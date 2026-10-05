@@ -1,0 +1,10 @@
+.shell { max-width: 40rem; margin: 3rem auto; padding: 0 1rem; font-family: system-ui, sans-serif; }
+.status { display: inline-block; padding: .4rem .8rem; border-radius: .4rem; font-weight: 600; }
+.status-online { background: #dcfce7; color: #14532d; }
+.status-server-down { background: #fef3c7; color: #78350f; }
+.status-offline { background: #fee2e2; color: #7f1d1d; }
+.note { color: #4b5563; }
+@media (prefers-color-scheme: dark) {
+  body { background: #111827; color: #f9fafb; }
+  .note { color: #9ca3af; }
+}
