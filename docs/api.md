@@ -78,3 +78,36 @@ transaction `reference`; card `reference` = approval code (optional). Electronic
 `confirmed_by_cashier` until provider integration verifies them.
 
 `GET /pos/sales/{id}` → a sale made on this device (reprint).
+## Offline till queue
+
+`POST /pos/sync` — **device** token (no staff session needed) + header `X-Device-Signature`:
+base64 ECDSA P-256/SHA-256 signature (raw r‖s) of the exact request body, made with the till's enrolled key.
+
+```json
+{"events": [
+  {"id": "uuid", "type": "shift_open", "grant": {"…": "offline grant"}, "payload": {"id": "same uuid", "opening_float_minor": 20000, "opened_at": "…"}},
+  {"id": "sale uuid", "type": "sale", "grant": {"…": "…"}, "payload": {"…": "same as POST /pos/sales, plus catalog_version"}},
+  {"id": "uuid", "type": "shift_close", "grant": {"…": "…"}, "payload": {"shift_id": "…", "counted_cash_minor": 69500, "note": null, "closed_at": "…"}}
+]}
+```
+
+→ `{"results": [{"id", "status": "accepted|duplicate|rejected", "code"?, "detail"?, "receipt_no"?}]}`. Events
+are applied in order, each in its own transaction (one bad event does not block the rest). `401
+bad_signature` if the signature is wrong. The `offline_grant` comes from `POST /pos/login`; send it
+exactly as received.
+
+`GET /pos/catalog` sends an `ETag`; send `If-None-Match` to get `304` when nothing changed.
+`POST /pos/shifts/open` accepts an optional till-generated `id`.
+
+## Node-to-node sync (servers only)
+
+Headers on every call: `X-Sync-Node` (caller's node id), `X-Sync-Tenant`, `X-Sync-Time` (unix seconds),
+`X-Sync-Signature` = hex HMAC-SHA256(secret, time + "\n" + METHOD + "\n" + path + "\n" + sha256(body)).
+Bodies and answers may be gzip (`Content-Encoding` / `Accept-Encoding`).
+
+| Call | Purpose |
+|---|---|
+| `GET /sync/hello` | node id, role, company identity (used when joining) |
+| `POST /sync/push` `{"events": [...]}` | caller's own events; answer `{acked_seq, results}` |
+| `GET /sync/pull?after=SEQ&limit=500` | our events after SEQ for the caller's groups; `{events, last_seq, has_more}` |
+

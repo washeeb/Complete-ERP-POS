@@ -36,9 +36,21 @@ Lines shown in red have no price on the chosen list and cannot be sold on it.
 
 After payment the receipt appears: **Print receipt** (80 mm printer or A4), then **New sale**.
 
-If the network drops while saving, the till keeps the sale and shows **“sale(s) saved on this till
-but not yet received”** with a **Send now** button. Do **not** ring the sale up again — sending it
-twice is safe, ringing it twice is not.
+## When the server is down
+
+The top right shows **“Server not answering — working offline”** or **“No network”**. Keep selling:
+
+- Sign in with your username and PIN as usual — this works offline if you have signed in on **this
+  till** while it was online in the last few days (your manager sets how long).
+- Sales, opening and closing shifts all work. Receipts print with their normal number and the line
+  *“Recorded on this till while offline”*.
+- A yellow banner counts what is **waiting to reach the server**. It goes on its own when the server is
+  back. **Do not ring a sale up twice** — sending is automatic and safe.
+- Closing a shift offline shows over/short worked out on the till; the server confirms it later.
+- A red banner means the server **refused** something — call a supervisor. They see why in the back
+  office (*Sales → Review queue*); after fixing it they press **Retry refused** on the till.
+- If the till must be reinstalled before it could send everything: press **Export unsent sales** and
+  give the file to your administrator.
 
 ## End of shift
 

@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { v7 as uuidv7 } from 'uuid'
-import { api, ApiError } from '../api'
+import { ApiError } from '../api'
 import { addToCart, findByBarcode, priceCart, qtyAllowed, search, setQty, type CartLine } from '../cart'
-import { db, nextSeq } from '../db'
+import { nextSeq } from '../db'
+import { exportQueueFile, retryRefused } from '../offline'
+import { submitSale } from '../till'
 import { formatMoney, prettyQty, toMilli } from '../money'
 import type { Bootstrap, Payment, PostedSale, Product, Unit } from '../types'
 import { Pay } from './Pay'
 
-export function Sell({ boot, products, onPosted, onRefresh, onCloseShift, onLogout }: {
-  boot: Bootstrap; products: Product[]; onPosted: (s: PostedSale) => void; onRefresh: () => Promise<void>
+export function Sell({ boot, products, online, catalogVersion, queue, onPosted, onRefresh, onSendNow, onCloseShift, onLogout }: {
+  boot: Bootstrap; products: Product[]; online: boolean; catalogVersion: string | null
+  queue: { pending: number; review: number; sending: boolean; lastError: string | null }
+  onPosted: (s: PostedSale) => void; onRefresh: () => Promise<void>; onSendNow: () => void
   onCloseShift: () => void; onLogout: () => void
 }) {
   const defaultList = boot.price_lists.find((l) => l.is_default) ?? boot.price_lists[0]
@@ -19,16 +22,11 @@ export function Sell({ boot, products, onPosted, onRefresh, onCloseShift, onLogo
   const [paying, setPaying] = useState(false)
   const [busy, setBusy] = useState(false)
   const [payError, setPayError] = useState('')
-  const [pending, setPending] = useState(0)
   const searchRef = useRef<HTMLInputElement>(null)
   const list = boot.price_lists.find((l) => l.id === listId) ?? defaultList
   const money = (m: number) => formatMoney(m, boot.company.currency, boot.company.exponent)
   const cart = useMemo(() => priceCart(lines, list, new Date()), [lines, list])
   const results = useMemo(() => search(products, query), [products, query])
-
-  useEffect(() => {
-    db.pendingSales.count().then(setPending)
-  }, [paying])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -38,6 +36,13 @@ export function Sell({ boot, products, onPosted, onRefresh, onCloseShift, onLogo
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   })
+
+  async function exportUnsent() {
+    const url = URL.createObjectURL(await exportQueueFile())
+    const a = Object.assign(document.createElement('a'), { href: url, download: `till-${boot.branch.code}-${boot.till?.code}${boot.device.receipt_series ?? ''}-unsent-${Date.now()}.json` })
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   function add(product: Product, unit?: Unit) {
     const u = unit ?? product.units.find((x) => x.is_base) ?? product.units[0]
@@ -85,55 +90,19 @@ export function Sell({ boot, products, onPosted, onRefresh, onCloseShift, onLogo
   async function complete(payments: Payment[]) {
     setBusy(true)
     setPayError('')
-    const payload = {
-      id: uuidv7(),
-      device_seq: await nextSeq(boot.last_device_seq),
-      occurred_at: new Date().toISOString(),
-      price_list_id: list.id,
-      shift_id: boot.shift!.id,
-      lines: cart.lines.map((l) => ({
-        product_id: l.product.id, product_uom_id: l.unit.id, qty: prettyQty(l.qtyMilli), unit_price_minor: l.price!.amount_minor, line_total_minor: l.total,
-      })),
-      totals: { net_minor: cart.net, tax_minor: cart.tax, total_minor: cart.total },
-      payments,
-    }
-    // Kept locally until the server acknowledges it; resending the same id is safe (idempotent).
-    await db.pendingSales.put({ id: payload.id, payload, createdAt: payload.occurred_at, lastError: null })
     try {
-      const { sale } = await api.postSale(payload)
-      await db.pendingSales.delete(payload.id)
+      const sale = await submitSale({ boot, online, cart, listId: list.id, payments, seq: await nextSeq(boot.last_device_seq), catalogVersion })
       setLines([])
       setPaying(false)
       onPosted(sale)
     } catch (err) {
-      const e = err instanceof ApiError ? err : new ApiError('server', String(err), 0)
-      if (e.code === 'network') {
-        await db.pendingSales.update(payload.id, { lastError: e.message })
-        setPayError(`${e.message} The sale is saved on this till and will be sent when you press “Send now”. Do not ring it up again.`)
-      } else {
-        await db.pendingSales.delete(payload.id) // refused by the server: nothing was recorded
-        setPayError(e.message)
-        if (['price_changed', 'totals_mismatch', 'product_unavailable'].includes(e.code)) await onRefresh()
-      }
+      const e = err instanceof ApiError ? err : null
+      setPayError(err instanceof Error ? err.message : String(err))
+      if (e && ['price_changed', 'totals_mismatch', 'product_unavailable'].includes(e.code)) await onRefresh()
     } finally {
       setBusy(false)
     }
   }
-
-  async function resendPending() {
-    for (const p of await db.pendingSales.toArray()) {
-      try {
-        await api.postSale(p.payload)
-        await db.pendingSales.delete(p.id)
-      } catch (err) {
-        await db.pendingSales.update(p.id, { lastError: err instanceof Error ? err.message : String(err) })
-        setMessage(err instanceof Error ? err.message : String(err))
-        break
-      }
-    }
-    setPending(await db.pendingSales.count())
-  }
-
   return (
     <div className="sell">
       <header className="topbar">
@@ -150,13 +119,21 @@ export function Sell({ boot, products, onPosted, onRefresh, onCloseShift, onLogo
         </div>
       </header>
 
-      {pending > 0 && (
-        <div className="banner warn" role="status">
-          {pending} sale(s) saved on this till but not yet received by the server.
-          <button type="button" onClick={resendPending}>Send now</button>
+      {(queue.pending > 0 || queue.review > 0 || !online) && (
+        <div className={`banner ${queue.review ? 'bad' : 'warn'}`} role="status">
+          <span>
+            {!online && <strong>Working offline. </strong>}
+            {queue.pending > 0 && `${queue.pending} item(s) saved on this till, waiting to reach the server${queue.sending ? ' — sending…' : '.'} `}
+            {queue.review > 0 && `${queue.review} item(s) were refused by the server — show a supervisor (they are in the back-office Review queue). `}
+            {queue.lastError && !queue.sending && <span className="small">({queue.lastError})</span>}
+          </span>
+          <span className="row">
+            {queue.pending > 0 && <button type="button" onClick={onSendNow} disabled={queue.sending}>Send now</button>}
+            {queue.review > 0 && <button type="button" onClick={async () => { await retryRefused(); onSendNow() }}>Retry refused</button>}
+            <button type="button" onClick={exportUnsent}>Export unsent sales</button>
+          </span>
         </div>
       )}
-
       <section className="find">
         <form onSubmit={onScanOrSearch}>
           <input ref={searchRef} autoFocus className="big" value={query} onChange={(e) => setQuery(e.target.value)}

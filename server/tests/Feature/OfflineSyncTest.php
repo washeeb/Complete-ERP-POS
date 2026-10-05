@@ -5,8 +5,10 @@ use App\Domain\Catalog\CatalogService;
 use App\Domain\Devices\DeviceService;
 use App\Domain\Devices\DeviceSignature;
 use App\Domain\Inventory\InventoryService;
+use App\Domain\Pos\TillFileImport;
 use App\Domain\Pricing\PriceResolver;
 use App\Domain\Pricing\TaxCalculator;
+use App\Domain\Support\DomainException;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\ReviewItem;
@@ -259,6 +261,26 @@ it('keeps sales by a person deactivated before the till synced, and flags them',
     $r = $this->t->sync($events)->assertOk()->json('results');
 
     expect($r[1]['status'])->toBe('accepted')->and(ReviewItem::where('type', 'grant_revoked')->exists())->toBeTrue();
+});
+
+it('recovers a revoked till’s unsent sales from its exported queue file', function () {
+    $events = [$this->t->openShift(0, now()->subHour()->toIso8601String()), $this->t->sale([[$this->milo, '2', null]], now()->subMinutes(30)->toIso8601String())];
+    $body = json_encode(['events' => $events]);
+    openssl_sign($body, $der, $this->t->privateKey, OPENSSL_ALGO_SHA256);
+    $file = json_encode(['format' => 'synclytics-till-queue-1', 'device_id' => $this->t->device->id, 'body' => $body,
+        'signature' => base64_encode(DeviceSignature::derToRaw($der))]);
+    // The till is wiped and revoked before it could sync.
+    app(DeviceService::class)->revoke(actorFor($this->owner), $this->t->device->fresh(), 'Reinstalled');
+
+    $r = app(TillFileImport::class)->import(actorFor($this->owner), $file);
+
+    expect(collect($r['results'])->pluck('status')->all())->toBe(['accepted', 'accepted'])
+        ->and(onHandOf($this->milo, $this->wh))->toBe('8.000');
+    // A tampered file is refused.
+    $bad = json_decode($file, true);
+    $bad['body'] = str_replace('"2"', '"1"', $bad['body']);
+    expect(fn () => app(TillFileImport::class)->import(actorFor($this->owner), json_encode($bad)))
+        ->toThrow(DomainException::class, 'signature');
 });
 
 it('never reuses receipt numbers when a till is reinstalled mid-queue', function () {

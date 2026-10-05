@@ -40,7 +40,11 @@ final class PosSyncService
                 if (! Str::isUuid($id) || ! in_array($e['type'] ?? null, self::TYPES, true) || ! is_array($e['payload'] ?? null)) {
                     throw new DomainException('Malformed queued event.', 'malformed');
                 }
-                $results[] = ['id' => $id] + $this->one($device, $e);
+                $results[] = $r = ['id' => $id] + $this->one($device, $e);
+                if ($r['status'] === 'accepted') {
+                    // A previously refused item that now goes through (cause fixed, till retried).
+                    DB::transaction(fn () => $this->reviews->closeBySystem('sync_event', $id, 'Accepted when the till retried'));
+                }
             } catch (DomainException $ex) {
                 $results[] = ['id' => $id, 'status' => 'rejected', 'code' => $ex->errorCode, 'detail' => $ex->getMessage()];
                 $this->recordRejection($device, $id, $e['type'] ?? '?', $ex);

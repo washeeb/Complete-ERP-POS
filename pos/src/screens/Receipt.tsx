@@ -19,6 +19,7 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
         {(boot.company.tin || boot.company.vat_no) && <p>{boot.company.tin && `TIN ${boot.company.tin}`} {boot.company.vat_no && `VAT ${boot.company.vat_no}`}</p>}
         <hr />
         <p><strong>Receipt {sale.receipt_no}</strong></p>
+        {sale.status === 'queued' && <p className="small">Recorded on this till while offline — sent to the server automatically.</p>}
         <p>{when} · {sale.cashier}</p>
         <hr />
         <table>

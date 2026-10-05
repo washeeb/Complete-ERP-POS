@@ -85,3 +85,4 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
   .no-print, .status { display: none !important; }
   .receipt-screen { display: block; } .receipt { width: 80mm; }
 }
+.banner.bad { background: var(--bad-bg); color: var(--bad-text); }

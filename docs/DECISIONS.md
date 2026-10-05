@@ -58,3 +58,21 @@ One line each: what — why. `[+]` = added beyond the spec.
 - `origin_node` added to every table (Phase 1 rows backfilled with this node's id by migration).
 - Sample data via `php artisan erp:demo-catalog --as=<email>` — runs as a named person so the audit log is truthful. [+]
 - Filament display callbacks must name the value `$state` (values are injected by name); a regression test now checks rendered values on populated screens.
+
+## Phase 3 (2026-10-07)
+
+- Offline sign-in = signed offline grant issued at an online PIN sign-in (person + device + expiry, default 72 h, setting) with a PBKDF2-SHA256 (210k) PIN hash; the PIN unlocks the grant, no reusable password cached (reference-build rule). Grant signed with a key derived from APP_KEY.
+- Offline sales are never refused for business reasons (old price, expired/revoked grant, clock skew, negative stock): recorded as they happened + review item. Refused only if not genuine (bad grant/signature) or internally inconsistent (arithmetic, missing shift). Online sales stay strict. [+]
+- Till queue: ordered, FIFO; while anything is queued every action goes through the queue so the server sees work in order; sent in signed batches (device ECDSA key) every 15 s; items leave only on acknowledgement; "Retry refused" after a supervisor fixes the cause; signed "Export unsent sales" file importable in the Sync Center even for a revoked device. [+]
+- Receipt series letter per device on a till (HQ-T01A-…): reinstalls/backup devices can never collide. Shifts are per device (index changed). Found while designing offline: the Phase 2 scheme would have collided on reinstall. [+]
+- Catalog cached on the till with an ETag version (304 when unchanged); full snapshot rather than incremental deltas — enough for LAN-attached tills; incremental if a branch catalog outgrows it.
+- Proxy 502/503/504 = server unreachable on the till (a reverse proxy in front of a stopped app server answers that way). Found in the browser test. [+]
+- Node sync: every outbox event carries a full snapshot (row + owned children) and a sync group; receivers upsert idempotently (newer version wins), insert immutable rows once, move stock only for newly inserted movements. Node-local secrets (2FA, passkeys, remember tokens, enrolment codes) never travel; password/PIN hashes do (branch sign-in while HQ is down).
+- Conflict policy "HQ wins" enforced at the source: branch servers refuse master-data writes (org, people, catalog, pricing) except node-local operational changes (PIN counters, own 2FA). So master data cannot conflict; sales/movements are append-only; negative stock after merge → review. Customers' field-level rule comes with CRM (Phase 6).
+- Groups and direction fixed by role: down = org, people, catalog, pricing; up = sales (+devices, shifts), reviews; both = stock. Pull modes per group: auto / manual (staged, preview + accept/reject per group) / off (held, can be applied later). Pushes always send (sales must reach HQ). "Scheduled" = the every-minute scheduler; per-group schedules not added (no need found yet). Bandwidth/image skipping deferred until product images exist (Phase 4).
+- Transport: HTTPS, HMAC-SHA256 per-pair secret, 5-min clock window, gzip both ways, batches of 500, cursors only move after acknowledgement; failed applies retried every sync and raised in the Review queue (auto-closed when they apply). USB sync files carry the same signature.
+- Installer/seeder starter data and role catalog now publish outbox events (found by the two-node test: they bypassed the Recorder and never reached branches). [+]
+- Tests run HQ and a branch server as two real PostgreSQL databases in one process (CI creates erp_test_node). [+]
+- Playwright browser automation for the till not added yet (needs a browser download — owner to approve); offline flow verified manually in the in-app browser.
+- "Online order during branch outage" (§4.3) moves to Phase 4 with the store connectors.
+
