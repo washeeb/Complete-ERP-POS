@@ -1,0 +1,11 @@
+{
+  "key": "assets",
+  "name": "Assets & Maintenance",
+  "version": "0.0.0",
+  "kind": "department",
+  "stage": "planned",
+  "phase": 12,
+  "description": "Equipment register and maintenance schedules.",
+  "requires": ["core"],
+  "permissions": []
+}

@@ -6,19 +6,32 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
+        // UUIDv7 keys so tills and branch nodes can create users/records offline without collisions.
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
+            $table->uuid('tenant_id')->index(); // FK added once tenants exists (tenancy migration)
             $table->string('name');
+            $table->string('username', 60);
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            // Ceiling: no role above this level can apply to the user (spec §9.1, L0–L7).
+            $table->unsignedSmallInteger('security_level')->default(2);
+            $table->boolean('is_active')->default(true);
+            $table->string('pin_hash')->nullable();
+            $table->unsignedSmallInteger('pin_failed_attempts')->default(0);
+            $table->timestamp('pin_locked_until')->nullable();
+            $table->text('app_authentication_secret')->nullable();
+            $table->text('app_authentication_recovery_codes')->nullable();
+            $table->timestamp('last_login_at')->nullable();
+            $table->uuid('created_by')->nullable();
+            $table->unsignedInteger('version')->default(1);
             $table->rememberToken();
             $table->timestamps();
+
+            $table->unique(['tenant_id', 'username']);
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -29,7 +42,7 @@ return new class extends Migration
 
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
-            $table->foreignId('user_id')->nullable()->index();
+            $table->foreignUuid('user_id')->nullable()->index();
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
             $table->longText('payload');
@@ -37,9 +50,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('users');

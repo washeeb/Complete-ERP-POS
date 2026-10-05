@@ -1,0 +1,11 @@
+{
+  "key": "restaurant",
+  "name": "Restaurant / Café / Bar",
+  "version": "0.0.0",
+  "kind": "industry",
+  "stage": "planned",
+  "phase": 9,
+  "description": "Tables and floor plan, modifiers, courses, split bills, kitchen display, recipes with ingredient deduction.",
+  "requires": ["core"],
+  "permissions": []
+}

@@ -1,0 +1,11 @@
+{
+  "key": "projects",
+  "name": "Projects & Tasks",
+  "version": "0.0.0",
+  "kind": "department",
+  "stage": "planned",
+  "phase": 12,
+  "description": "Projects, tasks and time for service and technology companies.",
+  "requires": ["core"],
+  "permissions": []
+}

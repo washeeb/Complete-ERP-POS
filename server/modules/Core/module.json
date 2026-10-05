@@ -1,0 +1,21 @@
+{
+  "key": "core",
+  "name": "Core",
+  "version": "0.1.0",
+  "kind": "core",
+  "stage": "available",
+  "description": "Company, branches, warehouses, tills, users, roles, devices, audit, modules and settings. Always installed.",
+  "requires": [],
+  "permissions": [
+    {"key": "setup.company.manage", "label": "Manage company profile, branches, warehouses and tills", "min_level": 5},
+    {"key": "audit.view", "label": "View the audit log", "min_level": 1},
+    {"key": "pos.access", "label": "Sign in to a POS till by PIN", "min_level": 2},
+    {"key": "admin.users.view", "label": "View users and their access", "min_level": 3, "technical": true},
+    {"key": "admin.users.manage", "label": "Create and edit users, reset PINs", "min_level": 4, "technical": true},
+    {"key": "admin.roles.manage", "label": "Edit roles and grant or revoke access", "min_level": 4, "technical": true},
+    {"key": "admin.devices.manage", "label": "Register, enrol and revoke devices", "min_level": 4, "technical": true},
+    {"key": "admin.modules.manage", "label": "Enable or disable modules per branch", "min_level": 4, "technical": true},
+    {"key": "admin.settings.manage", "label": "Change system settings", "min_level": 4, "technical": true},
+    {"key": "audit.verify", "label": "Verify the audit hash chain", "min_level": 4, "technical": true}
+  ]
+}

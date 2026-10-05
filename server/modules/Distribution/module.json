@@ -1,0 +1,11 @@
+{
+  "key": "distribution",
+  "name": "Sales & Distribution",
+  "version": "0.0.0",
+  "kind": "industry",
+  "stage": "planned",
+  "phase": 10,
+  "description": "Routes, territories, van stock, offline order-taking, GPS check-ins, collections.",
+  "requires": ["core"],
+  "permissions": []
+}

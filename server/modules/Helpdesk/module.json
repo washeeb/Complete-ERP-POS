@@ -1,0 +1,11 @@
+{
+  "key": "helpdesk",
+  "name": "Helpdesk",
+  "version": "0.0.0",
+  "kind": "department",
+  "stage": "planned",
+  "phase": 12,
+  "description": "Tickets, SLAs and warranty claims.",
+  "requires": ["core"],
+  "permissions": []
+}

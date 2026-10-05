@@ -1,0 +1,11 @@
+{
+  "key": "electronics",
+  "name": "Electronics / Technology",
+  "version": "0.0.0",
+  "kind": "industry",
+  "stage": "planned",
+  "phase": 10,
+  "description": "Serial/IMEI tracking, warranties, repair job cards, trade-ins, subscriptions.",
+  "requires": ["core"],
+  "permissions": []
+}

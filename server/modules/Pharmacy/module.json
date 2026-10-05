@@ -1,0 +1,11 @@
+{
+  "key": "pharmacy",
+  "name": "Pharmacy",
+  "version": "0.0.0",
+  "kind": "industry",
+  "stage": "planned",
+  "phase": 9,
+  "description": "Mandatory batch/expiry, prescriptions, patient profiles, controlled-drug register, interaction warnings.",
+  "requires": ["core"],
+  "permissions": []
+}

@@ -1,50 +1,66 @@
 <?php
 
+use App\Domain\Access\AccessService;
+use App\Domain\Org\OrgService;
+use App\Domain\Org\TenantInstaller;
+use App\Domain\Support\Actor;
+use App\Models\Branch;
+use App\Models\Role;
+use App\Models\User;
+use App\Security\ScopeType;
+use App\Support\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
-
-/*
-|--------------------------------------------------------------------------
-| Test Case
-|--------------------------------------------------------------------------
-|
-| The closure you provide to your test functions is always bound to a specific PHPUnit test
-| case class. By default, that class is "PHPUnit\Framework\TestCase". Of course, you may
-| need to change it using the "pest()" function to bind different classes or traits.
-|
-*/
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');
 
-/*
-|--------------------------------------------------------------------------
-| Expectations
-|--------------------------------------------------------------------------
-|
-| When you're writing tests, you often need to check that values meet certain conditions. The
-| "expect()" function gives you access to a set of "expectations" methods that you can use
-| to assert different things. Of course, you may extend the Expectation API at any time.
-|
-*/
-
-expect()->extend('toBeOne', function () {
-    return $this->toBe(1);
-});
-
-/*
-|--------------------------------------------------------------------------
-| Functions
-|--------------------------------------------------------------------------
-|
-| While Pest is very powerful out-of-the-box, you may have some testing code specific to your
-| project that you don't want to repeat in every file. Here you can also expose helpers as
-| global functions to help you to reduce the number of lines of code in your test files.
-|
-*/
-
-function something()
+/** Fresh company + owner (L6, Owner role company-wide). */
+function installCompany(string $name = 'Demo Ltd', string $email = 'owner@demo.test'): array
 {
-    // ..
+    [$tenant, $owner] = app(TenantInstaller::class)->install($name, [
+        'name' => 'Ama Owner', 'username' => 'owner'.substr(md5($email), 0, 4), 'email' => $email, 'password' => 'correct-horse-battery',
+    ]);
+    app(TenantContext::class)->set($tenant->id);
+
+    return [$tenant, $owner];
+}
+
+function actorFor(User $user): Actor
+{
+    return Actor::user($user->fresh());
+}
+
+/** Owner completes the wizard with the given branches; returns branches keyed by code. */
+function setUpBranches(User $owner, ?array $branches = null): array
+{
+    $branches ??= [
+        ['code' => 'HQ', 'name' => 'Head Office', 'is_hq' => true, 'tills' => 1, 'modules' => ['retail_wholesale']],
+        ['code' => 'BA', 'name' => 'Branch A', 'is_hq' => false, 'tills' => 2, 'modules' => ['grocery']],
+    ];
+    app(OrgService::class)->completeSetup(actorFor($owner), [
+        'deployment_mode' => 'cloud',
+        'company' => ['name' => 'Demo Ltd'],
+        'branches' => $branches,
+    ]);
+
+    return Branch::all()->keyBy('code')->all();
+}
+
+/** Create a user via the owner, optionally with a role at a scope. */
+function staff(User $owner, string $username, int $level, ?string $roleKey = null, ?ScopeType $scope = null, ?string $scopeId = null, array $limits = []): User
+{
+    $svc = app(AccessService::class);
+    $user = $svc->createUser(actorFor($owner), [
+        'name' => ucfirst($username), 'username' => $username, 'email' => "{$username}@demo.test",
+        'password' => 'correct-horse-battery', 'security_level' => $level,
+    ]);
+    if ($roleKey) {
+        $role = Role::where('key', $roleKey)->firstOrFail();
+        $scope ??= ScopeType::Tenant;
+        $svc->grant(actorFor($owner), $user, $role, $scope, $scope === ScopeType::Tenant ? $owner->tenant_id : $scopeId, $limits);
+    }
+
+    return $user->fresh();
 }

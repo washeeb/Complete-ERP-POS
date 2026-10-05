@@ -21,7 +21,7 @@ Not yet installed (added in the phase that needs them; owner asked first if syst
 
 ## Application packages
 
-Server: Laravel 13.34, Filament 5.9, Livewire 4.4, Pest 4.7, Pint 1.32.
+Server: Laravel 13.34, Filament 5.9, Livewire 4.4, Sanctum (API tokens), pragmarx/google2fa-qrcode 3 + bacon-qr-code 3 (authenticator app), spatie/laravel-passkeys 1.8 (passkeys), Pest 4.7, Pint 1.32. Browser: @simplewebauthn/browser 13.3 (vendored in `server/public/vendor`).
 POS: React 19.2, Vite 8.3, TypeScript 6.0, vite-plugin-pwa 2.0, Vitest 5.0.
 
 ## Runtime targets (from spec §12; per-mode hardware sheets written in Phase 13)

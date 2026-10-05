@@ -2,24 +2,21 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Tenant;
+use App\Security\AccessCatalogSync;
 use Illuminate\Database\Seeder;
 
+/**
+ * Safe on every deploy: adds new permissions and missing system roles, never overwrites
+ * or restores anything an administrator changed. Companies are created by erp:install.
+ */
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
-    public function run(): void
+    public function run(AccessCatalogSync $catalog): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        $new = $catalog->syncPermissions();
+        foreach (Tenant::all() as $tenant) {
+            $catalog->syncRoles($tenant->id, $new);
+        }
     }
 }
