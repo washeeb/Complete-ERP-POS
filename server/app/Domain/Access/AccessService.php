@@ -81,6 +81,21 @@ final class AccessService
         return $user;
     }
 
+    /** Self-service profile edits (name, email, password). The screen asks for the current password first. */
+    public function updateOwnProfile(Actor $actor, User $user, array $data): User
+    {
+        if ($actor->id === null || $actor->id !== $user->id) {
+            throw new AccessDenied('You can only change your own profile here.');
+        }
+        $user->fill(array_intersect_key($data, array_flip(['name', 'email'])));
+        if (! empty($data['password'])) {
+            $user->password = $data['password'];
+        }
+        $this->assertUnique($user);
+
+        return $this->recorder->save($actor, $user, 'user.profile_updated');
+    }
+
     public function setPin(Actor $actor, User $user, string $pin): void
     {
         if ($user->id !== $actor->id) {

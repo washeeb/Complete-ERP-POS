@@ -19,8 +19,10 @@ cd server
 composer install
 copy .env.example .env      # then set DB_PASSWORD
 php artisan key:generate
-php artisan migrate
-php artisan serve           # http://127.0.0.1:8000/admin
+php artisan erp:audit-key    # audit chain key — back it up
+php artisan migrate --seed
+php artisan erp:install      # company + owner (prompts)
+php artisan serve            # http://127.0.0.1:8000/admin
 ```
 
 ```bash

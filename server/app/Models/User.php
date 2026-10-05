@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Domain\Support\Actor;
+use App\Domain\Support\Recorder;
 use App\Security\Authorizer;
 use App\Security\SecurityLevel;
 use App\Support\Settings;
@@ -18,15 +20,17 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use SensitiveParameter;
+use Spatie\LaravelPasskeys\Models\Concerns\HasPasskeys;
+use Spatie\LaravelPasskeys\Models\Concerns\InteractsWithPasskeys;
 
 /**
  * Not tenant-scoped by a global scope (auth resolves users before a tenant is known);
  * every query listing users filters by tenant explicitly.
  */
-class User extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery
+class User extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery, HasPasskeys
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, HasUuids, Notifiable;
+    use HasApiTokens, HasFactory, HasUuids, InteractsWithPasskeys, Notifiable;
 
     protected $fillable = ['name', 'username', 'email', 'password', 'security_level', 'is_active'];
 
@@ -82,10 +86,11 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
         return $this->app_authentication_secret;
     }
 
+    /** Turning two-factor on or off is a security change: audited with the save. */
     public function saveAppAuthenticationSecret(#[SensitiveParameter] ?string $secret): void
     {
         $this->app_authentication_secret = $secret;
-        $this->save();
+        app(Recorder::class)->save(Actor::user($this, 'web'), $this, $secret ? 'auth.mfa_enabled' : 'auth.mfa_disabled');
     }
 
     public function getAppAuthenticationHolderName(): string
@@ -101,6 +106,6 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
     public function saveAppAuthenticationRecoveryCodes(#[SensitiveParameter] ?array $codes): void
     {
         $this->app_authentication_recovery_codes = $codes;
-        $this->save();
+        app(Recorder::class)->save(Actor::user($this, 'web'), $this, 'auth.mfa_recovery_codes_changed');
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Domain\Support\Actor;
+use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
 use App\Models\Setting;
 use InvalidArgumentException;
@@ -59,7 +60,7 @@ final class Settings
         if ($def['type'] === 'int') {
             $value = (int) $value;
             if ($value < $def['min'] || $value > $def['max']) {
-                throw new InvalidArgumentException("{$def['label']} must be between {$def['min']} and {$def['max']}.");
+                throw new DomainException("{$def['label']} must be between {$def['min']} and {$def['max']}.");
             }
         }
 
