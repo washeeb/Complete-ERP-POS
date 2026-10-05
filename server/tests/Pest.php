@@ -99,3 +99,11 @@ function staff(User $owner, string $username, int $level, ?string $roleKey = nul
 
     return $user->fresh();
 }
+
+/** Pretend the person already set up their authenticator, so MFA doesn't block the screen under test. */
+function withMfa(User $user): User
+{
+    $user->forceFill(['app_authentication_secret' => 'JBSWY3DPEHPK3PXP'])->saveQuietly();
+
+    return $user->fresh();
+}

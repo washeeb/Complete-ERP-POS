@@ -14,6 +14,7 @@ use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\ProductUom;
 use App\Models\TaxGroup;
+use App\Models\TaxRate;
 use App\Models\Uom;
 use App\Security\Authorizer;
 use App\Support\Money;
@@ -100,6 +101,81 @@ final class CatalogService
         $type = strtolower(class_basename($model));
 
         return $this->recorder->save($actor, $model, $type.($model->exists ? '.updated' : '.created'));
+    }
+
+    /** Exactly one default list; currency is the company's (multi-currency lists arrive with Finance). */
+    public function savePriceList(Actor $actor, PriceList $list, array $data): PriceList
+    {
+        $this->require($actor, 'pricing.manage');
+        $list->fill(array_intersect_key($data, array_flip(['code', 'name', 'prices_include_tax', 'is_default', 'pos_selectable', 'branch_id', 'is_active'])));
+        $list->code = strtoupper(trim($list->code));
+        $list->tenant_id = $actor->tenantId;
+        $list->currency_code ??= $actor->user->tenant->currency_code;
+        if ($list->exists && $list->getOriginal('is_default') && ! $list->is_default) {
+            throw new DomainException('Choose another list as the default instead of switching this one off.');
+        }
+        if ($list->is_default && ! $list->is_active) {
+            throw new DomainException('The default price list must stay active.');
+        }
+        if ($list->isDirty('prices_include_tax') && $list->exists && $list->prices()->exists()) {
+            throw new DomainException('Prices on this list were entered '.($list->getOriginal('prices_include_tax') ? 'including' : 'excluding')
+                .' tax. Create a new list rather than reinterpreting them.');
+        }
+
+        return $this->recorder->transaction(function () use ($actor, $list) {
+            if ($list->is_default) {
+                foreach (PriceList::where('is_default', true)->whereKeyNot($list->id ?? '00000000-0000-0000-0000-000000000000')->get() as $other) {
+                    $other->is_default = false;
+                    $this->recorder->save($actor, $other, 'price_list.updated', 'Another list became the default');
+                }
+            }
+
+            return $this->recorder->save($actor, $list, $list->exists ? 'price_list.updated' : 'price_list.created');
+        });
+    }
+
+    /** @param list<string> $rateIds */
+    public function saveTaxGroup(Actor $actor, TaxGroup $group, array $data, array $rateIds): TaxGroup
+    {
+        $this->require($actor, 'pricing.manage');
+        $group->fill(array_intersect_key($data, array_flip(['code', 'name'])));
+        $group->code = strtoupper(trim($group->code));
+        $group->tenant_id = $actor->tenantId;
+
+        return $this->recorder->transaction(function () use ($actor, $group, $rateIds) {
+            $before = $group->exists ? $group->rates()->pluck('tax_rates.id')->sort()->values()->all() : [];
+            $after = collect($rateIds)->sort()->values()->all();
+            $ratesChanged = $before !== $after;
+            if ($ratesChanged && $group->verified_at) {
+                // A changed tax set-up needs a fresh sign-off.
+                $group->verified_at = null;
+                $group->verified_by = null;
+                $group->verified_by_name = null;
+            }
+            $this->recorder->save($actor, $group, $group->exists ? 'tax_group.updated' : 'tax_group.created');
+            if ($ratesChanged) {
+                $group->rates()->sync($rateIds);
+                $this->recorder->audit->record($actor, 'tax_group.rates_changed', $group, ['rates' => [
+                    TaxRate::whereIn('id', $before)->pluck('code')->all(), TaxRate::whereIn('id', $after)->pluck('code')->all(),
+                ]]);
+            }
+
+            return $group;
+        });
+    }
+
+    /** The accountant (or owner on their advice) confirms the tax set-up; recorded by name. */
+    public function verifyTaxGroup(Actor $actor, TaxGroup $group, string $note): TaxGroup
+    {
+        $this->require($actor, 'pricing.manage');
+        if (trim($note) === '') {
+            throw new DomainException('Say who checked it and on what basis (e.g. “Checked with GRA guidance by our accountant, A. Mensah”).');
+        }
+        $group->verified_at = now();
+        $group->verified_by = $actor->id;
+        $group->verified_by_name = $actor->name;
+
+        return $this->recorder->save($actor, $group, 'tax_group.verified', $note);
     }
 
     // -------------------------------------------------------------------

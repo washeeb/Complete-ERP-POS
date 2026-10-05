@@ -35,6 +35,12 @@ class StockLevel extends Model
         return $this->belongsTo(Warehouse::class);
     }
 
+    /** Unique row identity for screens (same product appears once per warehouse). */
+    public function getKey(): string
+    {
+        return $this->getAttribute('warehouse_id').'|'.$this->getAttribute('product_id');
+    }
+
     /** Never save through Eloquent with only product_id as key. */
     protected function setKeysForSaveQuery($query): Builder
     {
