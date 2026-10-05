@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Domain\Sync\Transport\HttpSyncTransport;
+use App\Domain\Sync\Transport\SyncTransport;
 use App\Models\User;
 use App\Modules\ModuleRegistry;
 use App\Security\Authorizer;
@@ -22,6 +24,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(TenantContext::class);
         $this->app->scoped(Authorizer::class);
         $this->app->scoped(Settings::class);
+        $this->app->bind(SyncTransport::class, HttpSyncTransport::class);
     }
 
     public function boot(): void
@@ -41,6 +44,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('device-enroll', fn (Request $r) => Limit::perMinute(5)->by($r->ip()));
+        RateLimiter::for('node-sync', fn (Request $r) => Limit::perMinute(600)->by($r->header('X-Sync-Node').'|'.$r->ip()));
         RateLimiter::for('pos-sync', fn (Request $r) => Limit::perMinute(120)->by((string) $r->user()?->getKey()));
         RateLimiter::for('pos-login', fn (Request $r) => [
             Limit::perMinute(10)->by($r->ip()),

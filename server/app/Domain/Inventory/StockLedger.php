@@ -4,6 +4,7 @@ namespace App\Domain\Inventory;
 
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
+use App\Domain\Support\Outbox;
 use App\Models\Product;
 use App\Models\ProductUom;
 use App\Models\StockMovement;
@@ -22,7 +23,7 @@ use LogicException;
  */
 final class StockLedger
 {
-    public function __construct(private readonly Settings $settings) {}
+    public function __construct(private readonly Settings $settings, private readonly Outbox $outbox) {}
 
     /**
      * @param  list<array{product: Product, unit: ProductUom, qty_milli: int, unit_cost_minor?: ?int}>  $entries  qty signed, in the unit
@@ -107,6 +108,9 @@ final class StockLedger
             ])->save();
             $movements[] = $m;
         }
+        // Other nodes receive the movements themselves (not a recalculated quantity) and add them to their ledger.
+        $this->outbox->publishRaw($actor, 'stock_movement_batch', $movements[0]->id, 1, "stock.{$type}",
+            ['movements' => array_map(fn (StockMovement $m) => $m->getAttributes(), $movements)]);
 
         return $movements;
     }

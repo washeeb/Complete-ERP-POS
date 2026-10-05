@@ -43,7 +43,7 @@ final class TenantInstaller
             $tenant->save();
             $actor = Actor::system($tenant->id, 'Installer (php artisan erp:install)', 'cli');
             $this->recorder->audit->record($actor, 'tenant.created', $tenant, ['name' => [null, $companyName]]);
-            $this->recorder->outbox->publish($actor, $tenant, 'tenant.created', $tenant->toArray());
+            $this->recorder->outbox->publish($actor, $tenant->fresh(), 'tenant.created');
 
             $this->catalog->syncRoles($tenant->id, $newPermissions);
             $this->baseline->apply($tenant);

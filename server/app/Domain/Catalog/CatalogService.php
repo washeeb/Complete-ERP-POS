@@ -155,6 +155,7 @@ final class CatalogService
             $this->recorder->save($actor, $group, $group->exists ? 'tax_group.updated' : 'tax_group.created');
             if ($ratesChanged) {
                 $group->rates()->sync($rateIds);
+                $this->recorder->outbox->publish($actor, $group->fresh(), 'tax_group.rates_changed');
                 $this->recorder->audit->record($actor, 'tax_group.rates_changed', $group, ['rates' => [
                     TaxRate::whereIn('id', $before)->pluck('code')->all(), TaxRate::whereIn('id', $after)->pluck('code')->all(),
                 ]]);

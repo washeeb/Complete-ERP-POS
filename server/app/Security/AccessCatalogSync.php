@@ -2,6 +2,8 @@
 
 namespace App\Security;
 
+use App\Domain\Support\Actor;
+use App\Domain\Support\Outbox;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Modules\ModuleRegistry;
@@ -16,7 +18,7 @@ use Illuminate\Support\Facades\DB;
  */
 final class AccessCatalogSync
 {
-    public function __construct(private readonly ModuleRegistry $modules) {}
+    public function __construct(private readonly ModuleRegistry $modules, private readonly Outbox $outbox) {}
 
     public function syncPermissions(): array
     {
@@ -53,6 +55,10 @@ final class AccessCatalogSync
                 $attach = $isNewRole ? $defaults : array_values(array_intersect($defaults, $newPermissionKeys));
                 if ($attach) {
                     $role->permissions()->syncWithoutDetaching($attach);
+                }
+                if ($isNewRole || $attach) {
+                    // Published so branch servers receive seeded roles and newly introduced permissions.
+                    $this->outbox->publish(Actor::system($tenantId, 'Role catalog', 'system'), $role->fresh(), $isNewRole ? 'role.created' : 'role.permissions_changed');
                 }
             }
         });

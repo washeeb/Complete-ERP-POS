@@ -212,7 +212,7 @@ final class SaleService
                 $this->recorder->audit->record($actor, $offline ? 'sale.posted_offline' : 'sale.posted', $sale, [
                     'receipt_no' => [null, $receiptNo], 'total_minor' => [null, $total], 'lines' => [null, count($lines)],
                 ], null, $branch->id);
-                $this->recorder->outbox->publish($actor, $sale, 'sale.posted', $sale->load('lines', 'payments')->toArray());
+                $this->recorder->outbox->publish($actor, $sale, 'sale.posted', ['receipt_no' => $receiptNo, 'offline' => $offline]);
 
                 if ($offline) {
                     foreach ($flags as [$type, $summary]) {

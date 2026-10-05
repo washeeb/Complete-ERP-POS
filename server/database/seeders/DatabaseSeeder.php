@@ -15,7 +15,10 @@ class DatabaseSeeder extends Seeder
 {
     public function run(AccessCatalogSync $catalog, TenantBaseline $baseline): void
     {
-        $new = $catalog->syncPermissions();
+        $new = $catalog->syncPermissions(); // permissions are code (same on every node)
+        if (config('erp.node.role') === 'branch') {
+            return; // roles and starter data are head-office data: they arrive by sync
+        }
         foreach (Tenant::all() as $tenant) {
             $catalog->syncRoles($tenant->id, $new);
             $baseline->apply($tenant);

@@ -2,6 +2,9 @@
 
 namespace App\Domain\Org;
 
+use App\Domain\Support\Actor;
+use App\Domain\Support\AuditLog;
+use App\Domain\Support\Outbox;
 use App\Models\PriceList;
 use App\Models\TaxGroup;
 use App\Models\TaxRate;
@@ -16,6 +19,8 @@ use Illuminate\Support\Facades\DB;
  */
 final class TenantBaseline
 {
+    public function __construct(private readonly Outbox $outbox) {}
+
     public const UOMS = [
         ['PC', 'Piece', 0], ['PK', 'Pack', 0], ['CTN', 'Carton', 0], ['DZ', 'Dozen', 0], ['BAG', 'Bag', 0],
         ['KG', 'Kilogram', 3], ['G', 'Gram', 0], ['L', 'Litre', 3], ['ML', 'Millilitre', 0], ['M', 'Metre', 2],
@@ -32,11 +37,14 @@ final class TenantBaseline
         $tenant = $tenant->fresh(); // column defaults (country, currency) are only known after a reload
         DB::transaction(function () use ($tenant) {
             $node = (string) config('erp.node.id');
+            // Created as named system data; published so branch servers receive it too.
+            $actor = Actor::system($tenant->id, 'Starter data', 'system');
+            $publish = fn ($model) => $this->outbox->publish($actor, $model->fresh(), AuditLog::typeOf($model).'.created');
             $base = fn () => ['tenant_id' => $tenant->id, 'origin_node' => $node];
 
             if (! Uom::withoutGlobalScopes()->where('tenant_id', $tenant->id)->exists()) {
                 foreach (self::UOMS as [$code, $name, $dec]) {
-                    (new Uom(['code' => $code, 'name' => $name, 'decimals' => $dec]))->forceFill($base())->save();
+                    $publish(tap((new Uom(['code' => $code, 'name' => $name, 'decimals' => $dec]))->forceFill($base()))->save());
                 }
             }
 
@@ -47,20 +55,24 @@ final class TenantBaseline
                     foreach (self::GH_RATES as [$code, $name, $bp, $sort]) {
                         $r = (new TaxRate(['code' => $code, 'name' => $name, 'rate_bp' => $bp, 'sort' => $sort]))->forceFill($base());
                         $r->save();
+                        $publish($r);
                         $rates[] = $r->id;
                     }
                 }
                 $std = (new TaxGroup(['code' => 'STD', 'name' => 'Standard rated']))->forceFill($base());
                 $std->save();
                 $std->rates()->sync($rates);
-                (new TaxGroup(['code' => 'EXEMPT', 'name' => 'Exempt / zero rated']))->forceFill($base())->save();
+                $publish($std);
+                $publish(tap((new TaxGroup(['code' => 'EXEMPT', 'name' => 'Exempt / zero rated']))->forceFill($base()))->save());
             }
 
             if (! PriceList::withoutGlobalScopes()->where('tenant_id', $tenant->id)->exists()) {
                 (new PriceList(['code' => 'RETAIL', 'name' => 'Retail', 'currency_code' => $tenant->currency_code,
                     'prices_include_tax' => true, 'is_default' => true, 'pos_selectable' => true]))->forceFill($base())->save();
+                $publish(PriceList::withoutGlobalScopes()->where('tenant_id', $tenant->id)->where('code', 'RETAIL')->first());
                 (new PriceList(['code' => 'WHOLESALE', 'name' => 'Wholesale', 'currency_code' => $tenant->currency_code,
                     'prices_include_tax' => true, 'is_default' => false, 'pos_selectable' => true]))->forceFill($base())->save();
+                $publish(PriceList::withoutGlobalScopes()->where('tenant_id', $tenant->id)->where('code', 'WHOLESALE')->first());
             }
         });
     }

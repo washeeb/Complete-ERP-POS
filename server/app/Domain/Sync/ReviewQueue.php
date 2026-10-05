@@ -25,6 +25,15 @@ final class ReviewQueue
         return $this->recorder->save($actor, $item, 'review.opened', null, $branchId);
     }
 
+    /** The system itself fixed the cause (e.g. a failed sync event applied on retry). */
+    public function closeBySystem(string $subjectType, string $subjectId, string $resolution): void
+    {
+        foreach (ReviewItem::withoutGlobalScopes()->where('subject_type', $subjectType)->where('subject_id', $subjectId)->where('status', 'open')->get() as $item) {
+            $item->forceFill(['status' => 'resolved', 'resolved_by_name' => 'System', 'resolved_at' => now(), 'resolution' => $resolution]);
+            $this->recorder->save(Actor::system($item->tenant_id, 'Sync', 'sync'), $item, 'review.resolved', $resolution, $item->branch_id);
+        }
+    }
+
     public function resolve(Actor $actor, ReviewItem $item, string $resolution): ReviewItem
     {
         $branch = $item->branch_id ? Branch::find($item->branch_id) : null;
