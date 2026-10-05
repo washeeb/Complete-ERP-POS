@@ -136,7 +136,7 @@ class SyncPeerResource extends Resource
                             : 'Resumes sync from where it stopped.')
                         ->action(function (SyncPeer $record) {
                             $record->is_active = ! $record->is_active;
-                            Erp::run(fn ($actor) => app(\App\Domain\Support\Recorder::class)->save($actor, $record,
+                            Erp::run(fn ($actor) => app(Recorder::class)->save($actor, $record,
                                 $record->is_active ? 'sync.peer_enabled' : 'sync.peer_disabled'), $record->is_active ? 'Enabled' : 'Disabled');
                         }),
                     Action::make('resync')->label('Full resync from this peer')->icon(Heroicon::OutlinedArrowUturnLeft)->color('warning')
