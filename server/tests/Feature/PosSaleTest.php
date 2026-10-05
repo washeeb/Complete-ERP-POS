@@ -92,7 +92,7 @@ it('posts a cash sale: receipt number, tax, change, stock drops, audit and outbo
 
     $r = $this->withToken($this->token)->postJson('/api/v1/pos/sales', $sale)->assertCreated()->json('sale');
 
-    expect($r['receipt_no'])->toBe('HQ-T01-000001')
+    expect($r['receipt_no'])->toBe('HQ-T01A-000001')
         ->and($r['total_minor'])->toBe(9000 + 1850 + 100000)
         ->and($r['change_minor'])->toBe($sale['payments'][0]['tendered_minor'] - $r['total_minor'])
         ->and(collect($r['tax_breakdown'])->sum('amount_minor'))->toBe($r['tax_minor'])
@@ -229,7 +229,7 @@ it('shows the sale, its ledger lines and its figures in the back office', functi
 
     // Values must be rendered, not just the page: catches display callbacks that receive null.
     $this->get(StockMovementResource::getUrl())->assertOk()
-        ->assertSee('Sale HQ-T01-000001')->assertSee('-2');
+        ->assertSee('Sale HQ-T01A-000001')->assertSee('-2');
     $this->get(SaleResource::getUrl('view', ['record' => $r['id']]))->assertOk()
         ->assertSee('GH₵ 90.00')->assertSee('Milo 400g')->assertSee('Cash');
     $this->get(SaleResource::getUrl())->assertOk()->assertSee('GH₵ 90.00');

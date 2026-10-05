@@ -37,6 +37,7 @@ final class StockLedger
         ?string $sourceType = null,
         ?string $sourceId = null,
         ?CarbonInterface $occurredAt = null,
+        bool $alreadyHappened = false, // offline sales: the goods have left; never refuse, the shortfall is reviewed
     ): array {
         if (DB::transactionLevel() === 0) {
             throw new LogicException('Stock must be posted inside the domain transaction.');
@@ -69,7 +70,8 @@ final class StockLedger
         foreach ($productIds as $id) {
             $after = Qty::toMilli($levels[$id]->on_hand) + $deltas[$id];
             $outgoing = $deltas[$id] < 0;
-            $mustNotGoNegative = $type === 'sale' ? $blockNegativeSales : in_array($type, ['adjustment', 'opening'], true);
+            $mustNotGoNegative = ! $alreadyHappened
+                && ($type === 'sale' ? $blockNegativeSales : in_array($type, ['adjustment', 'opening'], true));
             if ($outgoing && $after < 0 && $mustNotGoNegative) {
                 $name = collect($entries)->first(fn ($e) => $e['product']->id === $id)['product']->name;
                 throw new DomainException("Not enough {$name} in {$warehouse->name}: on hand ".Qty::format(Qty::toMilli($levels[$id]->on_hand)).'.', 'insufficient_stock');

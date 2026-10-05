@@ -10,6 +10,9 @@ Route::prefix('v1')->group(function () {
     Route::post('pos/login', [DeviceAuthController::class, 'pinLogin'])
         ->middleware(['auth:sanctum', 'device.token:device', 'throttle:pos-login']);
 
+    // Queued (offline) work; device token + device-key signature, people identified by their offline grants.
+    Route::post('pos/sync', [PosController::class, 'sync'])->middleware(['auth:sanctum', 'device.token:device', 'throttle:pos-sync']);
+
     Route::middleware(['auth:sanctum', 'device.token:pos'])->prefix('pos')->group(function () {
         Route::get('me', [DeviceAuthController::class, 'me']);
         Route::post('logout', [DeviceAuthController::class, 'logout']);

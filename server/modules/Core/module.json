@@ -1,7 +1,7 @@
 {
   "key": "core",
   "name": "Core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "kind": "core",
   "stage": "available",
   "description": "Company, branches, warehouses, tills, users, roles, devices, audit, modules, settings, catalog, prices and tax, stock ledger and the POS. Always installed.",
@@ -16,6 +16,8 @@
     {"key": "stock.view", "label": "View stock levels and movements", "min_level": 1},
     {"key": "stock.adjust", "label": "Enter opening stock and stock adjustments", "min_level": 3},
     {"key": "sales.view", "label": "View till sales, receipts and shifts", "min_level": 2},
+    {"key": "sync.review", "label": "Review and resolve offline and sync exceptions", "min_level": 4},
+    {"key": "sync.manage", "label": "Run sync, manage sync peers and settings, import/export sync files", "min_level": 4, "technical": true},
     {"key": "admin.users.view", "label": "View users and their access", "min_level": 3, "technical": true},
     {"key": "admin.users.manage", "label": "Create and edit users, reset PINs", "min_level": 4, "technical": true},
     {"key": "admin.roles.manage", "label": "Edit roles and grant or revoke access", "min_level": 4, "technical": true},

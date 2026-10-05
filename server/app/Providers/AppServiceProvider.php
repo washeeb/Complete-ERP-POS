@@ -41,6 +41,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('device-enroll', fn (Request $r) => Limit::perMinute(5)->by($r->ip()));
+        RateLimiter::for('pos-sync', fn (Request $r) => Limit::perMinute(120)->by((string) $r->user()?->getKey()));
         RateLimiter::for('pos-login', fn (Request $r) => [
             Limit::perMinute(10)->by($r->ip()),
             Limit::perMinute(20)->by((string) $r->user()?->getKey()),

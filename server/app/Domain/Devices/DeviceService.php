@@ -47,6 +47,11 @@ final class DeviceService
         $device->tenant_id = $actor->tenantId;
         $device->status = 'pending';
         $device->created_by = $actor->id;
+        if ($device->till_id) {
+            // Own receipt series per device on a till, so numbers never collide (reinstalls, backup tablets).
+            $used = Device::withoutGlobalScopes()->where('till_id', $device->till_id)->count();
+            $device->receipt_series = self::series($used);
+        }
         $code = $this->issueCode($actor, $device);
         $this->recorder->save($actor, $device, 'device.registered', branchId: $branch->id);
 
@@ -119,6 +124,16 @@ final class DeviceService
             // Staff sessions opened on this device die with it.
             DB::table('personal_access_tokens')->where('abilities', 'like', '%"device:'.$device->id.'"%')->delete();
         });
+    }
+
+    public static function series(int $i): string
+    {
+        $s = '';
+        for ($n = $i; $n >= 0; $n = intdiv($n, 26) - 1) {
+            $s = chr(65 + $n % 26).$s;
+        }
+
+        return $s;
     }
 
     private function issueCode(Actor $actor, Device $device): string

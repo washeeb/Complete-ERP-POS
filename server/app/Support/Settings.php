@@ -31,6 +31,11 @@ final class Settings
             'label' => 'POS PIN lockout (minutes)',
             'help' => 'How long a locked PIN stays locked. A manager can also reset it from the user record.',
         ],
+        'security.offline_grant_hours' => [
+            'type' => 'int', 'default' => 72, 'min' => 4, 'max' => 336, 'group' => 'Security',
+            'label' => 'Offline till sign-in lasts (hours)',
+            'help' => 'After signing in online, a person can keep using that till without the server for this long. Shorter is safer; longer suits branches with poor connections. Sales made after it runs out are still kept, and flagged for review.',
+        ],
         'stock.block_negative_sales' => [
             'type' => 'bool', 'default' => false, 'group' => 'Stock',
             'label' => 'Stop sales when the system shows no stock',
