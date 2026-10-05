@@ -66,15 +66,18 @@ final class DeviceService
     }
 
     /** Called by the device itself (unauthenticated, rate-limited). Returns the device token. */
-    public function enroll(string $deviceId, string $code, string $publicKey): array
+    public function enroll(string $code, string $publicKey): array
     {
-        $device = Device::withoutGlobalScopes()->find($deviceId);
+        $normalized = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $code));
         $generic = new DomainException('Enrolment failed. Check the code or ask an administrator for a new one.', 'enrollment_failed');
-        if (! $device || $device->status !== 'pending' || ! $device->enrollment_code_hash
-            || $device->enrollment_expires_at?->isPast()) {
+        if (strlen($normalized) !== 12) {
             throw $generic;
         }
-        if (! Hash::check(strtoupper(str_replace('-', '', $code)), $device->enrollment_code_hash)) {
+        // The first block is stored in clear to find the device; the whole code is verified by hash.
+        $device = Device::withoutGlobalScopes()->where('enrollment_lookup', substr($normalized, 0, 4))
+            ->where('status', 'pending')->where('enrollment_expires_at', '>', now())->get()
+            ->first(fn (Device $d) => $d->enrollment_code_hash && Hash::check($normalized, $d->enrollment_code_hash));
+        if (! $device) {
             throw $generic;
         }
         if (strlen($publicKey) < 40 || strlen($publicKey) > 4096) {
@@ -89,6 +92,7 @@ final class DeviceService
             $device->public_key = $publicKey;
             $device->enrolled_at = now();
             $device->enrollment_code_hash = null;
+            $device->enrollment_lookup = null;
             $device->enrollment_expires_at = null;
             $this->recorder->save($actor, $device, 'device.enrolled', branchId: $device->branch_id);
             $token = $device->createToken('device', ['device'])->plainTextToken;
@@ -109,6 +113,7 @@ final class DeviceService
             $device->revoked_by = $actor->id;
             $device->revoke_reason = $reason;
             $device->enrollment_code_hash = null;
+            $device->enrollment_lookup = null;
             $this->recorder->save($actor, $device, 'device.revoked', $reason, $device->branch_id);
             $device->tokens()->delete();
             // Staff sessions opened on this device die with it.
@@ -121,6 +126,7 @@ final class DeviceService
         $code = strtoupper(Str::random(4).'-'.Str::random(4).'-'.Str::random(4));
         $code = strtr($code, ['0' => '8', 'O' => 'P', '1' => '7', 'I' => 'J', 'L' => 'M']); // unambiguous when read aloud
         $device->enrollment_code_hash = Hash::make(str_replace('-', '', $code));
+        $device->enrollment_lookup = substr($code, 0, 4);
         $device->enrollment_expires_at = now()->addHours((int) $this->settings->get('security.device_enrollment_hours', $actor->tenantId));
 
         return $code;

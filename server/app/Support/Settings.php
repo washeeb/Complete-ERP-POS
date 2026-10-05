@@ -31,6 +31,16 @@ final class Settings
             'label' => 'POS PIN lockout (minutes)',
             'help' => 'How long a locked PIN stays locked. A manager can also reset it from the user record.',
         ],
+        'stock.block_negative_sales' => [
+            'type' => 'bool', 'default' => false, 'group' => 'Stock',
+            'label' => 'Stop sales when the system shows no stock',
+            'help' => 'Off (recommended while stock counts are being set up): the till sells anyway and the shortfall shows as negative stock to investigate. On: the till refuses the sale.',
+        ],
+        'receipt.footer' => [
+            'type' => 'string', 'default' => 'Thank you for shopping with us.', 'max' => 200, 'group' => 'Receipts',
+            'label' => 'Message at the bottom of receipts',
+            'help' => 'Printed on every till receipt, e.g. returns policy or a thank-you line.',
+        ],
         'security.device_enrollment_hours' => [
             'type' => 'int', 'default' => 24, 'min' => 1, 'max' => 168, 'group' => 'Devices',
             'label' => 'Device enrolment code valid for (hours)',
@@ -61,6 +71,13 @@ final class Settings
             $value = (int) $value;
             if ($value < $def['min'] || $value > $def['max']) {
                 throw new DomainException("{$def['label']} must be between {$def['min']} and {$def['max']}.");
+            }
+        } elseif ($def['type'] === 'bool') {
+            $value = (bool) $value;
+        } elseif ($def['type'] === 'string') {
+            $value = trim((string) $value);
+            if (mb_strlen($value) > $def['max']) {
+                throw new DomainException("{$def['label']} can be at most {$def['max']} characters.");
             }
         }
 

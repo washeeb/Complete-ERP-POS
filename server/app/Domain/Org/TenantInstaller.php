@@ -21,7 +21,11 @@ use Illuminate\Support\Str;
  */
 final class TenantInstaller
 {
-    public function __construct(private readonly Recorder $recorder, private readonly AccessCatalogSync $catalog) {}
+    public function __construct(
+        private readonly Recorder $recorder,
+        private readonly AccessCatalogSync $catalog,
+        private readonly TenantBaseline $baseline,
+    ) {}
 
     /** @return array{0: Tenant, 1: User} */
     public function install(string $companyName, array $owner): array
@@ -42,6 +46,7 @@ final class TenantInstaller
             $this->recorder->outbox->publish($actor, $tenant, 'tenant.created', $tenant->toArray());
 
             $this->catalog->syncRoles($tenant->id, $newPermissions);
+            $this->baseline->apply($tenant);
 
             $user = new User;
             $user->forceFill([

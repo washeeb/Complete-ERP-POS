@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\HasOriginNode;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,13 +11,13 @@ use Laravel\Sanctum\HasApiTokens;
 
 class Device extends Model
 {
-    use BelongsToTenant, HasApiTokens, HasUuids;
+    use BelongsToTenant, HasApiTokens, HasOriginNode, HasUuids;
 
     public const KINDS = ['pos' => 'POS till', 'handheld' => 'Handheld scanner', 'kiosk' => 'Self-checkout kiosk', 'kds' => 'Kitchen display'];
 
     protected $fillable = ['branch_id', 'till_id', 'name', 'kind'];
 
-    protected $hidden = ['enrollment_code_hash', 'public_key'];
+    protected $hidden = ['enrollment_code_hash', 'enrollment_lookup', 'public_key'];
 
     protected function casts(): array
     {

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Domain\Org\TenantBaseline;
 use App\Models\Tenant;
 use App\Security\AccessCatalogSync;
 use Illuminate\Database\Seeder;
@@ -12,11 +13,12 @@ use Illuminate\Database\Seeder;
  */
 class DatabaseSeeder extends Seeder
 {
-    public function run(AccessCatalogSync $catalog): void
+    public function run(AccessCatalogSync $catalog, TenantBaseline $baseline): void
     {
         $new = $catalog->syncPermissions();
         foreach (Tenant::all() as $tenant) {
             $catalog->syncRoles($tenant->id, $new);
+            $baseline->apply($tenant);
         }
     }
 }
