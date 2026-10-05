@@ -1,0 +1,11 @@
+{
+  "key": "storefront",
+  "name": "Built-in Online Storefront",
+  "version": "0.0.0",
+  "kind": "department",
+  "stage": "planned",
+  "phase": 4,
+  "description": "Lightweight online store synced live with stock and prices.",
+  "requires": ["core"],
+  "permissions": []
+}

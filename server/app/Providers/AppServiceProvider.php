@@ -2,23 +2,48 @@
 
 namespace App\Providers;
 
+use App\Models\User;
+use App\Modules\ModuleRegistry;
+use App\Security\Authorizer;
+use App\Support\Settings;
+use App\Support\TenantContext;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
-        //
+        $this->app->singleton(ModuleRegistry::class, fn () => new ModuleRegistry(config('erp.modules_path')));
+        // Request-scoped: memoised grants and settings never leak between requests or queue jobs.
+        $this->app->scoped(TenantContext::class);
+        $this->app->scoped(Authorizer::class);
+        $this->app->scoped(Settings::class);
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        //
+        if (! in_array(config('erp.node.role'), ['hq', 'branch', 'standalone'], true)) {
+            throw new \RuntimeException('ERP_NODE_ROLE must be hq, branch or standalone.');
+        }
+
+        // Dotted abilities are ERP permissions: $user->can('admin.users.manage', $branch).
+        // No target = only a company-wide grant counts. Anything else falls through to policies.
+        Gate::before(function ($user, string $ability, array $args) {
+            if (! $user instanceof User || ! str_contains($ability, '.')) {
+                return null;
+            }
+
+            return app(Authorizer::class)->allows($user, $ability, $args[0] ?? null);
+        });
+
+        RateLimiter::for('device-enroll', fn (Request $r) => Limit::perMinute(5)->by($r->ip()));
+        RateLimiter::for('pos-login', fn (Request $r) => [
+            Limit::perMinute(10)->by($r->ip()),
+            Limit::perMinute(20)->by((string) $r->user()?->getKey()),
+        ]);
     }
 }

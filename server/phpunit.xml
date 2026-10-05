@@ -24,6 +24,8 @@
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
         <env name="DB_CONNECTION" value="pgsql"/>
+        <env name="ERP_AUDIT_KEY" value="test-only-audit-key"/>
+        <env name="ERP_NODE_ID" value="TEST"/>
         <env name="DB_DATABASE" value="erp_test"/>
         <env name="DB_URL" value=""/>
         <env name="MAIL_MAILER" value="array"/>

@@ -1,25 +1,34 @@
 # State (resume file)
 
-**Phase:** 0 — Discovery & scaffold · **Status:** done locally; CI pending a GitHub remote (owner decision)
-**Updated:** 2026-10-05
+**Phase:** 1 — Core platform · **Status:** in progress on branch `phase-1-core` (domain layer done, admin UI not started)
+**Updated:** 2026-10-05 · Repo: https://github.com/washeeb/Complete-ERP-POS (private). CI green on `main`.
 
-## Done
-- Spec + reference build (`../Complete ERP/`) read; invariants, permission matrix, offline grant contract and webhook rules carried into `docs/DECISIONS.md`.
-- Phase-0 owner answers recorded (all defaults) — `docs/DECISIONS.md`.
-- Tools: PostgreSQL 17.11 installed (service `postgresql-x64-17`, port 5432); role `erp` (non-superuser), DBs `erp`, `erp_test`. Superuser password in `.local-secrets/` (git-ignored) for the owner to move to a password manager.
-- `server/`: Laravel 13.34, Filament 5.9 panel at `/admin`, Pest 4, Postgres-only tests. 4 tests pass.
-- `pos/`: React+TS Vite PWA shell (app-shell precache, no API caching), connection indicator (online / server down / offline). 4 Vitest tests pass; build OK.
-- CI workflow `.github/workflows/ci.yml` (Pint, composer audit, Pest on Postgres 17, npm audit, Vitest, build).
-- Browser-verified: `/admin/login` renders; POS shows "Connected" and flips to "server not answering" when server stops.
+## Phase 0 — done
+Laravel 13 + Filament 5 (`server/`), React PWA shell (`pos/`), PostgreSQL 17 local, CI.
 
-## Next — Phase 1 (core platform)
-1. UUIDv7 primary keys + base model traits (`tenant_id`, `branch_id`, `origin_node`, `version`, device/server times).
-2. Tenancy: tenant, legal entities, branches, warehouses, tills, devices; node role config (`hq|branch|standalone`).
-3. Users, security levels L0–L7, seeded roles, scoped grants + numeric limits, SoD rules; IT Admin without business permissions.
-4. MFA (TOTP) for L3+, passkeys; PIN login for POS tied to named user.
-5. Audit hash chain (HMAC) + outbox table written in the same transaction by domain services.
-6. Module system (`modules/<Name>/module.json`), per-branch enable/disable, setup wizard.
-7. Settings layer (seeded defaults, editable in admin; locale Ghana/GHS/Africa/Accra).
+## Phase 1 — done so far (47 Pest tests passing on Postgres)
+- Schema: UUIDv7 users and tenancy (tenants, legal entities, branches, warehouses, tills, devices), permissions/roles/role_assignments (scope + limits + expiry), audit_events (HMAC chain, DB trigger append-only), outbox_events (node seq), branch_modules, settings.
+- `app/Domain/Support`: Actor, AuditLog, AuditVerifier, Outbox, Recorder (mutation + audit + outbox in one transaction).
+- `app/Security`: SecurityLevel L0–L7, ScopeType, Authorizer (deny by default, ceiling, scope path, limits), RoleCatalog (22 seeded roles), AccessCatalogSync (seeder never re-adds removed permissions).
+- `app/Domain`: AccessService (no self-grant, level ceilings, granter must hold the permissions they grant, IT Admin technical-only, temp access needs reason), OrgService (setup wizard logic, branches/warehouses/tills), ModuleService (core always on; planned modules only "reserved"), DeviceService (register → one-time code → enrol → revoke kills all sessions), PosAuthService (PIN login, lockout).
+- `modules/*/module.json`: Core (available) + 14 planned modules with release phase.
+- API: `POST /api/v1/devices/enroll`, `POST /api/v1/pos/login`, `GET /api/v1/pos/me`, `POST /api/v1/pos/logout`.
+- Commands: `erp:install`, `erp:audit-key`, `erp:audit-verify`. Settings registry (MFA level, PIN attempts/lockout, enrolment hours).
+- MFA: Filament TOTP contracts on User + `EnsureMfaForLevel` middleware written — **not yet wired into the panel**.
+
+## Next (remaining Phase 1)
+1. Wire AdminPanelProvider: `->multiFactorAuthentication([AppAuthentication::make()->recoverable()])`, `requiresMultiFactorAuthentication(true)` + `multiFactorAuthenticationRequiredMiddlewareName('erp.mfa')`; login by email.
+2. Filament UI: Setup wizard page (prefilled demo: HQ Wholesale, A Grocery, B Restaurant, C Pharmacy), Branches (+warehouses/tills), Users (+grants), Roles, Devices (show code once, revoke), Audit log (+verify), Modules per branch, Settings page. All writes via domain services.
+3. Tests: MFA redirect for L3+, wizard UI, Filament access denial per permission.
+4. Passkeys (check spatie/laravel-passkeys on Laravel 13) or feature flag off + DECISIONS line.
+5. Docs: DECISIONS (Phase 1 lines below), `docs/security.md`, `docs/modules.md`, CHANGELOG; browser-verify; merge to main.
+
+## Decisions to log in DECISIONS.md when Phase 1 closes
+- Base users migration rewritten to UUID (pre-release, no data). Owner created by CLI `erp:install` (no unauthenticated web setup).
+- Audit timestamps hashed at second precision; app DB role can still disable triggers → separate migration/runtime DB roles + external checkpoints in Phase 13.
+- Scopes in Phase 1: tenant/legal entity/branch/warehouse/till; department/cost-centre scopes arrive with HR/Finance.
+- PIN login needs an enrolled device (device = second factor); no TOTP on tills.
+- Wizard steps for tax profile, chart of accounts, hardware, sync are added in their phases.
 
 ## Blockers / owner decisions
-- GitHub: create a private repo and push so CI runs? (outward action — needs owner yes)
+- None.

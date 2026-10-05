@@ -1,18 +1,41 @@
 <?php
 
+use App\Domain\Support\AccessDenied;
+use App\Domain\Support\DomainException;
+use App\Http\Middleware\AssignRequestId;
+use App\Http\Middleware\EnsureDeviceToken;
+use App\Http\Middleware\EnsureMfaForLevel;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->prepend(AssignRequestId::class);
+        $middleware->alias([
+            'device.token' => EnsureDeviceToken::class,
+            'erp.mfa' => EnsureMfaForLevel::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // API error shape: {"error": "stable_code", "detail": "safe explanation"}
+        $exceptions->render(function (DomainException $e, Request $request) {
+            if ($request->is('api/*')) {
+                $status = match (true) {
+                    $e instanceof AccessDenied => 403,
+                    in_array($e->errorCode, ['invalid_credentials', 'device_revoked', 'enrollment_failed'], true) => 401,
+                    $e->errorCode === 'pin_locked' => 423,
+                    default => 422,
+                };
+
+                return response()->json(['error' => $e->errorCode, 'detail' => $e->getMessage()], $status);
+            }
+        });
     })->create();

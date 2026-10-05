@@ -1,0 +1,11 @@
+{
+  "key": "logistics",
+  "name": "Logistics & Delivery",
+  "version": "0.0.0",
+  "kind": "department",
+  "stage": "planned",
+  "phase": 12,
+  "description": "Delivery orders, riders, routes, proof of delivery, fleet and fuel logs.",
+  "requires": ["core"],
+  "permissions": []
+}

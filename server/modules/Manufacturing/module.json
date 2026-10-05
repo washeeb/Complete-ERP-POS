@@ -1,0 +1,11 @@
+{
+  "key": "manufacturing",
+  "name": "Manufacturing",
+  "version": "0.0.0",
+  "kind": "industry",
+  "stage": "planned",
+  "phase": 10,
+  "description": "Multi-level BOM, routings, work orders, MRP, backflush, QC and production costing.",
+  "requires": ["core"],
+  "permissions": []
+}
