@@ -58,13 +58,19 @@ Roles for departments not built yet start with no permissions and gain them in t
 Re-running the seeder adds **new** permissions to their default roles once; a permission an
 administrator removed from a role is never put back.
 
-### Phase 1 permissions
+### Permissions (Phases 1–2)
 
 | Permission | Min level | Technical | Default roles |
 |---|---|---|---|
 | `setup.company.manage` | L5 | | Owner, General Manager |
 | `audit.view` | L1 | | Owner, GM, Finance Manager, Auditor, Branch Manager |
-| `pos.access` | L2 | | Owner, GM, Branch Manager, Supervisor, Cashier |
+| `pos.access` | L2 | | Owner, GM, Branch Manager, Supervisor, Cashier (sign in, shifts, sell) |
+| `catalog.view` | L1 | | Owner, GM, Finance Mgr, Accountant, Auditor, Purchasing, Warehouse Mgr, Storekeeper, Branch Mgr, Supervisor, Sales Rep, E-commerce Mgr |
+| `catalog.manage` | L3 | | Owner, GM, Warehouse Manager, E-commerce Manager |
+| `pricing.manage` | L4 | | Owner, GM |
+| `stock.view` | L1 | | as catalog.view |
+| `stock.adjust` | L3 | | Owner, GM, Warehouse Manager, Branch Manager (scoped to their warehouses) |
+| `sales.view` | L2 | | Owner, GM, Finance Mgr, Accountant, Branch Mgr, Supervisor |
 | `admin.users.view` | L3 | ✓ | Owner, IT Admin |
 | `admin.users.manage` | L4 | ✓ | Owner, IT Admin |
 | `admin.roles.manage` | L4 | ✓ | Owner, IT Admin |

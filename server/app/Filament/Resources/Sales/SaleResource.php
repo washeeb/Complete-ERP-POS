@@ -87,31 +87,31 @@ class SaleResource extends Resource
                 TextEntry::make('occurred_at')->label('Sold at')->dateTime(),
                 TextEntry::make('cashier_name')->label('Cashier'),
                 TextEntry::make('where')->label('Where')->state(fn (Sale $r) => "{$r->branch->code} · till {$r->till->code}"),
-                TextEntry::make('net_minor')->label('Before tax')->formatStateUsing(fn ($s, Sale $r) => self::money($s, $r)),
-                TextEntry::make('tax_minor')->label('Tax')->formatStateUsing(fn ($s, Sale $r) => self::money($s, $r)),
-                TextEntry::make('total_minor')->label('Total')->weight('bold')->formatStateUsing(fn ($s, Sale $r) => self::money($s, $r)),
-                TextEntry::make('change_minor')->label('Change given')->formatStateUsing(fn ($s, Sale $r) => self::money($s, $r)),
+                TextEntry::make('net_minor')->label('Before tax')->formatStateUsing(fn ($state, Sale $r) => self::money($state, $r)),
+                TextEntry::make('tax_minor')->label('Tax')->formatStateUsing(fn ($state, Sale $r) => self::money($state, $r)),
+                TextEntry::make('total_minor')->label('Total')->weight('bold')->formatStateUsing(fn ($state, Sale $r) => self::money($state, $r)),
+                TextEntry::make('change_minor')->label('Change given')->formatStateUsing(fn ($state, Sale $r) => self::money($state, $r)),
             ]),
             Section::make('Items')->schema([
                 RepeatableEntry::make('lines')->hiddenLabel()->columns(6)->schema([
                     TextEntry::make('name')->columnSpan(2),
-                    TextEntry::make('qty')->formatStateUsing(fn ($s, $record) => rtrim(rtrim(Qty::format(Qty::toMilli((string) $s)), '0'), '.').' '.$record->uom_code),
-                    TextEntry::make('unit_price_minor')->label('Unit price')->formatStateUsing(fn ($s, $record) => self::money($s, $record->sale)),
-                    TextEntry::make('tax_minor')->label('Tax')->formatStateUsing(fn ($s, $record) => self::money($s, $record->sale)),
-                    TextEntry::make('line_total_minor')->label('Line total')->formatStateUsing(fn ($s, $record) => self::money($s, $record->sale)),
+                    TextEntry::make('qty')->formatStateUsing(fn ($state, $record) => rtrim(rtrim(Qty::format(Qty::toMilli((string) $state)), '0'), '.').' '.$record->uom_code),
+                    TextEntry::make('unit_price_minor')->label('Unit price')->formatStateUsing(fn ($state, $record) => self::money($state, $record->sale)),
+                    TextEntry::make('tax_minor')->label('Tax')->formatStateUsing(fn ($state, $record) => self::money($state, $record->sale)),
+                    TextEntry::make('line_total_minor')->label('Line total')->formatStateUsing(fn ($state, $record) => self::money($state, $record->sale)),
                 ]),
             ]),
             Grid::make(2)->schema([
                 Section::make('Tax')->schema([
                     RepeatableEntry::make('tax_breakdown')->hiddenLabel()->columns(2)->schema([
                         TextEntry::make('name'),
-                        TextEntry::make('amount_minor')->label('Amount')->formatStateUsing(fn ($s, $livewire) => Money::display((int) $s, $livewire->getRecord()->currency_code)),
+                        TextEntry::make('amount_minor')->label('Amount')->formatStateUsing(fn ($state, $livewire) => Money::display((int) $state, $livewire->getRecord()->currency_code)),
                     ]),
                 ]),
                 Section::make('Payments')->schema([
                     RepeatableEntry::make('payments')->hiddenLabel()->columns(3)->schema([
-                        TextEntry::make('method')->formatStateUsing(fn ($s, $record) => SalePayment::METHODS[$s].($record->provider ? ' · '.(SalePayment::MOMO_PROVIDERS[$record->provider] ?? $record->provider) : '')),
-                        TextEntry::make('amount_minor')->label('Amount')->formatStateUsing(fn ($s, $record) => self::money($s, $record->sale)),
+                        TextEntry::make('method')->formatStateUsing(fn ($state, $record) => SalePayment::METHODS[$state].($record->provider ? ' · '.(SalePayment::MOMO_PROVIDERS[$record->provider] ?? $record->provider) : '')),
+                        TextEntry::make('amount_minor')->label('Amount')->formatStateUsing(fn ($state, $record) => self::money($state, $record->sale)),
                         TextEntry::make('reference')->placeholder('—'),
                     ]),
                 ]),
@@ -128,7 +128,7 @@ class SaleResource extends Resource
                 TextColumn::make('branch.code')->label('Branch'),
                 TextColumn::make('cashier_name')->label('Cashier')->searchable(),
                 TextColumn::make('total_minor')->label('Total')->sortable()->alignEnd()
-                    ->formatStateUsing(fn ($s, Sale $r) => self::money($s, $r)),
+                    ->formatStateUsing(fn ($state, Sale $r) => self::money($state, $r)),
                 TextColumn::make('paid_by')->label('Paid by')
                     ->state(fn (Sale $r) => $r->payments->pluck('method')->unique()->map(fn ($m) => SalePayment::METHODS[$m])->implode(' + ')),
             ])

@@ -60,7 +60,7 @@ class StockMovementResource extends Resource
 
     public static function table(Table $table): Table
     {
-        $qty = fn ($v) => rtrim(rtrim(Qty::format(Qty::toMilli((string) $v)), '0'), '.');
+        $qty = fn ($state) => rtrim(rtrim(Qty::format(Qty::toMilli((string) $state)), '0'), '.');
 
         return $table
             ->columns([
@@ -68,7 +68,7 @@ class StockMovementResource extends Resource
                 TextColumn::make('warehouse.code')->label('Warehouse'),
                 TextColumn::make('product.name')->label('Product')->searchable()->wrap(),
                 TextColumn::make('type')->badge(),
-                TextColumn::make('qty_entered')->label('Entered')->formatStateUsing(fn ($s, StockMovement $r) => $qty($s).' '.$r->uom->code),
+                TextColumn::make('qty_entered')->label('Entered')->formatStateUsing(fn ($state, StockMovement $r) => $qty($state).' '.$r->uom->code),
                 TextColumn::make('qty_base')->label('Base qty')->formatStateUsing($qty)
                     ->color(fn ($state) => Qty::toMilli((string) $state) < 0 ? 'danger' : 'success'),
                 TextColumn::make('reason')->wrap()->limit(60),

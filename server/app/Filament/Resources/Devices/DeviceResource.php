@@ -81,10 +81,10 @@ class DeviceResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')->searchable(),
-                TextColumn::make('kind')->formatStateUsing(fn ($s) => Device::KINDS[$s] ?? $s),
+                TextColumn::make('kind')->formatStateUsing(fn ($state) => Device::KINDS[$state] ?? $state),
                 TextColumn::make('branch.code')->label('Branch'),
                 TextColumn::make('till.code')->label('Till')->placeholder('—'),
-                TextColumn::make('status')->badge()->color(fn ($s) => match ($s) {
+                TextColumn::make('status')->badge()->color(fn ($state) => match ($state) {
                     'active' => 'success', 'pending' => 'warning', default => 'danger',
                 }),
                 TextColumn::make('enrollment_expires_at')->label('Code expires')->since()->placeholder('—'),

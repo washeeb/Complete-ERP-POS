@@ -58,7 +58,7 @@ class ShiftResource extends Resource
 
     public static function table(Table $table): Table
     {
-        $m = fn ($s, Shift $r) => $s === null ? '—' : Money::display((int) $s, $r->currency_code);
+        $m = fn ($state, Shift $r) => $state === null ? '—' : Money::display((int) $state, $r->currency_code);
 
         return $table
             ->columns([

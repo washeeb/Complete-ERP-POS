@@ -44,7 +44,7 @@ class TaxRateResource extends SimpleCatalogResource
         return static::crudTable($table->columns([
             TextColumn::make('code')->sortable(),
             TextColumn::make('name'),
-            TextColumn::make('rate_bp')->label('Rate')->formatStateUsing(fn ($s) => number_format($s / 100, 2).'%'),
+            TextColumn::make('rate_bp')->label('Rate')->formatStateUsing(fn ($state) => number_format($state / 100, 2).'%'),
             IconColumn::make('is_active')->boolean()->label('Active'),
         ])->defaultSort('sort'));
     }

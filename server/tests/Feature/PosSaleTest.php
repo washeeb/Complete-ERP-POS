@@ -6,6 +6,13 @@ use App\Domain\Inventory\InventoryService;
 use App\Domain\Inventory\StockLedger;
 use App\Domain\Pricing\PriceResolver;
 use App\Domain\Pricing\TaxCalculator;
+use App\Filament\Resources\Devices\DeviceResource;
+use App\Filament\Resources\Roles\RoleResource;
+use App\Filament\Resources\Sales\SaleResource;
+use App\Filament\Resources\Shifts\ShiftResource;
+use App\Filament\Resources\StockLevels\StockLevelResource;
+use App\Filament\Resources\StockMovements\StockMovementResource;
+use App\Filament\Resources\TaxRates\TaxRateResource;
 use App\Models\AuditEvent;
 use App\Models\OutboxEvent;
 use App\Models\PriceList;
@@ -211,6 +218,26 @@ it('refuses selling for someone without till access there', function () {
     app(Authorizer::class)->forget();
 
     $this->withToken($this->token)->postJson('/api/v1/pos/sales', cart($this, [[$this->bread, true, '1']]))->assertForbidden();
+});
+
+it('shows the sale, its ledger lines and its figures in the back office', function () {
+    $r = $this->withToken($this->token)->postJson('/api/v1/pos/sales', cart($this, [[$this->milo, true, '2']]))->assertCreated()->json('sale');
+    app('auth')->forgetGuards();
+    Filament\Facades\Filament::setCurrentPanel(Filament\Facades\Filament::getPanel('admin'));
+    // The API calls above switched the default guard to sanctum; the back office uses web.
+    $this->withoutToken()->actingAs(withMfa($this->owner), 'web');
+
+    // Values must be rendered, not just the page: catches display callbacks that receive null.
+    $this->get(StockMovementResource::getUrl())->assertOk()
+        ->assertSee('Sale HQ-T01-000001')->assertSee('-2');
+    $this->get(SaleResource::getUrl('view', ['record' => $r['id']]))->assertOk()
+        ->assertSee('GH₵ 90.00')->assertSee('Milo 400g')->assertSee('Cash');
+    $this->get(SaleResource::getUrl())->assertOk()->assertSee('GH₵ 90.00');
+    $this->get(ShiftResource::getUrl())->assertOk()->assertSee('GH₵ 200.00');
+    $this->get(TaxRateResource::getUrl())->assertOk()->assertSee('15.00%');
+    $this->get(RoleResource::getUrl())->assertOk()->assertSee('L6');
+    $this->get(DeviceResource::getUrl())->assertOk()->assertSee('POS till');
+    $this->get(StockLevelResource::getUrl())->assertOk()->assertSee('98 PC');
 });
 
 it('keeps posted sale lines immutable at the database', function () {
