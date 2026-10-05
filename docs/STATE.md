@@ -3,7 +3,7 @@
 **Phase:** 3 — Offline POS + sync engine · **Status:** done on branch `phase-3-offline-sync` (PR to `main`); next is Phase 4
 **Updated:** 2026-10-07 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–2 merged (PRs #1, #2)
 
-## Phase 3 — done (134 Pest incl. two-database node tests + 18 Vitest; browser-verified offline)
+## Phase 3 — done (133 Pest incl. two-database node tests + 18 Vitest; browser-verified offline)
 - Done-when met: §4.3 tests pass (OfflineSyncTest, NodeSyncTest); in the browser a till sold offline with the server stopped (HQ-T01B-000002), signed in offline (wrong PIN refused), and the sale synced on reconnect (offline=true, stock 46→43, ledger + audit verify).
 - Till ⇄ server: `app/Domain/Devices/{OfflineGrant,DeviceSignature}`, `app/Domain/Pos/{PosSyncService,TillFileImport}`, SaleService online/offline modes, ShiftService client ids, `POST /pos/sync`, catalog ETag.
 - Server ⇄ server: `app/Domain/Sync/{Replication,ReplicationApplier,SyncServer,SyncEngine,SyncSigner,SyncFile,NodeSetup,ReviewQueue}`, `Transport/{SyncTransport,HttpSyncTransport}`, `/api/v1/sync/{hello,push,pull}`, `erp:node:add-branch|join`, `erp:sync` (scheduled every minute), HQ-wins guard in `Recorder`.
