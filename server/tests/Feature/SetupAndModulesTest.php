@@ -2,6 +2,7 @@
 
 use App\Domain\Modules\ModuleService;
 use App\Domain\Org\OrgService;
+use App\Domain\Org\TenantBaseline;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\DomainException;
 use App\Models\Branch;
@@ -83,7 +84,7 @@ it('re-seeding never re-adds a permission an admin removed from a role', functio
     $cashier = Role::where('key', 'cashier')->first();
     $cashier->permissions()->detach('pos.access');
 
-    app(DatabaseSeeder::class)->run(app(AccessCatalogSync::class));
+    app(DatabaseSeeder::class)->run(app(AccessCatalogSync::class), app(TenantBaseline::class));
 
     expect($cashier->fresh()->permissionKeys())->not->toContain('pos.access')
         ->and(Role::where('key', 'cashier')->count())->toBe(1);

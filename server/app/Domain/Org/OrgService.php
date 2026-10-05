@@ -9,6 +9,7 @@ use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
 use App\Models\Branch;
 use App\Models\LegalEntity;
+use App\Models\PriceList;
 use App\Models\Tenant;
 use App\Models\Till;
 use App\Models\Warehouse;
@@ -60,6 +61,8 @@ final class OrgService
             $tenant->deployment_mode = $data['deployment_mode'];
             $tenant->setup_completed_at = now();
             $this->recorder->save($actor, $tenant, 'setup.completed');
+            // Currency/country may have changed in the wizard: align still-unused starter data.
+            $this->alignStarterCurrency($tenant);
 
             $entity = null;
             if (! empty($data['legal_entity']['name'])) {
@@ -155,6 +158,12 @@ final class OrgService
         $till->tenant_id = $actor->tenantId;
 
         return $this->recorder->save($actor, $till, $till->exists ? 'till.updated' : 'till.created', branchId: $branch->id);
+    }
+
+    private function alignStarterCurrency(Tenant $tenant): void
+    {
+        PriceList::withoutGlobalScopes()->where('tenant_id', $tenant->id)->whereDoesntHave('prices')
+            ->update(['currency_code' => $tenant->currency_code]);
     }
 
     private function require(Actor $actor, string $permission, ?Branch $branch = null): void

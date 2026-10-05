@@ -78,7 +78,7 @@ it('ignores a role above the user\'s security ceiling even if it is in the table
         'id' => (string) Str::uuid7(), 'tenant_id' => $this->tenant->id, 'user_id' => $c->id,
         'role_id' => Role::where('key', 'general_manager')->value('id'), 'scope_type' => 'tenant',
         'scope_id' => $this->tenant->id, 'limits' => '{}', 'starts_at' => now(), 'granted_by' => $this->owner->id,
-        'granted_by_name' => 'x', 'created_at' => now(), 'updated_at' => now(),
+        'granted_by_name' => 'x', 'origin_node' => 'TEST', 'created_at' => now(), 'updated_at' => now(),
     ]);
 
     expect($this->authz->allows($c, 'setup.company.manage'))->toBeFalse();

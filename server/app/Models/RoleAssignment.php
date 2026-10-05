@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\HasOriginNode;
 use App\Security\ScopeType;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RoleAssignment extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToTenant, HasOriginNode, HasUuids;
 
     protected $fillable = ['user_id', 'role_id', 'scope_type', 'scope_id', 'limits', 'starts_at', 'expires_at', 'reason'];
 

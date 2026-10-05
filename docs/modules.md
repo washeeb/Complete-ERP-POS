@@ -13,8 +13,8 @@
 
 | Module | Kind | Status |
 |---|---|---|
-| Core | core | Available (Phase 1) |
-| Retail & Wholesale | industry | Planned · Phase 2 |
+| Core | core | Available — Phase 1 platform; Phase 2 catalog, prices/tax, stock ledger, POS |
+| Retail & Wholesale | industry | Planned · Phase 6 (wholesale customers, credit, B2B orders) |
 | Built-in Online Storefront | department | Planned · Phase 4 |
 | Grocery / Supermarket | industry | Planned · Phase 9 |
 | Restaurant / Café / Bar | industry | Planned · Phase 9 |

@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "kind": "industry",
   "stage": "planned",
-  "phase": 2,
-  "description": "Tiered and wholesale pricing, multi-UOM selling, credit customers, B2B orders.",
+  "phase": 6,
+  "description": "Wholesale customers and their price lists, credit limits and accounts, B2B orders and van-sales hooks. (Tiered prices and multi-unit selling are already in Core.)",
   "requires": ["core"],
   "permissions": []
 }

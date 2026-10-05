@@ -83,7 +83,7 @@ class RoleResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('name')->searchable()->sortable(),
-                TextColumn::make('security_level')->label('Level')->formatStateUsing(fn ($s) => 'L'.$s)->sortable(),
+                TextColumn::make('security_level')->label('Level')->formatStateUsing(fn ($state) => 'L'.$state)->sortable(),
                 TextColumn::make('permissions_count')->counts('permissions')->label('Permissions'),
                 IconColumn::make('is_technical')->label('Technical')->boolean(),
                 IconColumn::make('is_system')->label('Seeded')->boolean(),

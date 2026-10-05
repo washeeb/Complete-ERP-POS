@@ -13,12 +13,11 @@ class DeviceAuthController extends Controller
     public function enroll(Request $request, DeviceService $devices): JsonResponse
     {
         $data = $request->validate([
-            'device_id' => ['required', 'uuid'],
             'code' => ['required', 'string', 'max:20'],
             'public_key' => ['required', 'string', 'max:4096'],
         ]);
 
-        return response()->json($devices->enroll($data['device_id'], $data['code'], $data['public_key']), 201);
+        return response()->json($devices->enroll($data['code'], $data['public_key']), 201);
     }
 
     public function pinLogin(Request $request, PosAuthService $auth): JsonResponse

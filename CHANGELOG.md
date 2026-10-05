@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.0] — 2026-10-06 · Phase 2 catalog, stock and first till sale
+### Added
+- Catalog: products with SKU, category, brand, base unit, extra units (carton = 24), barcodes per unit, tax group; categories, brands, units of measure.
+- Prices: Retail and Wholesale lists, prices per unit, quantity tiers, dated promotions; tax rates and tax groups with a recorded accountant check (Ghana starter set marked unverified).
+- Stock: append-only stock ledger, stock on hand per warehouse, opening balances and adjustments with reasons; `erp:stock-check`.
+- Till app: enrolment by one-time code, PIN sign-in, open shift with float, scan/search, units, Retail/Wholesale switch, split cash / mobile money / card payments, 80 mm receipt, blind shift close with over/short; unsent sales kept on the till with retry.
+- Sale API: idempotent posting with server-side recalculation of every price, tax and total.
+- Back office: Till sales and Till shifts; settings for receipt footer and negative-stock blocking.
+- `erp:demo-catalog` sample range (21 Ghanaian grocery/wholesale items).
+- Docs: pricing and tax rules, cashier guide, catalog and stock guide, API for the till.
+### Fixed
+- Back-office columns that showed blank or zero values (Roles level, Devices kind/status, Tax rates) because their display callbacks did not receive the value.
+
 ## [0.1.0] — 2026-10-05 · Phase 1 core platform
 ### Added
 - Company structure: companies, legal entities, branches, warehouses, tills, devices (UUIDv7 ids, origin node and version on every row).

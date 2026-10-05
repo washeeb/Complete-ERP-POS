@@ -8,6 +8,7 @@ use App\Support\Settings;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\EmbeddedSchema;
@@ -51,8 +52,12 @@ class ManageSettings extends Page
     {
         $groups = [];
         foreach (Settings::DEFINITIONS as $key => $def) {
-            $groups[$def['group']][] = TextInput::make(self::field($key))->label($def['label'])->helperText($def['help'])
-                ->numeric()->integer()->required()->minValue($def['min'])->maxValue($def['max']);
+            $groups[$def['group']][] = match ($def['type']) {
+                'bool' => Toggle::make(self::field($key))->label($def['label'])->helperText($def['help']),
+                'string' => TextInput::make(self::field($key))->label($def['label'])->helperText($def['help'])->maxLength($def['max']),
+                default => TextInput::make(self::field($key))->label($def['label'])->helperText($def['help'])
+                    ->numeric()->integer()->required()->minValue($def['min'])->maxValue($def['max']),
+            };
         }
 
         return $schema->statePath('data')->components([
@@ -75,7 +80,7 @@ class ManageSettings extends Page
         $settings = app(Settings::class);
         Erp::run(fn ($actor) => app(Recorder::class)->transaction(function () use ($actor, $data, $settings) {
             foreach (array_keys(Settings::DEFINITIONS) as $key) {
-                if ((int) $data[self::field($key)] !== (int) $settings->get($key, $actor->tenantId)) {
+                if ($data[self::field($key)] != $settings->get($key, $actor->tenantId)) {
                     $settings->set($actor, $key, $data[self::field($key)], $data['reason'] ?? null);
                 }
             }

@@ -20,14 +20,6 @@ use App\Support\Settings;
 use Filament\Facades\Filament;
 use Livewire\Livewire;
 
-/** Pretend the person already set up their authenticator, so MFA doesn't block the screen under test. */
-function withMfa(User $user): User
-{
-    $user->forceFill(['app_authentication_secret' => 'JBSWY3DPEHPK3PXP'])->saveQuietly();
-
-    return $user->fresh();
-}
-
 beforeEach(function () {
     [$this->tenant, $this->owner] = installCompany();
     Filament::setCurrentPanel(Filament::getPanel('admin'));
