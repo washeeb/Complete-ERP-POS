@@ -10,6 +10,7 @@
         "bacon/bacon-qr-code": "3.*",
         "filament/filament": "5.*",
         "laravel/framework": "^13.0",
+        "laravel/reverb": "1.*",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
         "pragmarx/google2fa-qrcode": "3.*",

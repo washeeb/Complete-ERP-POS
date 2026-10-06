@@ -12,6 +12,18 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "pos", "run", "dev"],
       "port": 5173
+    },
+    {
+      "name": "reverb",
+      "runtimeExecutable": "php",
+      "runtimeArgs": ["server/artisan", "reverb:start", "--host=127.0.0.1", "--port=8080"],
+      "port": 8080
+    },
+    {
+      "name": "relay",
+      "runtimeExecutable": "php",
+      "runtimeArgs": ["server/artisan", "erp:relay", "--seconds=86400"],
+      "port": 0
     }
   ]
 }

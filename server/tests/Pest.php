@@ -2,6 +2,7 @@
 
 use App\Domain\Access\AccessService;
 use App\Domain\Catalog\CatalogService;
+use App\Domain\Modules\ModuleService;
 use App\Domain\Org\OrgService;
 use App\Domain\Org\TenantInstaller;
 use App\Domain\Support\Actor;
@@ -106,4 +107,9 @@ function withMfa(User $user): User
     $user->forceFill(['app_authentication_secret' => 'JBSWY3DPEHPK3PXP'])->saveQuietly();
 
     return $user->fresh();
+}
+
+function enableModule(User $owner, Branch $branch, string $key): void
+{
+    app(ModuleService::class)->setStatus(actorFor($owner), $branch, $key, 'enabled');
 }

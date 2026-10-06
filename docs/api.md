@@ -111,3 +111,21 @@ Bodies and answers may be gzip (`Content-Encoding` / `Accept-Encoding`).
 | `POST /sync/push` `{"events": [...]}` | caller's own events; answer `{acked_seq, results}` |
 | `GET /sync/pull?after=SEQ&limit=500` | our events after SEQ for the caller's groups; `{events, last_seq, has_more}` |
 
+
+## Store webhooks (Phase 4)
+
+`POST /api/v1/channels/{channel}/webhooks` — no login; authenticated by the store's signature over the **raw body** with the channel's webhook secret. Throttled per channel.
+
+| Store | Signature header | Delivery id header | Topic header |
+|---|---|---|---|
+| WooCommerce | `X-WC-Webhook-Signature` (base64 HMAC-SHA256) | `X-WC-Webhook-Delivery-ID` | `X-WC-Webhook-Topic` |
+| Shopify | `X-Shopify-Hmac-Sha256` (base64 HMAC-SHA256) | `X-Shopify-Webhook-Id` | `X-Shopify-Topic` |
+| Generic REST | `X-Synclytics-Signature` = hex HMAC-SHA256 of `{X-Synclytics-Timestamp}.{body}` (5-min window) | `X-Synclytics-Event-Id` | body field `topic` (default `order.created`) |
+
+Responses: `200 {"ok":true,"status":"received"}`, `200 {"ok":true,"status":"duplicate"}` (same delivery id again), `401 {"error":"bad_signature"}`; unknown or draft channels and bodies over 2 MB are refused with the standard error body. Paused channels still store webhooks. The order is created asynchronously by `erp:relay`.
+
+## Live updates (Phase 4)
+
+- `GET /api/v1/pos/bootstrap` includes `realtime: {key, host, port, scheme, channels[]}` when Reverb is configured (else `null`).
+- `POST /api/v1/pos/broadcasting/auth` (staff token + device) authorises private channels: `tenant.{id}.catalog`, `tenant.{id}.stock.{warehouse}`, `tenant.{id}.orders` (needs `orders.view`). Another company's channels are refused (403).
+- Events (Pusher protocol, prefix the name with `.` in Echo): `catalog.changed {product_ids, event}`, `stock.changed {product_ids}`, `order.received {id, number, branch_id}`; public `storefront.{channel}`: `product.updated {id, name, price_minor, available, for_sale}`, `catalog.reload`.

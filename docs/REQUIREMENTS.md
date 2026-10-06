@@ -11,6 +11,8 @@
 | PostgreSQL | 17.11 | EDB installer (signed, direct download), Windows service, port 5432 | all databases (`erp`, `erp_test`, `erp_test_node`) |
 | Memurai Developer | 4.1.2 | signed MSI from dist.memurai.com run elevated (the winget install failed: its helper inherited a sandboxed TEMP), Windows service (automatic start), port 6379; PHP phpredis 6.1.0 verified (approved 2026-10-06) | Redis-compatible cache/queue/broadcast for Reverb (Phase 4). Developer edition is for development only — production Windows nodes need Memurai Enterprise or Redis on Linux |
 | Playwright + Chromium | 1.63.0 / Chromium build 1243 | `pos` dev dependency; browser in `%LOCALAPPDATA%\ms-playwright` (~150 MB) | till browser tests (`npm run e2e`) |
+| Laravel Reverb | 1.x (Composer, `laravel/reverb`) | project dependency, no system install | WebSocket server for live updates (`php artisan reverb:start`) |
+| laravel-echo + pusher-js | 2.x / 8.x (npm) | project dependencies in `server/` (shop page) and `pos/` (till) | WebSocket clients |
 
 Not yet installed (added in the phase that needs them; owner asked first if system-wide):
 

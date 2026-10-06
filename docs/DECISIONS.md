@@ -76,3 +76,20 @@ One line each: what — why. `[+]` = added beyond the spec.
 - Playwright browser automation for the till not added yet (needs a browser download — owner to approve); offline flow verified manually in the in-app browser.
 - "Online order during branch outage" (§4.3) moves to Phase 4 with the store connectors.
 
+
+## Phase 4 (2026-10-08)
+
+- Live updates: Laravel Reverb. The outbox is the only source: the relay (`erp:relay`, per-consumer cursors with SKIP LOCKED) turns committed events into broadcasts, store pushes and order intake. Nothing is broadcast from inside a transaction. [+]
+- Live messages carry ids, not data (tills re-read through the permission-checked catalog API with ETag). Public shop channels carry public price/availability only. Private channels are tenant-checked; orders also need `orders.view`. [+]
+- Live is a convenience, never a dependency: the till polls every 60 s when not live, the order list every 30 s, and shop pages render current figures on load. A failed broadcast is logged and skipped.
+- Store connectors behind one interface (capabilities, credentials, push, verify webhook, normalise order, remote state). Built now: built-in shop, WooCommerce (REST v3), Shopify (GraphQL 2026-07), generic REST + HMAC webhooks. Marketplaces and delivery apps (Jumia, Glovo, Bolt Food, WhatsApp) are listed as planned and cannot be activated (spec: stubs, flag off).
+- Connectors are tested with recorded request/response fixtures only (Http::fake). No real store accounts were created (spec rule). WooCommerce/Shopify credentials are the owner's to enter.
+- Pushes are coalesced jobs (one pending per product and kind), skipped when nothing changed (hash), retried with exponential backoff and jitter, and dead-lettered after 8 attempts with a review item. Reconciliation every 15 min repairs price/stock drift.
+- Webhooks: signature checked over the raw body, stored before processing (2 MB max), deduplicated by delivery id, processed by the relay. Invalid signatures are not stored.
+- Availability offered online = on hand − active reservations − per-channel safety stock, floored at zero. Online orders reserve stock on arrival and issue it through the ledger only at hand-over. Oversold orders are accepted and flagged (never lost); store total ≠ items total is flagged. [+]
+- Online orders and reservations live at head office (where the stores connect) and are not replicated to branch servers yet. The safety stock absorbs offline branch sales during an outage (§4.3 test). Branch-side order handling over sync is deferred until a branch needs it.
+- Payment for online orders: pay at pickup (cash / MoMo / card recorded at hand-over) or already paid in the store. Gateway payments (Paystack/Hubtel) come with the payments work. Customers are not notified automatically yet (SMS/WhatsApp come later).
+- Built-in shop = the Storefront module, released in this phase and enabled per branch. Turning it off closes the shop (404). It provides catalogue, live prices/availability, an order (cart), and pickup checkout. Prices are always server-side. CSRF, rate limits, a honeypot and a one-time order token protect checkout; the confirmation is a signed link. Shop texts live on the channel (nothing hard-coded); addresses are unique across companies. [+]
+- Shopify order fulfilment status is not pushed yet (capability gap noted on the connector). WooCommerce order completion is pushed.
+- Reverb key/secret are per installation (`reverb:install`) and never committed. The key is public (sent to tills and shops); the secret stays on the server. Production needs TLS on the socket (`REVERB_SCHEME=https`).
+- Deferred omnichannel extras: click-and-collect slots, delivery zones/fees, buy-online-return-in-store, and per-branch shop pages for several branches in one shop.

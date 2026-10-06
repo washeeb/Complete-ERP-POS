@@ -6,6 +6,7 @@ use App\Models\Device;
 use App\Models\Product;
 use App\Models\Role;
 use App\Models\Sale;
+use App\Models\SalesOrder;
 use App\Models\TaxGroup;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -85,6 +86,8 @@ final class Replication
                 'sale_lines' => $model->lines()->get()->map->getAttributes()->all(),
                 'sale_payments' => $model->payments()->get()->map->getAttributes()->all(),
             ];
+        } elseif ($model instanceof SalesOrder) {
+            $snapshot['children'] = ['sales_order_lines' => $model->lines()->get()->map->getAttributes()->all()];
         } elseif ($model instanceof Device) {
             $snapshot['row']['public_key'] = $model->getAttributes()['public_key'] ?? null; // lets HQ verify imported queues
         } elseif ($model instanceof User) {

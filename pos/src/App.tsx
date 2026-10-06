@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, ApiError } from './api'
 import { connectionState, pingServer, type ConnectionState } from './connection'
 import { db, getDevice, getLocalShift, getSession, queueCounts, type CacheRecord } from './db'
+import { connectLive, type LiveState } from './live'
 import { sendQueue } from './offline'
 import { CloseShift, Enroll, Login, OpenShift } from './screens/Setup'
 import { Receipt } from './screens/Receipt'
@@ -26,6 +27,7 @@ export default function App() {
   const [error, setError] = useState('')
   const [conn, setConn] = useState<ConnectionState>('offline')
   const [queue, setQueue] = useState({ pending: 0, review: 0, sending: false, lastError: null as string | null })
+  const [live, setLive] = useState<LiveState>('off')
   const sending = useRef(false)
   const online = conn === 'online'
 
@@ -132,17 +134,31 @@ export default function App() {
     setStage('login')
   }
 
-  async function refreshCatalog() {
+  const refreshCatalog = useCallback(async () => {
     const r = await fetchOrCache().catch(() => null)
     if (!r) return
     setBoot((b) => (b ? { ...r.b, user: b.user, shift: b.shift } : r.b))
     setProducts(r.products)
     setCatalogVersion(r.version)
-  }
+  }, [fetchOrCache])
+
+  // Live price/stock changes while selling; polling (cheap with ETag) covers a missing or dropped socket.
+  const selling = stage === 'sell' || stage === 'receipt'
+  const rt = boot?.realtime ?? null
+  const rtKey = rt ? JSON.stringify(rt) : ''
+  useEffect(() => {
+    if (!selling || !online || !rtKey) return
+    return connectLive(JSON.parse(rtKey), refreshCatalog, setLive)
+  }, [selling, online, rtKey, refreshCatalog])
+  useEffect(() => {
+    if (!selling || !online || live === 'live') return
+    const id = setInterval(refreshCatalog, 60_000)
+    return () => clearInterval(id)
+  }, [selling, online, live, refreshCatalog])
 
   return (
     <div className="app">
-      <div className={`status status-${conn} no-print`} role="status">{LABELS[conn]}</div>
+      <div className={`status status-${conn} no-print`} role="status">{LABELS[conn]}{online && live === 'live' ? ' · live' : ''}</div>
       {stage === 'loading' && <p className="center muted">Loading…</p>}
       {stage === 'enroll' && <Enroll onDone={load} />}
       {stage === 'login' && <Login onDone={load} />}

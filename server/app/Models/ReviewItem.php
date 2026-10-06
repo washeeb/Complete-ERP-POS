@@ -20,6 +20,10 @@ class ReviewItem extends Model
         'negative_stock' => 'Stock went below zero after syncing',
         'sync_conflict' => 'Sync conflict',
         'sync_failed' => 'Change from another node could not be applied',
+        'oversell' => 'Online order larger than available stock',
+        'channel_total' => 'Store total differs from the items',
+        'channel_failed' => 'Could not update an online store',
+        'webhook_failed' => 'Store notification could not be processed',
     ];
 
     protected $guarded = [];

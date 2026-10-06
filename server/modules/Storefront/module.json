@@ -1,11 +1,11 @@
 {
   "key": "storefront",
   "name": "Built-in Online Storefront",
-  "version": "0.0.0",
+  "version": "0.4.0",
   "kind": "department",
-  "stage": "planned",
+  "stage": "available",
   "phase": 4,
-  "description": "Lightweight online store synced live with stock and prices.",
+  "description": "Built-in online shop for this branch: live prices and availability, reserve online and pay at pickup. Set it up under Online → Channels.",
   "requires": ["core"],
   "permissions": []
 }
