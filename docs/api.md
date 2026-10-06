@@ -150,3 +150,19 @@ A device registered as **Handheld scanner** enrols like a till (`POST devices/en
 | POST `wms/logout` | | |
 
 Errors use the standard body `{error, detail}`. For example: `wrong_status`, `not_on_order`, `insufficient_stock`, `own_document`, `over_limit`, `no_po`.
+
+## Customers and credit sales on the till (Phase 6a)
+
+- `GET pos/customers` (staff token; needs `customers.view`, otherwise it returns an empty list). Supports ETag / `If-None-Match` and returns 304 when nothing changed. Returns `{version, customers: [{id, code, name, phone, price_list_id, credit_limit_minor, credit_hold, balance_minor, available_minor, overdue_minor}]}`. Credit figures are a snapshot; online credit sales are re-checked by the server.
+- `GET pos/bootstrap` `price_lists` also include lists assigned to customers (e.g. Wholesale).
+- `POST pos/sales` accepts:
+  - `customer_id`;
+  - payment method `account` (on the customer's account);
+  - online only, `credit_approval: {username, pin}` from a supervisor.
+
+  Errors:
+  - `no_customer`, `unknown_customer`;
+  - `credit_needs_approval` (the till asks for a supervisor);
+  - `approval_failed`, `over_limit`, `own_document`, `pin_locked`.
+
+  Offline credit sales (queue) are accepted as they happened; going over the limit raises the review item `credit_over_limit`.

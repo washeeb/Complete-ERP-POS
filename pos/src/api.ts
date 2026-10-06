@@ -1,6 +1,6 @@
 import { db, getDevice, getSession } from './db'
 import type { OfflineGrant } from './db'
-import type { Bootstrap, PostedSale, Product, Shift, WmsBin, WmsBootstrap, WmsCount, WmsOrder, WmsTransfer, WmsUnit } from './types'
+import type { Bootstrap, PostedSale, Product, Shift, TillCustomer, WmsBin, WmsBootstrap, WmsCount, WmsOrder, WmsTransfer, WmsUnit } from './types'
 
 /** Error with the server's stable code ("price_changed", "no_shift"…) and a message safe to show. */
 export class ApiError extends Error {
@@ -61,6 +61,14 @@ export const api = {
     const body = await res.json().catch(() => ({}))
     if (!res.ok) throw new ApiError(body.error ?? 'server', body.detail ?? `Server error (${res.status})`, res.status)
     return body as { version: string; generated_at: string; products: Product[] }
+  },
+  /** Customers for lookup (ETag); null = unchanged. */
+  customers: async (version?: string | null) => {
+    const headers: Record<string, string> = { Accept: 'application/json', Authorization: `Bearer ${(await getSession())?.token ?? ''}` }
+    if (version) headers['If-None-Match'] = `"${version}"`
+    const res = await fetch('/api/v1/pos/customers', { headers }).catch(() => null)
+    if (!res || res.status === 304 || !res.ok) return null
+    return (await res.json()) as { version: string; customers: TillCustomer[] }
   },
   openShift: (floatMinor: number, id: string) =>
     call<{ shift: Shift }>('pos/shifts/open', { method: 'POST', body: JSON.stringify({ opening_float_minor: floatMinor, id }) }),

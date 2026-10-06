@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Domain\Customers\CustomerLedger;
+use App\Domain\Customers\CustomerService;
 use App\Domain\Devices\DeviceSignature;
 use App\Domain\Pos\PosSyncService;
 use App\Domain\Pos\SaleService;
@@ -9,6 +11,7 @@ use App\Domain\Pos\ShiftService;
 use App\Domain\Support\DomainException;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
+use App\Models\Customer;
 use App\Models\Device;
 use App\Models\LegalEntity;
 use App\Models\PriceList;
@@ -18,6 +21,7 @@ use App\Models\Shift;
 use App\Models\StockLevel;
 use App\Models\Tenant;
 use App\Models\Till;
+use App\Security\Authorizer;
 use App\Support\Money;
 use App\Support\Qty;
 use App\Support\Settings;
@@ -104,6 +108,33 @@ class PosController extends Controller
     }
 
     /** Changes whenever anything the till caches changes (catalog, prices, tax, lists, stock). */
+    /**
+     * Customers for lookup at the till (cached for offline use; ETag). Credit figures are a snapshot: the server
+     * re-checks every credit sale it receives online.
+     */
+    public function customers(Request $request, CustomerService $credit, CustomerLedger $ledger, Authorizer $authz): JsonResponse
+    {
+        if (! $authz->allowsAnywhere($request->user(), 'customers.view')) {
+            return response()->json(['version' => 'none', 'customers' => []]);
+        }
+        $tenant = app(TenantContext::class)->id();
+        $version = md5(implode('|', [
+            DB::table('customers')->where('tenant_id', $tenant)->count(), DB::table('customers')->where('tenant_id', $tenant)->max('updated_at'),
+            DB::table('customer_balances')->where('tenant_id', $tenant)->max('updated_at'),
+            DB::table('customer_orders')->where('tenant_id', $tenant)->max('updated_at'),
+            now()->toDateString(), // overdue status changes with the date
+        ]));
+        if ($request->header('If-None-Match') === '"'.$version.'"') {
+            return response()->json(null, 304)->setEtag($version);
+        }
+
+        return response()->json(['version' => $version, 'customers' => Customer::where('is_active', true)->with('balance')->orderBy('name')->limit(50000)->get()
+            ->map(fn (Customer $c) => ['id' => $c->id, 'code' => $c->code, 'name' => $c->name, 'phone' => $c->phone, 'price_list_id' => $c->price_list_id,
+                'credit_limit_minor' => $c->credit_limit_minor, 'credit_hold' => $c->credit_hold, 'balance_minor' => $c->balanceMinor(),
+                'available_minor' => $c->credit_limit_minor === null ? null : $credit->availableCredit($c),
+                'overdue_minor' => $c->credit_limit_minor === null && $c->balanceMinor() <= 0 ? 0 : $ledger->overdueMinor($c->id)])->values()])->setEtag($version);
+    }
+
     private function catalogVersion(): string
     {
         $tenant = app(TenantContext::class)->id();
@@ -204,7 +235,8 @@ class PosController extends Controller
     private function lists(Branch $branch)
     {
         return PriceList::where('is_active', true)
-            ->where(fn ($q) => $q->where('pos_selectable', true)->orWhere('is_default', true))
+            ->where(fn ($q) => $q->where('pos_selectable', true)->orWhere('is_default', true)
+                ->orWhereIn('id', Customer::where('is_active', true)->whereNotNull('price_list_id')->select('price_list_id'))) // customers' own lists
             ->where(fn ($q) => $q->whereNull('branch_id')->orWhere('branch_id', $branch->id))
             ->orderByDesc('is_default')->orderBy('name')->get();
     }

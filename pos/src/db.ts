@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import type { Bootstrap, Product } from './types'
+import type { Bootstrap, Product, TillCustomer } from './types'
 
 /**
  * Till-local storage (IndexedDB). The till must keep working when the server is unreachable:
@@ -20,6 +20,7 @@ export type LocalShift = { id: 'shift'; shiftId: string; openedAt: string; float
 export type CacheRecord =
   | { id: 'bootstrap'; data: Bootstrap; savedAt: string }
   | { id: 'catalog'; version: string; products: Product[]; savedAt: string }
+  | { id: 'customers'; version: string; customers: TillCustomer[]; savedAt: string }
 
 export type OfflineGrant = {
   v: number; id: string; device_id: string; user_id: string; user_name: string; username: string; issued_at: string; expires_at: string

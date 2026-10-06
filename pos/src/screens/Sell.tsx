@@ -5,7 +5,9 @@ import { nextSeq } from '../db'
 import { exportQueueFile, retryRefused } from '../offline'
 import { submitSale } from '../till'
 import { formatMoney, prettyQty, toMilli } from '../money'
-import type { Bootstrap, Payment, PostedSale, Product, Unit } from '../types'
+import type { Bootstrap, Payment, PostedSale, Product, TillCustomer, Unit } from '../types'
+import { cachedCustomers, refreshCustomers } from '../customers'
+import { CustomerPicker } from './CustomerPicker'
 import { Pay } from './Pay'
 
 export function Sell({ boot, products, online, catalogVersion, queue, onPosted, onRefresh, onSendNow, onCloseShift, onLogout }: {
@@ -22,7 +24,27 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   const [paying, setPaying] = useState(false)
   const [busy, setBusy] = useState(false)
   const [payError, setPayError] = useState('')
+  const [customers, setCustomers] = useState<TillCustomer[]>([])
+  const [customer, setCustomer] = useState<TillCustomer | null>(null)
+  const [picking, setPicking] = useState(false)
+  const [approval, setApproval] = useState<{ payments: Payment[]; message: string } | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    let alive = true
+    cachedCustomers().then((c) => alive && setCustomers(c.customers))
+    if (online) refreshCustomers().then((c) => alive && c && setCustomers(c))
+    return () => { alive = false }
+  }, [online])
+
+  function pickCustomer(c: TillCustomer | null) {
+    setCustomer(c)
+    setPicking(false)
+    // The customer's own price list (e.g. wholesale) applies to their sale.
+    if (c?.price_list_id && boot.price_lists.some((l) => l.id === c.price_list_id)) setListId(c.price_list_id)
+    else if (!c) setListId(defaultList?.id ?? '')
+    searchRef.current?.focus()
+  }
   const list = boot.price_lists.find((l) => l.id === listId) ?? defaultList
   const money = (m: number) => formatMoney(m, boot.company.currency, boot.company.exponent)
   const cart = useMemo(() => priceCart(lines, list, new Date()), [lines, list])
@@ -32,6 +54,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'F2') { e.preventDefault(); searchRef.current?.focus() }
       if (e.key === 'F12' && lines.length && !paying) { e.preventDefault(); startPay() }
+      if (e.key === 'F4' && !paying) { e.preventDefault(); setPicking(true) }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -87,16 +110,23 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
     setPaying(true)
   }
 
-  async function complete(payments: Payment[]) {
+  async function complete(payments: Payment[], creditApproval?: { username: string; pin: string }) {
     setBusy(true)
     setPayError('')
     try {
-      const sale = await submitSale({ boot, online, cart, listId: list.id, payments, seq: await nextSeq(boot.last_device_seq), catalogVersion })
+      const sale = await submitSale({ boot, online, cart, listId: list.id, payments, seq: await nextSeq(boot.last_device_seq), catalogVersion,
+        customerId: customer?.id ?? null, creditApproval })
       setLines([])
       setPaying(false)
+      setApproval(null)
+      pickCustomer(null)
       onPosted(sale)
     } catch (err) {
       const e = err instanceof ApiError ? err : null
+      if (e?.code === 'credit_needs_approval' || (creditApproval && e && ['approval_failed', 'over_limit', 'own_document', 'pin_locked'].includes(e.code))) {
+        setApproval({ payments, message: e.message })
+        return
+      }
       setPayError(err instanceof Error ? err.message : String(err))
       if (e && ['price_changed', 'totals_mismatch', 'product_unavailable'].includes(e.code)) await onRefresh()
     } finally {
@@ -114,6 +144,12 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
           </select>
         </label>
         <div className="row">
+          {customer ? (
+            <span className="chip" aria-label="Customer">
+              {customer.name}{customer.credit_limit_minor !== null && ` · credit ${money(customer.available_minor ?? 0)}`}
+              <button type="button" className="link" onClick={() => pickCustomer(null)} aria-label="Remove customer">✕</button>
+            </span>
+          ) : <button type="button" onClick={() => setPicking(true)}>Customer (F4)</button>}
           <button type="button" onClick={onCloseShift}>Close shift</button>
           <button type="button" onClick={onLogout}>Sign out</button>
         </div>
@@ -191,10 +227,34 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
         </div>
       </section>
 
-      {paying && (
+      {paying && !approval && (
         <Pay total={cart.total} currency={boot.company.currency} exponent={boot.company.exponent} busy={busy} error={payError}
-          onPay={complete} onCancel={() => setPaying(false)} />
+          customer={customer} onPay={(p) => complete(p)} onCancel={() => setPaying(false)} />
       )}
+      {picking && <CustomerPicker customers={customers} money={money} onPick={pickCustomer} onCancel={() => setPicking(false)} />}
+      {approval && <CreditApproval message={approval.message} busy={busy} onApprove={(a) => complete(approval.payments, a)} onCancel={() => setApproval(null)} />}
+    </div>
+  )
+}
+
+/** A supervisor approves a credit sale over the customer's limit with their own username and PIN. */
+function CreditApproval({ message, busy, onApprove, onCancel }: {
+  message: string; busy: boolean; onApprove: (a: { username: string; pin: string }) => void; onCancel: () => void
+}) {
+  const [username, setUsername] = useState('')
+  const [pin, setPin] = useState('')
+  return (
+    <div className="modal" role="dialog" aria-modal="true" aria-label="Supervisor approval">
+      <form className="card pay" onSubmit={(e) => { e.preventDefault(); if (username && pin) onApprove({ username, pin }) }}>
+        <h2>Supervisor approval</h2>
+        <p className="error">{message}</p>
+        <label>Supervisor username<input autoFocus value={username} onChange={(e) => setUsername(e.target.value)} autoCapitalize="none" /></label>
+        <label>Supervisor PIN<input type="password" inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))} /></label>
+        <div className="row">
+          <button type="button" onClick={onCancel} disabled={busy}>Back</button>
+          <button className="primary big" disabled={busy || !username || pin.length < 4}>{busy ? 'Checking…' : 'Approve credit sale'}</button>
+        </div>
+      </form>
     </div>
   )
 }

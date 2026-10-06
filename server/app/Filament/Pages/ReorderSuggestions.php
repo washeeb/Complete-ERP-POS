@@ -38,7 +38,7 @@ class ReorderSuggestions extends Page implements HasTable
 
     protected static ?int $navigationSort = 5;
 
-    protected string $view = 'filament.pages.reorder-suggestions';
+    protected string $view = 'filament.pages.table-page';
 
     public static function canAccess(): bool
     {

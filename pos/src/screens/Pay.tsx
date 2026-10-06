@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { formatMoney, parseMoney } from '../money'
-import type { Payment } from '../types'
+import type { Payment, TillCustomer } from '../types'
 
 const MOMO = [
   { id: 'mtn', name: 'MTN MoMo' },
@@ -12,8 +12,8 @@ const MOMO = [
  * Split tender. Cash may exceed what is owed (change); mobile money and card are entered with
  * the reference from the confirmation message / terminal slip (manual until Paystack/Hubtel are wired in).
  */
-export function Pay({ total, currency, exponent, busy, error, onPay, onCancel }: {
-  total: number; currency: string; exponent: number; busy: boolean; error: string
+export function Pay({ total, currency, exponent, busy, error, customer, onPay, onCancel }: {
+  total: number; currency: string; exponent: number; busy: boolean; error: string; customer?: TillCustomer | null
   onPay: (payments: Payment[]) => void; onCancel: () => void
 }) {
   const [payments, setPayments] = useState<Payment[]>([])
@@ -39,7 +39,7 @@ export function Pay({ total, currency, exponent, busy, error, onPay, onCancel }:
     try {
       const tendered = tenderedOverride ?? (amount ? parseMoney(amount, exponent) : due)
       if (tendered <= 0) throw new Error('Enter an amount.')
-      if (method !== 'cash' && tendered > due) throw new Error('Mobile money and card cannot be more than the amount due.')
+      if (method !== 'cash' && tendered > due) throw new Error('Only cash can be more than the amount due.')
       if (method === 'momo' && reference.trim().length < 4) throw new Error('Enter the transaction ID from the MoMo confirmation.')
       const applyAmount = Math.min(tendered, due)
       const p: Payment = { method, amount_minor: applyAmount, tendered_minor: method === 'cash' ? tendered : applyAmount }
@@ -71,7 +71,7 @@ export function Pay({ total, currency, exponent, busy, error, onPay, onCancel }:
           <ul className="payments">
             {payments.map((p, i) => (
               <li key={i}>
-                {p.method === 'cash' ? 'Cash' : p.method === 'momo' ? MOMO.find((m) => m.id === p.provider)?.name : 'Card'} {money(p.amount_minor)}
+                {p.method === 'cash' ? 'Cash' : p.method === 'momo' ? MOMO.find((m) => m.id === p.provider)?.name : p.method === 'account' ? `On account (${customer?.name ?? ''})` : 'Card'} {money(p.amount_minor)}
                 {p.reference ? ` · ${p.reference}` : ''}
                 {!busy && <button type="button" className="link" onClick={() => setPayments(payments.filter((_, j) => j !== i))}>remove</button>}
               </li>
@@ -82,9 +82,9 @@ export function Pay({ total, currency, exponent, busy, error, onPay, onCancel }:
         {due > 0 && (
           <>
             <div className="segmented" role="tablist">
-              {(['cash', 'momo', 'card'] as const).map((m) => (
+              {(customer ? (['cash', 'momo', 'card', 'account'] as const) : (['cash', 'momo', 'card'] as const)).map((m) => (
                 <button key={m} type="button" role="tab" aria-selected={method === m} className={method === m ? 'active' : ''} onClick={() => setMethod(m)}>
-                  {m === 'cash' ? 'Cash' : m === 'momo' ? 'Mobile money' : 'Card'}
+                  {m === 'cash' ? 'Cash' : m === 'momo' ? 'Mobile money' : m === 'account' ? 'On account' : 'Card'}
                 </button>
               ))}
             </div>
@@ -92,6 +92,13 @@ export function Pay({ total, currency, exponent, busy, error, onPay, onCancel }:
               <div className="row wrap">
                 {quick.map((q) => <button key={q} type="button" className="big" onClick={() => add(q)} disabled={busy}>{money(q)}</button>)}
               </div>
+            )}
+            {method === 'account' && customer && (
+              <p className={customer.credit_limit_minor === null || customer.credit_hold || customer.overdue_minor > 0 ? 'error' : 'muted'}>
+                {customer.credit_limit_minor === null ? `${customer.name} has no credit account — a supervisor must approve.`
+                  : customer.credit_hold ? 'This account is on credit hold — a supervisor must approve.'
+                    : `Credit available ${money(customer.available_minor ?? 0)}${customer.overdue_minor > 0 ? ` · ${money(customer.overdue_minor)} overdue — a supervisor must approve` : ''}.`}
+              </p>
             )}
             {method === 'momo' && (
               <div className="row wrap">
@@ -107,7 +114,7 @@ export function Pay({ total, currency, exponent, busy, error, onPay, onCancel }:
                 {method === 'cash' ? 'Cash received' : 'Amount'} <span className="muted">(blank = {money(due)})</span>
                 <input autoFocus className="big mono" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
               </label>
-              {method !== 'cash' && (
+              {(method === 'momo' || method === 'card') && (
                 <label>
                   {method === 'momo' ? 'Transaction ID' : 'Approval code (optional)'}
                   <input className="big mono" value={reference} onChange={(e) => setReference(e.target.value)} maxLength={80} />
@@ -119,7 +126,7 @@ export function Pay({ total, currency, exponent, busy, error, onPay, onCancel }:
                   <input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} />
                 </label>
               )}
-              <button className="primary big" disabled={busy}>Add {method === 'cash' ? 'cash' : method === 'momo' ? 'MoMo' : 'card'}</button>
+              <button className="primary big" disabled={busy}>Add {method === 'cash' ? 'cash' : method === 'momo' ? 'MoMo' : method === 'account' ? 'to account' : 'card'}</button>
             </form>
           </>
         )}
