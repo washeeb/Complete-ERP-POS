@@ -9,7 +9,7 @@
 - **Gift cards and store credit** (Sales → Gift cards & credit) as till tenders; expire 12 months after last use.
 - **Returns** at the till (F8): by receipt within 30 days, refunded to the original tenders; without a receipt, store credit with a supervisor PIN.
 - **Take account payments** at the till (counted in the shift cash).
-- Receipts show promotions, "You saved", points and RETURN/REFUND.
+- Receipts show promotions, "You saved", points and RETURN/REFUND; new layout: logo space, numbered item columns (SN, Item, Qty, Price, Total) running margin to margin, and a QR code of the receipt number (scan it on the Return screen).
 - Commands: `erp:expire-balances` (nightly); `erp:receivables-check` also checks points and card balances; `erp:demo-sales` adds sample promotions.
 - Docs: promotions, loyalty and returns guide; till API for promotions, returns and account payments.
 ## [0.6.0] — 2026-10-10 · Phase 6a customers and order-to-cash
