@@ -11,7 +11,8 @@ use LogicException;
  */
 final class DocumentNumbers
 {
-    public const PREFIXES = ['purchase_order' => 'PO', 'goods_receipt' => 'GRN', 'stock_transfer' => 'TRF', 'stock_count' => 'CNT'];
+    public const PREFIXES = ['purchase_order' => 'PO', 'goods_receipt' => 'GRN', 'stock_transfer' => 'TRF', 'stock_count' => 'CNT',
+        'customer' => 'CUS', 'quotation' => 'QT', 'customer_order' => 'SO', 'delivery' => 'DN', 'invoice' => 'INV', 'credit_note' => 'CRN', 'customer_payment' => 'RCT'];
 
     public function next(string $tenantId, string $docType): string
     {

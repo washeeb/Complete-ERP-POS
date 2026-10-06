@@ -27,7 +27,7 @@ export type Bootstrap = {
 
 export type Realtime = { key: string; host: string; port: number; scheme: 'http' | 'https'; channels: (string | null)[] }
 
-export type Payment = { method: 'cash' | 'momo' | 'card'; provider?: string; amount_minor: number; tendered_minor: number; reference?: string; payer_phone?: string }
+export type Payment = { method: 'cash' | 'momo' | 'card' | 'account'; provider?: string; amount_minor: number; tendered_minor: number; reference?: string; payer_phone?: string }
 
 export type PostedSale = {
   id: string; receipt_no: string; device_seq: number; status: string; occurred_at: string; cashier: string; currency: string
@@ -46,3 +46,6 @@ export type WmsOrderLine = { id: string; product_uom_id: string; sku: string; na
 export type WmsOrder = { id: string; number: string; supplier: string; expected_on: string | null; lines: WmsOrderLine[] }
 export type WmsTransfer = { id: string; number: string; from: string; dispatched_at: string | null; lines: { id: string; sku: string; name: string; uom_code: string; qty: string; product_uom_id: string; barcodes: string[] }[] }
 export type WmsCount = { id: string; number: string; bin: string | null; bin_id: string | null; blind: boolean; counted: number; lines: number }
+
+// Customer lookup at the till (credit figures are a snapshot; the server re-checks online credit sales)
+export type TillCustomer = { id: string; code: string; name: string; phone: string | null; price_list_id: string | null; credit_limit_minor: number | null; credit_hold: boolean; balance_minor: number; available_minor: number | null; overdue_minor: number }

@@ -1,7 +1,7 @@
 import { formatMoney, prettyQty, toMilli } from '../money'
 import type { Bootstrap, PostedSale } from '../types'
 
-const METHOD: Record<string, string> = { cash: 'Cash', momo: 'Mobile money', card: 'Card' }
+const METHOD: Record<string, string> = { cash: 'Cash', momo: 'Mobile money', card: 'Card', account: 'On account' }
 const NETWORK: Record<string, string> = { mtn: 'MTN', telecel: 'Telecel', at: 'AT' }
 
 /** 80 mm thermal layout; the same markup prints on A4. Only .receipt is printed (see App.css @media print). */

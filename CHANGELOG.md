@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.6.0] — 2026-10-10 · Phase 6a customers and order-to-cash
+### Added
+- **Customers** (Sales → Customers): profile, price list, recorded marketing consent (who, when, how), and head-office credit (limit, terms, hold, opening balance). The customer page shows balance, overdue amount, available credit and open items.
+- **Quotations → orders**:
+  - priced from the customer's price list;
+  - the credit check puts an order on hold;
+  - release by someone else within their override limit.
+- **Deliveries**: partial or full; each one raises its **invoice** automatically, due after the customer's terms.
+- **Payments**:
+  - settle the oldest invoices first;
+  - leftover money becomes account credit, used on the next invoice.
+- **Credit notes**: optionally take the goods back.
+- **Statements** and **aged receivables**.
+- A4 print/PDF pages for quotation/order, tax invoice, statement and payment receipt.
+- **Till**: customer lookup (F4, works offline) with the customer's price list, and the **On account** tender. A supervisor approves by PIN when a sale goes over the limit; offline credit sales are kept and flagged.
+- Sync: *customers* group (field-level merge with a conflict log) and *receivables* group, both relayed between branch servers.
+- Commands: `erp:receivables-check`, `erp:demo-sales`.
+- Docs: customers, wholesale sales and receivables guide; till customer API.
+### Fixed
+- A newly installed owner now gets the owner role's approval limits (PO approval, credit override).
+
 ## [0.5.0] — 2026-10-09 · Phase 5 purchasing and warehouse
 ### Added
 - **Suppliers**: contacts, terms, lead time; products supplied with purchase unit, supplier code, last cost, minimum order, preferred.

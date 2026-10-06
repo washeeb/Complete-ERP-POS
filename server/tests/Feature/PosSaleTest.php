@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Access\AccessService;
+use App\Domain\Customers\CustomerService;
 use App\Domain\Devices\DeviceService;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Inventory\StockLedger;
@@ -14,6 +15,7 @@ use App\Filament\Resources\StockLevels\StockLevelResource;
 use App\Filament\Resources\StockMovements\StockMovementResource;
 use App\Filament\Resources\TaxRates\TaxRateResource;
 use App\Models\AuditEvent;
+use App\Models\Customer;
 use App\Models\OutboxEvent;
 use App\Models\PriceList;
 use App\Models\Product;
@@ -245,3 +247,16 @@ it('keeps posted sale lines immutable at the database', function () {
 
     DB::table('sale_lines')->update(['unit_price_minor' => 1]);
 })->throws(Exception::class, 'immutable');
+
+it('lists customers for the till with their credit snapshot, and answers 304 when nothing changed', function () {
+    $c = app(CustomerService::class)->save(actorFor($this->owner), new Customer, ['name' => 'Kofi Provisions', 'phone' => '0245551234',
+        'price_list_id' => PriceList::where('code', 'WHOLESALE')->value('id'), 'credit_limit_minor' => 500_000, 'payment_terms_days' => 30]);
+    app('auth')->forgetGuards();
+
+    $r = $this->withToken($this->token)->getJson('/api/v1/pos/customers')->assertOk();
+    expect($r->json('customers.0'))->toMatchArray(['name' => 'Kofi Provisions', 'phone' => '+233245551234', 'credit_limit_minor' => 500_000,
+        'available_minor' => 500_000, 'overdue_minor' => 0, 'credit_hold' => false])
+        ->and(collect($this->withToken($this->token)->getJson('/api/v1/pos/bootstrap')->json('price_lists'))->pluck('code'))->toContain('WHOLESALE');
+    app('auth')->forgetGuards();
+    $this->withToken($this->token)->getJson('/api/v1/pos/customers', ['If-None-Match' => '"'.$r->json('version').'"'])->assertStatus(304);
+});

@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(AssignRequestId::class);
+        $middleware->redirectGuestsTo('/admin/login'); // printable documents live outside the panel
         $middleware->alias([
             'device.token' => EnsureDeviceToken::class,
             'erp.mfa' => EnsureMfaForLevel::class,

@@ -2,6 +2,8 @@
 
 use App\Domain\Access\AccessService;
 use App\Domain\Catalog\CatalogService;
+use App\Domain\Customers\CustomerLedger;
+use App\Domain\Customers\CustomerService;
 use App\Domain\Devices\DeviceService;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Inventory\StockLedger;
@@ -20,6 +22,7 @@ use App\Domain\Sync\SyncFile;
 use App\Domain\Sync\SyncServer;
 use App\Domain\Sync\SyncSigner;
 use App\Domain\Sync\Transport\SyncTransport;
+use App\Models\Customer;
 use App\Models\Device;
 use App\Models\GoodsReceipt;
 use App\Models\OutboxEvent;
@@ -364,4 +367,45 @@ it('relays a branch server’s stock and warehouse events to the other branch se
 
     $other = app(NodeSetup::class)->addBranchNode(actorFor($this->owner), 'B02', 'Branch B server')['peer'];
     expect(collect(app(SyncServer::class)->serve($other, 0, 1000)['events'])->pluck('id'))->toContain($relayed->first()->id);
+});
+
+it('merges customer edits field by field between servers, and logs a real conflict', function () {
+    $svc = app(CustomerService::class);
+    $c = $svc->save(actorFor($this->owner), new Customer, ['name' => 'Kofi Provisions', 'phone' => '0245551234', 'credit_limit_minor' => 500_000, 'payment_terms_days' => 30]);
+    branchSync();
+
+    // Branch changes the phone and the notes; HQ changes the email and the notes at the same time.
+    Nodes::on('B01', function () use ($c) {
+        $owner = User::where('username', 'like', 'owner%')->first();
+        app(CustomerService::class)->save(actorFor($owner), Customer::find($c->id), ['phone' => '0209998888', 'notes' => 'Delivers Tuesdays']);
+        expect(fn () => app(CustomerService::class)->setCredit(actorFor($owner), Customer::find($c->id), 9_000_000, 30, false))
+            ->toThrow(DomainException::class, 'head office');
+    });
+    $this->travel(1)->seconds();
+    $svc->save(actorFor($this->owner), $c->fresh(), ['email' => 'kofi@provisions.test', 'notes' => 'Prefers Monday']);
+    branchSync();
+
+    $hq = Customer::find($c->id);
+    $branch = Nodes::on('B01', fn () => Customer::find($c->id));
+    expect($hq->phone)->toBe('+233209998888')->and($hq->email)->toBe('kofi@provisions.test')->and($hq->notes)->toBe('Prefers Monday')
+        ->and($branch->phone)->toBe('+233209998888')->and($branch->email)->toBe('kofi@provisions.test')->and($branch->notes)->toBe('Prefers Monday')
+        ->and($branch->credit_limit_minor)->toBe(500_000)
+        ->and(ReviewItem::where('type', 'customer_conflict')->where('summary', 'like', '%notes%Delivers Tuesdays%')->exists())->toBeTrue()
+        ->and(ReviewItem::where('type', 'customer_conflict')->where('summary', 'like', '%phone%')->exists())->toBeFalse();
+});
+
+it('brings a branch credit sale to the customer account at HQ', function () {
+    $c = app(CustomerService::class)->save(actorFor($this->owner), new Customer, ['name' => 'Ama Stores', 'credit_limit_minor' => 500_000, 'payment_terms_days' => 14]);
+    branchSync();
+    $sale = Nodes::on('B01', function () use ($c) {
+        $owner = User::where('username', 'like', 'owner%')->first();
+        DB::transaction(fn () => app(CustomerLedger::class)->post(actorFor($owner), Customer::find($c->id), 'pos_sale', 5800, 'GHS',
+            'sale', (string) Str::uuid7(), 'BA-T01A-000009', now()->addDays(14)));
+
+        return true;
+    });
+    branchSync();
+
+    expect((int) DB::table('customer_balances')->where('customer_id', $c->id)->value('balance_minor'))->toBe(5800)
+        ->and(app(CustomerLedger::class)->check())->toBe([]);
 });

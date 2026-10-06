@@ -26,6 +26,9 @@ class ReviewItem extends Model
         'webhook_failed' => 'Store notification could not be processed',
         'transfer_short' => 'Transfer arrived with a different quantity',
         'grn_held' => 'Delivery above the over-delivery tolerance',
+        'credit_hold' => 'Customer order on credit hold',
+        'credit_over_limit' => 'Credit sale over the customer’s limit',
+        'customer_conflict' => 'Customer edited in two places',
     ];
 
     protected $guarded = [];

@@ -124,3 +124,44 @@ Design (Phase 5):
 - The handheld is a mode of the same PWA, chosen by the device kind returned at enrolment, under its own API (`/api/v1/wms`) and token ability (`handheld`). It works online against its branch's server over the LAN; no offline queue for warehouse work yet. Hardware scanners act as keyboards (scan, then Enter); camera scanning is deferred. [+]
 - Head office relays the two-way sync groups (stock, purchasing, warehouse): events applied from one branch server are published again at HQ and served to every other branch server, but never back to their origin. This fixes transfers between two branch servers, and it lets HQ's online-store stock sync and live updates see branch sales. Sales documents still flow up only. [+]
 - Deferred: requisitions/RFQs, 3-way match and supplier invoices (with Finance, Phase 7), returns to supplier, supplier scorecards and portal, landed costs, FEFO/batches/expiry (Pharmacy/Grocery, Phase 9), pick/pack/ship waves, ABC analysis, and printing PO PDFs and bin labels.
+
+## Phase 6 (2026-10-10)
+
+Owner answers (2026-10-10):
+- Credit limit / overdue: **hold for approval**. Orders over the limit go on credit hold and a manager with the override right releases them within their limit; on the till, a credit sale over the limit needs a supervisor PIN.
+- Wholesale invoices are raised **when goods are delivered** (posting a delivery note creates its invoice).
+- Loyalty default **1 % back**: 1 point per GHS 1, 100 points = GHS 1, redeem from 500, expire after 12 months (built in 6b).
+- Customers sync to **all branches**: field-level last-writer-wins with a conflict log; credit limits set at HQ only.
+- Phase 6 ships as two PRs: 6a, customers, order-to-cash, receivables and credit on the till (the done-when); 6b, promotions, loyalty and gift cards. The engine for 6b must behave the same in PHP and the offline till.
+
+Design (Phase 6a):
+- **Receivables sub-ledger.** `customer_ledger` is append-only (DB trigger); + means the customer owes more, − means less.
+  - Entries come from invoices, till credit sales, payments, credit notes and opening balances.
+  - `customer_balances` is a projection, moved in the same transaction.
+  - `receivable_allocations` records which documents a payment or credit note settles.
+  - Unique per (document, type), so posting twice is impossible. Sync sends entries and allocations as raw batches, applied idempotently. Finance (Phase 7) will post from here. [+]
+- **Settlement:** payments settle the oldest items first (or chosen invoices). Leftover credit is applied automatically when a new invoice or till credit sale arrives. Invoices never change; a credit note clears what is open and leaves any paid amount as account credit. Partial credit notes and refunds of account credit are deferred.
+- **Credit check:**
+  - exposure = balance + undelivered order value + the new amount;
+  - overdue debt or a manual hold also triggers a hold.
+  - An override limit is measured against the amount over the limit (all of it when there is no credit account, a hold or overdue debt). A supervisor's GHS 1,000 thus approves a sale that is GHS 230 over, not one GHS 1,550 over.
+  - Default override limits:
+
+    | Role | Limit |
+    |---|---|
+    | Supervisor | GHS 1,000 |
+    | Branch Manager | GHS 20,000 |
+    | Finance / GM / Owner | Unlimited |
+
+  - The releaser must not be the creator. [+]
+- **One document from quote to order:** `quote_number` while a quotation, `number` once confirmed, so the quote → order link needs no join table. Prices are resolved from the customer's price list when the quote is saved; manual price changes on quotes wait for discount rules (6b).
+- **Delivery and invoicing:** one invoice per delivery, using the order's tax rates on the quantity delivered. A delivery cannot take stock below zero (it is not an offline sale).
+- **Till credit sales:**
+  - The sale's `customer_id` is part of its idempotency hash.
+  - The `account` tender posts a `pos_sale` ledger entry, due after the customer's terms.
+  - Supervisor approval is a reusable `SupervisorApproval` (username + PIN, same lockout, permission + limit, not the cashier). It is only sent online and never stored in the offline queue.
+  - Offline credit sales follow the Phase 3 rule: kept, then flagged. [+]
+- **Customer sync** is field-level last-writer-wins. Each field stamp holds `at` (time|node) and `base` (the stamp the editor had seen); a conflict is logged only when an edit was not built on the other side's change. This gives a real conflict log without vector clocks. HQ ignores incoming credit fields, and branch servers refuse to change them. [+]
+- **Fresh installs:** the first owner's grant now takes the owner role's default limits. Before this, a new owner had no PO-approval or credit-override limit; existing installs got them through the upgrade path. This was found by the screens test. [+]
+- **A4 documents** are Blade pages (print or "Save as PDF") under `/print/*`. They need a signed-in back-office user, check permissions per document, and check the tenant explicitly. Server-side PDF and emailing come with notifications later.
+- **Filament note:** search callbacks must name their argument `$search`; a `$s` slipped through tests that fill fields by id and was found in the browser demo.

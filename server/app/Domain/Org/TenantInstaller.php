@@ -64,6 +64,7 @@ final class TenantInstaller
             $grant = new RoleAssignment([
                 'user_id' => $user->id, 'role_id' => $role->id, 'scope_type' => ScopeType::Tenant,
                 'scope_id' => $tenant->id, 'starts_at' => now(), 'reason' => 'Initial owner at installation',
+                'limits' => $role->default_limits ?? [], // approval limits (unlimited for the owner)
             ]);
             $grant->tenant_id = $tenant->id;
             $grant->granted_by = $user->id; // no human granter exists; the audit row names the installer

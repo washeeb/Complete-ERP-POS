@@ -75,14 +75,16 @@ type Cart = ReturnType<typeof priceCart>
 /** Post the sale now if we can; otherwise queue it and print a receipt marked "not yet sent". */
 export async function submitSale(args: {
   boot: Bootstrap; online: boolean; cart: Cart; listId: string; payments: Payment[]; seq: number; catalogVersion: string | null
+  customerId?: string | null; creditApproval?: { username: string; pin: string } | null; saleId?: string
 }): Promise<PostedSale> {
   const { boot, cart, payments } = args
   const local = await getLocalShift()
   const shiftId = boot.shift?.id ?? local?.shiftId
   if (!shiftId) throw new Error('Open a shift first.')
   const payload = {
-    id: uuidv7(),
+    id: args.saleId ?? uuidv7(),
     device_seq: args.seq,
+    customer_id: args.customerId ?? null,
     occurred_at: new Date().toISOString(),
     price_list_id: args.listId,
     shift_id: shiftId,
@@ -98,7 +100,8 @@ export async function submitSale(args: {
 
   if (!(await queueMode(args.online))) {
     try {
-      const { sale } = await api.postSale(payload)
+      // A supervisor's PIN goes to the server only, never into the offline queue.
+      const { sale } = await api.postSale(args.creditApproval ? { ...payload, credit_approval: args.creditApproval } : payload)
       await recordCash()
       return sale
     } catch (e) {

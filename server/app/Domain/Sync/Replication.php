@@ -2,8 +2,11 @@
 
 namespace App\Domain\Sync;
 
+use App\Models\CustomerOrder;
+use App\Models\Delivery;
 use App\Models\Device;
 use App\Models\GoodsReceipt;
+use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Role;
@@ -46,13 +49,18 @@ final class Replication
             'tables' => ['supplier' => 'suppliers', 'purchase_order' => 'purchase_orders', 'goods_receipt' => 'goods_receipts']],
         'warehouse' => ['label' => 'Bins, transfers, counts and reorder levels', 'direction' => 'both',
             'tables' => ['bin' => 'bins', 'stock_transfer' => 'stock_transfers', 'stock_count' => 'stock_counts', 'reorder_rule' => 'reorder_rules']],
+        'customers' => ['label' => 'Customers and what they owe', 'direction' => 'both',
+            'tables' => ['customer' => 'customers', 'customer_ledger_batch' => null]],
+        'receivables' => ['label' => 'Quotations, customer orders, deliveries, invoices, payments, credit notes', 'direction' => 'both',
+            'tables' => ['customer_order' => 'customer_orders', 'delivery' => 'deliveries', 'invoice' => 'invoices', 'credit_note' => 'credit_notes',
+                'customer_payment' => 'customer_payments']],
     ];
 
     /** Master data: owned by HQ, read-only on branch nodes (conflict policy "HQ wins", spec §4.2). */
     public const MASTER_GROUPS = ['org', 'people', 'catalog', 'pricing'];
 
     /** Two-way groups head office passes on: what one branch server sends reaches the other branch servers too. */
-    public const RELAY_GROUPS = ['stock', 'purchasing', 'warehouse'];
+    public const RELAY_GROUPS = ['stock', 'purchasing', 'warehouse', 'customers', 'receivables'];
 
     /** Documents whose lines travel inside their snapshot: class => [relation, table]. */
     public const CHILDREN = [
@@ -61,6 +69,9 @@ final class Replication
         GoodsReceipt::class => ['lines', 'goods_receipt_lines'],
         StockTransfer::class => ['lines', 'stock_transfer_lines'],
         StockCount::class => ['lines', 'stock_count_lines'],
+        CustomerOrder::class => ['lines', 'customer_order_lines'],
+        Delivery::class => ['lines', 'delivery_lines'],
+        Invoice::class => ['lines', 'invoice_lines'],
     ];
 
     private const NEVER = ['app_authentication_secret', 'app_authentication_recovery_codes', 'remember_token',
