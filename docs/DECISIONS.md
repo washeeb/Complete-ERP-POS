@@ -182,3 +182,24 @@ Design:
 - **Returns are sales of kind `return`** with negative amounts and `original_sale_id`, so stock, shift cash, tax and reports need no second code path. The value refunded is what the customer actually paid for each line (after promotions), refunded to the original tenders in order; points earned on the returned value are taken back. Returns need the server (they must see the original sale); offline returns are deferred.
 - **Expiry** runs only at head office (`erp:expire-balances`, daily 02:30) and posts `expire` ledger rows, which then sync like any other entry.
 - **Deferred:** selling gift cards at the till (back office only for now), offline returns, partial credit notes / refunds of account credit, sales reps and commissions.
+
+## Phase 7a (2026-10-12)
+
+Owner answers (2026-10-12):
+- **Chart of accounts:** the Ghana SME template (IFRS for SMEs layout); financial year **January–December**.
+- **Opening balances:** the accountant enters them (opening trial balance, open customer and supplier items, stock at cost) on the go-live date.
+- **Supplier bills:** **3-way match** (order price, goods received, bill); a difference above **2 % or GHS 50, whichever is smaller**, waits for a finance manager.
+- **Month-end:** **monthly lock**; finance closes each month once checks pass; only the **GM/owner reopens**, with a reason; late documents post to the next open month.
+
+Design:
+- **Finance lives at head office.** Accounts, months, journals and payables do not replicate; branch servers keep feeding the sub-ledgers (sales, stock, customers) as before and HQ posts them.
+- **Automatic posting is a catch-up job, exactly once.** `AutoPoster` (every 5 minutes, `erp:gl-post`, and "Post now") takes every source row not yet in `gl_postings` (primary key = source type + id), so rows that sync late or out of order are simply picked up on the next run. High-volume sources (till sales and returns, stock movements, points) are summarised per branch and day — one entry, many sources linked; documents (invoices, credit notes, payments, bills, gift-card sales, shift over/short) get one entry each.
+- **The ledger is enforced by the database too:** journal tables are append-only (trigger), an entry must balance and have two lines (deferred constraint trigger, checked at commit) and may only go into an open month (trigger). Mistakes are reversed by an equal and opposite entry.
+- **Control accounts belong to their sub-ledgers** (customers, suppliers, stock, gift cards/store credit, loyalty points): journals may not touch them, so `erp:gl-check` can prove each equals its sub-ledger. This is the Phase 7 done-when check, also shown under Finance → Reports → Ledger check and required before a month can close.
+- **Stock at cost:** the stock sub-ledger is the sum of movement values (quantity × the cost stamped on each movement; bin put-aways excluded). Incoming stock without a cost of its own (returns, count gains) is now stamped at the current average, and a goods-received reversal takes goods out at the cost they came in at, so goods-received-not-billed clears exactly. Weighted-average rounding can make on-hand × average differ by pesewas from the sub-ledger; the ledger follows the movements.
+- **Purchases:** goods received post Dr Stock / Cr Goods received not billed at the receipt cost; the bill clears that at the same value and puts any price difference to Purchase price differences. Recoverable input tax (per tax rate, `input_recoverable`, default yes — accountant to confirm) goes to input tax accounts; non-recoverable tax is a cost.
+- **Till sales:** revenue net of tax; each tax code to its own payable account; each tender to its own account (cash in tills, MoMo, card settlements, customer accounts, loyalty points, gift cards). Points are a cost when earned (1 point = 1 pesewa) and a debt until spent or expired; expired gift-card balances are income.
+- **Cost centres:** every line carries the branch. Departments come later.
+- **Years:** no closing entries; reports start income and expense accounts at zero each year and show earlier years' profit in retained earnings.
+- **Segregation:** accountants enter bills and journals; finance managers close months, approve price differences and pay suppliers; only the GM/owner reopens a month; IT admin has none of this.
+- **Deferred to 7b:** bank and MoMo statement import and reconciliation, expenses/petty cash, budgets, fixed assets and depreciation, multi-currency revaluation, VAT return and tax reports, supplier credit notes / returns to supplier, GRA E-VAT.

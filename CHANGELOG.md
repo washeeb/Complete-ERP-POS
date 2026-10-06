@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.0] — 2026-10-12 · Phase 7a finance: general ledger and payables
+### Added
+- **Chart of accounts** (Finance → Chart of accounts): Ghana SME template installed for every company; edit names and codes, add accounts, choose which account automatic posting uses for each purpose.
+- **Automatic posting** from every module into a double-entry general ledger: till sales and returns, stock at cost, customer invoices, credit notes and payments, online orders, shift cash over/short, loyalty points, gift cards, supplier bills and payments, opening balances. Runs every 5 minutes (`erp:gl-post`) or on demand (Journals → Post now).
+- **Journals**: typed journals, an opening trial balance for go-live, and reversals. The database refuses unbalanced entries, edits and postings into closed months.
+- **Month-end** (Finance → Month-end): close months in order once everything is posted and ties; late documents land in the next open month; only the GM/owner reopens, with a reason.
+- **Reports** (Finance → Reports): trial balance, profit and loss, balance sheet, account ledger (filter by branch) and the ledger check proving the ledger equals customers, suppliers, stock, gift cards and points (`erp:gl-check`).
+- **Supplier bills** with a 3-way match against goods received and order prices (differences over 2 % / GHS 50 wait for a finance manager), expense bills (rent, utilities), **supplier payments** (oldest bills first), supplier opening balances and **aged payables**.
+- Permissions: finance.view, finance.journal, finance.accounts.manage, finance.close, finance.reopen, payables.view, payables.manage, payables.approve, payables.pay (Core 0.8.0).
+- Docs: finance guide.
+### Changed
+- Stock coming in without its own cost (returns, count gains) is valued at the current average; a goods-received reversal leaves at the cost it came in at.
 ## [0.7.0] — 2026-10-11 · Phase 6b promotions, loyalty, gift cards and returns
 ### Added
 - **Promotions** (Pricing & tax → Promotions): percent or amount off, buy X get Y, bundles / mix & match, spend-X basket offers, coupons; by dates, days, happy-hour times, branch and price list. The best single promotion per item, then basket offer and one coupon on top.

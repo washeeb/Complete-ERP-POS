@@ -86,8 +86,15 @@ final class StockLedger
         $rows = [];
         foreach ($entries as $e) {
             $avg = $levels[$e['product']->id]->avg_cost_minor;
-            // Outgoing stock is valued at the current average (cost of goods); incoming carries its own cost.
-            $cost = $e['qty_milli'] > 0 ? ($e['unit_cost_minor'] ?? null) : StockProjection::costPerUnit($avg === null ? null : (string) $avg, (string) $e['unit']->factor);
+            // Outgoing stock is valued at the current average (cost of goods); incoming carries its own cost, or the average
+            // when it has none (returns, count gains), so the stock value in the ledger follows the goods. A goods-received
+            // reversal takes the goods out at the cost they came in at, so goods-received-not-billed clears exactly.
+            $atAverage = StockProjection::costPerUnit($avg === null ? null : (string) $avg, (string) $e['unit']->factor);
+            $cost = match (true) {
+                $type === 'receipt_reversal' => $e['unit_cost_minor'] ?? $atAverage,
+                $e['qty_milli'] > 0 => $e['unit_cost_minor'] ?? ($type === 'putaway' ? null : $atAverage),
+                default => $atAverage,
+            };
             foreach ($this->binSplit($warehouse, $e, $strict) as [$binId, $qtyMilli]) {
                 $rows[] = [
                     'id' => (string) Str::uuid7(),
