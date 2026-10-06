@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Http;
 beforeEach(function () {
     [$this->tenant, $this->owner] = installCompany();
     $this->branches = setUpBranches($this->owner);
+    enableModule($this->owner, $this->branches['HQ'], 'storefront');
     $this->wh = Warehouse::where('branch_id', $this->branches['HQ']->id)->first();
     $this->milo = makeProduct($this->owner, 'MILO', 'Milo 400g', retail: '58.00');
     app(InventoryService::class)->adjust(actorFor($this->owner), $this->wh, $this->milo, $this->milo->units->first(), '20', 'opening', '');

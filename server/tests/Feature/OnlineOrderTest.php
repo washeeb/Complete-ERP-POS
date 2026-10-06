@@ -20,6 +20,7 @@ use App\Security\ScopeType;
 beforeEach(function () {
     [$this->tenant, $this->owner] = installCompany();
     $this->branches = setUpBranches($this->owner);
+    enableModule($this->owner, $this->branches['BA'], 'storefront');
     $this->wh = Warehouse::where('branch_id', $this->branches['BA']->id)->first();
     $this->milo = makeProduct($this->owner, 'MILO', 'Milo 400g', retail: '58.00');
     app(InventoryService::class)->adjust(actorFor($this->owner), $this->wh, $this->milo, $this->milo->units->first(), '10', 'opening', '');

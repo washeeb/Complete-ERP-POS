@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.4.0] — 2026-10-08 · Phase 4 live updates and online store
+### Added
+- Live updates over WebSockets (Laravel Reverb). Tills pick up price and stock changes within seconds ("Connected · live"), with polling as a fallback.
+- **Online → Channels**: built-in shop, WooCommerce, Shopify and generic REST connectors.
+  - Encrypted secrets, never shown again; webhook address; safety stock per channel.
+  - Activate, pause, compare with store (reconciliation), retry failed updates.
+  - Marketplaces listed as planned.
+- **Online → Online orders**: orders from every channel with reserved stock, Mark ready, Hand over (records payment and issues stock), and Cancel (releases stock); scoped by branch.
+- **Built-in online shop** (Storefront module, per branch) at `/shop/{address}`: live prices and availability, order and pickup checkout, and a confirmation page.
+- Store webhooks: signed, deduplicated, stored before processing. Store pushes: retry with backoff, then a review item. Reconciliation every 15 minutes.
+- Review queue types: oversold online order, store total differs, store update failed, store order not processed.
+- Permissions: `orders.view`, `orders.manage`, `channels.manage`, added to the standard roles (`php artisan db:seed` after upgrading).
+- Commands: `erp:relay`, `erp:channels:reconcile`.
+- Docs: online store and live updates guide; API for webhooks and live channels.
+
 ## [0.3.0] — 2026-10-07 · Phase 3 offline tills and server sync
 ### Added
 - Tills keep working without their server: offline PIN sign-in (signed, expiring offline grants), cached catalog, offline shifts and sales in an ordered queue, receipts marked "recorded offline", automatic sending in device-key-signed batches, "Retry refused", "Export unsent sales".

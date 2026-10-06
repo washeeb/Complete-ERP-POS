@@ -21,8 +21,11 @@ export type Bootstrap = {
   shift: Shift | null
   last_device_seq: number
   catalog_version: string
+  realtime?: Realtime | null
   server_time: string
 }
+
+export type Realtime = { key: string; host: string; port: number; scheme: 'http' | 'https'; channels: (string | null)[] }
 
 export type Payment = { method: 'cash' | 'momo' | 'card'; provider?: string; amount_minor: number; tendered_minor: number; reference?: string; payer_phone?: string }
 
