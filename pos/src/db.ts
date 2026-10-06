@@ -7,7 +7,7 @@ import type { Bootstrap, Product } from './types'
  * here, the receipt counter, the current shift, and an ordered queue of work not yet sent.
  * Nothing in the queue is ever deleted until the server acknowledges it.
  */
-export type DeviceRecord = { id: 'device'; deviceId: string; token: string; privateKey: CryptoKey; enrolledAt: string }
+export type DeviceRecord = { id: 'device'; deviceId: string; token: string; privateKey: CryptoKey; enrolledAt: string; kind?: string }
 export type SessionRecord = {
   id: 'session'
   token: string | null // null = signed in offline with a grant

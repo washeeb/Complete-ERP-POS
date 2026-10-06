@@ -33,8 +33,8 @@ final class StockLedger
     public function __construct(private readonly Settings $settings, private readonly Outbox $outbox, private readonly StockProjection $projection) {}
 
     /**
-     * @param  list<array{product: Product, unit: ProductUom, qty_milli: int, unit_cost_minor?: ?int, bin_id?: ?string}>  $entries  qty signed, in the unit;
-     *                                                                                                                              cost per entered unit (incoming)
+     * @param  list<array{product: Product, unit: ProductUom, qty_milli: int, unit_cost_minor?: ?int, bin_id?: string|false|null}>  $entries  qty signed, in the unit;
+     *                                                                                                                                        cost per entered unit (incoming)
      * @return list<StockMovement>
      */
     public function post(
@@ -136,8 +136,8 @@ final class StockLedger
      */
     private function binSplit(Warehouse $warehouse, array $e, bool $strict): array
     {
-        if (! $warehouse->use_bins) {
-            return [[null, $e['qty_milli']]];
+        if (! $warehouse->use_bins || (array_key_exists('bin_id', $e) && $e['bin_id'] === false)) {
+            return [[null, $e['qty_milli']]]; // bin_id false: explicitly outside bins (stock placed in bins when they are switched on)
         }
         if (! empty($e['bin_id'])) {
             $bin = Bin::where('warehouse_id', $warehouse->id)->find($e['bin_id']) ?? throw new DomainException('That bin is not in this warehouse.');
@@ -215,6 +215,17 @@ final class StockLedger
             HAVING l.on_hand <> COALESCE(SUM(m.qty_base), 0)
         SQL, [$tenantId, $tenantId]);
 
-        return array_merge($warehouse, $bins);
+        // In a bin-managed warehouse every unit is in some bin: the warehouse total must equal the sum of its bins.
+        $unbinned = DB::select(<<<'SQL'
+            SELECT l.warehouse_id, NULL AS bin_id, l.product_id, l.on_hand, COALESCE(SUM(b.on_hand), 0) AS ledger
+            FROM stock_levels l
+            JOIN warehouses w ON w.id = l.warehouse_id AND w.use_bins
+            LEFT JOIN stock_bin_levels b ON b.warehouse_id = l.warehouse_id AND b.product_id = l.product_id
+            WHERE (?::uuid IS NULL OR l.tenant_id = ?::uuid)
+            GROUP BY l.warehouse_id, l.product_id, l.on_hand
+            HAVING l.on_hand <> COALESCE(SUM(b.on_hand), 0)
+        SQL, [$tenantId, $tenantId]);
+
+        return array_merge($warehouse, $bins, $unbinned);
     }
 }

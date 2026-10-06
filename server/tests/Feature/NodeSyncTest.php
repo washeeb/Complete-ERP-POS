@@ -9,6 +9,9 @@ use App\Domain\Pos\SaleService;
 use App\Domain\Pos\ShiftService;
 use App\Domain\Pricing\PriceResolver;
 use App\Domain\Pricing\TaxCalculator;
+use App\Domain\Purchasing\GoodsReceiptService;
+use App\Domain\Purchasing\PurchaseOrderService;
+use App\Domain\Purchasing\SupplierService;
 use App\Domain\Support\AuditVerifier;
 use App\Domain\Support\DomainException;
 use App\Domain\Sync\NodeSetup;
@@ -18,12 +21,15 @@ use App\Domain\Sync\SyncServer;
 use App\Domain\Sync\SyncSigner;
 use App\Domain\Sync\Transport\SyncTransport;
 use App\Models\Device;
+use App\Models\GoodsReceipt;
 use App\Models\PriceList;
 use App\Models\Product;
+use App\Models\PurchaseOrder;
 use App\Models\ReviewItem;
 use App\Models\Role;
 use App\Models\Sale;
 use App\Models\StockLevel;
+use App\Models\Supplier;
 use App\Models\SyncInboxEvent;
 use App\Models\SyncPeer;
 use App\Models\Till;
@@ -316,4 +322,33 @@ it('refuses HTTP sync calls without the right signature, and serves them with it
     $ok = $this->call('GET', $path.'?after=0&limit=5', [], [], [], $headers(SyncSigner::sign($secret, $time, 'GET', $path, '')))
         ->assertOk()->json();
     expect($ok['events'])->toHaveCount(5)->and($ok['has_more'])->toBeTrue();
+});
+
+it('receives an HQ purchase order on the branch server and brings the GRN, order status and cost back to HQ', function () {
+    $ctn = $this->milo->units->firstWhere('is_base', false);
+    $supplier = app(SupplierService::class)->save(actorFor($this->owner), new Supplier, ['code' => 'NESTLE', 'name' => 'Nestlé Ghana']);
+    $po = app(PurchaseOrderService::class)->saveDraft(actorFor($this->owner), new PurchaseOrder,
+        ['supplier_id' => $supplier->id, 'warehouse_id' => $this->whA->id, 'lines' => [['product_uom_id' => $ctn->id, 'qty' => '2', 'unit_cost' => '600.00']]]);
+    app(PurchaseOrderService::class)->submit(actorFor($this->owner), $po);
+    $approver = staff($this->owner, 'gm', 5, 'general_manager');
+    app(PurchaseOrderService::class)->approve(actorFor($approver), $po->fresh());
+    staff($this->owner, 'yaw', 2, 'storekeeper', ScopeType::Branch, $this->branches['BA']->id);
+    branchSync(); // the order, supplier and the storekeeper reach the branch server
+
+    $grnId = Nodes::on('B01', function () use ($po) {
+        $branchPo = PurchaseOrder::with('lines')->findOrFail($po->id);
+        $keeper = User::where('username', 'yaw')->first();
+
+        return app(GoodsReceiptService::class)->receive(actorFor($keeper), $branchPo,
+            ['lines' => [['purchase_order_line_id' => $branchPo->lines[0]->id, 'qty' => '2']]])->id;
+    });
+    $r = branchSync();
+
+    $grn = GoodsReceipt::find($grnId);
+    expect($r['error'])->toBeNull()
+        ->and($grn?->status)->toBe('posted')->and($grn->number)->toStartWith('GRN-B01-')->and($grn->lines)->toHaveCount(1)
+        ->and($po->fresh()->status)->toBe('received')
+        ->and(hqOnHand($this->milo, $this->whA))->toBe('34.000') // 10 + 2 × 12
+        ->and((string) StockLevel::where('warehouse_id', $this->whA->id)->where('product_id', $this->milo->id)->value('avg_cost_minor'))->toBe('5000.0000')
+        ->and(app(StockLedger::class)->check())->toBe([]);
 });

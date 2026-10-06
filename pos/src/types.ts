@@ -36,3 +36,13 @@ export type PostedSale = {
   lines: { line_no: number; sku: string; name: string; uom: string; qty: string; unit_price_minor: number; line_total_minor: number }[]
   payments: { method: string; provider: string | null; amount_minor: number; tendered_minor: number; reference: string | null; status: string }[]
 }
+
+// Warehouse handheld
+export type WmsBin = { id: string; code: string; name: string | null; kind?: string }
+export type WmsWarehouse = { id: string; code: string; name: string; use_bins: boolean; can: string[]; bins: WmsBin[] }
+export type WmsBootstrap = { user: { id: string; name: string }; device: { id: string; name: string; kind: string }; branch: { id: string; code: string; name: string }; warehouses: WmsWarehouse[] }
+export type WmsUnit = { product_uom_id: string; product_id: string; sku: string; name: string; uom_code: string; factor: string; decimals: number; units: { product_uom_id: string; uom_code: string; factor: string }[] }
+export type WmsOrderLine = { id: string; product_uom_id: string; sku: string; name: string; uom_code: string; ordered: string; received: string; barcodes: string[] }
+export type WmsOrder = { id: string; number: string; supplier: string; expected_on: string | null; lines: WmsOrderLine[] }
+export type WmsTransfer = { id: string; number: string; from: string; dispatched_at: string | null; lines: { id: string; sku: string; name: string; uom_code: string; qty: string; product_uom_id: string; barcodes: string[] }[] }
+export type WmsCount = { id: string; number: string; bin: string | null; bin_id: string | null; blind: boolean; counted: number; lines: number }

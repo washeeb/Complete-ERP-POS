@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Inventory\BinService;
+use App\Domain\Inventory\InventoryService;
 use App\Domain\Inventory\StockCountService;
 use App\Domain\Inventory\StockLedger;
 use App\Domain\Inventory\TransferService;
@@ -17,6 +18,7 @@ use App\Models\ReviewItem;
 use App\Models\StockTransfer;
 use App\Models\Supplier;
 use App\Models\Warehouse;
+use App\Security\AccessCatalogSync;
 use App\Security\ScopeType;
 use Illuminate\Support\Facades\DB;
 
@@ -164,4 +166,45 @@ it('numbers documents per node without gaps', function () {
     $node = config('erp.node.id');
 
     expect([$a->number, $b->number])->toBe(["PO-{$node}-000001", "PO-{$node}-000002"]);
+});
+
+it('takes till sales from shelves in pick order in a bin warehouse, and never lets bins and the warehouse disagree', function () {
+    app(BinService::class)->setUseBins(actorFor($this->owner), $this->hq, true);
+    $a1 = app(BinService::class)->saveBin(actorFor($this->owner), new Bin, ['warehouse_id' => $this->hq->id, 'code' => 'A-01', 'pick_order' => 1]);
+    $b1 = app(BinService::class)->saveBin(actorFor($this->owner), new Bin, ['warehouse_id' => $this->hq->id, 'code' => 'B-01', 'pick_order' => 2]);
+    $recv = BinService::receivingBin($this->hq->fresh());
+    $po = approvedPo($this, '1');
+    $this->grn->receive(actorFor($this->keeper), $po, ['lines' => [['purchase_order_line_id' => $po->lines[0]->id, 'qty' => '1']]]); // 24 pc
+    app(BinService::class)->putAway(actorFor($this->keeper), $this->hq->fresh(), $this->milo, $this->pc, '5', $recv->id, $a1->id);
+    app(BinService::class)->putAway(actorFor($this->keeper), $this->hq->fresh(), $this->milo, $this->pc, '10', $recv->id, $b1->id);
+
+    DB::transaction(fn () => app(StockLedger::class)->post(actorFor($this->owner), $this->hq->fresh(), 'sale',
+        [['product' => $this->milo, 'unit' => $this->pc, 'qty_milli' => -8000]], 'Till sale'));
+
+    expect(inBin($a1, $this->milo->id))->toBe('0.000')->and(inBin($b1, $this->milo->id))->toBe('7.000')->and(inBin($recv, $this->milo->id))->toBe('9.000')
+        ->and(whQty($this->hq, $this->milo->id))->toBe('16.000')->and(app(StockLedger::class)->check())->toBe([]);
+    expect(fn () => app(BinService::class)->setUseBins(actorFor($this->owner), $this->hq->fresh(), false))->toThrow(DomainException::class, 'still hold stock');
+});
+
+it('gives existing approvers their default limit when the approval permission arrives (upgrade)', function () {
+    $grant = $this->manager->roleAssignments()->first();
+    $grant->forceFill(['limits' => []])->save(); // as granted before Phase 5
+    $role = $grant->role;
+    $role->forceFill(['default_limits' => []])->save();
+
+    app(AccessCatalogSync::class)->syncRoles($this->tenant->id, ['purchasing.approve']);
+
+    expect($grant->fresh()->limits)->toBe(['po_approve_minor' => 2_000_000])->and($role->fresh()->default_limits)->toBe(['po_approve_minor' => 2_000_000]);
+    app(AccessCatalogSync::class)->syncRoles($this->tenant->id, []); // later runs leave owner edits alone
+    expect($grant->fresh()->limits)->toBe(['po_approve_minor' => 2_000_000]);
+});
+
+it('places existing stock in the receiving bin when bins are switched on, without changing the warehouse total', function () {
+    app(InventoryService::class)->adjust(actorFor($this->owner), $this->hq, $this->milo, $this->pc, '30', 'opening', '');
+
+    app(BinService::class)->setUseBins(actorFor($this->owner), $this->hq, true);
+
+    expect(whQty($this->hq, $this->milo->id))->toBe('30.000')
+        ->and(inBin(BinService::receivingBin($this->hq->fresh()), $this->milo->id))->toBe('30.000')
+        ->and(app(StockLedger::class)->check())->toBe([]);
 });

@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * mode "device": caller is an enrolled device (its own token).
- * mode "pos":    caller is a person signed in on a till; the token must be bound to a device
+ * mode "pos" / "handheld": caller is a person signed in on a till / warehouse handheld; the token must be bound to a device
  *                that is still active — revoking a device ends every session on it.
  */
 class EnsureDeviceToken
@@ -23,7 +23,7 @@ class EnsureDeviceToken
 
         $device = match (true) {
             $mode === 'device' && $principal instanceof Device && $token?->can('device') => $principal,
-            $mode === 'pos' && $principal instanceof User && $token?->can('pos') => $this->boundDevice($token->abilities ?? []),
+            in_array($mode, ['pos', 'handheld'], true) && $principal instanceof User && $token?->can($mode) => $this->boundDevice($token->abilities ?? []),
             default => null,
         };
 

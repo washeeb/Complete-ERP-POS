@@ -64,7 +64,8 @@ final class BinService
                 $qty = Qty::toMilli((string) $l->on_hand);
                 $binned = Qty::toMilli((string) (DB::table('stock_bin_levels')->where('warehouse_id', $warehouse->id)->where('product_id', $l->product_id)->sum('on_hand')));
                 if ($product && $base && $qty !== $binned) {
-                    $this->ledger->post($actor, $warehouse->fresh(), 'putaway', [
+                    $this->ledger->post($actor, $warehouse->fresh(), 'putaway', [ // a pair: out of "no bin", into the receiving bin
+                        ['product' => $product, 'unit' => $base, 'qty_milli' => $binned - $qty, 'bin_id' => false],
                         ['product' => $product, 'unit' => $base, 'qty_milli' => $qty - $binned, 'bin_id' => $recv->id],
                     ], 'Bins switched on: existing stock placed in the receiving bin', 'warehouse', $warehouse->id);
                 }

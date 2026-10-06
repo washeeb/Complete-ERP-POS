@@ -1,6 +1,6 @@
 import { db, getDevice, getSession } from './db'
 import type { OfflineGrant } from './db'
-import type { Bootstrap, PostedSale, Product, Shift } from './types'
+import type { Bootstrap, PostedSale, Product, Shift, WmsBin, WmsBootstrap, WmsCount, WmsOrder, WmsTransfer, WmsUnit } from './types'
 
 /** Error with the server's stable code ("price_changed", "no_shift"…) and a message safe to show. */
 export class ApiError extends Error {
@@ -41,9 +41,9 @@ async function call<T>(path: string, init: RequestInit & { auth?: 'device' | 'se
 
 export const api = {
   enroll: (code: string, publicKey: string) =>
-    call<{ device_id: string; token: string }>('devices/enroll', { method: 'POST', auth: 'none', body: JSON.stringify({ code, public_key: publicKey }) }),
+    call<{ device_id: string; token: string; kind: string }>('devices/enroll', { method: 'POST', auth: 'none', body: JSON.stringify({ code, public_key: publicKey }) }),
   login: (username: string, pin: string) =>
-    call<{ token: string; expires_at: string | null; user: { id: string; name: string }; offline_grant: OfflineGrant }>('pos/login', { method: 'POST', auth: 'device', body: JSON.stringify({ username, pin }) }),
+    call<{ token: string; expires_at: string | null; user: { id: string; name: string }; offline_grant: OfflineGrant | null }>('pos/login', { method: 'POST', auth: 'device', body: JSON.stringify({ username, pin }) }),
   logout: () => call<{ ok: boolean }>('pos/logout', { method: 'POST' }),
   bootstrap: () => call<Bootstrap>('pos/bootstrap'),
   /** null = unchanged since the given version (HTTP 304), so the cached copy is current. */
@@ -67,4 +67,27 @@ export const api = {
   closeShift: (countedMinor: number, note: string) =>
     call<{ shift: Shift }>('pos/shifts/close', { method: 'POST', body: JSON.stringify({ counted_cash_minor: countedMinor, note: note || null }) }),
   postSale: (payload: unknown) => call<{ sale: PostedSale; replayed: boolean }>('pos/sales', { method: 'POST', body: JSON.stringify(payload) }),
+}
+
+/** Warehouse handheld: same server, its own endpoints (receive, put away, transfers, counts). */
+export const wms = {
+  bootstrap: () => call<WmsBootstrap>('wms/bootstrap'),
+  logout: () => call<{ ok: boolean }>('wms/logout', { method: 'POST' }),
+  lookup: (code: string, warehouseId: string) =>
+    call<{ type: 'product'; unit: WmsUnit } | { type: 'bin'; bin: WmsBin }>(`wms/lookup?code=${encodeURIComponent(code)}&warehouse_id=${warehouseId}`),
+  purchaseOrders: (warehouseId: string) => call<WmsOrder[]>(`wms/purchase-orders?warehouse_id=${warehouseId}`),
+  receive: (body: { purchase_order_id: string; client_id: string; supplier_ref?: string; lines: { purchase_order_line_id: string; qty: string; bin_id?: string | null }[] }) =>
+    call<{ id: string; number: string; status: 'posted' | 'held' }>('wms/receipts', { method: 'POST', body: JSON.stringify(body) }),
+  binStock: (binId: string) => call<{ product_id: string; sku: string; name: string; on_hand: string }[]>(`wms/bin-stock?bin_id=${binId}`),
+  putAway: (body: { warehouse_id: string; product_uom_id: string; qty: string; from_bin_id: string; to_bin_id: string }) =>
+    call<{ ok: boolean }>('wms/putaway', { method: 'POST', body: JSON.stringify(body) }),
+  transfers: (warehouseId: string) => call<WmsTransfer[]>(`wms/transfers?warehouse_id=${warehouseId}`),
+  receiveTransfer: (id: string, lines: Record<string, string>, toBinId: string | null) =>
+    call<{ number: string; status: string; has_discrepancy: boolean }>(`wms/transfers/${id}/receive`, { method: 'POST', body: JSON.stringify({ lines, to_bin_id: toBinId }) }),
+  counts: (warehouseId: string) => call<WmsCount[]>(`wms/counts?warehouse_id=${warehouseId}`),
+  startCount: (warehouseId: string, binId: string | null) =>
+    call<{ id: string; number: string }>('wms/counts', { method: 'POST', body: JSON.stringify({ warehouse_id: warehouseId, bin_id: binId }) }),
+  countLine: (id: string, productUomId: string, qty: string, binId: string | null) =>
+    call<{ ok: boolean; counted_qty: string }>(`wms/counts/${id}/lines`, { method: 'POST', body: JSON.stringify({ product_uom_id: productUomId, qty, bin_id: binId }) }),
+  submitCount: (id: string) => call<{ number: string; status: string }>(`wms/counts/${id}/submit`, { method: 'POST' }),
 }
