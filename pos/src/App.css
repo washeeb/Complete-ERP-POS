@@ -86,3 +86,17 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
   .receipt-screen { display: block; } .receipt { width: 80mm; }
 }
 .banner.bad { background: var(--bad-bg); color: var(--bad-text); }
+
+/* Warehouse handheld (phone-sized scanner) */
+.handheld { max-width: 640px; margin: 0 auto; padding: 10px; display: grid; gap: 12px; }
+.hh-head { justify-content: space-between; }
+.hh-head select { flex: 1; min-width: 0; }
+.hh-menu { display: grid; gap: 12px; }
+.hh-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.hh-list button { width: 100%; text-align: left; }
+.hh-table { width: 100%; border-collapse: collapse; }
+.hh-table td, .hh-table th { padding: 6px 4px; border-bottom: 1px solid var(--line); text-align: left; }
+.hh-table input { width: 5em; }
+.scan input { width: 100%; }
+.handheld section { display: grid; gap: 10px; }
+.handheld label { display: grid; gap: 4px; }

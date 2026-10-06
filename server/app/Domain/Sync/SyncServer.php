@@ -4,6 +4,7 @@ namespace App\Domain\Sync;
 
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
+use App\Domain\Support\Outbox;
 use App\Models\OutboxEvent;
 use App\Models\SyncInboxEvent;
 use App\Models\SyncPeer;
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\DB;
  */
 final class SyncServer
 {
-    public function __construct(private readonly ReplicationApplier $applier, private readonly ReviewQueue $reviews) {}
+    public function __construct(private readonly ReplicationApplier $applier, private readonly ReviewQueue $reviews, private readonly Outbox $outbox) {}
 
     /**
      * Store and (by mode) apply events from a peer, in their origin order.
@@ -67,6 +68,7 @@ final class SyncServer
         try {
             DB::transaction(function () use ($in) {
                 $this->applier->apply($in->getAttributes() + ['payload' => $in->payload]);
+                $this->relay($in);
                 $in->forceFill(['status' => 'applied', 'applied_at' => now(), 'last_error' => null])->save();
                 if ($in->attempts > 0) {
                     $this->reviews->closeBySystem('sync_event', $in->id, 'Applied automatically on a later sync');
@@ -85,6 +87,21 @@ final class SyncServer
 
             return false;
         }
+    }
+
+    /**
+     * Head office is the hub: an event from one branch server in a two-way group is published again here, so the
+     * other branch servers receive it (e.g. a transfer from branch A to branch B) and local consumers (live updates,
+     * online stores) see it. It is never sent back to the branch it came from. Receivers apply it idempotently.
+     */
+    private function relay(SyncInboxEvent $in): void
+    {
+        if (config('erp.node.role') === 'branch' || ! in_array($in->sync_group, Replication::RELAY_GROUPS, true)) {
+            return;
+        }
+        $payload = $in->payload;
+        $this->outbox->publishRaw(Actor::system($in->tenant_id, 'Relay from '.$in->origin_node, 'sync'), $in->aggregate_type, $in->aggregate_id,
+            (int) ($payload['snapshot']['row']['version'] ?? 1), $in->event_type, $payload + ['relayed_from' => $in->origin_node]);
     }
 
     /** Retry everything that failed earlier, oldest first (e.g. after the missing parent arrived). */
@@ -111,6 +128,7 @@ final class SyncServer
             ->where('origin_node', (string) config('erp.node.id'))
             ->where('seq', '>', $after)
             ->whereIn('sync_group', $peer->groupsWeSend())
+            ->whereRaw("(payload->>'relayed_from') IS DISTINCT FROM ?", [$peer->node_id]) // never echo a branch's own events back
             ->orderBy('seq')->limit($limit + 1)->get();
         $hasMore = $events->count() > $limit;
         $events = $events->take($limit);

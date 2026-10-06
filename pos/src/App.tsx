@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { api, ApiError } from './api'
+import { api, ApiError, wms } from './api'
 import { connectionState, pingServer, type ConnectionState } from './connection'
 import { db, getDevice, getLocalShift, getSession, queueCounts, type CacheRecord } from './db'
 import { connectLive, type LiveState } from './live'
 import { sendQueue } from './offline'
 import { CloseShift, Enroll, Login, OpenShift } from './screens/Setup'
+import { Handheld } from './screens/Handheld'
 import { Receipt } from './screens/Receipt'
 import { Sell } from './screens/Sell'
 import type { Bootstrap, PostedSale, Product } from './types'
 import './App.css'
 
-type Stage = 'loading' | 'enroll' | 'login' | 'open-shift' | 'sell' | 'receipt' | 'close-shift' | 'error'
+type Stage = 'loading' | 'enroll' | 'login' | 'open-shift' | 'sell' | 'receipt' | 'close-shift' | 'handheld' | 'error'
 
 const LABELS: Record<ConnectionState, string> = {
   online: 'Connected',
@@ -50,12 +51,14 @@ export default function App() {
   }, [])
 
   const load = useCallback(async () => {
-    if (!(await getDevice())) return setStage('enroll')
+    const device = await getDevice()
+    if (!device) return setStage('enroll')
     const session = await getSession()
     if (!session?.userId) {
       await db.kv.delete('session') // signed in before offline support: sign in again to receive an offline grant
       return setStage('login')
     }
+    if (device.kind === 'handheld') return setStage('handheld') // warehouse scanner: no till, no shift
     try {
       const { b, products: p, version, live } = await fetchOrCache()
       const local = await getLocalShift()
@@ -129,7 +132,8 @@ export default function App() {
   }, [flush])
 
   async function logout() {
-    if ((await getSession())?.token) await api.logout().catch(() => undefined)
+    const handheld = (await getDevice())?.kind === 'handheld'
+    if ((await getSession())?.token) await (handheld ? wms.logout() : api.logout()).catch(() => undefined)
     await db.kv.delete('session')
     setStage('login')
   }
@@ -175,6 +179,7 @@ export default function App() {
           }} />
       )}
       {stage === 'receipt' && boot && receipt && <Receipt sale={receipt} boot={boot} onNew={() => setStage('sell')} />}
+      {stage === 'handheld' && <Handheld onLogout={logout} />}
       {stage === 'close-shift' && boot && <CloseShift boot={boot} online={online} onClosed={logout} onCancel={() => setStage('sell')} />}
       {stage === 'error' && (
         <div className="card narrow">

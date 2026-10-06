@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\ChannelWebhookController;
 use App\Http\Controllers\Api\V1\DeviceAuthController;
 use App\Http\Controllers\Api\V1\PosController;
 use App\Http\Controllers\Api\V1\SyncController;
+use App\Http\Controllers\Api\V1\WmsController;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
@@ -35,6 +36,23 @@ Route::prefix('v1')->group(function () {
         Route::post('shifts/close', [PosController::class, 'closeShift']);
         Route::post('sales', [PosController::class, 'postSale']);
         Route::get('sales/{id}', [PosController::class, 'showSale'])->whereUuid('id');
+    });
+
+    // Warehouse handheld (receive, put away, transfers, counts) — PIN sign-in on an enrolled handheld device.
+    Route::middleware(['auth:sanctum', 'device.token:handheld', 'throttle:wms'])->prefix('wms')->group(function () {
+        Route::get('bootstrap', [WmsController::class, 'bootstrap']);
+        Route::post('logout', [WmsController::class, 'logout']);
+        Route::get('lookup', [WmsController::class, 'lookup']);
+        Route::get('purchase-orders', [WmsController::class, 'purchaseOrders']);
+        Route::post('receipts', [WmsController::class, 'receive']);
+        Route::get('bin-stock', [WmsController::class, 'binStock']);
+        Route::post('putaway', [WmsController::class, 'putAway']);
+        Route::get('transfers', [WmsController::class, 'transfers']);
+        Route::post('transfers/{id}/receive', [WmsController::class, 'receiveTransfer'])->whereUuid('id');
+        Route::get('counts', [WmsController::class, 'counts']);
+        Route::post('counts', [WmsController::class, 'startCount']);
+        Route::post('counts/{id}/lines', [WmsController::class, 'countLine'])->whereUuid('id');
+        Route::post('counts/{id}/submit', [WmsController::class, 'submitCount'])->whereUuid('id');
     });
 });
 

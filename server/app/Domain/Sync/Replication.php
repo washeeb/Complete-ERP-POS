@@ -3,10 +3,15 @@
 namespace App\Domain\Sync;
 
 use App\Models\Device;
+use App\Models\GoodsReceipt;
 use App\Models\Product;
+use App\Models\PurchaseOrder;
 use App\Models\Role;
 use App\Models\Sale;
 use App\Models\SalesOrder;
+use App\Models\StockCount;
+use App\Models\StockTransfer;
+use App\Models\Supplier;
 use App\Models\TaxGroup;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -37,10 +42,26 @@ final class Replication
         'sales' => ['label' => 'Till sales, shifts and devices', 'direction' => 'up',
             'tables' => ['device' => 'devices', 'shift' => 'shifts', 'sale' => 'sales']],
         'reviews' => ['label' => 'Items needing review', 'direction' => 'up', 'tables' => ['review_item' => 'review_items']],
+        'purchasing' => ['label' => 'Suppliers, purchase orders and goods received', 'direction' => 'both',
+            'tables' => ['supplier' => 'suppliers', 'purchase_order' => 'purchase_orders', 'goods_receipt' => 'goods_receipts']],
+        'warehouse' => ['label' => 'Bins, transfers, counts and reorder levels', 'direction' => 'both',
+            'tables' => ['bin' => 'bins', 'stock_transfer' => 'stock_transfers', 'stock_count' => 'stock_counts', 'reorder_rule' => 'reorder_rules']],
     ];
 
     /** Master data: owned by HQ, read-only on branch nodes (conflict policy "HQ wins", spec §4.2). */
     public const MASTER_GROUPS = ['org', 'people', 'catalog', 'pricing'];
+
+    /** Two-way groups head office passes on: what one branch server sends reaches the other branch servers too. */
+    public const RELAY_GROUPS = ['stock', 'purchasing', 'warehouse'];
+
+    /** Documents whose lines travel inside their snapshot: class => [relation, table]. */
+    public const CHILDREN = [
+        Supplier::class => ['products', 'supplier_products'],
+        PurchaseOrder::class => ['lines', 'purchase_order_lines'],
+        GoodsReceipt::class => ['lines', 'goods_receipt_lines'],
+        StockTransfer::class => ['lines', 'stock_transfer_lines'],
+        StockCount::class => ['lines', 'stock_count_lines'],
+    ];
 
     private const NEVER = ['app_authentication_secret', 'app_authentication_recovery_codes', 'remember_token',
         'enrollment_code_hash', 'enrollment_lookup', 'enrollment_expires_at'];
@@ -86,6 +107,9 @@ final class Replication
                 'sale_lines' => $model->lines()->get()->map->getAttributes()->all(),
                 'sale_payments' => $model->payments()->get()->map->getAttributes()->all(),
             ];
+        } elseif (isset(self::CHILDREN[$model::class])) {
+            [$relation, $table] = self::CHILDREN[$model::class];
+            $snapshot['children'] = [$table => $model->{$relation}()->get()->map->getAttributes()->all()];
         } elseif ($model instanceof SalesOrder) {
             $snapshot['children'] = ['sales_order_lines' => $model->lines()->get()->map->getAttributes()->all()];
         } elseif ($model instanceof Device) {

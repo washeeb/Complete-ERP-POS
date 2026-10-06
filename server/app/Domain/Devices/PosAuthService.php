@@ -21,6 +21,8 @@ final class PosAuthService
 {
     public const TOKEN_HOURS = 12;
 
+    public const HANDHELD_PERMISSIONS = ['stock.receive', 'stock.transfer', 'stock.count'];
+
     public function __construct(
         private readonly Recorder $recorder,
         private readonly Authorizer $authz,
@@ -59,24 +61,32 @@ final class PosAuthService
             throw $failed;
         }
 
-        $target = $device->till_id ? Till::find($device->till_id) : $device->branch;
-        if (! $this->authz->allows($user, 'pos.access', $target)) {
-            throw new AccessDenied('You are not set up to use a till at this branch.');
+        $handheld = $device->kind === 'handheld';
+        if ($handheld) {
+            // Warehouse handheld: for people who receive, move, transfer or count stock at this branch.
+            if (! collect(self::HANDHELD_PERMISSIONS)->contains(fn ($p) => $this->authz->allows($user, $p, $device->branch))) {
+                throw new AccessDenied('You are not set up for warehouse work at this branch.');
+            }
+        } else {
+            $target = $device->till_id ? Till::find($device->till_id) : $device->branch;
+            if (! $this->authz->allows($user, 'pos.access', $target)) {
+                throw new AccessDenied('You are not set up to use a till at this branch.');
+            }
         }
 
-        return $this->recorder->transaction(function () use ($user, $device, $pin) {
+        return $this->recorder->transaction(function () use ($user, $device, $pin, $handheld) {
             $user->pin_failed_attempts = 0;
             $user->last_login_at = now();
             $this->recorder->save(Actor::user($user, 'pos', $device->id), $user, 'pos.login', branchId: $device->branch_id);
             $device->forceFill(['last_seen_at' => now()])->saveQuietly();
-            $token = $user->createToken("pos:{$device->id}", ['pos', "device:{$device->id}"], now()->addHours(self::TOKEN_HOURS));
+            $token = $user->createToken(($handheld ? 'handheld' : 'pos').":{$device->id}", [$handheld ? 'handheld' : 'pos', "device:{$device->id}"], now()->addHours(self::TOKEN_HOURS));
 
             return [
                 'token' => $token->plainTextToken,
                 'expires_at' => $token->accessToken->expires_at?->toIso8601String(),
                 'user' => ['id' => $user->id, 'name' => $user->name, 'username' => $user->username],
                 // Lets this person sign in on this till while it cannot reach the server.
-                'offline_grant' => $this->grants->issue($user, $device, $pin),
+                'offline_grant' => $handheld ? null : $this->grants->issue($user, $device, $pin), // handhelds work against their own (branch) server
             ];
         });
     }

@@ -19,6 +19,7 @@ use App\Models\Till;
 use App\Models\Warehouse;
 use App\Security\ScopeType;
 use App\Support\Qty;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
@@ -237,7 +238,7 @@ it('keeps sales from a till with a wrong clock, and flags them (clock skew)', fu
 });
 
 it('syncs a week of offline trading: sales after the grant expired are kept and flagged', function () {
-    $start = now();
+    $start = Carbon::parse($this->t->grant['issued_at']); // the 72 h boundary is measured from issue, to the second
     $events = [$this->t->openShift(0, $start->copy()->toIso8601String())];
     for ($day = 0; $day < 7; $day++) {
         for ($i = 0; $i < 5; $i++) {

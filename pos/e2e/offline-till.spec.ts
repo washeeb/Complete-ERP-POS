@@ -94,7 +94,7 @@ test('sells online, keeps selling with the server down, then sends the signed qu
 
   // Enrol and sign in online (this stores the offline grant).
   await page.getByPlaceholder('ABCD-EFGH-JKMN').fill('ABCD-EFGH-JKMN')
-  await page.getByRole('button', { name: 'Enrol this till' }).click()
+  await page.getByRole('button', { name: 'Enrol this device' }).click()
   await signIn(page)
   await page.getByPlaceholder('0.00').fill('100')
   await page.getByRole('button', { name: 'Open shift' }).click()

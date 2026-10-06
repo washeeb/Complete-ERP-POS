@@ -20,7 +20,7 @@ export function Enroll({ onDone }: { onDone: () => void }) {
     try {
       const { privateKey, publicKeySpki } = await createDeviceKey()
       const r = await api.enroll(code, publicKeySpki)
-      await db.kv.put({ id: 'device', deviceId: r.device_id, token: r.token, privateKey, enrolledAt: new Date().toISOString() })
+      await db.kv.put({ id: 'device', deviceId: r.device_id, token: r.token, privateKey, enrolledAt: new Date().toISOString(), kind: r.kind })
       onDone()
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Enrolment failed.')
@@ -31,7 +31,7 @@ export function Enroll({ onDone }: { onDone: () => void }) {
 
   return (
     <form className="card narrow" onSubmit={submit}>
-      <h1>Set up this till</h1>
+      <h1>Set up this device</h1>
       <p className="muted">
         An administrator registers this device under <strong>System → Devices</strong> and gets a one-time code. Enter it here.
       </p>
@@ -41,7 +41,7 @@ export function Enroll({ onDone }: { onDone: () => void }) {
           placeholder="ABCD-EFGH-JKMN" maxLength={14} autoComplete="off" required />
       </label>
       {error && <p className="error" role="alert">{error}</p>}
-      <button className="primary big" disabled={busy || code.replace(/-/g, '').length !== 12}>{busy ? 'Enrolling…' : 'Enrol this till'}</button>
+      <button className="primary big" disabled={busy || code.replace(/-/g, '').length !== 12}>{busy ? 'Enrolling…' : 'Enrol this device'}</button>
     </form>
   )
 }
@@ -61,7 +61,7 @@ export function Login({ onDone, deviceName }: { onDone: () => void; deviceName?:
     try {
       try {
         const r = await api.login(username.trim(), pin)
-        await saveGrant(r.offline_grant) // lets this person keep selling here if the server goes away
+        if (r.offline_grant) await saveGrant(r.offline_grant) // lets this person keep selling here if the server goes away (tills only)
         await db.kv.put({ id: 'session', token: r.token, userId: r.user.id, userName: r.user.name, expiresAt: r.expires_at })
       } catch (err) {
         if (!(err instanceof ApiError && err.code === 'network')) throw err

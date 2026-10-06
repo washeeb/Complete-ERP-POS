@@ -102,7 +102,7 @@ final class DeviceService
             $this->recorder->save($actor, $device, 'device.enrolled', branchId: $device->branch_id);
             $token = $device->createToken('device', ['device'])->plainTextToken;
 
-            return ['device_id' => $device->id, 'token' => $token, 'branch_id' => $device->branch_id, 'till_id' => $device->till_id];
+            return ['device_id' => $device->id, 'token' => $token, 'kind' => $device->kind, 'branch_id' => $device->branch_id, 'till_id' => $device->till_id];
         });
     }
 

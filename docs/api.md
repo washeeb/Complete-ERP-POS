@@ -129,3 +129,24 @@ Responses: `200 {"ok":true,"status":"received"}`, `200 {"ok":true,"status":"dupl
 - `GET /api/v1/pos/bootstrap` includes `realtime: {key, host, port, scheme, channels[]}` when Reverb is configured (else `null`).
 - `POST /api/v1/pos/broadcasting/auth` (staff token + device) authorises private channels: `tenant.{id}.catalog`, `tenant.{id}.stock.{warehouse}`, `tenant.{id}.orders` (needs `orders.view`). Another company's channels are refused (403).
 - Events (Pusher protocol, prefix the name with `.` in Echo): `catalog.changed {product_ids, event}`, `stock.changed {product_ids}`, `order.received {id, number, branch_id}`; public `storefront.{channel}`: `product.updated {id, name, price_minor, available, for_sale}`, `catalog.reload`.
+
+## Warehouse handheld (Phase 5)
+
+A device registered as **Handheld scanner** enrols like a till (`POST devices/enroll`, the response includes `kind`) and signs people in with `POST pos/login`. On a handheld, login needs `stock.receive`, `stock.transfer` or `stock.count` at the device's branch (not `pos.access`), returns a token with the `handheld` ability, and gives no offline grant. That token works only on `/api/v1/wms/*` (and a till token does not). Everything is limited to the device's branch; throttle `wms` is 300 requests a minute.
+
+| Method & path | Body / query | Notes |
+|---|---|---|
+| GET `wms/bootstrap` | | person, device, branch, warehouses with `use_bins`, `can[]` and active bins |
+| GET `wms/lookup` | `code`, `warehouse_id` | a bin label in that warehouse, or a product barcode / SKU → `{type: "bin"\|"product"}` |
+| GET `wms/purchase-orders` | `warehouse_id` | approved or partly received orders with lines and their barcodes |
+| POST `wms/receipts` | `purchase_order_id`, `client_id` (uuid), `supplier_ref?`, `lines[{purchase_order_line_id, qty, bin_id?}]` | → `201 {id, number, status: posted\|held}`; a repeated `client_id` returns the same GRN |
+| GET `wms/bin-stock` | `bin_id` | what a bin holds |
+| POST `wms/putaway` | `warehouse_id`, `product_uom_id`, `qty`, `from_bin_id`, `to_bin_id` | |
+| GET `wms/transfers` | `warehouse_id` | transfers in transit to that warehouse |
+| POST `wms/transfers/{id}/receive` | `lines{line_id: qty}`, `to_bin_id?`, `note?` | repeat-safe; reports `has_discrepancy` |
+| GET / POST `wms/counts` | `warehouse_id` (GET); `warehouse_id`, `bin_id?` (POST starts a count) | open counts |
+| POST `wms/counts/{id}/lines` | `product_uom_id`, `qty`, `bin_id?` | never returns the expected quantity (blind) |
+| POST `wms/counts/{id}/submit` | | |
+| POST `wms/logout` | | |
+
+Errors use the standard body `{error, detail}`. For example: `wrong_status`, `not_on_order`, `insufficient_stock`, `own_document`, `over_limit`, `no_po`.
