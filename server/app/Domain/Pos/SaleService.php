@@ -231,7 +231,11 @@ final class SaleService
         }
         $discountApprovedBy = null;
         if ($needBp > 0 && ! $this->authz->allowsAmount($user, 'pos.discount', $till, 'discount_bp', $needBp)) {
-            if ($offline) {
+            // Offline the till checked a supervisor's PIN against their offline sign-in; their permission and limit are checked here.
+            $offlineApprover = $offline && ! empty($p['discount_approved_offline_by']) ? User::where('tenant_id', $device->tenant_id)->find($p['discount_approved_offline_by']) : null;
+            if ($offlineApprover && $offlineApprover->id !== $user->id && $this->authz->allowsAmount($offlineApprover, 'pos.discount', $till, 'discount_bp', $needBp)) {
+                $discountApprovedBy = $offlineApprover->name;
+            } elseif ($offline) {
                 $flags[] = ['discount_over_limit', sprintf('%s gave a %.2f %% discount while offline, above their limit', $user->name, $needBp / 100)];
             } elseif (empty($p['discount_approval'])) {
                 throw new DomainException(sprintf('A supervisor must approve a %.2f %% discount.', $needBp / 100), 'discount_needs_approval');

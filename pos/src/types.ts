@@ -2,7 +2,7 @@ import type { TaxLine, TaxRate } from './money'
 
 export type Unit = { id: string; uom_code: string; uom_name: string; decimals: number; factor: string; is_base: boolean; barcodes: string[] }
 export type Price = { price_list_id: string; product_uom_id: string; min_qty: string; amount_minor: number; starts_at: string | null; ends_at: string | null }
-export type Product = { id: string; sku: string; name: string; track_stock: boolean; on_hand: string | null; tax: TaxRate[]; units: Unit[]; prices: Price[] }
+export type Product = { id: string; sku: string; name: string; category_id?: string | null; track_stock: boolean; on_hand: string | null; tax: TaxRate[]; units: Unit[]; prices: Price[] }
 export type PriceList = { id: string; code: string; name: string; prices_include_tax: boolean; is_default: boolean }
 
 export type Shift = {
@@ -27,13 +27,14 @@ export type Bootstrap = {
 
 export type Realtime = { key: string; host: string; port: number; scheme: 'http' | 'https'; channels: (string | null)[] }
 
-export type Payment = { method: 'cash' | 'momo' | 'card' | 'account'; provider?: string; amount_minor: number; tendered_minor: number; reference?: string; payer_phone?: string }
+export type Payment = { method: 'cash' | 'momo' | 'card' | 'account' | 'points' | 'gift_card' | 'store_credit'; provider?: string; amount_minor: number; tendered_minor: number; reference?: string; payer_phone?: string }
 
 export type PostedSale = {
   id: string; receipt_no: string; device_seq: number; status: string; occurred_at: string; cashier: string; currency: string
   prices_include_tax: boolean; net_minor: number; tax_minor: number; total_minor: number; paid_minor: number; change_minor: number
   tax_breakdown: TaxLine[]
-  lines: { line_no: number; sku: string; name: string; uom: string; qty: string; unit_price_minor: number; line_total_minor: number }[]
+  lines: { line_no: number; sku: string; name: string; uom: string; qty: string; unit_price_minor: number; line_total_minor: number; discount_minor?: number; promotions?: { name: string; saving_minor: number }[] }[]
+  kind?: 'sale' | 'return'; discount_minor?: number; points_earned?: number
   payments: { method: string; provider: string | null; amount_minor: number; tendered_minor: number; reference: string | null; status: string }[]
 }
 
@@ -48,4 +49,14 @@ export type WmsTransfer = { id: string; number: string; from: string; dispatched
 export type WmsCount = { id: string; number: string; bin: string | null; bin_id: string | null; blind: boolean; counted: number; lines: number }
 
 // Customer lookup at the till (credit figures are a snapshot; the server re-checks online credit sales)
-export type TillCustomer = { id: string; code: string; name: string; phone: string | null; price_list_id: string | null; credit_limit_minor: number | null; credit_hold: boolean; balance_minor: number; available_minor: number | null; overdue_minor: number }
+export type TillCustomer = { id: string; code: string; name: string; phone: string | null; price_list_id: string | null; credit_limit_minor: number | null; credit_hold: boolean; balance_minor: number; available_minor: number | null; overdue_minor: number; points?: number }
+
+// Promotions as the till caches them (the engine input plus when/where they run)
+export type PromotionRow = import('./promotions').Promotion & {
+  starts_at: string | null; ends_at: string | null; days: number[]; time_from: string | null; time_to: string | null; branch_ids: string[]; price_list_ids: string[]
+}
+export type Returnable = {
+  within_period: boolean
+  lines: { id: string; product_id: string; product_uom_id: string; name: string; sku: string; uom: string; qty: string; line_total_minor: number; returnable_qty: string }[]
+  tenders: { method: string; paid_minor: number; refundable_minor: number; reference: string | null }[]
+}

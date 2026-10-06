@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Customers;
 
 use App\Domain\Customers\CustomerLedger;
 use App\Domain\Customers\CustomerService;
+use App\Domain\Customers\Loyalty;
 use App\Domain\Sales\ReceivablesService;
 use App\Filament\Resources\Customers\Pages\CreateCustomer;
 use App\Filament\Resources\Customers\Pages\EditCustomer;
@@ -144,6 +145,7 @@ class CustomerResource extends Resource
                 TextEntry::make('type')->formatStateUsing(fn ($state) => Customer::TYPES[$state] ?? $state),
                 TextEntry::make('tax_no')->label('TIN')->placeholder('—'),
                 TextEntry::make('priceList.name')->label('Price list')->placeholder('Company default'),
+                TextEntry::make('points')->label('Loyalty points')->state(fn (Customer $record) => number_format(app(Loyalty::class)->balance($record->id))),
                 TextEntry::make('consents')->label('Consent')->state(fn (Customer $record) => collect(Customer::CONSENT_CHANNELS)
                     ->filter(fn ($l, $ch) => $record->hasConsent($ch))->values()->implode(', ') ?: 'none'),
             ]),

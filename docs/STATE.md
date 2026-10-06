@@ -1,51 +1,32 @@
 # State (resume file)
 
-**Phase:** 6 — Sales B2B + CRM + loyalty/promotions · **Status:** 6a done on branch `phase-6-sales-crm` (PR to `main`); next is 6b
-**Updated:** 2026-10-10 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–5 merged (PRs #1–#6)
+**Phase:** 6 — Sales B2B + CRM + loyalty/promotions · **Status:** 6b done on branch `phase-6b-promotions-loyalty` (PR to `main`); next is Phase 7
+**Updated:** 2026-10-11 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–6a merged (PRs #1–#7)
 
-## Phase 6a — done (203 Pest + 18 Vitest + 3 Playwright; browser-verified in the back office)
-- **Owner answers (2026-10-10):**
-  - credit over the limit or overdue → hold for approval (supervisor PIN on the till);
-  - invoices are raised when goods are delivered;
-  - loyalty at 1 % back (for 6b);
-  - customers are synced to all branches, with field merge.
-- **Done-when met in the browser:**
-  - the owner made quotation QT-HQ-000001 for Asante Provisions (sample, wholesale) on screen;
-  - Turn into order → SO-HQ-000001;
-  - a delivery of 12 CTN was refused (only 43 in stock); 3 CTN were delivered → DN-HQ-000001 + INV-HQ-000001 (GH₵ 2,016.00, due 5 Nov);
-  - a bank payment of GH₵ 1,500 was recorded;
-  - the statement showed GH₵ 516.00, not yet due;
-  - `erp:receivables-check`, `erp:stock-check` and `erp:audit-verify` were clean.
+## Phase 6b — done (231 Pest + 30 Vitest + 4 Playwright; live till demo verified)
+- **Owner answers (2026-10-11):**
+  - best single promotion per item, with basket offers and one coupon on top;
+  - discount limits: cashier 0 %, supervisor 10 %, manager 25 %;
+  - returns: 30 days with receipt, refunded to the original tender; without one, store credit + supervisor PIN;
+  - gift cards / store credit expire 12 months after last use.
+- **Done-when met:**
+  - shared vectors `spec/vectors/promotions.json` pass in PHP (`tests/Unit/PromotionEngineTest`) and TS (`pos/src/promotions.test.ts`);
+  - online sales are recomputed by the server; offline mismatches are kept and flagged (OfflineSyncTest);
+  - loyalty and gift-card balances sync HQ ↔ branch (NodeSyncTest);
+  - live till: Indomie 5-for-22 sale HQ-T01C-000001 accepted online (total 2200, discount 300, 22 points); stock, receivables and audit checks clean.
 - **Domain:**
-  - `app/Domain/Customers/{CustomerService,CustomerLedger}`;
-  - `app/Domain/Sales/{CustomerOrderService,DeliveryService,ReceivablesService}`;
-  - `app/Domain/Pos/SupervisorApproval`;
-  - SaleService handles customer and `account`.
-- **Back office:**
-  - Sales → Customers, Quotes & orders, Invoices, Payments received, Aged receivables;
-  - `/print/{invoice,order,statement,payment}`.
-- **Till:**
-  - `pos/src/customers.ts`, `screens/CustomerPicker.tsx`, the On account tab in Pay, and the CreditApproval dialog in Sell;
-  - `GET /api/v1/pos/customers` (ETag).
-- **Sync:**
-  - groups `customers` (customer field merge in `ReplicationApplier::mergeCustomer`, `customer_ledger_batch`) and `receivables`;
-  - both are relayed.
-- **Fix:** a fresh-install owner now gets the role's default limits.
-- **Docs:** sales-and-receivables.md, api.md (till customers), DECISIONS 6a, CHANGELOG 0.6.0.
+  - `app/Domain/Pricing/{PromotionEngine,PromotionService}`;
+  - `app/Domain/Customers/{Loyalty,StoredValues}`;
+  - `app/Domain/Pos/ReturnService`; SaleService runs the engine, manual discounts, new tenders and loyalty earn.
+- **Back office:** Pricing & tax → Promotions; Sales → Gift cards & credit; loyalty on the customer page; discounts/returns on sales.
+- **Till:** promotions + coupon + line/sale discounts (`cart.ts priceCart`), offline supervisor approval, Points/Gift card/Store credit tenders, Return (F8, `screens/ReturnScreen.tsx`), Take payment.
+- **API:** catalog promotions, `GET pos/receipts`, `POST pos/returns`, `POST pos/account-payments` (docs/api.md).
+- **Commands:** `erp:expire-balances` (HQ, 02:30); `erp:receivables-check` now covers points and cards.
+- **Docs:** promotions-loyalty-returns.md, api.md, DECISIONS 6b, CHANGELOG 0.7.0.
+- **Deferred:** selling gift cards at the till, offline returns, partial credit notes / refunds of account credit, sales reps and commissions.
 
-## Next — Phase 6b (promotions, loyalty, gift cards)
-- **A promotions engine identical in PHP and the till (TypeScript), with shared test vectors:**
-  - percentage or amount off;
-  - BOGO / buy X get Y;
-  - mix & match;
-  - threshold (spend X get Y);
-  - happy hour (time windows);
-  - coupons;
-  - per branch and price list.
-- **Line discounts and price overrides** within role limits (supervisor PIN).
-- **Loyalty** at 1 point per GHS 1, 100 points = GHS 1, redeemable from 500 points, expiring after 12 months: earn and burn on the till, with an append-only points ledger that syncs.
-- **Gift cards, vouchers and store credit** as tenders; take customer payments at the till; returns and exchanges (by receipt, refund to the original tender).
-- **Done-when:** the till and server compute the same promotion totals online and offline; the loyalty balance syncs between branches.
+## Next — Phase 7 (Finance & accounting)
+Read the Phase 7 section of `ERP-POS-MASTER-PROMPT.md` first; batch the owner questions (chart of accounts, fiscal year, VAT filing) at the start.
 
 ## Owner decisions pending
 - Accountant check of the Ghana tax set-up (before go-live).
@@ -57,11 +38,11 @@
   - `.local-secrets/dev-owner.txt`: owner email/password/TOTP secret, cashier;
   - `.local-secrets/dev-handheld.txt`: `yaw`/`kojo` PINs.
   - TOTP codes: run `php artisan tinker` with a script using `PragmaRX\Google2FA\Google2FA::getCurrentOtp()`.
-- **Browser devices:** till on `localhost:5173`; handheld on `handheld.localhost:5173`; back office on `localhost:8000/admin` (the Browser pane is small — drive Filament forms with JS `input`/`change` events if clicking is awkward).
+- **Browser devices:** till on `localhost:5173`; handheld on `handheld.localhost:5173`; back office on `localhost:8000/admin` (the Browser pane is small — drive Filament forms with JS `input`/`change` events if clicking is awkward). Till staff tokens expire; sign out and in again on a 401.
 - **Sample data:**
   - `erp:demo-catalog`;
   - `erp:demo-purchasing`;
-  - `erp:demo-sales` (Asante Provisions, Mama Esi Chop Bar, Kwame Mensah — all fictitious).
+  - `erp:demo-sales` (fictitious customers + 5 sample promotions).
 - **Processes** (`.claude/launch.json`): `server` (8000), `pos` (5173), `reverb` (8080), `relay`. After `git pull`, run `migrate` and `db:seed`.
 - **PHP and shells:**
   - PHP is Herd's; use script files with `php artisan tinker <file>`.
@@ -73,4 +54,4 @@
   - in tests, `flushSession()` before switching users.
 
 ## Blockers
-- Merge PR `phase-6-sales-crm` (6a) → `main` (asked in chat).
+- Merge PR `phase-6b-promotions-loyalty` → `main` (asked in chat).

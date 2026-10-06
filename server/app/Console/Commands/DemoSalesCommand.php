@@ -3,11 +3,14 @@
 namespace App\Console\Commands;
 
 use App\Domain\Customers\CustomerService;
+use App\Domain\Pricing\PromotionService;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\PriceList;
+use App\Models\Product;
+use App\Models\Promotion;
 use App\Models\User;
 use App\Support\TenantContext;
 use Illuminate\Console\Command;
@@ -46,12 +49,26 @@ class DemoSalesCommand extends Command
                     'price_list_id' => $list ? PriceList::where('code', $list)->value('id') : null,
                     'credit_limit_minor' => $limit, 'payment_terms_days' => $terms, 'tags' => ['sample']], 'sample data');
             }
+            // Sample promotions (one of each kind the till shows).
+            $id = fn (string $sku) => Product::where('sku', $sku)->value('id');
+            $samples = [
+                ['name' => 'Indomie 5 for GHS 22', 'type' => 'bundle', 'product_ids' => [$id('NOODLE-70')], 'bundle_qty' => 5, 'value_minor' => 2200],
+                ['name' => 'Malta 3 for 2', 'type' => 'buy_x_get_y', 'product_ids' => [$id('MALT-330')], 'buy_qty' => 2, 'get_qty' => 1, 'value_bp' => 10000],
+                ['name' => 'Bread happy hour 20%', 'type' => 'percent', 'product_ids' => [$id('BREAD-SLC')], 'value_bp' => 2000, 'time_from' => '17:00', 'time_to' => '19:00'],
+                ['name' => 'Spend GHS 200, save 5%', 'type' => 'threshold', 'min_spend_minor' => 20000, 'value_bp' => 500],
+                ['name' => 'WELCOME10 coupon', 'type' => 'coupon', 'coupon_code' => 'WELCOME10', 'value_minor' => 1000, 'min_spend_minor' => 5000],
+            ];
+            foreach ($samples as $s) {
+                if (! Promotion::where('name', $s['name'])->exists() && ! in_array(null, $s['product_ids'] ?? [], true)) {
+                    app(PromotionService::class)->save($actor, new Promotion, $s + ['is_active' => true]);
+                }
+            }
         } catch (DomainException $e) {
             $this->error($e->getMessage());
 
             return self::FAILURE;
         }
-        $this->info('Sample customers are in place.');
+        $this->info('Sample customers and promotions are in place.');
 
         return self::SUCCESS;
     }

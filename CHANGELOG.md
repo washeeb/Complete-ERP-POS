@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.0] — 2026-10-11 · Phase 6b promotions, loyalty, gift cards and returns
+### Added
+- **Promotions** (Pricing & tax → Promotions): percent or amount off, buy X get Y, bundles / mix & match, spend-X basket offers, coupons; by dates, days, happy-hour times, branch and price list. The best single promotion per item, then basket offer and one coupon on top.
+- One promotion engine in PHP and on the till, proven identical by shared test vectors; works offline, and the server re-checks online sales.
+- **Till discounts**: line discount or price override and a sale discount, within role limits (supervisor 10 %, manager 25 %); a supervisor approves by PIN, offline too.
+- **Loyalty**: 1 point per GHS 1, pay with points from 500 (100 points = GHS 1), 12-month expiry; synced to every branch.
+- **Gift cards and store credit** (Sales → Gift cards & credit) as till tenders; expire 12 months after last use.
+- **Returns** at the till (F8): by receipt within 30 days, refunded to the original tenders; without a receipt, store credit with a supervisor PIN.
+- **Take account payments** at the till (counted in the shift cash).
+- Receipts show promotions, "You saved", points and RETURN/REFUND.
+- Commands: `erp:expire-balances` (nightly); `erp:receivables-check` also checks points and card balances; `erp:demo-sales` adds sample promotions.
+- Docs: promotions, loyalty and returns guide; till API for promotions, returns and account payments.
 ## [0.6.0] — 2026-10-10 · Phase 6a customers and order-to-cash
 ### Added
 - **Customers** (Sales → Customers): profile, price list, recorded marketing consent (who, when, how), and head-office credit (limit, terms, hold, opening balance). The customer page shows balance, overdue amount, available credit and open items.

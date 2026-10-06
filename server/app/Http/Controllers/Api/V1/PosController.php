@@ -101,7 +101,7 @@ class PosController extends Controller
                 ->map(fn (Promotion $p) => $p->toEngine())->values(),
             'utc_offset_minutes' => (int) round(Carbon::now(Branch::find($device->branch_id)?->timezone ?: config('app.timezone'))->utcOffset()),
             'products' => $products->map(fn (Product $p) => [
-                'id' => $p->id, 'sku' => $p->sku, 'name' => $p->name, 'track_stock' => $p->track_stock,
+                'id' => $p->id, 'sku' => $p->sku, 'name' => $p->name, 'category_id' => $p->category_id, 'track_stock' => $p->track_stock,
                 'on_hand' => $p->track_stock ? (string) ($stock[$p->id] ?? '0.000') : null,
                 'tax' => $p->taxGroup->rates->map(fn ($r) => ['code' => $r->code, 'name' => $r->name, 'rate_bp' => $r->rate_bp])->values(),
                 'units' => $p->units->map(fn ($u) => [

@@ -100,3 +100,4 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
 .scan input { width: 100%; }
 .handheld section { display: grid; gap: 10px; }
 .handheld label { display: grid; gap: 4px; }
+.promo { color: var(--ok-text, #14532d); }
