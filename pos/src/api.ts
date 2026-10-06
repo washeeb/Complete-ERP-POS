@@ -42,6 +42,8 @@ async function call<T>(path: string, init: RequestInit & { auth?: 'device' | 'se
 export const api = {
   enroll: (code: string, publicKey: string) =>
     call<{ device_id: string; token: string; kind: string }>('devices/enroll', { method: 'POST', auth: 'none', body: JSON.stringify({ code, public_key: publicKey }) }),
+  clock: (id: string, username: string, pin: string, kind: 'in' | 'out') =>
+    call<{ status: string; name: string; kind: string; at: string }>('pos/clock', { method: 'POST', auth: 'device', body: JSON.stringify({ id, username, pin, kind }) }),
   login: (username: string, pin: string) =>
     call<{ token: string; expires_at: string | null; user: { id: string; name: string }; offline_grant: OfflineGrant | null }>('pos/login', { method: 'POST', auth: 'device', body: JSON.stringify({ username, pin }) }),
   logout: () => call<{ ok: boolean }>('pos/logout', { method: 'POST' }),

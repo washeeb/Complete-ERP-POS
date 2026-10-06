@@ -220,3 +220,20 @@ Design:
 - **VAT return** figures come from the ledger (output and input tax per tax code) with sales split into taxed and untaxed from the document lines; the accountant verifies against the GRA return before filing.
 - **New purposes in the chart** (petty cash, accumulated depreciation, depreciation, disposal gain/loss, bank charges) reach existing companies through a one-time migration backfill (`ChartTemplate::ensure`), which never renames or moves anything.
 - **Deferred:** direct bank/MoMo API feeds, supplier credit notes and returns to suppliers, foreign-currency revaluation, GRA E-VAT fiscal adapter (planned with the integrations phase), petty cash counts.
+
+## Phase 8 (2026-10-14)
+
+Owner answers (2026-10-14):
+- **Pay:** **monthly**, net pay by **bank, MoMo or cash** (signed pay sheet for cash; CSV list for bank/MoMo bulk payment).
+- **Pay items:** **transport and meal allowances, overtime, staff loans and salary advances, provident fund (Tier 3) and welfare dues** (besides SSNIT and PAYE).
+- **Attendance:** **clock in/out on the till with the staff PIN** (works offline); managers correct with a reason. Biometric devices later.
+- **Leave:** **Ghana statutory defaults** — annual 15 working days, sick (doctor's note), maternity 12 weeks (60 working days), paternity 5 days, unpaid; approved by the line manager.
+
+Design:
+- **Statutory profile, not code:** PAYE bands (monthly widths, basis points), SSNIT rates and Tier 1/2 split, Tier 3 relief cap, junior-staff overtime rates and the standard day live in `payroll_profiles.rules` (seeded GH-2024: 0 % on the first GHS 490, then 5, 10, 17.5, 25, 30, 35 %; SSNIT 5.5 % + 13 %, Tier 1 13.5 %, Tier 2 5 %). Payroll shows "NOT YET CHECKED" until someone with payroll.approve confirms the rules (recorded with their name). Changing rules is a new confirmation, audited.
+- **Calculator is pure integer maths** (`PayrollCalculator`), unit-tested on hand-worked figures. Tier 2 is computed as the remainder of the 18.5 % so the split always adds up. Qualifying junior staff overtime is taxed separately (5 % up to 50 % of basic, 10 % above) and kept out of PAYE income; otherwise overtime is ordinary taxable pay. Allowances are taxable. Unpaid leave and days outside employment are docked at basic ÷ working days (Mon–Fri). Loan repayments never take net pay below zero.
+- **Run lifecycle:** draft (recalculable from employees, timesheets, approved unpaid leave and outstanding loans) → approved by someone other than the preparer (payslips locked; loan repayments recorded; the automatic poster books wages, employer SSNIT, PAYE, SSNIT Tier 1, Tier 2, Tier 3, welfare, staff loans and salaries payable) → paid (clears salaries payable from the bank and cash accounts chosen). Statutory remittances (GRA, SSNIT, trustees) are paid with supplier payments or journals for now.
+- **Attendance events are append-only** (DB trigger); corrections add a manual event or a voiding event, each with a reason. Clock-ins are by user (the person's sign-in); employees link to users, so branch servers need no HR data. Offline clocking is verified against the person's offline sign-in on that till and queued as a `clock` event signed by the device; branch-server events flow up in the `attendance` sync group. Overtime = time beyond the standard day per day; a clock-in without a clock-out counts nothing and is shown to the manager.
+- **Privacy:** pay and bank details only with hr.manage / payroll permissions; hr.view sees people without pay; payslips are visible to the person (self-service page) and payroll staff; leave documents and receipts are private files.
+- **Segregation:** HR manager hires, prepares payroll and gives advances; finance manager (or GM) approves payroll and confirms the rules; finance pays. Nobody approves their own leave or payroll.
+- **Deferred:** biometric/geofenced clocking, shift rosters, public holidays in working-day counts, casual daily-rate pay, statutory returns (SSNIT C-form, GRA PAYE schedule) as files, performance and recruitment, mid-year profile changes by date within a run.

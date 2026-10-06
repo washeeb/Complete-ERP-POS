@@ -3,6 +3,7 @@
 namespace App\Domain\Pos;
 
 use App\Domain\Devices\OfflineGrant;
+use App\Domain\Hr\AttendanceService;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Domain\Sync\ReviewQueue;
@@ -21,13 +22,14 @@ use Illuminate\Support\Str;
  */
 final class PosSyncService
 {
-    public const TYPES = ['shift_open', 'sale', 'shift_close'];
+    public const TYPES = ['shift_open', 'sale', 'shift_close', 'clock'];
 
     public function __construct(
         private readonly OfflineGrant $grants,
         private readonly ShiftService $shifts,
         private readonly SaleService $sales,
         private readonly ReviewQueue $reviews,
+        private readonly AttendanceService $attendance,
     ) {}
 
     /** @return list<array{id: string, status: string, code?: string, detail?: string, receipt_no?: string}> */
@@ -94,6 +96,11 @@ final class PosSyncService
                     Carbon::parse($p['closed_at']), offline: true);
 
                 return ['status' => $wasClosed ? 'duplicate' : 'accepted'];
+
+            case 'clock': // clocked in or out while offline; the PIN was checked against this person's offline sign-in on the till
+                $r = $this->attendance->clock($device, $user, (string) ($p['kind'] ?? ''), $e['id'], Carbon::parse($p['occurred_at'] ?? 'now'), 'offline');
+
+                return ['status' => $r['status']];
         }
 
         throw new DomainException('Unknown event.', 'malformed');

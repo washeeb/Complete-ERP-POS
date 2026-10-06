@@ -32,6 +32,14 @@ final class PosAuthService
 
     public function pinLogin(Device $device, string $username, string $pin): array
     {
+        $user = $this->verifyPin($device, $username, $pin);
+
+        return $this->signIn($device, $user, $pin);
+    }
+
+    /** Check a person's PIN on this device (wrong PINs count towards the lockout). Used for sign-in and for clocking in/out. */
+    public function verifyPin(Device $device, string $username, string $pin): User
+    {
         if (! $device->isActive()) {
             throw new DomainException('This device is not enrolled or has been revoked.', 'device_revoked');
         }
@@ -60,7 +68,15 @@ final class PosAuthService
             });
             throw $failed;
         }
+        if ($user->pin_failed_attempts > 0) {
+            $user->forceFill(['pin_failed_attempts' => 0])->saveQuietly();
+        }
 
+        return $user;
+    }
+
+    private function signIn(Device $device, User $user, string $pin): array
+    {
         $handheld = $device->kind === 'handheld';
         if ($handheld) {
             // Warehouse handheld: for people who receive, move, transfer or count stock at this branch.

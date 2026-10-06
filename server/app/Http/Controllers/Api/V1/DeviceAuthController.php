@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Domain\Devices\DeviceService;
 use App\Domain\Devices\PosAuthService;
+use App\Domain\Hr\AttendanceService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -46,5 +47,18 @@ class DeviceAuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json(['ok' => true]);
+    }
+
+    /** Clock in or out at a till with username and PIN (no sign-in). */
+    public function clock(Request $request, AttendanceService $attendance): JsonResponse
+    {
+        $data = $request->validate([
+            'id' => ['required', 'uuid'],
+            'username' => ['required', 'string', 'max:60'],
+            'pin' => ['required', 'string', 'max:8'],
+            'kind' => ['required', 'in:in,out'],
+        ]);
+
+        return response()->json($attendance->clockWithPin($request->attributes->get('device'), $data['username'], $data['pin'], $data['kind'], $data['id']));
     }
 }

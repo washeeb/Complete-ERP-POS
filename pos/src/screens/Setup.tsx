@@ -1,3 +1,4 @@
+import { clock } from '../clock'
 import { useState } from 'react'
 import { api, ApiError } from '../api'
 import { db } from '../db'
@@ -78,6 +79,29 @@ export function Login({ onDone, deviceName }: { onDone: () => void; deviceName?:
     }
   }
 
+  const [clocked, setClocked] = useState('')
+
+  async function punch(kind: 'in' | 'out') {
+    if (!username || pin.length < 4) {
+      setError('Enter your username and PIN, then press Clock in or Clock out.')
+      return
+    }
+    setBusy(true)
+    setError('')
+    setClocked('')
+    try {
+      const r = await clock(username, pin, kind)
+      const time = new Date(r.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+      setClocked(`${r.name} clocked ${kind} at ${time}${r.offline ? ' (saved on this till; sent when the server is back)' : ''}.`)
+      setUsername('')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Clocking failed.')
+    } finally {
+      setPin('')
+      setBusy(false)
+    }
+  }
+
   const press = (k: string) => setPin((p) => (k === '⌫' ? p.slice(0, -1) : p.length < 8 ? p + k : p))
 
   return (
@@ -100,6 +124,11 @@ export function Login({ onDone, deviceName }: { onDone: () => void; deviceName?:
             : <button key={k} type="button" onClick={() => press(k)} aria-label={k === '⌫' ? 'Delete' : k}>{k}</button>,
         )}
       </div>
+      <div className="row clock-row">
+        <button type="button" onClick={() => punch('in')} disabled={busy}>Clock in</button>
+        <button type="button" onClick={() => punch('out')} disabled={busy}>Clock out</button>
+      </div>
+      {clocked && <p className="ok" role="status">{clocked}</p>}
       {error && <p className="error" role="alert">{error}</p>}
     </form>
   )
