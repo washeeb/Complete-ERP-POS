@@ -26,5 +26,5 @@ export default defineConfig({
     port: 5173,
     proxy: { '/api': 'http://127.0.0.1:8000', '/up': 'http://127.0.0.1:8000' },
   },
-  test: { environment: 'node' },
+  test: { environment: 'node', exclude: ['e2e/**', 'node_modules/**'] },
 })
