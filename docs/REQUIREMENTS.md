@@ -9,7 +9,7 @@
 | Node.js / npm | 24.20.0 / 11.19.0 | preinstalled | POS PWA |
 | Git / GitHub CLI | 2.55.0 / 2.98.0 | preinstalled | VCS, CI |
 | PostgreSQL | 17.11 | EDB installer (signed, direct download), Windows service, port 5432 | all databases (`erp`, `erp_test`, `erp_test_node`) |
-| Memurai Developer | 4.1.2 | winget `Memurai.MemuraiDeveloper`, Windows service, port 6379 (approved 2026-10-06) | Redis-compatible cache/queue/broadcast for Reverb (Phase 4). Developer edition is for development only — production Windows nodes need Memurai Enterprise or Redis on Linux |
+| Memurai Developer | 4.1.2 | signed MSI from dist.memurai.com run elevated (the winget install failed: its helper inherited a sandboxed TEMP), Windows service (automatic start), port 6379; PHP phpredis 6.1.0 verified (approved 2026-10-06) | Redis-compatible cache/queue/broadcast for Reverb (Phase 4). Developer edition is for development only — production Windows nodes need Memurai Enterprise or Redis on Linux |
 | Playwright + Chromium | 1.63.0 / Chromium build 1243 | `pos` dev dependency; browser in `%LOCALAPPDATA%\ms-playwright` (~150 MB) | till browser tests (`npm run e2e`) |
 
 Not yet installed (added in the phase that needs them; owner asked first if system-wide):
