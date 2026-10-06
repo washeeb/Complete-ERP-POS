@@ -2,15 +2,19 @@
 
 namespace App\Filament\Resources\Suppliers;
 
+use App\Domain\Payables\SupplierPaymentService;
 use App\Filament\Resources\Suppliers\Pages\CreateSupplier;
 use App\Filament\Resources\Suppliers\Pages\EditSupplier;
 use App\Filament\Resources\Suppliers\Pages\ListSuppliers;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
+use App\Filament\Support\FinanceUi;
 use App\Models\Supplier;
 use App\Support\Money;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -24,6 +28,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use UnitEnum;
 
 class SupplierResource extends Resource
@@ -102,10 +107,22 @@ class SupplierResource extends Resource
                 TextColumn::make('phone')->placeholder('—'),
                 TextColumn::make('payment_terms_days')->label('Terms')->formatStateUsing(fn ($state) => $state ? "{$state} days" : 'Cash'),
                 TextColumn::make('products_count')->counts('products')->label('Products'),
+                TextColumn::make('owed')->label('We owe')->alignEnd()->visible(fn () => Erp::canAnywhere('payables.view') && config('erp.node.role') !== 'branch')
+                    ->state(fn (Supplier $r) => (int) DB::table('supplier_balances')->where('supplier_id', $r->id)->value('balance_minor'))
+                    ->formatStateUsing(fn ($state) => $state ? FinanceUi::money((int) $state) : '—'),
                 IconColumn::make('is_active')->boolean()->label('Active'),
             ])
             ->filters([TernaryFilter::make('is_active')->label('Active')->default(true)])
-            ->recordActions([EditAction::make()])
+            ->recordActions([
+                EditAction::make(),
+                Action::make('opening')->label('Opening balance')->icon(Heroicon::OutlinedArrowDownOnSquare)->color('gray')
+                    ->visible(fn (Supplier $r) => Erp::canAnywhere('finance.journal') && config('erp.node.role') !== 'branch' && ! DB::table('supplier_ledger')->where('supplier_id', $r->id)->exists())
+                    ->modalDescription('What you owed this supplier when you started using this system (from your old books). Once only.')
+                    ->schema([TextInput::make('amount')->required()->numeric()->minValue(0.01), DatePicker::make('as_of')->label('As at')->required()->default(now()),
+                        DatePicker::make('due_on')->label('Due'), TextInput::make('reference')->label('Their invoice number(s)')->maxLength(60)])
+                    ->action(fn (Supplier $r, array $data) => Erp::run(fn ($actor) => app(SupplierPaymentService::class)->opening($actor, $r, FinanceUi::toMinor($data['amount']),
+                        $data['as_of'], $data['due_on'] ?? null, $data['reference'] ?? null), 'Opening balance recorded')),
+            ])
             ->defaultSort('name');
     }
 

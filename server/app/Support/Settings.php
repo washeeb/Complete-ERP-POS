@@ -71,6 +71,21 @@ final class Settings
             'label' => 'Returns accepted within (days, with receipt)',
             'help' => 'Within this many days a cashier can take goods back against the receipt and refund to the original payment. Without a receipt (or later): store credit only, with a supervisor PIN.',
         ],
+        'finance.year_end_month' => [
+            'type' => 'int', 'default' => 12, 'min' => 1, 'max' => 12, 'group' => 'Finance',
+            'label' => 'Financial year ends in month (1–12)',
+            'help' => '12 = January to December (owner decision). Set this before the first posting: months already created keep their dates.',
+        ],
+        'payables.match_tolerance_pct' => [
+            'type' => 'int', 'default' => 2, 'min' => 0, 'max' => 100, 'group' => 'Finance',
+            'label' => 'Supplier bill price difference allowed (%)',
+            'help' => 'A bill whose prices differ from the purchase order by more than this (or more than the amount below, whichever is smaller) waits for a finance manager.',
+        ],
+        'payables.match_tolerance_minor' => [
+            'type' => 'int', 'default' => 5000, 'min' => 0, 'max' => 100000000, 'group' => 'Finance',
+            'label' => 'Supplier bill price difference allowed (pesewas)',
+            'help' => '5000 = GHS 50.00 per bill.',
+        ],
         'receipt.footer' => [
             'type' => 'string', 'default' => 'Thank you for shopping with us.', 'max' => 200, 'group' => 'Receipts',
             'label' => 'Message at the bottom of receipts',

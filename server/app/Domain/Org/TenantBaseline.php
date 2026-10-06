@@ -2,6 +2,7 @@
 
 namespace App\Domain\Org;
 
+use App\Domain\Finance\ChartTemplate;
 use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
 use App\Domain\Support\Outbox;
@@ -73,6 +74,11 @@ final class TenantBaseline
                 (new PriceList(['code' => 'WHOLESALE', 'name' => 'Wholesale', 'currency_code' => $tenant->currency_code,
                     'prices_include_tax' => true, 'is_default' => false, 'pos_selectable' => true]))->forceFill($base())->save();
                 $publish(PriceList::withoutGlobalScopes()->where('tenant_id', $tenant->id)->where('code', 'WHOLESALE')->first());
+            }
+
+            // Finance is kept at head office only.
+            if (config('erp.node.role') !== 'branch') {
+                ChartTemplate::install($tenant);
             }
         });
     }

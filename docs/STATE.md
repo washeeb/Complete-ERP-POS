@@ -1,33 +1,25 @@
 # State (resume file)
 
-**Phase:** 6 — Sales B2B + CRM + loyalty/promotions · **Status:** 6b done on branch `phase-6b-promotions-loyalty` (PR to `main`); next is Phase 7
-**Updated:** 2026-10-11 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–6a merged (PRs #1–#7)
+**Phase:** 7 — Finance & accounting · **Status:** 7a done on branch `phase-7-finance` (PR to `main`); next is 7b
+**Updated:** 2026-10-12 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–6b merged (PRs #1–#8)
 
-## Phase 6b — done (231 Pest + 30 Vitest + 4 Playwright; live till demo verified)
-- **Owner answers (2026-10-11):**
-  - best single promotion per item, with basket offers and one coupon on top;
-  - discount limits: cashier 0 %, supervisor 10 %, manager 25 %;
-  - returns: 30 days with receipt, refunded to the original tender; without one, store credit + supervisor PIN;
-  - gift cards / store credit expire 12 months after last use.
-- **Done-when met:**
-  - shared vectors `spec/vectors/promotions.json` pass in PHP (`tests/Unit/PromotionEngineTest`) and TS (`pos/src/promotions.test.ts`);
-  - online sales are recomputed by the server; offline mismatches are kept and flagged (OfflineSyncTest);
-  - loyalty and gift-card balances sync HQ ↔ branch (NodeSyncTest);
-  - live till: Indomie 5-for-22 sale HQ-T01C-000001 accepted online (total 2200, discount 300, 22 points); stock, receivables and audit checks clean.
-- **Domain:**
-  - `app/Domain/Pricing/{PromotionEngine,PromotionService}`;
-  - `app/Domain/Customers/{Loyalty,StoredValues}`;
-  - `app/Domain/Pos/ReturnService`; SaleService runs the engine, manual discounts, new tenders and loyalty earn.
-- **Back office:** Pricing & tax → Promotions; Sales → Gift cards & credit; loyalty on the customer page; discounts/returns on sales.
-- **Till:** promotions + coupon + line/sale discounts (`cart.ts priceCart`), offline supervisor approval, Points/Gift card/Store credit tenders, Return (F8, `screens/ReturnScreen.tsx`), Take payment.
-- **API:** catalog promotions, `GET pos/receipts`, `POST pos/returns`, `POST pos/account-payments` (docs/api.md).
-- **Commands:** `erp:expire-balances` (HQ, 02:30); `erp:receivables-check` now covers points and cards.
-- **Docs:** promotions-loyalty-returns.md, api.md, DECISIONS 6b, CHANGELOG 0.7.0.
-- **Deferred:** selling gift cards at the till, offline returns, partial credit notes / refunds of account credit, sales reps and commissions.
+## Phase 7a — done (239 Pest + 30 Vitest + 4 Playwright; browser-verified)
+- **Owner answers (2026-10-12):** Ghana SME chart, Jan–Dec year; accountant enters opening balances; 3-way match with 2 % / GHS 50 tolerance; monthly lock, GM reopens.
+- **Done-when met (trial balance ties to sub-ledgers):**
+  - `tests/Feature/FinanceTest` posts till sales, a return, a held-then-approved bill, an expense bill, a supplier payment, customer/supplier openings, a gift card, a write-off and a cash shortage, then `GlCheck` ties all five control accounts, the trial balance sums to zero and the balance sheet balances;
+  - live dev data: Finance → Reports → Ledger check all zero differences; trial balance debits = credits GH₵ 9,121.97; balance sheet balanced.
+- **Domain:** `app/Domain/Finance/{ChartTemplate,GeneralLedger,AutoPoster,JournalService,PeriodService,GlCheck,FinancialReports,AccountService}`, `app/Domain/Payables/{SupplierLedger,BillService,SupplierPaymentService}`.
+- **DB:** accounts, fiscal_periods, journal_entries/lines (append-only, balanced at commit, open month only), gl_postings (exactly-once links), supplier_bills/lines, supplier_payments, supplier_ledger/balances, payable_allocations; tax_rates.input_recoverable.
+- **Back office (Finance group, HQ only):** Reports, Journals (new, opening balances, post now, reverse), Month-end, Chart of accounts, Supplier bills, Supplier payments, Aged payables; supplier opening balance + "We owe" on suppliers.
+- **Commands:** `erp:gl-post` (every 5 min), `erp:gl-check`.
+- **Changed:** incoming stock without its own cost is valued at the average; GRN reversal leaves at receipt cost.
+- **Docs:** finance.md, DECISIONS 7a, CHANGELOG 0.8.0.
 
-## Next — Phase 7 (Finance & accounting)
-Read the Phase 7 section of `ERP-POS-MASTER-PROMPT.md` first; batch the owner questions (chart of accounts, fiscal year, VAT filing) at the start.
-
+## Next — Phase 7b (banking, expenses, tax)
+- Bank and MoMo accounts with statement import (CSV) and reconciliation; cash management (till → safe → bank).
+- Expenses / petty cash; budgets per branch and account; fixed assets and depreciation.
+- VAT return and tax reports (VAT, NHIL, GETFund; accountant-verified); supplier credit notes / returns to supplier; multi-currency revaluation.
+- Ask the owner first (batched): which banks/MoMo wallets and their statement formats; depreciation method and asset classes; budget level (branch × account, monthly?).
 ## Owner decisions pending
 - Accountant check of the Ghana tax set-up (before go-live).
 - WooCommerce/Shopify: connect a real store only with the owner's keys.
@@ -54,4 +46,4 @@ Read the Phase 7 section of `ERP-POS-MASTER-PROMPT.md` first; batch the owner qu
   - in tests, `flushSession()` before switching users.
 
 ## Blockers
-- Merge PR `phase-6b-promotions-loyalty` → `main` (asked in chat).
+- Merge PR `phase-7-finance` → `main` (asked in chat).

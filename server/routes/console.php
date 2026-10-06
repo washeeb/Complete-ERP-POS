@@ -15,3 +15,4 @@ Schedule::command('erp:sync')->everyMinute()->withoutOverlapping(10)->runInBackg
 Schedule::command('erp:relay')->everyMinute()->withoutOverlapping(2)->runInBackground();
 Schedule::command('erp:channels:reconcile')->everyFifteenMinutes()->withoutOverlapping(30)->runInBackground();
 Schedule::command('erp:expire-balances')->dailyAt('02:30')->withoutOverlapping(60);
+Schedule::command('erp:gl-post')->everyFiveMinutes()->withoutOverlapping(30)->runInBackground();
