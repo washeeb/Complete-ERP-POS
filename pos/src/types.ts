@@ -14,12 +14,13 @@ export type Bootstrap = {
   company: { name: string; currency: string; exponent: number; timezone: string; legal_name: string | null; tin: string | null; vat_no: string | null }
   branch: { id: string; code: string; name: string; address: string | null; phone: string | null }
   till: { id: string; code: string; name: string; warehouse: string } | null
-  device: { id: string; name: string }
+  device: { id: string; name: string; receipt_series: string | null }
   user: { id: string; name: string }
   price_lists: PriceList[]
   receipt_footer: string
   shift: Shift | null
   last_device_seq: number
+  catalog_version: string
   server_time: string
 }
 

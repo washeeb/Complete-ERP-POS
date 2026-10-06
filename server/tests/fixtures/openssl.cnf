@@ -1,0 +1,4 @@
+# Minimal OpenSSL config so tests can generate keys on Windows PHP builds that ship without one.
+[req]
+distinguished_name = dn
+[dn]

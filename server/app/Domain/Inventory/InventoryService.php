@@ -80,7 +80,6 @@ final class InventoryService
                 'warehouse' => [null, $warehouse->code],
                 'qty' => [null, Qty::format($milli).' '.$unit->uom->code],
             ], $reason, $warehouse->branch_id);
-            $this->recorder->outbox->publish($actor, $product, 'stock.movement_posted', $movement->toArray());
 
             return $movement;
         });

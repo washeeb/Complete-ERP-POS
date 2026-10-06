@@ -31,6 +31,20 @@ final class AuditLog
         ?string $reason = null,
         ?string $branchId = null,
     ): AuditEvent {
+        return $this->recordRef($actor, $action, is_string($subject) ? $subject : self::typeOf($subject),
+            is_string($subject) ? null : (string) $subject->getKey(), $changes, $reason, $branchId);
+    }
+
+    /** Same as record(), for a subject known only by type and id (e.g. a row applied by sync). */
+    public function recordRef(
+        Actor $actor,
+        string $action,
+        string $subjectType,
+        ?string $subjectId,
+        array $changes = [],
+        ?string $reason = null,
+        ?string $branchId = null,
+    ): AuditEvent {
         if (DB::transactionLevel() === 0) {
             throw new LogicException('Audit rows must be written inside the domain transaction.');
         }
@@ -50,8 +64,8 @@ final class AuditLog
             'actor_name' => $actor->name,
             'source' => $actor->source,
             'action' => $action,
-            'subject_type' => is_string($subject) ? $subject : self::typeOf($subject),
-            'subject_id' => is_string($subject) ? null : $subject->getKey(),
+            'subject_type' => $subjectType,
+            'subject_id' => $subjectId,
             'branch_id' => $branchId,
             'device_id' => $actor->deviceId,
             'origin_node' => (string) config('erp.node.id'),

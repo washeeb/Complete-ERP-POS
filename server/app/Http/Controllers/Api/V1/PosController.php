@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Domain\Devices\DeviceSignature;
+use App\Domain\Pos\PosSyncService;
 use App\Domain\Pos\SaleService;
 use App\Domain\Pos\ShiftService;
 use App\Domain\Support\DomainException;
@@ -19,8 +21,10 @@ use App\Models\Till;
 use App\Support\Money;
 use App\Support\Qty;
 use App\Support\Settings;
+use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /** Endpoints a signed-in till uses. Device + staff session are checked by the device.token:pos middleware. */
 class PosController extends Controller
@@ -39,7 +43,7 @@ class PosController extends Controller
                 'timezone' => $branch->timezone ?? $tenant->timezone, 'legal_name' => $entity?->name, 'tin' => $entity?->tin, 'vat_no' => $entity?->vat_no],
             'branch' => ['id' => $branch->id, 'code' => $branch->code, 'name' => $branch->name, 'address' => $branch->address, 'phone' => $branch->phone],
             'till' => $till ? ['id' => $till->id, 'code' => $till->code, 'name' => $till->name, 'warehouse' => $till->warehouse->name] : null,
-            'device' => ['id' => $device->id, 'name' => $device->name],
+            'device' => ['id' => $device->id, 'name' => $device->name, 'receipt_series' => $device->receipt_series],
             'user' => ['id' => $request->user()->id, 'name' => $request->user()->name],
             'price_lists' => $this->lists($branch)->map(fn (PriceList $l) => [
                 'id' => $l->id, 'code' => $l->code, 'name' => $l->name, 'prices_include_tax' => $l->prices_include_tax, 'is_default' => $l->is_default,
@@ -47,6 +51,7 @@ class PosController extends Controller
             'receipt_footer' => $settings->get('receipt.footer', $device->tenant_id),
             'shift' => $this->shiftJson($shifts->current($device), $shifts),
             'last_device_seq' => (int) Sale::where('device_id', $device->id)->max('device_seq'),
+            'catalog_version' => $this->catalogVersion(),
             'server_time' => now()->toIso8601String(),
         ]);
     }
@@ -55,6 +60,11 @@ class PosController extends Controller
     public function catalog(Request $request): JsonResponse
     {
         $device = $this->device($request);
+        $version = $this->catalogVersion();
+        // The till caches the catalog for offline use and asks only when something changed.
+        if ($request->header('If-None-Match') === '"'.$version.'"') {
+            return response()->json(null, 304)->setEtag($version);
+        }
         $till = Till::find($device->till_id);
         $lists = $this->lists(Branch::find($device->branch_id))->pluck('id');
         $now = now();
@@ -67,6 +77,7 @@ class PosController extends Controller
         $stock = $till ? StockLevel::where('warehouse_id', $till->warehouse_id)->pluck('on_hand', 'product_id') : collect();
 
         return response()->json([
+            'version' => $version,
             'generated_at' => $now->toIso8601String(),
             'products' => $products->map(fn (Product $p) => [
                 'id' => $p->id, 'sku' => $p->sku, 'name' => $p->name, 'track_stock' => $p->track_stock,
@@ -81,13 +92,31 @@ class PosController extends Controller
                     'amount_minor' => $x->amount_minor, 'starts_at' => $x->starts_at?->toIso8601String(), 'ends_at' => $x->ends_at?->toIso8601String(),
                 ])->values(),
             ])->values(),
-        ]);
+        ])->setEtag($version);
+    }
+
+    /** Changes whenever anything the till caches changes (catalog, prices, tax, lists, stock). */
+    private function catalogVersion(): string
+    {
+        $tenant = app(TenantContext::class)->id();
+        $parts = [];
+        foreach (['products', 'product_uoms', 'barcodes', 'prices', 'price_lists', 'tax_rates', 'tax_groups', 'uoms'] as $t) {
+            $row = DB::table($t)->where('tenant_id', $tenant)->selectRaw('count(*) as c, max(updated_at) as u')->first();
+            $parts[] = $t.':'.$row->c.':'.$row->u;
+        }
+        $parts[] = 'tax_group_rates:'.DB::table('tax_group_rates')->count();
+        $parts[] = 'stock:'.DB::table('stock_levels')->where('tenant_id', $tenant)->max('updated_at');
+
+        return substr(hash('sha256', implode('|', $parts)), 0, 32);
     }
 
     public function openShift(Request $request, ShiftService $shifts): JsonResponse
     {
-        $data = $request->validate(['opening_float_minor' => ['required', 'integer', 'min:0', 'max:100000000000']]);
-        $shift = $shifts->open($this->device($request), $request->user(), (int) $data['opening_float_minor']);
+        $data = $request->validate([
+            'opening_float_minor' => ['required', 'integer', 'min:0', 'max:100000000000'],
+            'id' => ['nullable', 'uuid'], // till-generated, so the same shift can later be referenced offline
+        ]);
+        $shift = $shifts->open($this->device($request), $request->user(), (int) $data['opening_float_minor'], $data['id'] ?? null);
 
         return response()->json(['shift' => $this->shiftJson($shift, $shifts)], 201);
     }
@@ -132,6 +161,21 @@ class PosController extends Controller
         $result = $sales->post($device, $request->user(), $request->all());
 
         return response()->json(['sale' => $this->saleJson($result['sale']), 'replayed' => $result['replayed']], $result['replayed'] ? 200 : 201);
+    }
+
+    /**
+     * Queued work from a till that was offline (or still has a queue). Authenticated by the DEVICE
+     * token (the people who sold may have signed out) and signed by the device's own key; each
+     * event carries the offline grant of the person who did it.
+     */
+    public function sync(Request $request, PosSyncService $sync, DeviceSignature $signature): JsonResponse
+    {
+        $device = $this->device($request);
+        $signature->verify($device, $request->getContent(), $request->header('X-Device-Signature'));
+        $data = $request->validate(['events' => ['required', 'array', 'min:1', 'max:200']]);
+        $device->forceFill(['last_seen_at' => now()])->saveQuietly();
+
+        return response()->json(['results' => $sync->apply($device, $data['events'])]);
     }
 
     public function showSale(Request $request, string $id): JsonResponse

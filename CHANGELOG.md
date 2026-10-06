@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.0] — 2026-10-07 · Phase 3 offline tills and server sync
+### Added
+- Tills keep working without their server: offline PIN sign-in (signed, expiring offline grants), cached catalog, offline shifts and sales in an ordered queue, receipts marked "recorded offline", automatic sending in device-key-signed batches, "Retry refused", "Export unsent sales".
+- Offline sales are kept as they happened and flagged in a new **Review queue** (old price, expired or revoked sign-in, wrong clock, negative stock, refused items); resolved with a note.
+- Branch servers: pairing with head office (`erp:node:add-branch`, `erp:node:join`), automatic two-way sync every minute (`erp:sync`), HQ-owned master data read-only on branches, per-group Automatic / Manual (preview) / Off, full resync, USB sync files.
+- **Sync Center**: peer status, queues, errors, sync now, review incoming, export/import, disable/enable, add branch server, import till file.
+- Receipt series letter per till device (HQ-T01A-000123) so numbers never collide after a reinstall.
+- Settings: how long an offline till sign-in lasts.
+- Docs: offline and sync guide, branch server install, cashier offline section, API for the queue and server sync, security notes.
+### Fixed
+- Starter data and seeded roles now reach branch servers (they were created without sync events).
+- The till treats proxy errors (502/503/504) from a stopped server as "offline".
+
 ## [0.2.0] — 2026-10-06 · Phase 2 catalog, stock and first till sale
 ### Added
 - Catalog: products with SKU, category, brand, base unit, extra units (carton = 24), barcodes per unit, tax group; categories, brands, units of measure.

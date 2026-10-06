@@ -39,6 +39,8 @@ jobs:
           coverage: none
       - run: composer install --no-interaction --prefer-dist
       - run: cp .env.example .env && php artisan key:generate
+      - name: Second database (branch server in node-sync tests)
+        run: PGPASSWORD=erp psql -h 127.0.0.1 -U erp -d erp_test -c "CREATE DATABASE erp_test_node OWNER erp"
       - run: vendor/bin/pint --test
       - run: composer audit
       - run: php artisan test

@@ -11,8 +11,8 @@ final class RoleCatalog
 {
     public const ROLES = [
         'owner' => ['Owner', 6, false, ['*']],
-        'general_manager' => ['General Manager', 5, false, ['setup.company.manage', 'audit.view', 'pos.access', 'catalog.view', 'catalog.manage', 'pricing.manage', 'stock.view', 'stock.adjust', 'sales.view']],
-        'finance_manager' => ['Finance Manager', 5, false, ['audit.view', 'catalog.view', 'stock.view', 'sales.view']],
+        'general_manager' => ['General Manager', 5, false, ['setup.company.manage', 'audit.view', 'pos.access', 'catalog.view', 'catalog.manage', 'pricing.manage', 'stock.view', 'stock.adjust', 'sales.view', 'sync.review']],
+        'finance_manager' => ['Finance Manager', 5, false, ['audit.view', 'catalog.view', 'stock.view', 'sales.view', 'sync.review']],
         'accountant' => ['Accountant', 4, false, ['catalog.view', 'stock.view', 'sales.view']],
         'auditor' => ['Auditor (read-only)', 1, false, ['audit.view', 'catalog.view', 'stock.view']],
         'hr_manager' => ['HR Manager', 4, false, []],
@@ -22,7 +22,7 @@ final class RoleCatalog
         'warehouse_manager' => ['Warehouse Manager', 4, false, ['catalog.view', 'catalog.manage', 'stock.view', 'stock.adjust']],
         'storekeeper' => ['Storekeeper', 2, false, ['catalog.view', 'stock.view']],
         'picker_packer' => ['Picker / Packer', 2, false, []],
-        'branch_manager' => ['Branch Manager', 4, false, ['audit.view', 'pos.access', 'catalog.view', 'stock.view', 'stock.adjust', 'sales.view']],
+        'branch_manager' => ['Branch Manager', 4, false, ['audit.view', 'pos.access', 'catalog.view', 'stock.view', 'stock.adjust', 'sales.view', 'sync.review']],
         'supervisor' => ['Supervisor', 3, false, ['pos.access', 'catalog.view', 'stock.view', 'sales.view']],
         'cashier' => ['Cashier', 2, false, ['pos.access']],
         'sales_rep' => ['Sales Rep', 2, false, ['catalog.view', 'stock.view']],

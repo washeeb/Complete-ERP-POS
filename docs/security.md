@@ -78,6 +78,8 @@ administrator removed from a role is never put back.
 | `admin.modules.manage` | L4 | ✓ | Owner, IT Admin |
 | `admin.settings.manage` | L4 | ✓ | Owner, IT Admin |
 | `audit.verify` | L4 | ✓ | Owner, IT Admin |
+| `sync.review` | L4 | | Owner, GM, Finance Manager, Branch Manager (their branches) |
+| `sync.manage` | L4 | ✓ | Owner, IT Admin |
 
 ## Signing in
 
@@ -90,6 +92,18 @@ administrator removed from a role is never put back.
 - **Tills:** username + PIN, only on an **enrolled device**, only for people with `pos.access`
   over that till. The device is the second factor. PINs lock after *N* wrong attempts (Settings).
   Trivial PINs (1234, 0000…) are refused.
+- **Tills offline:** an online sign-in issues a signed **offline grant** (person + device + expiry,
+  default 72 h) carrying a PBKDF2-SHA256 hash (210 000 iterations) of the PIN. Offline, the PIN unlocks
+  the grant on that till only; no reusable password is stored. Deactivating a person or revoking a
+  device takes effect for offline work **at the next sync** — sales made in between are kept and
+  raised in the Review queue. Limits: browser storage is not a hardware vault; a stolen, unlocked till
+  could be used until its grants expire — revoke the device at once (*System → Devices*). A PIN hash on
+  a stolen device can be brute-forced offline given time; keep grant periods short where devices are
+  exposed. The desktop shell (Phase 13) adds OS-level key storage.
+- **Till sync batches** are signed with the till's non-extractable ECDSA P-256 key; a stolen bearer
+  token alone cannot submit sales.
+- **Server-to-server sync** is HMAC-SHA256 signed with a per-pair secret (encrypted at rest, shown
+  once at pairing), with a 5-minute clock window; USB sync files carry the same signature.
 
 ## Devices
 

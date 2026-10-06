@@ -25,6 +25,7 @@ final class PosAuthService
         private readonly Recorder $recorder,
         private readonly Authorizer $authz,
         private readonly Settings $settings,
+        private readonly OfflineGrant $grants,
     ) {}
 
     public function pinLogin(Device $device, string $username, string $pin): array
@@ -63,7 +64,7 @@ final class PosAuthService
             throw new AccessDenied('You are not set up to use a till at this branch.');
         }
 
-        return $this->recorder->transaction(function () use ($user, $device) {
+        return $this->recorder->transaction(function () use ($user, $device, $pin) {
             $user->pin_failed_attempts = 0;
             $user->last_login_at = now();
             $this->recorder->save(Actor::user($user, 'pos', $device->id), $user, 'pos.login', branchId: $device->branch_id);
@@ -74,6 +75,8 @@ final class PosAuthService
                 'token' => $token->plainTextToken,
                 'expires_at' => $token->accessToken->expires_at?->toIso8601String(),
                 'user' => ['id' => $user->id, 'name' => $user->name, 'username' => $user->username],
+                // Lets this person sign in on this till while it cannot reach the server.
+                'offline_grant' => $this->grants->issue($user, $device, $pin),
             ];
         });
     }

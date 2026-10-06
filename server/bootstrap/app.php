@@ -30,7 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->is('api/*')) {
                 $status = match (true) {
                     $e instanceof AccessDenied => 403,
-                    in_array($e->errorCode, ['invalid_credentials', 'device_revoked', 'enrollment_failed'], true) => 401,
+                    in_array($e->errorCode, ['invalid_credentials', 'device_revoked', 'enrollment_failed', 'bad_signature'], true) => 401,
                     $e->errorCode === 'pin_locked' => 423,
                     $e->errorCode === 'conflict' => 409,
                     $e->errorCode === 'not_found' => 404,
