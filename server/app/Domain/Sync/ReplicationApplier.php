@@ -2,6 +2,7 @@
 
 namespace App\Domain\Sync;
 
+use App\Domain\Inventory\StockProjection;
 use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
 use App\Domain\Support\DomainException;
@@ -21,7 +22,7 @@ final class ReplicationApplier
     /** @var array<string, list<string>> */
     private array $columns = [];
 
-    public function __construct(private readonly AuditLog $audit, private readonly ReviewQueue $reviews) {}
+    public function __construct(private readonly AuditLog $audit, private readonly ReviewQueue $reviews, private readonly StockProjection $projection) {}
 
     public function apply(array $event): void
     {
@@ -80,6 +81,16 @@ final class ReplicationApplier
                 DB::table('tax_group_rates')->where('tax_group_id', $id)->delete();
                 DB::table('tax_group_rates')->insert(array_map(fn ($r) => ['tax_group_id' => $id, 'tax_rate_id' => $r], $c['tax_rate_ids'] ?? []));
                 break;
+            case 'supplier':
+            case 'purchase_order':
+            case 'goods_receipt':
+            case 'stock_transfer':
+            case 'stock_count':
+                $table = array_key_first($c);
+                if ($table) {
+                    $this->replaceSet($table, "{$type}_id", $id, $c[$table]); // lines belong to their document
+                }
+                break;
             case 'sale':
                 foreach (['sale_lines' => $c['sale_lines'] ?? [], 'sale_payments' => $c['sale_payments'] ?? []] as $table => $rows) {
                     if ($rows) {
@@ -110,12 +121,8 @@ final class ReplicationApplier
             if ($inserted === 0) {
                 continue; // already have this movement: the projection already includes it
             }
-            DB::table('stock_levels')->insertOrIgnore(['tenant_id' => $m['tenant_id'], 'warehouse_id' => $m['warehouse_id'],
-                'product_id' => $m['product_id'], 'on_hand' => 0, 'updated_at' => now()]);
-            $level = DB::table('stock_levels')->where('warehouse_id', $m['warehouse_id'])->where('product_id', $m['product_id'])->lockForUpdate()->first();
-            $after = Qty::toMilli((string) $level->on_hand) + Qty::toMilli((string) $m['qty_base']);
-            DB::table('stock_levels')->where('warehouse_id', $m['warehouse_id'])->where('product_id', $m['product_id'])
-                ->update(['on_hand' => Qty::format($after), 'updated_at' => now()]);
+            $this->projection->apply([$m]);
+            $after = Qty::toMilli((string) DB::table('stock_levels')->where('warehouse_id', $m['warehouse_id'])->where('product_id', $m['product_id'])->value('on_hand'));
             $touched[$m['warehouse_id'].'|'.$m['product_id']] = [$m, $after];
         }
         foreach ($touched as [$m, $after]) {

@@ -93,3 +93,11 @@ One line each: what — why. `[+]` = added beyond the spec.
 - Shopify order fulfilment status is not pushed yet (capability gap noted on the connector). WooCommerce order completion is pushed.
 - Reverb key/secret are per installation (`reverb:install`) and never committed. The key is public (sent to tills and shops); the secret stays on the server. Production needs TLS on the socket (`REVERB_SCHEME=https`).
 - Deferred omnichannel extras: click-and-collect slots, delivery zones/fees, buy-online-return-in-store, and per-branch shop pages for several branches in one shop.
+
+## Phase 5 (2026-10-09)
+
+Owner answers (2026-10-09):
+- Valuation: **weighted average** per product per warehouse (FIFO possible later, before any sale is costed under it).
+- PO approval: **tiered** default limits — Purchasing Officer ≤ GHS 5,000, Branch/Warehouse Manager ≤ GHS 20,000, Finance Manager/GM above; creator never approves own PO. Editable per person.
+- Bins: **per-warehouse switch**, off by default (on for the HQ wholesale warehouse in demo data).
+- Over-receipt: allowed up to **5%**; more needs a manager's approval on the GRN.

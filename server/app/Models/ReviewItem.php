@@ -24,6 +24,8 @@ class ReviewItem extends Model
         'channel_total' => 'Store total differs from the items',
         'channel_failed' => 'Could not update an online store',
         'webhook_failed' => 'Store notification could not be processed',
+        'transfer_short' => 'Transfer arrived with a different quantity',
+        'grn_held' => 'Delivery above the over-delivery tolerance',
     ];
 
     protected $guarded = [];

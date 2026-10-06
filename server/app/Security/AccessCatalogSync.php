@@ -6,6 +6,7 @@ use App\Domain\Support\Actor;
 use App\Domain\Support\Outbox;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\RoleAssignment;
 use App\Modules\ModuleRegistry;
 use Illuminate\Support\Facades\DB;
 
@@ -56,7 +57,19 @@ final class AccessCatalogSync
                 if ($attach) {
                     $role->permissions()->syncWithoutDetaching($attach);
                 }
-                if ($isNewRole || $attach) {
+                // Default limits travel with their permission: added when it is introduced, never overwriting owner edits.
+                $newLimits = array_filter(RoleCatalog::LIMITS[$key] ?? [], fn ($v, $limitKey) => $isNewRole
+                    || in_array(RoleCatalog::LIMIT_PERMISSIONS[$limitKey] ?? '', $newPermissionKeys, true), ARRAY_FILTER_USE_BOTH);
+                if ($newLimits) {
+                    $role->default_limits = ($role->default_limits ?? []) + $newLimits;
+                    $role->save();
+                    foreach (RoleAssignment::withoutGlobalScopes()->where('role_id', $role->id)->get() as $grant) {
+                        $grant->limits = ($grant->limits ?? []) + $newLimits;
+                        $grant->save();
+                        $this->outbox->publish(Actor::system($tenantId, 'Role catalog', 'system'), $grant, 'role_assignment.limits_added');
+                    }
+                }
+                if ($isNewRole || $attach || $newLimits) {
                     // Published so branch servers receive seeded roles and newly introduced permissions.
                     $this->outbox->publish(Actor::system($tenantId, 'Role catalog', 'system'), $role->fresh(), $isNewRole ? 'role.created' : 'role.permissions_changed');
                 }

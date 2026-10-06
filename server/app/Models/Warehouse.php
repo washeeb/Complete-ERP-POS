@@ -12,11 +12,11 @@ class Warehouse extends Model
 {
     use BelongsToTenant, HasOriginNode, HasUuids;
 
-    protected $fillable = ['branch_id', 'code', 'name', 'is_active'];
+    protected $fillable = ['branch_id', 'code', 'name', 'is_active', 'use_bins'];
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return ['is_active' => 'boolean', 'use_bins' => 'boolean'];
     }
 
     public function branch(): BelongsTo

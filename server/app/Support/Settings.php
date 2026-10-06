@@ -41,6 +41,11 @@ final class Settings
             'label' => 'Stop sales when the system shows no stock',
             'help' => 'Off (recommended while stock counts are being set up): the till sells anyway and the shortfall shows as negative stock to investigate. On: the till refuses the sale.',
         ],
+        'purchasing.over_receipt_pct' => [
+            'type' => 'int', 'default' => 5, 'min' => 0, 'max' => 100, 'group' => 'Purchasing',
+            'label' => 'Over-delivery accepted without a manager (%)',
+            'help' => 'A delivery may exceed the ordered quantity by this much. Above it, the goods received note waits until a manager with “approve deliveries” accepts it.',
+        ],
         'receipt.footer' => [
             'type' => 'string', 'default' => 'Thank you for shopping with us.', 'max' => 200, 'group' => 'Receipts',
             'label' => 'Message at the bottom of receipts',
