@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ExpenseReceiptController;
 use App\Http\Controllers\PrintController;
 use App\Http\Controllers\StorefrontController;
 use App\Security\Passkeys\PasskeyLoginController;
@@ -31,3 +32,6 @@ Route::prefix('print')->middleware('auth')->name('print.')->group(function () {
     Route::get('statement/{customer}', [PrintController::class, 'statement'])->name('statement')->whereUuid('customer');
     Route::get('payment/{payment}', [PrintController::class, 'payment'])->name('payment')->whereUuid('payment');
 });
+
+// Receipt photos attached to expense claims (private storage).
+Route::get('expense-receipt/{claim}', ExpenseReceiptController::class)->middleware('auth')->name('expense.receipt')->whereUuid('claim');

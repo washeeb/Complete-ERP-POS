@@ -5,6 +5,7 @@ namespace App\Domain\Finance;
 use App\Models\Account;
 use App\Models\Tenant;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Starter chart of accounts for a Ghanaian SME trading business (IFRS for SMEs layout; owner decision 2026-10-12).
@@ -24,6 +25,7 @@ final class ChartTemplate
         ['1140', 'Mobile money wallets', 'asset', '1100', false, null, 'momo'],
         ['1150', 'Card settlements due', 'asset', '1100', false, null, 'card_clearing'],
         ['1160', 'Online payments due', 'asset', '1100', false, null, 'online_clearing'],
+        ['1170', 'Petty cash', 'asset', '1100', false, null, 'petty_cash'],
         ['1200', 'Receivables', 'asset', '1000', true, null, null],
         ['1210', 'Trade receivables (customer accounts)', 'asset', '1200', false, 'receivables', 'receivables'],
         ['1220', 'Staff advances and loans', 'asset', '1200', false, null, null],
@@ -42,7 +44,7 @@ final class ChartTemplate
         ['1610', 'Furniture and fittings', 'asset', '1600', false, null, null],
         ['1620', 'Equipment and computers', 'asset', '1600', false, null, null],
         ['1630', 'Motor vehicles', 'asset', '1600', false, null, null],
-        ['1690', 'Accumulated depreciation', 'asset', '1600', false, null, null],
+        ['1690', 'Accumulated depreciation', 'asset', '1600', false, null, 'accumulated_depreciation'],
 
         ['2000', 'Liabilities', 'liability', null, true, null, null],
         ['2100', 'Trade payables (supplier accounts)', 'liability', '2000', false, 'payables', 'payables'],
@@ -74,6 +76,7 @@ final class ChartTemplate
         ['4120', 'Sales – online store', 'income', '4000', false, null, 'sales_online'],
         ['4800', 'Other income', 'income', '4000', false, null, null],
         ['4810', 'Unused gift cards (expired)', 'income', '4000', false, null, 'breakage'],
+        ['4820', 'Gain or loss on sale of assets', 'income', '4000', false, null, 'disposal'],
 
         ['5000', 'Cost of sales', 'expense', null, true, null, null],
         ['5100', 'Cost of goods sold', 'expense', '5000', false, null, 'cogs'],
@@ -91,9 +94,9 @@ final class ChartTemplate
         ['6600', 'Repairs and maintenance', 'expense', '6000', false, null, null],
         ['6700', 'Marketing and advertising', 'expense', '6000', false, null, 'marketing'],
         ['6710', 'Loyalty rewards', 'expense', '6000', false, null, 'loyalty_expense'],
-        ['6800', 'Bank and MoMo charges', 'expense', '6000', false, null, null],
+        ['6800', 'Bank and MoMo charges', 'expense', '6000', false, null, 'bank_charges'],
         ['6810', 'Cash over and short', 'expense', '6000', false, null, 'cash_over_short'],
-        ['6900', 'Depreciation', 'expense', '6000', false, null, null],
+        ['6900', 'Depreciation', 'expense', '6000', false, null, 'depreciation'],
         ['6950', 'General and administrative', 'expense', '6000', false, null, null],
         ['7100', 'Interest and finance costs', 'expense', '6000', false, null, null],
         ['8100', 'Income tax', 'expense', '6000', false, null, null],
@@ -116,6 +119,51 @@ final class ChartTemplate
             }
 
             return count($ids);
+        });
+    }
+
+    /** Default asset classes: [code, name, life in months, cost account code]. */
+    public const ASSET_CLASSES = [['FURN', 'Furniture and fittings', 60, '1610'], ['COMP', 'Equipment and computers', 36, '1620'], ['VEH', 'Motor vehicles', 60, '1630']];
+
+    /**
+     * Add what a newer template needs to an existing chart: purposes nobody holds yet go to the template account
+     * with that code (if it is free of another purpose and of the same type), or a new account is added. Default
+     * asset classes are added when the company has none. Never renames, moves or removes anything.
+     */
+    public static function ensure(Tenant $tenant): void
+    {
+        if (! Account::withoutGlobalScopes()->where('tenant_id', $tenant->id)->exists()) {
+            self::install($tenant);
+        }
+        DB::transaction(function () use ($tenant) {
+            $q = fn () => Account::withoutGlobalScopes()->where('tenant_id', $tenant->id);
+            foreach (self::GHANA_SME as [$code, $name, $type, $parent, $header, $control, $key]) {
+                if (! $key || $q()->where('system_key', $key)->exists()) {
+                    continue;
+                }
+                $existing = $q()->where('code', $code)->first();
+                if ($existing) {
+                    if (! $existing->system_key && $existing->type === $type && ! $existing->is_header) {
+                        $existing->forceFill(['system_key' => $key, 'version' => $existing->version + 1])->save();
+                    }
+
+                    continue;
+                }
+                (new Account)->forceFill(['tenant_id' => $tenant->id, 'code' => $code, 'name' => $name, 'type' => $type, 'is_header' => $header,
+                    'parent_id' => $parent ? $q()->where('code', $parent)->value('id') : null, 'control' => $control, 'system_key' => $key])->save();
+            }
+            if (! DB::table('asset_classes')->where('tenant_id', $tenant->id)->exists()) {
+                $acc = fn (string $key) => $q()->where('system_key', $key)->value('id');
+                foreach (self::ASSET_CLASSES as [$code, $name, $life, $costCode]) {
+                    $cost = $q()->where('code', $costCode)->value('id');
+                    if ($cost && $acc('accumulated_depreciation') && $acc('depreciation')) {
+                        DB::table('asset_classes')->insert(['id' => (string) Str::uuid7(), 'tenant_id' => $tenant->id, 'code' => $code,
+                            'name' => $name, 'life_months' => $life, 'cost_account_id' => $cost, 'accumulated_account_id' => $acc('accumulated_depreciation'),
+                            'expense_account_id' => $acc('depreciation'), 'origin_node' => (string) config('erp.node.id'), 'version' => 1,
+                            'created_at' => now(), 'updated_at' => now()]);
+                    }
+                }
+            }
         });
     }
 }

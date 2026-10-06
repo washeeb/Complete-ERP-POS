@@ -2,6 +2,7 @@
 
 namespace App\Domain\Finance;
 
+use App\Domain\Assets\AssetService;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Models\Account;
@@ -24,6 +25,7 @@ final class AutoPoster
         'customer_payments' => 'Customer payments', 'customer_openings' => 'Customer opening balances', 'online_orders' => 'Online orders',
         'shifts' => 'Till cash over / short', 'loyalty' => 'Loyalty points', 'stored_value' => 'Gift cards and store credit',
         'supplier_bills' => 'Supplier bills', 'supplier_payments' => 'Supplier payments', 'supplier_openings' => 'Supplier opening balances',
+        'money_transfers' => 'Money moved between accounts', 'expense_claims' => 'Expense claims paid', 'depreciation' => 'Depreciation', 'asset_disposals' => 'Assets disposed of',
     ];
 
     /** How each kind of stock movement is balanced against the stock account. */
@@ -47,7 +49,7 @@ final class AutoPoster
 
     private ?string $hq = null;
 
-    public function __construct(private readonly GeneralLedger $gl) {}
+    public function __construct(private readonly GeneralLedger $gl, private readonly AssetService $assets) {}
 
     /**
      * @return array{posted: array<string, int>, errors: array<string, string>}
@@ -59,6 +61,7 @@ final class AutoPoster
         $this->hq = DB::table('branches')->where('tenant_id', $tenantId)->orderByDesc('is_hq')->orderBy('code')->value('id');
         $this->gl->forget();
         $actor = Actor::system($tenantId, 'Automatic posting', 'system');
+        $this->assets->calculate($tenantId); // depreciation for months that have ended
         $posted = [];
         $errors = [];
         foreach (array_keys(self::KINDS) as $kind) {
@@ -111,6 +114,10 @@ final class AutoPoster
             'supplier_bills' => [$this->unpostedQuery('supplier_bills', 'supplier_bill', $tenantId)->where('s.status', 'posted'), 's.bill_date'],
             'supplier_payments' => [$this->unpostedQuery('supplier_payments', 'supplier_payment', $tenantId), 's.paid_on'],
             'supplier_openings' => [$this->unpostedQuery('supplier_ledger', 'supplier_ledger', $tenantId)->where('s.type', 'opening'), $d('s.occurred_at')],
+            'money_transfers' => [$this->unpostedQuery('money_transfers', 'money_transfer', $tenantId), 's.moved_on'],
+            'expense_claims' => [$this->unpostedQuery('expense_claims', 'expense_claim', $tenantId)->where('s.status', 'paid'), 's.paid_on'],
+            'depreciation' => [$this->unpostedQuery('asset_depreciation', 'asset_depreciation', $tenantId), "(date_trunc('month', s.month) + interval '1 month - 1 day')::date"],
+            'asset_disposals' => [$this->unpostedQuery('fixed_assets', 'fixed_asset_disposal', $tenantId)->where('s.status', 'disposed'), 's.disposed_on'],
         ];
     }
 
@@ -359,6 +366,75 @@ final class AutoPoster
                 ['account' => 'payables', 'amount' => -(int) $o->amount_minor, 'branch_id' => $branch, 'party_type' => 'supplier', 'party_id' => $o->supplier_id],
                 ['account' => 'opening_equity', 'amount' => (int) $o->amount_minor, 'branch_id' => $branch],
             ], [['supplier_ledger', $o->id]], 'supplier_openings', late: true);
+        }
+
+        return count($rows);
+    }
+
+    private function money_transfers(Actor $actor, int $batch): int
+    {
+        $rows = $this->rows('money_transfers', $actor->tenantId, $batch, ['s.id', 's.number', 's.from_account_id', 's.to_account_id', 's.branch_id', 's.to_branch_id', 's.amount_minor']);
+        foreach ($rows as $t) {
+            $this->gl->post($actor, $t->d, 'auto', "Money moved {$t->number}", [
+                ['account' => Account::withoutGlobalScopes()->findOrFail($t->to_account_id), 'amount' => (int) $t->amount_minor, 'branch_id' => $t->to_branch_id],
+                ['account' => Account::withoutGlobalScopes()->findOrFail($t->from_account_id), 'amount' => -(int) $t->amount_minor, 'branch_id' => $t->branch_id],
+            ], [['money_transfer', $t->id]], 'money_transfers', late: true);
+        }
+
+        return count($rows);
+    }
+
+    private function expense_claims(Actor $actor, int $batch): int
+    {
+        $rows = $this->rows('expense_claims', $actor->tenantId, $batch, ['s.id', 's.number', 's.account_id', 's.paid_from_account_id', 's.branch_id', 's.amount_minor', 's.description']);
+        foreach ($rows as $e) {
+            $this->gl->post($actor, $e->d, 'auto', "Expense {$e->number}: {$e->description}", [
+                ['account' => Account::withoutGlobalScopes()->findOrFail($e->account_id), 'amount' => (int) $e->amount_minor, 'branch_id' => $e->branch_id],
+                ['account' => Account::withoutGlobalScopes()->findOrFail($e->paid_from_account_id), 'amount' => -(int) $e->amount_minor, 'branch_id' => $e->branch_id],
+            ], [['expense_claim', $e->id]], 'expense_claims', late: true);
+        }
+
+        return count($rows);
+    }
+
+    /** One entry per month: each asset's charge to its class's depreciation expense and accumulated depreciation accounts. */
+    private function depreciation(Actor $actor, int $batch): int
+    {
+        $rows = $this->rows('depreciation', $actor->tenantId, $batch, ['s.id', 's.amount_minor', 's.fixed_asset_id']);
+        $assets = DB::table('fixed_assets as a')->join('asset_classes as c', 'c.id', '=', 'a.asset_class_id')
+            ->whereIn('a.id', array_unique(array_column($rows, 'fixed_asset_id')))->get(['a.id', 'a.branch_id', 'c.expense_account_id', 'c.accumulated_account_id'])->keyBy('id');
+        foreach (collect($rows)->groupBy('d') as $d => $group) {
+            $lines = [];
+            foreach ($group as $r) {
+                $a = $assets[$r->fixed_asset_id];
+                $lines[] = ['account' => Account::withoutGlobalScopes()->findOrFail($a->expense_account_id), 'amount' => (int) $r->amount_minor, 'branch_id' => $a->branch_id];
+                $lines[] = ['account' => Account::withoutGlobalScopes()->findOrFail($a->accumulated_account_id), 'amount' => -(int) $r->amount_minor, 'branch_id' => $a->branch_id];
+            }
+            $this->gl->post($actor, min($d, now()->toDateString()), 'auto', 'Depreciation '.substr($d, 0, 7), $lines,
+                $group->map(fn ($r) => ['asset_depreciation', $r->id])->all(), 'depreciation', late: true);
+        }
+
+        return count($rows);
+    }
+
+    /** Off the books: cost out, depreciation to date out, money in, and the difference is a gain or loss. */
+    private function asset_disposals(Actor $actor, int $batch): int
+    {
+        $rows = $this->rows('asset_disposals', $actor->tenantId, $batch, ['s.id', 's.number', 's.name', 's.branch_id', 's.asset_class_id', 's.cost_minor',
+            's.opening_depreciation_minor', 's.disposal_proceeds_minor', 's.proceeds_account_id']);
+        foreach ($rows as $a) {
+            $class = DB::table('asset_classes')->where('id', $a->asset_class_id)->first();
+            $dep = (int) $a->opening_depreciation_minor + (int) DB::table('asset_depreciation')->where('fixed_asset_id', $a->id)->sum('amount_minor');
+            $proceeds = (int) $a->disposal_proceeds_minor;
+            $lines = [
+                ['account' => Account::withoutGlobalScopes()->findOrFail($class->cost_account_id), 'amount' => -(int) $a->cost_minor, 'branch_id' => $a->branch_id],
+                ['account' => Account::withoutGlobalScopes()->findOrFail($class->accumulated_account_id), 'amount' => $dep, 'branch_id' => $a->branch_id],
+                ['account' => 'disposal', 'amount' => (int) $a->cost_minor - $dep - $proceeds, 'branch_id' => $a->branch_id],
+            ];
+            if ($proceeds > 0) {
+                $lines[] = ['account' => Account::withoutGlobalScopes()->findOrFail($a->proceeds_account_id), 'amount' => $proceeds, 'branch_id' => $a->branch_id];
+            }
+            $this->gl->post($actor, $a->d, 'auto', "Asset {$a->number} {$a->name} disposed of", $lines, [['fixed_asset_disposal', $a->id]], 'asset_disposals', late: true);
         }
 
         return count($rows);

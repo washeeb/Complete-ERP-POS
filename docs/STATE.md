@@ -1,25 +1,22 @@
 # State (resume file)
 
-**Phase:** 7 — Finance & accounting · **Status:** 7a done on branch `phase-7-finance` (PR to `main`); next is 7b
-**Updated:** 2026-10-12 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–6b merged (PRs #1–#8)
+**Phase:** 7 — Finance & accounting · **Status:** 7b done on branch `phase-7b-banking-tax` (PR to `main`); Phase 7 complete; next is Phase 8 (HR & payroll + attendance)
+**Updated:** 2026-10-13 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–7a merged (PRs #1–#9)
 
-## Phase 7a — done (239 Pest + 30 Vitest + 4 Playwright; browser-verified)
-- **Owner answers (2026-10-12):** Ghana SME chart, Jan–Dec year; accountant enters opening balances; 3-way match with 2 % / GHS 50 tolerance; monthly lock, GM reopens.
-- **Done-when met (trial balance ties to sub-ledgers):**
-  - `tests/Feature/FinanceTest` posts till sales, a return, a held-then-approved bill, an expense bill, a supplier payment, customer/supplier openings, a gift card, a write-off and a cash shortage, then `GlCheck` ties all five control accounts, the trial balance sums to zero and the balance sheet balances;
-  - live dev data: Finance → Reports → Ledger check all zero differences; trial balance debits = credits GH₵ 9,121.97; balance sheet balanced.
-- **Domain:** `app/Domain/Finance/{ChartTemplate,GeneralLedger,AutoPoster,JournalService,PeriodService,GlCheck,FinancialReports,AccountService}`, `app/Domain/Payables/{SupplierLedger,BillService,SupplierPaymentService}`.
-- **DB:** accounts, fiscal_periods, journal_entries/lines (append-only, balanced at commit, open month only), gl_postings (exactly-once links), supplier_bills/lines, supplier_payments, supplier_ledger/balances, payable_allocations; tax_rates.input_recoverable.
-- **Back office (Finance group, HQ only):** Reports, Journals (new, opening balances, post now, reverse), Month-end, Chart of accounts, Supplier bills, Supplier payments, Aged payables; supplier opening balance + "We owe" on suppliers.
-- **Commands:** `erp:gl-post` (every 5 min), `erp:gl-check`.
-- **Changed:** incoming stock without its own cost is valued at the average; GRN reversal leaves at receipt cost.
-- **Docs:** finance.md, DECISIONS 7a, CHANGELOG 0.8.0.
+## Phase 7b — done (248 Pest + 30 Vitest + 4 Playwright; browser-checked)
+- **Owner answers (2026-10-13):** CSV statements now, bank APIs later; straight-line monthly depreciation; budgets branch × account × month; expense claims + petty cash float (branch manager ≤ GHS 500, finance above).
+- **Domain:** `app/Domain/Banking/{BankingService,StatementCsv}`, `app/Domain/Expenses/ExpenseService`, `app/Domain/Assets/AssetService`, `app/Domain/Budgets/BudgetService`; AutoPoster kinds money_transfers, expense_claims, depreciation (calculated each run for ended months), asset_disposals; FinancialReports `budgetVsActual`, `vatReturn`.
+- **DB:** bank_accounts, bank_statement_imports/lines, bank_matches, bank_matched_lines, money_transfers, expense_claims, asset_classes, fixed_assets, asset_depreciation, budget_amounts; chart purposes backfilled by migration (`ChartTemplate::ensure`).
+- **Back office (Finance):** Bank & cash (import, reconcile page, move money), Money moved, Expense claims (receipt photos via `/expense-receipt/{claim}`), Fixed assets (+ kinds of asset), Budgets grid, Reports → Budget vs actual and VAT return.
+- **Tests:** BankingExpensesAssetsTest (5), BankingExpensesAssetsScreensTest (4); phpunit memory_limit 512M.
+- **Docs:** finance.md (banking, expenses, assets, budgets, VAT), DECISIONS 7b, CHANGELOG 0.9.0.
 
-## Next — Phase 7b (banking, expenses, tax)
-- Bank and MoMo accounts with statement import (CSV) and reconciliation; cash management (till → safe → bank).
-- Expenses / petty cash; budgets per branch and account; fixed assets and depreciation.
-- VAT return and tax reports (VAT, NHIL, GETFund; accountant-verified); supplier credit notes / returns to supplier; multi-currency revaluation.
-- Ask the owner first (batched): which banks/MoMo wallets and their statement formats; depreciation method and asset classes; budget level (branch × account, monthly?).
+## Phase 7a — done (see CHANGELOG 0.8.0, docs/finance.md)
+- GL, automatic posting (exactly once via gl_postings), journals, month-end lock (GM reopens), supplier bills (3-way match) and payments, reports and the ledger check (`erp:gl-check`).
+
+## Next — Phase 8 (HR & payroll + attendance)
+- Read the HR & Payroll section (§6.10) of `ERP-POS-MASTER-PROMPT.md`; done-when: a payroll run with payslips on a seeded (accountant-verifiable) Ghana profile (SSNIT tiers, PAYE).
+- Ask the owner first (batched): pay frequency and pay day; allowances and deductions in use; attendance source (POS clock-in, mobile with geofence); leave types and entitlements.
 ## Owner decisions pending
 - Accountant check of the Ghana tax set-up (before go-live).
 - WooCommerce/Shopify: connect a real store only with the owner's keys.
@@ -46,4 +43,4 @@
   - in tests, `flushSession()` before switching users.
 
 ## Blockers
-- Merge PR `phase-7-finance` → `main` (asked in chat).
+- Merge PR `phase-7b-banking-tax` → `main` (asked in chat).

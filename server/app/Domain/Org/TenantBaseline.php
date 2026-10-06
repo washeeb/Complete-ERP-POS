@@ -78,7 +78,7 @@ final class TenantBaseline
 
             // Finance is kept at head office only.
             if (config('erp.node.role') !== 'branch') {
-                ChartTemplate::install($tenant);
+                ChartTemplate::ensure($tenant);
             }
         });
     }
