@@ -124,3 +124,12 @@ Design (Phase 5):
 - The handheld is a mode of the same PWA, chosen by the device kind returned at enrolment, under its own API (`/api/v1/wms`) and token ability (`handheld`). It works online against its branch's server over the LAN; no offline queue for warehouse work yet. Hardware scanners act as keyboards (scan, then Enter); camera scanning is deferred. [+]
 - Head office relays the two-way sync groups (stock, purchasing, warehouse): events applied from one branch server are published again at HQ and served to every other branch server, but never back to their origin. This fixes transfers between two branch servers, and it lets HQ's online-store stock sync and live updates see branch sales. Sales documents still flow up only. [+]
 - Deferred: requisitions/RFQs, 3-way match and supplier invoices (with Finance, Phase 7), returns to supplier, supplier scorecards and portal, landed costs, FEFO/batches/expiry (Pharmacy/Grocery, Phase 9), pick/pack/ship waves, ABC analysis, and printing PO PDFs and bin labels.
+
+## Phase 6 (2026-10-10)
+
+Owner answers (2026-10-10):
+- Credit limit / overdue: **hold for approval**. Orders over the limit go on credit hold and a manager with the override right releases them within their limit; on the till, a credit sale over the limit needs a supervisor PIN.
+- Wholesale invoices are raised **when goods are delivered** (posting a delivery note creates its invoice).
+- Loyalty default **1 % back**: 1 point per GHS 1, 100 points = GHS 1, redeem from 500, expire after 12 months (built in 6b).
+- Customers sync to **all branches**: field-level last-writer-wins with a conflict log; credit limits set at HQ only.
+- Phase 6 ships as two PRs: 6a, customers, order-to-cash, receivables and credit on the till (the done-when); 6b, promotions, loyalty and gift cards. The engine for 6b must behave the same in PHP and the offline till.

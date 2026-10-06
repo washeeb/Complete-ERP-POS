@@ -2,10 +2,12 @@
 
 namespace App\Domain\Sync;
 
+use App\Domain\Customers\CustomerLedger;
 use App\Domain\Inventory\StockProjection;
 use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
 use App\Domain\Support\DomainException;
+use App\Models\Customer;
 use App\Support\Qty;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -22,7 +24,7 @@ final class ReplicationApplier
     /** @var array<string, list<string>> */
     private array $columns = [];
 
-    public function __construct(private readonly AuditLog $audit, private readonly ReviewQueue $reviews, private readonly StockProjection $projection) {}
+    public function __construct(private readonly AuditLog $audit, private readonly ReviewQueue $reviews, private readonly StockProjection $projection, private readonly CustomerLedger $customers) {}
 
     public function apply(array $event): void
     {
@@ -32,6 +34,11 @@ final class ReplicationApplier
 
         if ($type === 'stock_movement_batch') {
             $this->applyMovements($actor, $payload['movements'] ?? []);
+        } elseif ($type === 'customer_ledger_batch') {
+            $this->customers->apply(array_map(fn ($r) => array_intersect_key($r, array_flip($this->columnsOf('customer_ledger'))), $payload['entries'] ?? []),
+                array_map(fn ($r) => array_intersect_key($r, array_flip($this->columnsOf('receivable_allocations'))), $payload['allocations'] ?? []));
+        } elseif ($type === 'customer') {
+            $this->mergeCustomer($actor, $payload['snapshot']['row'] ?? throw new DomainException('Event has no snapshot.', 'malformed'), $event['origin_node']);
         } else {
             $table = Replication::tableOf($type) ?? throw new DomainException("This node does not know how to apply “{$type}”. Update it to the same version as head office.", 'unknown_type');
             $snapshot = $payload['snapshot'] ?? throw new DomainException('Event has no snapshot.', 'malformed');
@@ -81,6 +88,9 @@ final class ReplicationApplier
                 DB::table('tax_group_rates')->where('tax_group_id', $id)->delete();
                 DB::table('tax_group_rates')->insert(array_map(fn ($r) => ['tax_group_id' => $id, 'tax_rate_id' => $r], $c['tax_rate_ids'] ?? []));
                 break;
+            case 'customer_order':
+            case 'delivery':
+            case 'invoice':
             case 'supplier':
             case 'purchase_order':
             case 'goods_receipt':
@@ -98,6 +108,58 @@ final class ReplicationApplier
                     }
                 }
                 break;
+        }
+    }
+
+    /**
+     * Customers merge field by field: for each field the later change wins (time, then node id), so two branches editing
+     * different fields both keep their edits. Each stamp also records the stamp its editor had seen ("base"); when the
+     * other side's change was not built on ours, the same field was edited in two places at once, and the losing value is
+     * logged for review. Credit fields are head office's: changes to them coming from a branch are ignored at HQ.
+     */
+    private function mergeCustomer(Actor $actor, array $in, string $originNode): void
+    {
+        $in = array_intersect_key($in, array_flip($this->columnsOf('customers')));
+        $local = DB::table('customers')->where('id', $in['id'])->lockForUpdate()->first();
+        if (! $local) {
+            DB::table('customers')->insert($in);
+
+            return;
+        }
+        $inStamps = is_string($in['field_stamps'] ?? null) ? json_decode($in['field_stamps'], true) : ($in['field_stamps'] ?? []);
+        $loStamps = json_decode($local->field_stamps ?? '{}', true) ?: [];
+        $hqHere = config('erp.node.role') !== 'branch';
+        $update = [];
+        $conflicts = [];
+        foreach (Customer::MERGED_FIELDS as $f) {
+            if (! array_key_exists($f, $in) || ($hqHere && in_array($f, Customer::CREDIT_FIELDS, true))) {
+                continue; // credit is set at HQ only (sync never applies it here)
+            }
+            $a = (string) ($inStamps[$f]['at'] ?? '');
+            $b = (string) ($loStamps[$f]['at'] ?? '');
+            if ($a === $b) {
+                continue;
+            }
+            $same = json_encode($in[$f]) === json_encode($local->{$f}) || (string) $in[$f] === (string) $local->{$f};
+            if ($a > $b) {
+                $update[$f] = $in[$f];
+                $loStamps[$f] = $inStamps[$f];
+                if (! $same && $b !== '' && ($inStamps[$f]['base'] ?? '') !== $b) {
+                    $conflicts[] = "{$f} — kept ".json_encode($in[$f]).' (later), replaced '.json_encode($local->{$f});
+                }
+            } elseif (! $same && $a !== '' && ($loStamps[$f]['base'] ?? '') !== $a) {
+                $conflicts[] = "{$f} — kept ".json_encode($local->{$f}).' (later), did not apply '.json_encode($in[$f]).' from '.$originNode;
+            }
+        }
+        if ($update) {
+            $update['field_stamps'] = json_encode($loStamps);
+            $update['version'] = max((int) $local->version, (int) ($in['version'] ?? 1));
+            $update['updated_at'] = now();
+            DB::table('customers')->where('id', $in['id'])->update($update);
+        }
+        if ($conflicts) {
+            $this->reviews->add($actor, 'customer_conflict', 'customer', $in['id'], "Customer {$local->name} was edited on two servers at once: ".implode('; ', $conflicts),
+                ['from' => $originNode], $local->home_branch_id);
         }
     }
 

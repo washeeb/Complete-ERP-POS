@@ -2,6 +2,8 @@
 
 namespace App\Domain\Pos;
 
+use App\Domain\Customers\CustomerLedger;
+use App\Domain\Customers\CustomerService;
 use App\Domain\Devices\OfflineGrant;
 use App\Domain\Inventory\StockLedger;
 use App\Domain\Pricing\PriceResolver;
@@ -12,6 +14,7 @@ use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
 use App\Domain\Sync\ReviewQueue;
 use App\Models\Branch;
+use App\Models\Customer;
 use App\Models\Device;
 use App\Models\PriceList;
 use App\Models\Product;
@@ -53,6 +56,9 @@ final class SaleService
         private readonly ShiftService $shifts,
         private readonly OfflineGrant $grants,
         private readonly ReviewQueue $reviews,
+        private readonly CustomerService $customers,
+        private readonly CustomerLedger $receivables,
+        private readonly SupervisorApproval $approvals,
     ) {}
 
     /** @return array{sale: Sale, replayed: bool} */
@@ -110,8 +116,13 @@ final class SaleService
 
         $branch = Branch::findOrFail($till->branch_id);
         $warehouse = Warehouse::findOrFail($till->warehouse_id);
+        $customer = null;
+        if (! empty($p['customer_id'])) {
+            $customer = Customer::find($p['customer_id']) ?? throw new DomainException('That customer is not known here. Refresh the till.', 'unknown_customer');
+        }
         $list = PriceList::find($p['price_list_id'] ?? null);
-        $listUsable = $list && (! $list->branch_id || $list->branch_id === $branch->id) && ($list->pos_selectable || $list->is_default);
+        $listUsable = $list && (! $list->branch_id || $list->branch_id === $branch->id)
+            && ($list->pos_selectable || $list->is_default || ($customer && $customer->price_list_id === $list->id)); // a customer's own list
         if (! $list || (! $offline && (! $list->is_active || ! $listUsable))) {
             throw new DomainException('That price list cannot be used on this till.');
         }
@@ -174,11 +185,30 @@ final class SaleService
 
         [$payments, $paid, $change] = $this->payments($p['payments'] ?? [], $total);
 
+        // On account (credit sale): within the customer's credit, or approved by a supervisor's PIN (owner decision: hold for approval).
+        $onAccount = array_sum(array_map(fn ($x) => $x['method'] === 'account' ? $x['amount_minor'] : 0, $payments));
+        $creditApprovedBy = null;
+        if ($onAccount > 0) {
+            if (! $customer) {
+                throw new DomainException('Choose the customer to put this sale on their account.', 'no_customer');
+            }
+            $problems = $this->customers->creditProblems($customer, $onAccount);
+            if ($problems && ! $offline) {
+                if (empty($p['credit_approval'])) {
+                    throw new DomainException('A supervisor must approve this credit sale: '.implode('; ', $problems).'.', 'credit_needs_approval');
+                }
+                $creditApprovedBy = $this->approvals->verify($device, $p['credit_approval'], 'customers.credit.override', $branch, 'credit_override_minor',
+                    $this->customers->overrideAmount($customer, $onAccount), $user->id)->name;
+            } elseif ($problems) {
+                $flags[] = ['credit_over_limit', "Credit sale to {$customer->name} while offline: ".implode('; ', $problems)];
+            }
+        }
+
         $receiptNo = sprintf('%s-%s%s-%06d', $branch->code, $till->code, $device->receipt_series, $p['device_seq']);
         $actor = Actor::user($user, 'pos', $device->id);
 
         try {
-            $sale = $this->recorder->transaction(function () use ($p, $device, $till, $branch, $warehouse, $shift, $user, $list, $occurredAt, $hash, $receiptNo, $lines, $lineBreakdowns, $net, $tax, $total, $paid, $change, $payments, $actor, $offline, $grant, $flags, $priceDiffs) {
+            $sale = $this->recorder->transaction(function () use ($p, $device, $till, $branch, $warehouse, $shift, $user, $list, $occurredAt, $hash, $receiptNo, $lines, $lineBreakdowns, $net, $tax, $total, $paid, $change, $payments, $actor, $offline, $grant, $flags, $priceDiffs, $customer, $onAccount, $creditApprovedBy) {
                 $sale = new Sale;
                 $sale->forceFill([
                     'id' => $p['id'], 'tenant_id' => $device->tenant_id, 'branch_id' => $branch->id, 'warehouse_id' => $warehouse->id,
@@ -189,7 +219,7 @@ final class SaleService
                     'tax_breakdown' => TaxCalculator::sum($lineBreakdowns), 'status' => 'posted', 'payload_hash' => $hash,
                     'offline' => $offline, 'grant_expires_at' => $offline ? $this->grants->expiresAt($grant) : null,
                     'catalog_version' => isset($p['catalog_version']) ? mb_substr((string) $p['catalog_version'], 0, 64) : null,
-                    'occurred_at' => $occurredAt, 'received_at' => now(),
+                    'occurred_at' => $occurredAt, 'received_at' => now(), 'customer_id' => $customer?->id,
                 ])->save();
 
                 foreach ($lines as $l) {
@@ -202,7 +232,12 @@ final class SaleService
                     ]);
                 }
                 foreach ($payments as $pay) {
-                    SalePayment::create(['id' => (string) Str::uuid7(), 'sale_id' => $sale->id] + $pay);
+                    SalePayment::create(['id' => (string) Str::uuid7(), 'sale_id' => $sale->id, 'approved_by_name' => $pay['method'] === 'account' ? $creditApprovedBy : null] + $pay);
+                }
+                if ($onAccount > 0) {
+                    $this->receivables->post($actor, $customer, 'pos_sale', $onAccount, $list->currency_code, 'sale', $sale->id, $receiptNo,
+                        $occurredAt->copy()->startOfDay()->addDays((int) $customer->payment_terms_days), $branch->id, $occurredAt);
+                    $this->receivables->applyCredits($actor, $customer);
                 }
 
                 $this->ledger->post($actor, $warehouse, 'sale', array_map(fn ($l) => [
@@ -265,6 +300,13 @@ final class SaleService
             } else {
                 $tendered = $amount;
             }
+            if ($method === 'account') {
+                $paid += $amount;
+                $payments[] = ['method' => 'account', 'provider' => null, 'amount_minor' => $amount, 'tendered_minor' => $amount,
+                    'reference' => null, 'payer_phone' => null, 'status' => 'on_account'];
+
+                continue;
+            }
             $reference = trim((string) ($pay['reference'] ?? ''));
             if ($method === 'momo') {
                 if (! array_key_exists($pay['provider'] ?? '', SalePayment::MOMO_PROVIDERS)) {
@@ -295,7 +337,7 @@ final class SaleService
     private function canonical(array $p): array
     {
         $keep = fn (array $a, array $keys) => array_intersect_key($a, array_flip($keys));
-        $out = $keep($p, ['id', 'device_seq', 'occurred_at', 'price_list_id', 'shift_id']);
+        $out = $keep($p, ['id', 'device_seq', 'occurred_at', 'price_list_id', 'shift_id', 'customer_id']);
         $out['lines'] = array_map(fn ($l) => array_map('strval', $keep($l, ['product_id', 'product_uom_id', 'qty', 'unit_price_minor', 'line_total_minor'])), $p['lines'] ?? []);
         $out['payments'] = array_map(fn ($x) => array_map('strval', $keep($x, ['method', 'provider', 'amount_minor', 'tendered_minor', 'reference'])), $p['payments'] ?? []);
         array_walk_recursive($out, fn (&$v) => $v = (string) $v);
