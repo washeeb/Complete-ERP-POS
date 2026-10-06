@@ -153,6 +153,71 @@ final class FinancialReports
         return ['opening' => $opening, 'lines' => $lines, 'closing' => $running];
     }
 
+    /**
+     * Budget against actual for months of a financial year (income and costs both as positive amounts).
+     *
+     * @return list<array{account: Account, budget: int, actual: int, variance: int, better: bool}>
+     */
+    public function budgetVsActual(string $tenantId, int $year, int $fromPeriod, int $toPeriod, ?string $branchId = null): array
+    {
+        $months = FiscalPeriod::withoutGlobalScopes()->where('tenant_id', $tenantId)->where('year', $year)->whereBetween('period', [$fromPeriod, $toPeriod])->orderBy('period')->get();
+        if ($months->isEmpty()) {
+            return [];
+        }
+        $budget = DB::table('budget_amounts')->where('tenant_id', $tenantId)->where('year', $year)->whereBetween('period', [$fromPeriod, $toPeriod])
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))->groupBy('account_id')->selectRaw('account_id, SUM(amount_minor) AS s')->pluck('s', 'account_id');
+        $actual = $this->sums($tenantId, $months->first()->starts_on->toDateString(), $months->last()->ends_on->toDateString(), $branchId);
+        $out = [];
+        foreach (Account::withoutGlobalScopes()->where('tenant_id', $tenantId)->whereIn('type', ['income', 'expense'])->where('is_header', false)->orderBy('code')->get() as $a) {
+            $b = (int) ($budget[$a->id] ?? 0);
+            $act = $a->type === 'income' ? -($actual[$a->id] ?? 0) : ($actual[$a->id] ?? 0);
+            if ($b === 0 && $act === 0) {
+                continue;
+            }
+            $out[] = ['account' => $a, 'budget' => $b, 'actual' => $act, 'variance' => $act - $b, 'better' => $a->type === 'income' ? $act >= $b : $act <= $b];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Figures for the VAT return (accountant to verify against the GRA form): sales split into taxed and
+     * untaxed, tax charged on sales and tax paid on purchases per tax, and what is due per tax.
+     *
+     * @return array{sales_total: int, sales_untaxed: int, sales_taxed: int, taxes: list<array{code: string, name: string, output: int, input: int, due: int}>}
+     */
+    public function vatReturn(string $tenantId, string $from, string $to): array
+    {
+        $tz = preg_replace('/[^A-Za-z_\/+-]/', '', (string) DB::table('tenants')->where('id', $tenantId)->value('timezone') ?: 'UTC');
+        $sums = $this->sums($tenantId, $from, $to, null);
+        $accounts = Account::withoutGlobalScopes()->where('tenant_id', $tenantId)->get();
+        $salesTotal = -array_sum(array_map(fn ($a) => $sums[$a->id] ?? 0, $accounts->filter(fn ($a) => in_array($a->system_key, ['sales_pos', 'sales_invoice', 'sales_online'], true))->all()));
+        $untaxed = (int) DB::selectOne(<<<SQL
+            SELECT COALESCE(SUM(x.net), 0) AS v FROM (
+                SELECT l.net_minor AS net FROM sale_lines l JOIN sales s ON s.id = l.sale_id
+                WHERE s.tenant_id = ? AND s.status = 'posted' AND jsonb_array_length(COALESCE(l.tax_breakdown, '[]'::jsonb)) = 0
+                  AND ((s.occurred_at AT TIME ZONE 'UTC') AT TIME ZONE '{$tz}')::date BETWEEN ? AND ?
+                UNION ALL
+                SELECT l.net_minor FROM invoice_lines l JOIN invoices i ON i.id = l.invoice_id
+                WHERE i.tenant_id = ? AND jsonb_array_length(COALESCE(l.tax_breakdown, '[]'::jsonb)) = 0 AND i.issued_on BETWEEN ? AND ?
+                UNION ALL
+                SELECT -l.net_minor FROM invoice_lines l JOIN credit_notes c ON c.invoice_id = l.invoice_id
+                WHERE c.tenant_id = ? AND jsonb_array_length(COALESCE(l.tax_breakdown, '[]'::jsonb)) = 0
+                  AND ((c.created_at AT TIME ZONE 'UTC') AT TIME ZONE '{$tz}')::date BETWEEN ? AND ?
+            ) x
+        SQL, [$tenantId, $from, $to, $tenantId, $from, $to, $tenantId, $from, $to])->v;
+        $taxes = [];
+        foreach (DB::table('tax_rates')->where('tenant_id', $tenantId)->orderBy('sort')->get(['code', 'name']) as $t) {
+            $out = $accounts->firstWhere('system_key', "output_tax:{$t->code}");
+            $in = $accounts->firstWhere('system_key', "input_tax:{$t->code}");
+            $o = $out ? -($sums[$out->id] ?? 0) : 0;
+            $i = $in ? ($sums[$in->id] ?? 0) : 0;
+            $taxes[] = ['code' => $t->code, 'name' => $t->name, 'output' => $o, 'input' => $i, 'due' => $o - $i];
+        }
+
+        return ['sales_total' => $salesTotal, 'sales_untaxed' => $untaxed, 'sales_taxed' => $salesTotal - $untaxed, 'taxes' => $taxes];
+    }
+
     /** @return array<string, int> */
     private function sums(string $tenantId, string $from, string $to, ?string $branchId): array
     {

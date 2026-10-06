@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Domain\Finance\FinancialReports as Reports;
+use App\Domain\Finance\GeneralLedger;
 use App\Domain\Finance\GlCheck;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
@@ -30,7 +31,7 @@ class FinancialReports extends Page
 
     protected string $view = 'filament.pages.financial-reports';
 
-    public const REPORTS = ['tb' => 'Trial balance', 'pl' => 'Profit and loss', 'bs' => 'Balance sheet', 'ledger' => 'Account ledger', 'check' => 'Ledger check'];
+    public const REPORTS = ['tb' => 'Trial balance', 'pl' => 'Profit and loss', 'bs' => 'Balance sheet', 'ledger' => 'Account ledger', 'budget' => 'Budget vs actual', 'vat' => 'VAT return', 'check' => 'Ledger check'];
 
     #[Url]
     public string $report = 'tb';
@@ -74,8 +75,21 @@ class FinancialReports extends Page
             'bs' => $r->balanceSheet($tenant, $this->to, $branch),
             'ledger' => $this->account && ($a = Account::find($this->account)) ? $r->ledger($tenant, $a, $this->from, $this->to, $branch) + ['account' => $a] : [],
             'check' => app(GlCheck::class)->run($tenant),
+            'vat' => $r->vatReturn($tenant, $this->from, $this->to),
+            'budget' => $this->budget($r, $tenant, $branch),
             default => $r->trialBalance($tenant, $this->from, $this->to, $branch),
         };
+    }
+
+    /** Budget vs actual for the months of the financial year that the From–To dates fall in. */
+    private function budget(Reports $r, string $tenant, ?string $branch): array
+    {
+        $gl = app(GeneralLedger::class);
+        $a = $gl->period($tenant, $this->from);
+        $b = $gl->period($tenant, $this->to);
+        $to = $b->year === $a->year ? $b->period : 12;
+
+        return ['rows' => $r->budgetVsActual($tenant, $a->year, $a->period, $to, $branch), 'label' => $a->starts_on->format('M Y').' – '.$gl->period($tenant, $a->starts_on->copy()->addMonths($to - $a->period)->toDateString())->starts_on->format('M Y')];
     }
 
     public function accounts(): array

@@ -203,3 +203,20 @@ Design:
 - **Years:** no closing entries; reports start income and expense accounts at zero each year and show earlier years' profit in retained earnings.
 - **Segregation:** accountants enter bills and journals; finance managers close months, approve price differences and pay suppliers; only the GM/owner reopens a month; IT admin has none of this.
 - **Deferred to 7b:** bank and MoMo statement import and reconciliation, expenses/petty cash, budgets, fixed assets and depreciation, multi-currency revaluation, VAT return and tax reports, supplier credit notes / returns to supplier, GRA E-VAT.
+
+## Phase 7b (2026-10-13)
+
+Owner answers (2026-10-13):
+- **Statements:** **CSV import now, bank APIs later** — each bank/MoMo account remembers its column mapping; `bank_accounts.feed` marks the source so an API feed can later produce the same statement lines.
+- **Depreciation:** **straight-line, monthly**; default classes Furniture 60, Equipment and computers 36, Motor vehicles 60 months (editable).
+- **Budgets:** **branch × income/expense account × month** of the financial year.
+- **Expenses:** **claims with receipt photo and a petty cash float per branch**; branch manager approves up to GHS 500 (limit `expense_approve_minor`), finance above; never your own.
+
+Design:
+- **Reconciliation** matches statement lines to unmatched ledger lines on the bank's account, many-to-many when the totals agree (one deposit for several days' takings; one day's MoMo sales against many wallet credits). Suggestions are 1:1 (same amount, ±5 days, unique both ways). Lines with nothing behind them (charges, interest, fees) are posted from the statement and matched in one step; ledger lines older than the first imported statement (e.g. the opening balance) are cleared as "on an earlier statement". Re-importing a file skips lines already in (hash of date, amount, text, balance and position among identical lines). The reconciliation shows ledger − outstanding + unrecorded = what the statement should show, against the statement's own balance column.
+- **Money moved** between own accounts (till cash banked, petty cash topped up, MoMo swept) is a document posted by the automatic poster; each side keeps its own branch.
+- **Expense claims post when paid** (Dr the expense, Cr petty cash or the account paid from); an approved but unpaid claim is not accrued. Receipt photos are private files served only to the claimant, approvers, payers and finance.
+- **Fixed assets:** registering does not post the cost (it is already in the books through a bill or the opening balances). Depreciation is calculated for every month that has ended (and the disposal month) at the start of each posting run — one entry per month; each month charges (cost − residual) ÷ life, the last month takes the rounding. Assets brought over with depreciation in the opening balances start from the month they were registered. Disposal takes cost and depreciation off and posts the gain or loss.
+- **VAT return** figures come from the ledger (output and input tax per tax code) with sales split into taxed and untaxed from the document lines; the accountant verifies against the GRA return before filing.
+- **New purposes in the chart** (petty cash, accumulated depreciation, depreciation, disposal gain/loss, bank charges) reach existing companies through a one-time migration backfill (`ChartTemplate::ensure`), which never renames or moves anything.
+- **Deferred:** direct bank/MoMo API feeds, supplier credit notes and returns to suppliers, foreign-currency revaluation, GRA E-VAT fiscal adapter (planned with the integrations phase), petty cash counts.

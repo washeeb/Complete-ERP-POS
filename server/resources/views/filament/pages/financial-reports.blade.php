@@ -14,17 +14,17 @@
                 </x-filament::input.select></x-filament::input.wrapper>
             </label>
         @endif
-        @if ($report !== 'check')
+        @if (! in_array($report, ['check'], true))
             @if ($report !== 'bs')
                 <label>From <x-filament::input.wrapper><x-filament::input type="date" wire:model.live="from" /></x-filament::input.wrapper></label>
             @endif
             <label>{{ $report === 'bs' ? 'As at' : 'To' }} <x-filament::input.wrapper><x-filament::input type="date" wire:model.live="to" /></x-filament::input.wrapper></label>
-            <label>Branch
+            @if ($report !== 'vat')<label>Branch
                 <x-filament::input.wrapper><x-filament::input.select wire:model.live="branch">
                     <option value="">All branches</option>
                     @foreach ($this->branches() as $id => $label)<option value="{{ $id }}">{{ $label }}</option>@endforeach
                 </x-filament::input.select></x-filament::input.wrapper>
-            </label>
+            </label>@endif
         @endif
     </div>
 
@@ -89,6 +89,38 @@
         @else
             <p>Choose an account.</p>
         @endif
+    @elseif ($report === 'budget')
+        <p class="fin-note">Months: {{ $d['label'] }}. Income and costs both shown as positive amounts.</p>
+        <table class="fin-table wide">
+            <thead><tr><th>Account</th><th class="num">Budget</th><th class="num">Actual</th><th class="num">Difference</th></tr></thead>
+            <tbody>
+            @forelse ($d['rows'] as $r)
+                <tr><td>{{ $r['account']->label() }}</td><td class="num">{{ $this->money($r['budget']) }}</td><td class="num">{{ $this->money($r['actual']) }}</td>
+                    <td class="num" style="color:{{ $r['better'] ? '#16a34a' : '#dc2626' }}">{{ \App\Filament\Support\FinanceUi::money($r['variance']) }}</td></tr>
+            @empty
+                <tr><td colspan="4">No budget or postings for these months. Enter one under Finance → Budgets.</td></tr>
+            @endforelse
+            </tbody>
+        </table>
+    @elseif ($report === 'vat')
+        <table class="fin-table">
+            <tr><td>Sales (before tax)</td><td class="num">{{ \App\Filament\Support\FinanceUi::money($d['sales_total']) }}</td></tr>
+            <tr><td>— of which taxed</td><td class="num">{{ \App\Filament\Support\FinanceUi::money($d['sales_taxed']) }}</td></tr>
+            <tr><td>— of which exempt or zero-rated</td><td class="num">{{ \App\Filament\Support\FinanceUi::money($d['sales_untaxed']) }}</td></tr>
+        </table>
+        <table class="fin-table wide" style="margin-top:12px">
+            <thead><tr><th>Tax</th><th class="num">On sales (output)</th><th class="num">On purchases (input)</th><th class="num">Due</th></tr></thead>
+            <tbody>
+            @foreach ($d['taxes'] as $t)
+                <tr><td>{{ $t['name'] }}</td><td class="num">{{ \App\Filament\Support\FinanceUi::money($t['output']) }}</td>
+                    <td class="num">{{ \App\Filament\Support\FinanceUi::money($t['input']) }}</td><td class="num"><strong>{{ \App\Filament\Support\FinanceUi::money($t['due']) }}</strong></td></tr>
+            @endforeach
+            </tbody>
+            <tfoot><tr><th>Total</th><th class="num">{{ \App\Filament\Support\FinanceUi::money(array_sum(array_column($d['taxes'], 'output'))) }}</th>
+                <th class="num">{{ \App\Filament\Support\FinanceUi::money(array_sum(array_column($d['taxes'], 'input'))) }}</th>
+                <th class="num">{{ \App\Filament\Support\FinanceUi::money(array_sum(array_column($d['taxes'], 'due'))) }}</th></tr></tfoot>
+        </table>
+        <p class="fin-note">From the ledger for the dates chosen. Your accountant must check these against the GRA return (which taxes are claimable on purchases, rates and boxes) before filing.</p>
     @else
         <table class="fin-table wide">
             <thead><tr><th>Control account</th><th class="num">Ledger</th><th class="num">Sub-ledger</th><th class="num">Difference</th></tr></thead>

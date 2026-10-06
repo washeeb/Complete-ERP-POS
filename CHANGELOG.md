@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0] — 2026-10-13 · Phase 7b banking, expenses, assets, budgets, VAT
+### Added
+- **Bank & cash** (Finance): bank, MoMo and cash accounts; **statement import from CSV** with a remembered column mapping (money in/out or signed amounts, Ghanaian date formats, totals rows skipped, re-imports skipped); **reconciliation** with suggestions, many-to-many matching, posting bank charges from the statement, and the reconciliation summary against the statement balance.
+- **Money moved** between your own accounts (bank the till cash, top up petty cash, sweep MoMo).
+- **Expense claims** with receipt photo: approved by the branch manager up to GHS 500 and by finance above, never your own; paid from petty cash or another account.
+- **Fixed assets**: register, kinds of asset with useful lives, straight-line monthly depreciation posted automatically, disposal with gain or loss.
+- **Budgets** per branch, account and month (spread a yearly figure), and the **budget vs actual** report.
+- **VAT return** report: taxed and exempt sales, output and input VAT, NHIL and GETFund, and what is due.
+- Permissions: banking.manage, expenses.claim, expenses.approve (limit), expenses.pay, assets.manage, budgets.manage (Core 0.9.0).
+### Changed
+- The chart gains petty cash, accumulated depreciation, depreciation, disposal gain/loss and bank charges purposes (added to existing companies automatically).
+- Tests run with a 512 MB memory limit.
 ## [0.8.0] — 2026-10-12 · Phase 7a finance: general ledger and payables
 ### Added
 - **Chart of accounts** (Finance → Chart of accounts): Ghana SME template installed for every company; edit names and codes, add accounts, choose which account automatic posting uses for each purpose.

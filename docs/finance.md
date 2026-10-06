@@ -56,6 +56,29 @@ The account *Opening balances (to clear)* collects the other side; it should be 
 
 **Finance → Reports**: trial balance, profit and loss, balance sheet, account ledger (click an account in the trial balance), each filterable by branch, and the **ledger check**. From a terminal: `php artisan erp:gl-check` (posts anything outstanding, then checks).
 
+## Bank, MoMo and cash (Finance → Bank & cash)
+
+1. **Add each account** (bank, MoMo wallet, petty cash) and link it to its ledger account — or give a new code and one is created.
+2. **Import statement**: export CSV from the bank or MoMo portal (in Excel: Save As → CSV). Say which column is the date, the description, the amount (or money in / money out) and the balance; this is remembered for next time. Importing the same file twice adds nothing.
+3. **Reconcile**: tick statement lines and ledger lines that are the same money and press *Match* (several to several is fine if the totals agree). *Match suggestions* does the obvious ones. For bank charges or interest, tick the statement line, choose the account and press *Post*. Tick the opening balance and press *…on an earlier statement*. The top shows whether the books explain the statement balance.
+4. **Move money** between your own accounts: banking the till cash, topping up petty cash, sweeping MoMo to the bank.
+
+## Expense claims and petty cash (Finance → Expense claims)
+
+Anyone with *claim expenses* records what they spent, with a photo of the receipt. The branch manager approves claims up to **GHS 500**; finance approves larger ones; nobody approves their own. The person holding petty cash then presses **Pay** (from petty cash, or the bank/MoMo account used to reimburse). Top up petty cash with *Move money*.
+
+## Fixed assets (Finance → Fixed assets)
+
+Record the purchase as a supplier bill (*Other charges* → the asset account, e.g. 1620 Equipment), then **Register an asset** with its kind, cost and date. Depreciation is posted automatically each month (straight-line over the kind's useful life, e.g. computers 36 months). **Dispose of** an asset when it is sold or scrapped: the system works out the gain or loss.
+
+## Budgets (Finance → Budgets)
+
+Choose the year and branch, type a yearly figure per account and press *Spread*, or type each month. Compare under **Reports → Budget vs actual** (green = better than budget).
+
+## VAT return (Finance → Reports → VAT return)
+
+Choose the month: sales split into taxed and exempt, VAT, NHIL and GETFund charged on sales and paid on purchases, and what is due. Your accountant checks these against the GRA return before filing.
+
 ## Who can do what
 
 | | View | Journals | Chart | Bills | Approve bills | Pay suppliers | Close month | Reopen |
@@ -65,6 +88,8 @@ The account *Opening balances (to clear)* collects the other side; it should be 
 | General manager | ✓ | | | | ✓ | ✓ | | ✓ |
 | Auditor | ✓ | | | | | | | |
 
-## Not yet (Phase 7b)
+Also: **banking** and **fixed assets** — accountant and finance manager; **budgets** — finance manager and GM; **expense claims** — most staff claim, branch and warehouse managers approve up to GHS 500 and finance/GM above, branch managers, accountants and finance pay.
 
-Bank and MoMo statement import and reconciliation, expenses and petty cash, budgets, fixed assets and depreciation, VAT return and tax reports, supplier credit notes, foreign-currency revaluation, GRA E-VAT.
+## Not yet
+
+Direct bank/MoMo feeds (CSV for now), supplier credit notes and returns to suppliers, foreign-currency revaluation, GRA E-VAT.
