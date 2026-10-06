@@ -24,7 +24,8 @@ class Sale extends Model
         return [
             'prices_include_tax' => 'boolean', 'tax_breakdown' => 'array', 'occurred_at' => 'datetime',
             'received_at' => 'datetime', 'device_seq' => 'integer', 'net_minor' => 'integer', 'tax_minor' => 'integer',
-            'total_minor' => 'integer', 'paid_minor' => 'integer', 'change_minor' => 'integer',
+            'total_minor' => 'integer', 'paid_minor' => 'integer', 'change_minor' => 'integer', 'discount_minor' => 'integer',
+            'sale_discount_bp' => 'integer', 'points_earned' => 'integer',
         ];
     }
 

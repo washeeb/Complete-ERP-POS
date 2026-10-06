@@ -42,7 +42,7 @@ final class ReceivablesService
 
     /** @param  list<string>|null  $invoiceIds  settle only these documents (else oldest first) */
     public function recordPayment(Actor $actor, Customer $customer, Branch $branch, string $method, int $amountMinor, ?string $reference = null,
-        ?string $receivedOn = null, ?array $invoiceIds = null, ?string $provider = null, ?string $note = null): CustomerPayment
+        ?string $receivedOn = null, ?array $invoiceIds = null, ?string $provider = null, ?string $note = null, ?string $shiftId = null): CustomerPayment
     {
         if (! $actor->user || ! $this->authz->allows($actor->user, 'receivables.collect', $branch)) {
             throw new AccessDenied;
@@ -65,13 +65,13 @@ final class ReceivablesService
         }
         $currency = Tenant::find($customer->tenant_id)->currency_code;
 
-        return $this->recorder->transaction(function () use ($actor, $customer, $branch, $method, $amountMinor, $reference, $day, $invoiceIds, $provider, $note, $currency) {
+        return $this->recorder->transaction(function () use ($actor, $customer, $branch, $method, $amountMinor, $reference, $day, $invoiceIds, $provider, $note, $currency, $shiftId) {
             DB::table('customer_balances')->where('customer_id', $customer->id)->lockForUpdate()->first(); // one settlement at a time per customer
             $p = new CustomerPayment;
             $p->forceFill(['tenant_id' => $customer->tenant_id, 'number' => $this->numbers->next($customer->tenant_id, 'customer_payment'),
                 'customer_id' => $customer->id, 'branch_id' => $branch->id, 'method' => $method, 'provider' => $method === 'momo' ? $provider : null,
                 'reference' => $reference ? mb_substr(trim($reference), 0, 80) : null, 'currency_code' => $currency, 'amount_minor' => $amountMinor,
-                'received_on' => $day->toDateString(), 'received_by_name' => $actor->name, 'note' => $note]);
+                'received_on' => $day->toDateString(), 'received_by_name' => $actor->name, 'note' => $note, 'shift_id' => $shiftId]);
             $this->recorder->save($actor, $p, 'customer_payment.received', branchId: $branch->id);
             $plan = $this->ledger->plan($customer->id, $amountMinor, $invoiceIds);
             $this->ledger->post($actor, $customer, 'payment', -$amountMinor, $currency, 'customer_payment', $p->id, $p->number, null, $branch->id,

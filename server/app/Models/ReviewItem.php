@@ -29,6 +29,10 @@ class ReviewItem extends Model
         'credit_hold' => 'Customer order on credit hold',
         'credit_over_limit' => 'Credit sale over the customer’s limit',
         'customer_conflict' => 'Customer edited in two places',
+        'discount_over_limit' => 'Discount above the cashier’s limit (offline)',
+        'points_overdrawn' => 'Loyalty points used beyond the balance (offline)',
+        'stored_value_overdrawn' => 'Gift card or store credit used beyond its balance (offline)',
+        'return_no_receipt' => 'Return without a receipt',
     ];
 
     protected $guarded = [];

@@ -87,7 +87,7 @@ final class CustomerLedger
         return DB::select(<<<'SQL'
             SELECT l.doc_type, l.doc_id, -l.amount_minor - COALESCE((SELECT SUM(a.amount_minor) FROM receivable_allocations a WHERE a.from_type = l.doc_type AND a.from_id = l.doc_id), 0) AS free_minor
             FROM customer_ledger l
-            WHERE l.customer_id = ? AND l.type IN ('payment', 'credit_note')
+            WHERE l.customer_id = ? AND l.type IN ('payment', 'credit_note', 'pos_return')
             ORDER BY l.occurred_at
         SQL, [$customerId]);
     }

@@ -3,6 +3,8 @@
 namespace App\Domain\Sync;
 
 use App\Domain\Customers\CustomerLedger;
+use App\Domain\Customers\Loyalty;
+use App\Domain\Customers\StoredValues;
 use App\Domain\Inventory\StockProjection;
 use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
@@ -37,6 +39,11 @@ final class ReplicationApplier
         } elseif ($type === 'customer_ledger_batch') {
             $this->customers->apply(array_map(fn ($r) => array_intersect_key($r, array_flip($this->columnsOf('customer_ledger'))), $payload['entries'] ?? []),
                 array_map(fn ($r) => array_intersect_key($r, array_flip($this->columnsOf('receivable_allocations'))), $payload['allocations'] ?? []));
+        } elseif ($type === 'loyalty_batch') {
+            app(Loyalty::class)->apply(array_map(fn ($r) => array_intersect_key($r, array_flip($this->columnsOf('loyalty_ledger'))), $payload['entries'] ?? []));
+        } elseif ($type === 'stored_value_batch') {
+            app(StoredValues::class)->apply(array_map(fn ($r) => array_intersect_key($r, array_flip($this->columnsOf('stored_value_ledger'))), $payload['entries'] ?? []),
+                $payload['touch'] ?? []);
         } elseif ($type === 'customer') {
             $this->mergeCustomer($actor, $payload['snapshot']['row'] ?? throw new DomainException('Event has no snapshot.', 'malformed'), $event['origin_node']);
         } else {

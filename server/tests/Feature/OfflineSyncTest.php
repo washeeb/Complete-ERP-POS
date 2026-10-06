@@ -7,10 +7,12 @@ use App\Domain\Devices\DeviceSignature;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Pos\TillFileImport;
 use App\Domain\Pricing\PriceResolver;
+use App\Domain\Pricing\PromotionService;
 use App\Domain\Pricing\TaxCalculator;
 use App\Domain\Support\DomainException;
 use App\Models\PriceList;
 use App\Models\Product;
+use App\Models\Promotion;
 use App\Models\ReviewItem;
 use App\Models\Sale;
 use App\Models\Shift;
@@ -296,4 +298,17 @@ it('never reuses receipt numbers when a till is reinstalled mid-queue', function
     expect(Sale::orderBy('receipt_no')->pluck('receipt_no')->all())
         ->toBe(['HQ-T01'.$old->device->receipt_series.'-000001', 'HQ-T01'.$new->device->receipt_series.'-000001'])
         ->and($old->device->receipt_series)->not->toBe($new->device->receipt_series);
+});
+
+it('keeps an offline sale that missed a promotion started while the till was offline, and flags it', function () {
+    app(PromotionService::class)->save(actorFor($this->owner), new Promotion,
+        ['name' => 'Milo 10%', 'type' => 'percent', 'product_ids' => [$this->milo->id], 'value_bp' => 1000]);
+    $at = now()->subMinutes(30)->toIso8601String();
+
+    $r = $this->t->sync([$this->t->openShift(0, now()->subHour()->toIso8601String()), $this->t->sale([[$this->milo, '1', null]], $at)])->assertOk();
+
+    $sale = Sale::latest('received_at')->first();
+    expect(collect($r->json('results'))->pluck('status')->unique()->all())->toBe(['accepted'])
+        ->and($sale->total_minor)->toBe(5800)->and($sale->discount_minor)->toBe(0)
+        ->and(ReviewItem::where('type', 'offline_price')->where('summary', 'like', '%Promotions or discounts%')->exists())->toBeTrue();
 });

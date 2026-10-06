@@ -13,6 +13,7 @@ use App\Models\Till;
 use App\Models\User;
 use App\Security\Authorizer;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Facades\DB;
 
 /**
  * A till session: opening float → sales → blind cash count → over/short.
@@ -86,6 +87,9 @@ final class ShiftService
     {
         $cash = (int) SalePayment::whereIn('sale_id', $shift->sales()->where('status', 'posted')->select('id'))
             ->where('method', 'cash')->sum('amount_minor');
+
+        // Money taken at the till against customer accounts is in the drawer too.
+        $cash += (int) DB::table('customer_payments')->where('shift_id', $shift->id)->where('method', 'cash')->sum('amount_minor');
 
         return $shift->opening_float_minor + $cash;
     }

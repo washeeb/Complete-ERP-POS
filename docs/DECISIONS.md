@@ -165,3 +165,11 @@ Design (Phase 6a):
 - **Fresh installs:** the first owner's grant now takes the owner role's default limits. Before this, a new owner had no PO-approval or credit-override limit; existing installs got them through the upgrade path. This was found by the screens test. [+]
 - **A4 documents** are Blade pages (print or "Save as PDF") under `/print/*`. They need a signed-in back-office user, check permissions per document, and check the tenant explicitly. Server-side PDF and emailing come with notifications later.
 - **Filament note:** search callbacks must name their argument `$search`; a `$s` slipped through tests that fill fields by id and was found in the browser demo.
+
+## Phase 6b (2026-10-11)
+
+Owner answers (2026-10-11):
+- **Promotions:** the **best single promotion per item**; basket offers (spend X) and coupons apply on top.
+- **Manual discounts and price overrides (default limits):** cashier 0 %, supervisor 10 %, branch manager 25 %; above your own limit → supervisor PIN.
+- **Returns:** **30 days with the receipt**, refunded to the original tender (account sales credited to the account); without a receipt, store credit only, with a supervisor PIN.
+- **Gift cards and store credit:** expire **12 months after last use**.
