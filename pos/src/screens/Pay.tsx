@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { formatMoney, parseMoney } from '../money'
 import type { Payment, TillCustomer } from '../types'
 
+const LABEL: Record<string, string> = { cash: 'Cash', momo: 'Mobile money', card: 'Card', account: 'On account', points: 'Points', gift_card: 'Gift card', store_credit: 'Store credit' }
+
 const MOMO = [
   { id: 'mtn', name: 'MTN MoMo' },
   { id: 'telecel', name: 'Telecel Cash' },
@@ -45,6 +47,11 @@ export function Pay({ total, currency, exponent, busy, error, customer, onPay, o
       const p: Payment = { method, amount_minor: applyAmount, tendered_minor: method === 'cash' ? tendered : applyAmount }
       if (method === 'momo') Object.assign(p, { provider, reference: reference.trim(), payer_phone: phone.trim() || undefined })
       if (method === 'card' && reference.trim()) p.reference = reference.trim()
+      if (method === 'gift_card' || method === 'store_credit') {
+        if (reference.trim().length < 6) throw new Error('Scan or type the card code.')
+        p.reference = reference.trim().toUpperCase()
+      }
+      if (method === 'points' && applyAmount > (customer?.points ?? 0)) throw new Error(`${customer?.name} has ${customer?.points ?? 0} points (worth ${money(customer?.points ?? 0)}).`)
       const next = [...payments, p]
       setPayments(next)
       setAmount('')
@@ -71,7 +78,7 @@ export function Pay({ total, currency, exponent, busy, error, customer, onPay, o
           <ul className="payments">
             {payments.map((p, i) => (
               <li key={i}>
-                {p.method === 'cash' ? 'Cash' : p.method === 'momo' ? MOMO.find((m) => m.id === p.provider)?.name : p.method === 'account' ? `On account (${customer?.name ?? ''})` : 'Card'} {money(p.amount_minor)}
+                {p.method === 'momo' ? MOMO.find((m) => m.id === p.provider)?.name : p.method === 'account' ? `On account (${customer?.name ?? ''})` : LABEL[p.method]} {money(p.amount_minor)}
                 {p.reference ? ` · ${p.reference}` : ''}
                 {!busy && <button type="button" className="link" onClick={() => setPayments(payments.filter((_, j) => j !== i))}>remove</button>}
               </li>
@@ -82,9 +89,9 @@ export function Pay({ total, currency, exponent, busy, error, customer, onPay, o
         {due > 0 && (
           <>
             <div className="segmented" role="tablist">
-              {(customer ? (['cash', 'momo', 'card', 'account'] as const) : (['cash', 'momo', 'card'] as const)).map((m) => (
+              {(customer ? (['cash', 'momo', 'card', 'account', 'points', 'gift_card', 'store_credit'] as const) : (['cash', 'momo', 'card', 'gift_card', 'store_credit'] as const)).map((m) => (
                 <button key={m} type="button" role="tab" aria-selected={method === m} className={method === m ? 'active' : ''} onClick={() => setMethod(m)}>
-                  {m === 'cash' ? 'Cash' : m === 'momo' ? 'Mobile money' : m === 'account' ? 'On account' : 'Card'}
+                  {LABEL[m]}
                 </button>
               ))}
             </div>
@@ -100,6 +107,9 @@ export function Pay({ total, currency, exponent, busy, error, customer, onPay, o
                     : `Credit available ${money(customer.available_minor ?? 0)}${customer.overdue_minor > 0 ? ` · ${money(customer.overdue_minor)} overdue — a supervisor must approve` : ''}.`}
               </p>
             )}
+            {method === 'points' && customer && (
+              <p className="muted">{customer.name} has {customer.points ?? 0} points, worth {money(customer.points ?? 0)} (100 points = {money(100)}).</p>
+            )}
             {method === 'momo' && (
               <div className="row wrap">
                 {MOMO.map((m) => (
@@ -114,9 +124,9 @@ export function Pay({ total, currency, exponent, busy, error, customer, onPay, o
                 {method === 'cash' ? 'Cash received' : 'Amount'} <span className="muted">(blank = {money(due)})</span>
                 <input autoFocus className="big mono" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
               </label>
-              {(method === 'momo' || method === 'card') && (
+              {(method === 'momo' || method === 'card' || method === 'gift_card' || method === 'store_credit') && (
                 <label>
-                  {method === 'momo' ? 'Transaction ID' : 'Approval code (optional)'}
+                  {method === 'momo' ? 'Transaction ID' : method === 'card' ? 'Approval code (optional)' : 'Card code'}
                   <input className="big mono" value={reference} onChange={(e) => setReference(e.target.value)} maxLength={80} />
                 </label>
               )}
@@ -126,7 +136,7 @@ export function Pay({ total, currency, exponent, busy, error, customer, onPay, o
                   <input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} />
                 </label>
               )}
-              <button className="primary big" disabled={busy}>Add {method === 'cash' ? 'cash' : method === 'momo' ? 'MoMo' : method === 'account' ? 'to account' : 'card'}</button>
+              <button className="primary big" disabled={busy}>Add {method === 'account' ? 'to account' : LABEL[method].toLowerCase()}</button>
             </form>
           </>
         )}

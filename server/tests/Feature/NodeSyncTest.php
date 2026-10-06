@@ -4,6 +4,8 @@ use App\Domain\Access\AccessService;
 use App\Domain\Catalog\CatalogService;
 use App\Domain\Customers\CustomerLedger;
 use App\Domain\Customers\CustomerService;
+use App\Domain\Customers\Loyalty;
+use App\Domain\Customers\StoredValues;
 use App\Domain\Devices\DeviceService;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Inventory\StockLedger;
@@ -33,6 +35,7 @@ use App\Models\ReviewItem;
 use App\Models\Role;
 use App\Models\Sale;
 use App\Models\StockLevel;
+use App\Models\StoredValue;
 use App\Models\Supplier;
 use App\Models\SyncInboxEvent;
 use App\Models\SyncPeer;
@@ -408,4 +411,22 @@ it('brings a branch credit sale to the customer account at HQ', function () {
 
     expect((int) DB::table('customer_balances')->where('customer_id', $c->id)->value('balance_minor'))->toBe(5800)
         ->and(app(CustomerLedger::class)->check())->toBe([]);
+});
+
+it('carries loyalty points and gift card balances between servers', function () {
+    $c = app(CustomerService::class)->save(actorFor($this->owner), new Customer, ['name' => 'Ama Owusu', 'phone' => '0241112222']);
+    $card = app(StoredValues::class)->sellCard(actorFor($this->owner), 5000, 'cash', null);
+    branchSync();
+
+    Nodes::on('B01', function () use ($c, $card) {
+        $owner = User::where('username', 'like', 'owner%')->first();
+        DB::transaction(function () use ($owner, $c, $card) {
+            app(Loyalty::class)->post(actorFor($owner), Customer::find($c->id), 'earn', 120, 'sale', (string) Str::uuid7(), 'BA-T01A-000001');
+            app(StoredValues::class)->redeem(actorFor($owner), StoredValue::find($card->id), 2000, 'sale', (string) Str::uuid7(), 'BA-T01A-000001', false);
+        });
+    });
+    branchSync();
+
+    expect(app(Loyalty::class)->balance($c->id))->toBe(120)->and($card->balanceMinor())->toBe(3000)
+        ->and(app(Loyalty::class)->check())->toBe([])->and(app(StoredValues::class)->check())->toBe([]);
 });

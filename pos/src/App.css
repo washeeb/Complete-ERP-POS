@@ -71,8 +71,19 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
 
 .receipt-screen { display: grid; justify-content: center; gap: 12px; }
 .receipt { background: #fff; color: #000; width: 80mm; padding: 4mm; font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
-.receipt h2 { font-size: 15px; text-align: center; margin: 0 0 2px; } .receipt p { margin: 2px 0; text-align: center; }
-.receipt table { width: 100%; border-collapse: collapse; } .receipt td { padding: 1px 0; vertical-align: top; }
+.receipt h2 { font-size: 15px; margin: 0 0 2px; color: #000; font-family: inherit; } .receipt .small { font-size: 10px; } .receipt p { margin: 2px 0; text-align: left; }
+.receipt .center, .receipt .center p { text-align: center; }
+.receipt table { width: 100%; border-collapse: collapse; } .receipt td, .receipt th { padding: 1px 0; vertical-align: top; text-align: left; }
+.receipt .num { text-align: right; white-space: nowrap; padding-left: 4px; }
+.receipt-logo { width: 28mm; height: 12mm; margin: 0 auto 4px; border: 1px dashed #000; display: grid; place-items: center; font-size: 10px; letter-spacing: 2px; }
+.receipt-items { font-size: 11px; line-height: 1.3; } .receipt-items .num { padding-left: 8px; }
+.receipt-items thead th { font-weight: 700; }
+.receipt-items thead tr:last-child th { font-weight: 400; padding-bottom: 2px; border-bottom: 1px solid #000; }
+.receipt-items tbody + tbody tr:first-child td { border-top: 1px dotted #999; }
+.receipt-items .sn { width: 1%; padding-right: 4px; white-space: nowrap; }
+.receipt-items .item { overflow-wrap: anywhere; }
+.receipt-items .promo-line td { padding-top: 0; font-style: italic; }
+.receipt-qr { width: 26mm; height: 26mm; display: block; margin: 4px auto; }
 .receipt hr { border: 0; border-top: 1px dashed #000; margin: 4px 0; }
 
 @media (max-width: 760px) {
@@ -100,3 +111,4 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
 .scan input { width: 100%; }
 .handheld section { display: grid; gap: 10px; }
 .handheld label { display: grid; gap: 4px; }
+.promo { color: var(--ok-text, #14532d); }

@@ -46,6 +46,31 @@ final class Settings
             'label' => 'Over-delivery accepted without a manager (%)',
             'help' => 'A delivery may exceed the ordered quantity by this much. Above it, the goods received note waits until a manager with “approve deliveries” accepts it.',
         ],
+        'loyalty.enabled' => [
+            'type' => 'bool', 'default' => true, 'group' => 'Loyalty',
+            'label' => 'Loyalty points',
+            'help' => 'Customers on a sale earn 1 point per GHS 1 paid; 100 points are worth GHS 1 at the till.',
+        ],
+        'loyalty.min_redeem_points' => [
+            'type' => 'int', 'default' => 500, 'min' => 0, 'max' => 100000, 'group' => 'Loyalty',
+            'label' => 'Points needed before they can be used',
+            'help' => 'A customer can pay with points once they hold at least this many.',
+        ],
+        'loyalty.expiry_months' => [
+            'type' => 'int', 'default' => 12, 'min' => 0, 'max' => 120, 'group' => 'Loyalty',
+            'label' => 'Points expire after (months)',
+            'help' => 'Points not used within this many months of being earned expire (oldest first). 0 = never.',
+        ],
+        'stored_value.expiry_months' => [
+            'type' => 'int', 'default' => 12, 'min' => 0, 'max' => 120, 'group' => 'Gift cards',
+            'label' => 'Gift cards and store credit expire after (months unused)',
+            'help' => 'A balance expires when the card has not been used for this long; any use resets the clock. 0 = never.',
+        ],
+        'returns.days' => [
+            'type' => 'int', 'default' => 30, 'min' => 0, 'max' => 365, 'group' => 'Returns',
+            'label' => 'Returns accepted within (days, with receipt)',
+            'help' => 'Within this many days a cashier can take goods back against the receipt and refund to the original payment. Without a receipt (or later): store credit only, with a supervisor PIN.',
+        ],
         'receipt.footer' => [
             'type' => 'string', 'default' => 'Thank you for shopping with us.', 'max' => 200, 'group' => 'Receipts',
             'label' => 'Message at the bottom of receipts',

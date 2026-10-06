@@ -6,8 +6,11 @@ use App\Domain\Customers\CustomerLedger;
 use App\Domain\Customers\CustomerService;
 use App\Domain\Devices\DeviceSignature;
 use App\Domain\Pos\PosSyncService;
+use App\Domain\Pos\ReturnService;
 use App\Domain\Pos\SaleService;
 use App\Domain\Pos\ShiftService;
+use App\Domain\Sales\ReceivablesService;
+use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
@@ -16,6 +19,7 @@ use App\Models\Device;
 use App\Models\LegalEntity;
 use App\Models\PriceList;
 use App\Models\Product;
+use App\Models\Promotion;
 use App\Models\Sale;
 use App\Models\Shift;
 use App\Models\StockLevel;
@@ -28,6 +32,7 @@ use App\Support\Settings;
 use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /** Endpoints a signed-in till uses. Device + staff session are checked by the device.token:pos middleware. */
@@ -91,8 +96,12 @@ class PosController extends Controller
         return response()->json([
             'version' => $version,
             'generated_at' => $now->toIso8601String(),
+            // Every active promotion; the till picks the running ones (dates, days, happy hours, branch, list) like the server.
+            'promotions' => Promotion::where('is_active', true)->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>', $now))->get()
+                ->map(fn (Promotion $p) => $p->toEngine())->values(),
+            'utc_offset_minutes' => (int) round(Carbon::now(Branch::find($device->branch_id)?->timezone ?: config('app.timezone'))->utcOffset()),
             'products' => $products->map(fn (Product $p) => [
-                'id' => $p->id, 'sku' => $p->sku, 'name' => $p->name, 'track_stock' => $p->track_stock,
+                'id' => $p->id, 'sku' => $p->sku, 'name' => $p->name, 'category_id' => $p->category_id, 'track_stock' => $p->track_stock,
                 'on_hand' => $p->track_stock ? (string) ($stock[$p->id] ?? '0.000') : null,
                 'tax' => $p->taxGroup->rates->map(fn ($r) => ['code' => $r->code, 'name' => $r->name, 'rate_bp' => $r->rate_bp])->values(),
                 'units' => $p->units->map(fn ($u) => [
@@ -122,24 +131,28 @@ class PosController extends Controller
             DB::table('customers')->where('tenant_id', $tenant)->count(), DB::table('customers')->where('tenant_id', $tenant)->max('updated_at'),
             DB::table('customer_balances')->where('tenant_id', $tenant)->max('updated_at'),
             DB::table('customer_orders')->where('tenant_id', $tenant)->max('updated_at'),
+            DB::table('loyalty_balances')->where('tenant_id', $tenant)->max('updated_at'),
             now()->toDateString(), // overdue status changes with the date
         ]));
         if ($request->header('If-None-Match') === '"'.$version.'"') {
             return response()->json(null, 304)->setEtag($version);
         }
 
+        $points = DB::table('loyalty_balances')->pluck('points', 'customer_id');
+
         return response()->json(['version' => $version, 'customers' => Customer::where('is_active', true)->with('balance')->orderBy('name')->limit(50000)->get()
             ->map(fn (Customer $c) => ['id' => $c->id, 'code' => $c->code, 'name' => $c->name, 'phone' => $c->phone, 'price_list_id' => $c->price_list_id,
                 'credit_limit_minor' => $c->credit_limit_minor, 'credit_hold' => $c->credit_hold, 'balance_minor' => $c->balanceMinor(),
                 'available_minor' => $c->credit_limit_minor === null ? null : $credit->availableCredit($c),
-                'overdue_minor' => $c->credit_limit_minor === null && $c->balanceMinor() <= 0 ? 0 : $ledger->overdueMinor($c->id)])->values()])->setEtag($version);
+                'overdue_minor' => $c->credit_limit_minor === null && $c->balanceMinor() <= 0 ? 0 : $ledger->overdueMinor($c->id),
+                'points' => (int) ($points[$c->id] ?? 0)])->values()])->setEtag($version);
     }
 
     private function catalogVersion(): string
     {
         $tenant = app(TenantContext::class)->id();
         $parts = [];
-        foreach (['products', 'product_uoms', 'barcodes', 'prices', 'price_lists', 'tax_rates', 'tax_groups', 'uoms'] as $t) {
+        foreach (['products', 'product_uoms', 'barcodes', 'prices', 'price_lists', 'tax_rates', 'tax_groups', 'uoms', 'promotions'] as $t) {
             $row = DB::table($t)->where('tenant_id', $tenant)->selectRaw('count(*) as c, max(updated_at) as u')->first();
             $parts[] = $t.':'.$row->c.':'.$row->u;
         }
@@ -257,6 +270,46 @@ class PosController extends Controller
         ];
     }
 
+    /** A receipt to take goods back against (by receipt number): lines, what can still be returned, how it was paid. */
+    public function lookupSale(Request $request, ReturnService $returns): JsonResponse
+    {
+        $no = strtoupper(trim((string) $request->query('receipt', '')));
+        $sale = Sale::with('lines', 'payments')->where('kind', 'sale')->where('receipt_no', $no)->first();
+        if (! $sale) {
+            return response()->json(['error' => 'not_found', 'detail' => "No sale with receipt number {$no}."], 404);
+        }
+
+        return response()->json(['sale' => $this->saleJson($sale), 'returnable' => $returns->returnable($sale), 'customer_id' => $sale->customer_id]);
+    }
+
+    public function postReturn(Request $request, ReturnService $returns): JsonResponse
+    {
+        $request->validate([
+            'id' => ['required', 'uuid'], 'device_seq' => ['required', 'integer', 'min:1'], 'occurred_at' => ['required', 'date'], 'shift_id' => ['required', 'uuid'],
+            'original_sale_id' => ['nullable', 'uuid'], 'reason' => ['required', 'string', 'max:255'], 'customer_id' => ['nullable', 'uuid'],
+            'lines' => ['required', 'array', 'min:1', 'max:200'], 'lines.*.qty' => ['required', 'string', 'max:20'],
+            'refunds' => ['nullable', 'array', 'max:10'], 'refunds.*.method' => ['required', 'string', 'max:20'], 'refunds.*.amount_minor' => ['required', 'integer', 'min:1'],
+        ]);
+        $r = $returns->post($this->device($request), $request->user(), $request->all());
+
+        return response()->json(['sale' => $this->saleJson($r['sale']), 'store_credit_code' => $r['store_credit_code']], 201);
+    }
+
+    /** Take money from a customer at the till against their account (counts in this shift's cash). */
+    public function accountPayment(Request $request, ReceivablesService $receivables, ShiftService $shifts): JsonResponse
+    {
+        $data = $request->validate(['customer_id' => ['required', 'uuid'], 'amount_minor' => ['required', 'integer', 'min:1'],
+            'method' => ['required', 'in:cash,momo,card'], 'provider' => ['nullable', 'string', 'max:20'], 'reference' => ['nullable', 'string', 'max:80']]);
+        $device = $this->device($request);
+        $shift = $shifts->current($device) ?? throw new DomainException('Open a shift on this till first.', 'no_shift');
+        $till = Till::findOrFail($device->till_id);
+        $p = $receivables->recordPayment(Actor::user($request->user(), 'pos', $device->id), Customer::findOrFail($data['customer_id']), Branch::findOrFail($till->branch_id),
+            $data['method'], $data['amount_minor'], $data['reference'] ?? null, null, null, $data['provider'] ?? null, 'Taken at till '.$till->code, $shift->id);
+
+        return response()->json(['number' => $p->number, 'amount_minor' => $p->amount_minor,
+            'balance_minor' => (int) DB::table('customer_balances')->where('customer_id', $p->customer_id)->value('balance_minor')], 201);
+    }
+
     private function saleJson(Sale $s): array
     {
         return [
@@ -266,7 +319,9 @@ class PosController extends Controller
             'total_minor' => $s->total_minor, 'paid_minor' => $s->paid_minor, 'change_minor' => $s->change_minor,
             'tax_breakdown' => $s->tax_breakdown,
             'lines' => $s->lines->map(fn ($l) => ['line_no' => $l->line_no, 'sku' => $l->sku, 'name' => $l->name, 'uom' => $l->uom_code,
-                'qty' => Qty::format(Qty::toMilli((string) $l->qty)), 'unit_price_minor' => $l->unit_price_minor, 'line_total_minor' => $l->line_total_minor])->values(),
+                'qty' => Qty::format(Qty::toMilli((string) $l->qty)), 'unit_price_minor' => $l->unit_price_minor, 'line_total_minor' => $l->line_total_minor,
+                'discount_minor' => (int) $l->discount_minor, 'promotions' => $l->promotions ?? []])->values(),
+            'kind' => $s->kind, 'discount_minor' => (int) $s->discount_minor, 'points_earned' => (int) $s->points_earned,
             'payments' => $s->payments->map(fn ($p) => ['method' => $p->method, 'provider' => $p->provider, 'amount_minor' => $p->amount_minor,
                 'tendered_minor' => $p->tendered_minor, 'reference' => $p->reference, 'status' => $p->status])->values(),
         ];

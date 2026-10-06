@@ -166,3 +166,18 @@ Errors use the standard body `{error, detail}`. For example: `wrong_status`, `no
   - `approval_failed`, `over_limit`, `own_document`, `pin_locked`.
 
   Offline credit sales (queue) are accepted as they happened; going over the limit raises the review item `credit_over_limit`.
+
+## Promotions, loyalty, gift cards and returns on the till (Phase 6b)
+
+- `GET pos/catalog` adds `promotions` (the rows the engine needs: `type`, `product_ids`, `category_ids`, `value_bp`, `value_minor`, `buy_qty`, `get_qty`, `bundle_qty`, `min_spend_minor`, `coupon_code`, date/day/time windows, `branch_ids`, `price_list_ids`), `utc_offset_minutes` (branch time for happy hours) and product `category_id`. The catalog version changes when a promotion changes.
+- `GET pos/customers` adds `points`.
+- `POST pos/sales` (and queued `sale` events) accept:
+  - per line `manual: {bp}` or `manual: {price_minor}` (line discount or price override), `list_total_minor`, `discount_minor`, `promotions`;
+  - `coupon_code`, `sale_discount_bp`;
+  - online `discount_approval: {username, pin}`; offline `discount_approved_offline_by` (the supervisor's user id from their offline sign-in);
+  - payment methods `points` (needs `customer_id`; 1 point = 1 pesewa; from 500 points), `gift_card` and `store_credit` (`reference` = card code).
+
+  Errors: `coupon_invalid`, `totals_mismatch`, `discount_needs_approval`, `points_refused`, `stored_value_refused`. Responses add `kind`, `discount_minor`, `points_earned` and per line `discount_minor`, `promotions`.
+- `GET pos/receipts?receipt=HQ-T01A-000001` → `{sale, customer_id, returnable: {within_period, lines: [{id, name, qty, line_total_minor, returnable_qty, …}], tenders: [{method, paid_minor, refundable_minor, reference}]}}`; 404 `not_found`.
+- `POST pos/returns` `{id, device_seq, occurred_at, shift_id, original_sale_id|null, reason, customer_id?, lines: [{original_line_id, qty}] (or product lines without a receipt), refunds: [{method, amount_minor, reference?}], approval?: {username, pin}}` → `201 {sale (kind return, negative), store_credit_code|null}`. Errors: `over_return`, `refund_mismatch`, `return_needs_approval` (no receipt or past the period: store credit with a supervisor PIN), `no_shift`. Online only.
+- `POST pos/account-payments` `{customer_id, amount_minor, method: cash|momo|card, provider?, reference?}` → `201 {number, amount_minor, balance_minor}`. Counts in the current shift's cash; `no_shift` without one.

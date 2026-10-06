@@ -1,0 +1,105 @@
+{
+  "_about": "Shared test vectors for the promotion engine. Run by server/tests/Unit/PromotionEngineTest.php and pos/src/promotions.test.ts; both engines must give exactly these results. Expected values are worked out by hand (see the notes).",
+  "_defaults": {
+    "promotion": { "product_ids": [], "category_ids": [], "value_bp": 0, "value_minor": 0, "buy_qty": 0, "get_qty": 0, "bundle_qty": 0, "min_spend_minor": 0, "coupon_code": null },
+    "line": { "category_id": null, "tax": [] }
+  },
+  "cases": [
+    {
+      "name": "percent off one product",
+      "input": { "inclusive": true, "lines": [{ "key": "A", "product_id": "A", "qty_milli": 2000, "unit_price_minor": 1000 }],
+        "promotions": [{ "id": "p1", "name": "Milo 10%", "type": "percent", "product_ids": ["A"], "value_bp": 1000 }] },
+      "expect": { "total": 1800, "discount": 200, "lines": { "A": 200 } }
+    },
+    {
+      "name": "buy 2 get 1 free (mix and match), saving shared across the group by price",
+      "note": "group [A 1000, A 1000, B 500]: the cheapest (B) is free = 500, shared 1000:1000:500 → A 400, B 100",
+      "input": { "inclusive": true, "lines": [
+          { "key": "A", "product_id": "A", "qty_milli": 2000, "unit_price_minor": 1000 },
+          { "key": "B", "product_id": "B", "qty_milli": 1000, "unit_price_minor": 500 }],
+        "promotions": [{ "id": "p2", "name": "3 for 2", "type": "buy_x_get_y", "product_ids": ["A", "B"], "buy_qty": 2, "get_qty": 1 }] },
+      "expect": { "total": 2000, "discount": 500, "lines": { "A": 400, "B": 100 } }
+    },
+    {
+      "name": "best single promotion per item: the 3-for-2 beats 10% off for both lines",
+      "note": "10%: A 200, B 50; 3-for-2: A 400, B 100 → both choose the 3-for-2",
+      "input": { "inclusive": true, "lines": [
+          { "key": "A", "product_id": "A", "qty_milli": 2000, "unit_price_minor": 1000 },
+          { "key": "B", "product_id": "B", "qty_milli": 1000, "unit_price_minor": 500 }],
+        "promotions": [
+          { "id": "p1", "name": "10% everything", "type": "percent", "value_bp": 1000 },
+          { "id": "p2", "name": "3 for 2", "type": "buy_x_get_y", "product_ids": ["A", "B"], "buy_qty": 2, "get_qty": 1 }] },
+      "expect": { "total": 2000, "discount": 500, "lines": { "A": 400, "B": 100 } }
+    },
+    {
+      "name": "bundle: any 3 for 10.00, saving shared by price with largest remainder",
+      "note": "pool 500,500,400,400 → one group [500,500,400] = 1400 → save 400 → 142.86/142.86/114.29 → 143,143,114",
+      "input": { "inclusive": true, "lines": [
+          { "key": "A", "product_id": "A", "qty_milli": 2000, "unit_price_minor": 500 },
+          { "key": "B", "product_id": "B", "qty_milli": 2000, "unit_price_minor": 400 }],
+        "promotions": [{ "id": "p3", "name": "Any 3 for 10", "type": "bundle", "product_ids": ["A", "B"], "bundle_qty": 3, "value_minor": 1000 }] },
+      "expect": { "total": 1400, "discount": 400, "lines": { "A": 286, "B": 114 } }
+    },
+    {
+      "name": "spend 20.00 get 10% on top of an item promotion",
+      "note": "item 10% → 300 off, 2700 left ≥ 2000 → basket 10% = 270",
+      "input": { "inclusive": true, "lines": [{ "key": "A", "product_id": "A", "qty_milli": 3000, "unit_price_minor": 1000 }],
+        "promotions": [
+          { "id": "p1", "name": "Milo 10%", "type": "percent", "product_ids": ["A"], "value_bp": 1000 },
+          { "id": "p5", "name": "Spend 20 save 10%", "type": "threshold", "min_spend_minor": 2000, "value_bp": 1000 }] },
+      "expect": { "total": 2430, "discount": 570, "lines": { "A": 570 } }
+    },
+    {
+      "name": "spend threshold not reached after item discount",
+      "input": { "inclusive": true, "lines": [{ "key": "A", "product_id": "A", "qty_milli": 2000, "unit_price_minor": 1000 }],
+        "promotions": [
+          { "id": "p1", "name": "Milo 10%", "type": "percent", "product_ids": ["A"], "value_bp": 1000 },
+          { "id": "p5", "name": "Spend 20 save 10%", "type": "threshold", "min_spend_minor": 2000, "value_bp": 1000 }] },
+      "expect": { "total": 1800, "discount": 200, "lines": { "A": 200 } }
+    },
+    {
+      "name": "coupon: 5.00 off with minimum spend 10.00, code is case-insensitive",
+      "input": { "inclusive": true, "coupon": "save5", "lines": [{ "key": "A", "product_id": "A", "qty_milli": 1000, "unit_price_minor": 1000 }],
+        "promotions": [{ "id": "p6", "name": "SAVE5", "type": "coupon", "coupon_code": "SAVE5", "value_minor": 500, "min_spend_minor": 1000 }] },
+      "expect": { "total": 500, "discount": 500, "lines": { "A": 500 }, "coupon_applied": "p6" }
+    },
+    {
+      "name": "unknown coupon is reported and nothing is taken off",
+      "input": { "inclusive": true, "coupon": "NOPE", "lines": [{ "key": "A", "product_id": "A", "qty_milli": 1000, "unit_price_minor": 1000 }],
+        "promotions": [] },
+      "expect": { "total": 1000, "discount": 0, "lines": { "A": 0 }, "coupon_applied": null, "coupon_error": "This coupon is not valid now." }
+    },
+    {
+      "name": "manual line 10% then whole-sale 5%",
+      "note": "line 1000 → 10% = 100 → 900 → sale 5% = 45",
+      "input": { "inclusive": true, "sale_discount_bp": 500, "lines": [{ "key": "A", "product_id": "A", "qty_milli": 1000, "unit_price_minor": 1000, "manual": { "bp": 1000 } }],
+        "promotions": [] },
+      "expect": { "total": 855, "discount": 145, "lines": { "A": 145 } }
+    },
+    {
+      "name": "price override replaces promotions on that line",
+      "input": { "inclusive": true, "lines": [{ "key": "A", "product_id": "A", "qty_milli": 2000, "unit_price_minor": 1000, "manual": { "price_minor": 800 } }],
+        "promotions": [{ "id": "p1", "name": "Milo 10%", "type": "percent", "product_ids": ["A"], "value_bp": 1000 }] },
+      "expect": { "total": 1600, "discount": 400, "lines": { "A": 400 } }
+    },
+    {
+      "name": "tax is worked out on the discounted amount (Ghana VAT + NHIL, prices include tax)",
+      "note": "1160 − 116 = 1044; net = round(1044 × 10000 / 11750) = 889; tax 155 split 1500:250 → 133 + 22",
+      "input": { "inclusive": true, "lines": [{ "key": "A", "product_id": "A", "qty_milli": 1000, "unit_price_minor": 1160,
+          "tax": [{ "code": "VAT", "name": "VAT", "rate_bp": 1500 }, { "code": "NHIL", "name": "NHIL", "rate_bp": 250 }] }],
+        "promotions": [{ "id": "p1", "name": "10% off", "type": "percent", "value_bp": 1000 }] },
+      "expect": { "total": 1044, "net": 889, "tax": 155, "discount": 116, "lines": { "A": 116 }, "breakdown": { "VAT": 133, "NHIL": 22 } }
+    },
+    {
+      "name": "category promotion and amount off per unit, best per item",
+      "note": "B (category C1): 20% = 160 vs 1.00 off each × 2 = 200 → amount off wins; A not in C1 gets the amount off too (200)",
+      "input": { "inclusive": true, "lines": [
+          { "key": "A", "product_id": "A", "qty_milli": 2000, "unit_price_minor": 600 },
+          { "key": "B", "product_id": "B", "category_id": "C1", "qty_milli": 2000, "unit_price_minor": 400 }],
+        "promotions": [
+          { "id": "p7", "name": "Snacks 20%", "type": "percent", "category_ids": ["C1"], "value_bp": 2000 },
+          { "id": "p8", "name": "1.00 off", "type": "amount_off", "value_minor": 100 }] },
+      "expect": { "total": 1600, "discount": 400, "lines": { "A": 200, "B": 200 } }
+    }
+  ]
+}

@@ -86,7 +86,7 @@ test('sells on account to a customer, with a supervisor approving the part over 
   await expect(page.getByRole('dialog', { name: 'Supervisor approval' })).toBeVisible()
   await page.getByLabel('Supervisor username').fill('kojo')
   await page.getByLabel('Supervisor PIN').fill('771204')
-  await page.getByRole('button', { name: 'Approve credit sale' }).click()
+  await page.getByRole('button', { name: 'Approve', exact: true }).click()
 
   await expect(page.getByText('Receipt HQ-T01A-000002')).toBeVisible()
   expect(posted).toHaveLength(2)

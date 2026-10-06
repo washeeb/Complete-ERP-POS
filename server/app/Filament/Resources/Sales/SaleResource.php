@@ -91,6 +91,11 @@ class SaleResource extends Resource
                 TextEntry::make('tax_minor')->label('Tax')->formatStateUsing(fn ($state, Sale $r) => self::money($state, $r)),
                 TextEntry::make('total_minor')->label('Total')->weight('bold')->formatStateUsing(fn ($state, Sale $r) => self::money($state, $r)),
                 TextEntry::make('change_minor')->label('Change given')->formatStateUsing(fn ($state, Sale $r) => self::money($state, $r)),
+                TextEntry::make('discount_minor')->label('Discounts')->formatStateUsing(fn ($state, Sale $r) => self::money($state, $r))
+                    ->belowContent(fn (Sale $r) => trim(($r->coupon_code ? "coupon {$r->coupon_code} " : '').($r->discount_approved_by_name ? "approved by {$r->discount_approved_by_name}" : '')) ?: null),
+                TextEntry::make('kind')->label('Type')->badge()->formatStateUsing(fn ($state, Sale $r) => $state === 'return' ? 'Return'.($r->return_reason ? ": {$r->return_reason}" : '') : 'Sale')
+                    ->color(fn ($state) => $state === 'return' ? 'warning' : 'gray'),
+                TextEntry::make('points_earned')->label('Points earned')->visible(fn (Sale $r) => $r->points_earned > 0),
             ]),
             Section::make('Items')->schema([
                 RepeatableEntry::make('lines')->hiddenLabel()->columns(6)->schema([
@@ -123,7 +128,8 @@ class SaleResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('receipt_no')->label('Receipt')->searchable()->sortable(),
+                TextColumn::make('receipt_no')->label('Receipt')->searchable()->sortable()
+                    ->description(fn (Sale $r) => $r->kind === 'return' ? 'Return' : null),
                 TextColumn::make('occurred_at')->label('Sold at')->dateTime()->sortable(),
                 TextColumn::make('branch.code')->label('Branch'),
                 TextColumn::make('cashier_name')->label('Cashier')->searchable(),

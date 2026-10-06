@@ -3,6 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Domain\Customers\CustomerLedger;
+use App\Domain\Customers\Loyalty;
+use App\Domain\Customers\StoredValues;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -11,11 +13,11 @@ class ReceivablesCheckCommand extends Command
 {
     protected $signature = 'erp:receivables-check';
 
-    protected $description = 'Prove every customer balance equals its ledger, and allocations never exceed the documents';
+    protected $description = 'Prove customer balances, loyalty points and gift card / store credit balances equal their ledgers, and allocations never exceed the documents';
 
-    public function handle(CustomerLedger $ledger): int
+    public function handle(CustomerLedger $ledger, Loyalty $loyalty, StoredValues $stored): int
     {
-        $balances = $ledger->check();
+        $balances = array_merge($ledger->check(), $loyalty->check(), $stored->check());
         $over = DB::select(<<<'SQL'
             SELECT l.doc_number, l.amount_minor, SUM(a.amount_minor) AS settled
             FROM customer_ledger l JOIN receivable_allocations a ON a.to_type = l.doc_type AND a.to_id = l.doc_id
@@ -23,12 +25,12 @@ class ReceivablesCheckCommand extends Command
             GROUP BY l.doc_number, l.amount_minor HAVING SUM(a.amount_minor) > l.amount_minor
         SQL);
         if ($balances === [] && $over === []) {
-            $this->info('Customer balances match the ledger; no document is over-settled.');
+            $this->info('Customer balances, points and card balances match their ledgers; no document is over-settled.');
 
             return self::SUCCESS;
         }
         if ($balances) {
-            $this->table(['customer', 'balance', 'ledger'], array_map(fn ($r) => (array) $r, $balances));
+            $this->table(['account', 'balance', 'ledger'], array_map(fn ($r) => array_values((array) $r), $balances));
         }
         if ($over) {
             $this->table(['document', 'amount', 'settled'], array_map(fn ($r) => (array) $r, $over));

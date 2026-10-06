@@ -7,10 +7,12 @@ use App\Domain\Devices\DeviceSignature;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Pos\TillFileImport;
 use App\Domain\Pricing\PriceResolver;
+use App\Domain\Pricing\PromotionService;
 use App\Domain\Pricing\TaxCalculator;
 use App\Domain\Support\DomainException;
 use App\Models\PriceList;
 use App\Models\Product;
+use App\Models\Promotion;
 use App\Models\ReviewItem;
 use App\Models\Sale;
 use App\Models\Shift;
@@ -296,4 +298,40 @@ it('never reuses receipt numbers when a till is reinstalled mid-queue', function
     expect(Sale::orderBy('receipt_no')->pluck('receipt_no')->all())
         ->toBe(['HQ-T01'.$old->device->receipt_series.'-000001', 'HQ-T01'.$new->device->receipt_series.'-000001'])
         ->and($old->device->receipt_series)->not->toBe($new->device->receipt_series);
+});
+
+it('keeps an offline sale that missed a promotion started while the till was offline, and flags it', function () {
+    app(PromotionService::class)->save(actorFor($this->owner), new Promotion,
+        ['name' => 'Milo 10%', 'type' => 'percent', 'product_ids' => [$this->milo->id], 'value_bp' => 1000]);
+    $at = now()->subMinutes(30)->toIso8601String();
+
+    $r = $this->t->sync([$this->t->openShift(0, now()->subHour()->toIso8601String()), $this->t->sale([[$this->milo, '1', null]], $at)])->assertOk();
+
+    $sale = Sale::latest('received_at')->first();
+    expect(collect($r->json('results'))->pluck('status')->unique()->all())->toBe(['accepted'])
+        ->and($sale->total_minor)->toBe(5800)->and($sale->discount_minor)->toBe(0)
+        ->and(ReviewItem::where('type', 'offline_price')->where('summary', 'like', '%Promotions or discounts%')->exists())->toBeTrue();
+});
+
+it('accepts an offline discount approved by a supervisor with the limit, and flags one without', function () {
+    $sup = staff($this->owner, 'kojo', 3, 'supervisor', ScopeType::Branch, $this->branches['HQ']->id);
+    $open = $this->t->openShift(0, now()->subHour()->toIso8601String());
+    $make = function (?string $approver) {
+        $e = $this->t->sale([[$this->milo, '1', null]], now()->subMinutes(20)->toIso8601String());
+        $e['payload']['lines'][0]['manual'] = ['bp' => 500];
+        $e['payload']['lines'][0]['line_total_minor'] = 5510;
+        $t = TaxCalculator::line(5510, $this->milo->taxGroup->rates->map(fn ($r) => ['code' => $r->code, 'name' => $r->name, 'rate_bp' => $r->rate_bp])->all(), true);
+        $e['payload']['totals'] = ['net_minor' => $t['net'], 'tax_minor' => $t['tax'], 'total_minor' => 5510];
+        $e['payload']['payments'][0]['amount_minor'] = $e['payload']['payments'][0]['tendered_minor'] = 5510;
+        if ($approver) {
+            $e['payload']['discount_approved_offline_by'] = $approver;
+        }
+
+        return $e;
+    };
+    $this->t->sync([$open, $make($sup->id), $make(null)])->assertOk();
+
+    $sales = Sale::orderBy('device_seq')->get();
+    expect($sales[0]->discount_approved_by_name)->toBe('Kojo')->and($sales[0]->total_minor)->toBe(5510)
+        ->and(ReviewItem::where('type', 'discount_over_limit')->count())->toBe(1);
 });

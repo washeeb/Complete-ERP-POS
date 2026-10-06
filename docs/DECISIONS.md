@@ -165,3 +165,20 @@ Design (Phase 6a):
 - **Fresh installs:** the first owner's grant now takes the owner role's default limits. Before this, a new owner had no PO-approval or credit-override limit; existing installs got them through the upgrade path. This was found by the screens test. [+]
 - **A4 documents** are Blade pages (print or "Save as PDF") under `/print/*`. They need a signed-in back-office user, check permissions per document, and check the tenant explicitly. Server-side PDF and emailing come with notifications later.
 - **Filament note:** search callbacks must name their argument `$search`; a `$s` slipped through tests that fill fields by id and was found in the browser demo.
+
+## Phase 6b (2026-10-11)
+
+Owner answers (2026-10-11):
+- **Promotions:** the **best single promotion per item**; basket offers (spend X) and coupons apply on top.
+- **Manual discounts and price overrides (default limits):** cashier 0 %, supervisor 10 %, branch manager 25 %; above your own limit → supervisor PIN.
+- **Returns:** **30 days with the receipt**, refunded to the original tender (account sales credited to the account); without a receipt, store credit only, with a supervisor PIN.
+- **Gift cards and store credit:** expire **12 months after last use**.
+
+Design:
+- **One engine, two languages.** `App\Domain\Pricing\PromotionEngine` (PHP) and `pos/src/promotions.ts` (TypeScript) implement the same integer algorithm; `spec/vectors/promotions.json` is run by both test suites, so a change to one that is not made to the other fails CI. Order: best item promotion per line (percent, amount off, buy X get Y, bundle / mix & match) → manual line discount → best spend-X offer → one coupon → sale discount. Group savings (buy X get Y, bundles) are spread over every unit in the group by price, so "best per item" compares like with like. Rounding: largest remainder, never floats.
+- **The server is the judge online, the till's figures stand offline.** An online sale is recomputed with the promotions active at its branch and time; a different total is refused (`totals_mismatch`, the till refreshes). An offline sale keeps the till's totals when they are plausible (never above list price) and raises `offline_price` for review — the customer already paid.
+- **Manual discounts use the existing limits.** `pos.discount` with the `discount_bp` limit (supervisor 10 %, branch manager 25 %, GM/owner 100 %). Over your own limit a supervisor approves with their PIN; offline, the PIN is checked against the supervisor's offline sign-in on that till and recorded as `discount_approved_offline_by` (over their limit → `discount_over_limit` review item).
+- **Loyalty and stored value are append-only ledgers** with balance projections and the same DB trigger as stock and customer ledgers. 1 point = 1 pesewa when spent; 1 point earned per GHS 1 on cash, MoMo, card and account (not on points, gift cards or store credit). Both sync in the `customers` group as batches and are relayed between branches; overdrawing offline is kept and flagged (`points_overdrawn`, `stored_value_overdrawn`), never refused after the fact.
+- **Returns are sales of kind `return`** with negative amounts and `original_sale_id`, so stock, shift cash, tax and reports need no second code path. The value refunded is what the customer actually paid for each line (after promotions), refunded to the original tenders in order; points earned on the returned value are taken back. Returns need the server (they must see the original sale); offline returns are deferred.
+- **Expiry** runs only at head office (`erp:expire-balances`, daily 02:30) and posts `expire` ledger rows, which then sync like any other entry.
+- **Deferred:** selling gift cards at the till (back office only for now), offline returns, partial credit notes / refunds of account credit, sales reps and commissions.

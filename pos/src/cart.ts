@@ -1,7 +1,8 @@
-import { lineTax, lineTotal, sumTax, toMilli, type TaxLine } from './money'
-import type { Price, PriceList, Product, Unit } from './types'
+import { toMilli, type TaxLine } from './money'
+import { activePromotions, computePromotions, type Applied } from './promotions'
+import type { Price, PriceList, Product, PromotionRow, Unit } from './types'
 
-export type CartLine = { key: string; product: Product; unit: Unit; qtyMilli: number }
+export type CartLine = { key: string; product: Product; unit: Unit; qtyMilli: number; manual?: { bp?: number; price_minor?: number } | null }
 
 /** Same rule as server PriceResolver: active at `at`, min_qty ≤ qty, highest tier, dated beats open-ended. */
 export function resolvePrice(product: Product, unitId: string, listId: string, qtyMilli: number, at: Date): Price | null {
@@ -23,23 +24,35 @@ export function resolvePrice(product: Product, unitId: string, listId: string, q
   return candidates[0] ?? null
 }
 
-export type PricedLine = CartLine & { price: Price | null; total: number; net: number; tax: number; breakdown: TaxLine[] }
+export type PricedLine = CartLine & {
+  price: Price | null; total: number; net: number; tax: number; breakdown: TaxLine[]; listTotal: number; discount: number; promotions: Applied[]
+}
+export type CartExtras = { promotions?: PromotionRow[]; branchId?: string; utcOffsetMinutes?: number; coupon?: string | null; saleDiscountBp?: number }
 
-export function priceCart(lines: CartLine[], list: PriceList, at: Date) {
-  const priced: PricedLine[] = lines.map((l) => {
-    const price = resolvePrice(l.product, l.unit.id, list.id, l.qtyMilli, at)
-    if (!price) return { ...l, price: null, total: 0, net: 0, tax: 0, breakdown: [] }
-    const t = lineTax(lineTotal(l.qtyMilli, price.amount_minor), l.product.tax, list.prices_include_tax)
-    return { ...l, price, total: t.gross, net: t.net, tax: t.tax, breakdown: t.breakdown }
+/** List prices from the price list, then promotions and discounts through the same engine as the server. */
+export function priceCart(lines: CartLine[], list: PriceList, at: Date, extras: CartExtras = {}) {
+  const withPrice = lines.map((l) => ({ l, price: resolvePrice(l.product, l.unit.id, list.id, l.qtyMilli, at) }))
+  const running = activePromotions(extras.promotions ?? [], at, extras.branchId ?? '', list.id, extras.utcOffsetMinutes ?? 0)
+  const calc = computePromotions({
+    inclusive: list.prices_include_tax, promotions: running, coupon: extras.coupon ?? null, sale_discount_bp: extras.saleDiscountBp ?? 0,
+    lines: withPrice.filter((x) => x.price).map(({ l, price }) => ({ key: l.key, product_id: l.product.id, category_id: l.product.category_id ?? null,
+      qty_milli: l.qtyMilli, unit_price_minor: price!.amount_minor, tax: l.product.tax, manual: l.manual ?? null })),
+  })
+  const byKey = new Map(calc.lines.map((r) => [r.key, r]))
+  const priced: PricedLine[] = withPrice.map(({ l, price }) => {
+    const r = price ? byKey.get(l.key)! : null
+    return { ...l, price, total: r?.total ?? 0, net: r?.net ?? 0, tax: r?.tax ?? 0, breakdown: r?.breakdown ?? [],
+      listTotal: r?.list_total ?? 0, discount: r?.discount ?? 0, promotions: r?.promotions ?? [] }
   })
   return {
-    lines: priced,
-    net: priced.reduce((a, l) => a + l.net, 0),
-    tax: priced.reduce((a, l) => a + l.tax, 0),
-    total: priced.reduce((a, l) => a + l.total, 0),
-    taxBreakdown: sumTax(priced.map((l) => l.breakdown)),
-    unpriced: priced.filter((l) => !l.price),
+    lines: priced, net: calc.net, tax: calc.tax, total: calc.total, discount: calc.discount, taxBreakdown: calc.breakdown,
+    couponApplied: calc.coupon_applied, couponError: calc.coupon_error, unpriced: priced.filter((l) => !l.price),
   }
+}
+
+/** Set (or clear) a line's manual discount: a percentage in basis points, or a new unit price. */
+export function setManual(lines: CartLine[], key: string, manual: CartLine['manual']): CartLine[] {
+  return lines.map((l) => (l.key === key ? { ...l, manual } : l))
 }
 
 /** Add one of a unit; the same product+unit merges into its existing line. */

@@ -76,6 +76,7 @@ type Cart = ReturnType<typeof priceCart>
 export async function submitSale(args: {
   boot: Bootstrap; online: boolean; cart: Cart; listId: string; payments: Payment[]; seq: number; catalogVersion: string | null
   customerId?: string | null; creditApproval?: { username: string; pin: string } | null; saleId?: string
+  coupon?: string | null; saleDiscountBp?: number; discountApproval?: { username: string; pin: string } | null; offlineApproverId?: string | null
 }): Promise<PostedSale> {
   const { boot, cart, payments } = args
   const local = await getLocalShift()
@@ -91,7 +92,12 @@ export async function submitSale(args: {
     catalog_version: args.catalogVersion,
     lines: cart.lines.map((l) => ({
       product_id: l.product.id, product_uom_id: l.unit.id, qty: (l.qtyMilli / 1000).toString(), unit_price_minor: l.price!.amount_minor, line_total_minor: l.total,
+      ...(l.manual ? { manual: l.manual } : {}),
     })),
+    coupon_code: args.coupon || null,
+    sale_discount_bp: args.saleDiscountBp ?? 0,
+    // Offline, a supervisor's PIN was checked against their offline sign-in on this till; the server checks their limit.
+    ...(args.offlineApproverId ? { discount_approved_offline_by: args.offlineApproverId } : {}),
     totals: { net_minor: cart.net, tax_minor: cart.tax, total_minor: cart.total },
     payments,
   }
@@ -101,7 +107,8 @@ export async function submitSale(args: {
   if (!(await queueMode(args.online))) {
     try {
       // A supervisor's PIN goes to the server only, never into the offline queue.
-      const { sale } = await api.postSale(args.creditApproval ? { ...payload, credit_approval: args.creditApproval } : payload)
+      const { sale } = await api.postSale({ ...payload, ...(args.creditApproval ? { credit_approval: args.creditApproval } : {}),
+        ...(args.discountApproval ? { discount_approval: args.discountApproval } : {}) })
       await recordCash()
       return sale
     } catch (e) {
@@ -109,6 +116,10 @@ export async function submitSale(args: {
     }
   }
 
+  // Going into the offline queue with a manual discount: a supervisor must confirm it here (PIN against their offline sign-in).
+  if ((cart.lines.some((l) => l.manual) || (args.saleDiscountBp ?? 0) > 0) && !args.offlineApproverId) {
+    throw new ApiError('offline_approval_needed', 'The server cannot be reached: a supervisor must approve the discount here.', 0)
+  }
   const receiptNo = `${boot.branch.code}-${boot.till!.code}${boot.device.receipt_series ?? ''}-${String(args.seq).padStart(6, '0')}`
   await enqueue({ id: payload.id, type: 'sale', grant: await currentGrant(), payload, receiptNo })
   await recordCash()
@@ -122,7 +133,8 @@ export async function submitSale(args: {
     change_minor: payments.reduce((a, p) => a + (p.tendered_minor - p.amount_minor), 0),
     tax_breakdown: cart.taxBreakdown,
     lines: cart.lines.map((l, i) => ({ line_no: i + 1, sku: l.product.sku, name: l.product.name, uom: l.unit.uom_code,
-      qty: (l.qtyMilli / 1000).toFixed(3), unit_price_minor: l.price!.amount_minor, line_total_minor: l.total })),
+      qty: (l.qtyMilli / 1000).toFixed(3), unit_price_minor: l.price!.amount_minor, line_total_minor: l.total, discount_minor: l.discount, promotions: l.promotions })),
+    kind: 'sale', discount_minor: cart.discount, points_earned: 0,
     payments: payments.map((p) => ({ method: p.method, provider: p.provider ?? null, amount_minor: p.amount_minor,
       tendered_minor: p.tendered_minor, reference: p.reference ?? null, status: 'queued' })),
   }

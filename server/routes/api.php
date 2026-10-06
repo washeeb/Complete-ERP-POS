@@ -37,6 +37,9 @@ Route::prefix('v1')->group(function () {
         Route::post('shifts/close', [PosController::class, 'closeShift']);
         Route::post('sales', [PosController::class, 'postSale']);
         Route::get('sales/{id}', [PosController::class, 'showSale'])->whereUuid('id');
+        Route::get('receipts', [PosController::class, 'lookupSale']);
+        Route::post('returns', [PosController::class, 'postReturn']);
+        Route::post('account-payments', [PosController::class, 'accountPayment']);
     });
 
     // Warehouse handheld (receive, put away, transfers, counts) — PIN sign-in on an enrolled handheld device.
