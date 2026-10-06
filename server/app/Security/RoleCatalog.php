@@ -11,7 +11,7 @@ final class RoleCatalog
 {
     public const ROLES = [
         'owner' => ['Owner', 6, false, ['*']],
-        'general_manager' => ['General Manager', 5, false, ['setup.company.manage', 'audit.view', 'pos.access', 'catalog.view', 'catalog.manage', 'pricing.manage', 'stock.view', 'stock.adjust', 'sales.view', 'sync.review']],
+        'general_manager' => ['General Manager', 5, false, ['setup.company.manage', 'audit.view', 'pos.access', 'catalog.view', 'catalog.manage', 'pricing.manage', 'stock.view', 'stock.adjust', 'sales.view', 'sync.review', 'orders.view', 'orders.manage', 'channels.manage']],
         'finance_manager' => ['Finance Manager', 5, false, ['audit.view', 'catalog.view', 'stock.view', 'sales.view', 'sync.review']],
         'accountant' => ['Accountant', 4, false, ['catalog.view', 'stock.view', 'sales.view']],
         'auditor' => ['Auditor (read-only)', 1, false, ['audit.view', 'catalog.view', 'stock.view']],
@@ -22,14 +22,14 @@ final class RoleCatalog
         'warehouse_manager' => ['Warehouse Manager', 4, false, ['catalog.view', 'catalog.manage', 'stock.view', 'stock.adjust']],
         'storekeeper' => ['Storekeeper', 2, false, ['catalog.view', 'stock.view']],
         'picker_packer' => ['Picker / Packer', 2, false, []],
-        'branch_manager' => ['Branch Manager', 4, false, ['audit.view', 'pos.access', 'catalog.view', 'stock.view', 'stock.adjust', 'sales.view', 'sync.review']],
-        'supervisor' => ['Supervisor', 3, false, ['pos.access', 'catalog.view', 'stock.view', 'sales.view']],
+        'branch_manager' => ['Branch Manager', 4, false, ['audit.view', 'pos.access', 'catalog.view', 'stock.view', 'stock.adjust', 'sales.view', 'sync.review', 'orders.view', 'orders.manage']],
+        'supervisor' => ['Supervisor', 3, false, ['pos.access', 'catalog.view', 'stock.view', 'sales.view', 'orders.view', 'orders.manage']],
         'cashier' => ['Cashier', 2, false, ['pos.access']],
         'sales_rep' => ['Sales Rep', 2, false, ['catalog.view', 'stock.view']],
         'van_sales_rep' => ['Van Sales Rep', 2, false, []],
-        'customer_service' => ['Customer Service', 2, false, []],
+        'customer_service' => ['Customer Service', 2, false, ['orders.view']],
         'marketing' => ['Marketing', 3, false, []],
-        'ecommerce_manager' => ['E-commerce Manager', 4, false, ['catalog.view', 'catalog.manage', 'stock.view']],
+        'ecommerce_manager' => ['E-commerce Manager', 4, false, ['catalog.view', 'catalog.manage', 'stock.view', 'orders.view', 'orders.manage', 'channels.manage']],
         'delivery_rider' => ['Delivery Rider', 2, false, []],
         // Technical only: may hold technical permissions and nothing else (enforced in AccessService).
         'it_admin' => ['IT Admin', 4, true, ['@technical']],

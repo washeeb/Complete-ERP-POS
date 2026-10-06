@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\Api\V1\ChannelWebhookController;
 use App\Http\Controllers\Api\V1\DeviceAuthController;
 use App\Http\Controllers\Api\V1\PosController;
 use App\Http\Controllers\Api\V1\SyncController;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -13,6 +15,9 @@ Route::prefix('v1')->group(function () {
 
     // Queued (offline) work; device token + device-key signature, people identified by their offline grants.
     Route::post('pos/sync', [PosController::class, 'sync'])->middleware(['auth:sanctum', 'device.token:device', 'throttle:pos-sync']);
+
+    // Store webhooks (WooCommerce, Shopify, generic REST): signature checked over the raw body, stored once, processed by the relay.
+    Route::post('channels/{channel}/webhooks', ChannelWebhookController::class)->whereUuid('channel')->middleware('throttle:webhooks');
 
     // Node-to-node sync (branch server ⇄ HQ). HMAC-signed with the peer's shared secret.
     Route::prefix('sync')->middleware('throttle:node-sync')->group(function () {
@@ -32,3 +37,6 @@ Route::prefix('v1')->group(function () {
         Route::get('sales/{id}', [PosController::class, 'showSale'])->whereUuid('id');
     });
 });
+
+// Live updates for tills: private channel auth with the staff token (POST /api/v1/pos/broadcasting/auth).
+Broadcast::routes(['prefix' => 'v1/pos', 'middleware' => ['auth:sanctum', 'device.token:pos']]);

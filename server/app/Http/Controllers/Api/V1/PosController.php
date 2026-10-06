@@ -52,6 +52,14 @@ class PosController extends Controller
             'shift' => $this->shiftJson($shifts->current($device), $shifts),
             'last_device_seq' => (int) Sale::where('device_id', $device->id)->max('device_seq'),
             'catalog_version' => $this->catalogVersion(),
+            // Live updates (Reverb). null = not configured on this server; the till then polls.
+            'realtime' => config('broadcasting.default') === 'reverb' && config('broadcasting.connections.reverb.key') ? [
+                'key' => config('broadcasting.connections.reverb.key'),
+                'host' => config('broadcasting.connections.reverb.options.host'),
+                'port' => (int) config('broadcasting.connections.reverb.options.port'),
+                'scheme' => config('broadcasting.connections.reverb.options.scheme'),
+                'channels' => ['tenant.'.$device->tenant_id.'.catalog', $till ? 'tenant.'.$device->tenant_id.'.stock.'.$till->warehouse_id : null],
+            ] : null,
             'server_time' => now()->toIso8601String(),
         ]);
     }
