@@ -70,6 +70,8 @@ the file is signed by that device’s own key. Then register and enrol the new d
 | Stock movements | both ways | the node where the movement happened |
 | Till sales, shifts, devices | branches → HQ | the branch |
 | Review items | branches → HQ | the branch |
+| Suppliers, purchase orders, goods received | both ways | where the document was created (newer version wins) |
+| Bins, transfers, counts, reorder levels | both ways | where the document was created (newer version wins) |
 
 **HQ wins** is enforced at the source: a branch server refuses edits to master data (*“This is
 managed at head office…”*), so master data cannot conflict. Sales, payments and stock movements are
@@ -90,6 +92,9 @@ codes (a till enrols on the server it talks to).
   the group’s mode. Applying is idempotent; an event that cannot be applied yet (e.g. the branch runs older
   code) is marked *failed*, raised in the Review queue, and retried at every sync until it applies — then
   its review item closes itself.
+- **Head office relays** the two-way groups (stock movements, purchasing, warehouse): an event that branch
+  server A sends is published again at HQ, so branch server B pulls it at its next sync (a transfer from A to
+  B arrives at B). It is never sent back to A. Online stores and live updates at HQ see branch stock this way too.
 
 ### Sync Center (*System → Sync Center*, needs “Run sync, manage sync peers…”)
 - Status per peer: last sync, *to send / to review / held / failed* counts, last error.

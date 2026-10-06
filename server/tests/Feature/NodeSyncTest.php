@@ -22,6 +22,7 @@ use App\Domain\Sync\SyncSigner;
 use App\Domain\Sync\Transport\SyncTransport;
 use App\Models\Device;
 use App\Models\GoodsReceipt;
+use App\Models\OutboxEvent;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
@@ -351,4 +352,16 @@ it('receives an HQ purchase order on the branch server and brings the GRN, order
         ->and(hqOnHand($this->milo, $this->whA))->toBe('34.000') // 10 + 2 × 12
         ->and((string) StockLevel::where('warehouse_id', $this->whA->id)->where('product_id', $this->milo->id)->value('avg_cost_minor'))->toBe('5000.0000')
         ->and(app(StockLedger::class)->check())->toBe([]);
+});
+
+it('relays a branch server’s stock and warehouse events to the other branch servers, never back to the sender', function () {
+    branchSale(fn () => [['MILO', '1']]);
+    branchSync();
+
+    $relayed = OutboxEvent::where('origin_node', 'TEST')->whereRaw("payload->>'relayed_from' = 'B01'")->get();
+    expect($relayed->pluck('aggregate_type')->unique()->values()->all())->toBe(['stock_movement_batch']) // sales themselves go up only
+        ->and(collect(app(SyncServer::class)->serve(SyncPeer::find(Nodes::$hqPeerId), 0, 1000)['events'])->pluck('id'))->not->toContain($relayed->first()->id);
+
+    $other = app(NodeSetup::class)->addBranchNode(actorFor($this->owner), 'B02', 'Branch B server')['peer'];
+    expect(collect(app(SyncServer::class)->serve($other, 0, 1000)['events'])->pluck('id'))->toContain($relayed->first()->id);
 });

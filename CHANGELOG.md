@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.5.0] — 2026-10-09 · Phase 5 purchasing and warehouse
+### Added
+- **Suppliers**: contacts, terms, lead time; products supplied with purchase unit, supplier code, last cost, minimum order, preferred.
+- **Purchase orders**:
+  - draft → submit → approve or send back;
+  - the creator never approves; tiered approval limits (officer GHS 5,000, managers GHS 20,000, finance/GM/owner unlimited);
+  - receive, close short, cancel;
+  - tax worked out from each product's tax group.
+- **Goods received (GRN)**:
+  - posts at cost (weighted-average stock valuation);
+  - over-deliveries above 5 % wait for a manager (accept or refuse);
+  - a posted GRN is reversed, never edited.
+- **Bins**:
+  - switched on per warehouse, with a receiving bin;
+  - put-away and move stock;
+  - pick order for sales and transfers;
+  - bin contents shown.
+- **Transfers**: dispatch, in transit, receive with differences flagged for review.
+- **Stock counts**: blind by default, frozen expected quantities, entered on screen or handheld, posted by a second person.
+- **Reorder levels** (min/max) and **What to order**: suggestions in supplier cartons that count open orders and transfers in transit; one-click draft orders per supplier.
+- **Warehouse handheld**: enrol a scanner phone as a handheld; PIN sign-in for storekeepers; receive by scanning, put away, receive transfers, count.
+- Document numbers per server: PO-HQ-000001, GRN-…, TRF-…, CNT-….
+- Sync: new groups *purchasing* and *warehouse*; head office relays stock and warehouse events between branch servers.
+- Settings: over-delivery tolerance (%).
+- `erp:demo-purchasing` sample suppliers, head-office bins and reorder levels.
+- Docs: purchasing and warehouse guide; handheld API.
+### Changed
+- The device enrolment screen says "device" (tills and handhelds).
+- `erp:stock-check` also checks bin levels, and that bin-managed warehouses equal the sum of their bins.
+### Fixed
+- A timing-dependent test of the 72-hour offline sign-in boundary.
+
 ## [0.4.0] — 2026-10-08 · Phase 4 live updates and online store
 ### Added
 - Live updates over WebSockets (Laravel Reverb). Tills pick up price and stock changes within seconds ("Connected · live"), with polling as a fallback.

@@ -101,3 +101,26 @@ Owner answers (2026-10-09):
 - PO approval: **tiered** default limits — Purchasing Officer ≤ GHS 5,000, Branch/Warehouse Manager ≤ GHS 20,000, Finance Manager/GM above; creator never approves own PO. Editable per person.
 - Bins: **per-warehouse switch**, off by default (on for the HQ wholesale warehouse in demo data).
 - Over-receipt: allowed up to **5%**; more needs a manager's approval on the GRN.
+
+Design (Phase 5):
+- Purchasing and the warehouse (WMS) are Core (spec §6 "installed with Core"). Their permissions are in Core 0.5.0 and their screens sit under Purchasing and Stock.
+- Document numbers: one gap-free sequence per node and type (`PO-HQ-000001`, `GRN-B01-000007`), taken inside the document transaction. Server documents never collide across nodes; till receipts keep their per-device series. [+]
+- Default approval limits travel with their permission. A limit key (e.g. `po_approve_minor`) is added to roles and existing grants only when its permission is first introduced, so later seeding never overwrites owner edits; this was tested as an upgrade. Purchasing Officer approval (≤ GHS 5,000) needs `purchasing.approve` at level 2, and `suppliers.manage` is level 2 too. [+]
+- GRNs are created held and then posted: the first audited change is held → posted, so every GRN has an audit row and a snapshot with its lines. A delivery above tolerance stays held, puts nothing into stock, and raises a review item (`grn_held`). Without a purchase order, only a manager can receive. Handheld receipts carry a client UUID, so a resend never receives twice.
+- Valuation is a weighted average per base unit, kept on `stock_levels.avg_cost_minor` (4 decimals) and moved by a shared projection that the ledger and sync both use. Stock below zero counts as zero when averaging. Incoming stock without a cost (count gains, put-away) leaves the average alone. Outgoing movements are stamped with the average (the basis for cost of goods sold in Phase 7). Each node computes its own average from the movements it has, so nodes may differ slightly when movements arrive in a different order; head office's figure is authoritative for finance. [+]
+- Bins are switched on per warehouse (owner). With bins on:
+  - every movement names a bin;
+  - incoming stock with no bin goes to the receiving bin;
+  - outgoing stock with no bin is taken in pick order (storage before receiving; whole cartons are not split across bins where possible).
+  `erp:stock-check` now also proves bin levels equal their movements, and that a bin-managed warehouse equals the sum of its bins. That second check was added after a bug: switching bins on posted the placement into RECV without its "out of no bin" leg. It was found in the browser demo, fixed, tested, and the dev data corrected with append-only compensating movements. [+]
+- Transfers: dispatch posts `transfer_out` at the sender's average cost; the goods are in transit (in neither warehouse) until receipt posts `transfer_in` at that cost. Differences are flagged (`transfer_short`), never absorbed. Only drafts can be cancelled.
+- Counts:
+  - expected quantities are frozen at the start, and posting books counted − expected as `count` movements;
+  - uncounted lines are left alone;
+  - blind by default;
+  - the poster must differ from the submitter;
+  - count movements may take stock below zero (they record reality).
+- Reordering is min/max per warehouse. It counts on hand + open purchase orders + transfers in transit, and suggests whole purchase units of the preferred supplier (at least their minimum). Drafts are created per supplier and are never sent automatically.
+- The handheld is a mode of the same PWA, chosen by the device kind returned at enrolment, under its own API (`/api/v1/wms`) and token ability (`handheld`). It works online against its branch's server over the LAN; no offline queue for warehouse work yet. Hardware scanners act as keyboards (scan, then Enter); camera scanning is deferred. [+]
+- Head office relays the two-way sync groups (stock, purchasing, warehouse): events applied from one branch server are published again at HQ and served to every other branch server, but never back to their origin. This fixes transfers between two branch servers, and it lets HQ's online-store stock sync and live updates see branch sales. Sales documents still flow up only. [+]
+- Deferred: requisitions/RFQs, 3-way match and supplier invoices (with Finance, Phase 7), returns to supplier, supplier scorecards and portal, landed costs, FEFO/batches/expiry (Pharmacy/Grocery, Phase 9), pick/pack/ship waves, ABC analysis, and printing PO PDFs and bin labels.

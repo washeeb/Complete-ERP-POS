@@ -51,6 +51,9 @@ final class Replication
     /** Master data: owned by HQ, read-only on branch nodes (conflict policy "HQ wins", spec §4.2). */
     public const MASTER_GROUPS = ['org', 'people', 'catalog', 'pricing'];
 
+    /** Two-way groups head office passes on: what one branch server sends reaches the other branch servers too. */
+    public const RELAY_GROUPS = ['stock', 'purchasing', 'warehouse'];
+
     /** Documents whose lines travel inside their snapshot: class => [relation, table]. */
     public const CHILDREN = [
         Supplier::class => ['products', 'supplier_products'],
