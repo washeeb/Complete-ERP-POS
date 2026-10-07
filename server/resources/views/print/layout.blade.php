@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title')</title>
+    {!! \App\Domain\Licensing\Watermark::meta() !!}
     <style>
         @page { size: A4; margin: 14mm; }
         * { box-sizing: border-box; }
@@ -21,6 +22,7 @@
         .total { font-size: 13pt; font-weight: 700; }
         .box { border: 1px solid #ddd; border-radius: 6px; padding: 8px 10px; }
         .no-print { margin: 12px 0; }
+        .wm { margin-top: 18px; font-size: 6pt; color: #b5b5b0; letter-spacing: .5px; }
         @media print { .no-print { display: none; } .page { padding: 0; } }
     </style>
 </head>
@@ -29,13 +31,14 @@
     <p class="no-print"><button onclick="window.print()">Print / Save as PDF</button></p>
     <header>
         <div>
-            <h1>{{ $company['name'] }}</h1>
+            <h1>{{ \App\Domain\Licensing\Watermark::stamp($company['name']) }}</h1>
             <div class="small">{{ $company['address'] }} @if ($company['phone']) · {{ $company['phone'] }} @endif</div>
             <div class="small">@if ($company['tin']) TIN {{ $company['tin'] }} @endif @if ($company['vat_no']) · VAT {{ $company['vat_no'] }} @endif</div>
         </div>
         <div class="right">@yield('heading')</div>
     </header>
     @yield('content')
+    <p class="wm">Ref {{ \App\Domain\Licensing\Watermark::reference() }}</p>
 </div>
 </body>
 </html>

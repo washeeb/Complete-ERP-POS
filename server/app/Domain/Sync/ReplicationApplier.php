@@ -7,6 +7,7 @@ use App\Domain\Customers\Loyalty;
 use App\Domain\Customers\StoredValues;
 use App\Domain\Hr\AttendanceService;
 use App\Domain\Inventory\StockProjection;
+use App\Domain\Licensing\LicenseManager;
 use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
 use App\Domain\Support\DomainException;
@@ -30,6 +31,11 @@ final class ReplicationApplier
     public function __construct(private readonly AuditLog $audit, private readonly ReviewQueue $reviews, private readonly StockProjection $projection, private readonly CustomerLedger $customers) {}
 
     public function apply(array $event): void
+    {
+        LicenseManager::bypass(fn () => $this->applyOne($event)); // receiving sync is never blocked: it only brings what was already recorded
+    }
+
+    private function applyOne(array $event): void
     {
         $type = $event['aggregate_type'];
         $payload = is_string($event['payload']) ? json_decode($event['payload'], true) : $event['payload'];

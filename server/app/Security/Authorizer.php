@@ -2,6 +2,7 @@
 
 namespace App\Security;
 
+use App\Domain\Licensing\LicenseManager;
 use App\Models\Branch;
 use App\Models\Permission;
 use App\Models\RoleAssignment;
@@ -98,6 +99,9 @@ final class Authorizer
         if (! $user->is_active) {
             return collect();
         }
+        if (! $this->licensed($permission)) {
+            return collect(); // the licence does not include this part of the system
+        }
         $all = $this->memo[$user->id] ??= $this->loadGrants($user);
         $perm = array_key_exists($permission, $this->permissions)
             ? $this->permissions[$permission]
@@ -107,6 +111,25 @@ final class Authorizer
         }
 
         return $all->filter(fn ($g) => in_array($permission, $g['permissions'], true))->values();
+    }
+
+    /** Licensed parts of the system, by permission prefix (owner decision 2026-10-15: modules are licensed). */
+    public const FEATURES = [
+        'finance' => ['finance.', 'payables.', 'banking.', 'expenses.', 'assets.', 'budgets.'],
+        'hr' => ['hr.', 'attendance.', 'leave.', 'loans.', 'payroll.'],
+    ];
+
+    private function licensed(string $permission): bool
+    {
+        foreach (self::FEATURES as $feature => $prefixes) {
+            foreach ($prefixes as $p) {
+                if (str_starts_with($permission, $p)) {
+                    return app(LicenseManager::class)->allowsFeature($feature);
+                }
+            }
+        }
+
+        return true;
     }
 
     private function loadGrants(User $user): Collection

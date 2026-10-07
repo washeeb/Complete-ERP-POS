@@ -34,7 +34,7 @@ final class Replication
     public const GROUPS = [
         'org' => ['label' => 'Company, branches, tills, modules, settings', 'direction' => 'down',
             'tables' => ['tenant' => 'tenants', 'legal_entity' => 'legal_entities', 'branch' => 'branches', 'warehouse' => 'warehouses',
-                'till' => 'tills', 'branch_module' => 'branch_modules', 'setting' => 'settings']],
+                'till' => 'tills', 'branch_module' => 'branch_modules', 'setting' => 'settings', 'license' => 'licenses']],
         'people' => ['label' => 'Users, roles and access', 'direction' => 'down',
             'tables' => ['user' => 'users', 'role' => 'roles', 'role_assignment' => 'role_assignments']],
         'catalog' => ['label' => 'Products, units, barcodes, categories, brands', 'direction' => 'down',

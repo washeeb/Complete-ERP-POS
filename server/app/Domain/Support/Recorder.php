@@ -2,6 +2,7 @@
 
 namespace App\Domain\Support;
 
+use App\Domain\Licensing\LicenseManager;
 use App\Domain\Sync\Replication;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,8 @@ final class Recorder
      */
     public function transaction(callable $mutation): mixed
     {
+        app(LicenseManager::class)->assertWritable(); // read-only when unlicensed, expired past grace, revoked or tampered
+
         return DB::transaction($mutation, 3);
     }
 

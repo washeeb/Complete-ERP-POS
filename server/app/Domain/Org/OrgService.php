@@ -2,6 +2,7 @@
 
 namespace App\Domain\Org;
 
+use App\Domain\Licensing\LicenseManager;
 use App\Domain\Modules\ModuleService;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
@@ -103,6 +104,8 @@ final class OrgService
         if (Branch::withoutGlobalScopes()->where('tenant_id', $actor->tenantId)->where('code', $code)->exists()) {
             throw new DomainException("Branch code {$code} is already used.");
         }
+
+        app(LicenseManager::class)->assertWithin('branches', Branch::count(), 'branches');
 
         return $this->recorder->transaction(function () use ($actor, $data, $code, $tills) {
             $branch = new Branch(array_intersect_key($data, array_flip(['legal_entity_id', 'name', 'is_hq', 'address', 'phone', 'timezone'])));

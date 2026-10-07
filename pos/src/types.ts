@@ -18,6 +18,7 @@ export type Bootstrap = {
   user: { id: string; name: string }
   price_lists: PriceList[]
   receipt_footer: string
+  license?: { state: string; read_only: boolean; message: string | null; ref: string }
   shift: Shift | null
   last_device_seq: number
   catalog_version: string

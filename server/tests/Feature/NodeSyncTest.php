@@ -9,6 +9,7 @@ use App\Domain\Customers\StoredValues;
 use App\Domain\Devices\DeviceService;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Inventory\StockLedger;
+use App\Domain\Licensing\LicenseManager;
 use App\Domain\Pos\SaleService;
 use App\Domain\Pos\ShiftService;
 use App\Domain\Pricing\PriceResolver;
@@ -197,6 +198,8 @@ it('gives a new branch server everything it needs in one full sync', function ()
     expect($this->first['error'])->toBeNull()->and($failures)->toBe([]);
 
     Nodes::on('B01', function () {
+        LicenseManager::forget();
+        expect(app(LicenseManager::class)->status()['state'])->toBe('active'); // the licence came down from HQ
         expect(Product::where('sku', 'MILO')->first()->units)->toHaveCount(2)
             ->and(Product::where('sku', 'MILO')->first()->prices)->toHaveCount(2)
             ->and(User::where('username', 'kofi')->first()->pin_hash)->not->toBeNull()   // can sign in on a branch till

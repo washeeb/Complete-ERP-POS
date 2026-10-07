@@ -2,6 +2,7 @@
 
 namespace App\Domain\Devices;
 
+use App\Domain\Licensing\LicenseManager;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
@@ -33,6 +34,7 @@ final class DeviceService
     {
         $branch = Branch::findOrFail($data['branch_id']);
         $this->require($actor, $branch);
+        app(LicenseManager::class)->assertWithin('devices', Device::where('status', '<>', 'revoked')->count(), 'tills and devices');
         if (! array_key_exists($data['kind'] ?? '', Device::KINDS)) {
             throw new DomainException('Choose the kind of device.');
         }

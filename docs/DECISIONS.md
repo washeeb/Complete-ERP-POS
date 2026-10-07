@@ -237,3 +237,21 @@ Design:
 - **Privacy:** pay and bank details only with hr.manage / payroll permissions; hr.view sees people without pay; payslips are visible to the person (self-service page) and payroll staff; leave documents and receipts are private files.
 - **Segregation:** HR manager hires, prepares payroll and gives advances; finance manager (or GM) approves payroll and confirms the rules; finance pays. Nobody approves their own leave or payroll.
 - **Deferred:** biometric/geofenced clocking, shift rosters, public holidays in working-day counts, casual daily-rate pay, statutory returns (SSNIT C-form, GRA PAYE schedule) as files, performance and recruitment, mid-year profile changes by date within a run.
+
+## Licensing and anti-piracy (2026-10-15)
+
+Owner answers (2026-10-15):
+- **Activation:** an **offline signed key plus a daily online check-in** with a Synclytics licence server.
+- **Expiry:** warn 30 days before, **14-day grace**, then **read-only — no printing, nothing output at all**.
+- **Key limits:** branches, tills/devices, active users, modules (industry modules; Finance and HR as licensed features).
+- **Protection:** hidden watermarks, tamper detection, per-customer build stamping (not ionCube for now).
+
+Design:
+- **Ed25519 over canonical JSON** (sodium): licence keys `SYN1-<payload>.<sig>`, check-in answers, release manifests. The production public keys are in `config/license.php` (code, not `.env`, so they cannot be swapped). The development key is honoured only in development builds (no signed release manifest).
+- **One choke point:** the Recorder (every change goes through it) refuses when the licence is read-only. Installing, activating, joining a branch server to HQ and applying sync are exempt (they only move what was already recorded, or bring the licence itself). Printing and downloads have their own middleware. The till sync endpoint answers 423 for the whole batch, so tills keep their queue instead of marking sales refused. Never delete or hide data.
+- **Feature licensing in the Authorizer:** permissions of unlicensed features (finance.*, payables.*, banking.*, … / hr.*, payroll.*, …) are never granted, so menus, screens and services all follow from one rule.
+- **Binding:** installation id (random, per database) + machine fingerprint (OS machine id + PostgreSQL system identifier). A mismatched installation id is read-only at once; a changed machine gets the grace period to re-activate (hardware is replaced legitimately). Branch servers take the licence from HQ by sync (`org` group) and check expiry, revocation and tampering, but not binding or check-in.
+- **Check-in:** HQ daily (`license:checkin`, 03:15): the report includes counts, build id and tamper state. The signed answer can revoke or hand over a renewal (`--replaces`). Not reaching the server: warning after `checkin_days` (30), read-only after another grace period. A forged answer is ignored.
+- **Tamper detection:** `release:build` signs the hashes of the licensing-enforcing files. In a release, a changed, missing or added guarded file → read-only + reported. Honest limit: someone with the source can remove checks; the layers raise the cost and leave evidence.
+- **Watermarks:** licence short id + build id, as visible micro-text and zero-width characters (U+200B/U+200C between U+2060 marks) in printed documents. Also a meta tag, the till receipt "Ref" line, a build stamp in the till bundle (`data-build`), and a stamp in every PHP file of a release. `license:trace` decodes them.
+- **Deferred:** a vendor web console for the licence server (artisan commands for now), ionCube encoding, hardware dongles.

@@ -116,3 +116,7 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
 /* Clock in / out on the sign-in screen */
 .clock-row { margin-top: 8px; } .clock-row button { flex: 1; }
 .ok { color: var(--ok-text, #15803d); }
+
+/* Licence */
+.banner.warn { background: #fef3c7; color: #78350f; padding: 6px 12px; }
+.receipt .receipt-ref { font-size: 7px; color: #9a9a9a; letter-spacing: .5px; margin-top: 4px; }

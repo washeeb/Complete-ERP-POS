@@ -163,6 +163,9 @@ export default function App() {
   return (
     <div className="app">
       <div className={`status status-${conn} no-print`} role="status">{LABELS[conn]}{online && live === 'live' ? ' · live' : ''}</div>
+      {boot?.license?.message && (
+        <div className={`banner no-print ${boot.license.read_only ? 'bad' : 'warn'}`} role="alert">{boot.license.read_only ? 'Read-only: ' : ''}{boot.license.message}</div>
+      )}
       {stage === 'loading' && <p className="center muted">Loading…</p>}
       {stage === 'enroll' && <Enroll onDone={load} />}
       {stage === 'login' && <Login onDone={load} />}

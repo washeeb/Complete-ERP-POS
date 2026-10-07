@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.11.0] — 2026-10-15 · Licensing and anti-piracy
+### Added
+- **Licence keys:** every installation must be activated with a key from Synclytics (Settings → Licence shows the installation code). Keys set the expiry date, the number of branches, tills and devices and active users, the industry modules, and whether Finance and HR are included.
+- **Expiry:** banner from 30 days before; 14 days' grace; then **read-only**: view only, no changes, no sales, no printing or downloads. Data is never deleted, and tills keep unsent sales.
+- **Daily check-in** with the Synclytics licence server: renewals arrive automatically; licences can be withdrawn; signed answers.
+- **Tamper detection** in release builds (signed manifest of the licensing code) and **per-customer release builds** with a hidden stamp (`release:build`).
+- **Hidden watermarks** on printed documents, till receipts and pages, readable with `license:trace`.
+- Commands: `license:status`, `license:checkin`, `license:trace`; Synclytics only: `license:keygen`, `license:issue`, `license:revoke`, `release:build`.
+- Docs: licensing guide.
 ## [0.10.0] — 2026-10-14 · Phase 8 HR, attendance and payroll
 ### Added
 - **Employees** (HR & payroll): personal, job and pay details (basic, transport and meal allowances, overtime rate, Tier 3, welfare), paid by bank, MoMo or cash; departments; end of employment.

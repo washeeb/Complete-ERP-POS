@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\V1;
 use App\Domain\Customers\CustomerLedger;
 use App\Domain\Customers\CustomerService;
 use App\Domain\Devices\DeviceSignature;
+use App\Domain\Licensing\LicenseManager;
+use App\Domain\Licensing\Watermark;
 use App\Domain\Pos\PosSyncService;
 use App\Domain\Pos\ReturnService;
 use App\Domain\Pos\SaleService;
@@ -58,6 +60,7 @@ class PosController extends Controller
                 'id' => $l->id, 'code' => $l->code, 'name' => $l->name, 'prices_include_tax' => $l->prices_include_tax, 'is_default' => $l->is_default,
             ])->values(),
             'receipt_footer' => $settings->get('receipt.footer', $device->tenant_id),
+            'license' => (fn ($s) => ['state' => $s['state'], 'read_only' => $s['read_only'], 'message' => $s['message'], 'ref' => Watermark::reference()])(app(LicenseManager::class)->status()),
             'shift' => $this->shiftJson($shifts->current($device), $shifts),
             'last_device_seq' => (int) Sale::where('device_id', $device->id)->max('device_seq'),
             'catalog_version' => $this->catalogVersion(),
@@ -225,6 +228,11 @@ class PosController extends Controller
         $device = $this->device($request);
         $signature->verify($device, $request->getContent(), $request->header('X-Device-Signature'));
         $data = $request->validate(['events' => ['required', 'array', 'min:1', 'max:200']]);
+        $license = app(LicenseManager::class)->status();
+        if ($license['read_only']) {
+            // Refuse the whole batch without judging it: the till keeps its queue and sends it once the licence is renewed.
+            return response()->json(['error' => 'license_read_only', 'detail' => $license['message']], 423);
+        }
         $device->forceFill(['last_seen_at' => now()])->saveQuietly();
 
         return response()->json(['results' => $sync->apply($device, $data['events'])]);

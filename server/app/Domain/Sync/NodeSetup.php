@@ -2,6 +2,7 @@
 
 namespace App\Domain\Sync;
 
+use App\Domain\Licensing\LicenseManager;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
@@ -45,6 +46,12 @@ final class NodeSetup
 
     /** On a fresh branch server: connect to HQ, take the company identity, then sync everything down. */
     public function joinHq(string $baseUrl, string $hqNodeId, string $tenantId, string $secret): SyncPeer
+    {
+        // A new branch server has no licence yet: it arrives from head office through this very link.
+        return LicenseManager::bypass(fn () => $this->join($baseUrl, $hqNodeId, $tenantId, $secret));
+    }
+
+    private function join(string $baseUrl, string $hqNodeId, string $tenantId, string $secret): SyncPeer
     {
         if (config('erp.node.role') !== 'branch') {
             throw new DomainException('Set ERP_NODE_ROLE=branch on this server before joining head office.');
