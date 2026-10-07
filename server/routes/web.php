@@ -31,6 +31,10 @@ Route::prefix('print')->middleware('auth')->name('print.')->group(function () {
     Route::get('order/{order}', [PrintController::class, 'order'])->name('order')->whereUuid('order');
     Route::get('statement/{customer}', [PrintController::class, 'statement'])->name('statement')->whereUuid('customer');
     Route::get('payment/{payment}', [PrintController::class, 'payment'])->name('payment')->whereUuid('payment');
+    Route::get('payslip/{payslip}', [PrintController::class, 'payslip'])->name('payslip')->whereUuid('payslip');
+    Route::get('payroll/{run}/payslips', [PrintController::class, 'payslips'])->name('payslips')->whereUuid('run');
+    Route::get('payroll/{run}/pay-sheet', [PrintController::class, 'paySheet'])->name('pay-sheet')->whereUuid('run');
+    Route::get('payroll/{run}/pay-list.csv', [PrintController::class, 'payList'])->name('pay-list')->whereUuid('run');
 });
 
 // Receipt photos attached to expense claims (private storage).

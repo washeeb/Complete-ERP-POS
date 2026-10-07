@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.10.0] — 2026-10-14 · Phase 8 HR, attendance and payroll
+### Added
+- **Employees** (HR & payroll): personal, job and pay details (basic, transport and meal allowances, overtime rate, Tier 3, welfare), paid by bank, MoMo or cash; departments; end of employment.
+- **Clock in / out on the till** with username and PIN — no sign-in needed; works offline for people who have signed in on that till before.
+- **Timesheets**: hours and overtime per person per month; managers add a missing clock-out or cancel a wrong one, with a reason.
+- **Leave**: Ghana statutory types (annual 15 days, sick, maternity, paternity, unpaid), balances, requests by staff (self-service) or HR, approval by the line manager.
+- **Staff loans and salary advances**, repaid automatically through payroll.
+- **Monthly payroll** on a seeded, accountant-confirmable Ghana profile (PAYE bands, SSNIT Tier 1/2, Tier 3 relief, junior staff overtime tax): prepare → approve (someone else) → pay; payslips (A4), cash pay sheet, bank/MoMo payment list (CSV); posted to the books automatically.
+- **My leave & payslips** page for every employee with a sign-in.
+- Permissions: hr.view, hr.manage, attendance.manage, leave.request, leave.approve, loans.manage, payroll.prepare, payroll.approve, payroll.pay (Core 0.10.0).
+- API: `POST pos/clock`; queued `clock` events.
+### Changed
+- The chart gains payroll purposes (salaries, employer SSNIT, PAYE, SSNIT, Tier 2, Tier 3, welfare, salaries payable, staff loans), added to existing companies automatically.
 ## [0.9.0] — 2026-10-13 · Phase 7b banking, expenses, assets, budgets, VAT
 ### Added
 - **Bank & cash** (Finance): bank, MoMo and cash accounts; **statement import from CSV** with a remembered column mapping (money in/out or signed amounts, Ghanaian date formats, totals rows skipped, re-imports skipped); **reconciliation** with suggestions, many-to-many matching, posting bank charges from the statement, and the reconciliation summary against the statement balance.

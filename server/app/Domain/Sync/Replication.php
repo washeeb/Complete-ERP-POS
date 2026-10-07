@@ -45,6 +45,7 @@ final class Replication
         'sales' => ['label' => 'Till sales, shifts and devices', 'direction' => 'up',
             'tables' => ['device' => 'devices', 'shift' => 'shifts', 'sale' => 'sales']],
         'reviews' => ['label' => 'Items needing review', 'direction' => 'up', 'tables' => ['review_item' => 'review_items']],
+        'attendance' => ['label' => 'Clock-in and clock-out', 'direction' => 'up', 'tables' => ['attendance_batch' => null]],
         'purchasing' => ['label' => 'Suppliers, purchase orders and goods received', 'direction' => 'both',
             'tables' => ['supplier' => 'suppliers', 'purchase_order' => 'purchase_orders', 'goods_receipt' => 'goods_receipts']],
         'warehouse' => ['label' => 'Bins, transfers, counts and reorder levels', 'direction' => 'both',

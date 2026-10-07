@@ -1,24 +1,23 @@
 # State (resume file)
 
-**Phase:** 7 — Finance & accounting · **Status:** 7b done on branch `phase-7b-banking-tax` (PR to `main`); Phase 7 complete; next is Phase 8 (HR & payroll + attendance)
-**Updated:** 2026-10-13 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–7a merged (PRs #1–#9)
+**Phase:** 8 — HR & payroll + attendance · **Status:** done on branch `phase-8-hr-payroll` (PR to `main`); next is Phase 9 (industry modules wave 1)
+**Updated:** 2026-10-14 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–7 merged (PRs #1–#10)
 
-## Phase 7b — done (248 Pest + 30 Vitest + 4 Playwright; browser-checked)
-- **Owner answers (2026-10-13):** CSV statements now, bank APIs later; straight-line monthly depreciation; budgets branch × account × month; expense claims + petty cash float (branch manager ≤ GHS 500, finance above).
-- **Domain:** `app/Domain/Banking/{BankingService,StatementCsv}`, `app/Domain/Expenses/ExpenseService`, `app/Domain/Assets/AssetService`, `app/Domain/Budgets/BudgetService`; AutoPoster kinds money_transfers, expense_claims, depreciation (calculated each run for ended months), asset_disposals; FinancialReports `budgetVsActual`, `vatReturn`.
-- **DB:** bank_accounts, bank_statement_imports/lines, bank_matches, bank_matched_lines, money_transfers, expense_claims, asset_classes, fixed_assets, asset_depreciation, budget_amounts; chart purposes backfilled by migration (`ChartTemplate::ensure`).
-- **Back office (Finance):** Bank & cash (import, reconcile page, move money), Money moved, Expense claims (receipt photos via `/expense-receipt/{claim}`), Fixed assets (+ kinds of asset), Budgets grid, Reports → Budget vs actual and VAT return.
-- **Tests:** BankingExpensesAssetsTest (5), BankingExpensesAssetsScreensTest (4); phpunit memory_limit 512M.
-- **Docs:** finance.md (banking, expenses, assets, budgets, VAT), DECISIONS 7b, CHANGELOG 0.9.0.
+## Phase 8 — done (256 Pest + 30 Vitest + 5 Playwright; browser-checked)
+- **Owner answers (2026-10-14):** monthly pay by bank, MoMo or cash; transport/meal allowances, overtime, loans/advances, Tier 3 and welfare; clocking on the till with PIN; Ghana statutory leave defaults.
+- **Done-when met (payroll run with payslips on a seeded profile):** `HrPayrollTest` clocks a cashier in/out online and offline, takes annual and unpaid leave, gives an advance, prepares (payroll officer), approves (finance, not the preparer) and pays the March payroll; payslips print; the ledger ties (salaries payable cleared, PAYE/SSNIT/Tier 2/loans as expected). `PayrollCalculatorTest` checks PAYE bands and payslips against hand-worked figures.
+- **Domain:** `app/Domain/Hr/{HrBaseline,PayrollCalculator,AttendanceService,HrService,PayrollService}`; `PosAuthService::verifyPin` shared by sign-in and clocking; AutoPoster kinds staff_loans, payroll, payroll_payments.
+- **DB:** departments, employees, attendance_events (append-only), leave_types, leave_requests, employee_loans, payroll_profiles (GH-2024 seeded), payroll_runs, payslips, loan_repayments; payroll chart purposes backfilled.
+- **Till:** Clock in / Clock out on the sign-in screen (`pos/src/clock.ts`), queued `clock` events offline; `POST pos/clock`; sync group `attendance` (up).
+- **Back office (HR & payroll):** Employees (+ departments), Timesheets, Leave, Payroll (+ tax and SSNIT rules page), Loans & advances, My leave & payslips; prints: payslip(s), pay sheet, bank/MoMo CSV.
+- **Tests:** HrPayrollTest, HrScreensTest, PayrollCalculatorTest (unit), e2e `clock.spec.ts`; `FakeTill` test helper moved to `tests/Support/FakeTill.php`.
+- **Docs:** hr-payroll.md, api.md (clock), DECISIONS 8, CHANGELOG 0.10.0.
 
-## Phase 7a — done (see CHANGELOG 0.8.0, docs/finance.md)
-- GL, automatic posting (exactly once via gl_postings), journals, month-end lock (GM reopens), supplier bills (3-way match) and payments, reports and the ledger check (`erp:gl-check`).
-
-## Next — Phase 8 (HR & payroll + attendance)
-- Read the HR & Payroll section (§6.10) of `ERP-POS-MASTER-PROMPT.md`; done-when: a payroll run with payslips on a seeded (accountant-verifiable) Ghana profile (SSNIT tiers, PAYE).
-- Ask the owner first (batched): pay frequency and pay day; allowances and deductions in use; attendance source (POS clock-in, mobile with geofence); leave types and entitlements.
+## Next — Phase 9 (industry modules wave 1: Grocery, Restaurant with KDS, Pharmacy)
+- Read the industry modules section (§8) of `ERP-POS-MASTER-PROMPT.md`; done-when: each installable per branch with its tests.
+- Ask the owner first (batched): which modules each branch runs; restaurant service style (table service, quick service, both) and kitchen printers/screens; pharmacy rules (prescription capture, batch/expiry, controlled drugs); grocery weighing scales and fresh-produce barcodes.
 ## Owner decisions pending
-- Accountant check of the Ghana tax set-up (before go-live).
+- Accountant check of the Ghana tax set-up (VAT/NHIL/GETFund rates and the payroll PAYE bands / SSNIT rates — Payroll → Tax and SSNIT rules) before go-live.
 - WooCommerce/Shopify: connect a real store only with the owner's keys.
 
 ## Dev environment notes
@@ -43,4 +42,4 @@
   - in tests, `flushSession()` before switching users.
 
 ## Blockers
-- Merge PR `phase-7b-banking-tax` → `main` (asked in chat).
+- Merge PR `phase-8-hr-payroll` → `main` (asked in chat).

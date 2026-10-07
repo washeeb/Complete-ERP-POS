@@ -112,3 +112,7 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
 .handheld section { display: grid; gap: 10px; }
 .handheld label { display: grid; gap: 4px; }
 .promo { color: var(--ok-text, #14532d); }
+
+/* Clock in / out on the sign-in screen */
+.clock-row { margin-top: 8px; } .clock-row button { flex: 1; }
+.ok { color: var(--ok-text, #15803d); }

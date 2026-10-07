@@ -181,3 +181,8 @@ Errors use the standard body `{error, detail}`. For example: `wrong_status`, `no
 - `GET pos/receipts?receipt=HQ-T01A-000001` → `{sale, customer_id, returnable: {within_period, lines: [{id, name, qty, line_total_minor, returnable_qty, …}], tenders: [{method, paid_minor, refundable_minor, reference}]}}`; 404 `not_found`.
 - `POST pos/returns` `{id, device_seq, occurred_at, shift_id, original_sale_id|null, reason, customer_id?, lines: [{original_line_id, qty}] (or product lines without a receipt), refunds: [{method, amount_minor, reference?}], approval?: {username, pin}}` → `201 {sale (kind return, negative), store_credit_code|null}`. Errors: `over_return`, `refund_mismatch`, `return_needs_approval` (no receipt or past the period: store credit with a supervisor PIN), `no_shift`. Online only.
 - `POST pos/account-payments` `{customer_id, amount_minor, method: cash|momo|card, provider?, reference?}` → `201 {number, amount_minor, balance_minor}`. Counts in the current shift's cash; `no_shift` without one.
+
+## Clocking in and out (Phase 8)
+
+- `POST pos/clock` (device token, like `pos/login`): `{id (uuid), username, pin, kind: in|out}` → `{status: accepted|duplicate, name, kind, at}`. Wrong PINs count towards the PIN lockout (`invalid_credentials`, `pin_locked`).
+- Offline: the till checks the PIN against the person's offline sign-in and queues `{type: "clock", grant, payload: {kind, occurred_at}}` in `pos/sync`; the server records it as source `offline`.

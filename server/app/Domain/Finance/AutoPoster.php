@@ -26,6 +26,7 @@ final class AutoPoster
         'shifts' => 'Till cash over / short', 'loyalty' => 'Loyalty points', 'stored_value' => 'Gift cards and store credit',
         'supplier_bills' => 'Supplier bills', 'supplier_payments' => 'Supplier payments', 'supplier_openings' => 'Supplier opening balances',
         'money_transfers' => 'Money moved between accounts', 'expense_claims' => 'Expense claims paid', 'depreciation' => 'Depreciation', 'asset_disposals' => 'Assets disposed of',
+        'staff_loans' => 'Staff loans and advances paid out', 'payroll' => 'Payroll (approved)', 'payroll_payments' => 'Payroll paid',
     ];
 
     /** How each kind of stock movement is balanced against the stock account. */
@@ -118,6 +119,9 @@ final class AutoPoster
             'expense_claims' => [$this->unpostedQuery('expense_claims', 'expense_claim', $tenantId)->where('s.status', 'paid'), 's.paid_on'],
             'depreciation' => [$this->unpostedQuery('asset_depreciation', 'asset_depreciation', $tenantId), "(date_trunc('month', s.month) + interval '1 month - 1 day')::date"],
             'asset_disposals' => [$this->unpostedQuery('fixed_assets', 'fixed_asset_disposal', $tenantId)->where('s.status', 'disposed'), 's.disposed_on'],
+            'staff_loans' => [$this->unpostedQuery('employee_loans', 'employee_loan', $tenantId), 's.issued_on'],
+            'payroll' => [$this->unpostedQuery('payroll_runs', 'payroll_run', $tenantId)->whereIn('s.status', ['approved', 'paid']), 's.period_end'],
+            'payroll_payments' => [$this->unpostedQuery('payroll_runs', 'payroll_payment', $tenantId)->where('s.status', 'paid'), 's.paid_on'],
         ];
     }
 
@@ -435,6 +439,66 @@ final class AutoPoster
                 $lines[] = ['account' => Account::withoutGlobalScopes()->findOrFail($a->proceeds_account_id), 'amount' => $proceeds, 'branch_id' => $a->branch_id];
             }
             $this->gl->post($actor, $a->d, 'auto', "Asset {$a->number} {$a->name} disposed of", $lines, [['fixed_asset_disposal', $a->id]], 'asset_disposals', late: true);
+        }
+
+        return count($rows);
+    }
+
+    private function staff_loans(Actor $actor, int $batch): int
+    {
+        $rows = $this->rows('staff_loans', $actor->tenantId, $batch, ['s.id', 's.number', 's.principal_minor', 's.paid_from_account_id', 's.employee_id']);
+        foreach ($rows as $l) {
+            $branch = DB::table('employees')->where('id', $l->employee_id)->value('branch_id');
+            $this->gl->post($actor, $l->d, 'auto', "Staff loan / advance {$l->number}", [
+                ['account' => 'staff_loans', 'amount' => (int) $l->principal_minor, 'branch_id' => $branch, 'party_type' => 'employee', 'party_id' => $l->employee_id],
+                ['account' => Account::withoutGlobalScopes()->findOrFail($l->paid_from_account_id), 'amount' => -(int) $l->principal_minor, 'branch_id' => $branch],
+            ], [['employee_loan', $l->id]], 'staff_loans', late: true);
+        }
+
+        return count($rows);
+    }
+
+    /** Wages and the employer's SSNIT as costs; what is owed to GRA, SSNIT, pension trustees, the welfare fund and the staff as liabilities. */
+    private function payroll(Actor $actor, int $batch): int
+    {
+        $rows = $this->rows('payroll', $actor->tenantId, $batch, ['s.id', 's.number', 's.year', 's.month']);
+        foreach ($rows as $run) {
+            $lines = [];
+            foreach (DB::table('payslips')->where('payroll_run_id', $run->id)->get() as $p) {
+                $b = $p->branch_id;
+                array_push($lines,
+                    ['account' => 'salaries', 'amount' => (int) $p->gross_minor, 'branch_id' => $b],
+                    ['account' => 'ssnit_employer', 'amount' => (int) $p->ssnit_employer_minor, 'branch_id' => $b],
+                    ['account' => 'ssnit', 'amount' => -(int) $p->tier1_minor, 'branch_id' => $b],
+                    ['account' => 'tier2', 'amount' => -(int) $p->tier2_minor, 'branch_id' => $b],
+                    ['account' => 'paye', 'amount' => -(int) $p->paye_minor, 'branch_id' => $b],
+                    ['account' => 'tier3', 'amount' => -(int) $p->tier3_minor, 'branch_id' => $b],
+                    ['account' => 'welfare', 'amount' => -(int) $p->welfare_minor, 'branch_id' => $b],
+                    ['account' => 'staff_loans', 'amount' => -(int) $p->loans_minor, 'branch_id' => $b, 'party_type' => 'employee', 'party_id' => $p->employee_id],
+                    ['account' => 'net_pay', 'amount' => -(int) $p->net_minor, 'branch_id' => $b],
+                );
+            }
+            $this->gl->post($actor, $run->d, 'auto', sprintf('Payroll %s (%04d-%02d)', $run->number, $run->year, $run->month), $lines, [['payroll_run', $run->id]], 'payroll', late: true);
+        }
+
+        return count($rows);
+    }
+
+    private function payroll_payments(Actor $actor, int $batch): int
+    {
+        $rows = $this->rows('payroll_payments', $actor->tenantId, $batch, ['s.id', 's.number', 's.bank_account_id', 's.cash_account_id']);
+        foreach ($rows as $run) {
+            $lines = [];
+            foreach (DB::table('payslips')->where('payroll_run_id', $run->id)->get() as $p) {
+                if ((int) $p->net_minor === 0) {
+                    continue;
+                }
+                $cash = (json_decode($p->employee, true)['pay_method'] ?? '') === 'cash';
+                $lines[] = ['account' => 'net_pay', 'amount' => (int) $p->net_minor, 'branch_id' => $p->branch_id];
+                $lines[] = ['account' => Account::withoutGlobalScopes()->findOrFail($cash ? $run->cash_account_id : $run->bank_account_id), 'amount' => -(int) $p->net_minor,
+                    'branch_id' => $p->branch_id];
+            }
+            $this->gl->post($actor, $run->d, 'auto', "Salaries paid {$run->number}", $lines, [['payroll_payment', $run->id]], 'payroll_payments', late: true);
         }
 
         return count($rows);

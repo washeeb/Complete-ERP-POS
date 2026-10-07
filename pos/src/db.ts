@@ -31,7 +31,7 @@ export type OfflineGrant = {
 export type QueueItem = {
   seq?: number
   id: string
-  type: 'shift_open' | 'sale' | 'shift_close'
+  type: 'shift_open' | 'sale' | 'shift_close' | 'clock'
   payload: Record<string, unknown>
   grant: OfflineGrant
   status: 'pending' | 'review'

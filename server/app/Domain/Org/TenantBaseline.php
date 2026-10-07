@@ -3,6 +3,7 @@
 namespace App\Domain\Org;
 
 use App\Domain\Finance\ChartTemplate;
+use App\Domain\Hr\HrBaseline;
 use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
 use App\Domain\Support\Outbox;
@@ -79,6 +80,7 @@ final class TenantBaseline
             // Finance is kept at head office only.
             if (config('erp.node.role') !== 'branch') {
                 ChartTemplate::ensure($tenant);
+                HrBaseline::ensure($tenant);
             }
         });
     }
