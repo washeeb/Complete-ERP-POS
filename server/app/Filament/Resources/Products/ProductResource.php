@@ -92,6 +92,10 @@ class ProductResource extends Resource
                     ->helperText(fn (?Product $record) => $record?->stockLevels()->exists() ? 'Fixed once stock has moved.' : null),
                 Toggle::make('track_stock')->label('Track stock')->default(true)->inline(false),
                 Toggle::make('is_active')->label('For sale')->default(true)->inline(false),
+                Toggle::make('track_batches')->label('Batches and expiry dates')->inline(false)
+                    ->helperText('Received with batch number and expiry; sold oldest expiry first; expired stock cannot be sold.'),
+                TextInput::make('plu')->label('Scale code (PLU)')->maxLength(5)->regex('/^\d{1,5}$/')
+                    ->helperText('For items weighed on the label scale (Grocery): the item number the scale prints in the barcode.'),
                 Textarea::make('description')->rows(2)->columnSpanFull(),
             ]),
             Section::make('Barcodes and selling units')->description('Scanning a barcode adds that unit to the till. Buy in cartons, sell in pieces: add the carton with how many base units it holds.')

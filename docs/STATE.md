@@ -1,27 +1,21 @@
 # State (resume file)
 
-**Phase:** 8 — HR & payroll + attendance · **Status:** done on branch `phase-8-hr-payroll` (PR to `main`); next is Phase 9 (industry modules wave 1)
-**Updated:** 2026-10-14 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–7 merged (PRs #1–#10)
+**Phase:** 9 — Industry modules wave 1 · **Status:** 9a (Grocery + batch/expiry) done on branch `phase-9-industry-modules` (PR to `main`); next 9b Pharmacy, then 9c Restaurant
+**Updated:** 2026-10-16 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–8 and licensing merged (PRs #1–#12)
 
-## Phase 8 — done (256 Pest + 30 Vitest + 5 Playwright; browser-checked)
-- **Owner answers (2026-10-14):** monthly pay by bank, MoMo or cash; transport/meal allowances, overtime, loans/advances, Tier 3 and welfare; clocking on the till with PIN; Ghana statutory leave defaults.
-- **Done-when met (payroll run with payslips on a seeded profile):** `HrPayrollTest` clocks a cashier in/out online and offline, takes annual and unpaid leave, gives an advance, prepares (payroll officer), approves (finance, not the preparer) and pays the March payroll; payslips print; the ledger ties (salaries payable cleared, PAYE/SSNIT/Tier 2/loans as expected). `PayrollCalculatorTest` checks PAYE bands and payslips against hand-worked figures.
-- **Domain:** `app/Domain/Hr/{HrBaseline,PayrollCalculator,AttendanceService,HrService,PayrollService}`; `PosAuthService::verifyPin` shared by sign-in and clocking; AutoPoster kinds staff_loans, payroll, payroll_payments.
-- **DB:** departments, employees, attendance_events (append-only), leave_types, leave_requests, employee_loans, payroll_profiles (GH-2024 seeded), payroll_runs, payslips, loan_repayments; payroll chart purposes backfilled.
-- **Till:** Clock in / Clock out on the sign-in screen (`pos/src/clock.ts`), queued `clock` events offline; `POST pos/clock`; sync group `attendance` (up).
-- **Back office (HR & payroll):** Employees (+ departments), Timesheets, Leave, Payroll (+ tax and SSNIT rules page), Loans & advances, My leave & payslips; prints: payslip(s), pay sheet, bank/MoMo CSV.
-- **Tests:** HrPayrollTest, HrScreensTest, PayrollCalculatorTest (unit), e2e `clock.spec.ts`; `FakeTill` test helper moved to `tests/Support/FakeTill.php`.
-- **Docs:** hr-payroll.md, api.md (clock), DECISIONS 8, CHANGELOG 0.10.0.
+## Phase 9a — done (274 Pest + 33 Vitest + 6 Playwright; browser-checked)
+- **Owner answers (2026-10-16):** scale labels with weight in barcode; FEFO + suggested markdowns applied by a manager; pharmacist approves POM sales (9b); restaurant table service + counter with kitchen screens (9c).
+- **Core:** batches in the stock ledger — `products.track_batches`, `stock_batches` (UUID v5 ids), `stock_movements.batch_id`, `stock_batch_levels`; `StockBatches` (ensure / FEFO / latest / check); `StockLedger::withBatches`, `assignOpeningBatches` (`batch_assign`, excluded from GL); batches through GRN (+ handheld), adjustments, transfers, returns, reversals; offline expired sales flagged `expired_sold`.
+- **Grocery module (0.1.0, per branch):** `app/Domain/Grocery/{MarkdownService,EslRelay}`, `App\Support\Ean13`, markdown stickers (`markdowns`, sale line `markdown_id`), scale labels on the till (`pos/src/scale.ts`), Stock → Batches & expiry, Stock → Shrink, sticker print route, settings `grocery.*`.
+- **Tests:** GroceryTest (5), SetupAndModulesTest updated (grocery released), `scale.test.ts`, e2e `grocery.spec.ts`.
+- **Docs:** grocery.md, api.md (grocery), DECISIONS 9a, CHANGELOG 0.12.0.
 
-## Licensing — done on branch `security-licensing` (stacked on `phase-8-hr-payroll`; 264 Pest + 30 Vitest + 5 Playwright)
-- **Owner answers (2026-10-15):** offline signed key + daily check-in; 30-day warning, 14-day grace, then read-only with no output; limits on branches/devices/users/modules (+ Finance/HR features); hidden watermarks, tamper detection, per-customer build stamping.
-- **Code:** `app/Domain/Licensing/{Signer,LicenseKey,LicenseManager,LicenseService,MachineFingerprint,ReleaseManifest,Watermark,Vendor/*}`; guard in `Recorder::transaction`; `EnforceLicense` middleware (panel redirect, `license:output` on print routes); feature gating in `Authorizer`; limits in OrgService/DeviceService/AccessService/ModuleService; `pos/sync` 423 when read-only; licence in the `org` sync group.
-- **Dev:** dev signing key in `.local-secrets/license-dev.json` (git-ignored); `LICENSE_DEV_PUBLIC_KEY` + `LICENSE_PRIVATE_KEY_PATH` in `server/.env`; dev licence activated until 2027-12-31. Tests sign their own (`activateTestLicense()`).
-- **Before the first customer release:** run `license:keygen` for the production key (keep it offline), add its public key to `config/license.php`, deploy a licence server (`LICENSE_SERVER=true`).
-- **Docs:** licensing.md, DECISIONS, CHANGELOG 0.11.0.
-## Next — Phase 9 (industry modules wave 1: Grocery, Restaurant with KDS, Pharmacy)
-- Read the industry modules section (§8) of `ERP-POS-MASTER-PROMPT.md`; done-when: each installable per branch with its tests.
-- Ask the owner first (batched): which modules each branch runs; restaurant service style (table service, quick service, both) and kitchen printers/screens; pharmacy rules (prescription capture, batch/expiry, controlled drugs); grocery weighing scales and fresh-produce barcodes.
+## Licensing (merged, PR #12)
+- Signed activation keys, expiry with grace then read-only, daily check-in, tamper detection, watermarks — see docs/licensing.md. Dev licence valid to 2027-12-31 (dev key in `.local-secrets/license-dev.json`). Before the first customer release: production key (`license:keygen`), its public key in `config/license.php`, a licence server.
+
+## Next — Phase 9b (Pharmacy)
+- Drug fields on products (schedule OTC/POM/controlled, generic name, strength, form, FDA registration no.), batch/expiry mandatory for medicines.
+- Patients (customers with allergies, NHIS no.), prescriptions, pharmacist PIN approval for POM at the till (offline via offline sign-in), controlled-drug register (append-only), interaction/allergy warnings from a local table (pluggable source), generic substitution, NHIS claims hook, Pharmacy Council / FDA compliance fields; module roles Pharmacist and Pharmacy Technician.
 ## Owner decisions pending
 - Accountant check of the Ghana tax set-up (VAT/NHIL/GETFund rates and the payroll PAYE bands / SSNIT rates — Payroll → Tax and SSNIT rules) before go-live.
 - WooCommerce/Shopify: connect a real store only with the owner's keys.
@@ -48,4 +42,4 @@
   - in tests, `flushSession()` before switching users.
 
 ## Blockers
-- Merge PR `phase-8-hr-payroll` (#11) → `main`, then the licensing PR (asked in chat).
+- Merge PR `phase-9-industry-modules` (9a) → `main` (asked in chat).

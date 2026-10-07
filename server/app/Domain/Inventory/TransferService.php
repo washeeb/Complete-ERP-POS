@@ -139,8 +139,25 @@ final class TransferService
                     $diffs[] = "{$l->name}: sent ".Qty::format($sent).', received '.Qty::format($got)." {$l->uom_code}";
                 }
                 $unit = ProductUom::findOrFail($l->product_uom_id);
-                if ($got > 0) {
-                    $entries[] = ['product' => Product::findOrFail($l->product_id), 'unit' => $unit, 'qty_milli' => $got, 'bin_id' => $toBinId,
+                $product = Product::findOrFail($l->product_id);
+                $sentBatches = ! $product->track_batches ? collect() : DB::table('stock_movements as m')->join('stock_batches as b', 'b.id', '=', 'm.batch_id')
+                    ->where('m.source_type', 'stock_transfer')->where('m.source_id', $t->id)->where('m.type', 'transfer_out')->where('m.product_id', $product->id)
+                    ->groupBy('m.batch_id', 'b.expires_on')->orderByRaw('b.expires_on ASC NULLS LAST')
+                    ->selectRaw('m.batch_id, -SUM(m.qty_base) AS qty')->get();
+                if ($got > 0 && $sentBatches->isNotEmpty()) {
+                    // The batches that were sent arrive (earliest expiry first); anything extra joins the last of them.
+                    $base = ProductUom::where('product_id', $product->id)->where('is_base', true)->firstOrFail();
+                    $left = Qty::toBaseMilli($got, Qty::factorMicro($unit->factor));
+                    foreach ($sentBatches as $i => $sb) {
+                        $q = $i === count($sentBatches) - 1 ? $left : min($left, Qty::toMilli((string) $sb->qty));
+                        if ($q > 0) {
+                            $entries[] = ['product' => $product, 'unit' => $base, 'qty_milli' => $q, 'bin_id' => $toBinId, 'batch_id' => $sb->batch_id,
+                                'unit_cost_minor' => StockProjection::costPerUnit($l->unit_cost_minor === null ? null : (string) $l->unit_cost_minor, '1')];
+                            $left -= $q;
+                        }
+                    }
+                } elseif ($got > 0) {
+                    $entries[] = ['product' => $product, 'unit' => $unit, 'qty_milli' => $got, 'bin_id' => $toBinId,
                         'unit_cost_minor' => StockProjection::costPerUnit($l->unit_cost_minor === null ? null : (string) $l->unit_cost_minor, (string) $unit->factor)];
                 }
                 $l->received_qty = Qty::format($got);

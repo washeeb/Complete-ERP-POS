@@ -2,6 +2,7 @@
 
 namespace App\Domain\Purchasing;
 
+use App\Domain\Inventory\StockBatches;
 use App\Domain\Inventory\StockLedger;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
@@ -24,6 +25,7 @@ use App\Security\Authorizer;
 use App\Support\Money;
 use App\Support\Qty;
 use App\Support\Settings;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -41,6 +43,7 @@ final class GoodsReceiptService
         private readonly StockLedger $ledger,
         private readonly Settings $settings,
         private readonly ReviewQueue $reviews,
+        private readonly StockBatches $batches,
     ) {}
 
     /**
@@ -111,7 +114,8 @@ final class GoodsReceiptService
             }
             $lines[] = ['line_no' => count($lines) + 1, 'purchase_order_line_id' => $poLine?->id, 'product_id' => $product->id, 'product_uom_id' => $unit->id,
                 'sku' => $product->sku, 'name' => $product->name, 'uom_code' => $unit->uom->code, 'factor' => $unit->factor, 'qty' => Qty::format($qty),
-                'unit_cost_minor' => $cost, 'net_minor' => Qty::divRound($qty * $cost, 1000), 'bin_id' => $r['bin_id'] ?? null];
+                'unit_cost_minor' => $cost, 'net_minor' => Qty::divRound($qty * $cost, 1000), 'bin_id' => $r['bin_id'] ?? null]
+                + self::batchFields($product, $r);
         }
         if ($lines === []) {
             throw new DomainException('Enter what was received.');
@@ -197,7 +201,7 @@ final class GoodsReceiptService
             foreach ($receiptMoves as $m) {
                 $unit = ProductUom::where('product_id', $m->product_id)->where('uom_id', $m->uom_id)->firstOrFail();
                 $entries[] = ['product' => Product::findOrFail($m->product_id), 'unit' => $unit, 'qty_milli' => -Qty::toMilli((string) $m->qty_entered),
-                    'bin_id' => $m->bin_id, 'unit_cost_minor' => $m->unit_cost_minor];
+                    'bin_id' => $m->bin_id, 'unit_cost_minor' => $m->unit_cost_minor, 'batch_id' => $m->batch_id];
             }
             $this->ledger->post($actor, $grn->warehouse, 'receipt_reversal', $entries, "Reversal of {$grn->number}: {$reason}", 'goods_receipt', $grn->id);
             if ($grn->purchase_order_id) {
@@ -213,8 +217,10 @@ final class GoodsReceiptService
     {
         $entries = [];
         foreach ($grn->lines()->get() as $l) {
-            $entries[] = ['product' => Product::findOrFail($l->product_id), 'unit' => ProductUom::findOrFail($l->product_uom_id),
-                'qty_milli' => Qty::toMilli((string) $l->qty), 'unit_cost_minor' => $l->unit_cost_minor, 'bin_id' => $l->bin_id];
+            $product = Product::findOrFail($l->product_id);
+            $entries[] = ['product' => $product, 'unit' => ProductUom::findOrFail($l->product_uom_id),
+                'qty_milli' => Qty::toMilli((string) $l->qty), 'unit_cost_minor' => $l->unit_cost_minor, 'bin_id' => $l->bin_id]
+                + ($product->track_batches ? ['batch_id' => $this->batches->ensure($actor, $product, (string) $l->batch_no, $l->expires_on)] : []);
             SupplierProduct::where('supplier_id', $grn->supplier_id)->where('product_uom_id', $l->product_uom_id)->update(['last_cost_minor' => $l->unit_cost_minor]);
         }
         $this->ledger->post($actor, $grn->warehouse, 'receipt', $entries, "{$grn->number} from ".$grn->supplier->name, 'goods_receipt', $grn->id);
@@ -252,5 +258,23 @@ final class GoodsReceiptService
         if (! $actor->user || ! $this->authz->allows($actor->user, $permission, $warehouse)) {
             throw new AccessDenied;
         }
+    }
+
+    /** Batch-tracked products are received with their batch number and expiry date (printed on the pack). */
+    private static function batchFields(Product $product, array $r): array
+    {
+        if (! $product->track_batches) {
+            return [];
+        }
+        $batch = trim((string) ($r['batch_no'] ?? ''));
+        $expires = $r['expires_on'] ?? null;
+        if ($batch === '') {
+            throw new DomainException("{$product->name}: enter the batch number and expiry date from the pack.", 'batch_required');
+        }
+        if ($expires && Carbon::parse($expires)->lt(now()->startOfDay())) {
+            throw new DomainException("{$product->name}: batch {$batch} has already expired; do not receive it.", 'expired_stock');
+        }
+
+        return ['batch_no' => mb_strtoupper(mb_substr($batch, 0, 60)), 'expires_on' => $expires ? Carbon::parse($expires)->toDateString() : null];
     }
 }

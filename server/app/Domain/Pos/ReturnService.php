@@ -29,6 +29,7 @@ use App\Security\Authorizer;
 use App\Support\Qty;
 use App\Support\Settings;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -193,7 +194,11 @@ final class ReturnService
                     'unit_price_minor' => $l['unit_price'], 'line_total_minor' => -$l['t']['gross'], 'net_minor' => -$l['t']['net'], 'tax_minor' => -$l['t']['tax'],
                     'tax_breakdown' => array_map(fn ($b) => ['amount_minor' => -$b['amount_minor']] + $b, $l['t']['breakdown']), 'original_line_id' => $l['original_line_id']]);
             }
-            $this->stock->post($actor, $warehouse, 'sale_return', array_map(fn ($l) => ['product' => $l['product'], 'unit' => $l['unit'], 'qty_milli' => $l['qty']], $lines),
+            // Goods come back into the batch they were sold from (batch-tracked products).
+            $soldFrom = $original ? DB::table('stock_movements')->where('source_type', 'sale')->where('source_id', $original->id)->whereNotNull('batch_id')
+                ->orderByDesc('qty_base')->pluck('batch_id', 'product_id') : collect(); // pluck keeps the last row: the batch most was sold from
+            $this->stock->post($actor, $warehouse, 'sale_return', array_map(fn ($l) => ['product' => $l['product'], 'unit' => $l['unit'], 'qty_milli' => $l['qty']]
+                + (isset($soldFrom[$l['product']->id]) ? ['batch_id' => $soldFrom[$l['product']->id]] : []), $lines),
                 "Return {$receiptNo}".($original ? " of {$original->receipt_no}" : ''), 'sale', $sale->id, $occurredAt);
 
             $storeCredit = null;

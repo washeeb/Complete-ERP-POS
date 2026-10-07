@@ -20,6 +20,7 @@ use App\Domain\Sync\ReviewQueue;
 use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\Device;
+use App\Models\Markdown;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\ProductUom;
@@ -155,7 +156,12 @@ final class SaleService
                 throw new DomainException("{$product->name}: {$unit->uom->name} allows {$unit->uom->decimals} decimal place(s).");
             }
             $unitPrice = (int) $l['unit_price_minor'];
-            $current = $this->prices->resolve($list, $product->id, $unit->id, $qty, $occurredAt);
+            // A near-expiry markdown sticker (Grocery): its own price and batch, outside promotions.
+            $markdown = ! empty($l['markdown_id']) ? Markdown::where('branch_id', $branch->id)->where('product_uom_id', $unit->id)->find($l['markdown_id']) : null;
+            if (! empty($l['markdown_id']) && ! $offline && (! $markdown || $markdown->status !== 'active' || $markdown->valid_until->lt($occurredAt->copy()->startOfDay()))) {
+                throw new DomainException("{$product->name}: that markdown sticker is no longer valid.", 'markdown_invalid');
+            }
+            $current = $markdown ? (object) ['amount_minor' => $markdown->price_minor] : $this->prices->resolve($list, $product->id, $unit->id, $qty, $occurredAt);
             if ($current?->amount_minor !== $unitPrice) {
                 if (! $offline) {
                     throw new DomainException(
@@ -170,9 +176,9 @@ final class SaleService
                 ->map(fn ($r) => ['code' => $r->code, 'name' => $r->name, 'rate_bp' => $r->rate_bp])->values()->all();
             $manual = self::manualDiscount($l['manual'] ?? null, $unitPrice, $product->name);
             $key = (string) $i;
-            $engineLines[] = ['key' => $key, 'product_id' => $product->id, 'category_id' => $product->category_id, 'qty_milli' => $qty,
+            $engineLines[] = ['key' => $key, 'product_id' => $markdown ? 'markdown:'.$markdown->id : $product->id, 'category_id' => $markdown ? null : $product->category_id, 'qty_milli' => $qty,
                 'unit_price_minor' => $unitPrice, 'tax' => $rates, 'manual' => $manual];
-            $lines[] = compact('product', 'unit', 'qty', 'unitPrice', 'manual', 'rates', 'key') + ['no' => $i + 1, 'given' => (int) ($l['line_total_minor'] ?? -1)];
+            $lines[] = compact('product', 'unit', 'qty', 'unitPrice', 'manual', 'rates', 'key', 'markdown') + ['no' => $i + 1, 'given' => (int) ($l['line_total_minor'] ?? -1)];
         }
         if ($lines === []) {
             throw new DomainException('The cart is empty.');
@@ -293,6 +299,7 @@ final class SaleService
                         'line_total_minor' => $results[$l['key']]['total'], 'net_minor' => $results[$l['key']]['net'], 'tax_minor' => $results[$l['key']]['tax'],
                         'tax_breakdown' => $results[$l['key']]['breakdown'], 'list_total_minor' => $results[$l['key']]['list_total'],
                         'discount_minor' => $results[$l['key']]['discount'], 'promotions' => $results[$l['key']]['promotions'], 'manual_discount' => $l['manual'],
+                        'markdown_id' => $l['markdown']?->id,
                     ]);
                 }
                 foreach ($payments as $pay) {
@@ -307,7 +314,14 @@ final class SaleService
 
                 $this->ledger->post($actor, $warehouse, 'sale', array_map(fn ($l) => [
                     'product' => $l['product'], 'unit' => $l['unit'], 'qty_milli' => -$l['qty'],
-                ], $lines), "Sale {$receiptNo}", 'sale', $sale->id, $occurredAt, alreadyHappened: $offline);
+                ] + ($l['markdown'] ? ['batch_id' => $l['markdown']->batch_id] : []), $lines), "Sale {$receiptNo}", 'sale', $sale->id, $occurredAt, alreadyHappened: $offline);
+                if ($offline) {
+                    $expired = DB::table('stock_movements as m')->join('stock_batches as b', 'b.id', '=', 'm.batch_id')->where('m.source_type', 'sale')
+                        ->where('m.source_id', $sale->id)->where('b.expires_on', '<', $occurredAt->toDateString())->pluck('b.batch_no')->unique();
+                    if ($expired->isNotEmpty()) {
+                        $flags[] = ['expired_sold', 'expired batch(es) sold while offline: '.$expired->implode(', ')];
+                    }
+                }
 
                 $this->recorder->audit->record($actor, $offline ? 'sale.posted_offline' : 'sale.posted', $sale, [
                     'receipt_no' => [null, $receiptNo], 'total_minor' => [null, $total], 'lines' => [null, count($lines)],

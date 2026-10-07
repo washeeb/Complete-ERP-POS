@@ -93,6 +93,7 @@ export async function submitSale(args: {
     lines: cart.lines.map((l) => ({
       product_id: l.product.id, product_uom_id: l.unit.id, qty: (l.qtyMilli / 1000).toString(), unit_price_minor: l.price!.amount_minor, line_total_minor: l.total,
       ...(l.manual ? { manual: l.manual } : {}),
+      ...(l.markdown ? { markdown_id: l.markdown.id } : {}),
     })),
     coupon_code: args.coupon || null,
     sale_discount_bp: args.saleDiscountBp ?? 0,

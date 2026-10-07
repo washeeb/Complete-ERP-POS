@@ -13,11 +13,11 @@ class Product extends Model
 {
     use BelongsToTenant, HasOriginNode, HasUuids;
 
-    protected $fillable = ['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active'];
+    protected $fillable = ['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu'];
 
     protected function casts(): array
     {
-        return ['track_stock' => 'boolean', 'is_active' => 'boolean'];
+        return ['track_stock' => 'boolean', 'is_active' => 'boolean', 'track_batches' => 'boolean'];
     }
 
     public function category(): BelongsTo

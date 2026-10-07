@@ -102,7 +102,7 @@ final class AutoPoster
 
         return [
             'sales' => [$this->unpostedQuery('sales', 'sale', $tenantId)->where('s.status', 'posted'), $d('s.occurred_at')],
-            'stock' => [$this->unpostedQuery('stock_movements', 'stock_movement', $tenantId)->where('s.type', '<>', 'putaway'), $d('s.occurred_at')],
+            'stock' => [$this->unpostedQuery('stock_movements', 'stock_movement', $tenantId)->whereNotIn('s.type', ['putaway', 'batch_assign']), $d('s.occurred_at')], // moves inside a warehouse carry no value
             'invoices' => [$this->unpostedQuery('invoices', 'invoice', $tenantId), 's.issued_on'],
             'credit_notes' => [$this->unpostedQuery('credit_notes', 'credit_note', $tenantId), $d('s.created_at')],
             'customer_payments' => [$this->unpostedQuery('customer_payments', 'customer_payment', $tenantId), 's.received_on'],

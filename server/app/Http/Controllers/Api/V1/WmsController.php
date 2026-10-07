@@ -112,6 +112,7 @@ class WmsController extends Controller
             ->whereIn('status', ['approved', 'partially_received'])->orderBy('expected_on')->orderBy('number')->limit(100)->get()
             ->map(fn ($po) => ['id' => $po->id, 'number' => $po->number, 'supplier' => $po->supplier->name, 'expected_on' => $po->expected_on?->toDateString(),
                 'lines' => $po->lines->map(fn ($l) => ['id' => $l->id, 'product_uom_id' => $l->product_uom_id, 'sku' => $l->sku, 'name' => $l->name,
+                    'track_batches' => (bool) Product::find($l->product_id)?->track_batches,
                     'uom_code' => $l->uom_code, 'ordered' => (string) $l->qty, 'received' => (string) $l->received_qty,
                     'barcodes' => Barcode::where('product_uom_id', $l->product_uom_id)->pluck('code')])->values()]));
     }
@@ -122,6 +123,7 @@ class WmsController extends Controller
             'purchase_order_id' => ['required', 'uuid'], 'client_id' => ['required', 'uuid'], 'supplier_ref' => ['nullable', 'string', 'max:60'],
             'note' => ['nullable', 'string', 'max:500'], 'lines' => ['required', 'array', 'min:1', 'max:500'],
             'lines.*.purchase_order_line_id' => ['required', 'uuid'], 'lines.*.qty' => ['required', 'numeric', 'min:0'], 'lines.*.bin_id' => ['nullable', 'uuid'],
+            'lines.*.batch_no' => ['nullable', 'string', 'max:60'], 'lines.*.expires_on' => ['nullable', 'date'],
         ]);
         $po = PurchaseOrder::findOrFail($data['purchase_order_id']);
         $this->warehouse($request, $po->warehouse_id, 'stock.receive');

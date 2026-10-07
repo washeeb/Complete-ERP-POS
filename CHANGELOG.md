@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.12.0] — 2026-10-16 · Phase 9a Grocery, batches and expiry
+### Added
+- **Batches and expiry dates** for any product ("Batches and expiry dates" on the product): received with batch number and expiry (back office and handheld), sold earliest expiry first, expired stock cannot be sold online (offline sales are kept and flagged). Batches follow transfers and returns; switching it on for stock already held puts it in batch OPENING.
+- **Stock → Batches & expiry**: batches on hand by expiry; suggested markdowns to apply; expired batches to write off; active markdowns and **markdown stickers** (EAN-13) to print.
+- **Grocery module** (per branch): **scale labels** with the weight in the barcode (item scale code / PLU on the product), **markdown stickers** scanned at the till at their own price, **electronic shelf label** price feed.
+- **Stock → Shrink**: losses at cost by reason and product. New adjustment reason "Spoilage".
+- Settings → Grocery: scale prefixes, sticker prefix, markdown rules, shelf-label gateway address.
+### Changed
+- `erp:stock-check` also proves batch levels.
 ## [0.11.0] — 2026-10-15 · Licensing and anti-piracy
 ### Added
 - **Licence keys:** every installation must be activated with a key from Synclytics (Settings → Licence shows the installation code). Keys set the expiry date, the number of branches, tills and devices and active users, the industry modules, and whether Finance and HR are included.

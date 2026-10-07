@@ -48,6 +48,13 @@ final class StockProjection
             DB::table('stock_levels')->where('warehouse_id', $m['warehouse_id'])->where('product_id', $m['product_id'])
                 ->update(['on_hand' => Qty::format($before + $qty), 'avg_cost_minor' => $avg, 'updated_at' => $now]);
 
+            if (! empty($m['batch_id'])) {
+                DB::table('stock_batch_levels')->insertOrIgnore(['tenant_id' => $m['tenant_id'], 'warehouse_id' => $m['warehouse_id'],
+                    'batch_id' => $m['batch_id'], 'product_id' => $m['product_id'], 'on_hand' => 0, 'updated_at' => $now]);
+                $lot = DB::table('stock_batch_levels')->where('warehouse_id', $m['warehouse_id'])->where('batch_id', $m['batch_id'])->lockForUpdate()->first();
+                DB::table('stock_batch_levels')->where('warehouse_id', $m['warehouse_id'])->where('batch_id', $m['batch_id'])
+                    ->update(['on_hand' => Qty::format(Qty::toMilli((string) $lot->on_hand) + $qty), 'updated_at' => $now]);
+            }
             if (! empty($m['bin_id'])) {
                 DB::table('stock_bin_levels')->insertOrIgnore(['tenant_id' => $m['tenant_id'], 'warehouse_id' => $m['warehouse_id'],
                     'bin_id' => $m['bin_id'], 'product_id' => $m['product_id'], 'on_hand' => 0, 'updated_at' => $now]);

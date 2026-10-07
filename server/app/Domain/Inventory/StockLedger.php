@@ -30,7 +30,8 @@ final class StockLedger
     /** Movement types that may not take stock below zero (sales follow the shop's setting; offline sales never refuse). */
     private const STRICT = ['adjustment', 'opening', 'transfer_out', 'putaway', 'receipt_reversal', 'delivery']; // counts record what is there
 
-    public function __construct(private readonly Settings $settings, private readonly Outbox $outbox, private readonly StockProjection $projection) {}
+    public function __construct(private readonly Settings $settings, private readonly Outbox $outbox, private readonly StockProjection $projection,
+        private readonly StockBatches $batches) {}
 
     /**
      * @param  list<array{product: Product, unit: ProductUom, qty_milli: int, unit_cost_minor?: ?int, bin_id?: string|false|null}>  $entries  qty signed, in the unit;
@@ -83,6 +84,8 @@ final class StockLedger
             }
         }
 
+        $entries = $this->withBatches($actor, $warehouse, $type, $entries, $alreadyHappened);
+
         $rows = [];
         foreach ($entries as $e) {
             $avg = $levels[$e['product']->id]->avg_cost_minor;
@@ -102,6 +105,7 @@ final class StockLedger
                     'branch_id' => $warehouse->branch_id,
                     'warehouse_id' => $warehouse->id,
                     'bin_id' => $binId,
+                    'batch_id' => $e['batch_id'] ?? null,
                     'product_id' => $e['product']->id,
                     'qty_base' => Qty::format(Qty::toBaseMilli($qtyMilli, Qty::factorMicro($e['unit']->factor))),
                     'uom_id' => $e['unit']->uom_id,
@@ -202,6 +206,66 @@ final class StockLedger
         return collect($entries)->first(fn ($e) => $e['product']->id === $productId)['product']->name;
     }
 
+    /**
+     * Batch-tracked products: every movement names its batch. Stock going out without one is taken earliest expiry
+     * first (sales and deliveries never from expired batches, unless an offline sale already happened); stock coming in
+     * without one joins the newest batch — except receipts and opening stock, which must say which batch it is.
+     * Moves between bins stay outside batches (they do not change what the warehouse holds).
+     */
+    private function withBatches(Actor $actor, Warehouse $warehouse, string $type, array $entries, bool $alreadyHappened): array
+    {
+        if (in_array($type, ['putaway', 'batch_assign'], true)) {
+            return $entries;
+        }
+        $out = [];
+        foreach ($entries as $e) {
+            if (! $e['product']->track_batches || ! empty($e['batch_id'])) {
+                $out[] = $e;
+
+                continue;
+            }
+            if ($e['qty_milli'] > 0) {
+                if (in_array($type, ['receipt', 'opening'], true)) {
+                    throw new DomainException("{$e['product']->name}: enter the batch number and expiry date.", 'batch_required');
+                }
+                $out[] = ['batch_id' => $this->batches->latest($actor, $warehouse, $e['product'])] + $e;
+
+                continue;
+            }
+            $factor = Qty::factorMicro($e['unit']->factor);
+            $split = $this->batches->fefo($actor, $warehouse, $e['product'], Qty::toBaseMilli(-$e['qty_milli'], $factor), in_array($type, ['sale', 'delivery'], true), $alreadyHappened);
+            if (count($split) === 1) {
+                $out[] = ['batch_id' => $split[0][0]] + $e;
+
+                continue;
+            }
+            $base = ProductUom::where('product_id', $e['product']->id)->where('is_base', true)->firstOrFail();
+            foreach ($split as [$batchId, $qtyBase]) {
+                $out[] = ['batch_id' => $batchId, 'unit' => $base, 'qty_milli' => -$qtyBase] + $e;
+            }
+        }
+
+        return $out;
+    }
+
+    /** Switching batch tracking on for a product with stock: what is on hand becomes batch "OPENING" (no value moves). */
+    public function assignOpeningBatches(Actor $actor, Product $product): void
+    {
+        $base = ProductUom::where('product_id', $product->id)->where('is_base', true)->firstOrFail();
+        foreach (DB::table('stock_levels')->where('product_id', $product->id)->get() as $level) {
+            $inBatches = Qty::toMilli((string) DB::table('stock_batch_levels')->where('warehouse_id', $level->warehouse_id)->where('product_id', $product->id)->sum('on_hand'));
+            $loose = Qty::toMilli((string) $level->on_hand) - $inBatches;
+            if ($loose === 0) {
+                continue;
+            }
+            $batch = $this->batches->ensure($actor, $product, 'OPENING', null);
+            $this->post($actor, Warehouse::findOrFail($level->warehouse_id), 'batch_assign', [
+                ['product' => $product, 'unit' => $base, 'qty_milli' => -$loose, 'bin_id' => false],
+                ['product' => $product, 'unit' => $base, 'qty_milli' => $loose, 'bin_id' => false, 'batch_id' => $batch],
+            ], 'Batch tracking started', 'product', $product->id, alreadyHappened: true);
+        }
+    }
+
     /** Products whose projections disagree with the ledger (should always be empty). */
     public function check(?string $tenantId = null): array
     {
@@ -233,6 +297,6 @@ final class StockLedger
             HAVING l.on_hand <> COALESCE(SUM(b.on_hand), 0)
         SQL, [$tenantId, $tenantId]);
 
-        return array_merge($warehouse, $bins, $unbinned);
+        return array_merge($warehouse, $bins, $unbinned, StockBatches::check($tenantId));
     }
 }

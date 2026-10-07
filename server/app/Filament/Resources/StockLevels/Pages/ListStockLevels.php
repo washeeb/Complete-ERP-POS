@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\ProductUom;
 use App\Models\Warehouse;
 use Filament\Actions\Action;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -48,6 +49,9 @@ class ListStockLevels extends ListRecords
                     Select::make('reason')->options(InventoryService::ADJUSTMENT_REASONS)->required(fn (Get $get) => $get('type') === 'adjustment')
                         ->visible(fn (Get $get) => $get('type') === 'adjustment'),
                     TextInput::make('note')->maxLength(200)->visible(fn (Get $get) => $get('type') === 'adjustment'),
+                    TextInput::make('batch_no')->label('Batch no.')->maxLength(60)->visible(fn (Get $get) => (bool) Product::find($get('product_id'))?->track_batches)
+                        ->helperText('Batch-tracked product. Removing stock without a batch takes the earliest expiry first.'),
+                    DatePicker::make('expires_on')->label('Expiry')->visible(fn (Get $get) => (bool) Product::find($get('product_id'))?->track_batches),
                     TextInput::make('unit_cost')->label('Unit cost (optional)')->numeric()->minValue(0)
                         ->helperText('Used for stock value from Phase 7. Leave blank if unknown.'),
                 ])
@@ -55,7 +59,7 @@ class ListStockLevels extends ListRecords
                     Erp::run(fn ($actor) => app(InventoryService::class)->adjust(
                         $actor, Warehouse::findOrFail($data['warehouse_id']), Product::findOrFail($data['product_id']),
                         ProductUom::findOrFail($data['product_uom_id']), (string) $data['qty'], $data['type'], $data['reason'] ?? '',
-                        $data['note'] ?? null, isset($data['unit_cost']) ? (string) $data['unit_cost'] : null,
+                        $data['note'] ?? null, isset($data['unit_cost']) ? (string) $data['unit_cost'] : null, $data['batch_no'] ?? null, $data['expires_on'] ?? null,
                     ), 'Stock updated');
                 }),
         ];
