@@ -41,6 +41,11 @@ final class LiveRelay
                     $this->send("tenant.{$t}.stock.{$wh}", true, 'stock.changed', ['product_ids' => $rows->pluck('product_id')->unique()->values()->all()]);
                 }
             }
+            if ($e->aggregate_type === 'dining_order') {
+                // Restaurant: tills and waiter tablets at the branch re-read the floor / the bill.
+                $row = $e->payload['snapshot']['row'] ?? [];
+                $this->send("tenant.{$t}.dining.".($row['branch_id'] ?? ''), true, 'dining.changed', ['order_id' => $e->aggregate_id, 'event' => $e->event_type]);
+            }
             if ($e->aggregate_type === 'sales_order' && $e->event_type === 'sales_order.received') {
                 $row = $e->payload['snapshot']['row'] ?? [];
                 $this->send("tenant.{$t}.orders", true, 'order.received', ['id' => $e->aggregate_id, 'number' => $row['number'] ?? '', 'branch_id' => $row['branch_id'] ?? null]);

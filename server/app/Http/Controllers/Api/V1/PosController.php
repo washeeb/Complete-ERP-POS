@@ -13,6 +13,7 @@ use App\Domain\Pos\PosSyncService;
 use App\Domain\Pos\ReturnService;
 use App\Domain\Pos\SaleService;
 use App\Domain\Pos\ShiftService;
+use App\Domain\Restaurant\DiningSales;
 use App\Domain\Sales\ReceivablesService;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
@@ -20,8 +21,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\Device;
+use App\Models\DiningOrder;
 use App\Models\DrugInteraction;
 use App\Models\LegalEntity;
+use App\Models\ModifierGroup;
 use App\Models\PatientProfile;
 use App\Models\PriceList;
 use App\Models\Product;
@@ -74,7 +77,8 @@ class PosController extends Controller
                 'host' => config('broadcasting.connections.reverb.options.host'),
                 'port' => (int) config('broadcasting.connections.reverb.options.port'),
                 'scheme' => config('broadcasting.connections.reverb.options.scheme'),
-                'channels' => ['tenant.'.$device->tenant_id.'.catalog', $till ? 'tenant.'.$device->tenant_id.'.stock.'.$till->warehouse_id : null],
+                'channels' => ['tenant.'.$device->tenant_id.'.catalog', $till ? 'tenant.'.$device->tenant_id.'.stock.'.$till->warehouse_id : null,
+                    app(ModuleService::class)->isEnabled($branch, 'restaurant') ? 'tenant.'.$device->tenant_id.'.dining.'.$branch->id : null],
             ] : null,
             'server_time' => now()->toIso8601String(),
         ]);
@@ -113,12 +117,20 @@ class PosController extends Controller
                 'markdown_prefix' => (string) app(Settings::class)->get('grocery.markdown_prefix', $device->tenant_id),
                 'markdowns' => MarkdownService::activeFor($device->branch_id),
             ] : null,
+            // Restaurant: modifier choices, the service charge and tips (null when the module is off at this branch).
+            'restaurant' => app(ModuleService::class)->isEnabled($device->branch_id, 'restaurant') ? [
+                'modifier_groups' => ModifierGroup::with('options')->where('is_active', true)->orderBy('name')->get()->map(fn ($g) => ['id' => $g->id, 'name' => $g->name,
+                    'min' => $g->min_choices, 'max' => $g->max_choices, 'options' => $g->options->map(fn ($o) => ['id' => $o->id, 'name' => $o->name, 'product_id' => $o->product_id])->values()])->values(),
+                'service_charge' => ($sc = app(DiningSales::class)->serviceCharge($device->tenant_id, Branch::find($device->branch_id))) ? ['product_id' => $sc[0], 'bp' => $sc[1]] : null,
+                'tips' => (bool) app(Settings::class)->get('restaurant.tips_enabled', $device->tenant_id),
+            ] : null,
             // Pharmacy: prescription-only medicines need a pharmacist; the interaction table drives the till's warnings.
             'pharmacy' => app(ModuleService::class)->isEnabled($device->branch_id, 'pharmacy') ? [
                 'interactions' => DrugInteraction::orderBy('ingredient_a')->get(['ingredient_a', 'ingredient_b', 'severity', 'note'])->toArray(),
             ] : null,
             'products' => $products->map(fn (Product $p) => [
                 'id' => $p->id, 'sku' => $p->sku, 'name' => $p->name, 'category_id' => $p->category_id, 'track_stock' => $p->track_stock, 'plu' => $p->plu,
+                'station' => $p->station, 'modifier_group_ids' => $p->modifier_group_ids ?? [],
                 'drug' => $p->drug_schedule ? ['schedule' => $p->drug_schedule, 'generic_name' => $p->generic_name, 'strength' => $p->strength,
                     'dosage_form' => $p->dosage_form, 'active_ingredients' => $p->active_ingredients ?? []] : null,
                 'on_hand' => $p->track_stock ? (string) ($stock[$p->id] ?? '0.000') : null,
@@ -181,7 +193,7 @@ class PosController extends Controller
     {
         $tenant = app(TenantContext::class)->id();
         $parts = [];
-        foreach (['products', 'product_uoms', 'barcodes', 'prices', 'price_lists', 'tax_rates', 'tax_groups', 'uoms', 'promotions', 'markdowns', 'drug_interactions'] as $t) {
+        foreach (['products', 'product_uoms', 'barcodes', 'prices', 'price_lists', 'tax_rates', 'tax_groups', 'uoms', 'promotions', 'markdowns', 'drug_interactions', 'modifier_groups', 'settings'] as $t) {
             $row = DB::table($t)->where('tenant_id', $tenant)->selectRaw('count(*) as c, max(updated_at) as u')->first();
             $parts[] = $t.':'.$row->c.':'.$row->u;
         }
@@ -227,6 +239,11 @@ class PosController extends Controller
             'lines.*.qty' => ['required', 'string', 'max:20'],
             'lines.*.unit_price_minor' => ['required', 'integer', 'min:0'],
             'lines.*.line_total_minor' => ['required', 'integer', 'min:0'],
+            'lines.*.note' => ['nullable', 'string', 'max:255'],
+            'lines.*.dining_item_id' => ['nullable', 'uuid'],
+            'lines.*.service_charge' => ['nullable', 'boolean'],
+            'dining_order_id' => ['nullable', 'uuid'],
+            'tip_minor' => ['nullable', 'integer', 'min:0'],
             'totals.net_minor' => ['required', 'integer'],
             'totals.tax_minor' => ['required', 'integer'],
             'totals.total_minor' => ['required', 'integer'],
@@ -354,7 +371,9 @@ class PosController extends Controller
             'tax_breakdown' => $s->tax_breakdown,
             'lines' => $s->lines->map(fn ($l) => ['line_no' => $l->line_no, 'sku' => $l->sku, 'name' => $l->name, 'uom' => $l->uom_code,
                 'qty' => Qty::format(Qty::toMilli((string) $l->qty)), 'unit_price_minor' => $l->unit_price_minor, 'line_total_minor' => $l->line_total_minor,
-                'discount_minor' => (int) $l->discount_minor, 'promotions' => $l->promotions ?? []])->values(),
+                'discount_minor' => (int) $l->discount_minor, 'promotions' => $l->promotions ?? [], 'note' => $l->note])->values(),
+            'tip_minor' => (int) $s->tip_minor,
+            'order_number' => $s->dining_order_id ? DiningOrder::whereKey($s->dining_order_id)->value('number') : null,
             'kind' => $s->kind, 'discount_minor' => (int) $s->discount_minor, 'points_earned' => (int) $s->points_earned,
             'payments' => $s->payments->map(fn ($p) => ['method' => $p->method, 'provider' => $p->provider, 'amount_minor' => $p->amount_minor,
                 'tendered_minor' => $p->tendered_minor, 'reference' => $p->reference, 'status' => $p->status])->values(),

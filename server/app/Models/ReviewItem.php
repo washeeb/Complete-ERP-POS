@@ -35,6 +35,7 @@ class ReviewItem extends Model
         'return_no_receipt' => 'Return without a receipt',
         'expired_sold' => 'Expired batch sold offline',
         'pharmacy_unapproved' => 'Prescription medicine sold offline without a valid pharmacist approval',
+        'dining_conflict' => 'Restaurant bill paid offline that had changed (items voided or already paid)',
     ];
 
     protected $guarded = [];

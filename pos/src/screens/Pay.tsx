@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { formatMoney, parseMoney } from '../money'
+import { evenSplit } from '../restaurant'
 import type { Payment, TillCustomer } from '../types'
 
 const LABEL: Record<string, string> = { cash: 'Cash', momo: 'Mobile money', card: 'Card', account: 'On account', points: 'Points', gift_card: 'Gift card', store_credit: 'Store credit' }
@@ -14,10 +15,16 @@ const MOMO = [
  * Split tender. Cash may exceed what is owed (change); mobile money and card are entered with
  * the reference from the confirmation message / terminal slip (manual until Paystack/Hubtel are wired in).
  */
-export function Pay({ total, currency, exponent, busy, error, customer, onPay, onCancel }: {
+export function Pay({ total: bill, currency, exponent, busy, error, customer, tips = false, onPay, onCancel }: {
   total: number; currency: string; exponent: number; busy: boolean; error: string; customer?: TillCustomer | null
-  onPay: (payments: Payment[]) => void; onCancel: () => void
+  tips?: boolean // Restaurant: ask for a tip, paid on top of the bill
+  onPay: (payments: Payment[], tipMinor: number) => void; onCancel: () => void
 }) {
+  const [tipInput, setTipInput] = useState('')
+  const [guests, setGuests] = useState('')
+  let tip = 0
+  try { tip = tips && tipInput ? parseMoney(tipInput, exponent) : 0 } catch { tip = 0 }
+  const total = bill + tip
   const [payments, setPayments] = useState<Payment[]>([])
   const [method, setMethod] = useState<Payment['method']>('cash')
   const [amount, setAmount] = useState('')
@@ -57,7 +64,7 @@ export function Pay({ total, currency, exponent, busy, error, customer, onPay, o
       setAmount('')
       setReference('')
       setPhone('')
-      if (next.reduce((a, x) => a + x.amount_minor, 0) === total) onPay(next)
+      if (next.reduce((a, x) => a + x.amount_minor, 0) === total) onPay(next, tip)
     } catch (e) {
       setFormError(e instanceof Error ? e.message : String(e))
     }
@@ -67,7 +74,16 @@ export function Pay({ total, currency, exponent, busy, error, customer, onPay, o
     <div className="modal" role="dialog" aria-modal="true" aria-label="Payment" onKeyDown={(e) => e.key === 'Escape' && !busy && onCancel()}>
       <div className="card pay">
         <h2>Payment</h2>
+        {tips && payments.length === 0 && (
+          <div className="row wrap tip">
+            <label className="inline">Tip<input className="mono" inputMode="decimal" value={tipInput} onChange={(e) => setTipInput(e.target.value)} aria-label="Tip" placeholder="0.00" /></label>
+            {[500, 1000, 1500].map((bp) => (
+              <button key={bp} type="button" onClick={() => setTipInput((Math.round(bill * bp / 10000) / 10 ** exponent).toFixed(exponent))}>{bp / 100} %</button>
+            ))}
+          </div>
+        )}
         <dl className="totals">
+          {tip > 0 && <><dt>Bill</dt><dd>{money(bill)}</dd><dt>Tip</dt><dd>{money(tip)}</dd></>}
           <dt>Total</dt><dd>{money(total)}</dd>
           {applied > 0 && <><dt>Paid</dt><dd>{money(applied)}</dd></>}
           <dt className="strong">Due</dt><dd className="strong">{money(due)}</dd>
@@ -119,6 +135,11 @@ export function Pay({ total, currency, exponent, busy, error, customer, onPay, o
                 ))}
               </div>
             )}
+            <div className="row wrap split">
+              <label className="inline">Split between<input inputMode="numeric" value={guests} onChange={(e) => setGuests(e.target.value.replace(/\D/g, '').slice(0, 2))} aria-label="Guests sharing" placeholder="1" /> guests</label>
+              {Number(guests) > 1 && <button type="button" onClick={() => setAmount((evenSplit(due, Number(guests) - payments.length)[0] / 10 ** exponent).toFixed(exponent))}>
+                Each pays {money(evenSplit(due, Math.max(1, Number(guests) - payments.length))[0])}</button>}
+            </div>
             <form className="grid2" onSubmit={(e) => { e.preventDefault(); add() }}>
               <label>
                 {method === 'cash' ? 'Cash received' : 'Amount'} <span className="muted">(blank = {money(due)})</span>
@@ -143,7 +164,7 @@ export function Pay({ total, currency, exponent, busy, error, customer, onPay, o
         {(formError || error) && <p className="error" role="alert">{formError || error}</p>}
         <div className="row">
           <button type="button" onClick={onCancel} disabled={busy}>Back to cart (Esc)</button>
-          {due === 0 && <button type="button" className="primary big" disabled={busy} onClick={() => onPay(payments)}>{busy ? 'Saving…' : 'Complete sale'}</button>}
+          {due === 0 && <button type="button" className="primary big" disabled={busy} onClick={() => onPay(payments, tip)}>{busy ? 'Saving…' : 'Complete sale'}</button>}
         </div>
       </div>
     </div>

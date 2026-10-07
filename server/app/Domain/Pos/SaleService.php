@@ -14,6 +14,7 @@ use App\Domain\Pricing\PriceResolver;
 use App\Domain\Pricing\PromotionEngine;
 use App\Domain\Pricing\PromotionService;
 use App\Domain\Pricing\TaxCalculator;
+use App\Domain\Restaurant\DiningSales;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DocumentNumbers;
@@ -74,6 +75,7 @@ final class SaleService
         private readonly Settings $settings,
         private readonly ModuleService $modules,
         private readonly DocumentNumbers $numbers,
+        private readonly DiningSales $dining,
     ) {}
 
     /** @return array{sale: Sale, replayed: bool} */
@@ -149,6 +151,7 @@ final class SaleService
         $lines = [];
         $engineLines = [];
         $priceDiffs = [];
+        $service = $this->dining->serviceCharge($device->tenant_id, $branch); // Restaurant: [product id, basis points] or null
         foreach (array_values($p['lines'] ?? []) as $i => $l) {
             $product = Product::with('taxGroup.rates')->when(! $offline, fn ($q) => $q->where('is_active', true))->find($l['product_id'] ?? null)
                 ?? throw new DomainException('A product in the cart is no longer for sale.', 'product_unavailable');
@@ -162,6 +165,19 @@ final class SaleService
                 throw new DomainException("{$product->name}: {$unit->uom->name} allows {$unit->uom->decimals} decimal place(s).");
             }
             $unitPrice = (int) $l['unit_price_minor'];
+            $note = isset($l['note']) ? mb_substr(trim((string) $l['note']), 0, 255) ?: null : null;
+            $diningItem = isset($l['dining_item_id']) ? (string) $l['dining_item_id'] : null;
+            if (! empty($l['service_charge'])) {
+                // Restaurant service charge: one line of the service product, priced from the rest of the bill below.
+                if (! $service || $product->id !== $service[0] || $qty !== 1000 || ! empty($l['manual'])) {
+                    throw new DomainException('Service charge is not set up for this branch. Refresh the till.', 'service_charge_invalid');
+                }
+                $rates = $product->taxGroup->rates->where('is_active', true)->map(fn ($r) => ['code' => $r->code, 'name' => $r->name, 'rate_bp' => $r->rate_bp])->values()->all();
+                $lines[] = compact('product', 'unit', 'qty', 'unitPrice', 'rates', 'note') + ['manual' => null, 'key' => (string) $i, 'markdown' => null, 'no' => $i + 1,
+                    'given' => (int) ($l['line_total_minor'] ?? -1), 'service' => true, 'dining_item' => null];
+
+                continue;
+            }
             // A near-expiry markdown sticker (Grocery): its own price and batch, outside promotions.
             $markdown = ! empty($l['markdown_id']) ? Markdown::where('branch_id', $branch->id)->where('product_uom_id', $unit->id)->find($l['markdown_id']) : null;
             if (! empty($l['markdown_id']) && ! $offline && (! $markdown || $markdown->status !== 'active' || $markdown->valid_until->lt($occurredAt->copy()->startOfDay()))) {
@@ -184,10 +200,14 @@ final class SaleService
             $key = (string) $i;
             $engineLines[] = ['key' => $key, 'product_id' => $markdown ? 'markdown:'.$markdown->id : $product->id, 'category_id' => $markdown ? null : $product->category_id, 'qty_milli' => $qty,
                 'unit_price_minor' => $unitPrice, 'tax' => $rates, 'manual' => $manual];
-            $lines[] = compact('product', 'unit', 'qty', 'unitPrice', 'manual', 'rates', 'key', 'markdown') + ['no' => $i + 1, 'given' => (int) ($l['line_total_minor'] ?? -1)];
+            $lines[] = compact('product', 'unit', 'qty', 'unitPrice', 'manual', 'rates', 'key', 'markdown', 'note') + ['no' => $i + 1, 'given' => (int) ($l['line_total_minor'] ?? -1),
+                'service' => false, 'dining_item' => $diningItem];
         }
-        if ($lines === []) {
+        if ($lines === [] || $engineLines === []) {
             throw new DomainException('The cart is empty.');
+        }
+        if (count(array_filter($lines, fn ($l) => $l['service'])) > 1) {
+            throw new DomainException('Only one service charge per bill.', 'service_charge_invalid');
         }
         $saleBp = (int) ($p['sale_discount_bp'] ?? 0);
         if ($saleBp < 0 || $saleBp > 10000) {
@@ -199,6 +219,22 @@ final class SaleService
         $calc = PromotionEngine::compute(['lines' => $engineLines, 'inclusive' => $list->prices_include_tax, 'coupon' => $coupon, 'sale_discount_bp' => $saleBp,
             'promotions' => PromotionService::active($branch->id, $list->id, $occurredAt)]);
         $results = array_column($calc['lines'], null, 'key');
+        foreach ($lines as $l) {
+            if (! $l['service']) {
+                continue;
+            }
+            // Service charge = its rate × the bill after discounts (gross on tax-inclusive lists, net otherwise).
+            $amount = Qty::divRound(($list->prices_include_tax ? $calc['total'] : $calc['net']) * $service[1], 10000);
+            if ($amount !== $l['unitPrice'] && ! $offline) {
+                throw new DomainException('The service charge on the till differs from the server’s. Refresh the till and try again.', 'totals_mismatch');
+            }
+            $t = TaxCalculator::line($l['unitPrice'], $l['rates'], $list->prices_include_tax);
+            $results[$l['key']] = ['key' => $l['key'], 'list_total' => $l['unitPrice'], 'item_discount' => 0, 'manual_discount' => 0, 'basket_discount' => 0, 'discount' => 0,
+                'total' => $t['gross'], 'net' => $t['net'], 'tax' => $t['tax'], 'breakdown' => $t['breakdown'], 'promotions' => []];
+            $calc['total'] += $t['gross'];
+            $calc['net'] += $t['net'];
+            $calc['tax'] += $t['tax'];
+        }
         $tot = $p['totals'] ?? [];
         $agrees = collect($lines)->every(fn ($l) => $results[$l['key']]['total'] === $l['given'])
             && (int) ($tot['total_minor'] ?? -1) === $calc['total'] && (int) ($tot['tax_minor'] ?? -1) === $calc['tax'] && (int) ($tot['net_minor'] ?? -1) === $calc['net'];
@@ -256,7 +292,15 @@ final class SaleService
             }
         }
 
-        [$payments, $paid, $change] = $this->payments($p['payments'] ?? [], $total);
+        // Restaurant: the bill (dining order) being paid, and a tip on top of the total for the waiter.
+        $diningOrder = $this->dining->checkPayment($p, $lines, $branch, $offline, $flags);
+        $tip = (int) ($p['tip_minor'] ?? 0);
+        if ($tip < 0 || ($tip > $total && ! $offline)) {
+            throw new DomainException('Check the tip: it cannot be negative or more than the bill.', 'tip_invalid');
+        }
+        $tipUserId = $tip > 0 ? ($diningOrder?->waiter_id ?? $user->id) : null;
+
+        [$payments, $paid, $change] = $this->payments($p['payments'] ?? [], $total + $tip);
 
         // On account (credit sale): within the customer's credit, or approved by a supervisor's PIN (owner decision: hold for approval).
         $onAccount = array_sum(array_map(fn ($x) => $x['method'] === 'account' ? $x['amount_minor'] : 0, $payments));
@@ -283,7 +327,7 @@ final class SaleService
         $actor = Actor::user($user, 'pos', $device->id);
 
         try {
-            $sale = $this->recorder->transaction(function () use ($p, $device, $till, $branch, $warehouse, $shift, $user, $list, $occurredAt, $hash, $receiptNo, $lines, $lineBreakdowns, $net, $tax, $total, $paid, $change, $payments, $actor, $offline, $grant, &$flags, $priceDiffs, $customer, $onAccount, $creditApprovedBy, $results, $discount, $coupon, $saleBp, $discountApprovedBy, $calc, $rx) {
+            $sale = $this->recorder->transaction(function () use ($p, $device, $till, $branch, $warehouse, $shift, $user, $list, $occurredAt, $hash, $receiptNo, $lines, $lineBreakdowns, $net, $tax, $total, $paid, $change, $payments, $actor, $offline, $grant, &$flags, $priceDiffs, $customer, $onAccount, $creditApprovedBy, $results, $discount, $coupon, $saleBp, $discountApprovedBy, $calc, $rx, $diningOrder, $tip, $tipUserId) {
                 $sale = new Sale;
                 $sale->forceFill([
                     'id' => $p['id'], 'tenant_id' => $device->tenant_id, 'branch_id' => $branch->id, 'warehouse_id' => $warehouse->id,
@@ -297,6 +341,7 @@ final class SaleService
                     'occurred_at' => $occurredAt, 'received_at' => now(), 'customer_id' => $customer?->id,
                     'discount_minor' => $discount, 'coupon_code' => $calc['coupon_applied'] ? $coupon : null, 'sale_discount_bp' => $saleBp,
                     'discount_approved_by_name' => $discountApprovedBy,
+                    'dining_order_id' => $diningOrder?->id, 'tip_minor' => $tip, 'tip_user_id' => $tipUserId,
                 ])->save();
                 if ($rx) {
                     $rx->forceFill(['number' => $this->numbers->next($device->tenant_id, 'prescription'), 'sale_id' => $sale->id])->save();
@@ -314,6 +359,7 @@ final class SaleService
                         'discount_minor' => $results[$l['key']]['discount'], 'promotions' => $results[$l['key']]['promotions'], 'manual_discount' => $l['manual'],
                         'markdown_id' => $l['markdown']?->id,
                         'prescription_id' => $rx && $l['product']->needsPrescription() ? $rx->id : null,
+                        'dining_item_id' => $l['dining_item'], 'note' => $l['note'], 'is_service_charge' => $l['service'],
                     ]);
                 }
                 foreach ($payments as $pay) {
@@ -326,9 +372,8 @@ final class SaleService
                     $this->receivables->applyCredits($actor, $customer);
                 }
 
-                $this->ledger->post($actor, $warehouse, 'sale', array_map(fn ($l) => [
-                    'product' => $l['product'], 'unit' => $l['unit'], 'qty_milli' => -$l['qty'],
-                ] + ($l['markdown'] ? ['batch_id' => $l['markdown']->batch_id] : []), $lines), "Sale {$receiptNo}", 'sale', $sale->id, $occurredAt, alreadyHappened: $offline);
+                $stockEntries = $this->dining->stockEntries($lines); // dishes with a recipe use up their ingredients
+                $this->ledger->post($actor, $warehouse, 'sale', $stockEntries, "Sale {$receiptNo}", 'sale', $sale->id, $occurredAt, alreadyHappened: $offline);
                 if ($offline) {
                     $expired = DB::table('stock_movements as m')->join('stock_batches as b', 'b.id', '=', 'm.batch_id')->where('m.source_type', 'sale')
                         ->where('m.source_id', $sale->id)->where('b.expires_on', '<', $occurredAt->toDateString())->pluck('b.batch_no')->unique();
@@ -340,6 +385,7 @@ final class SaleService
                 $this->recorder->audit->record($actor, $offline ? 'sale.posted_offline' : 'sale.posted', $sale, [
                     'receipt_no' => [null, $receiptNo], 'total_minor' => [null, $total], 'lines' => [null, count($lines)],
                 ], null, $branch->id);
+                $this->dining->settle($actor, $sale, $lines, $diningOrder, $branch, $offline, $flags);
                 $this->recorder->outbox->publish($actor, $sale, 'sale.posted', ['receipt_no' => $receiptNo, 'offline' => $offline]);
 
                 if ($offline) {
@@ -348,10 +394,10 @@ final class SaleService
                             $type === 'offline_price' ? ['lines' => $priceDiffs] : [], $branch->id);
                     }
                     $negative = DB::table('stock_levels')->where('warehouse_id', $warehouse->id)
-                        ->whereIn('product_id', array_map(fn ($l) => $l['product']->id, $lines))->where('on_hand', '<', 0)
+                        ->whereIn('product_id', array_map(fn ($e) => $e['product']->id, $stockEntries))->where('on_hand', '<', 0)
                         ->pluck('on_hand', 'product_id');
                     foreach ($negative as $productId => $onHand) {
-                        $name = collect($lines)->first(fn ($l) => $l['product']->id === $productId)['product']->name;
+                        $name = collect($stockEntries)->first(fn ($e) => $e['product']->id === $productId)['product']->name;
                         $this->reviews->add($actor, 'negative_stock', 'product', $productId,
                             "{$name} is at {$onHand} in {$warehouse->code} after offline sale {$receiptNo} — count it", ['sale_id' => $sale->id], $branch->id);
                     }
@@ -565,8 +611,8 @@ final class SaleService
     private function canonical(array $p): array
     {
         $keep = fn (array $a, array $keys) => array_intersect_key($a, array_flip($keys));
-        $out = $keep($p, ['id', 'device_seq', 'occurred_at', 'price_list_id', 'shift_id', 'customer_id', 'coupon_code', 'sale_discount_bp']);
-        $out['lines'] = array_map(fn ($l) => $keep($l, ['product_id', 'product_uom_id', 'qty', 'unit_price_minor', 'line_total_minor', 'manual']), $p['lines'] ?? []);
+        $out = $keep($p, ['id', 'device_seq', 'occurred_at', 'price_list_id', 'shift_id', 'customer_id', 'coupon_code', 'sale_discount_bp', 'dining_order_id', 'tip_minor']);
+        $out['lines'] = array_map(fn ($l) => $keep($l, ['product_id', 'product_uom_id', 'qty', 'unit_price_minor', 'line_total_minor', 'manual', 'dining_item_id', 'service_charge']), $p['lines'] ?? []);
         $out['payments'] = array_map(fn ($x) => array_map('strval', $keep($x, ['method', 'provider', 'amount_minor', 'tendered_minor', 'reference'])), $p['payments'] ?? []);
         array_walk_recursive($out, fn (&$v) => $v = (string) $v);
         ksort($out);

@@ -1,6 +1,6 @@
 import { db, getDevice, getSession } from './db'
 import type { OfflineGrant } from './db'
-import type { Bootstrap, PostedSale, Product, PromotionRow, Returnable, Shift, TillCustomer, WmsBin, WmsBootstrap, WmsCount, WmsOrder, WmsTransfer, WmsUnit, Grocery, Pharmacy } from './types'
+import type { Bootstrap, PostedSale, Product, PromotionRow, Returnable, Shift, TillCustomer, WmsBin, WmsBootstrap, WmsCount, WmsOrder, WmsTransfer, WmsUnit, Grocery, Pharmacy, Restaurant, DiningOrder, Floor, KitchenTicket } from './types'
 
 /** Error with the server's stable code ("price_changed", "no_shift"…) and a message safe to show. */
 export class ApiError extends Error {
@@ -62,7 +62,7 @@ export const api = {
     if (GATEWAY_DOWN.includes(res.status)) throw new ApiError('network', 'The server is not answering.', res.status)
     const body = await res.json().catch(() => ({}))
     if (!res.ok) throw new ApiError(body.error ?? 'server', body.detail ?? `Server error (${res.status})`, res.status)
-    return body as { version: string; generated_at: string; products: Product[]; promotions?: PromotionRow[]; utc_offset_minutes?: number; grocery?: Grocery | null; pharmacy?: Pharmacy | null }
+    return body as { version: string; generated_at: string; products: Product[]; promotions?: PromotionRow[]; utc_offset_minutes?: number; grocery?: Grocery | null; pharmacy?: Pharmacy | null; restaurant?: Restaurant | null }
   },
   /** Customers for lookup (ETag); null = unchanged. */
   customers: async (version?: string | null) => {
@@ -81,6 +81,29 @@ export const api = {
   postReturn: (payload: unknown) => call<{ sale: PostedSale; store_credit_code: string | null }>('pos/returns', { method: 'POST', body: JSON.stringify(payload) }),
   accountPayment: (body: { customer_id: string; amount_minor: number; method: 'cash' | 'momo' | 'card'; provider?: string; reference?: string }) =>
     call<{ number: string; amount_minor: number; balance_minor: number }>('pos/account-payments', { method: 'POST', body: JSON.stringify(body) }),
+}
+
+export type NewDiningItem = { id: string; product_id: string; product_uom_id: string; qty: string; modifier_option_ids: string[]; note?: string | null; course: number; seat?: number | null; hold: boolean }
+
+/** Restaurant bills, shared by tills and waiter tablets (signed-in staff). */
+export const dining = {
+  floor: () => call<Floor>('pos/restaurant/floor'),
+  order: (id: string) => call<{ order: DiningOrder }>(`pos/restaurant/orders/${id}`),
+  open: (body: { id: string; kind: 'table' | 'tab' | 'counter'; dining_table_id?: string | null; tab_name?: string | null; covers?: number; customer_id?: string | null }) =>
+    call<{ order: DiningOrder }>('pos/restaurant/orders', { method: 'POST', body: JSON.stringify(body) }),
+  addItems: (id: string, items: NewDiningItem[]) => call<{ order: DiningOrder }>(`pos/restaurant/orders/${id}/items`, { method: 'POST', body: JSON.stringify({ items }) }),
+  fire: (id: string, course: number | null) => call<{ order: DiningOrder }>(`pos/restaurant/orders/${id}/fire`, { method: 'POST', body: JSON.stringify({ course }) }),
+  void: (id: string, itemIds: string[], reason: string, approval?: { username: string; pin: string } | null) =>
+    call<{ order: DiningOrder }>(`pos/restaurant/orders/${id}/void`, { method: 'POST', body: JSON.stringify({ item_ids: itemIds, reason, ...(approval ? { approval } : {}) }) }),
+  serve: (id: string, itemIds: string[]) => call<{ order: DiningOrder }>(`pos/restaurant/orders/${id}/serve`, { method: 'POST', body: JSON.stringify({ item_ids: itemIds }) }),
+  move: (id: string, tableId: string) => call<{ order: DiningOrder }>(`pos/restaurant/orders/${id}/move`, { method: 'POST', body: JSON.stringify({ dining_table_id: tableId }) }),
+  close: (id: string) => call<{ order: DiningOrder }>(`pos/restaurant/orders/${id}/close`, { method: 'POST' }),
+}
+
+/** Kitchen screen: the enrolled kitchen device itself (no person signs in). */
+export const kds = {
+  tickets: (station: string | null) => call<{ stations: Floor['stations']; tickets: KitchenTicket[]; server_time: string }>(`kds/tickets${station ? `?station=${encodeURIComponent(station)}` : ''}`, { auth: 'device' }),
+  bump: (itemIds: string[], status: 'ready' | 'fired' | 'served') => call<{ changed: number }>('kds/bump', { method: 'POST', auth: 'device', body: JSON.stringify({ item_ids: itemIds, status }) }),
 }
 
 /** Warehouse handheld: same server, its own endpoints (receive, put away, transfers, counts). */

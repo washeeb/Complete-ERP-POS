@@ -1,9 +1,38 @@
 # State (resume file)
 
-**Phase:** 9 — Industry modules wave 1 · **Status:** 9b (Pharmacy) done on branch `phase-9b-pharmacy` (PR to `main`); next 9c Restaurant
-**Updated:** 2026-10-17 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–8, licensing and 9a merged (PRs #1–#13)
+**Phase:** 9 — Industry modules wave 1 · **Status:** 9c (Restaurant core) done on branch `phase-9c-restaurant` (PR to `main`); next 9d (reservations, delivery-aggregator hook, kitchen waste log)
+**Updated:** 2026-10-18 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–8, licensing, 9a and 9b merged (PRs #1–#14)
 
-## Phase 9b — done (277 Pest + 36 Vitest + 7 Playwright)
+## Phase 9c — done (285 Pest + 39 Vitest + 9 Playwright)
+- **Owner answers (2026-10-17):**
+  - tips plus an optional service charge, paid out via payroll;
+  - kitchen screens with printer fallback;
+  - recipes deducted when the bill is paid;
+  - extras wanted: reservations, aggregators, waste log, bar tabs (bar tabs done; the rest is 9d).
+- **Server:**
+  - migration `2026_10_18_100001_create_restaurant_tables`: `kitchen_stations`, `dining_tables`, `modifier_groups`/`options`, `recipe_lines`, `dining_orders`/`items`; `products.station` and `modifier_group_ids`; sale tip, bill and service-line columns; `payslips.tips_minor`; account 2260;
+  - `app/Domain/Restaurant/{RestaurantSetup, DiningService, DiningSales}`;
+  - SaleService hooks: service line, tip, bill check and settle, recipe stock;
+  - `RestaurantController` (`pos/restaurant/*`, `kds/*`); live channel `dining`;
+  - tips in AutoPoster and payroll.
+- **Back office:** Restaurant menu (Bills, Floor plan, Kitchen stations, Modifiers, Tips & voids); Product → Restaurant section; settings `restaurant.*`; module 0.1.0; roles `waiter` and `kitchen_staff`.
+- **Till:**
+  - `pos/src/restaurant.ts`;
+  - `screens/Restaurant.tsx` (floor, bill, modifier picker, void);
+  - `screens/Kitchen.tsx` (kitchen display mode for `kds` devices);
+  - Sell: Tables (F6), paying bills, counter choices;
+  - Pay: tip and even split;
+  - Receipt: order number, notes, tip, offline kitchen ticket.
+- **Tests:**
+  - RestaurantTest (8);
+  - SetupAndModulesTest (manufacturing is now the unreleased example);
+  - `restaurant.test.ts`, e2e `restaurant.spec.ts` (2).
+- **Docs:** restaurant.md, api.md, DECISIONS 9c, CHANGELOG 0.14.0.
+
+## Phase 9b — done (merged, PR #14)
+- Pharmacy: drug fields, patients, pharmacist PIN approval, prescriptions, warnings, controlled-drug register, NHIS CSV — see docs/pharmacy.md.
+
+## Phase 9b — details (277 Pest + 36 Vitest + 7 Playwright at the time)
 - **Server:**
   - migration `2026_10_17_100001_create_pharmacy_tables` (drug fields on products, `patient_profiles`, `drug_interactions`, `prescriptions`, `sale_lines.prescription_id`);
   - `app/Domain/Pharmacy/{PharmacyService, PharmacyReports}`;
@@ -27,9 +56,10 @@
 ## Licensing (merged, PR #12)
 - Signed activation keys, expiry with grace then read-only, daily check-in, tamper detection, watermarks — see docs/licensing.md. Dev licence valid to 2027-12-31 (dev key in `.local-secrets/license-dev.json`). Before the first customer release: production key (`license:keygen`), its public key in `config/license.php`, a licence server.
 
-## Next — Phase 9c (Restaurant)
-- Owner answer: both table service and counter service, with kitchen screens.
-- Scope: tables and floor plan, open tabs per table, modifiers, courses, kitchen display routing, split bills, recipes/BOM stock deduction, tips.
+## Next — Phase 9d (Restaurant extras)
+- Reservations: tables booked by date and time with the guest's name and phone, shown on the floor view.
+- Delivery-aggregator hook: Bolt Food, Glovo or Chowdeck orders become `delivery` bills (a webhook like the store channels). Connect real accounts only with the owner's keys.
+- Kitchen waste log: spoiled or dropped food against stock (shrink), with ingredients from recipes.
 ## Owner decisions pending
 - Accountant check of the Ghana tax set-up (VAT/NHIL/GETFund rates and the payroll PAYE bands / SSNIT rates — Payroll → Tax and SSNIT rules) before go-live.
 - WooCommerce/Shopify: connect a real store only with the owner's keys.
@@ -56,4 +86,4 @@
   - in tests, `flushSession()` before switching users.
 
 ## Blockers
-- Merge PR `phase-9b-pharmacy` → `main` (asked in chat).
+- Merge PR `phase-9c-restaurant` → `main` (asked in chat).

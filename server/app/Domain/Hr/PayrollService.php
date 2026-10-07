@@ -68,7 +68,7 @@ final class PayrollService
                     ->filter(fn ($l) => $l['balance_minor'] > 0)->values()->all();
                 $c = PayrollCalculator::compute($e->only(['basic_salary_minor', 'transport_allowance_minor', 'meal_allowance_minor', 'overtime_rate_bp', 'overtime_junior',
                     'tier3_bp', 'welfare_minor', 'ssnit_exempt']), $profile->rules, ['working_days' => $working, 'unpaid_days' => $unpaid,
-                        'overtime_centi_hours' => $sheet['overtime_centi'], 'loans' => $loans]);
+                        'overtime_centi_hours' => $sheet['overtime_centi'], 'loans' => $loans, 'tips_minor' => $this->tips($e->user_id, $start, $end, $tz)]);
                 Payslip::create(['id' => (string) Str::uuid7(), 'tenant_id' => $e->tenant_id, 'payroll_run_id' => $run->id, 'employee_id' => $e->id, 'branch_id' => $e->branch_id,
                     'employee' => ['name' => $e->name, 'number' => $e->number, 'job_title' => $e->job_title, 'department' => $e->department?->name,
                         'ssnit_no' => $e->ssnit_no, 'ghana_card_no' => $e->ghana_card_no, 'pay_method' => $e->pay_method, 'bank_name' => $e->bank_name,
@@ -79,6 +79,18 @@ final class PayrollService
 
             return $this->recorder->save($actor, $run, 'payroll.prepared');
         });
+    }
+
+    /** Tips the person received on till sales this month (owed to them since; paid out with this payroll). */
+    private function tips(?string $userId, Carbon $start, Carbon $end, string $tz): int
+    {
+        if (! $userId) {
+            return 0;
+        }
+
+        return (int) DB::table('sales')->where('tip_user_id', $userId)->where('status', 'posted')
+            ->where('occurred_at', '>=', $start->copy()->shiftTimezone($tz)->startOfDay()->utc())
+            ->where('occurred_at', '<', $end->copy()->shiftTimezone($tz)->addDay()->startOfDay()->utc())->sum('tip_minor');
     }
 
     public function approve(Actor $actor, PayrollRun $run): PayrollRun

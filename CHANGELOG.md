@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.14.0] — 2026-10-18 · Phase 9c Restaurant
+### Added
+- **Restaurant module** (per branch). Set-up:
+  - kitchen stations (screen, or print tickets);
+  - floor plan with tables;
+  - modifier groups (free or charged choices);
+  - per-dish station, choices and **recipe**.
+- **Table service and bar tabs** on the till and waiter tablets (Tables, F6):
+  - open a bill per table or tab name;
+  - add dishes with choices, course, seat and hold;
+  - send to the kitchen, call courses, mark served;
+  - void (supervisor PIN once the kitchen has it);
+  - move table;
+  - pay all or selected items (split by guest or seat).
+- **Counter service:** dishes with choices are asked at the till; paid dishes go to the kitchen as a counter order; the order number is on the receipt. Offline, the till prints the kitchen ticket.
+- **Kitchen screens** (Kitchen display devices, no sign-in): tickets by station, oldest first, with timers; ready, recall and collected. Stations without a screen print each new dish.
+- **Service charge** line on table and tab bills (Settings → Restaurant); **tips** at payment, with even-split help.
+- **Recipes:** ingredients come off stock when the bill is paid.
+- **Tips** are owed to the waiter (account 2260 Tips owed to staff) and paid out with that month's payroll as a taxable earning.
+- **Back office:** Restaurant → Bills, Floor plan, Kitchen stations, Modifiers, Tips & voids.
+- **Roles:** Waiter / Bartender and Kitchen Staff.
+- **Permissions:** `restaurant.serve`, `restaurant.void`, `restaurant.manage`.
 ## [0.13.0] — 2026-10-17 · Phase 9b Pharmacy
 ### Added
 - **Pharmacy module** (per branch).

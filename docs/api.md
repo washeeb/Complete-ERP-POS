@@ -204,3 +204,28 @@ Errors use the standard body `{error, detail}`. For example: `wrong_status`, `no
   - offline, `pharmacist_offline_by` (user id, PIN checked on the till).
 - Errors (online): `prescription_required`, `pharmacist_needed`, `approval_failed`, `over_limit` (the approver lacks `pharmacy.dispense`), `pin_locked`. Offline problems become review items of type `pharmacy_unapproved`.
 - Back office: `GET /print/controlled-register?warehouse=&from=&to=` (A4), `GET /print/nhis-claims.csv?from=&to=` (`pharmacy.manage`). Both are blocked when the licence is read-only.
+
+## Restaurant (Phase 9c)
+
+- `GET pos/catalog` adds, per product, `station` and `modifier_group_ids`. When the module is on at the till's branch, it also adds `restaurant`: `{modifier_groups: [{id, name, min, max, options: [{id, name, product_id}]}], service_charge: {product_id, bp} | null, tips}` (otherwise null).
+- **Bills** (staff token, `restaurant.serve` at the branch). Each returns `{order}` with its `items` (`status`: held, fired, ready, served, void; `paid`):
+  - `GET pos/restaurant/floor` → `{tables, stations, orders}` (the open bills);
+  - `POST pos/restaurant/orders` `{id, kind: table|tab|counter, dining_table_id?, tab_name?, covers?, customer_id?}`; error `table_busy`;
+  - `GET pos/restaurant/orders/{id}`;
+  - `POST pos/restaurant/orders/{id}/items` `{items: [{id, product_id, product_uom_id, qty, modifier_option_ids, note?, course, seat?, hold}]}` (idempotent per item id); error `modifiers_invalid`;
+  - `POST pos/restaurant/orders/{id}/fire` `{course?}`;
+  - `POST pos/restaurant/orders/{id}/void` `{item_ids, reason, approval?: {username, pin}}`. Items the kitchen has need `restaurant.void` or an approval; error `void_needs_approval`;
+  - `POST pos/restaurant/orders/{id}/serve` `{item_ids}`;
+  - `POST pos/restaurant/orders/{id}/move` `{dining_table_id}`;
+  - `POST pos/restaurant/orders/{id}/close`; error `bill_unpaid`.
+- **Kitchen screens** (the `kds` device's own token, no sign-in):
+  - `GET kds/tickets?station=CODE` → `{stations, tickets: [{order_id, number, label, kind, waiter, paid, items}]}`;
+  - `POST kds/bump` `{item_ids, status: ready|fired|served}`.
+- `POST pos/sales` accepts:
+  - `dining_order_id`, with lines carrying `dining_item_id`. Each dish is paid whole with its charged extras. Errors `bill_changed` and `order_closed`; offline these become review items `dining_conflict`;
+  - `lines.*.note`;
+  - one line `service_charge: true` of the service product, priced at rate × the rest of the bill after discounts (`totals_mismatch` if it differs);
+  - `tip_minor`: payments then add up to total + tip (`tip_invalid`).
+
+  The response adds `tip_minor` and `order_number` (the bill, or the counter order created for kitchen dishes).
+- **Live:** private channel `tenant.{id}.dining.{branch}`, event `dining.changed` `{order_id, event}`. Tills re-read the floor or the bill; they also poll every 10 s.

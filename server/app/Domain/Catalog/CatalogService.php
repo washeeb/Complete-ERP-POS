@@ -11,10 +11,12 @@ use App\Domain\Support\Recorder;
 use App\Models\Barcode;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\ModifierGroup;
 use App\Models\Price;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\ProductUom;
+use App\Models\RecipeLine;
 use App\Models\TaxGroup;
 use App\Models\TaxRate;
 use App\Models\Uom;
@@ -38,6 +40,37 @@ final class CatalogService
      *   base_barcodes: [code…]
      *   prices: [[price_list_id, uom_id, min_qty, amount (decimal string), starts_at, ends_at], …] — full replacement
      */
+    /**
+     * Restaurant recipe: what one base unit of the dish uses (deducted from stock when the dish is sold).
+     *
+     * @param  list<array{product_uom_id?: string, qty?: string}>  $rows
+     * @return list<array{ingredient_id: string, ingredient_uom_id: string, qty: string}>
+     */
+    private function recipeLines(Product $product, array $rows): array
+    {
+        $out = [];
+        foreach (array_values($rows) as $r) {
+            if (empty($r['product_uom_id']) && trim((string) ($r['qty'] ?? '')) === '') {
+                continue;
+            }
+            $unit = ProductUom::find($r['product_uom_id'] ?? null) ?? throw new DomainException('Recipe: choose the ingredient and its unit on every line.');
+            $ingredient = Product::find($unit->product_id);
+            $qty = Qty::toMilli((string) ($r['qty'] ?? '0'));
+            if (! $ingredient || $ingredient->id === $product->id || ! $ingredient->track_stock) {
+                throw new DomainException('Recipe: ingredients are other products that track stock.');
+            }
+            if ($qty <= 0) {
+                throw new DomainException("Recipe: enter the quantity of {$ingredient->name}.");
+            }
+            if (isset($out[$ingredient->id])) {
+                throw new DomainException("Recipe: {$ingredient->name} is listed twice.");
+            }
+            $out[$ingredient->id] = ['ingredient_id' => $ingredient->id, 'ingredient_uom_id' => $unit->id, 'qty' => Qty::format($qty)];
+        }
+
+        return array_values($out);
+    }
+
     public function saveProduct(Actor $actor, Product $product, array $data, ?string $reason = null): Product
     {
         $this->require($actor, 'catalog.manage');
@@ -47,7 +80,20 @@ final class CatalogService
         }
 
         $product->fill(array_intersect_key($data, array_flip(['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu',
-            'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'fda_reg_no'])));
+            'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'fda_reg_no', 'station'])));
+        // Restaurant: the kitchen station that prepares it, and the choices offered with it.
+        $product->station = trim((string) $product->station) === '' ? null : strtoupper(trim((string) $product->station));
+        if ($product->station !== null && ! preg_match('/^[A-Z0-9_-]{1,20}$/', $product->station)) {
+            throw new DomainException('Kitchen station: a short code such as KITCHEN or BAR.');
+        }
+        if (array_key_exists('modifier_group_ids', $data)) {
+            $ids = array_values(array_unique(array_filter((array) $data['modifier_group_ids'])));
+            if (ModifierGroup::whereIn('id', $ids)->count() !== count($ids)) {
+                throw new DomainException('Choose modifier groups from the list.');
+            }
+            $product->modifier_group_ids = $ids ?: null;
+        }
+        $recipe = array_key_exists('recipe', $data) ? $this->recipeLines($product, (array) $data['recipe']) : null;
         if (array_key_exists('active_ingredients', $data)) {
             $product->active_ingredients = PharmacyService::names($data['active_ingredients']);
         }
@@ -78,7 +124,7 @@ final class CatalogService
             throw new DomainException('The base unit cannot change once stock has moved; create a new product instead.');
         }
 
-        return $this->recorder->transaction(function () use ($actor, $product, $data, $pricesGiven, $reason, $startsBatches) {
+        return $this->recorder->transaction(function () use ($actor, $product, $data, $pricesGiven, $reason, $startsBatches, $recipe) {
             $isNew = ! $product->exists;
             if ($startsBatches && ! $isNew) {
                 app(StockLedger::class)->assignOpeningBatches($actor, $product); // stock already here becomes batch OPENING
@@ -96,6 +142,18 @@ final class CatalogService
             }
             if ($pricesGiven) {
                 $summary['prices'] = $this->syncPrices($actor, $product, $data['prices']);
+            }
+            if ($recipe !== null) {
+                $before = RecipeLine::where('product_id', $product->id)->get(['ingredient_id', 'ingredient_uom_id', 'qty'])
+                    ->map(fn ($r) => [$r->ingredient_id, $r->ingredient_uom_id, Qty::format(Qty::toMilli((string) $r->qty))])->all();
+                $after = array_map(fn ($r) => [$r['ingredient_id'], $r['ingredient_uom_id'], $r['qty']], $recipe);
+                if ($before !== $after) {
+                    RecipeLine::where('product_id', $product->id)->delete();
+                    foreach ($recipe as $r) {
+                        RecipeLine::create(['product_id' => $product->id] + $r);
+                    }
+                    $summary['recipe'] = count($recipe).' ingredient(s)';
+                }
             }
             if (array_filter($summary)) {
                 $this->recorder->audit->record($actor, 'product.details_changed', $product,

@@ -155,7 +155,7 @@ final class AutoPoster
 
     private function sales(Actor $actor, int $batch): int
     {
-        $rows = $this->rows('sales', $actor->tenantId, $batch, ['s.id', 's.branch_id', 's.net_minor', 's.tax_breakdown', 's.customer_id', 's.kind']);
+        $rows = $this->rows('sales', $actor->tenantId, $batch, ['s.id', 's.branch_id', 's.net_minor', 's.tax_breakdown', 's.customer_id', 's.kind', 's.tip_minor']);
         if (! $rows) {
             return 0;
         }
@@ -167,6 +167,9 @@ final class AutoPoster
             foreach ($group as $s) {
                 $lines[] = ['account' => 'sales_pos', 'amount' => -(int) $s->net_minor, 'branch_id' => $s->branch_id];
                 array_push($lines, ...$this->taxLines($s->tax_breakdown, -1, $s->branch_id));
+                if ((int) $s->tip_minor > 0) {
+                    $lines[] = ['account' => 'tips_payable', 'amount' => -(int) $s->tip_minor, 'branch_id' => $s->branch_id]; // owed to the waiter
+                }
                 foreach ($payments[$s->id] ?? [] as $p) {
                     $key = self::TENDER[$p->method] ?? throw new DomainException("Till payment method “{$p->method}” has no account.", 'gl_account_missing');
                     $lines[] = ['account' => $key, 'amount' => (int) $p->amount_minor, 'branch_id' => $s->branch_id]
@@ -467,7 +470,8 @@ final class AutoPoster
             foreach (DB::table('payslips')->where('payroll_run_id', $run->id)->get() as $p) {
                 $b = $p->branch_id;
                 array_push($lines,
-                    ['account' => 'salaries', 'amount' => (int) $p->gross_minor, 'branch_id' => $b],
+                    ['account' => 'salaries', 'amount' => (int) $p->gross_minor - (int) $p->tips_minor, 'branch_id' => $b],
+                    ['account' => 'tips_payable', 'amount' => (int) $p->tips_minor, 'branch_id' => $b], // tips were owed since the sale
                     ['account' => 'ssnit_employer', 'amount' => (int) $p->ssnit_employer_minor, 'branch_id' => $b],
                     ['account' => 'ssnit', 'amount' => -(int) $p->tier1_minor, 'branch_id' => $b],
                     ['account' => 'tier2', 'amount' => -(int) $p->tier2_minor, 'branch_id' => $b],

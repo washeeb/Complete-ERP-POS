@@ -1,11 +1,15 @@
 {
   "key": "restaurant",
   "name": "Restaurant / Café / Bar",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "kind": "industry",
-  "stage": "planned",
+  "stage": "available",
   "phase": 9,
-  "description": "Tables and floor plan, modifiers, courses, split bills, kitchen display, recipes with ingredient deduction.",
+  "description": "Floor plan and tables, bar tabs and counter service, modifiers, courses, kitchen screens with ticket printing, split bills, recipes with ingredient deduction, tips and service charge.",
   "requires": ["core"],
-  "permissions": []
+  "permissions": [
+    {"key": "restaurant.serve", "label": "Open bills, take orders and send them to the kitchen", "min_level": 2},
+    {"key": "restaurant.void", "label": "Void items the kitchen already has, or approve such voids", "min_level": 3},
+    {"key": "restaurant.manage", "label": "Set up the floor plan, kitchen stations, modifiers and recipes; see tips and voids", "min_level": 4}
+  ]
 }

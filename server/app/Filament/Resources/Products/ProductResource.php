@@ -9,8 +9,11 @@ use App\Filament\Resources\Products\Pages\ListProducts;
 use App\Filament\Support\Erp;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\KitchenStation;
+use App\Models\ModifierGroup;
 use App\Models\PriceList;
 use App\Models\Product;
+use App\Models\ProductUom;
 use App\Models\TaxGroup;
 use App\Models\Uom;
 use App\Support\Money;
@@ -110,6 +113,21 @@ class ProductResource extends Resource
                     TagsInput::make('active_ingredients')->label('Active ingredients')->placeholder('Type, then Enter')
                         ->helperText('Used for allergy and interaction warnings.'),
                 ]),
+            Section::make('Restaurant')->columns(2)->visible(fn () => ModuleService::enabledAnywhere('restaurant'))
+                ->description('Dishes and drinks: where they are prepared, the choices offered, and the ingredients one portion uses (taken from stock when the bill is paid; switch "Track stock" off for the dish itself).')
+                ->schema([
+                    Select::make('station')->label('Prepared at (kitchen station)')->placeholder('Not sent to a kitchen')
+                        ->options(fn () => KitchenStation::where('is_active', true)->orderBy('code')->get()->mapWithKeys(fn ($s) => [$s->code => "{$s->code} · {$s->name}"])->all()),
+                    Select::make('modifier_group_ids')->label('Choices offered')->multiple()
+                        ->options(fn () => ModifierGroup::where('is_active', true)->orderBy('name')->pluck('name', 'id')),
+                    Repeater::make('recipe')->label('Recipe (per one)')->defaultItems(0)->columns(2)->reorderable(false)->columnSpanFull()
+                        ->schema([
+                            Select::make('product_uom_id')->label('Ingredient')->required()->searchable()
+                                ->getSearchResultsUsing(fn (string $search) => self::ingredientOptions($search))
+                                ->getOptionLabelUsing(fn ($value) => self::ingredientLabel($value)),
+                            TextInput::make('qty')->label('Quantity')->required()->numeric()->minValue(0.001),
+                        ]),
+                ]),
             Section::make('Barcodes and selling units')->description('Scanning a barcode adds that unit to the till. Buy in cartons, sell in pieces: add the carton with how many base units it holds.')
                 ->schema([
                     TagsInput::make('base_barcodes')->label('Barcodes for the base unit')->placeholder('Scan or type, then Enter'),
@@ -143,6 +161,20 @@ class ProductResource extends Resource
         ]);
     }
 
+    /** Ingredients for recipes: stocked products, by unit. */
+    public static function ingredientOptions(string $search): array
+    {
+        return ProductUom::with(['uom', 'product'])->whereHas('product', fn ($q) => $q->where('track_stock', true)->where(fn ($q) => $q->where('name', 'ilike', "%{$search}%")->orWhere('sku', 'ilike', "%{$search}%")))
+            ->limit(30)->get()->mapWithKeys(fn ($u) => [$u->id => "{$u->product->name} ({$u->uom->code})"])->all();
+    }
+
+    public static function ingredientLabel(?string $id): ?string
+    {
+        $u = $id ? ProductUom::with(['uom', 'product'])->find($id) : null;
+
+        return $u ? "{$u->product->name} ({$u->uom->code})" : null;
+    }
+
     /** Model → form arrays (units/barcodes/prices) for editing. */
     public static function toFormData(Product $p): array
     {
@@ -151,6 +183,7 @@ class ProductResource extends Resource
 
         return [
             'base_barcodes' => $base?->barcodes->pluck('code')->all() ?? [],
+            'recipe' => $p->recipe()->get()->map(fn ($r) => ['product_uom_id' => $r->ingredient_uom_id, 'qty' => rtrim(rtrim((string) $r->qty, '0'), '.')])->all(),
             'units' => $p->units->where('is_base', false)->where('is_sellable', true)->values()->map(fn ($u) => [
                 'uom_id' => $u->uom_id, 'factor' => rtrim(rtrim((string) $u->factor, '0'), '.'), 'is_sellable' => $u->is_sellable,
                 'is_purchasable' => $u->is_purchasable, 'barcodes' => $u->barcodes->pluck('code')->all(),

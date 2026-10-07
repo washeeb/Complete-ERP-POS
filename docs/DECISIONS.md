@@ -300,3 +300,46 @@ Design:
 - **Controlled-drug register = a query, not a second ledger.** It reads `stock_movements` of controlled products joined to sales, prescriptions and patients, with a running balance. It cannot drift from the stock, and the ledger is already append-only. The NHIS claims export likewise reads prescription lines of patients with an NHIS number.
 - **Roles:** Pharmacist (level 4: dispense, patients, manage) and Pharmacy Technician (level 2: till, patients, receiving). The GM gets `pharmacy.manage` and `pharmacy.patients`; a Branch Manager gets `pharmacy.patients`.
 - **Deferred:** an NHIS e-claims API (CSV for now), a commercial interaction database, dose and age checks, label printing for dispensed medicines, refills or partial dispensing of one prescription.
+
+## Phase 9c — Restaurant (2026-10-18)
+
+Owner answers (2026-10-17):
+- **Service:** both table service and counter service.
+- **Kitchen:** kitchen screens, with a ticket printer where there is no screen.
+- **Money:** tips plus an optional service charge; tips paid out through payroll.
+- **Recipes:** ingredients deducted when the bill is paid.
+- **Also wanted:** reservations, delivery-aggregator orders, a kitchen waste log and bar tabs. Bar tabs are in 9c. The other three follow in **9d**.
+
+Design:
+- **Bills live on the server.** A dining order is shared by tills, waiter tablets and kitchen screens. Its id and item ids are generated on the device, so retries are idempotent.
+  - At most one open bill per table (a partial unique index).
+  - Changes go through the Recorder (audit row + outbox; `dining_order` syncs up in the `sales` group, items as its children). A live notice goes on `tenant.{id}.dining.{branch}`.
+  - Without the server there is no shared table state, so table service needs the server. A **branch server on the LAN** keeps it working when the internet is down. Counter sales stay offline-capable.
+- **Items** are sent when the waiter presses Send.
+  - Each goes straight to its station, or is **held** until its course is called.
+  - Statuses: held → fired → ready → served, or void.
+  - Voiding something the kitchen has needs `restaurant.void` or a supervisor PIN, plus a reason. Paid items cannot be voided (refund instead).
+- **Paying reuses the till sale.** A sale carries `dining_order_id`, and its lines carry `dining_item_id`.
+  - The server checks that each dish is paid **whole**, once, with exactly its **charged extras**. Splitting a bill = several sales over different items. Splitting evenly = several tenders on one sale, so the tax receipt stays one document.
+  - When nothing unpaid is left, the bill closes and the table is free.
+  - Online conflicts are refused (`bill_changed`). Offline they are kept and flagged (`dining_conflict`).
+- **Modifiers:** a charged choice is a **product**. It becomes its own sale line (with the dish's item id), so price lists, tax and promotions need no new rules. Free choices are a kitchen note (`sale_lines.note`).
+- **Service charge = one line of a configured non-stock product** (`restaurant.service_charge_sku`), so the tax comes from its tax group.
+  - The rate (`restaurant.service_charge_bp`) applies to the bill after discounts: gross on tax-inclusive lists, net otherwise.
+  - The line stays outside promotions. The server recomputes it and refuses a different figure online.
+  - The till adds it for table and tab bills; the cashier may remove it.
+- **Tips** = `sales.tip_minor` paid on top of the total (payments add up to total + tip). The tip goes to the bill's waiter, or the cashier for counter sales.
+  - In the books: credited to **2260 Tips owed to staff** (new system account `tips_payable`, back-filled for existing companies by migration).
+  - Payroll adds the month's tips as a taxable **TIPS** earning. The payroll entry debits Tips owed instead of salaries for that part.
+- **Recipes:** `recipe_lines` per dish (quantity per base unit, in the ingredient's unit). When the sale posts, a dish with a recipe moves its ingredients instead of itself; other lines move as before. Returns do not restore ingredients, and voids never touched them.
+- **Counter orders:** an online sale at a restaurant branch with station products creates a closed `counter` order (fired items, linked to the sale), so the kitchen screens show it. The receipt prints its order number.
+  - An offline sale does not create one later (it would reach the kitchen hours late). The till prints a kitchen ticket at the time instead.
+- **Kitchen screens** authenticate as the device (kind `kds`, device token); nobody signs in. They poll every 4 s (`throttle:kds`), so they work without the websocket server. A station marked "print tickets" makes its device print each new dish (printer fallback).
+- **Set-up data** (stations, tables, modifier groups, recipes) is head-office master data in the `catalog` group.
+- **Roles:**
+  - Waiter / Bartender (level 2): `restaurant.serve`.
+  - Kitchen Staff (level 1): attendance and leave only.
+  - Supervisor: serve and void.
+  - Branch Manager and GM: also `restaurant.manage`.
+- **Deferred to 9d:** reservations, the delivery-aggregator hook (Bolt Food / Glovo / Chowdeck), the kitchen waste log.
+- **Deferred further:** merging and transferring items between bills, a graphical floor-plan editor (grid positions for now), recipe costing reports.
