@@ -255,3 +255,26 @@ Design:
 - **Tamper detection:** `release:build` signs the hashes of the licensing-enforcing files. In a release, a changed, missing or added guarded file → read-only + reported. Honest limit: someone with the source can remove checks; the layers raise the cost and leave evidence.
 - **Watermarks:** licence short id + build id, as visible micro-text and zero-width characters (U+200B/U+200C between U+2060 marks) in printed documents. Also a meta tag, the till receipt "Ref" line, a build stamp in the till bundle (`data-build`), and a stamp in every PHP file of a release. `license:trace` decodes them.
 - **Deferred:** a vendor web console for the licence server (artisan commands for now), ionCube encoding, hardware dongles.
+
+## Phase 9a — Grocery and batch/expiry (2026-10-16)
+
+Owner answers (2026-10-16):
+- **Scales:** label scales print EAN-13 with the **weight in the barcode** (prefix · 5-digit PLU · grams · check digit; prefix 21 by default).
+- **Near expiry:** **FEFO + suggested markdowns** a manager applies (default 30 % at ≤ 7 days, 50 % at ≤ 3 days); expired batches cannot be sold and are written off as shrink.
+- **Pharmacy (9b):** pharmacist approves prescription-only sales (PIN), prescriptions recorded, controlled-drug register, warnings from a local table.
+- **Restaurant (9c):** both table service and counter service, kitchen screens.
+- Phase 9 is delivered in three parts: 9a Grocery (with batch/expiry in the core stock ledger), 9b Pharmacy, 9c Restaurant.
+
+Design:
+- **Batches live in the core stock ledger** (Pharmacy needs them too): a product flag `track_batches`; every movement of such a product names a batch; `stock_batch_levels` is a projection checked by `erp:stock-check`. A batch id is a UUID v5 of (company, product, batch number), so head office and branch servers agree without coordination; batches sync in the `stock` group.
+- **Which batch:** stock going out without a batch is taken earliest expiry first. Sales and deliveries never use expired batches online — refused with `expired_stock`. An offline sale already happened, so it is kept and flagged `expired_sold`. Overselling lands negative on the newest batch.
+  - Stock coming in without a batch joins the newest batch. Receipts and opening stock must name theirs, and an expired batch is refused at receiving.
+  - Transfers carry the batches that were sent; returns go back to the batch they were sold from; GRN reversals take the batch received.
+  - Moves between bins carry no batch (they do not change what a warehouse holds).
+  - Turning tracking on for a product with stock posts a value-neutral `batch_assign` pair into batch OPENING, excluded from the ledger like put-aways.
+- **Markdowns are stickers, not price changes:** applying a markdown creates an EAN-13 code (prefix 29) tied to one batch with its own price. The till charges that price, the stock comes off that batch, and the line stays out of promotions (engine product id `markdown:<id>` in both engines). Markdowns sync down in the `pricing` group; a withdrawn or expired sticker is refused online.
+- **Scale labels are read on the till only** (the server receives an ordinary weighed line); PLUs are unique per company.
+- **Shrink** = negative adjustments and count shortages at cost, by reason (new reason "Spoilage").
+- **ESL hook:** a separate outbox consumer (`esl`) posts shelf prices to the configured gateway on product/price changes. A failing gateway keeps its own cursor and retries without holding up tills or online stores.
+- **Grocery is a per-branch module** (module 0.1.0, permission `grocery.markdowns`): tills get scale and sticker settings only where it is enabled. Batch tracking itself is core.
+- **Known limits:** bins and batches are tracked separately (which batch sits in which bin is not recorded); counts adjust totals (gains join the newest batch, shortages FEFO).

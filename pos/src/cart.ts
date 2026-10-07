@@ -2,7 +2,8 @@ import { toMilli, type TaxLine } from './money'
 import { activePromotions, computePromotions, type Applied } from './promotions'
 import type { Price, PriceList, Product, PromotionRow, Unit } from './types'
 
-export type CartLine = { key: string; product: Product; unit: Unit; qtyMilli: number; manual?: { bp?: number; price_minor?: number } | null }
+export type CartLine = { key: string; product: Product; unit: Unit; qtyMilli: number; manual?: { bp?: number; price_minor?: number } | null
+  markdown?: { id: string; price_minor: number } | null }
 
 /** Same rule as server PriceResolver: active at `at`, min_qty ≤ qty, highest tier, dated beats open-ended. */
 export function resolvePrice(product: Product, unitId: string, listId: string, qtyMilli: number, at: Date): Price | null {
@@ -31,11 +32,15 @@ export type CartExtras = { promotions?: PromotionRow[]; branchId?: string; utcOf
 
 /** List prices from the price list, then promotions and discounts through the same engine as the server. */
 export function priceCart(lines: CartLine[], list: PriceList, at: Date, extras: CartExtras = {}) {
-  const withPrice = lines.map((l) => ({ l, price: resolvePrice(l.product, l.unit.id, list.id, l.qtyMilli, at) }))
+  // A markdown sticker carries its own price and stays out of promotions (same as the server).
+  const withPrice = lines.map((l) => ({ l, price: l.markdown
+    ? { price_list_id: list.id, product_uom_id: l.unit.id, min_qty: '1', amount_minor: l.markdown.price_minor, starts_at: null, ends_at: null }
+    : resolvePrice(l.product, l.unit.id, list.id, l.qtyMilli, at) }))
   const running = activePromotions(extras.promotions ?? [], at, extras.branchId ?? '', list.id, extras.utcOffsetMinutes ?? 0)
   const calc = computePromotions({
     inclusive: list.prices_include_tax, promotions: running, coupon: extras.coupon ?? null, sale_discount_bp: extras.saleDiscountBp ?? 0,
-    lines: withPrice.filter((x) => x.price).map(({ l, price }) => ({ key: l.key, product_id: l.product.id, category_id: l.product.category_id ?? null,
+    lines: withPrice.filter((x) => x.price).map(({ l, price }) => ({ key: l.key, product_id: l.markdown ? `markdown:${l.markdown.id}` : l.product.id,
+      category_id: l.markdown ? null : l.product.category_id ?? null,
       qty_milli: l.qtyMilli, unit_price_minor: price!.amount_minor, tax: l.product.tax, manual: l.manual ?? null })),
   })
   const byKey = new Map(calc.lines.map((r) => [r.key, r]))
@@ -61,6 +66,19 @@ export function addToCart(lines: CartLine[], product: Product, unit: Unit, qtyMi
   const existing = lines.find((l) => l.key === key)
   if (existing) return lines.map((l) => (l.key === key ? { ...l, qtyMilli: l.qtyMilli + qtyMilli } : l))
   return [...lines, { key, product, unit, qtyMilli }]
+}
+
+/** A marked-down pack (sticker): its own line, at the sticker price. */
+export function addMarkdown(lines: CartLine[], product: Product, unit: Unit, markdown: { id: string; price_minor: number }): CartLine[] {
+  const key = `md:${markdown.id}`
+  const existing = lines.find((l) => l.key === key)
+  if (existing) return lines.map((l) => (l.key === key ? { ...l, qtyMilli: l.qtyMilli + 1000 } : l))
+  return [...lines, { key, product, unit, qtyMilli: 1000, markdown }]
+}
+
+/** A weighed item from a scale label: always its own line (each pack has its own weight). */
+export function addWeighed(lines: CartLine[], product: Product, unit: Unit, grams: number): CartLine[] {
+  return [...lines, { key: `w:${product.id}:${lines.length}:${grams}`, product, unit, qtyMilli: grams }]
 }
 
 export function setQty(lines: CartLine[], key: string, qtyMilli: number): CartLine[] {

@@ -10,6 +10,7 @@ use App\Models\CustomerPayment;
 use App\Models\Employee;
 use App\Models\Invoice;
 use App\Models\LegalEntity;
+use App\Models\Markdown;
 use App\Models\PayrollRun;
 use App\Models\Payslip;
 use App\Models\Tenant;
@@ -17,6 +18,7 @@ use App\Security\Authorizer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -143,5 +145,17 @@ class PrintController extends Controller
             }
             fclose($out);
         }, "salaries-{$run->number}.csv", ['Content-Type' => 'text/csv']);
+    }
+
+    /** Markdown stickers (EAN-13 with the reduced price) for near-expiry packs. */
+    public function markdownLabels(Request $request): View
+    {
+        $ids = array_filter(explode(',', (string) $request->query('ids')), fn ($id) => Str::isUuid($id));
+        $labels = Markdown::with('product')->whereIn('id', $ids)->get();
+        abort_if($labels->isEmpty(), 404);
+        $this->allow($request, ['grocery.markdowns'], $labels->first()->branch_id, $labels->first()->tenant_id);
+
+        return view('print.markdown-labels', ['labels' => $labels, 'company' => $this->company($labels->first()->branch_id),
+            'currency' => Tenant::find($labels->first()->tenant_id)->currency_code]);
     }
 }

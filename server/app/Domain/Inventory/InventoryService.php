@@ -24,6 +24,7 @@ final class InventoryService
     public const ADJUSTMENT_REASONS = [
         'damaged' => 'Damaged',
         'expired' => 'Expired',
+        'spoilage' => 'Spoilage (fresh produce)',
         'theft' => 'Theft / missing',
         'found' => 'Found / surplus',
         'own_use' => 'Own use / sample',
@@ -37,7 +38,8 @@ final class InventoryService
     ) {}
 
     /** $qty is the signed change in the chosen unit, as a decimal string ("-2", "1.5"). */
-    public function adjust(Actor $actor, Warehouse $warehouse, Product $product, ProductUom $unit, string $qty, string $type, string $reasonCode, ?string $note = null, ?string $unitCost = null): StockMovement
+    public function adjust(Actor $actor, Warehouse $warehouse, Product $product, ProductUom $unit, string $qty, string $type, string $reasonCode, ?string $note = null, ?string $unitCost = null,
+        ?string $batchNo = null, ?string $expiresOn = null): StockMovement
     {
         if (! $actor->user || ! $this->authz->allows($actor->user, 'stock.adjust', $warehouse)) {
             throw new AccessDenied;
@@ -72,9 +74,11 @@ final class InventoryService
 
         $reason = $type === 'opening' ? 'Opening balance' : self::ADJUSTMENT_REASONS[$reasonCode].($note ? ": {$note}" : '');
 
-        return $this->recorder->transaction(function () use ($actor, $warehouse, $product, $unit, $milli, $type, $reason, $cost) {
+        return $this->recorder->transaction(function () use ($actor, $warehouse, $product, $unit, $milli, $type, $reason, $cost, $batchNo, $expiresOn) {
+            // Batch-tracked: a named batch (new or existing); without one, stock out is taken earliest expiry first.
+            $batch = $product->track_batches && trim((string) $batchNo) !== '' ? ['batch_id' => app(StockBatches::class)->ensure($actor, $product, (string) $batchNo, $expiresOn)] : [];
             [$movement] = $this->ledger->post($actor, $warehouse, $type, [
-                ['product' => $product, 'unit' => $unit, 'qty_milli' => $milli, 'unit_cost_minor' => $cost],
+                ['product' => $product, 'unit' => $unit, 'qty_milli' => $milli, 'unit_cost_minor' => $cost] + $batch,
             ], $reason, 'manual', null);
             $this->recorder->audit->record($actor, "stock.{$type}", $product, [
                 'warehouse' => [null, $warehouse->code],

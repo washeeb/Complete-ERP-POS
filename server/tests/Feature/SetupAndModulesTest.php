@@ -31,8 +31,8 @@ it('wizard creates branches with a warehouse, tills and per-branch modules', fun
     expect($this->tenant->fresh()->isSetUp())->toBeTrue()
         ->and(Warehouse::count())->toBe(4)
         ->and(Till::where('branch_id', $b['A']->id)->count())->toBe(2)
-        ->and($this->modules->statuses($b['A']))->toBe(['core' => 'enabled', 'grocery' => 'reserved'])
-        ->and($this->modules->statuses($b['B']))->toMatchArray(['restaurant' => 'reserved', 'grocery' => 'reserved'])
+        ->and($this->modules->statuses($b['A']))->toBe(['core' => 'enabled', 'grocery' => 'enabled']) // released in Phase 9a
+        ->and($this->modules->statuses($b['B']))->toMatchArray(['restaurant' => 'reserved', 'grocery' => 'enabled'])
         ->and($this->modules->statuses($b['C']))->not->toHaveKey('grocery')
         ->and($this->modules->isEnabled($b['C'], 'pharmacy'))->toBeFalse(); // reserved ≠ working
 });
@@ -76,7 +76,7 @@ it('reads manifests and only seeds permissions of released modules', function ()
 
     expect($reg->has('grocery'))->toBeTrue()
         ->and($reg->get('core')->isAvailable())->toBeTrue()
-        ->and(collect($reg->permissions())->pluck('module')->unique()->all())->toBe(['core'])
+        ->and(collect($reg->permissions())->pluck('module')->unique()->sort()->values()->all())->toBe(['core', 'grocery']) // planned modules (restaurant, pharmacy…) add none yet
         ->and(Permission::count())->toBe(count($reg->permissions()));
 });
 

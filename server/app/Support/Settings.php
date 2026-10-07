@@ -86,6 +86,26 @@ final class Settings
             'label' => 'Supplier bill price difference allowed (pesewas)',
             'help' => '5000 = GHS 50.00 per bill.',
         ],
+        'grocery.scale_prefixes' => [
+            'type' => 'string', 'default' => '21', 'max' => 40, 'group' => 'Grocery',
+            'label' => 'Scale label barcodes start with',
+            'help' => 'EAN-13 labels from the scales: prefix (2 digits), the product\'s 5-digit scale code (PLU), the weight in grams (5 digits), check digit. Several prefixes: 21,22.',
+        ],
+        'grocery.markdown_prefix' => [
+            'type' => 'string', 'default' => '29', 'max' => 2, 'group' => 'Grocery',
+            'label' => 'Markdown stickers start with',
+            'help' => 'First two digits of the barcodes printed on near-expiry markdown stickers. Must differ from the scale prefixes.',
+        ],
+        'grocery.markdown_rules' => [
+            'type' => 'string', 'default' => '7:30,3:50', 'max' => 60, 'group' => 'Grocery',
+            'label' => 'Suggested markdowns (days left : % off)',
+            'help' => '"7:30,3:50" = 30 % off when 7 days or fewer are left, 50 % at 3 days. A manager applies them.',
+        ],
+        'grocery.esl_webhook_url' => [
+            'type' => 'string', 'default' => '', 'max' => 255, 'group' => 'Grocery',
+            'label' => 'Electronic shelf labels: price update address',
+            'help' => 'If you use electronic shelf labels, their gateway\'s web address. Price changes are sent there as they happen. Leave blank if you do not.',
+        ],
         'receipt.footer' => [
             'type' => 'string', 'default' => 'Thank you for shopping with us.', 'max' => 200, 'group' => 'Receipts',
             'label' => 'Message at the bottom of receipts',

@@ -83,6 +83,7 @@ function Receive({ wh, done }: { wh: WmsWarehouse; done: (message: string) => vo
   const [orders, setOrders] = useState<WmsOrder[] | null>(null)
   const [po, setPo] = useState<WmsOrder | null>(null)
   const [now, setNow] = useState<Record<string, string>>({})
+  const [lots, setLots] = useState<Record<string, { batch_no: string; expires_on: string }>>({}) // batch-tracked lines: from the pack
   const [bin, setBin] = useState<string | null>(null)
   const [ref, setRef] = useState('')
   const [note, setNote] = useState('')
@@ -102,7 +103,8 @@ function Receive({ wh, done }: { wh: WmsWarehouse; done: (message: string) => vo
     if (!po) return
     setBusy(true)
     try {
-      const lines = po.lines.filter((l) => Number(now[l.id] ?? 0) > 0).map((l) => ({ purchase_order_line_id: l.id, qty: now[l.id], bin_id: bin }))
+      const lines = po.lines.filter((l) => Number(now[l.id] ?? 0) > 0).map((l) => ({ purchase_order_line_id: l.id, qty: now[l.id], bin_id: bin,
+        ...(l.track_batches ? { batch_no: lots[l.id]?.batch_no ?? '', expires_on: lots[l.id]?.expires_on || null } : {}) }))
       const r = await wms.receive({ purchase_order_id: po.id, client_id: clientId.current, supplier_ref: ref || undefined, lines })
       done(r.status === 'held' ? `${r.number}: more than ordered — waiting for a manager. Nothing is in stock yet.` : `${r.number} received into stock.`)
     } catch (e) {
@@ -140,7 +142,15 @@ function Receive({ wh, done }: { wh: WmsWarehouse; done: (message: string) => vo
               <td>{l.name}<br /><span className="muted small">{l.sku} · {l.uom_code}</span></td>
               <td>{q(l.ordered)}</td>
               <td>{q(l.received)}</td>
-              <td><input aria-label={`Received now ${l.name}`} inputMode="decimal" value={now[l.id] ?? ''} placeholder="0" onChange={(e) => setNow({ ...now, [l.id]: e.target.value })} /></td>
+              <td><input aria-label={`Received now ${l.name}`} inputMode="decimal" value={now[l.id] ?? ''} placeholder="0" onChange={(e) => setNow({ ...now, [l.id]: e.target.value })} />
+                {l.track_batches && Number(now[l.id] ?? 0) > 0 && (
+                  <div className="hh-lot">
+                    <input aria-label={`Batch ${l.name}`} placeholder="Batch no." value={lots[l.id]?.batch_no ?? ''}
+                      onChange={(e) => setLots({ ...lots, [l.id]: { batch_no: e.target.value, expires_on: lots[l.id]?.expires_on ?? '' } })} />
+                    <input aria-label={`Expiry ${l.name}`} type="date" value={lots[l.id]?.expires_on ?? ''}
+                      onChange={(e) => setLots({ ...lots, [l.id]: { batch_no: lots[l.id]?.batch_no ?? '', expires_on: e.target.value } })} />
+                  </div>
+                )}</td>
             </tr>
           ))}
         </tbody>

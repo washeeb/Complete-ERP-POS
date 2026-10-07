@@ -2,6 +2,7 @@
 
 namespace App\Domain\Catalog;
 
+use App\Domain\Inventory\StockLedger;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
@@ -44,7 +45,12 @@ final class CatalogService
             throw new AccessDenied('Changing prices needs the pricing permission.');
         }
 
-        $product->fill(array_intersect_key($data, array_flip(['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active'])));
+        $product->fill(array_intersect_key($data, array_flip(['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu'])));
+        $product->plu = $product->plu === null || trim((string) $product->plu) === '' ? null : trim((string) $product->plu);
+        if ($product->plu !== null && (! preg_match('/^\d{1,5}$/', $product->plu) || Product::where('plu', $product->plu)->when($product->exists, fn ($q) => $q->whereKeyNot($product->id))->exists())) {
+            throw new DomainException('Scale code (PLU): up to 5 digits, not used by another product.');
+        }
+        $startsBatches = $product->track_batches && (! $product->exists || $product->isDirty('track_batches'));
         $product->sku = strtoupper(trim((string) $product->sku));
         if (! preg_match('/^[A-Z0-9][A-Z0-9._-]{0,39}$/', $product->sku)) {
             throw new DomainException('SKU: letters, digits, dot, dash or underscore (max 40).');
@@ -60,8 +66,11 @@ final class CatalogService
             throw new DomainException('The base unit cannot change once stock has moved; create a new product instead.');
         }
 
-        return $this->recorder->transaction(function () use ($actor, $product, $data, $pricesGiven, $reason) {
+        return $this->recorder->transaction(function () use ($actor, $product, $data, $pricesGiven, $reason, $startsBatches) {
             $isNew = ! $product->exists;
+            if ($startsBatches && ! $isNew) {
+                app(StockLedger::class)->assignOpeningBatches($actor, $product); // stock already here becomes batch OPENING
+            }
             $product->tenant_id = $actor->tenantId;
             $product->updated_by = $actor->id;
             if ($isNew) {

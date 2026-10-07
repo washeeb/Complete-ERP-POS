@@ -1,11 +1,13 @@
 {
   "key": "grocery",
   "name": "Grocery / Supermarket",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "kind": "industry",
-  "stage": "planned",
+  "stage": "available",
   "phase": 9,
-  "description": "Scales and weighted barcodes, batch/expiry with FEFO, near-expiry markdowns, shrink, ESL hook.",
+  "description": "Weighted-barcode scale labels, batch/expiry with first-expiry-first-out, near-expiry markdown stickers, expired write-offs and shrink, electronic shelf label hook.",
   "requires": ["core"],
-  "permissions": []
+  "permissions": [
+    {"key": "grocery.markdowns", "label": "Mark down near-expiry batches and print the stickers", "min_level": 3}
+  ]
 }

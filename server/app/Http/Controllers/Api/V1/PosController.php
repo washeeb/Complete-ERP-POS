@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api\V1;
 use App\Domain\Customers\CustomerLedger;
 use App\Domain\Customers\CustomerService;
 use App\Domain\Devices\DeviceSignature;
+use App\Domain\Grocery\MarkdownService;
 use App\Domain\Licensing\LicenseManager;
 use App\Domain\Licensing\Watermark;
+use App\Domain\Modules\ModuleService;
 use App\Domain\Pos\PosSyncService;
 use App\Domain\Pos\ReturnService;
 use App\Domain\Pos\SaleService;
@@ -103,8 +105,14 @@ class PosController extends Controller
             'promotions' => Promotion::where('is_active', true)->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>', $now))->get()
                 ->map(fn (Promotion $p) => $p->toEngine())->values(),
             'utc_offset_minutes' => (int) round(Carbon::now(Branch::find($device->branch_id)?->timezone ?: config('app.timezone'))->utcOffset()),
+            // Grocery: weighted-barcode scale labels and near-expiry markdown stickers this branch's tills recognise.
+            'grocery' => app(ModuleService::class)->isEnabled($device->branch_id, 'grocery') ? [
+                'scale_prefixes' => array_values(array_filter(array_map('trim', explode(',', (string) app(Settings::class)->get('grocery.scale_prefixes', $device->tenant_id))))),
+                'markdown_prefix' => (string) app(Settings::class)->get('grocery.markdown_prefix', $device->tenant_id),
+                'markdowns' => MarkdownService::activeFor($device->branch_id),
+            ] : null,
             'products' => $products->map(fn (Product $p) => [
-                'id' => $p->id, 'sku' => $p->sku, 'name' => $p->name, 'category_id' => $p->category_id, 'track_stock' => $p->track_stock,
+                'id' => $p->id, 'sku' => $p->sku, 'name' => $p->name, 'category_id' => $p->category_id, 'track_stock' => $p->track_stock, 'plu' => $p->plu,
                 'on_hand' => $p->track_stock ? (string) ($stock[$p->id] ?? '0.000') : null,
                 'tax' => $p->taxGroup->rates->map(fn ($r) => ['code' => $r->code, 'name' => $r->name, 'rate_bp' => $r->rate_bp])->values(),
                 'units' => $p->units->map(fn ($u) => [
@@ -155,7 +163,7 @@ class PosController extends Controller
     {
         $tenant = app(TenantContext::class)->id();
         $parts = [];
-        foreach (['products', 'product_uoms', 'barcodes', 'prices', 'price_lists', 'tax_rates', 'tax_groups', 'uoms', 'promotions'] as $t) {
+        foreach (['products', 'product_uoms', 'barcodes', 'prices', 'price_lists', 'tax_rates', 'tax_groups', 'uoms', 'promotions', 'markdowns'] as $t) {
             $row = DB::table($t)->where('tenant_id', $tenant)->selectRaw('count(*) as c, max(updated_at) as u')->first();
             $parts[] = $t.':'.$row->c.':'.$row->u;
         }

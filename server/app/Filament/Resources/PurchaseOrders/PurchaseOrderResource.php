@@ -11,6 +11,7 @@ use App\Filament\Resources\PurchaseOrders\Pages\ListPurchaseOrders;
 use App\Filament\Resources\PurchaseOrders\Pages\ViewPurchaseOrder;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
+use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
 use App\Models\Warehouse;
@@ -31,6 +32,7 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -170,17 +172,20 @@ class PurchaseOrderResource extends Resource
                 ->visible(fn (PurchaseOrder $record) => $record->isReceivable() && Erp::can('stock.receive', $record->warehouse))
                 ->modalWidth('4xl')
                 ->fillForm(fn (PurchaseOrder $record) => ['lines' => $record->lines()->get()->map(fn ($l) => [
-                    'purchase_order_line_id' => $l->id, 'item' => "{$l->sku} · {$l->name} ({$l->uom_code})",
+                    'purchase_order_line_id' => $l->id, 'item' => "{$l->sku} · {$l->name} ({$l->uom_code})", 'batched' => (bool) Product::find($l->product_id)?->track_batches,
                     'qty' => Fields::qty(Qty::format(max(0, Qty::toMilli((string) $l->qty) - Qty::toMilli((string) $l->received_qty)))),
                 ])->all()])
                 ->schema(fn (PurchaseOrder $record) => [
                     TextInput::make('supplier_ref')->label('Supplier delivery note / invoice no.')->maxLength(60),
-                    Repeater::make('lines')->columns(4)->addable(false)->deletable(false)->reorderable(false)->schema([
+                    Repeater::make('lines')->columns(6)->addable(false)->deletable(false)->reorderable(false)->schema([
                         TextInput::make('item')->disabled()->dehydrated(false)->columnSpan(2),
                         TextInput::make('qty')->label('Received now')->numeric()->minValue(0)->required(),
                         Select::make('bin_id')->label('Into bin')->options(Fields::bins($record->warehouse_id))
                             ->visible($record->warehouse->use_bins)->placeholder('Receiving dock'),
+                        TextInput::make('batch_no')->label('Batch no.')->maxLength(60)->visible(fn (Get $get) => (bool) $get('batched'))->required(fn (Get $get) => (bool) $get('batched')),
+                        DatePicker::make('expires_on')->label('Expiry')->visible(fn (Get $get) => (bool) $get('batched')),
                         Hidden::make('purchase_order_line_id'),
+                        Hidden::make('batched')->dehydrated(false),
                     ]),
                     Textarea::make('note'),
                 ])

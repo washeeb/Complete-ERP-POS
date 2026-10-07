@@ -186,3 +186,9 @@ Errors use the standard body `{error, detail}`. For example: `wrong_status`, `no
 
 - `POST pos/clock` (device token, like `pos/login`): `{id (uuid), username, pin, kind: in|out}` → `{status: accepted|duplicate, name, kind, at}`. Wrong PINs count towards the PIN lockout (`invalid_credentials`, `pin_locked`).
 - Offline: the till checks the PIN against the person's offline sign-in and queues `{type: "clock", grant, payload: {kind, occurred_at}}` in `pos/sync`; the server records it as source `offline`.
+
+## Grocery and batches (Phase 9a)
+
+- `GET pos/catalog` adds per product `plu` and `grocery` (null when the module is off at the till's branch): `{scale_prefixes: ["21"], markdown_prefix: "29", markdowns: [{id, code, product_id, product_uom_id, price_minor, percent_bp, valid_until}]}`.
+- `POST pos/sales` lines accept `markdown_id` (a scanned sticker): unit price = the sticker price; the stock comes from its batch; promotions do not apply. Error `markdown_invalid` (withdrawn/expired, online). A sale needing expired stock online: `expired_stock`.
+- Handheld `POST wms/receipts` lines accept `batch_no` and `expires_on` (required for batch-tracked products: `batch_required`); `GET wms/purchase-orders` lines carry `track_batches`.

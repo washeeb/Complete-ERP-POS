@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { api, ApiError } from '../api'
-import { addToCart, findByBarcode, priceCart, qtyAllowed, search, setManual, setQty, type CartLine } from '../cart'
+import { addMarkdown, addToCart, addWeighed, findByBarcode, priceCart, qtyAllowed, search, setManual, setQty, type CartLine } from '../cart'
+import { findMarkdown, parseScaleLabel, productForPlu } from '../scale'
 import { db, nextSeq, type CacheRecord } from '../db'
 import { exportQueueFile, offlineSignIn, retryRefused } from '../offline'
 import { queueMode, submitSale } from '../till'
 import { formatMoney, prettyQty, toMilli } from '../money'
-import type { Bootstrap, Payment, PostedSale, Product, PromotionRow, TillCustomer, Unit } from '../types'
+import type { Bootstrap, Grocery, Payment, PostedSale, Product, PromotionRow, TillCustomer, Unit } from '../types'
 import { parseMoney } from '../money'
 import { ReturnScreen } from './ReturnScreen'
 import { cachedCustomers, refreshCustomers } from '../customers'
@@ -34,6 +35,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   const [approval, setApproval] = useState<{ payments: Payment[]; message: string; kind: 'credit' | 'discount' | 'discount_offline'; approvals: Approvals } | null>(null)
   const [promotions, setPromotions] = useState<PromotionRow[]>([])
   const [utcOffset, setUtcOffset] = useState(0)
+  const [grocery, setGrocery] = useState<Grocery | null>(null)
   const [coupon, setCoupon] = useState('')
   const [couponInput, setCouponInput] = useState('')
   const [saleBp, setSaleBp] = useState(0)
@@ -47,6 +49,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       const cat = c as Extract<CacheRecord, { id: 'catalog' }> | undefined
       setPromotions(cat?.promotions ?? [])
       setUtcOffset(cat?.utc_offset_minutes ?? 0)
+      setGrocery(cat?.grocery ?? null)
     })
   }, [catalogVersion])
 
@@ -99,6 +102,21 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
 
   function onScanOrSearch(e: React.FormEvent) {
     e.preventDefault()
+    // Grocery: a markdown sticker, or a scale label with the weight in it.
+    const md = findMarkdown(grocery, query, products)
+    if (md) {
+      setLines((l) => addMarkdown(l, md.product, md.unit, md.markdown))
+      setQuery('')
+      return setMessage(`Marked down: ${md.product.name}`)
+    }
+    const weighed = grocery ? parseScaleLabel(query, grocery.scale_prefixes) : null
+    if (weighed) {
+      const p = productForPlu(products, weighed.plu)
+      if (!p) return setMessage(`No product has scale code ${weighed.plu}.`)
+      setLines((l) => addWeighed(l, p.product, p.unit, weighed.grams))
+      setQuery('')
+      return setMessage('')
+    }
     const hit = findByBarcode(products, query)
     if (hit) return add(hit.product, hit.unit)
     if (results.length === 1) return add(results[0])
@@ -261,6 +279,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
               {cart.lines.map((l) => (
                 <tr key={l.key} className={l.price ? '' : 'unpriced'}>
                   <td>{l.product.name}
+                    {l.markdown && <div className="small promo">Marked-down sticker</div>}
                     {l.promotions.map((p) => <div key={p.id} className="small promo">{p.name} −{money(p.saving_minor)}</div>)}
                     {l.manual && <div className="small promo">Discount −{money(l.discount - l.promotions.reduce((a, p) => a + p.saving_minor, 0))}</div>}
                   </td>

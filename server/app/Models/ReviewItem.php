@@ -33,6 +33,7 @@ class ReviewItem extends Model
         'points_overdrawn' => 'Loyalty points used beyond the balance (offline)',
         'stored_value_overdrawn' => 'Gift card or store credit used beyond its balance (offline)',
         'return_no_receipt' => 'Return without a receipt',
+        'expired_sold' => 'Expired batch sold offline',
     ];
 
     protected $guarded = [];

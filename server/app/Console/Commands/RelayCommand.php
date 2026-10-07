@@ -5,9 +5,11 @@ namespace App\Console\Commands;
 use App\Domain\Channels\ChannelSync;
 use App\Domain\Channels\LiveRelay;
 use App\Domain\Channels\WebhookIntake;
+use App\Domain\Grocery\EslRelay;
 use App\Models\SalesChannel;
 use App\Support\TenantContext;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Delivers committed changes: live updates to tills/back office/storefronts, pushes to stores,
@@ -20,11 +22,16 @@ class RelayCommand extends Command
 
     protected $description = 'Deliver live updates, store pushes and incoming store orders';
 
-    public function handle(LiveRelay $live, ChannelSync $sync, WebhookIntake $webhooks): int
+    public function handle(LiveRelay $live, ChannelSync $sync, WebhookIntake $webhooks, EslRelay $esl): int
     {
         $until = microtime(true) + (int) $this->option('seconds');
         do {
             $work = $live->run();
+            try {
+                $work += $esl->run();
+            } catch (\Throwable $e) {
+                Log::warning('Shelf-label prices not delivered; retrying next run', ['error' => $e->getMessage()]);
+            }
             foreach (SalesChannel::withoutGlobalScopes()->where('status', 'active')->get() as $channel) {
                 app(TenantContext::class)->set($channel->tenant_id);
                 $work += $webhooks->process($channel);
