@@ -88,12 +88,12 @@
   - `.local-secrets/dev-owner.txt`: owner email/password/TOTP secret, cashier;
   - `.local-secrets/dev-handheld.txt`: `yaw`/`kojo` PINs.
   - TOTP codes: run `php artisan tinker` with a script using `PragmaRX\Google2FA\Google2FA::getCurrentOtp()`.
-- **Browser devices:** till on `localhost:5173`; handheld on `handheld.localhost:5173`; back office on `localhost:8000/admin` (the Browser pane is small — drive Filament forms with JS `input`/`change` events if clicking is awkward). Till staff tokens expire; sign out and in again on a 401.
+- **Browser devices:** till on `localhost:5173`; handheld on `handheld.localhost:5173`; back office on `localhost:8010/admin` (the Browser pane is small — drive Filament forms with JS `input`/`change` events if clicking is awkward). Till staff tokens expire; sign out and in again on a 401.
 - **Sample data:**
   - `erp:demo-catalog`;
   - `erp:demo-purchasing`;
   - `erp:demo-sales` (fictitious customers + 5 sample promotions).
-- **Processes** (`.claude/launch.json`): `server` (8000), `pos` (5173), `reverb` (8080), `relay`. After `git pull`, run `migrate` and `db:seed`.
+- **Processes** (`.claude/launch.json`): `server` (8010; 8000 belongs to another project), `pos` (5173), `reverb` (8080), `relay`. After `git pull`, run `migrate` and `db:seed`.
 - **PHP and shells:**
   - PHP is Herd's; use script files with `php artisan tinker <file>`.
   - PowerShell double-quoted strings eat backticks and `${…}`, which breaks TS template literals; use the Edit/Write tools for code.
