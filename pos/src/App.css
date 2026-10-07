@@ -121,3 +121,8 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
 .banner.warn { background: #fef3c7; color: #78350f; padding: 6px 12px; }
 .receipt .receipt-ref { font-size: 7px; color: #9a9a9a; letter-spacing: .5px; margin-top: 4px; }
 .hh-lot { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 4px; }
+/* Pharmacy: prescription before payment */
+.rx-meds { list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 6px; }
+.rx-meds li { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.rx-warnings { list-style: none; padding: 8px 12px; margin: 0 0 8px; border-radius: 8px; background: var(--warn-bg); color: var(--warn-text); display: grid; gap: 4px; }
+.rx-warnings li.major { color: var(--danger); font-weight: 600; }

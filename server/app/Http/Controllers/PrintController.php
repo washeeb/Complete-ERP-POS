@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Domain\Customers\CustomerLedger;
+use App\Domain\Pharmacy\PharmacyReports;
 use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\CustomerOrder;
@@ -14,7 +15,9 @@ use App\Models\Markdown;
 use App\Models\PayrollRun;
 use App\Models\Payslip;
 use App\Models\Tenant;
+use App\Models\Warehouse;
 use App\Security\Authorizer;
+use App\Support\Settings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -157,5 +160,49 @@ class PrintController extends Controller
 
         return view('print.markdown-labels', ['labels' => $labels, 'company' => $this->company($labels->first()->branch_id),
             'currency' => Tenant::find($labels->first()->tenant_id)->currency_code]);
+    }
+
+    /** Controlled-drug register for a warehouse and period (Pharmacy): every movement with a running balance. */
+    public function controlledRegister(Request $request): View
+    {
+        $w = Warehouse::findOrFail((string) $request->query('warehouse'));
+        $this->allow($request, ['pharmacy.manage', 'pharmacy.dispense'], $w->branch_id, $w->tenant_id);
+        [$from, $to] = $this->period($request);
+
+        return view('print.controlled-register', ['warehouse' => $w, 'from' => $from, 'to' => $to, 'products' => PharmacyReports::controlledRegister($w->id, $from, $to),
+            'company' => $this->company($w->branch_id), 'licence' => app(Settings::class)->get('pharmacy.premises_licence_no', $w->tenant_id),
+            'superintendent' => app(Settings::class)->get('pharmacy.superintendent', $w->tenant_id)]);
+    }
+
+    /** NHIS claims list (CSV): medicines dispensed on prescription to NHIS members over a period. */
+    public function nhisClaims(Request $request): StreamedResponse
+    {
+        $user = $request->user();
+        abort_unless($user && $this->authz->allowsAnywhere($user, 'pharmacy.manage'), 403);
+        $branchIds = $this->authz->branchIds($user, 'pharmacy.manage');
+        [$from, $to] = $this->period($request);
+        $rows = PharmacyReports::nhisClaims($branchIds, $from, $to);
+
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Prescription', 'Date', 'Receipt', 'Patient', 'NHIS no.', 'NHIS expires', 'Prescriber', 'Prescriber reg. no.', 'Facility', 'Prescription ref.',
+                'Pharmacist', 'Medicine', 'Generic name', 'Strength', 'FDA reg. no.', 'Qty', 'Unit', 'Amount'], ',', '"', '');
+            foreach ($rows as $r) {
+                fputcsv($out, [$r->number, Carbon::parse($r->occurred_at)->toDateString(), $r->receipt_no, $r->patient, $r->nhis_no, $r->nhis_expires_on, $r->prescriber_name,
+                    $r->prescriber_reg_no, $r->facility, $r->reference, $r->pharmacist_name, $r->medicine, $r->generic_name, $r->strength, $r->fda_reg_no,
+                    rtrim(rtrim((string) $r->qty, '0'), '.'), $r->uom_code, number_format($r->line_total_minor / 100, 2, '.', '')], ',', '"', '');
+            }
+            fclose($out);
+        }, "nhis-claims-{$from}-to-{$to}.csv", ['Content-Type' => 'text/csv']);
+    }
+
+    /** @return array{0: string, 1: string} */
+    private function period(Request $request): array
+    {
+        $from = Carbon::parse((string) $request->query('from', now()->startOfMonth()->toDateString()))->toDateString();
+        $to = Carbon::parse((string) $request->query('to', now()->toDateString()))->toDateString();
+        abort_if($from > $to, 422);
+
+        return [$from, $to];
     }
 }

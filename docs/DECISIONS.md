@@ -278,3 +278,25 @@ Design:
 - **ESL hook:** a separate outbox consumer (`esl`) posts shelf prices to the configured gateway on product/price changes. A failing gateway keeps its own cursor and retries without holding up tills or online stores.
 - **Grocery is a per-branch module** (module 0.1.0, permission `grocery.markdowns`): tills get scale and sticker settings only where it is enabled. Batch tracking itself is core.
 - **Known limits:** bins and batches are tracked separately (which batch sits in which bin is not recorded); counts adjust totals (gains join the newest batch, shortages FEFO).
+
+## Phase 9b — Pharmacy (2026-10-17)
+
+Owner answer (2026-10-16): a **pharmacist approves every prescription-only sale with their PIN**. Prescriptions are recorded, there is a controlled-drug register, and warnings come from a local table.
+
+Design:
+- **Medicines are products** with a schedule (`otc`, `pom`, `controlled`) and drug fields. A medicine must track batches (`batch_required`), so FEFO, expiry refusal and the register come from the 9a batch ledger.
+- **The rule lives in `SaleService`, per branch.** It applies when the Pharmacy module is on at the till's branch and a line is POM or controlled. Online sales without the patient or prescription are refused (`prescription_required`).
+  - Approval is a supervisor-style PIN check of `pharmacy.dispense` at the branch. The cashier may be the pharmacist, so no "someone else" rule applies.
+  - If the cashier holds `pharmacy.dispense`, no PIN is needed.
+  - Offline, the till checks the pharmacist's PIN against their offline sign-in and sends `pharmacist_offline_by`. The server re-checks the permission. Anything missing becomes a `pharmacy_unapproved` review item; the sale is never refused.
+  - An offline sale without a patient creates no prescription (there is no one to file it under); the review item records it.
+- **A prescription is an immutable document** (RX number per node), created in the sale's transaction. It has an audit row and the outbox event `prescription.dispensed`, syncs up in the `sales` group, and is linked from its sale lines (`sale_lines.prescription_id`). It stores the warnings the pharmacist saw.
+- **Warnings: same rule on the till (`pos/src/pharmacy.ts`) and server (`PharmacyService::warnings`).**
+  - An allergy is any active ingredient or generic name that matches the patient's allergies; it is always major.
+  - An interaction is any pair of different products whose ingredients match a table row, in either order.
+  - Ingredients are lower-cased. Table pairs are stored sorted, one row per pair.
+  - The table is local (`source` = `local`), so a licensed data provider can fill it later. It syncs down in the `pricing` group. Rules are never deleted.
+- **Health data is need-to-know:** allergies and NHIS numbers reach only tills signed in by holders of `pharmacy.patients` or `pharmacy.dispense`. Patient profiles sync in the `customers` group.
+- **Controlled-drug register = a query, not a second ledger.** It reads `stock_movements` of controlled products joined to sales, prescriptions and patients, with a running balance. It cannot drift from the stock, and the ledger is already append-only. The NHIS claims export likewise reads prescription lines of patients with an NHIS number.
+- **Roles:** Pharmacist (level 4: dispense, patients, manage) and Pharmacy Technician (level 2: till, patients, receiving). The GM gets `pharmacy.manage` and `pharmacy.patients`; a Branch Manager gets `pharmacy.patients`.
+- **Deferred:** an NHIS e-claims API (CSV for now), a commercial interaction database, dose and age checks, label printing for dispensed medicines, refills or partial dispensing of one prescription.

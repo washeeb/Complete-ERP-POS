@@ -1,7 +1,21 @@
 # State (resume file)
 
-**Phase:** 9 — Industry modules wave 1 · **Status:** 9a (Grocery + batch/expiry) done on branch `phase-9-industry-modules` (PR to `main`); next 9b Pharmacy, then 9c Restaurant
-**Updated:** 2026-10-16 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–8 and licensing merged (PRs #1–#12)
+**Phase:** 9 — Industry modules wave 1 · **Status:** 9b (Pharmacy) done on branch `phase-9b-pharmacy` (PR to `main`); next 9c Restaurant
+**Updated:** 2026-10-17 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–8, licensing and 9a merged (PRs #1–#13)
+
+## Phase 9b — done (277 Pest + 36 Vitest + 7 Playwright)
+- **Server:**
+  - migration `2026_10_17_100001_create_pharmacy_tables` (drug fields on products, `patient_profiles`, `drug_interactions`, `prescriptions`, `sale_lines.prescription_id`);
+  - `app/Domain/Pharmacy/{PharmacyService, PharmacyReports}`;
+  - in `SaleService::prescription()`: the pharmacist approval and the prescription;
+  - catalog `drug` and `pharmacy`; customers carry allergies and NHIS details for pharmacy staff only.
+- **Back office:**
+  - Product → Medicine section; Customer → Patient details;
+  - Pharmacy menu: Prescriptions, Drug interactions, Controlled-drug register (print view and NHIS CSV);
+  - settings `pharmacy.*`; Pharmacy module 0.1.0; roles `pharmacist` and `pharmacy_technician`.
+- **Till:** `pos/src/pharmacy.ts` (warnings, generics); prescription form before payment in Sell; `till.ts` sends `prescription`, `pharmacist_approval` and `pharmacist_offline_by`.
+- **Tests:** PharmacyTest (8), SetupAndModulesTest (restaurant is now the unreleased example), `pharmacy.test.ts`, e2e `pharmacy.spec.ts`.
+- **Docs:** pharmacy.md, api.md, DECISIONS 9b, CHANGELOG 0.13.0.
 
 ## Phase 9a — done (269 Pest + 33 Vitest + 6 Playwright; browser-checked)
 - **Owner answers (2026-10-16):** scale labels with weight in barcode; FEFO + suggested markdowns applied by a manager; pharmacist approves POM sales (9b); restaurant table service + counter with kitchen screens (9c).
@@ -13,9 +27,9 @@
 ## Licensing (merged, PR #12)
 - Signed activation keys, expiry with grace then read-only, daily check-in, tamper detection, watermarks — see docs/licensing.md. Dev licence valid to 2027-12-31 (dev key in `.local-secrets/license-dev.json`). Before the first customer release: production key (`license:keygen`), its public key in `config/license.php`, a licence server.
 
-## Next — Phase 9b (Pharmacy)
-- Drug fields on products (schedule OTC/POM/controlled, generic name, strength, form, FDA registration no.), batch/expiry mandatory for medicines.
-- Patients (customers with allergies, NHIS no.), prescriptions, pharmacist PIN approval for POM at the till (offline via offline sign-in), controlled-drug register (append-only), interaction/allergy warnings from a local table (pluggable source), generic substitution, NHIS claims hook, Pharmacy Council / FDA compliance fields; module roles Pharmacist and Pharmacy Technician.
+## Next — Phase 9c (Restaurant)
+- Owner answer: both table service and counter service, with kitchen screens.
+- Scope: tables and floor plan, open tabs per table, modifiers, courses, kitchen display routing, split bills, recipes/BOM stock deduction, tips.
 ## Owner decisions pending
 - Accountant check of the Ghana tax set-up (VAT/NHIL/GETFund rates and the payroll PAYE bands / SSNIT rates — Payroll → Tax and SSNIT rules) before go-live.
 - WooCommerce/Shopify: connect a real store only with the owner's keys.
@@ -42,4 +56,4 @@
   - in tests, `flushSession()` before switching users.
 
 ## Blockers
-- Merge PR `phase-9-industry-modules` (9a) → `main` (asked in chat).
+- Merge PR `phase-9b-pharmacy` → `main` (asked in chat).

@@ -3,6 +3,7 @@
 namespace App\Domain\Catalog;
 
 use App\Domain\Inventory\StockLedger;
+use App\Domain\Pharmacy\PharmacyService;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
@@ -45,7 +46,18 @@ final class CatalogService
             throw new AccessDenied('Changing prices needs the pricing permission.');
         }
 
-        $product->fill(array_intersect_key($data, array_flip(['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu'])));
+        $product->fill(array_intersect_key($data, array_flip(['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu',
+            'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'fda_reg_no'])));
+        if (array_key_exists('active_ingredients', $data)) {
+            $product->active_ingredients = PharmacyService::names($data['active_ingredients']);
+        }
+        $product->drug_schedule = $product->drug_schedule ?: null;
+        if ($product->drug_schedule && ! array_key_exists($product->drug_schedule, Product::SCHEDULES)) {
+            throw new DomainException('Choose the medicine schedule: over the counter, prescription only or controlled.');
+        }
+        if ($product->drug_schedule && ! $product->track_batches) {
+            throw new DomainException('Medicines must track batches and expiry dates (Pharmacy).', 'batch_required');
+        }
         $product->plu = $product->plu === null || trim((string) $product->plu) === '' ? null : trim((string) $product->plu);
         if ($product->plu !== null && (! preg_match('/^\d{1,5}$/', $product->plu) || Product::where('plu', $product->plu)->when($product->exists, fn ($q) => $q->whereKeyNot($product->id))->exists())) {
             throw new DomainException('Scale code (PLU): up to 5 digits, not used by another product.');

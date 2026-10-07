@@ -20,7 +20,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\Device;
+use App\Models\DrugInteraction;
 use App\Models\LegalEntity;
+use App\Models\PatientProfile;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\Promotion;
@@ -111,8 +113,14 @@ class PosController extends Controller
                 'markdown_prefix' => (string) app(Settings::class)->get('grocery.markdown_prefix', $device->tenant_id),
                 'markdowns' => MarkdownService::activeFor($device->branch_id),
             ] : null,
+            // Pharmacy: prescription-only medicines need a pharmacist; the interaction table drives the till's warnings.
+            'pharmacy' => app(ModuleService::class)->isEnabled($device->branch_id, 'pharmacy') ? [
+                'interactions' => DrugInteraction::orderBy('ingredient_a')->get(['ingredient_a', 'ingredient_b', 'severity', 'note'])->toArray(),
+            ] : null,
             'products' => $products->map(fn (Product $p) => [
                 'id' => $p->id, 'sku' => $p->sku, 'name' => $p->name, 'category_id' => $p->category_id, 'track_stock' => $p->track_stock, 'plu' => $p->plu,
+                'drug' => $p->drug_schedule ? ['schedule' => $p->drug_schedule, 'generic_name' => $p->generic_name, 'strength' => $p->strength,
+                    'dosage_form' => $p->dosage_form, 'active_ingredients' => $p->active_ingredients ?? []] : null,
                 'on_hand' => $p->track_stock ? (string) ($stock[$p->id] ?? '0.000') : null,
                 'tax' => $p->taxGroup->rates->map(fn ($r) => ['code' => $r->code, 'name' => $r->name, 'rate_bp' => $r->rate_bp])->values(),
                 'units' => $p->units->map(fn ($u) => [
@@ -138,7 +146,10 @@ class PosController extends Controller
             return response()->json(['version' => 'none', 'customers' => []]);
         }
         $tenant = app(TenantContext::class)->id();
+        // Allergies and NHIS numbers are health data: only pharmacy staff's tills receive them.
+        $health = $authz->allowsAnywhere($request->user(), 'pharmacy.patients') || $authz->allowsAnywhere($request->user(), 'pharmacy.dispense');
         $version = md5(implode('|', [
+            $health ? 'health:'.json_encode(DB::table('patient_profiles')->where('tenant_id', $tenant)->selectRaw('count(*) as c, max(updated_at) as u')->first()) : 'no-health',
             DB::table('customers')->where('tenant_id', $tenant)->count(), DB::table('customers')->where('tenant_id', $tenant)->max('updated_at'),
             DB::table('customer_balances')->where('tenant_id', $tenant)->max('updated_at'),
             DB::table('customer_orders')->where('tenant_id', $tenant)->max('updated_at'),
@@ -150,20 +161,27 @@ class PosController extends Controller
         }
 
         $points = DB::table('loyalty_balances')->pluck('points', 'customer_id');
+        $patients = $health ? PatientProfile::get(['customer_id', 'allergies', 'nhis_no', 'nhis_expires_on'])->keyBy('customer_id') : collect();
 
         return response()->json(['version' => $version, 'customers' => Customer::where('is_active', true)->with('balance')->orderBy('name')->limit(50000)->get()
             ->map(fn (Customer $c) => ['id' => $c->id, 'code' => $c->code, 'name' => $c->name, 'phone' => $c->phone, 'price_list_id' => $c->price_list_id,
                 'credit_limit_minor' => $c->credit_limit_minor, 'credit_hold' => $c->credit_hold, 'balance_minor' => $c->balanceMinor(),
                 'available_minor' => $c->credit_limit_minor === null ? null : $credit->availableCredit($c),
                 'overdue_minor' => $c->credit_limit_minor === null && $c->balanceMinor() <= 0 ? 0 : $ledger->overdueMinor($c->id),
-                'points' => (int) ($points[$c->id] ?? 0)])->values()])->setEtag($version);
+                'points' => (int) ($points[$c->id] ?? 0)]
+                + ($health ? self::patient($patients->get($c->id)) : []))->values()])->setEtag($version);
+    }
+
+    private static function patient(?PatientProfile $p): array
+    {
+        return ['allergies' => $p?->allergies ?? [], 'nhis_no' => $p?->nhis_no, 'nhis_expires_on' => $p?->nhis_expires_on?->toDateString()];
     }
 
     private function catalogVersion(): string
     {
         $tenant = app(TenantContext::class)->id();
         $parts = [];
-        foreach (['products', 'product_uoms', 'barcodes', 'prices', 'price_lists', 'tax_rates', 'tax_groups', 'uoms', 'promotions', 'markdowns'] as $t) {
+        foreach (['products', 'product_uoms', 'barcodes', 'prices', 'price_lists', 'tax_rates', 'tax_groups', 'uoms', 'promotions', 'markdowns', 'drug_interactions'] as $t) {
             $row = DB::table($t)->where('tenant_id', $tenant)->selectRaw('count(*) as c, max(updated_at) as u')->first();
             $parts[] = $t.':'.$row->c.':'.$row->u;
         }

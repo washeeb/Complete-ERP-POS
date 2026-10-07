@@ -106,6 +106,16 @@ final class Settings
             'label' => 'Electronic shelf labels: price update address',
             'help' => 'If you use electronic shelf labels, their gateway\'s web address. Price changes are sent there as they happen. Leave blank if you do not.',
         ],
+        'pharmacy.premises_licence_no' => [
+            'type' => 'string', 'default' => '', 'max' => 60, 'group' => 'Pharmacy',
+            'label' => 'Pharmacy Council premises licence number',
+            'help' => 'Printed on the controlled-drug register and prescription receipts.',
+        ],
+        'pharmacy.superintendent' => [
+            'type' => 'string', 'default' => '', 'max' => 120, 'group' => 'Pharmacy',
+            'label' => 'Superintendent pharmacist',
+            'help' => 'Name and registration number, printed on the controlled-drug register.',
+        ],
         'receipt.footer' => [
             'type' => 'string', 'default' => 'Thank you for shopping with us.', 'max' => 200, 'group' => 'Receipts',
             'label' => 'Message at the bottom of receipts',

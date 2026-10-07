@@ -15,7 +15,8 @@ final class DocumentNumbers
         'customer' => 'CUS', 'quotation' => 'QT', 'customer_order' => 'SO', 'delivery' => 'DN', 'invoice' => 'INV', 'credit_note' => 'CRN', 'customer_payment' => 'RCT',
         'journal' => 'JE', 'supplier_bill' => 'BILL', 'supplier_payment' => 'SPAY',
         'money_transfer' => 'MT', 'expense_claim' => 'EXP', 'fixed_asset' => 'FA',
-        'employee' => 'EMP', 'employee_loan' => 'LN', 'payroll_run' => 'PAYR'];
+        'employee' => 'EMP', 'employee_loan' => 'LN', 'payroll_run' => 'PAYR',
+        'prescription' => 'RX'];
 
     public function next(string $tenantId, string $docType): string
     {
