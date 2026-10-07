@@ -91,6 +91,10 @@ final class ShiftService
         // Money taken at the till against customer accounts is in the drawer too.
         $cash += (int) DB::table('customer_payments')->where('shift_id', $shift->id)->where('method', 'cash')->sum('amount_minor');
 
+        // Restaurant booking deposits taken (in) and refunded (out) in cash at this till.
+        $cash += (int) DB::table('deposit_movements')->where('shift_id', $shift->id)->where('method', 'cash')
+            ->selectRaw("COALESCE(SUM(CASE WHEN kind = 'taken' THEN amount_minor ELSE -amount_minor END), 0) AS c")->value('c');
+
         return $shift->opening_float_minor + $cash;
     }
 

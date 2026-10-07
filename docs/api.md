@@ -229,3 +229,27 @@ Errors use the standard body `{error, detail}`. For example: `wrong_status`, `no
 
   The response adds `tip_minor` and `order_number` (the bill, or the counter order created for kitchen dishes).
 - **Live:** private channel `tenant.{id}.dining.{branch}`, event `dining.changed` `{order_id, event}`. Tills re-read the floor or the bill; they also poll every 10 s.
+
+## Restaurant extras (Phase 9d)
+
+- **Bookings** (staff token, `restaurant.serve`):
+  - `GET pos/restaurant/reservations?date=YYYY-MM-DD`;
+  - `POST pos/restaurant/reservations` `{guest_name, phone?, party_size, starts_at, duration_minutes?, dining_table_id?, customer_id?, note?}`; error `table_booked`;
+  - `POST pos/restaurant/reservations/{id}` (change);
+  - `POST .../{id}/deposit` `{method: cash|momo|card, amount_minor, provider?, reference?}`;
+  - `POST .../{id}/refund` `{method, approval?}`; error `refund_needs_approval`;
+  - `POST .../{id}/seat` `{dining_table_id?}` → `{order}`;
+  - `POST .../{id}/no-show`;
+  - `POST .../{id}/cancel` `{reason}`.
+
+  `GET pos/restaurant/floor` adds `reservations` (today's) and `hold_minutes`. Bills include `reservation: {number, deposit_left_minor}`, `platform` and `external_ref`.
+- **Delivery orders:** `POST pos/restaurant/orders` with `kind: delivery`, `platform: bolt_food|glovo|chowdeck` and `external_ref` (each once; `duplicate`).
+  - Channels of type `bolt_food`, `glovo` and `chowdeck` accept the signed REST webhook (`order.created`). `lines` give `sku` (or `product_uom_id`), `qty` and `note`.
+  - They push nothing to the platform.
+- **Sale tenders:**
+  - `deposit`: `reference` = booking number; up to the deposit left (`deposit_refused`; offline review `deposit_overdrawn`);
+  - `aggregator`: `provider` = the platform, `reference` = its order number. It posts to account 1240 Due from delivery apps.
+- **Waste:**
+  - till: `POST pos/restaurant/waste` `{items: [{product_id, product_uom_id, qty}], reason, approval?}` → `{value_minor, currency, lines, approved_by}`; error `waste_needs_approval`;
+  - kitchen screen: `GET kds/products`, and `POST kds/waste` with `username` and `pin` as well. A wrong PIN answers 401 and counts towards the lockout.
+- **SMS hook:** `POST {restaurant.sms_webhook_url}` `{to, message, reference}` on booking and as a reminder (`erp:reservation-reminders`, every 5 minutes).

@@ -415,7 +415,8 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
 
       {paying && !approval && !rxPrompt && (
         <Pay total={cart.total} currency={boot.company.currency} exponent={boot.company.exponent} busy={busy} error={payError}
-          customer={customer} tips={!!restaurant?.tips && online} onPay={(p, tip) => complete(p, { tip })} onCancel={() => setPaying(false)} />
+          customer={customer} tips={!!restaurant?.tips && online && payingBill?.kind !== 'delivery'} bill={payingBill}
+          onPay={(p, tip) => complete(p, { tip })} onCancel={() => setPaying(false)} />
       )}
       {rxPrompt && pharmacy && (
         <PrescriptionForm message={rxPrompt.message} initial={rx} lines={lines} products={products} customer={customer} pharmacy={pharmacy}
@@ -423,7 +424,8 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
           onSwap={(line, alt) => setLines((l) => addToCart(setQty(l, line.key, 0), alt, alt.units.find((u) => u.is_base) ?? alt.units[0], line.qtyMilli))}
           onConfirm={confirmRx} onCancel={() => setRxPrompt(null)} />
       )}
-      {floorOpen && <FloorView onOpenBill={(o) => { setFloorOpen(false); setBillOpen(o) }} onClose={() => setFloorOpen(false)} />}
+      {floorOpen && <FloorView products={products} money={{ currency: boot.company.currency, exponent: boot.company.exponent }}
+        onOpenBill={(o) => { setFloorOpen(false); setBillOpen(o) }} onClose={() => setFloorOpen(false)} />}
       {billOpen && restaurant && <BillView initial={billOpen} products={products} restaurant={restaurant} onPay={payBill}
         onBack={() => { setBillOpen(null); setFloorOpen(true) }} />}
       {counterPick && restaurant && <ModifierPicker product={counterPick} restaurant={restaurant} tableService={false}

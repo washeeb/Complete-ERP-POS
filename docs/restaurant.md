@@ -74,6 +74,41 @@ Register a device of kind **Kitchen display** (System → Devices) and enrol it 
 - Tap a dish when it is **ready** (tap again to recall it). **Collected** clears it once it has left the pass.
 - At a station set to **Print tickets**, the device prints each new dish on its printer.
 
+## Bookings
+
+**Tables (F6) → Bookings** at the till, or **Restaurant → Bookings** in the back office.
+
+- **New booking:** name, phone, guests, date and time, and a table if you know it. A table cannot be booked twice for overlapping times.
+- **Deposit (optional):** take it at the till by cash, mobile money or card. It counts in the shift's cash and is held as **Customer deposits** until:
+  - it is **used on the bill**: at payment, press "Use deposit RES-…";
+  - it is **refunded**: at a till, with a supervisor's PIN; or
+  - it is **kept** after a no-show or cancellation: a manager, in the back office. It becomes **Other income**.
+- **On the floor**, a booked table shows as reserved from 30 minutes before (Settings → Restaurant). It shows as **late** after 15 minutes.
+- **Seat** opens the bill on the booked table with the number of guests. **No-show** and **Cancel** close the booking.
+- **SMS:** when Settings → Restaurant has an **SMS gateway address**, guests with a phone number get:
+  - a confirmation when the table is booked;
+  - a reminder some hours before (3 by default).
+
+  The message is posted to that address for your SMS provider to send, as `{"to", "message", "reference"}`. No SMS account is built in.
+
+## Delivery apps (Bolt Food, Glovo, Chowdeck)
+
+- **Keyed in at the till:** Tables → **Delivery order**. Choose the app, enter its order number, add the items and send them.
+- **By webhook:** Online → Sales channels → new channel of type Bolt Food, Glovo or Chowdeck, with a webhook secret.
+  - Give the webhook address to the app's integration partner. Orders arrive in the signed format of the generic REST channel (see docs/api.md).
+  - Lines are matched by the dish's SKU, and the order goes straight to the kitchen.
+  - An order whose dish is not recognised is listed under Reviews.
+- **On hand-over:** Pay bill → **Paid by Bolt Food** (or Glovo, Chowdeck). The amount is owed by the app (**Due from delivery apps**) until it pays you. Record its payout, and its commission as a charge, when you reconcile the bank.
+
+## Kitchen waste
+
+- **At the till:** Tables → **Kitchen waste**.
+- **On the kitchen screen:** **Log waste**. The cook enters their username and PIN.
+- Choose what was wasted and how much, and say why. A dish counts as the ingredients of its recipe.
+- Waste worth more than the limit (GHS 50.00 by default, Settings → Restaurant) needs a manager's username and PIN.
+- It is recorded as a stock adjustment, "Kitchen waste: …", and shows under **Stock → Shrink**.
+- Staff need the **restaurant.waste** permission: Kitchen Staff, Waiters, Supervisors and managers have it.
+
 ## Money
 
 - **Recipes:** ingredients come off stock **when the bill is paid**. Voided items never touch stock. Returns do not put ingredients back.

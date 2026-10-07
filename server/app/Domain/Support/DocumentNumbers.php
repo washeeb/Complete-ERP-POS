@@ -16,7 +16,7 @@ final class DocumentNumbers
         'journal' => 'JE', 'supplier_bill' => 'BILL', 'supplier_payment' => 'SPAY',
         'money_transfer' => 'MT', 'expense_claim' => 'EXP', 'fixed_asset' => 'FA',
         'employee' => 'EMP', 'employee_loan' => 'LN', 'payroll_run' => 'PAYR',
-        'prescription' => 'RX', 'dining_order' => 'ORD'];
+        'prescription' => 'RX', 'dining_order' => 'ORD', 'reservation' => 'RES'];
 
     public function next(string $tenantId, string $docType): string
     {

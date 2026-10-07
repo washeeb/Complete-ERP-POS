@@ -27,6 +27,7 @@ final class AutoPoster
         'supplier_bills' => 'Supplier bills', 'supplier_payments' => 'Supplier payments', 'supplier_openings' => 'Supplier opening balances',
         'money_transfers' => 'Money moved between accounts', 'expense_claims' => 'Expense claims paid', 'depreciation' => 'Depreciation', 'asset_disposals' => 'Assets disposed of',
         'staff_loans' => 'Staff loans and advances paid out', 'payroll' => 'Payroll (approved)', 'payroll_payments' => 'Payroll paid',
+        'deposits' => 'Booking deposits (restaurant)',
     ];
 
     /** How each kind of stock movement is balanced against the stock account. */
@@ -40,7 +41,8 @@ final class AutoPoster
 
     /** Till tenders → the account the money (or claim) sits in. */
     public const TENDER = ['cash' => 'cash_till', 'momo' => 'momo', 'card' => 'card_clearing', 'account' => 'receivables',
-        'points' => 'loyalty', 'gift_card' => 'stored_value', 'store_credit' => 'stored_value'];
+        'points' => 'loyalty', 'gift_card' => 'stored_value', 'store_credit' => 'stored_value',
+        'deposit' => 'customer_deposits', 'aggregator' => 'aggregator_receivable'];
 
     /** Money received or paid elsewhere (back office, online). */
     public const METHOD = ['cash' => 'cash_office', 'momo' => 'momo', 'card' => 'card_clearing', 'bank' => 'bank', 'cheque' => 'bank',
@@ -122,6 +124,7 @@ final class AutoPoster
             'staff_loans' => [$this->unpostedQuery('employee_loans', 'employee_loan', $tenantId), 's.issued_on'],
             'payroll' => [$this->unpostedQuery('payroll_runs', 'payroll_run', $tenantId)->whereIn('s.status', ['approved', 'paid']), 's.period_end'],
             'payroll_payments' => [$this->unpostedQuery('payroll_runs', 'payroll_payment', $tenantId)->where('s.status', 'paid'), 's.paid_on'],
+            'deposits' => [$this->unpostedQuery('deposit_movements', 'deposit_movement', $tenantId), $d('s.occurred_at')],
         ];
     }
 
@@ -178,6 +181,30 @@ final class AutoPoster
             }
             $this->gl->post($actor, $first->d, 'auto', "Till sales {$codes[$first->branch_id]} {$first->d} ({$group->count()} receipts)", $lines,
                 $group->map(fn ($s) => ['sale', $s->id])->all(), 'sales', late: true);
+        }
+
+        return count($rows);
+    }
+
+    /** Booking deposits: held as owed to the guest until used on the bill (a till tender), refunded, or kept after a no-show. */
+    private function deposits(Actor $actor, int $batch): int
+    {
+        $rows = $this->rows('deposits', $actor->tenantId, $batch, ['s.id', 's.branch_id', 's.kind', 's.method', 's.amount_minor']);
+        $codes = DB::table('branches')->pluck('code', 'id');
+        foreach (collect($rows)->groupBy(fn ($r) => "{$r->branch_id}|{$r->d}") as $group) {
+            $lines = [];
+            $first = $group->first();
+            foreach ($group as $m) {
+                $a = (int) $m->amount_minor;
+                $money = $m->method ? (self::TENDER[$m->method] ?? throw new DomainException("Deposit method “{$m->method}” has no account.", 'gl_account_missing')) : null;
+                array_push($lines, ...match ($m->kind) {
+                    'taken' => [['account' => $money, 'amount' => $a, 'branch_id' => $m->branch_id], ['account' => 'customer_deposits', 'amount' => -$a, 'branch_id' => $m->branch_id]],
+                    'refunded' => [['account' => 'customer_deposits', 'amount' => $a, 'branch_id' => $m->branch_id], ['account' => $money, 'amount' => -$a, 'branch_id' => $m->branch_id]],
+                    default => [['account' => 'customer_deposits', 'amount' => $a, 'branch_id' => $m->branch_id], ['account' => 'other_income', 'amount' => -$a, 'branch_id' => $m->branch_id]],
+                });
+            }
+            $this->gl->post($actor, $first->d, 'auto', "Booking deposits {$codes[$first->branch_id]} {$first->d}", $lines,
+                $group->map(fn ($m) => ['deposit_movement', $m->id])->all(), 'deposits', late: true);
         }
 
         return count($rows);

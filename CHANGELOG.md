@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.15.0] — 2026-10-19 · Phase 9d Restaurant extras
+### Added
+- **Bookings:** guest, phone, party size, time and table, with no double booking. Booked tables show on the floor (late after 15 minutes). Seat, no-show, cancel.
+- **Booking deposits** taken at the till and held as customer deposits. They are used on the bill as a tender, refunded (supervisor PIN), or kept after a no-show (manager → Other income).
+- **SMS hook:** booking confirmation and a reminder before the booking, posted to your SMS gateway's address.
+- **Delivery apps (Bolt Food, Glovo, Chowdeck):** orders keyed in at the till or received by signed webhook. They go straight to the kitchen and are paid by the app on hand-over (account 1240 Due from delivery apps).
+- **Kitchen waste log** at the till and on the kitchen screen (cook's PIN). Dishes count as their recipe's ingredients, and a manager approves above a value limit. Shown in Stock → Shrink.
+- Back office: Restaurant → Bookings.
+- Settings → Restaurant: waste limit, SMS gateway address, confirmations, reminder hours, hold time.
+- Permission `restaurant.waste` (Kitchen Staff and up).
 ## [0.14.0] — 2026-10-18 · Phase 9c Restaurant
 ### Added
 - **Restaurant module** (per branch). Set-up:

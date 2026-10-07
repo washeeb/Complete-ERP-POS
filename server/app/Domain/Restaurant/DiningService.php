@@ -18,6 +18,7 @@ use App\Models\DiningTable;
 use App\Models\ModifierGroup;
 use App\Models\Product;
 use App\Models\ProductUom;
+use App\Models\SalePayment;
 use App\Models\User;
 use App\Security\Authorizer;
 use App\Support\Qty;
@@ -38,7 +39,7 @@ final class DiningService
         private readonly SupervisorApproval $approvals,
     ) {}
 
-    /** @param array{id: string, kind: string, dining_table_id?: ?string, tab_name?: ?string, covers?: int, customer_id?: ?string, note?: ?string} $data */
+    /** @param array{id: string, kind: string, dining_table_id?: ?string, tab_name?: ?string, covers?: int, customer_id?: ?string, note?: ?string, platform?: ?string, external_ref?: ?string} $data */
     public function open(Device $device, User $user, array $data): DiningOrder
     {
         $branch = $this->branch($device, $user, 'restaurant.serve');
@@ -46,8 +47,19 @@ final class DiningService
             return $existing->load('items'); // the till retried
         }
         $kind = $data['kind'] ?? '';
-        if (! in_array($kind, ['table', 'tab', 'counter'], true)) {
-            throw new DomainException('Choose a table, a bar tab or a counter order.');
+        if (! in_array($kind, ['table', 'tab', 'counter', 'delivery'], true)) {
+            throw new DomainException('Choose a table, a bar tab, a counter or a delivery order.');
+        }
+        // A delivery-app order keyed in at the till: the platform and its order number (each entered once).
+        $platform = $kind === 'delivery' ? (string) ($data['platform'] ?? '') : null;
+        $ref = $kind === 'delivery' ? strtoupper(trim((string) ($data['external_ref'] ?? ''))) : null;
+        if ($kind === 'delivery') {
+            if (! array_key_exists($platform, SalePayment::PLATFORMS) || strlen($ref) < 2 || strlen($ref) > 80) {
+                throw new DomainException('Choose the delivery app and enter its order number.');
+            }
+            if (DiningOrder::where('platform', $platform)->where('external_ref', $ref)->exists()) {
+                throw new DomainException(SalePayment::PLATFORMS[$platform]." order {$ref} is already in.", 'duplicate');
+            }
         }
         $table = null;
         if ($kind === 'table') {
@@ -57,7 +69,7 @@ final class DiningService
                 throw new DomainException("Table {$table->code} already has an open bill ({$busy->number}).", 'table_busy');
             }
         }
-        $tab = $kind === 'tab' ? trim((string) ($data['tab_name'] ?? '')) : null;
+        $tab = $kind === 'tab' ? trim((string) ($data['tab_name'] ?? '')) : ($kind === 'delivery' ? SalePayment::PLATFORMS[$platform]." #{$ref}" : null);
         if ($kind === 'tab' && ($tab === '' || mb_strlen($tab) > 60)) {
             throw new DomainException('Enter the name the tab is opened under.');
         }
@@ -65,12 +77,13 @@ final class DiningService
         $actor = Actor::user($user, 'pos', $device->id);
 
         try {
-            return $this->recorder->transaction(function () use ($actor, $device, $user, $branch, $data, $kind, $table, $tab, $customer) {
+            return $this->recorder->transaction(function () use ($actor, $device, $user, $branch, $data, $kind, $table, $tab, $customer, $platform, $ref) {
                 $o = (new DiningOrder)->forceFill([
                     'id' => $data['id'], 'tenant_id' => $device->tenant_id, 'number' => $this->numbers->next($device->tenant_id, 'dining_order'),
                     'branch_id' => $branch->id, 'kind' => $kind, 'dining_table_id' => $table?->id, 'tab_name' => $tab,
                     'covers' => max(0, min(99, (int) ($data['covers'] ?? 0))), 'customer_id' => $customer?->id, 'waiter_id' => $user->id, 'waiter_name' => $user->name,
                     'status' => 'open', 'note' => isset($data['note']) ? mb_substr(trim((string) $data['note']), 0, 255) ?: null : null, 'opened_at' => now(),
+                    'platform' => $platform, 'external_ref' => $ref,
                 ]);
                 $this->recorder->save($actor, $o, 'dining_order.opened', branchId: $branch->id);
 

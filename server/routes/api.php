@@ -55,6 +55,15 @@ Route::prefix('v1')->group(function () {
             Route::post('orders/{id}/serve', [RestaurantController::class, 'serve'])->whereUuid('id');
             Route::post('orders/{id}/move', [RestaurantController::class, 'move'])->whereUuid('id');
             Route::post('orders/{id}/close', [RestaurantController::class, 'close'])->whereUuid('id');
+            Route::get('reservations', [RestaurantController::class, 'reservations']);
+            Route::post('reservations', [RestaurantController::class, 'book']);
+            Route::post('reservations/{id}', [RestaurantController::class, 'book'])->whereUuid('id');
+            Route::post('reservations/{id}/deposit', [RestaurantController::class, 'deposit'])->whereUuid('id');
+            Route::post('reservations/{id}/refund', [RestaurantController::class, 'refund'])->whereUuid('id');
+            Route::post('reservations/{id}/seat', [RestaurantController::class, 'seat'])->whereUuid('id');
+            Route::post('reservations/{id}/no-show', [RestaurantController::class, 'noShow'])->whereUuid('id');
+            Route::post('reservations/{id}/cancel', [RestaurantController::class, 'cancelBooking'])->whereUuid('id');
+            Route::post('waste', [RestaurantController::class, 'recordWaste']);
         });
     });
 
@@ -62,6 +71,8 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:sanctum', 'device.token:device', 'throttle:kds'])->prefix('kds')->group(function () {
         Route::get('tickets', [RestaurantController::class, 'tickets']);
         Route::post('bump', [RestaurantController::class, 'bump']);
+        Route::get('products', [RestaurantController::class, 'kdsProducts']);
+        Route::post('waste', [RestaurantController::class, 'kdsWaste'])->middleware('throttle:pos-login'); // a PIN is checked
     });
 
     // Warehouse handheld (receive, put away, transfers, counts) — PIN sign-in on an enrolled handheld device.

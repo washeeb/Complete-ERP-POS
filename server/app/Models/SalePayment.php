@@ -10,7 +10,11 @@ class SalePayment extends Model
 {
     use HasUuids;
 
-    public const METHODS = ['cash' => 'Cash', 'momo' => 'Mobile money', 'card' => 'Card (standalone terminal)', 'account' => 'On account (credit)', 'points' => 'Loyalty points', 'gift_card' => 'Gift card', 'store_credit' => 'Store credit'];
+    public const METHODS = ['cash' => 'Cash', 'momo' => 'Mobile money', 'card' => 'Card (standalone terminal)', 'account' => 'On account (credit)', 'points' => 'Loyalty points', 'gift_card' => 'Gift card', 'store_credit' => 'Store credit',
+        'deposit' => 'Booking deposit', 'aggregator' => 'Delivery app (paid by the platform)'];
+
+    /** Delivery apps whose orders the restaurant takes (paid to us by the platform later). */
+    public const PLATFORMS = ['bolt_food' => 'Bolt Food', 'glovo' => 'Glovo', 'chowdeck' => 'Chowdeck'];
 
     public const MOMO_PROVIDERS = ['mtn' => 'MTN MoMo', 'telecel' => 'Telecel Cash', 'at' => 'AT Money'];
 

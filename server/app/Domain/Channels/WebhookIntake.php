@@ -3,6 +3,7 @@
 namespace App\Domain\Channels;
 
 use App\Domain\Channels\Connectors\ConnectorRegistry;
+use App\Domain\Restaurant\DeliveryOrders;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Domain\Sync\ReviewQueue;
@@ -66,7 +67,11 @@ final class WebhookIntake
 
                     continue;
                 }
-                $this->orders->ingest($channel, $input);
+                if (ConnectorRegistry::isDelivery($channel->type)) {
+                    app(DeliveryOrders::class)->ingest($channel, $input); // Restaurant: a delivery bill for the kitchen
+                } else {
+                    $this->orders->ingest($channel, $input);
+                }
                 $entry->forceFill(['status' => 'processed', 'processed_at' => now(), 'last_error' => null])->save();
                 $n++;
             } catch (\Throwable $e) {

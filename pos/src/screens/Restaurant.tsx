@@ -3,7 +3,8 @@ import { v7 as uuidv7 } from 'uuid'
 import { ApiError, dining, type NewDiningItem } from '../api'
 import { search } from '../cart'
 import { prettyQty, toMilli } from '../money'
-import { describeChoices, groupsFor, heldCourses, kitchenNote, minutesSince, modifierError, unpaid } from '../restaurant'
+import { describeChoices, groupsFor, heldCourses, kitchenNote, minutesSince, modifierError, tableBooking, unpaid } from '../restaurant'
+import { BookingsPanel, DeliveryDialog, WasteDialog } from './RestaurantExtras'
 import type { DiningItem, DiningOrder, DiningTable, Floor as FloorData, Product, Restaurant } from '../types'
 
 export const COURSES = ['Now', 'Starter', 'Main', 'Dessert'] as const
@@ -87,7 +88,13 @@ export function ModifierPicker({ product, restaurant, tableService, onDone, onCa
 }
 
 /** The floor: tables on the plan (free or with a bill), open bar tabs and counter orders. */
-export function FloorView({ onOpenBill, onClose }: { onOpenBill: (o: DiningOrder) => void; onClose: () => void }) {
+export function FloorView({ products, money, onOpenBill, onClose }: {
+  products: Product[]; money: { currency: string; exponent: number }; onOpenBill: (o: DiningOrder) => void; onClose: () => void
+}) {
+  const [panel, setPanel] = useState<'bookings' | 'delivery' | 'waste' | null>(null)
+  // What can be wasted from the till: stocked items and dishes (a dish counts as its recipe's ingredients on the server).
+  const wasteable = useMemo(() => products.filter((p) => p.track_stock || p.station).map((p) => ({ id: p.id, sku: p.sku, name: p.name,
+    units: p.units.filter((u) => u.is_base).map((u) => ({ id: u.id, uom_code: u.uom_code, decimals: u.decimals })) })).filter((p) => p.units.length), [products])
   const [floor, setFloor] = useState<FloorData | null>(null)
   const [error, setError] = useState('')
   const [opening, setOpening] = useState<{ table?: DiningTable; tab?: boolean } | null>(null)
@@ -115,7 +122,14 @@ export function FloorView({ onOpenBill, onClose }: { onOpenBill: (o: DiningOrder
   return (
     <div className="modal floor" role="dialog" aria-modal="true" aria-label="Tables">
       <div className="card wide">
-        <div className="row spread"><h2>Tables</h2><button type="button" onClick={onClose}>Back to till</button></div>
+        <div className="row spread"><h2>Tables</h2>
+          <div className="row wrap">
+            <button type="button" onClick={() => setPanel('bookings')}>Bookings</button>
+            <button type="button" onClick={() => setPanel('delivery')}>Delivery order</button>
+            <button type="button" onClick={() => setPanel('waste')}>Kitchen waste</button>
+            <button type="button" onClick={onClose}>Back to till</button>
+          </div>
+        </div>
         {error && <p className="error" role="alert">{error}</p>}
         {!floor ? <p className="muted">Loading the floor…</p> : (
           <>
@@ -126,12 +140,16 @@ export function FloorView({ onOpenBill, onClose }: { onOpenBill: (o: DiningOrder
                   {floor.tables.filter((t) => (t.area ?? '') === area).map((t) => {
                     const o = byTable.get(t.id)
                     const ready = o?.items.some((i) => i.status === 'ready')
+                    const booked = o ? null : tableBooking(floor.reservations ?? [], t.id, now, floor.hold_minutes ?? 30)
                     return (
                       <button key={t.id} type="button" style={{ gridColumn: t.pos_x + 1, gridRow: t.pos_y + 1 }}
-                        className={`table-tile ${o ? 'busy' : 'free'} ${ready ? 'ready' : ''}`} aria-label={`Table ${t.code}${o ? ', open bill' : ', free'}`}
-                        onClick={() => (o ? onOpenBill(o) : setOpening({ table: t }))}>
+                        className={`table-tile ${o ? 'busy' : booked ? 'reserved' : 'free'} ${ready ? 'ready' : ''} ${booked?.late ? 'late' : ''}`}
+                        aria-label={`Table ${t.code}${o ? ', open bill' : booked ? `, reserved for ${booked.reservation.guest_name}` : ', free'}`}
+                        onClick={() => (o ? onOpenBill(o) : booked ? setPanel('bookings') : setOpening({ table: t }))}>
                         <strong>{t.code}</strong>
-                        <span className="small">{o ? `${unpaid(o).length} item(s) · ${minutesSince(o.opened_at, now)} min` : `${t.seats} seats`}</span>
+                        <span className="small">{o ? `${unpaid(o).length} item(s) · ${minutesSince(o.opened_at, now)} min` : booked
+                          ? `${new Date(booked.reservation.starts_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} ${booked.reservation.guest_name} (${booked.reservation.party_size})${booked.late ? ' · late' : ''}`
+                          : `${t.seats} seats`}</span>
                         {ready && <span className="small">Food ready</span>}
                       </button>
                     )
@@ -139,7 +157,7 @@ export function FloorView({ onOpenBill, onClose }: { onOpenBill: (o: DiningOrder
                 </div>
               </section>
             ))}
-            <h3>Bar tabs and counter</h3>
+            <h3>Bar tabs, counter and delivery</h3>
             <div className="row wrap">
               {floor.orders.filter((o) => !o.dining_table_id).map((o) => (
                 <button key={o.id} type="button" className="table-tile busy" onClick={() => onOpenBill(o)}>
@@ -151,6 +169,9 @@ export function FloorView({ onOpenBill, onClose }: { onOpenBill: (o: DiningOrder
           </>
         )}
       </div>
+      {panel === 'bookings' && <BookingsPanel tables={floor?.tables ?? []} money={money} onSeated={(o) => { setPanel(null); onOpenBill(o) }} onClose={() => { setPanel(null); load() }} />}
+      {panel === 'delivery' && <DeliveryDialog onOpen={(o) => { setPanel(null); onOpenBill(o) }} onCancel={() => setPanel(null)} />}
+      {panel === 'waste' && <WasteDialog products={wasteable} identify={false} money={money} onSave={(b) => dining.waste(b)} onCancel={() => setPanel(null)} />}
       {opening && <OpenBill table={opening.table} onOpen={(covers, name) => open(opening.table
         ? { id: uuidv7(), kind: 'table', dining_table_id: opening.table.id, covers }
         : { id: uuidv7(), kind: 'tab', tab_name: name, covers })} onCancel={() => setOpening(null)} />}

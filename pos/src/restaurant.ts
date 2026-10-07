@@ -1,6 +1,6 @@
 import type { CartLine } from './cart'
 import { divRound } from './money'
-import type { DiningItem, DiningOrder, ModifierGroup, Product } from './types'
+import type { DiningItem, DiningOrder, ModifierGroup, Product, Reservation } from './types'
 
 /**
  * Restaurant rules on the till. Bill lines, modifiers and the service charge follow the server (DiningSales, DiningService):
@@ -71,3 +71,17 @@ export const minutesSince = (iso: string | null | undefined, now: number) => (is
 
 /** Courses still waiting to be called on a bill, in order. */
 export const heldCourses = (o: DiningOrder) => [...new Set(o.items.filter((i) => i.status === 'held').map((i) => i.course))].sort((a, b) => a - b)
+
+/** Late arrivals: a booking more than this many minutes past its time is shown as late (its table can be released). */
+export const LATE_MINUTES = 15
+
+/**
+ * The booking holding a table on the floor view: from `holdMinutes` before its time until the guests are seated;
+ * `late` once they are more than 15 minutes late.
+ */
+export function tableBooking(reservations: Reservation[], tableId: string, now: number, holdMinutes: number): { reservation: Reservation; late: boolean } | null {
+  const r = reservations
+    .filter((x) => x.status === 'booked' && x.dining_table_id === tableId && Date.parse(x.starts_at) - holdMinutes * 60000 <= now)
+    .sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at))[0]
+  return r ? { reservation: r, late: now - Date.parse(r.starts_at) > LATE_MINUTES * 60000 } : null
+}

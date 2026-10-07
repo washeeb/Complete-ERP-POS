@@ -158,3 +158,6 @@ fieldset.choices button.active, .segmented button.active { background: var(--pri
 .ticket .note { color: var(--danger); font-weight: 600; }
 .print-only { display: none; }
 @media print { .print-only { display: block; } .kitchen-ticket { break-before: page; } }
+
+.table-tile.reserved { background: var(--ok-bg); color: var(--ok-text); border-color: transparent; }
+.table-tile.late { outline: 3px solid var(--danger); }

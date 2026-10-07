@@ -41,6 +41,7 @@ class DiningOrder extends Model
         return match ($this->kind) {
             'table' => 'Table '.($this->table?->code ?? '?'),
             'tab' => 'Tab '.$this->tab_name,
+            'delivery' => (string) $this->tab_name,
             default => ucfirst($this->kind).' '.$this->number,
         };
     }

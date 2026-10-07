@@ -16,10 +16,19 @@ final class ConnectorRegistry
         'shopify' => ['label' => 'Shopify', 'class' => ShopifyConnector::class],
         'rest' => ['label' => 'Generic REST + webhooks', 'class' => RestConnector::class],
         'jumia' => ['label' => 'Jumia (planned)', 'class' => null],
-        'glovo' => ['label' => 'Glovo (planned)', 'class' => null],
-        'bolt_food' => ['label' => 'Bolt Food (planned)', 'class' => null],
+        'glovo' => ['label' => 'Glovo (delivery app)', 'class' => DeliveryConnector::class],
+        'bolt_food' => ['label' => 'Bolt Food (delivery app)', 'class' => DeliveryConnector::class],
+        'chowdeck' => ['label' => 'Chowdeck (delivery app)', 'class' => DeliveryConnector::class],
         'whatsapp' => ['label' => 'WhatsApp catalog (planned)', 'class' => null],
     ];
+
+    /** Delivery apps: orders in only, turned into kitchen bills (Restaurant). */
+    public const DELIVERY = ['bolt_food', 'glovo', 'chowdeck'];
+
+    public static function isDelivery(string $type): bool
+    {
+        return in_array($type, self::DELIVERY, true);
+    }
 
     public function for(string $type): ChannelConnector
     {

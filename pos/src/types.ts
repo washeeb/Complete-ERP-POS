@@ -18,9 +18,16 @@ export type DiningItem = {
 export type DiningOrder = {
   id: string; number: string; kind: 'table' | 'tab' | 'counter' | 'delivery'; label: string; dining_table_id: string | null; tab_name: string | null; covers: number
   customer_id: string | null; waiter: string; status: 'open' | 'closed' | 'void'; note: string | null; opened_at: string; version: number; items: DiningItem[]
+  platform?: string | null; external_ref?: string | null; reservation?: { number: string; deposit_left_minor: number } | null
+}
+export type Reservation = {
+  id: string; number: string; guest_name: string; phone: string | null; party_size: number; starts_at: string; duration_minutes: number
+  dining_table_id: string | null; customer_id: string | null; note: string | null; status: 'booked' | 'seated' | 'no_show' | 'cancelled'
+  deposit_minor: number; deposit_left_minor: number; deposit_status: string; dining_order_id: string | null
 }
 export type DiningTable = { id: string; code: string; area: string | null; seats: number; pos_x: number; pos_y: number }
-export type Floor = { tables: DiningTable[]; stations: { code: string; name: string; auto_print: boolean }[]; orders: DiningOrder[]; server_time: string }
+export type Floor = { tables: DiningTable[]; stations: { code: string; name: string; auto_print: boolean }[]; orders: DiningOrder[]; server_time: string
+  reservations?: Reservation[]; hold_minutes?: number }
 export type KitchenTicket = { order_id: string; number: string; label: string; kind: string; waiter: string; paid: boolean; items: DiningItem[] }
 export type Product = { id: string; sku: string; name: string; category_id?: string | null; plu?: string | null; drug?: Drug | null; station?: string | null; modifier_group_ids?: string[]; track_stock: boolean; on_hand: string | null; tax: TaxRate[]; units: Unit[]; prices: Price[] }
 export type PriceList = { id: string; code: string; name: string; prices_include_tax: boolean; is_default: boolean }
@@ -48,7 +55,7 @@ export type Bootstrap = {
 
 export type Realtime = { key: string; host: string; port: number; scheme: 'http' | 'https'; channels: (string | null)[] }
 
-export type Payment = { method: 'cash' | 'momo' | 'card' | 'account' | 'points' | 'gift_card' | 'store_credit'; provider?: string; amount_minor: number; tendered_minor: number; reference?: string; payer_phone?: string }
+export type Payment = { method: 'cash' | 'momo' | 'card' | 'account' | 'points' | 'gift_card' | 'store_credit' | 'deposit' | 'aggregator'; provider?: string; amount_minor: number; tendered_minor: number; reference?: string; payer_phone?: string }
 
 export type PostedSale = {
   id: string; receipt_no: string; device_seq: number; status: string; occurred_at: string; cashier: string; currency: string

@@ -511,6 +511,9 @@ final class SaleService
     private function tenders(Actor $actor, Sale $sale, array $payments, ?Customer $customer, bool $offline, array &$flags, string $receiptNo, $occurredAt): void
     {
         foreach ($payments as $pay) {
+            if ($pay['method'] === 'deposit') {
+                $this->dining->useDeposit($actor, $sale, $pay, $offline, $flags);
+            }
             if (in_array($pay['method'], ['gift_card', 'store_credit'], true)) {
                 $sv = $this->storedValues->find((string) $pay['reference']);
                 if (! $sv) {
@@ -569,6 +572,21 @@ final class SaleService
                 $change += $tendered - $amount;
             } else {
                 $tendered = $amount;
+            }
+            // Restaurant: a booking deposit (its reservation number), or a delivery order the platform pays us for later.
+            if ($method === 'deposit' || $method === 'aggregator') {
+                $reference = strtoupper(trim((string) ($pay['reference'] ?? '')));
+                if ($method === 'aggregator' && ! array_key_exists((string) ($pay['provider'] ?? ''), SalePayment::PLATFORMS)) {
+                    throw new DomainException('Choose the delivery app.');
+                }
+                if (strlen($reference) < 2) {
+                    throw new DomainException($method === 'deposit' ? 'Enter the booking number.' : 'Enter the delivery app’s order number.');
+                }
+                $paid += $amount;
+                $payments[] = ['method' => $method, 'provider' => $method === 'aggregator' ? $pay['provider'] : null, 'amount_minor' => $amount, 'tendered_minor' => $amount,
+                    'reference' => mb_substr($reference, 0, 80), 'payer_phone' => null, 'status' => $method === 'deposit' ? 'redeemed' : 'due_from_platform'];
+
+                continue;
             }
             if (in_array($method, ['account', 'points', 'gift_card', 'store_credit'], true)) {
                 $code = $method === 'gift_card' || $method === 'store_credit' ? strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string) ($pay['reference'] ?? ''))) : null;

@@ -343,3 +343,41 @@ Design:
   - Branch Manager and GM: also `restaurant.manage`.
 - **Deferred to 9d:** reservations, the delivery-aggregator hook (Bolt Food / Glovo / Chowdeck), the kitchen waste log.
 - **Deferred further:** merging and transferring items between bills, a graphical floor-plan editor (grid positions for now), recipe costing reports.
+
+## Phase 9d — Restaurant extras (2026-10-19)
+
+Owner answers (2026-10-18):
+- **Bookings:** an optional deposit and an SMS reminder.
+- **Delivery apps:** a webhook hook plus manual entry at the till.
+- **Kitchen waste:** logged by kitchen staff; a manager approves above a limit.
+
+Design:
+- **Bookings** are documents (`reservations`, RES numbers). They sync in the `customers` group, both ways and relayed, since bookings are made at the branch or at head office.
+  - A table cannot be double-booked: overlapping `starts_at` + `duration` on the same table is refused (`table_booked`).
+  - The floor shows a booking from `restaurant.hold_minutes` before its time, and late after 15 minutes. Releasing the table is a person's decision (No-show), never automatic.
+  - Seating opens the bill on the table, linked both ways.
+- **Deposits** are money at the till, recorded in their own append-only table (`deposit_movements`: taken, refunded, forfeited):
+  - they count in the shift's expected cash;
+  - they post to the books via a new AutoPoster kind (Dr money / Cr 2330 Customer deposits; refund reversed; forfeit Dr deposits / Cr 4800 Other income).
+  - Using the deposit on the bill is a till tender `deposit`, so it appears on the receipt and closes the liability through the normal sales posting.
+  - Partial use is allowed; the rest stays held (refund or use later).
+  - Refunds need `restaurant.void` or a supervisor PIN. Keeping a deposit needs `restaurant.manage` and a reason.
+  - The new system keys `customer_deposits`, `other_income` and `aggregator_receivable` are back-filled by migration.
+- **SMS** is a hook, not a provider: an outbox consumer `sms` posts `{to, message, reference}` to `restaurant.sms_webhook_url`. A failing gateway is retried without blocking anything else.
+  - `erp:reservation-reminders` (every 5 minutes) marks due bookings `reminder_sent_at` and publishes `reservation.reminder`. Bookings made less than an hour ago are not reminded, and changing the time resets the reminder.
+  - Messages are transactional (only for the guest's own booking). Nothing is sent without the gateway address and a phone number.
+- **Delivery apps** reuse the sales-channel webhook pipeline (signature check, store once, relay, review on failure) with a `DeliveryConnector`.
+  - It accepts orders in the documented signed format, the same as the REST channel. Today these platforms give merchant API access through partners, so a bridge maps their payload to ours. No product or stock is pushed.
+  - Orders become `delivery` bills (platform + order number unique per company) whose items are fired at once.
+  - The same bill can be keyed in at the till.
+  - Hand-over is a till sale paid by tender `aggregator` → 1240 Due from delivery apps. The platform's payout and commission are booked when reconciling the bank.
+  - No service charge or tip on delivery bills.
+- **Kitchen waste** goes through the stock ledger as `adjustment` with reason "Kitchen waste: …", so Stock → Shrink, the books (5200 Stock losses) and `erp:stock-check` all agree. A dish expands into its recipe.
+  - It is valued at average cost. Above `restaurant.waste_approval_minor` (GHS 50 default), a holder of `restaurant.void` approves with their PIN.
+  - Kitchen staff have no till access. On the kitchen screen, they identify with username and PIN for each entry; a wrong PIN counts towards the lockout.
+  - New permission `restaurant.waste` (level 1).
+- **Deferred:**
+  - real Bolt Food, Glovo and Chowdeck credentials (only with the owner's keys);
+  - booking deposits taken online;
+  - a booking widget on the online shop;
+  - automatic commission split on delivery payouts.

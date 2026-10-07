@@ -25,6 +25,7 @@ final class InventoryService
         'damaged' => 'Damaged',
         'expired' => 'Expired',
         'spoilage' => 'Spoilage (fresh produce)',
+        'kitchen_waste' => 'Kitchen waste',
         'theft' => 'Theft / missing',
         'found' => 'Found / surplus',
         'own_use' => 'Own use / sample',

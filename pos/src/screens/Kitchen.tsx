@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { kds } from '../api'
+import { kds, type WasteProduct } from '../api'
+import { WasteDialog } from './RestaurantExtras'
 import { prettyQty, toMilli } from '../money'
 import { kitchenNote, minutesSince } from '../restaurant'
 import type { DiningItem, Floor, KitchenTicket } from '../types'
@@ -21,6 +22,7 @@ export function Kitchen() {
   const [error, setError] = useState('')
   const [now, setNow] = useState(Date.now())
   const [toPrint, setToPrint] = useState<KitchenTicket[]>([])
+  const [waste, setWaste] = useState<WasteProduct[] | null>(null)
   const printed = useRef(new Set<string>(JSON.parse(read(PRINTED_KEY) ?? '[]') as string[]))
 
   const load = useCallback(async () => {
@@ -76,6 +78,7 @@ export function Kitchen() {
           </select>
         </label>
         <span className="muted small">{tickets.reduce((a, t) => a + t.items.filter((i) => i.status === 'fired').length, 0)} to cook</span>
+        <button type="button" onClick={() => kds.products().then((r) => setWaste(r.products)).catch((e) => setError(e instanceof Error ? e.message : String(e)))}>Log waste</button>
       </header>
       {error && <p className="error no-print" role="alert">{error}</p>}
       <div className="tickets no-print">
@@ -106,6 +109,8 @@ export function Kitchen() {
           )
         })}
       </div>
+      {waste && <WasteDialog products={waste} identify money={{ currency: 'GHS', exponent: 2 }}
+        onSave={(b) => kds.waste({ ...b, username: b.username ?? '', pin: b.pin ?? '' })} onCancel={() => setWaste(null)} />}
       {toPrint.map((t) => (
         <div key={t.order_id} className="receipt kitchen-ticket print-only" aria-hidden="true">
           <header className="center"><h2>{station || 'KITCHEN'}</h2><p><strong>{t.label}</strong> · {t.waiter}</p></header>

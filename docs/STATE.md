@@ -1,9 +1,29 @@
 # State (resume file)
 
-**Phase:** 9 — Industry modules wave 1 · **Status:** 9c (Restaurant core) done on branch `phase-9c-restaurant` (PR to `main`); next 9d (reservations, delivery-aggregator hook, kitchen waste log)
-**Updated:** 2026-10-18 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–8, licensing, 9a and 9b merged (PRs #1–#14)
+**Phase:** 9 — Industry modules wave 1 · **Status:** 9d (Restaurant extras) done on branch `phase-9d-restaurant-extras` (PR to `main`); Phase 9 complete after merge — next Phase 10 per the master prompt
+**Updated:** 2026-10-19 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–8, licensing, 9a, 9b and 9c merged (PRs #1–#15)
 
-## Phase 9c — done (285 Pest + 39 Vitest + 9 Playwright)
+## Phase 9d — done (291 Pest + 40 Vitest + 11 Playwright)
+- **Owner answers (2026-10-18):** bookings with an optional deposit and SMS; delivery apps by webhook and manual entry; kitchen staff log waste, a manager approves above a limit.
+- **Server:**
+  - migration `2026_10_19_100001_create_restaurant_extras_tables`: `reservations`, `deposit_movements`, delivery fields on `dining_orders`, accounts 1240/2330/4800 keys;
+  - `app/Domain/Restaurant/{ReservationService, DeliveryOrders, WasteService, SmsRelay}`;
+  - `DeliveryConnector` (bolt_food, glovo, chowdeck);
+  - tenders `deposit` and `aggregator`; AutoPoster `deposits`; shift cash includes deposits;
+  - `erp:reservation-reminders`; SMS in `erp:relay`.
+- **Back office:** Restaurant → Bookings; delivery-app channels under Online → Sales channels; `restaurant.*` settings; module 0.2.0 with `restaurant.waste`.
+- **Till:**
+  - `screens/RestaurantExtras.tsx` (bookings, deposit/refund, delivery order, waste);
+  - floor shows booked and late tables;
+  - Pay: "Use deposit" and "Paid by {app}";
+  - kitchen screen: Log waste.
+- **Tests:** RestaurantExtrasTest (6), `restaurant.test.ts` (bookings on the floor), e2e `restaurant-extras.spec.ts` (2).
+- **Docs:** restaurant.md (bookings, delivery, waste), api.md, DECISIONS 9d, CHANGELOG 0.15.0.
+
+## Phase 9c — done (merged, PR #15)
+- Restaurant core: floor and tables, bar tabs, modifiers and courses, kitchen screens, split bills, recipes, tips and service charge — see docs/restaurant.md.
+
+## Phase 9c — details (285 Pest + 39 Vitest + 9 Playwright at the time)
 - **Owner answers (2026-10-17):**
   - tips plus an optional service charge, paid out via payroll;
   - kitchen screens with printer fallback;
@@ -56,10 +76,8 @@
 ## Licensing (merged, PR #12)
 - Signed activation keys, expiry with grace then read-only, daily check-in, tamper detection, watermarks — see docs/licensing.md. Dev licence valid to 2027-12-31 (dev key in `.local-secrets/license-dev.json`). Before the first customer release: production key (`license:keygen`), its public key in `config/license.php`, a licence server.
 
-## Next — Phase 9d (Restaurant extras)
-- Reservations: tables booked by date and time with the guest's name and phone, shown on the floor view.
-- Delivery-aggregator hook: Bolt Food, Glovo or Chowdeck orders become `delivery` bills (a webhook like the store channels). Connect real accounts only with the owner's keys.
-- Kitchen waste log: spoiled or dropped food against stock (shrink), with ingredients from recipes.
+## Next — Phase 10
+- Industry modules wave 2: Manufacturing, Fashion, Electronics, Services & Packages, Distribution (master prompt §phases). Ask the owner's decisions in one batch before starting.
 ## Owner decisions pending
 - Accountant check of the Ghana tax set-up (VAT/NHIL/GETFund rates and the payroll PAYE bands / SSNIT rates — Payroll → Tax and SSNIT rules) before go-live.
 - WooCommerce/Shopify: connect a real store only with the owner's keys.
@@ -86,4 +104,4 @@
   - in tests, `flushSession()` before switching users.
 
 ## Blockers
-- Merge PR `phase-9c-restaurant` → `main` (asked in chat).
+- Merge PR `phase-9d-restaurant-extras` → `main` (asked in chat).

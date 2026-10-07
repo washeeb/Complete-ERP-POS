@@ -6,6 +6,7 @@ use App\Domain\Channels\ChannelSync;
 use App\Domain\Channels\LiveRelay;
 use App\Domain\Channels\WebhookIntake;
 use App\Domain\Grocery\EslRelay;
+use App\Domain\Restaurant\SmsRelay;
 use App\Models\SalesChannel;
 use App\Support\TenantContext;
 use Illuminate\Console\Command;
@@ -22,7 +23,7 @@ class RelayCommand extends Command
 
     protected $description = 'Deliver live updates, store pushes and incoming store orders';
 
-    public function handle(LiveRelay $live, ChannelSync $sync, WebhookIntake $webhooks, EslRelay $esl): int
+    public function handle(LiveRelay $live, ChannelSync $sync, WebhookIntake $webhooks, EslRelay $esl, SmsRelay $sms): int
     {
         $until = microtime(true) + (int) $this->option('seconds');
         do {
@@ -31,6 +32,11 @@ class RelayCommand extends Command
                 $work += $esl->run();
             } catch (\Throwable $e) {
                 Log::warning('Shelf-label prices not delivered; retrying next run', ['error' => $e->getMessage()]);
+            }
+            try {
+                $work += $sms->run();
+            } catch (\Throwable $e) {
+                Log::warning('Booking SMS not delivered; retrying next run', ['error' => $e->getMessage()]);
             }
             foreach (SalesChannel::withoutGlobalScopes()->where('status', 'active')->get() as $channel) {
                 app(TenantContext::class)->set($channel->tenant_id);
