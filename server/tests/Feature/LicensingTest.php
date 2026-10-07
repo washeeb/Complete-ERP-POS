@@ -25,6 +25,7 @@ use App\Security\ScopeType;
 use Filament\Facades\Filament;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -249,6 +250,6 @@ it('builds a stamped, signed release whose manifest matches the delivered files'
             ->and(glob("{$out}/synclytics-kofi-stores-{$build->id}.zip"))->toHaveCount(1);
     } finally {
         @unlink($keyFile);
-        \Illuminate\Support\Facades\File::deleteDirectory($out);
+        File::deleteDirectory($out);
     }
 });
