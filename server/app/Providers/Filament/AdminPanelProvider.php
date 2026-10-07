@@ -2,7 +2,9 @@
 
 namespace App\Providers\Filament;
 
+use App\Domain\Licensing\Watermark;
 use App\Filament\Auth\EditProfile;
+use App\Http\Middleware\EnforceLicense;
 use App\Http\Middleware\RedirectToSetupWizard;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Http\Middleware\Authenticate;
@@ -69,8 +71,11 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn () => Blade::render(
                 '<x-authenticate-passkey><x-filament::button color="gray" icon="heroicon-o-finger-print" class="w-full mt-2">Sign in with a passkey</x-filament::button></x-authenticate-passkey>'))
             ->renderHook(PanelsRenderHook::PAGE_END, fn () => Blade::render('@livewire(\'passkeys\')'), scopes: EditProfile::class)
+            ->renderHook(PanelsRenderHook::BODY_START, fn () => view('license.banner'))
+            ->renderHook(PanelsRenderHook::HEAD_END, fn () => new HtmlString(Watermark::meta()))
             ->authMiddleware([
                 Authenticate::class,
+                EnforceLicense::class,
                 RedirectToSetupWizard::class,
             ]);
     }

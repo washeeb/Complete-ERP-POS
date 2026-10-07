@@ -2,6 +2,8 @@
 
 namespace App\Domain\Modules;
 
+use App\Domain\Licensing\LicenseException;
+use App\Domain\Licensing\LicenseManager;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
@@ -39,6 +41,9 @@ final class ModuleService
             throw new AccessDenied;
         }
         $module = $this->registry->get($moduleKey);
+        if ($status === 'enabled' && $module->kind !== 'core' && ! app(LicenseManager::class)->allowsModule($moduleKey)) {
+            throw new LicenseException("The {$module->name} module is not in your licence. Contact Synclytics to add it.", 'license_module');
+        }
         if (! in_array($status, [self::ENABLED, self::DISABLED, self::RESERVED], true)) {
             throw new DomainException('Unknown module status.');
         }

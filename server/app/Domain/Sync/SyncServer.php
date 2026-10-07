@@ -2,6 +2,7 @@
 
 namespace App\Domain\Sync;
 
+use App\Domain\Licensing\LicenseManager;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Domain\Support\Outbox;
@@ -64,6 +65,11 @@ final class SyncServer
 
     /** Apply one stored event in its own transaction; failures are recorded and retried later. */
     public function applyStored(SyncInboxEvent $in): bool
+    {
+        return LicenseManager::bypass(fn () => $this->applyStoredUnguarded($in)); // moving recorded data is never blocked by the licence
+    }
+
+    private function applyStoredUnguarded(SyncInboxEvent $in): bool
     {
         try {
             DB::transaction(function () use ($in) {

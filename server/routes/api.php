@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\DeviceAuthController;
 use App\Http\Controllers\Api\V1\PosController;
 use App\Http\Controllers\Api\V1\SyncController;
 use App\Http\Controllers\Api\V1\WmsController;
+use App\Http\Controllers\LicenseServerController;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
@@ -63,3 +64,6 @@ Route::prefix('v1')->group(function () {
 
 // Live updates for tills: private channel auth with the staff token (POST /api/v1/pos/broadcasting/auth).
 Broadcast::routes(['prefix' => 'v1/pos', 'middleware' => ['auth:sanctum', 'device.token:pos']]);
+
+// Synclytics licence server (answers only when this installation is the licence server).
+Route::post('license/checkin', [LicenseServerController::class, 'checkin'])->middleware('throttle:30,1');

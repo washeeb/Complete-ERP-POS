@@ -13,6 +13,12 @@
 - **Tests:** HrPayrollTest, HrScreensTest, PayrollCalculatorTest (unit), e2e `clock.spec.ts`; `FakeTill` test helper moved to `tests/Support/FakeTill.php`.
 - **Docs:** hr-payroll.md, api.md (clock), DECISIONS 8, CHANGELOG 0.10.0.
 
+## Licensing — done on branch `security-licensing` (stacked on `phase-8-hr-payroll`; 264 Pest + 30 Vitest + 5 Playwright)
+- **Owner answers (2026-10-15):** offline signed key + daily check-in; 30-day warning, 14-day grace, then read-only with no output; limits on branches/devices/users/modules (+ Finance/HR features); hidden watermarks, tamper detection, per-customer build stamping.
+- **Code:** `app/Domain/Licensing/{Signer,LicenseKey,LicenseManager,LicenseService,MachineFingerprint,ReleaseManifest,Watermark,Vendor/*}`; guard in `Recorder::transaction`; `EnforceLicense` middleware (panel redirect, `license:output` on print routes); feature gating in `Authorizer`; limits in OrgService/DeviceService/AccessService/ModuleService; `pos/sync` 423 when read-only; licence in the `org` sync group.
+- **Dev:** dev signing key in `.local-secrets/license-dev.json` (git-ignored); `LICENSE_DEV_PUBLIC_KEY` + `LICENSE_PRIVATE_KEY_PATH` in `server/.env`; dev licence activated until 2027-12-31. Tests sign their own (`activateTestLicense()`).
+- **Before the first customer release:** run `license:keygen` for the production key (keep it offline), add its public key to `config/license.php`, deploy a licence server (`LICENSE_SERVER=true`).
+- **Docs:** licensing.md, DECISIONS, CHANGELOG 0.11.0.
 ## Next — Phase 9 (industry modules wave 1: Grocery, Restaurant with KDS, Pharmacy)
 - Read the industry modules section (§8) of `ERP-POS-MASTER-PROMPT.md`; done-when: each installable per branch with its tests.
 - Ask the owner first (batched): which modules each branch runs; restaurant service style (table service, quick service, both) and kitchen printers/screens; pharmacy rules (prescription capture, batch/expiry, controlled drugs); grocery weighing scales and fresh-produce barcodes.
@@ -42,4 +48,4 @@
   - in tests, `flushSession()` before switching users.
 
 ## Blockers
-- Merge PR `phase-8-hr-payroll` → `main` (asked in chat).
+- Merge PR `phase-8-hr-payroll` (#11) → `main`, then the licensing PR (asked in chat).

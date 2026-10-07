@@ -2,6 +2,8 @@
 
 use App\Domain\Access\AccessService;
 use App\Domain\Catalog\CatalogService;
+use App\Domain\Licensing\LicenseService;
+use App\Domain\Licensing\Vendor\LicenseIssuer;
 use App\Domain\Modules\ModuleService;
 use App\Domain\Org\OrgService;
 use App\Domain\Org\TenantInstaller;
@@ -16,6 +18,7 @@ use App\Models\User;
 use App\Security\ScopeType;
 use App\Support\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 require_once __DIR__.'/Support/FakeTill.php';
@@ -31,8 +34,20 @@ function installCompany(string $name = 'Demo Ltd', string $email = 'owner@demo.t
         'name' => 'Ama Owner', 'username' => 'owner'.substr(md5($email), 0, 4), 'email' => $email, 'password' => 'correct-horse-battery',
     ]);
     app(TenantContext::class)->set($tenant->id);
+    activateTestLicense();
 
     return [$tenant, $owner];
+}
+
+/** Activate a licence for this test installation (unlimited unless overridden), signed with the test key. */
+function activateTestLicense(array $over = []): string
+{
+    $issued = LicenseIssuer::issue($over + ['customer' => 'Test', 'request_code' => LicenseService::installationCode(), 'expires_at' => now()->addYear()->toDateString(),
+        'dev' => true], TestCase::$licenseKeys, record: false);
+    $tenantId = (string) DB::table('tenants')->value('id');
+    app(LicenseService::class)->activate(Actor::system($tenantId, 'Test setup', 'system'), $issued['key']);
+
+    return $issued['key'];
 }
 
 function actorFor(User $user): Actor

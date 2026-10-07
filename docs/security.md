@@ -140,3 +140,7 @@ administrator removed from a role is never put back.
 3. Restrict access: revoke sessions of database/IT administrators until reviewed.
 4. Compare with the most recent good backup to find what changed.
 5. Record the incident, findings and actions in writing; inform the owner.
+
+## Licensing
+
+Installations run under a signed licence key; read-only enforcement, tamper detection and output watermarks are described in [licensing.md](licensing.md).

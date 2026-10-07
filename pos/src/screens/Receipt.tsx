@@ -95,6 +95,7 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
         <footer className="center">
           <ReceiptQr text={sale.receipt_no} />
           <p>{boot.receipt_footer}</p>
+          {boot.license?.ref && <p className="receipt-ref">Ref {boot.license.ref}</p>}
         </footer>
       </div>
       <div className="row no-print">

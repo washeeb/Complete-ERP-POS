@@ -2,6 +2,7 @@
 
 namespace App\Domain\Access;
 
+use App\Domain\Licensing\LicenseManager;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
@@ -32,6 +33,7 @@ final class AccessService
         $this->require($actor, 'admin.users.manage');
         $level = (int) $data['security_level'];
         $this->assertLevelGrantable($actor, $level);
+        app(LicenseManager::class)->assertWithin('users', User::where('is_active', true)->count(), 'active users');
 
         $user = new User;
         $user->forceFill([
@@ -66,6 +68,9 @@ final class AccessService
             throw new DomainException('You cannot deactivate your own account.');
         }
 
+        if (! empty($data['is_active']) && ! $user->is_active) {
+            app(LicenseManager::class)->assertWithin('users', User::where('is_active', true)->count(), 'active users');
+        }
         $user->fill(array_intersect_key($data, array_flip(['name', 'username', 'email', 'security_level', 'is_active'])));
         if (! empty($data['password'])) {
             $user->password = $data['password'];

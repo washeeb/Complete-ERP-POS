@@ -3,6 +3,7 @@
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\DomainException;
 use App\Http\Middleware\AssignRequestId;
+use App\Http\Middleware\EnforceLicense;
 use App\Http\Middleware\EnsureDeviceToken;
 use App\Http\Middleware\EnsureMfaForLevel;
 use Illuminate\Foundation\Application;
@@ -24,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'device.token' => EnsureDeviceToken::class,
             'erp.mfa' => EnsureMfaForLevel::class,
+            'license' => EnforceLicense::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -33,7 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 $status = match (true) {
                     $e instanceof AccessDenied => 403,
                     in_array($e->errorCode, ['invalid_credentials', 'device_revoked', 'enrollment_failed', 'bad_signature'], true) => 401,
-                    $e->errorCode === 'pin_locked' => 423,
+                    in_array($e->errorCode, ['pin_locked', 'license_read_only', 'license_missing'], true) => 423,
                     $e->errorCode === 'conflict' => 409,
                     $e->errorCode === 'not_found' => 404,
                     default => 422,

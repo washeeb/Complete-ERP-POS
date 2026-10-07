@@ -5,7 +5,11 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // The POS must load with the server unreachable, so the app shell is precached.
 // API responses are deliberately NOT cached here: sale data lives in IndexedDB (Phase 3).
+// Release builds are stamped with the build id (release:build); it is embedded in the bundle and the page.
+const BUILD = process.env.VITE_BUILD_STAMP ?? 'DEV'
+
 export default defineConfig({
+  define: { __BUILD_STAMP__: JSON.stringify(BUILD) },
   plugins: [
     react(),
     VitePWA({

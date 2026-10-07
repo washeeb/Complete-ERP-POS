@@ -2,6 +2,7 @@
 
 namespace App\Domain\Org;
 
+use App\Domain\Licensing\LicenseManager;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
@@ -29,6 +30,11 @@ final class TenantInstaller
 
     /** @return array{0: Tenant, 1: User} */
     public function install(string $companyName, array $owner): array
+    {
+        return LicenseManager::bypass(fn () => $this->doInstall($companyName, $owner)); // installing comes before activation
+    }
+
+    private function doInstall(string $companyName, array $owner): array
     {
         if (User::where('email', strtolower($owner['email']))->exists()) {
             throw new DomainException('That email already has an account.');
