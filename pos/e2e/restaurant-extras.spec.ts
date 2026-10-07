@@ -98,13 +98,13 @@ test('books a table with a deposit, seats the guests and pays with the deposit; 
   await form.getByLabel('Guests').fill('4')
   await form.getByLabel('Table').selectOption('tb-1')
   await form.getByRole('button', { name: 'Save booking' }).click()
-  expect(seen.booked[0]).toMatchObject({ guest_name: 'Mensah', phone: '0241112222', party_size: 4, dining_table_id: 'tb-1' })
+  await expect.poll(() => seen.booked[0]).toMatchObject({ guest_name: 'Mensah', phone: '0241112222', party_size: 4, dining_table_id: 'tb-1' })
   const bookings = page.getByRole('dialog', { name: 'Bookings' })
   await bookings.getByRole('button', { name: 'Deposit' }).click()
   const dep = page.getByRole('dialog', { name: 'Take deposit' })
   await dep.getByLabel('Amount').fill('50')
   await dep.getByRole('button', { name: 'Take deposit' }).click()
-  expect(seen.deposits[0]).toEqual({ method: 'cash', amount_minor: 5000 })
+  await expect.poll(() => seen.deposits[0]).toEqual({ method: 'cash', amount_minor: 5000 })
   await expect(bookings.getByText(/deposit GH₵ 50\.00 \(held\)/)).toBeVisible()
 
   // The guests arrive: seat them, and the deposit pays part of the bill.
