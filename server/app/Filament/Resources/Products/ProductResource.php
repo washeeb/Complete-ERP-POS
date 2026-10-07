@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Products;
 
+use App\Domain\Modules\ModuleService;
 use App\Filament\Resources\Products\Pages\CreateProduct;
 use App\Filament\Resources\Products\Pages\EditProduct;
 use App\Filament\Resources\Products\Pages\ListProducts;
@@ -98,6 +99,17 @@ class ProductResource extends Resource
                     ->helperText('For items weighed on the label scale (Grocery): the item number the scale prints in the barcode.'),
                 Textarea::make('description')->rows(2)->columnSpanFull(),
             ]),
+            Section::make('Medicine')->columns(3)->visible(fn () => ModuleService::enabledAnywhere('pharmacy'))
+                ->description('Pharmacy: prescription-only and controlled medicines need a pharmacist’s approval at the till. Medicines must track batches and expiry.')
+                ->schema([
+                    Select::make('drug_schedule')->label('Schedule')->options(Product::SCHEDULES)->placeholder('Not a medicine'),
+                    TextInput::make('generic_name')->label('Generic name')->maxLength(255),
+                    TextInput::make('strength')->maxLength(60)->placeholder('500 mg'),
+                    TextInput::make('dosage_form')->label('Form')->maxLength(40)->placeholder('Capsule'),
+                    TextInput::make('fda_reg_no')->label('FDA registration no.')->maxLength(60),
+                    TagsInput::make('active_ingredients')->label('Active ingredients')->placeholder('Type, then Enter')
+                        ->helperText('Used for allergy and interaction warnings.'),
+                ]),
             Section::make('Barcodes and selling units')->description('Scanning a barcode adds that unit to the till. Buy in cartons, sell in pieces: add the carton with how many base units it holds.')
                 ->schema([
                     TagsInput::make('base_barcodes')->label('Barcodes for the base unit')->placeholder('Scan or type, then Enter'),

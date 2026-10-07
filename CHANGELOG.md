@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.13.0] — 2026-10-17 · Phase 9b Pharmacy
+### Added
+- **Pharmacy module** (per branch).
+- **Medicine details on products:** schedule (OTC / prescription only / controlled), generic name, strength, form, FDA registration number, active ingredients. Medicines must track batches and expiry.
+- **Patient details** on customers: allergies, conditions, NHIS number and expiry. Only pharmacy staff see them.
+- **Prescription-only and controlled sales at the till** need:
+  - the patient;
+  - the prescription details;
+  - a pharmacist's username and PIN, or a pharmacist signed in on the till. This works offline through the offline sign-in; unapproved offline sales are flagged for review.
+- **Allergy and interaction warnings** before payment, from the local interaction table. Generic substitution at the till.
+- **Pharmacy menu:**
+  - Prescriptions (RX numbers, linked to the sale);
+  - Drug interactions;
+  - Controlled-drug register (from the stock ledger, printable);
+  - NHIS claims export (CSV).
+- Roles **Pharmacist** and **Pharmacy Technician**; permissions `pharmacy.dispense`, `pharmacy.patients`, `pharmacy.manage`.
+- Settings → Pharmacy: premises licence number, superintendent pharmacist.
 ## [0.12.0] — 2026-10-16 · Phase 9a Grocery, batches and expiry
 ### Added
 - **Batches and expiry dates** for any product ("Batches and expiry dates" on the product): received with batch number and expiry (back office and handheld), sold earliest expiry first, expired stock cannot be sold online (offline sales are kept and flagged). Batches follow transfers and returns; switching it on for stock already held puts it in batch OPENING.

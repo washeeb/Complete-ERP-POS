@@ -36,6 +36,8 @@ Route::prefix('print')->middleware(['auth', 'license:output'])->name('print.')->
     Route::get('payroll/{run}/payslips', [PrintController::class, 'payslips'])->name('payslips')->whereUuid('run');
     Route::get('payroll/{run}/pay-sheet', [PrintController::class, 'paySheet'])->name('pay-sheet')->whereUuid('run');
     Route::get('payroll/{run}/pay-list.csv', [PrintController::class, 'payList'])->name('pay-list')->whereUuid('run');
+    Route::get('controlled-register', [PrintController::class, 'controlledRegister'])->name('controlled-register');
+    Route::get('nhis-claims.csv', [PrintController::class, 'nhisClaims'])->name('nhis-claims');
 });
 
 // Receipt photos attached to expense claims (private storage).

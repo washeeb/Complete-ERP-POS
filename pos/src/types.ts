@@ -4,7 +4,10 @@ export type Unit = { id: string; uom_code: string; uom_name: string; decimals: n
 export type Price = { price_list_id: string; product_uom_id: string; min_qty: string; amount_minor: number; starts_at: string | null; ends_at: string | null }
 export type Markdown = { id: string; code: string; product_id: string; product_uom_id: string; price_minor: number; percent_bp: number; valid_until: string }
 export type Grocery = { scale_prefixes: string[]; markdown_prefix: string; markdowns: Markdown[] }
-export type Product = { id: string; sku: string; name: string; category_id?: string | null; plu?: string | null; track_stock: boolean; on_hand: string | null; tax: TaxRate[]; units: Unit[]; prices: Price[] }
+export type Drug = { schedule: 'otc' | 'pom' | 'controlled'; generic_name: string | null; strength: string | null; dosage_form: string | null; active_ingredients: string[] }
+export type Interaction = { ingredient_a: string; ingredient_b: string; severity: 'minor' | 'moderate' | 'major'; note: string }
+export type Pharmacy = { interactions: Interaction[] }
+export type Product = { id: string; sku: string; name: string; category_id?: string | null; plu?: string | null; drug?: Drug | null; track_stock: boolean; on_hand: string | null; tax: TaxRate[]; units: Unit[]; prices: Price[] }
 export type PriceList = { id: string; code: string; name: string; prices_include_tax: boolean; is_default: boolean }
 
 export type Shift = {
@@ -52,7 +55,8 @@ export type WmsTransfer = { id: string; number: string; from: string; dispatched
 export type WmsCount = { id: string; number: string; bin: string | null; bin_id: string | null; blind: boolean; counted: number; lines: number }
 
 // Customer lookup at the till (credit figures are a snapshot; the server re-checks online credit sales)
-export type TillCustomer = { id: string; code: string; name: string; phone: string | null; price_list_id: string | null; credit_limit_minor: number | null; credit_hold: boolean; balance_minor: number; available_minor: number | null; overdue_minor: number; points?: number }
+export type TillCustomer = { id: string; code: string; name: string; phone: string | null; price_list_id: string | null; credit_limit_minor: number | null; credit_hold: boolean; balance_minor: number; available_minor: number | null; overdue_minor: number; points?: number
+  allergies?: string[]; nhis_no?: string | null; nhis_expires_on?: string | null } // patient details: pharmacy staff only
 
 // Promotions as the till caches them (the engine input plus when/where they run)
 export type PromotionRow = import('./promotions').Promotion & {

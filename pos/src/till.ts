@@ -72,11 +72,15 @@ export async function closeShift(countedMinor: number, note: string, online: boo
 
 type Cart = ReturnType<typeof priceCart>
 
+/** The paper prescription, as the pharmacist enters it before payment (Pharmacy). */
+export type RxDetails = { prescriber_name: string; prescriber_reg_no?: string; facility?: string; reference?: string; issued_on: string }
+
 /** Post the sale now if we can; otherwise queue it and print a receipt marked "not yet sent". */
 export async function submitSale(args: {
   boot: Bootstrap; online: boolean; cart: Cart; listId: string; payments: Payment[]; seq: number; catalogVersion: string | null
   customerId?: string | null; creditApproval?: { username: string; pin: string } | null; saleId?: string
   coupon?: string | null; saleDiscountBp?: number; discountApproval?: { username: string; pin: string } | null; offlineApproverId?: string | null
+  prescription?: RxDetails | null; pharmacistApproval?: { username: string; pin: string } | null; pharmacistOfflineBy?: string | null
 }): Promise<PostedSale> {
   const { boot, cart, payments } = args
   const local = await getLocalShift()
@@ -99,6 +103,9 @@ export async function submitSale(args: {
     sale_discount_bp: args.saleDiscountBp ?? 0,
     // Offline, a supervisor's PIN was checked against their offline sign-in on this till; the server checks their limit.
     ...(args.offlineApproverId ? { discount_approved_offline_by: args.offlineApproverId } : {}),
+    ...(args.prescription ? { prescription: args.prescription } : {}),
+    // Pharmacy offline: the pharmacist's PIN was checked against their offline sign-in here; the server checks their permission.
+    ...(args.pharmacistOfflineBy ? { pharmacist_offline_by: args.pharmacistOfflineBy } : {}),
     totals: { net_minor: cart.net, tax_minor: cart.tax, total_minor: cart.total },
     payments,
   }
@@ -109,7 +116,8 @@ export async function submitSale(args: {
     try {
       // A supervisor's PIN goes to the server only, never into the offline queue.
       const { sale } = await api.postSale({ ...payload, ...(args.creditApproval ? { credit_approval: args.creditApproval } : {}),
-        ...(args.discountApproval ? { discount_approval: args.discountApproval } : {}) })
+        ...(args.discountApproval ? { discount_approval: args.discountApproval } : {}),
+        ...(args.pharmacistApproval ? { pharmacist_approval: args.pharmacistApproval } : {}) })
       await recordCash()
       return sale
     } catch (e) {

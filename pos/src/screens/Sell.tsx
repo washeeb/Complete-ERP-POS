@@ -4,9 +4,10 @@ import { addMarkdown, addToCart, addWeighed, findByBarcode, priceCart, qtyAllowe
 import { findMarkdown, parseScaleLabel, productForPlu } from '../scale'
 import { db, nextSeq, type CacheRecord } from '../db'
 import { exportQueueFile, offlineSignIn, retryRefused } from '../offline'
-import { queueMode, submitSale } from '../till'
+import { queueMode, submitSale, type RxDetails } from '../till'
+import { generics, needsPrescription, warnings as rxWarnings } from '../pharmacy'
 import { formatMoney, prettyQty, toMilli } from '../money'
-import type { Bootstrap, Grocery, Payment, PostedSale, Product, PromotionRow, TillCustomer, Unit } from '../types'
+import type { Bootstrap, Grocery, Pharmacy, Payment, PostedSale, Product, PromotionRow, TillCustomer, Unit } from '../types'
 import { parseMoney } from '../money'
 import { ReturnScreen } from './ReturnScreen'
 import { cachedCustomers, refreshCustomers } from '../customers'
@@ -31,11 +32,15 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   const [customer, setCustomer] = useState<TillCustomer | null>(null)
   const [picking, setPicking] = useState(false)
   // seq: a retry of the same sale (after an approval) keeps its receipt number, so numbers have no gaps.
-  type Approvals = { credit?: { username: string; pin: string }; discount?: { username: string; pin: string }; offlineApproverId?: string; seq?: number }
+  type Approvals = { credit?: { username: string; pin: string }; discount?: { username: string; pin: string }; offlineApproverId?: string; seq?: number; rx?: Rx }
   const [approval, setApproval] = useState<{ payments: Payment[]; message: string; kind: 'credit' | 'discount' | 'discount_offline'; approvals: Approvals } | null>(null)
   const [promotions, setPromotions] = useState<PromotionRow[]>([])
   const [utcOffset, setUtcOffset] = useState(0)
   const [grocery, setGrocery] = useState<Grocery | null>(null)
+  const [pharmacy, setPharmacy] = useState<Pharmacy | null>(null)
+  // Pharmacy: the prescription and the pharmacist's approval for prescription-only medicines in this sale.
+  const [rx, setRx] = useState<Rx | null>(null)
+  const [rxPrompt, setRxPrompt] = useState<{ message: string; payments?: Payment[]; approvals?: Approvals } | null>(null)
   const [coupon, setCoupon] = useState('')
   const [couponInput, setCouponInput] = useState('')
   const [saleBp, setSaleBp] = useState(0)
@@ -50,6 +55,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       setPromotions(cat?.promotions ?? [])
       setUtcOffset(cat?.utc_offset_minutes ?? 0)
       setGrocery(cat?.grocery ?? null)
+      setPharmacy(cat?.pharmacy ?? null)
     })
   }, [catalogVersion])
 
@@ -147,13 +153,37 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       return
     }
     setPayError('')
+    if (pharmacy && lines.some((l) => needsPrescription(l.product)) && !rx) {
+      setRxPrompt({ message: '' })
+      return
+    }
     setPaying(true)
+  }
+
+  async function confirmRx(details: RxDetails, pharmacist: { username: string; pin: string } | null) {
+    const pending = rxPrompt
+    try {
+      let next: Rx = { details }
+      if (pharmacist && (await queueMode(online))) {
+        // Offline: the pharmacist's PIN is checked against their offline sign-in on this till.
+        const g = await offlineSignIn(pharmacist.username, pharmacist.pin)
+        next = { details, offlineBy: g.user_id }
+      } else if (pharmacist) {
+        next = { details, approval: pharmacist }
+      }
+      setRx(next)
+      setRxPrompt(null)
+      if (pending?.payments) return complete(pending.payments, { ...pending.approvals, rx: next })
+      setPaying(true)
+    } catch (err) {
+      setRxPrompt({ ...(pending ?? {}), message: err instanceof Error ? err.message : String(err) })
+    }
   }
 
   async function complete(payments: Payment[], given: Approvals = {}) {
     setBusy(true)
     setPayError('')
-    const approvals: Approvals = { ...given, seq: given.seq ?? (await nextSeq(boot.last_device_seq)) }
+    const approvals: Approvals = { ...given, seq: given.seq ?? (await nextSeq(boot.last_device_seq)), rx: given.rx ?? rx ?? undefined }
     try {
       const hasManual = saleBp > 0 || lines.some((l) => l.manual)
       if (hasManual && !approvals.offlineApproverId && !approvals.discount && (await queueMode(online))) {
@@ -163,18 +193,24 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       }
       const sale = await submitSale({ boot, online, cart, listId: list.id, payments, seq: approvals.seq!, catalogVersion,
         customerId: customer?.id ?? null, creditApproval: approvals.credit ?? null, discountApproval: approvals.discount ?? null,
-        offlineApproverId: approvals.offlineApproverId ?? null, coupon: cart.couponApplied ? coupon : null, saleDiscountBp: saleBp })
+        offlineApproverId: approvals.offlineApproverId ?? null, coupon: cart.couponApplied ? coupon : null, saleDiscountBp: saleBp,
+        prescription: approvals.rx?.details ?? null, pharmacistApproval: approvals.rx?.approval ?? null, pharmacistOfflineBy: approvals.rx?.offlineBy ?? null })
       setLines([])
       setPaying(false)
       setApproval(null)
       setCoupon('')
       setCouponInput('')
       setSaleBp(0)
+      setRx(null)
       pickCustomer(null)
       onPosted(sale)
     } catch (err) {
       const e = err instanceof ApiError ? err : null
       const retrying = ['approval_failed', 'over_limit', 'own_document', 'pin_locked'].includes(e?.code ?? '')
+      if (['prescription_required', 'pharmacist_needed'].includes(e?.code ?? '') || (retrying && approvals.rx?.approval && !approvals.credit && !approvals.discount)) {
+        setRxPrompt({ message: e!.message, payments, approvals: { ...approvals, rx: undefined } })
+        return
+      }
       if (e?.code === 'credit_needs_approval' || (retrying && approvals.credit && !approvals.discount)) {
         setApproval({ payments, message: e!.message, kind: 'credit', approvals: { ...approvals, credit: undefined } })
         return
@@ -323,9 +359,15 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
         </div>
       </section>
 
-      {paying && !approval && (
+      {paying && !approval && !rxPrompt && (
         <Pay total={cart.total} currency={boot.company.currency} exponent={boot.company.exponent} busy={busy} error={payError}
           customer={customer} onPay={(p) => complete(p)} onCancel={() => setPaying(false)} />
+      )}
+      {rxPrompt && pharmacy && (
+        <PrescriptionForm message={rxPrompt.message} initial={rx} lines={lines} products={products} customer={customer} pharmacy={pharmacy}
+          offline={!online} busy={busy} onPickPatient={() => setPicking(true)}
+          onSwap={(line, alt) => setLines((l) => addToCart(setQty(l, line.key, 0), alt, alt.units.find((u) => u.is_base) ?? alt.units[0], line.qtyMilli))}
+          onConfirm={confirmRx} onCancel={() => setRxPrompt(null)} />
       )}
       {picking && <CustomerPicker customers={customers} money={money} onPick={pickCustomer} onCancel={() => setPicking(false)} />}
       {approval && <CreditApproval title={approval.kind === 'credit' ? 'Supervisor approval — credit' : 'Supervisor approval — discount'} message={approval.message} busy={busy}
@@ -334,6 +376,85 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       {takingPayment && customer && <AccountPayment customer={customer} money={money} exponent={boot.company.exponent}
         onDone={(balance) => { setTakingPayment(false); if (balance !== null) setCustomer({ ...customer, balance_minor: balance }) }} />}
       {returning && <ReturnScreen boot={boot} money={money} onDone={(s) => { setReturning(false); if (s) onPosted(s) }} />}
+    </div>
+  )
+}
+
+type Rx = { details: RxDetails; approval?: { username: string; pin: string }; offlineBy?: string }
+
+/**
+ * Pharmacy: before payment for prescription-only or controlled medicines — the patient, the prescription, the allergy and
+ * interaction warnings, generic substitutes, and the pharmacist's username and PIN (empty when the pharmacist is signed in here).
+ */
+function PrescriptionForm({ message, initial, lines, products, customer, pharmacy, offline, busy, onPickPatient, onSwap, onConfirm, onCancel }: {
+  message: string; initial: Rx | null; lines: CartLine[]; products: Product[]; customer: TillCustomer | null; pharmacy: Pharmacy; offline: boolean; busy: boolean
+  onPickPatient: () => void; onSwap: (line: CartLine, alt: Product) => void
+  onConfirm: (d: RxDetails, pharmacist: { username: string; pin: string } | null) => void; onCancel: () => void
+}) {
+  const today = new Date().toLocaleDateString('en-CA')
+  const [d, setD] = useState<RxDetails>(initial?.details ?? { prescriber_name: '', prescriber_reg_no: '', facility: '', reference: '', issued_on: today })
+  const [username, setUsername] = useState('')
+  const [pin, setPin] = useState('')
+  const [error, setError] = useState('')
+  const set = (k: keyof RxDetails) => (e: React.ChangeEvent<HTMLInputElement>) => setD({ ...d, [k]: e.target.value })
+  const medicines = lines.filter((l) => needsPrescription(l.product))
+  const found = rxWarnings([...new Map(lines.map((l) => [l.product.id, l.product])).values()], customer?.allergies ?? [], pharmacy.interactions)
+  function submit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!customer) return setError('Choose the patient.')
+    if (!d.prescriber_name.trim() || !d.issued_on) return setError('Enter the prescriber and the date on the prescription.')
+    if (d.issued_on > today) return setError('The prescription date cannot be in the future.')
+    if ((username && pin.length < 4) || (!username && pin)) return setError('Enter the pharmacist’s username and PIN, or leave both empty if you are the pharmacist.')
+    onConfirm({ ...d, prescriber_name: d.prescriber_name.trim() }, username ? { username, pin } : null)
+  }
+  return (
+    <div className="modal" role="dialog" aria-modal="true" aria-label="Prescription" onKeyDown={(e) => e.key === 'Escape' && onCancel()}>
+      <form className="card pay rx" onSubmit={submit}>
+        <h2>Prescription</h2>
+        {(message || error) && <p className="error">{error || message}</p>}
+        <ul className="rx-meds">
+          {medicines.map((l) => {
+            const alts = generics(products, l.product)
+            return (
+              <li key={l.key}><strong>{l.product.name}</strong> {l.product.drug?.schedule === 'controlled' && <span className="chip">Controlled</span>}
+                {alts.length > 0 && (
+                  <select aria-label={`Generic for ${l.product.name}`} value="" onChange={(e) => { const a = alts.find((x) => x.id === e.target.value); if (a) onSwap(l, a) }}>
+                    <option value="">Swap for generic…</option>
+                    {alts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                  </select>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+        <div className="row">
+          <span>Patient: <strong>{customer?.name ?? 'none chosen'}</strong>{customer?.nhis_no ? ` · NHIS ${customer.nhis_no}` : ''}</span>
+          <button type="button" onClick={onPickPatient}>{customer ? 'Change patient' : 'Choose patient'}</button>
+        </div>
+        {found.length > 0 && (
+          <ul className="rx-warnings" role="alert" aria-label="Warnings">
+            {found.map((w, i) => <li key={i} className={w.severity}><strong>{w.severity === 'major' ? 'Major' : w.severity === 'moderate' ? 'Moderate' : 'Minor'}</strong> · {w.message}</li>)}
+          </ul>
+        )}
+        <label>Prescriber<input autoFocus value={d.prescriber_name} onChange={set('prescriber_name')} placeholder="Dr. …" /></label>
+        <div className="row">
+          <label>Reg. no.<input value={d.prescriber_reg_no ?? ''} onChange={set('prescriber_reg_no')} /></label>
+          <label>Written on<input type="date" value={d.issued_on} max={today} onChange={set('issued_on')} /></label>
+        </div>
+        <div className="row">
+          <label>Hospital / clinic<input value={d.facility ?? ''} onChange={set('facility')} /></label>
+          <label>Prescription no.<input value={d.reference ?? ''} onChange={set('reference')} /></label>
+        </div>
+        <p className="muted small">Pharmacist approval{offline ? ' (checked on this till while offline)' : ''} — leave empty if you are the pharmacist.</p>
+        <div className="row">
+          <label>Pharmacist username<input value={username} onChange={(e) => setUsername(e.target.value)} autoCapitalize="none" /></label>
+          <label>Pharmacist PIN<input type="password" inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))} /></label>
+        </div>
+        <div className="row">
+          <button type="button" onClick={onCancel} disabled={busy}>Back</button>
+          <button className="primary big" disabled={busy}>{found.some((w) => w.severity === 'major') ? 'Dispense despite warnings' : 'Continue to payment'}</button>
+        </div>
+      </form>
     </div>
   )
 }

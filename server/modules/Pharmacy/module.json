@@ -1,11 +1,15 @@
 {
   "key": "pharmacy",
   "name": "Pharmacy",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "kind": "industry",
-  "stage": "planned",
+  "stage": "available",
   "phase": 9,
-  "description": "Mandatory batch/expiry, prescriptions, patient profiles, controlled-drug register, interaction warnings.",
+  "description": "Medicines with mandatory batch/expiry, prescription-only sales approved by a pharmacist, patient profiles with allergies, interaction warnings, controlled-drug register, NHIS claims export.",
   "requires": ["core"],
-  "permissions": []
+  "permissions": [
+    {"key": "pharmacy.dispense", "label": "Approve and dispense prescription-only and controlled medicines", "min_level": 3},
+    {"key": "pharmacy.patients", "label": "Record patient allergies, conditions and NHIS details", "min_level": 2},
+    {"key": "pharmacy.manage", "label": "Manage the interaction table, the controlled-drug register and NHIS claims", "min_level": 4}
+  ]
 }

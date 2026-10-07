@@ -34,7 +34,8 @@ it('wizard creates branches with a warehouse, tills and per-branch modules', fun
         ->and($this->modules->statuses($b['A']))->toBe(['core' => 'enabled', 'grocery' => 'enabled']) // released in Phase 9a
         ->and($this->modules->statuses($b['B']))->toMatchArray(['restaurant' => 'reserved', 'grocery' => 'enabled'])
         ->and($this->modules->statuses($b['C']))->not->toHaveKey('grocery')
-        ->and($this->modules->isEnabled($b['C'], 'pharmacy'))->toBeFalse(); // reserved ≠ working
+        ->and($this->modules->isEnabled($b['C'], 'pharmacy'))->toBeTrue() // released in Phase 9b
+        ->and($this->modules->isEnabled($b['B'], 'restaurant'))->toBeFalse(); // reserved ≠ working
 });
 
 it('wizard runs once and needs exactly one HQ', function () {
@@ -51,10 +52,10 @@ it('wizard is refused to people without setup rights', function () {
 
 it('never enables an unreleased module, but reserves it', function () {
     $b = setUpBranches($this->owner);
-    expect(fn () => $this->modules->setStatus(actorFor($this->owner), $b['HQ'], 'pharmacy', 'enabled'))
+    expect(fn () => $this->modules->setStatus(actorFor($this->owner), $b['HQ'], 'restaurant', 'enabled'))
         ->toThrow(DomainException::class, 'not released');
 
-    $row = $this->modules->setStatus(actorFor($this->owner), $b['HQ'], 'pharmacy', 'reserved', 'Planned dispensary');
+    $row = $this->modules->setStatus(actorFor($this->owner), $b['HQ'], 'restaurant', 'reserved', 'Planned kitchen');
     expect($row->status)->toBe('reserved');
 });
 
@@ -76,7 +77,7 @@ it('reads manifests and only seeds permissions of released modules', function ()
 
     expect($reg->has('grocery'))->toBeTrue()
         ->and($reg->get('core')->isAvailable())->toBeTrue()
-        ->and(collect($reg->permissions())->pluck('module')->unique()->sort()->values()->all())->toBe(['core', 'grocery']) // planned modules (restaurant, pharmacy…) add none yet
+        ->and(collect($reg->permissions())->pluck('module')->unique()->sort()->values()->all())->toBe(['core', 'grocery', 'pharmacy']) // planned modules (restaurant…) add none yet
         ->and(Permission::count())->toBe(count($reg->permissions()));
 });
 

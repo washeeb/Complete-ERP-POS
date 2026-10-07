@@ -95,4 +95,10 @@ final class ModuleService
         return BranchModule::withoutGlobalScopes()->where('branch_id', $id)->where('module_key', $moduleKey)
             ->where('status', self::ENABLED)->exists();
     }
+
+    /** Is the module on at any branch of the current company (to show its fields and screens in the back office)? */
+    public static function enabledAnywhere(string $moduleKey): bool
+    {
+        return BranchModule::where('module_key', $moduleKey)->where('status', self::ENABLED)->exists();
+    }
 }

@@ -192,3 +192,15 @@ Errors use the standard body `{error, detail}`. For example: `wrong_status`, `no
 - `GET pos/catalog` adds per product `plu` and `grocery` (null when the module is off at the till's branch): `{scale_prefixes: ["21"], markdown_prefix: "29", markdowns: [{id, code, product_id, product_uom_id, price_minor, percent_bp, valid_until}]}`.
 - `POST pos/sales` lines accept `markdown_id` (a scanned sticker): unit price = the sticker price; the stock comes from its batch; promotions do not apply. Error `markdown_invalid` (withdrawn/expired, online). A sale needing expired stock online: `expired_stock`.
 - Handheld `POST wms/receipts` lines accept `batch_no` and `expires_on` (required for batch-tracked products: `batch_required`); `GET wms/purchase-orders` lines carry `track_batches`.
+
+## Pharmacy (Phase 9b)
+
+- `GET pos/catalog` adds per product `drug` (null for non-medicines): `{schedule: otc|pom|controlled, generic_name, strength, dosage_form, active_ingredients: [..]}`. It also adds `pharmacy` (null when the module is off at the till's branch): `{interactions: [{ingredient_a, ingredient_b, severity: minor|moderate|major, note}]}`.
+- `GET pos/customers` adds `allergies`, `nhis_no` and `nhis_expires_on`, but only when the signed-in person holds `pharmacy.patients` or `pharmacy.dispense`. The ETag differs too.
+- `POST pos/sales`: when a POM or controlled line is sold at a pharmacy branch, the request needs:
+  - `customer_id` (the patient);
+  - `prescription: {prescriber_name, prescriber_reg_no?, facility?, reference?, issued_on}`;
+  - online, `pharmacist_approval: {username, pin}`, unless the cashier holds `pharmacy.dispense`;
+  - offline, `pharmacist_offline_by` (user id, PIN checked on the till).
+- Errors (online): `prescription_required`, `pharmacist_needed`, `approval_failed`, `over_limit` (the approver lacks `pharmacy.dispense`), `pin_locked`. Offline problems become review items of type `pharmacy_unapproved`.
+- Back office: `GET /print/controlled-register?warehouse=&from=&to=` (A4), `GET /print/nhis-claims.csv?from=&to=` (`pharmacy.manage`). Both are blocked when the licence is read-only.

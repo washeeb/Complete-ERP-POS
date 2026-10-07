@@ -5,6 +5,8 @@ namespace App\Filament\Resources\Customers;
 use App\Domain\Customers\CustomerLedger;
 use App\Domain\Customers\CustomerService;
 use App\Domain\Customers\Loyalty;
+use App\Domain\Modules\ModuleService;
+use App\Domain\Pharmacy\PharmacyService;
 use App\Domain\Sales\ReceivablesService;
 use App\Filament\Resources\Customers\Pages\CreateCustomer;
 use App\Filament\Resources\Customers\Pages\EditCustomer;
@@ -13,6 +15,7 @@ use App\Filament\Resources\Customers\Pages\ViewCustomer;
 use App\Filament\Support\Erp;
 use App\Models\Branch;
 use App\Models\Customer;
+use App\Models\PatientProfile;
 use App\Models\PriceList;
 use App\Models\SalePayment;
 use App\Models\Tenant;
@@ -178,6 +181,20 @@ class CustomerResource extends Resource
     public static function accountActions(): array
     {
         return [
+            Action::make('patient')->label('Patient details')->icon(Heroicon::OutlinedHeart)->color('gray')
+                ->visible(fn () => Erp::canAnywhere('pharmacy.patients') && ModuleService::enabledAnywhere('pharmacy'))
+                ->fillForm(fn (Customer $record) => ($p = PatientProfile::find($record->id)) ? ['date_of_birth' => $p->date_of_birth, 'sex' => $p->sex,
+                    'allergies' => $p->allergies ?? [], 'conditions' => $p->conditions, 'nhis_no' => $p->nhis_no, 'nhis_expires_on' => $p->nhis_expires_on] : [])
+                ->schema([
+                    DatePicker::make('date_of_birth')->label('Date of birth')->maxDate(now()),
+                    Select::make('sex')->options(['female' => 'Female', 'male' => 'Male']),
+                    TagsInput::make('allergies')->label('Allergies (ingredients)')->placeholder('e.g. penicillin, then Enter')
+                        ->helperText('The till warns the pharmacist when a medicine contains one of these.'),
+                    Textarea::make('conditions')->label('Conditions / notes')->rows(2)->maxLength(2000),
+                    TextInput::make('nhis_no')->label('NHIS membership no.')->maxLength(30),
+                    DatePicker::make('nhis_expires_on')->label('NHIS card expires'),
+                ])
+                ->action(fn (Customer $record, array $data) => Erp::run(fn ($actor) => app(PharmacyService::class)->savePatient($actor, $record, $data), 'Patient details saved')),
             Action::make('pay')->label('Record payment')->icon(Heroicon::OutlinedBanknotes)->color('success')
                 ->visible(fn () => Erp::canAnywhere('receivables.collect'))
                 ->schema([

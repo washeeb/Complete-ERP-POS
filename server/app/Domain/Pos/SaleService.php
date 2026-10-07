@@ -8,12 +8,15 @@ use App\Domain\Customers\Loyalty;
 use App\Domain\Customers\StoredValues;
 use App\Domain\Devices\OfflineGrant;
 use App\Domain\Inventory\StockLedger;
+use App\Domain\Modules\ModuleService;
+use App\Domain\Pharmacy\PharmacyService;
 use App\Domain\Pricing\PriceResolver;
 use App\Domain\Pricing\PromotionEngine;
 use App\Domain\Pricing\PromotionService;
 use App\Domain\Pricing\TaxCalculator;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
+use App\Domain\Support\DocumentNumbers;
 use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
 use App\Domain\Sync\ReviewQueue;
@@ -21,6 +24,7 @@ use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\Device;
 use App\Models\Markdown;
+use App\Models\Prescription;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\ProductUom;
@@ -68,6 +72,8 @@ final class SaleService
         private readonly Loyalty $loyalty,
         private readonly StoredValues $storedValues,
         private readonly Settings $settings,
+        private readonly ModuleService $modules,
+        private readonly DocumentNumbers $numbers,
     ) {}
 
     /** @return array{sale: Sale, replayed: bool} */
@@ -271,11 +277,13 @@ final class SaleService
             }
         }
 
+        $rx = $this->prescription($device, $user, $p, $lines, $customer, $branch, $offline, $flags);
+
         $receiptNo = sprintf('%s-%s%s-%06d', $branch->code, $till->code, $device->receipt_series, $p['device_seq']);
         $actor = Actor::user($user, 'pos', $device->id);
 
         try {
-            $sale = $this->recorder->transaction(function () use ($p, $device, $till, $branch, $warehouse, $shift, $user, $list, $occurredAt, $hash, $receiptNo, $lines, $lineBreakdowns, $net, $tax, $total, $paid, $change, $payments, $actor, $offline, $grant, &$flags, $priceDiffs, $customer, $onAccount, $creditApprovedBy, $results, $discount, $coupon, $saleBp, $discountApprovedBy, $calc) {
+            $sale = $this->recorder->transaction(function () use ($p, $device, $till, $branch, $warehouse, $shift, $user, $list, $occurredAt, $hash, $receiptNo, $lines, $lineBreakdowns, $net, $tax, $total, $paid, $change, $payments, $actor, $offline, $grant, &$flags, $priceDiffs, $customer, $onAccount, $creditApprovedBy, $results, $discount, $coupon, $saleBp, $discountApprovedBy, $calc, $rx) {
                 $sale = new Sale;
                 $sale->forceFill([
                     'id' => $p['id'], 'tenant_id' => $device->tenant_id, 'branch_id' => $branch->id, 'warehouse_id' => $warehouse->id,
@@ -290,6 +298,11 @@ final class SaleService
                     'discount_minor' => $discount, 'coupon_code' => $calc['coupon_applied'] ? $coupon : null, 'sale_discount_bp' => $saleBp,
                     'discount_approved_by_name' => $discountApprovedBy,
                 ])->save();
+                if ($rx) {
+                    $rx->forceFill(['number' => $this->numbers->next($device->tenant_id, 'prescription'), 'sale_id' => $sale->id])->save();
+                    $this->recorder->audit->record($actor, 'prescription.dispensed', $rx, ['number' => [null, $rx->number], 'pharmacist_name' => [null, $rx->pharmacist_name]], null, $branch->id);
+                    $this->recorder->outbox->publish($actor, $rx, 'prescription.dispensed');
+                }
 
                 foreach ($lines as $l) {
                     SaleLine::create([
@@ -300,6 +313,7 @@ final class SaleService
                         'tax_breakdown' => $results[$l['key']]['breakdown'], 'list_total_minor' => $results[$l['key']]['list_total'],
                         'discount_minor' => $results[$l['key']]['discount'], 'promotions' => $results[$l['key']]['promotions'], 'manual_discount' => $l['manual'],
                         'markdown_id' => $l['markdown']?->id,
+                        'prescription_id' => $rx && $l['product']->needsPrescription() ? $rx->id : null,
                     ]);
                 }
                 foreach ($payments as $pay) {
@@ -354,6 +368,72 @@ final class SaleService
         }
 
         return ['sale' => $sale->load('lines', 'payments'), 'replayed' => false];
+    }
+
+    /**
+     * Prescription-only and controlled medicines (owner decision 2026-10-16: a pharmacist approves every such sale).
+     * The patient and the prescriber are recorded; the pharmacist approves with their username and PIN — or is the
+     * cashier. Offline the till checked the pharmacist's PIN against their offline sign-in; no approval becomes a review item.
+     */
+    private function prescription(Device $device, User $user, array $p, array $lines, ?Customer $customer, Branch $branch, bool $offline, array &$flags): ?Prescription
+    {
+        $medicines = array_values(array_filter($lines, fn ($l) => $l['product']->needsPrescription()));
+        if ($medicines === [] || ! $this->modules->isEnabled($branch, 'pharmacy')) {
+            return null;
+        }
+        $names = implode(', ', array_unique(array_map(fn ($l) => $l['product']->name, $medicines)));
+        $data = is_array($p['prescription'] ?? null) ? $p['prescription'] : [];
+        $prescriber = trim((string) ($data['prescriber_name'] ?? ''));
+        $issued = ($data['issued_on'] ?? null) ? Carbon::parse($data['issued_on'])->toDateString() : null;
+        if (! $offline) {
+            if (! $customer) {
+                throw new DomainException("{$names} need a prescription: choose the patient.", 'prescription_required');
+            }
+            if ($prescriber === '' || ! $issued) {
+                throw new DomainException("{$names} need a prescription: enter the prescriber and the date it was written.", 'prescription_required');
+            }
+            if ($issued > now()->toDateString()) {
+                throw new DomainException('The prescription date cannot be in the future.', 'prescription_required');
+            }
+        } elseif (! $customer || $prescriber === '' || ! $issued) {
+            $flags[] = ['pharmacy_unapproved', "{$names} sold offline without the patient or prescription details"];
+        }
+
+        $pharmacist = null;
+        $approvedOffline = false;
+        if ($this->authz->allows($user, 'pharmacy.dispense', $branch)) {
+            $pharmacist = $user;
+        } elseif ($offline) {
+            $by = ! empty($p['pharmacist_offline_by']) ? User::where('tenant_id', $device->tenant_id)->find($p['pharmacist_offline_by']) : null;
+            if ($by && $this->authz->allows($by, 'pharmacy.dispense', $branch)) {
+                [$pharmacist, $approvedOffline] = [$by, true];
+            } else {
+                $flags[] = ['pharmacy_unapproved', "{$names} sold offline by {$user->name} without a pharmacist's approval"];
+            }
+        } elseif (empty($p['pharmacist_approval'])) {
+            throw new DomainException("A pharmacist must approve {$names}.", 'pharmacist_needed');
+        } else {
+            $pharmacist = $this->approvals->verify($device, $p['pharmacist_approval'], 'pharmacy.dispense', $branch, null, 0, '');
+        }
+        if (! $customer) {
+            return null; // offline without a patient: nothing to file the prescription under; the review item covers it
+        }
+
+        return (new Prescription)->forceFill([
+            'id' => (string) Str::uuid7(), 'tenant_id' => $device->tenant_id, 'branch_id' => $branch->id, 'customer_id' => $customer->id,
+            'prescriber_name' => $prescriber !== '' ? mb_substr($prescriber, 0, 255) : 'Not recorded',
+            'prescriber_reg_no' => self::short($data['prescriber_reg_no'] ?? null, 60), 'facility' => self::short($data['facility'] ?? null, 255),
+            'reference' => self::short($data['reference'] ?? null, 60), 'issued_on' => $issued ?? Carbon::parse($p['occurred_at'])->toDateString(),
+            'pharmacist_name' => $pharmacist?->name ?? 'Not approved', 'pharmacist_id' => $pharmacist?->id, 'approved_offline' => $approvedOffline,
+            'warnings' => PharmacyService::warningsFor(array_map(fn ($l) => $l['product']->id, $lines), $customer->id),
+        ]);
+    }
+
+    private static function short(mixed $v, int $max): ?string
+    {
+        $v = trim((string) $v);
+
+        return $v === '' ? null : mb_substr($v, 0, $max);
     }
 
     /** A manual line discount the till sent: a percentage (basis points) or a lower unit price. */
