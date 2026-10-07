@@ -126,3 +126,35 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
 .rx-meds li { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .rx-warnings { list-style: none; padding: 8px 12px; margin: 0 0 8px; border-radius: 8px; background: var(--warn-bg); color: var(--warn-text); display: grid; gap: 4px; }
 .rx-warnings li.major { color: var(--danger); font-weight: 600; }
+
+/* Restaurant: floor, bills, choices */
+.card.wide { width: min(1100px, 96vw); max-height: 92vh; overflow: auto; }
+.row.spread { justify-content: space-between; align-items: center; }
+.floor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.table-tile { display: grid; gap: 2px; min-height: 78px; padding: 10px; border-radius: 10px; border: 2px solid var(--line); text-align: left; }
+.table-tile.free { background: var(--panel); }
+.table-tile.busy { background: var(--warn-bg); color: var(--warn-text); border-color: transparent; }
+.table-tile.ready { outline: 3px solid var(--accent); }
+.bill-cols { display: grid; grid-template-columns: 3fr 2fr; gap: 20px; }
+@media (max-width: 760px) { .bill-cols { grid-template-columns: 1fr; } }
+.bill-items { list-style: none; padding: 0; margin: 0 0 8px; }
+.bill-items li { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.bill-items li label { display: flex; gap: 8px; align-items: flex-start; }
+.bill-items li.st-void { opacity: .45; text-decoration: line-through; }
+.bill-items li.paid { opacity: .6; }
+.bill-items li.st-ready .chip { background: var(--ok-bg); color: var(--ok-text); }
+fieldset.choices { border: 1px solid var(--line); border-radius: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+fieldset.choices button.active, .segmented button.active { background: var(--primary); color: var(--primary-text); }
+.tip input, .split input { width: 90px; margin-left: 6px; }
+
+/* Kitchen screen */
+.kitchen .tickets { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; padding: 12px; align-items: start; }
+.ticket { background: var(--panel); border: 2px solid var(--line); border-radius: 10px; padding: 10px; display: grid; gap: 8px; }
+.ticket.slow { border-color: #d97706; } .ticket.late { border-color: var(--danger); }
+.ticket > header { display: flex; justify-content: space-between; align-items: baseline; }
+.ticket ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.ticket .dish { width: 100%; display: flex; justify-content: space-between; gap: 8px; text-align: left; padding: 10px; border-radius: 8px; }
+.ticket .dish.ready { background: var(--ok-bg); color: var(--ok-text); }
+.ticket .note { color: var(--danger); font-weight: 600; }
+.print-only { display: none; }
+@media print { .print-only { display: block; } .kitchen-ticket { break-before: page; } }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\ChannelWebhookController;
 use App\Http\Controllers\Api\V1\DeviceAuthController;
 use App\Http\Controllers\Api\V1\PosController;
+use App\Http\Controllers\Api\V1\RestaurantController;
 use App\Http\Controllers\Api\V1\SyncController;
 use App\Http\Controllers\Api\V1\WmsController;
 use App\Http\Controllers\LicenseServerController;
@@ -42,6 +43,25 @@ Route::prefix('v1')->group(function () {
         Route::get('receipts', [PosController::class, 'lookupSale']);
         Route::post('returns', [PosController::class, 'postReturn']);
         Route::post('account-payments', [PosController::class, 'accountPayment']);
+
+        // Restaurant: bills shared by tills and waiter tablets (the module must be on at the branch).
+        Route::prefix('restaurant')->group(function () {
+            Route::get('floor', [RestaurantController::class, 'floor']);
+            Route::post('orders', [RestaurantController::class, 'open']);
+            Route::get('orders/{id}', [RestaurantController::class, 'show'])->whereUuid('id');
+            Route::post('orders/{id}/items', [RestaurantController::class, 'addItems'])->whereUuid('id');
+            Route::post('orders/{id}/fire', [RestaurantController::class, 'fire'])->whereUuid('id');
+            Route::post('orders/{id}/void', [RestaurantController::class, 'void'])->whereUuid('id');
+            Route::post('orders/{id}/serve', [RestaurantController::class, 'serve'])->whereUuid('id');
+            Route::post('orders/{id}/move', [RestaurantController::class, 'move'])->whereUuid('id');
+            Route::post('orders/{id}/close', [RestaurantController::class, 'close'])->whereUuid('id');
+        });
+    });
+
+    // Kitchen screens: the enrolled kitchen device itself (no person signs in); polled every few seconds.
+    Route::middleware(['auth:sanctum', 'device.token:device', 'throttle:kds'])->prefix('kds')->group(function () {
+        Route::get('tickets', [RestaurantController::class, 'tickets']);
+        Route::post('bump', [RestaurantController::class, 'bump']);
     });
 
     // Warehouse handheld (receive, put away, transfers, counts) — PIN sign-in on an enrolled handheld device.

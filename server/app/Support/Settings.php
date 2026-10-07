@@ -116,6 +116,21 @@ final class Settings
             'label' => 'Superintendent pharmacist',
             'help' => 'Name and registration number, printed on the controlled-drug register.',
         ],
+        'restaurant.service_charge_bp' => [
+            'type' => 'int', 'default' => 0, 'min' => 0, 'max' => 2500, 'group' => 'Restaurant',
+            'label' => 'Service charge on table bills (basis points)',
+            'help' => '1000 = 10 %. Added to table and bar-tab bills at the till as a line of the service-charge product below; 0 = none. The cashier can remove it.',
+        ],
+        'restaurant.service_charge_sku' => [
+            'type' => 'string', 'default' => 'SERVICE', 'max' => 40, 'group' => 'Restaurant',
+            'label' => 'Service-charge product (SKU)',
+            'help' => 'Create a product with this SKU that does not track stock; its tax group sets the tax on the service charge.',
+        ],
+        'restaurant.tips_enabled' => [
+            'type' => 'bool', 'default' => true, 'group' => 'Restaurant',
+            'label' => 'Ask for a tip at payment',
+            'help' => 'Tips are paid on top of the bill, owed to the waiter on the bill (or the cashier), and paid out with that month’s payroll.',
+        ],
         'receipt.footer' => [
             'type' => 'string', 'default' => 'Thank you for shopping with us.', 'max' => 200, 'group' => 'Receipts',
             'label' => 'Message at the bottom of receipts',

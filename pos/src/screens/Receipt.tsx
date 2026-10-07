@@ -46,6 +46,7 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
           <hr />
           <p><strong>{sale.kind === 'return' ? 'RETURN ' : 'Receipt '}{sale.receipt_no}</strong></p>
           <p>{when} · {sale.cashier}</p>
+          {sale.order_number && <p className="strong">Order {sale.order_number.slice(-3)}</p>}
         </header>
         {sale.status === 'queued' && <p className="small">Recorded on this till while offline — sent to the server automatically.</p>}
         <hr />
@@ -63,6 +64,7 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
                 <td className="num">{n(l.unit_price_minor)}</td>
                 <td className="num">{n(l.line_total_minor)}</td>
               </tr>
+              {l.note && <tr className="small"><td /><td colSpan={4}>{l.note}</td></tr>}
               {(l.promotions ?? []).map((p, j) => (
                 <tr key={j} className="small promo-line"><td /><td colSpan={3}>{p.name}</td><td className="num">−{n(p.saving_minor)}</td></tr>
               ))}
@@ -74,6 +76,8 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
           <tbody>
             {(sale.discount_minor ?? 0) > 0 && <tr><td>You saved</td><td className="num">{m(sale.discount_minor ?? 0)}</td></tr>}
             <tr className="strong"><td>{sale.kind === 'return' ? 'REFUND' : 'TOTAL'}</td><td className="num">{m(sale.total_minor)}</td></tr>
+            {(sale.tip_minor ?? 0) > 0 && <><tr><td>Tip — thank you</td><td className="num">{m(sale.tip_minor ?? 0)}</td></tr>
+              <tr className="strong"><td>PAID</td><td className="num">{m(sale.total_minor + (sale.tip_minor ?? 0))}</td></tr></>}
             {sale.payments.map((p, i) => (
               <tr key={i}><td>{METHOD[p.method]}{p.provider ? ` ${NETWORK[p.provider] ?? p.provider}` : ''}{p.reference ? ` ${p.reference}` : ''}</td><td className="num">{m(p.tendered_minor)}</td></tr>
             ))}
@@ -98,6 +102,21 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
           {boot.license?.ref && <p className="receipt-ref">Ref {boot.license.ref}</p>}
         </footer>
       </div>
+      {sale.status === 'queued' && (sale.kitchen?.length ?? 0) > 0 && (
+        // Offline counter sale: the kitchen screens cannot see it yet — this ticket goes to the kitchen instead.
+        <div className="receipt kitchen-ticket" aria-label="Kitchen ticket">
+          <header className="center"><h2>KITCHEN</h2><p><strong>{sale.receipt_no}</strong> · {when}</p></header>
+          <hr />
+          {[...new Set(sale.kitchen!.map((k) => k.station))].map((st) => (
+            <div key={st}>
+              <p className="strong">{st}</p>
+              {sale.kitchen!.filter((k) => k.station === st).map((k, i) => (
+                <p key={i}>{k.qty} × {k.name}{k.note ? <><br /><span className="small">  {k.note}</span></> : null}</p>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
       <div className="row no-print">
         <button type="button" onClick={() => window.print()}>Print receipt</button>
         <button type="button" className="primary big" autoFocus onClick={onNew}>New sale</button>

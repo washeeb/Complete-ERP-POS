@@ -1,9 +1,12 @@
-import { toMilli, type TaxLine } from './money'
+import { lineTax, sumTax, toMilli, type TaxLine } from './money'
+import { serviceAmount } from './restaurant'
 import { activePromotions, computePromotions, type Applied } from './promotions'
 import type { Price, PriceList, Product, PromotionRow, Unit } from './types'
 
 export type CartLine = { key: string; product: Product; unit: Unit; qtyMilli: number; manual?: { bp?: number; price_minor?: number } | null
-  markdown?: { id: string; price_minor: number } | null }
+  markdown?: { id: string; price_minor: number } | null
+  // Restaurant: the bill item this line pays, the kitchen note (choices), and the service charge line.
+  diningItemId?: string; note?: string | null; service?: boolean }
 
 /** Same rule as server PriceResolver: active at `at`, min_qty ≤ qty, highest tier, dated beats open-ended. */
 export function resolvePrice(product: Product, unitId: string, listId: string, qtyMilli: number, at: Date): Price | null {
@@ -28,12 +31,13 @@ export function resolvePrice(product: Product, unitId: string, listId: string, q
 export type PricedLine = CartLine & {
   price: Price | null; total: number; net: number; tax: number; breakdown: TaxLine[]; listTotal: number; discount: number; promotions: Applied[]
 }
-export type CartExtras = { promotions?: PromotionRow[]; branchId?: string; utcOffsetMinutes?: number; coupon?: string | null; saleDiscountBp?: number }
+export type CartExtras = { promotions?: PromotionRow[]; branchId?: string; utcOffsetMinutes?: number; coupon?: string | null; saleDiscountBp?: number; serviceBp?: number }
 
 /** List prices from the price list, then promotions and discounts through the same engine as the server. */
 export function priceCart(lines: CartLine[], list: PriceList, at: Date, extras: CartExtras = {}) {
   // A markdown sticker carries its own price and stays out of promotions (same as the server).
-  const withPrice = lines.map((l) => ({ l, price: l.markdown
+  const regular = lines.filter((l) => !l.service)
+  const withPrice = regular.map((l) => ({ l, price: l.markdown
     ? { price_list_id: list.id, product_uom_id: l.unit.id, min_qty: '1', amount_minor: l.markdown.price_minor, starts_at: null, ends_at: null }
     : resolvePrice(l.product, l.unit.id, list.id, l.qtyMilli, at) }))
   const running = activePromotions(extras.promotions ?? [], at, extras.branchId ?? '', list.id, extras.utcOffsetMinutes ?? 0)
@@ -49,8 +53,20 @@ export function priceCart(lines: CartLine[], list: PriceList, at: Date, extras: 
     return { ...l, price, total: r?.total ?? 0, net: r?.net ?? 0, tax: r?.tax ?? 0, breakdown: r?.breakdown ?? [],
       listTotal: r?.list_total ?? 0, discount: r?.discount ?? 0, promotions: r?.promotions ?? [] }
   })
+  // Restaurant service charge: priced from the rest of the bill after discounts, outside promotions (same as the server).
+  let { net, tax, total, breakdown } = { net: calc.net, tax: calc.tax, total: calc.total, breakdown: calc.breakdown }
+  for (const l of lines.filter((x) => x.service)) {
+    const amount = serviceAmount({ total: calc.total, net: calc.net }, list.prices_include_tax, extras.serviceBp ?? 0)
+    const t = lineTax(amount, l.product.tax, list.prices_include_tax)
+    priced.push({ ...l, price: { price_list_id: list.id, product_uom_id: l.unit.id, min_qty: '1', amount_minor: amount, starts_at: null, ends_at: null },
+      total: t.gross, net: t.net, tax: t.tax, breakdown: t.breakdown, listTotal: amount, discount: 0, promotions: [] })
+    net += t.net
+    tax += t.tax
+    total += t.gross
+    breakdown = sumTax([breakdown, t.breakdown])
+  }
   return {
-    lines: priced, net: calc.net, tax: calc.tax, total: calc.total, discount: calc.discount, taxBreakdown: calc.breakdown,
+    lines: priced, net, tax, total, discount: calc.discount, taxBreakdown: breakdown,
     couponApplied: calc.coupon_applied, couponError: calc.coupon_error, unpriced: priced.filter((l) => !l.price),
   }
 }

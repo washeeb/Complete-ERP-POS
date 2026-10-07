@@ -19,5 +19,8 @@ Broadcast::channel('tenant.{tenantId}.stock.{warehouseId}', function (User $user
     return $user->tenant_id === $tenantId && $user->is_active && $warehouse?->tenant_id === $tenantId;
 });
 
+Broadcast::channel('tenant.{tenantId}.dining.{branchId}', fn (User $user, string $tenantId, string $branchId) => $user->tenant_id === $tenantId
+    && $user->is_active && app(Authorizer::class)->allowsAnywhere($user, 'restaurant.serve'));
+
 Broadcast::channel('tenant.{tenantId}.orders', fn (User $user, string $tenantId) => $user->tenant_id === $tenantId
     && app(Authorizer::class)->allowsAnywhere($user, 'orders.view'));

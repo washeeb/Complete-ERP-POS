@@ -44,6 +44,7 @@ export function connectLive(rt: Realtime, onChange: () => void, onState: (s: Liv
 
   for (const name of rt.channels.filter((c): c is string => !!c)) {
     echo.private(name).listen('.catalog.changed', changed).listen('.stock.changed', changed)
+      .listen('.dining.changed', () => window.dispatchEvent(new CustomEvent('dining-changed'))) // tables and bills re-read themselves
   }
 
   return () => {

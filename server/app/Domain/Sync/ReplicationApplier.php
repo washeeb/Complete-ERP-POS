@@ -90,6 +90,9 @@ final class ReplicationApplier
                 $this->replaceSet('product_uoms', 'product_id', $id, $c['product_uoms'] ?? [], deleteMissing: false); // units with history stay
                 $this->replaceSet('barcodes', 'product_id', $id, $c['barcodes'] ?? []);
                 $this->replaceSet('prices', 'product_id', $id, $c['prices'] ?? []);
+                if (array_key_exists('recipe_lines', $c)) {
+                    $this->replaceSet('recipe_lines', 'product_id', $id, $c['recipe_lines']);
+                }
                 break;
             case 'role':
                 $keys = $c['permission_keys'] ?? [];
@@ -112,6 +115,8 @@ final class ReplicationApplier
             case 'goods_receipt':
             case 'stock_transfer':
             case 'stock_count':
+            case 'modifier_group':
+            case 'dining_order':
                 $table = array_key_first($c);
                 if ($table) {
                     $this->replaceSet($table, "{$type}_id", $id, $c[$table]); // lines belong to their document

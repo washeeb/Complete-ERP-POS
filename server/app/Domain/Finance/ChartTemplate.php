@@ -65,6 +65,7 @@ final class ChartTemplate
         ['2320', 'Loyalty points', 'liability', '2300', false, 'loyalty', 'loyalty'],
         ['2330', 'Customer deposits', 'liability', '2300', false, null, null],
         ['2250', 'Salaries payable', 'liability', '2000', false, null, 'net_pay'],
+        ['2260', 'Tips owed to staff', 'liability', '2000', false, null, 'tips_payable'],
         ['2400', 'Accrued expenses', 'liability', '2000', false, null, null],
         ['2500', 'Loans and borrowings', 'liability', '2000', false, null, null],
 

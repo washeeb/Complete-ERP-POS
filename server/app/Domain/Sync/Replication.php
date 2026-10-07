@@ -5,8 +5,10 @@ namespace App\Domain\Sync;
 use App\Models\CustomerOrder;
 use App\Models\Delivery;
 use App\Models\Device;
+use App\Models\DiningOrder;
 use App\Models\GoodsReceipt;
 use App\Models\Invoice;
+use App\Models\ModifierGroup;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Role;
@@ -38,12 +40,13 @@ final class Replication
         'people' => ['label' => 'Users, roles and access', 'direction' => 'down',
             'tables' => ['user' => 'users', 'role' => 'roles', 'role_assignment' => 'role_assignments']],
         'catalog' => ['label' => 'Products, units, barcodes, categories, brands', 'direction' => 'down',
-            'tables' => ['product' => 'products', 'category' => 'categories', 'brand' => 'brands', 'uom' => 'uoms']],
+            'tables' => ['product' => 'products', 'category' => 'categories', 'brand' => 'brands', 'uom' => 'uoms',
+                'kitchen_station' => 'kitchen_stations', 'dining_table' => 'dining_tables', 'modifier_group' => 'modifier_groups']],
         'pricing' => ['label' => 'Prices, price lists and tax', 'direction' => 'down',
             'tables' => ['price_list' => 'price_lists', 'tax_rate' => 'tax_rates', 'tax_group' => 'tax_groups', 'promotion' => 'promotions', 'markdown' => 'markdowns', 'drug_interaction' => 'drug_interactions']],
         'stock' => ['label' => 'Stock movements and batches', 'direction' => 'both', 'tables' => ['stock_movement_batch' => null, 'stock_batch' => 'stock_batches']],
         'sales' => ['label' => 'Till sales, shifts and devices', 'direction' => 'up',
-            'tables' => ['device' => 'devices', 'shift' => 'shifts', 'sale' => 'sales', 'prescription' => 'prescriptions']],
+            'tables' => ['device' => 'devices', 'shift' => 'shifts', 'sale' => 'sales', 'prescription' => 'prescriptions', 'dining_order' => 'dining_orders']],
         'reviews' => ['label' => 'Items needing review', 'direction' => 'up', 'tables' => ['review_item' => 'review_items']],
         'attendance' => ['label' => 'Clock-in and clock-out', 'direction' => 'up', 'tables' => ['attendance_batch' => null]],
         'purchasing' => ['label' => 'Suppliers, purchase orders and goods received', 'direction' => 'both',
@@ -70,6 +73,8 @@ final class Replication
         GoodsReceipt::class => ['lines', 'goods_receipt_lines'],
         StockTransfer::class => ['lines', 'stock_transfer_lines'],
         StockCount::class => ['lines', 'stock_count_lines'],
+        ModifierGroup::class => ['options', 'modifier_options'],
+        DiningOrder::class => ['items', 'dining_order_items'],
         CustomerOrder::class => ['lines', 'customer_order_lines'],
         Delivery::class => ['lines', 'delivery_lines'],
         Invoice::class => ['lines', 'invoice_lines'],
@@ -109,6 +114,7 @@ final class Replication
                 'product_uoms' => $model->units()->get()->map->getAttributes()->all(),
                 'barcodes' => $model->barcodes()->get()->map->getAttributes()->all(),
                 'prices' => $model->prices()->get()->map->getAttributes()->all(),
+                'recipe_lines' => $model->recipe()->get()->map->getAttributes()->all(),
             ];
         } elseif ($model instanceof Role) {
             $snapshot['children'] = ['permission_keys' => $model->permissions()->pluck('key')->all()];

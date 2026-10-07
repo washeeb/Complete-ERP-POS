@@ -7,7 +7,22 @@ export type Grocery = { scale_prefixes: string[]; markdown_prefix: string; markd
 export type Drug = { schedule: 'otc' | 'pom' | 'controlled'; generic_name: string | null; strength: string | null; dosage_form: string | null; active_ingredients: string[] }
 export type Interaction = { ingredient_a: string; ingredient_b: string; severity: 'minor' | 'moderate' | 'major'; note: string }
 export type Pharmacy = { interactions: Interaction[] }
-export type Product = { id: string; sku: string; name: string; category_id?: string | null; plu?: string | null; drug?: Drug | null; track_stock: boolean; on_hand: string | null; tax: TaxRate[]; units: Unit[]; prices: Price[] }
+// Restaurant
+export type ModifierGroup = { id: string; name: string; min: number; max: number; options: { id: string; name: string; product_id: string | null }[] }
+export type Restaurant = { modifier_groups: ModifierGroup[]; service_charge: { product_id: string; bp: number } | null; tips: boolean }
+export type DiningItem = {
+  id: string; product_id: string; product_uom_id: string; name: string; qty: string; modifiers: { group: string; option_id: string; name: string; product_id: string | null }[]
+  note: string | null; course: number; seat: number | null; station: string | null; status: 'held' | 'fired' | 'ready' | 'served' | 'void'; paid: boolean
+  added_by: string; fired_at: string | null; ready_at: string | null; void_reason: string | null
+}
+export type DiningOrder = {
+  id: string; number: string; kind: 'table' | 'tab' | 'counter' | 'delivery'; label: string; dining_table_id: string | null; tab_name: string | null; covers: number
+  customer_id: string | null; waiter: string; status: 'open' | 'closed' | 'void'; note: string | null; opened_at: string; version: number; items: DiningItem[]
+}
+export type DiningTable = { id: string; code: string; area: string | null; seats: number; pos_x: number; pos_y: number }
+export type Floor = { tables: DiningTable[]; stations: { code: string; name: string; auto_print: boolean }[]; orders: DiningOrder[]; server_time: string }
+export type KitchenTicket = { order_id: string; number: string; label: string; kind: string; waiter: string; paid: boolean; items: DiningItem[] }
+export type Product = { id: string; sku: string; name: string; category_id?: string | null; plu?: string | null; drug?: Drug | null; station?: string | null; modifier_group_ids?: string[]; track_stock: boolean; on_hand: string | null; tax: TaxRate[]; units: Unit[]; prices: Price[] }
 export type PriceList = { id: string; code: string; name: string; prices_include_tax: boolean; is_default: boolean }
 
 export type Shift = {
@@ -39,7 +54,9 @@ export type PostedSale = {
   id: string; receipt_no: string; device_seq: number; status: string; occurred_at: string; cashier: string; currency: string
   prices_include_tax: boolean; net_minor: number; tax_minor: number; total_minor: number; paid_minor: number; change_minor: number
   tax_breakdown: TaxLine[]
-  lines: { line_no: number; sku: string; name: string; uom: string; qty: string; unit_price_minor: number; line_total_minor: number; discount_minor?: number; promotions?: { name: string; saving_minor: number }[] }[]
+  lines: { line_no: number; sku: string; name: string; uom: string; qty: string; unit_price_minor: number; line_total_minor: number; discount_minor?: number; promotions?: { name: string; saving_minor: number }[]; note?: string | null }[]
+  tip_minor?: number; order_number?: string | null
+  kitchen?: { name: string; qty: string; note: string | null; station: string }[] // offline counter sale: ticket the till prints itself
   kind?: 'sale' | 'return'; discount_minor?: number; points_earned?: number
   payments: { method: string; provider: string | null; amount_minor: number; tendered_minor: number; reference: string | null; status: string }[]
 }

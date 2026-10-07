@@ -81,6 +81,7 @@ export async function submitSale(args: {
   customerId?: string | null; creditApproval?: { username: string; pin: string } | null; saleId?: string
   coupon?: string | null; saleDiscountBp?: number; discountApproval?: { username: string; pin: string } | null; offlineApproverId?: string | null
   prescription?: RxDetails | null; pharmacistApproval?: { username: string; pin: string } | null; pharmacistOfflineBy?: string | null
+  diningOrderId?: string | null; tipMinor?: number; kitchenTickets?: boolean
 }): Promise<PostedSale> {
   const { boot, cart, payments } = args
   const local = await getLocalShift()
@@ -98,7 +99,12 @@ export async function submitSale(args: {
       product_id: l.product.id, product_uom_id: l.unit.id, qty: (l.qtyMilli / 1000).toString(), unit_price_minor: l.price!.amount_minor, line_total_minor: l.total,
       ...(l.manual ? { manual: l.manual } : {}),
       ...(l.markdown ? { markdown_id: l.markdown.id } : {}),
+      ...(l.diningItemId ? { dining_item_id: l.diningItemId } : {}),
+      ...(l.note ? { note: l.note } : {}),
+      ...(l.service ? { service_charge: true } : {}),
     })),
+    ...(args.diningOrderId ? { dining_order_id: args.diningOrderId } : {}),
+    ...(args.tipMinor ? { tip_minor: args.tipMinor } : {}),
     coupon_code: args.coupon || null,
     sale_discount_bp: args.saleDiscountBp ?? 0,
     // Offline, a supervisor's PIN was checked against their offline sign-in on this till; the server checks their limit.
@@ -142,7 +148,11 @@ export async function submitSale(args: {
     change_minor: payments.reduce((a, p) => a + (p.tendered_minor - p.amount_minor), 0),
     tax_breakdown: cart.taxBreakdown,
     lines: cart.lines.map((l, i) => ({ line_no: i + 1, sku: l.product.sku, name: l.product.name, uom: l.unit.uom_code,
-      qty: (l.qtyMilli / 1000).toFixed(3), unit_price_minor: l.price!.amount_minor, line_total_minor: l.total, discount_minor: l.discount, promotions: l.promotions })),
+      qty: (l.qtyMilli / 1000).toFixed(3), unit_price_minor: l.price!.amount_minor, line_total_minor: l.total, discount_minor: l.discount, promotions: l.promotions, note: l.note ?? null })),
+    tip_minor: args.tipMinor ?? 0, order_number: null,
+    // Restaurant counter sale while offline: the kitchen cannot see it yet, so the till prints the kitchen ticket.
+    kitchen: args.kitchenTickets && !args.diningOrderId ? cart.lines.filter((l) => l.product.station && !l.service)
+      .map((l) => ({ name: l.product.name, qty: (l.qtyMilli / 1000).toString(), note: l.note ?? null, station: l.product.station! })) : [],
     kind: 'sale', discount_minor: cart.discount, points_earned: 0,
     payments: payments.map((p) => ({ method: p.method, provider: p.provider ?? null, amount_minor: p.amount_minor,
       tendered_minor: p.tendered_minor, reference: p.reference ?? null, status: 'queued' })),
