@@ -3,7 +3,7 @@
 **Phase:** 9 — Industry modules wave 1 · **Status:** 9a (Grocery + batch/expiry) done on branch `phase-9-industry-modules` (PR to `main`); next 9b Pharmacy, then 9c Restaurant
 **Updated:** 2026-10-16 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–8 and licensing merged (PRs #1–#12)
 
-## Phase 9a — done (274 Pest + 33 Vitest + 6 Playwright; browser-checked)
+## Phase 9a — done (269 Pest + 33 Vitest + 6 Playwright; browser-checked)
 - **Owner answers (2026-10-16):** scale labels with weight in barcode; FEFO + suggested markdowns applied by a manager; pharmacist approves POM sales (9b); restaurant table service + counter with kitchen screens (9c).
 - **Core:** batches in the stock ledger — `products.track_batches`, `stock_batches` (UUID v5 ids), `stock_movements.batch_id`, `stock_batch_levels`; `StockBatches` (ensure / FEFO / latest / check); `StockLedger::withBatches`, `assignOpeningBatches` (`batch_assign`, excluded from GL); batches through GRN (+ handheld), adjustments, transfers, returns, reversals; offline expired sales flagged `expired_sold`.
 - **Grocery module (0.1.0, per branch):** `app/Domain/Grocery/{MarkdownService,EslRelay}`, `App\Support\Ean13`, markdown stickers (`markdowns`, sale line `markdown_id`), scale labels on the till (`pos/src/scale.ts`), Stock → Batches & expiry, Stock → Shrink, sticker print route, settings `grocery.*`.
