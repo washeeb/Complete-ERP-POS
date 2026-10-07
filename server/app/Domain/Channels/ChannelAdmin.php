@@ -43,7 +43,7 @@ final class ChannelAdmin
         if (isset($data['safety_stock']) && Qty::toMilli((string) $data['safety_stock']) < 0) {
             throw new DomainException('Safety stock cannot be negative.');
         }
-        if ($type !== 'storefront' && empty($data['base_url'] ?? $channel->base_url)) {
+        if ($type !== 'storefront' && ! ConnectorRegistry::isDelivery($type) && empty($data['base_url'] ?? $channel->base_url)) {
             throw new DomainException('Enter the store address (https://…).');
         }
 
@@ -94,7 +94,7 @@ final class ChannelAdmin
         }
         $channel->status = 'active';
         $this->recorder->save($actor, $channel, 'channel.activated');
-        if ($channel->type !== 'storefront') {
+        if ($channel->type !== 'storefront' && ! ConnectorRegistry::isDelivery($channel->type)) {
             $this->sync->queueAll($channel); // first full push; later changes flow from the outbox
         }
 

@@ -36,6 +36,7 @@ class ReviewItem extends Model
         'expired_sold' => 'Expired batch sold offline',
         'pharmacy_unapproved' => 'Prescription medicine sold offline without a valid pharmacist approval',
         'dining_conflict' => 'Restaurant bill paid offline that had changed (items voided or already paid)',
+        'deposit_overdrawn' => 'Booking deposit used offline beyond what was left of it',
     ];
 
     protected $guarded = [];

@@ -17,3 +17,4 @@ Schedule::command('erp:channels:reconcile')->everyFifteenMinutes()->withoutOverl
 Schedule::command('erp:expire-balances')->dailyAt('02:30')->withoutOverlapping(60);
 Schedule::command('erp:gl-post')->everyFiveMinutes()->withoutOverlapping(30)->runInBackground();
 Schedule::command('license:checkin')->dailyAt('03:15')->withoutOverlapping(30);
+Schedule::command('erp:reservation-reminders')->everyFiveMinutes()->withoutOverlapping(10);

@@ -12,6 +12,7 @@ use App\Models\DiningOrder;
 use App\Models\DiningOrderItem;
 use App\Models\Product;
 use App\Models\RecipeLine;
+use App\Models\Reservation;
 use App\Models\Sale;
 use App\Support\Qty;
 use App\Support\Settings;
@@ -40,6 +41,28 @@ final class DiningSales
         $id = Product::where('sku', strtoupper((string) $this->settings->get('restaurant.service_charge_sku', $tenantId)))->where('track_stock', false)->value('id');
 
         return $id ? [$id, $bp] : null;
+    }
+
+    /** A booking deposit spent on the bill: up to what is left of it; the rest stays held (refund or use later). */
+    public function useDeposit(Actor $actor, Sale $sale, array $pay, bool $offline, array &$flags): void
+    {
+        $r = Reservation::where('number', $pay['reference'])->lockForUpdate()->first();
+        $left = $r?->depositLeft() ?? 0;
+        if (! $r || $pay['amount_minor'] > $left) {
+            $problem = $r ? "booking {$r->number} has only ".number_format($left / 100, 2).' of deposit left' : "booking {$pay['reference']} is not known";
+            if (! $offline) {
+                throw new DomainException(ucfirst($problem).'.', 'deposit_refused');
+            }
+            $flags[] = ['deposit_overdrawn', "Deposit used offline but {$problem}"];
+            if (! $r) {
+                return;
+            }
+        }
+        $r->forceFill(['deposit_used_minor' => $r->deposit_used_minor + $pay['amount_minor']]);
+        if ($r->deposit_used_minor >= $r->deposit_minor) {
+            $r->deposit_status = 'used';
+        }
+        $this->recorder->save($actor, $r, 'reservation.deposit_used', branchId: $sale->branch_id, payload: ['sale_id' => $sale->id, 'amount_minor' => $pay['amount_minor']]);
     }
 
     /**

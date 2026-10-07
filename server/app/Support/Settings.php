@@ -131,6 +131,31 @@ final class Settings
             'label' => 'Ask for a tip at payment',
             'help' => 'Tips are paid on top of the bill, owed to the waiter on the bill (or the cashier), and paid out with that month’s payroll.',
         ],
+        'restaurant.waste_approval_minor' => [
+            'type' => 'int', 'default' => 5000, 'min' => 0, 'max' => 100000000, 'group' => 'Restaurant',
+            'label' => 'Kitchen waste needing a manager (pesewas)',
+            'help' => '5000 = GHS 50.00. Waste worth more than this (at cost) is approved by a manager’s PIN when it is recorded.',
+        ],
+        'restaurant.sms_webhook_url' => [
+            'type' => 'string', 'default' => '', 'max' => 255, 'group' => 'Restaurant',
+            'label' => 'SMS gateway address (booking messages)',
+            'help' => 'Booking confirmations and reminders are posted here as {"to", "message", "reference"} for your SMS provider to send. Leave blank for no SMS.',
+        ],
+        'restaurant.sms_confirmations' => [
+            'type' => 'bool', 'default' => true, 'group' => 'Restaurant',
+            'label' => 'Text the guest when a table is booked',
+            'help' => 'Needs the SMS gateway address and the guest’s phone number.',
+        ],
+        'restaurant.reminder_hours' => [
+            'type' => 'int', 'default' => 3, 'min' => 0, 'max' => 72, 'group' => 'Restaurant',
+            'label' => 'Booking reminder (hours before)',
+            'help' => 'A reminder text this many hours before the booking; 0 = no reminders.',
+        ],
+        'restaurant.hold_minutes' => [
+            'type' => 'int', 'default' => 30, 'min' => 0, 'max' => 240, 'group' => 'Restaurant',
+            'label' => 'Show a booked table as reserved from (minutes before)',
+            'help' => 'On the till’s floor view; a booking more than 15 minutes late is shown as late so the table can be released.',
+        ],
         'receipt.footer' => [
             'type' => 'string', 'default' => 'Thank you for shopping with us.', 'max' => 200, 'group' => 'Receipts',
             'label' => 'Message at the bottom of receipts',

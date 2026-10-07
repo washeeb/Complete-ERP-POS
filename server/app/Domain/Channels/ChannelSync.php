@@ -41,8 +41,8 @@ final class ChannelSync
     /** Turn new outbox events into jobs for this channel. */
     public function dispatch(SalesChannel $channel): int
     {
-        if (! $channel->isActive() || $channel->type === 'storefront') {
-            return 0;
+        if (! $channel->isActive() || $channel->type === 'storefront' || ConnectorRegistry::isDelivery($channel->type)) {
+            return 0; // delivery apps take orders only
         }
 
         return $this->consumers->consume('channel:'.$channel->id, function (OutboxEvent $e) use ($channel) {

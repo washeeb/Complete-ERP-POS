@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react'
 import { formatMoney, parseMoney } from '../money'
 import { evenSplit } from '../restaurant'
-import type { Payment, TillCustomer } from '../types'
+import type { DiningOrder, Payment, TillCustomer } from '../types'
 
-const LABEL: Record<string, string> = { cash: 'Cash', momo: 'Mobile money', card: 'Card', account: 'On account', points: 'Points', gift_card: 'Gift card', store_credit: 'Store credit' }
+const LABEL: Record<string, string> = { cash: 'Cash', momo: 'Mobile money', card: 'Card', account: 'On account', points: 'Points', gift_card: 'Gift card', store_credit: 'Store credit',
+  deposit: 'Booking deposit', aggregator: 'Delivery app' }
+const PLATFORM: Record<string, string> = { bolt_food: 'Bolt Food', glovo: 'Glovo', chowdeck: 'Chowdeck' }
 
 const MOMO = [
   { id: 'mtn', name: 'MTN MoMo' },
@@ -15,9 +17,10 @@ const MOMO = [
  * Split tender. Cash may exceed what is owed (change); mobile money and card are entered with
  * the reference from the confirmation message / terminal slip (manual until Paystack/Hubtel are wired in).
  */
-export function Pay({ total: bill, currency, exponent, busy, error, customer, tips = false, onPay, onCancel }: {
+export function Pay({ total: bill, currency, exponent, busy, error, customer, tips = false, bill: order = null, onPay, onCancel }: {
   total: number; currency: string; exponent: number; busy: boolean; error: string; customer?: TillCustomer | null
   tips?: boolean // Restaurant: ask for a tip, paid on top of the bill
+  bill?: DiningOrder | null // Restaurant: the bill being paid (its booking deposit, or the delivery app that pays for it)
   onPay: (payments: Payment[], tipMinor: number) => void; onCancel: () => void
 }) {
   const [tipInput, setTipInput] = useState('')
@@ -42,6 +45,13 @@ export function Pay({ total: bill, currency, exponent, busy, error, customer, ti
     const steps = [1, 5, 10, 20, 50, 100, 200].map((n) => n * unit)
     return [...new Set([due, ...steps.map((s) => Math.ceil(due / s) * s)])].filter((v) => v >= due).slice(0, 4)
   }, [due, exponent])
+
+  /** A tender with nothing to type: the booking deposit, or the delivery app paying for the order. */
+  function quickPay(p: Pick<Payment, 'method' | 'provider' | 'reference'>, amount: number) {
+    const next = [...payments, { ...p, amount_minor: amount, tendered_minor: amount } as Payment]
+    setPayments(next)
+    if (next.reduce((a, x) => a + x.amount_minor, 0) === total) onPay(next, tip)
+  }
 
   function add(tenderedOverride?: number) {
     setFormError('')
@@ -134,6 +144,14 @@ export function Pay({ total: bill, currency, exponent, busy, error, customer, ti
                   </label>
                 ))}
               </div>
+            )}
+            {order?.reservation && order.reservation.deposit_left_minor > 0 && !payments.some((p) => p.method === 'deposit') && (
+              <button type="button" className="big" disabled={busy} onClick={() => quickPay({ method: 'deposit', reference: order.reservation!.number },
+                Math.min(order.reservation!.deposit_left_minor, due))}>Use deposit {order.reservation.number} ({money(Math.min(order.reservation.deposit_left_minor, due))})</button>
+            )}
+            {order?.kind === 'delivery' && order.platform && (
+              <button type="button" className="big primary" disabled={busy} onClick={() => quickPay({ method: 'aggregator', provider: order.platform!, reference: order.external_ref ?? '' }, due)}>
+                Paid by {PLATFORM[order.platform] ?? order.platform} ({money(due)})</button>
             )}
             <div className="row wrap split">
               <label className="inline">Split between<input inputMode="numeric" value={guests} onChange={(e) => setGuests(e.target.value.replace(/\D/g, '').slice(0, 2))} aria-label="Guests sharing" placeholder="1" /> guests</label>

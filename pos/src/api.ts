@@ -1,6 +1,6 @@
 import { db, getDevice, getSession } from './db'
 import type { OfflineGrant } from './db'
-import type { Bootstrap, PostedSale, Product, PromotionRow, Returnable, Shift, TillCustomer, WmsBin, WmsBootstrap, WmsCount, WmsOrder, WmsTransfer, WmsUnit, Grocery, Pharmacy, Restaurant, DiningOrder, Floor, KitchenTicket } from './types'
+import type { Bootstrap, PostedSale, Product, PromotionRow, Returnable, Shift, TillCustomer, WmsBin, WmsBootstrap, WmsCount, WmsOrder, WmsTransfer, WmsUnit, Grocery, Pharmacy, Restaurant, DiningOrder, Floor, KitchenTicket, Reservation } from './types'
 
 /** Error with the server's stable code ("price_changed", "no_shift"…) and a message safe to show. */
 export class ApiError extends Error {
@@ -98,13 +98,33 @@ export const dining = {
   serve: (id: string, itemIds: string[]) => call<{ order: DiningOrder }>(`pos/restaurant/orders/${id}/serve`, { method: 'POST', body: JSON.stringify({ item_ids: itemIds }) }),
   move: (id: string, tableId: string) => call<{ order: DiningOrder }>(`pos/restaurant/orders/${id}/move`, { method: 'POST', body: JSON.stringify({ dining_table_id: tableId }) }),
   close: (id: string) => call<{ order: DiningOrder }>(`pos/restaurant/orders/${id}/close`, { method: 'POST' }),
+  openDelivery: (body: { id: string; platform: string; external_ref: string }) =>
+    call<{ order: DiningOrder }>('pos/restaurant/orders', { method: 'POST', body: JSON.stringify({ ...body, kind: 'delivery' }) }),
+  reservations: (date?: string) => call<{ reservations: Reservation[] }>(`pos/restaurant/reservations${date ? `?date=${date}` : ''}`),
+  book: (body: Partial<Reservation> & { guest_name?: string; starts_at?: string }, id?: string) =>
+    call<{ reservation: Reservation }>(`pos/restaurant/reservations${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(body) }),
+  deposit: (id: string, body: { method: 'cash' | 'momo' | 'card'; amount_minor: number; provider?: string; reference?: string }) =>
+    call<{ reservation: Reservation }>(`pos/restaurant/reservations/${id}/deposit`, { method: 'POST', body: JSON.stringify(body) }),
+  refund: (id: string, body: { method: 'cash' | 'momo' | 'card'; provider?: string; reference?: string; approval?: { username: string; pin: string } | null }) =>
+    call<{ reservation: Reservation }>(`pos/restaurant/reservations/${id}/refund`, { method: 'POST', body: JSON.stringify(body) }),
+  seat: (id: string, tableId?: string | null) => call<{ order: DiningOrder }>(`pos/restaurant/reservations/${id}/seat`, { method: 'POST', body: JSON.stringify({ dining_table_id: tableId ?? null }) }),
+  noShow: (id: string) => call<{ reservation: Reservation }>(`pos/restaurant/reservations/${id}/no-show`, { method: 'POST' }),
+  cancelBooking: (id: string, reason: string) => call<{ reservation: Reservation }>(`pos/restaurant/reservations/${id}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  waste: (body: WasteBody) => call<WasteResult>('pos/restaurant/waste', { method: 'POST', body: JSON.stringify(body) }),
 }
+
+export type WasteBody = { items: { product_id: string; product_uom_id: string; qty: string }[]; reason: string; approval?: { username: string; pin: string } | null }
+export type WasteResult = { value_minor: number; currency: string; lines: number; approved_by: string | null }
 
 /** Kitchen screen: the enrolled kitchen device itself (no person signs in). */
 export const kds = {
   tickets: (station: string | null) => call<{ stations: Floor['stations']; tickets: KitchenTicket[]; server_time: string }>(`kds/tickets${station ? `?station=${encodeURIComponent(station)}` : ''}`, { auth: 'device' }),
   bump: (itemIds: string[], status: 'ready' | 'fired' | 'served') => call<{ changed: number }>('kds/bump', { method: 'POST', auth: 'device', body: JSON.stringify({ item_ids: itemIds, status }) }),
+  products: () => call<{ products: WasteProduct[] }>('kds/products', { auth: 'device' }),
+  waste: (body: WasteBody & { username: string; pin: string }) => call<WasteResult>('kds/waste', { method: 'POST', auth: 'device', body: JSON.stringify(body) }),
 }
+
+export type WasteProduct = { id: string; sku: string; name: string; units: { id: string; uom_code: string; decimals: number }[] }
 
 /** Warehouse handheld: same server, its own endpoints (receive, put away, transfers, counts). */
 export const wms = {

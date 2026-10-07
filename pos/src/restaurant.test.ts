@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { priceCart } from './cart'
-import { billLines, describeChoices, evenSplit, heldCourses, kitchenNote, modifierError, serviceAmount, unpaid } from './restaurant'
+import { billLines, describeChoices, evenSplit, heldCourses, kitchenNote, modifierError, serviceAmount, tableBooking, unpaid } from './restaurant'
 import type { DiningItem, DiningOrder, ModifierGroup, Product } from './types'
 
 const pc = (id: string) => [{ id, uom_code: 'PC', uom_name: 'Piece', decimals: 0, factor: '1.000000', is_base: true, barcodes: [] }]
@@ -49,5 +49,19 @@ describe('restaurant at the till', () => {
     const order = { items: [item({}), item({ id: 'i2', status: 'void' }), item({ id: 'i3', paid: true }), item({ id: 'i4', status: 'held', course: 2 }), item({ id: 'i5', status: 'held', course: 1 })] } as DiningOrder
     expect(unpaid(order).map((i) => i.id)).toEqual(['i1', 'i4', 'i5'])
     expect(heldCourses(order)).toEqual([1, 2])
+  })
+})
+
+describe('bookings on the floor', () => {
+  const at = Date.parse('2026-10-18T19:30:00Z')
+  const booking = (over: Partial<import('./types').Reservation>) => ({ id: 'r1', number: 'RES-HQ-000001', guest_name: 'Mensah', phone: null, party_size: 4,
+    starts_at: '2026-10-18T19:30:00Z', duration_minutes: 90, dining_table_id: 't1', customer_id: null, note: null, status: 'booked' as const, deposit_minor: 0,
+    deposit_left_minor: 0, deposit_status: 'none', dining_order_id: null, ...over })
+  it('holds the table from the hold time, and marks the guests late after 15 minutes', () => {
+    expect(tableBooking([booking({})], 't1', at - 31 * 60000, 30)).toBeNull()
+    expect(tableBooking([booking({})], 't1', at - 30 * 60000, 30)).toEqual({ reservation: booking({}), late: false })
+    expect(tableBooking([booking({})], 't1', at + 16 * 60000, 30)?.late).toBe(true)
+    expect(tableBooking([booking({ status: 'seated' })], 't1', at, 30)).toBeNull()
+    expect(tableBooking([booking({})], 't2', at, 30)).toBeNull()
   })
 })
