@@ -72,7 +72,13 @@ Browsers allow a web app to use its **security functions** (the till's own signi
 
 **Tip:** waiter tablets in a restaurant are registered as **POS till** devices on a till of their branch.
 
-## 9.6 Receipt printer and cash drawer
+**Van reps:** register the rep's Android phone as a **POS till** on the **van's till** (each van has one, created with the van). Allow the app to use the phone's **location** when asked, so visits record where they happened. On the phone the till shows **Route (F3)**, **Take order** and **Empties returned**. Install it as an app (step 2) so it opens without signal.
+
+## 9.6 Choosing light or dark
+
+Every till, handheld and kitchen screen has a **Theme** switch at the bottom left: **System** (follows the device's own setting), **Light** or **Dark**. The choice is remembered on that device. Dark is easier on the eyes in a dim bar or kitchen and saves battery on phones.
+
+## 9.7 Receipt printer and cash drawer
 
 1. Install the printer's **Windows (or Android) driver** from the manufacturer, and print a Windows test page.
 2. In the printer's **Printing preferences**, choose paper **80 mm** (or 72 mm) receipt roll. For a cash drawer connected to the printer, switch on the driver's **cash drawer / open drawer before printing** option.
@@ -84,7 +90,7 @@ Browsers allow a web app to use its **security functions** (the till's own signi
 
 **Check:** a sale prints a full-width receipt and the drawer opens.
 
-## 9.7 Barcode scanner
+## 9.8 Barcode scanner
 
 1. Plug it in (USB) or pair it (Bluetooth).
 2. Open Notepad and scan a product: the number appears and the cursor moves to a **new line**.
@@ -92,7 +98,7 @@ Browsers allow a web app to use its **security functions** (the till's own signi
 
 **Why:** the till adds the product when the scanner "presses Enter" after the code.
 
-## 9.8 Handheld (warehouse)
+## 9.9 Handheld (warehouse)
 
 1. Register a device of kind **Handheld scanner** for the branch.
 2. On the phone: Chrome, do 9.3 if needed, open the till address (9.2), enrol with the code.
@@ -100,7 +106,7 @@ Browsers allow a web app to use its **security functions** (the till's own signi
 
 **Note:** the handheld needs its branch's server to be reachable (it does not queue work offline). For warehouses with weak internet, use a branch server (Chapter 10).
 
-## 9.9 Kitchen screen (Restaurant)
+## 9.10 Kitchen screen (Restaurant)
 
 1. Register a device of kind **Kitchen display** for the branch.
 2. On the screen's PC or tablet: Chrome, do 9.3 if needed, open the till address, enrol with the code.
@@ -109,15 +115,15 @@ Browsers allow a web app to use its **security functions** (the till's own signi
 
 **Check:** send a dish from a till: it appears on the screen within a few seconds.
 
-## 9.10 Counting stock with a handheld
+## 9.11 Counting stock with a handheld
 
 During a stock count (Chapter 14.4) storekeepers scan the bin, then each product, and type the quantity. Counts from several handhelds go into the same count.
 
-## 9.11 Label scale (Grocery)
+## 9.12 Label scale (Grocery)
 
 Set the scale to print **EAN-13** labels starting with `21` (see Chapter 8, Grocery). The scale's own software holds each item's **PLU** (5-digit code) and price per kg; keep its PLU codes the same as the products' **scale codes**.
 
-## 9.12 When a device is lost, stolen or replaced
+## 9.13 When a device is lost, stolen or replaced
 
 - **Lost or stolen:** **System → Devices → Revoke** at once. Its access and every sign-in on it end immediately.
 - **Replacing a till that still has unsent sales:** on the old till press **Export unsent sales** (in the yellow banner). In the back office: **System → Sync Center → Import till file**. Then register and enrol the new device.

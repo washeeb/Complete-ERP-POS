@@ -1,6 +1,6 @@
 import { v7 as uuidv7 } from 'uuid'
 import { warrantyUntil } from './electronics'
-import { api, ApiError } from './api'
+import { api, ApiError, van as vanApi, type OrderBody, type VisitBody } from './api'
 import { db, getLocalShift, getSession, type OfflineGrant } from './db'
 import { enqueue, grantFor } from './offline'
 import type { Bootstrap, Payment, PostedSale, Shift, TradeInItem } from './types'
@@ -15,6 +15,28 @@ import type { priceCart } from './cart'
 export async function queueMode(online: boolean): Promise<boolean> {
   const session = await getSession()
   return !online || !session?.token || (await db.queue.count()) > 0
+}
+
+/**
+ * Distribution: a visit or an order from the road. Sent straight away when the server answers; otherwise (or when other
+ * work is already waiting) it joins the offline queue and is sent in order later. Returns whether it was queued.
+ */
+export async function submitRoadEvent(online: boolean, type: 'visit' | 'order', payload: VisitBody | OrderBody): Promise<{ queued: boolean; number?: string; status?: string }> {
+  if (!(await queueMode(online))) {
+    try {
+      if (type === 'visit') {
+        await vanApi.visit(payload as VisitBody)
+        return { queued: false }
+      }
+      const r = await vanApi.order(payload as OrderBody)
+      return { queued: false, number: r.order.number, status: r.order.status }
+    } catch (e) {
+      if (!isNetwork(e)) throw e
+    }
+  }
+  const { id, ...rest } = payload
+  await enqueue({ id, type, grant: await currentGrant(), payload: rest })
+  return { queued: true }
 }
 
 async function currentGrant(): Promise<OfflineGrant> {

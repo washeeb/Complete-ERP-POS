@@ -90,7 +90,7 @@
         .muted { opacity: .65; }
         .fin-scroll { overflow-x: auto; }
         .fin-table { width: 100%; border-collapse: collapse; font-size: .875rem; }
-        .fin-table th, .fin-table td { padding: 6px 8px; border-bottom: 1px solid rgb(0 0 0 / .06); text-align: left; vertical-align: top; }
+        .fin-table th, .fin-table td { padding: 6px 8px; border-bottom: 1px solid color-mix(in srgb, currentColor 6%, transparent); text-align: left; vertical-align: top; }
         .fin-table .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
     </style>
 </x-filament-panels::page>

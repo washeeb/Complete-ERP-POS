@@ -122,6 +122,16 @@ class ProductResource extends Resource
                         ->helperText('Needs "Track stock"; not with batches. Stock already on hand gets its numbers under Electronics → Serial numbers.'),
                     TextInput::make('warranty_months')->label('Warranty (months)')->numeric()->minValue(0)->maxValue(120),
                 ]),
+            Section::make('Returnable containers (empties)')->columns(3)->visible(fn () => ModuleService::enabledAnywhere('distribution'))
+                ->description('Crates, bottles, gas cylinders: the container is a product of its own, sold at its deposit and bought back at the same price when the empty comes back.')
+                ->schema([
+                    Toggle::make('is_container')->label('This product is a returnable container')->inline(false)
+                        ->helperText('Its price is the deposit. Empties handed back at the till come in as a minus quantity.'),
+                    Select::make('deposit_product_id')->label('Sold with this container (deposit)')->placeholder('No deposit')->searchable()
+                        ->options(fn () => Product::where('is_container', true)->orderBy('name')->pluck('name', 'id')),
+                    TextInput::make('deposit_per_unit')->label('Containers per unit sold')->numeric()->minValue(0.001)->default('1')
+                        ->helperText('1 for a bottle; 0.042 if a crate holds 24 and you sell single bottles.'),
+                ]),
             Section::make('Consignment')->columns(2)->visible(fn () => ModuleService::enabledAnywhere('fashion'))
                 ->description('Stock that belongs to a supplier: received at no cost (Stock → adjustment "Consignment received"); each sale owes them their share, settled from Fashion → Sell-through & consignment.')
                 ->schema([

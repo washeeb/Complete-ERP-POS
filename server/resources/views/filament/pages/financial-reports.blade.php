@@ -144,7 +144,7 @@
         .fin-filters label { display: grid; gap: 4px; font-size: .875rem; font-weight: 500; }
         .fin-scroll { overflow-x: auto; } .fin-table.wide { min-width: 560px; }
         .fin-table { width: 100%; border-collapse: collapse; font-size: .875rem; }
-        .fin-table th, .fin-table td { padding: 6px 8px; border-bottom: 1px solid rgb(0 0 0 / .06); text-align: left; }
+        .fin-table th, .fin-table td { padding: 6px 8px; border-bottom: 1px solid color-mix(in srgb, currentColor 6%, transparent); text-align: left; }
         .fin-table .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
         .fin-head th { padding-top: 14px; font-weight: 700; }
         .fin-sub td { font-weight: 600; }

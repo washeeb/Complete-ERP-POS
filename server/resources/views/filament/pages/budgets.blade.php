@@ -34,7 +34,7 @@
         .bud-scroll { overflow-x: auto; }
         .bud { border-collapse: collapse; font-size: .8rem; } .bud th, .bud td { padding: 2px 4px; text-align: left; white-space: nowrap; }
         .bud .acc { min-width: 220px; white-space: normal; }
-        .bud .cell { width: 84px; padding: 2px 4px; text-align: right; border: 1px solid rgb(0 0 0 / .15); border-radius: 4px; background: transparent; color: inherit; }
+        .bud .cell { width: 84px; padding: 2px 4px; text-align: right; border: 1px solid color-mix(in srgb, currentColor 15%, transparent); border-radius: 4px; background: transparent; color: inherit; }
         .bud .spread { font-size: .7rem; text-decoration: underline; }
     </style>
 </x-filament-panels::page>

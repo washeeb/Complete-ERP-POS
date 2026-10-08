@@ -45,7 +45,7 @@
     <style>
         .ts-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; } .ts-filters label { display: grid; gap: 4px; font-size: .875rem; }
         .ts-scroll { overflow-x: auto; } .ts { width: 100%; border-collapse: collapse; font-size: .875rem; }
-        .ts th, .ts td { padding: 6px 8px; border-bottom: 1px solid rgb(0 0 0 / .06); text-align: left; } .ts .num { text-align: right; }
+        .ts th, .ts td { padding: 6px 8px; border-bottom: 1px solid color-mix(in srgb, currentColor 6%, transparent); text-align: left; } .ts .num { text-align: right; }
         .ts-link { text-decoration: underline; } .ts-sel td { background: rgb(59 130 246 / .08); } .ts-void td { opacity: .5; text-decoration: line-through; }
     </style>
 </x-filament-panels::page>

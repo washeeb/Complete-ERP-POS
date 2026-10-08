@@ -3,6 +3,7 @@
 namespace App\Domain\Pos;
 
 use App\Domain\Devices\OfflineGrant;
+use App\Domain\Distribution\RouteService;
 use App\Domain\Hr\AttendanceService;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
@@ -96,6 +97,14 @@ final class PosSyncService
                     Carbon::parse($p['closed_at']), offline: true);
 
                 return ['status' => $wasClosed ? 'duplicate' : 'accepted'];
+
+            case 'visit': // Distribution: a rep's call on a customer, recorded while offline
+                return app(RouteService::class)->visit($device, $user, ['id' => $e['id']] + $p);
+
+            case 'order': // Distribution: an order taken on the road while offline
+                $r = app(RouteService::class)->takeOrder($device, $user, ['id' => $e['id']] + $p);
+
+                return ['status' => $r['status'], 'number' => $r['order']->number];
 
             case 'clock': // clocked in or out while offline; the PIN was checked against this person's offline sign-in on the till
                 $r = $this->attendance->clock($device, $user, (string) ($p['kind'] ?? ''), $e['id'], Carbon::parse($p['occurred_at'] ?? 'now'), 'offline');

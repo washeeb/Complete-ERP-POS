@@ -14,5 +14,5 @@
     <x-filament::section heading="Top products">
         <table class="sr">@foreach ($this->byProduct() as $x)<tr><td>{{ $x->name }} <span style="opacity:.6">{{ $x->sku }}</span></td><td class="num">{{ \App\Filament\Support\Fields::qty($x->qty) }}</td><td class="num">{{ $money($x->value) }}</td></tr>@endforeach</table>
     </x-filament::section>
-    <style>.sr-f{display:flex;flex-wrap:wrap;gap:12px}.sr-f label{display:grid;gap:4px;font-size:.875rem}.sr{width:100%;border-collapse:collapse;font-size:.875rem}.sr td{padding:6px 8px;border-bottom:1px solid rgb(0 0 0/.06)}.sr .num{text-align:right}.sr .t td{font-weight:700}</style>
+    <style>.sr-f{display:flex;flex-wrap:wrap;gap:12px}.sr-f label{display:grid;gap:4px;font-size:.875rem}.sr{width:100%;border-collapse:collapse;font-size:.875rem}.sr td{padding:6px 8px;border-bottom:1px solid color-mix(in srgb, currentColor 6%, transparent)}.sr .num{text-align:right}.sr .t td{font-weight:700}</style>
 </x-filament-panels::page>

@@ -120,7 +120,23 @@ final class CatalogService
 
         $product->fill(array_intersect_key($data, array_flip(['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu',
             'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'fda_reg_no', 'station', 'track_serials', 'warranty_months', 'consignor_id', 'consignment_bp',
-            'service_minutes', 'commission_bp', 'licence_keys'])));
+            'service_minutes', 'commission_bp', 'licence_keys',
+            'is_container', 'deposit_product_id', 'deposit_per_unit'])));
+        // Distribution: returnable containers (crates, bottles, gas cylinders) and the container sold with each unit.
+        $product->deposit_product_id = $product->deposit_product_id ?: null;
+        if ($product->deposit_product_id) {
+            $container = Product::find($product->deposit_product_id);
+            if (! $container?->is_container || $container->id === $product->id || $product->is_container) {
+                throw new DomainException('Deposit: choose a product marked as a returnable container (and not for a container itself).');
+            }
+            $per = (float) ($product->deposit_per_unit ?? 1);
+            if ($per <= 0 || $per > 1000) {
+                throw new DomainException('Containers per unit: more than 0 (e.g. 1 bottle, or 0.042 of a crate of 24).');
+            }
+            $product->deposit_per_unit = $product->deposit_per_unit ?? '1';
+        } else {
+            $product->deposit_per_unit = null;
+        }
         // Services: a bookable service and how long it takes; a commission rate of its own; a prepaid pack; licence keys.
         $product->service_minutes = ($product->service_minutes === null || $product->service_minutes === '') ? null : (int) $product->service_minutes;
         $product->commission_bp = ($product->commission_bp === null || $product->commission_bp === '') ? null : (int) $product->commission_bp;

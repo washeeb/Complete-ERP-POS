@@ -37,7 +37,7 @@
         .cd-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; } .cd-filters label { display: grid; gap: 4px; font-size: .875rem; }
         .cd-links { display: flex; gap: 16px; padding-bottom: 8px; }
         .cd-scroll { overflow-x: auto; } .cd { width: 100%; border-collapse: collapse; font-size: .875rem; }
-        .cd th, .cd td { padding: 6px 8px; border-bottom: 1px solid rgb(0 0 0 / .06); text-align: left; } .cd .num { text-align: right; }
+        .cd th, .cd td { padding: 6px 8px; border-bottom: 1px solid color-mix(in srgb, currentColor 6%, transparent); text-align: left; } .cd .num { text-align: right; }
         .muted { opacity: .6; font-size: .8rem; }
     </style>
 </x-filament-panels::page>

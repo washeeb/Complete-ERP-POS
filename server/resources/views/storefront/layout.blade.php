@@ -4,9 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? $shop->name }}</title>
+    <script>try{var t=localStorage.getItem('shop-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}</script>
     <style>
         :root { --bg:#f7f7f5; --card:#fff; --ink:#1d1d1b; --muted:#6b6b66; --line:#e3e3de; --accent:#14532d; --warn:#9a3412; }
-        @media (prefers-color-scheme: dark) { :root { --bg:#141413; --card:#1f1f1d; --ink:#ececea; --muted:#a3a39c; --line:#33332f; --accent:#4ade80; --warn:#fb923c; } }
+        :root[data-theme="dark"] { --bg:#141413; --card:#1f1f1d; --ink:#ececea; --muted:#a3a39c; --line:#33332f; --accent:#4ade80; --warn:#fb923c; color-scheme:dark; }
+        @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#141413; --card:#1f1f1d; --ink:#ececea; --muted:#a3a39c; --line:#33332f; --accent:#4ade80; --warn:#fb923c; color-scheme:dark; } }
+        .theme-picker { width:auto; padding:4px 8px; font-size:.8rem; }
         * { box-sizing: border-box; }
         body { margin:0; font:16px/1.5 system-ui, sans-serif; background:var(--bg); color:var(--ink); }
         header, main, footer { max-width:1040px; margin:0 auto; padding:16px; }
@@ -51,7 +54,12 @@
     @if ($errors->any())<div class="notice error" role="alert">{{ implode(' ', $errors->all()) }}</div>@endif
     @yield('content')
 </main>
-<footer class="muted"><small>{{ $shop->branch->name }}</small></footer>
+<footer class="muted"><small>{{ $shop->branch->name }}</small>
+    <select class="theme-picker" aria-label="Theme" onchange="var t=this.value;var d=document.documentElement;if(t==='system'){delete d.dataset.theme;try{localStorage.removeItem('shop-theme')}catch(e){}}else{d.dataset.theme=t;try{localStorage.setItem('shop-theme',t)}catch(e){}}">
+        <option value="system">Theme: System</option><option value="light">Theme: Light</option><option value="dark">Theme: Dark</option>
+    </select>
+    <script>try{var s=document.querySelector('.theme-picker'),v=localStorage.getItem('shop-theme');if(v)s.value=v;}catch(e){}</script>
+</footer>
 </div>
 @if ($rt) @vite('resources/js/storefront.js') @endif
 </body>

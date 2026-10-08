@@ -11,6 +11,7 @@ import { Receipt } from './screens/Receipt'
 import { Sell } from './screens/Sell'
 import type { Bootstrap, PostedSale, Product } from './types'
 import './App.css'
+import { applyTheme, getTheme, THEMES, type ThemeChoice } from './theme'
 
 type Stage = 'loading' | 'enroll' | 'login' | 'open-shift' | 'sell' | 'receipt' | 'close-shift' | 'handheld' | 'kitchen' | 'error'
 
@@ -164,6 +165,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <ThemePicker />
       <div className={`status status-${conn} no-print`} role="status">{LABELS[conn]}{online && live === 'live' ? ' · live' : ''}</div>
       {boot?.license?.message && (
         <div className={`banner no-print ${boot.license.read_only ? 'bad' : 'warn'}`} role="alert">{boot.license.read_only ? 'Read-only: ' : ''}{boot.license.message}</div>
@@ -195,5 +197,16 @@ export default function App() {
         </div>
       )}
     </div>
+  )
+}
+
+/** System / Light / Dark for this device (bottom left on every screen). */
+function ThemePicker() {
+  const [theme, setTheme] = useState<ThemeChoice>(getTheme())
+  return (
+    <select className="theme-picker no-print" aria-label="Theme" value={theme}
+      onChange={(e) => { const t = e.target.value as ThemeChoice; setTheme(t); applyTheme(t) }}>
+      {(Object.keys(THEMES) as ThemeChoice[]).map((t) => <option key={t} value={t}>Theme: {THEMES[t]}</option>)}
+    </select>
   )
 }

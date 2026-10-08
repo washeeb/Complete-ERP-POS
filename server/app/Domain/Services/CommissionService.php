@@ -26,8 +26,18 @@ final class CommissionService
     {
         $lines = DB::table('sale_lines as l')->join('employees as e', 'e.id', '=', 'l.staff_id')->join('products as p', 'p.id', '=', 'l.product_id')
             ->leftJoin('service_passes as sp', 'sp.id', '=', 'l.service_pass_id')
-            ->where('l.sale_id', $sale->id)->get(['l.id', 'l.product_id', 'l.qty', 'l.net_minor', 'l.staff_id', 'p.commission_bp as product_bp', 'e.commission_bp as staff_bp',
+            ->where('l.sale_id', $sale->id)->where('p.is_container', false)
+            ->get(['l.id', 'l.product_id', 'l.qty', 'l.net_minor', 'l.staff_id', 'p.commission_bp as product_bp', 'e.commission_bp as staff_bp',
                 'l.service_pass_id', 'sp.session_value_minor']);
+        // Distribution: on a van's till, lines nobody else did earn the rep (the employee who signed in) their commission.
+        $rep = DB::table('tills as t')->join('warehouses as w', 'w.id', '=', 't.warehouse_id')->where('t.id', $sale->till_id)->where('w.is_van', true)->exists()
+            ? DB::table('employees')->where('user_id', $sale->cashier_id)->first(['id', 'commission_bp']) : null;
+        if ($rep && $rep->commission_bp > 0) {
+            $lines = $lines->concat(DB::table('sale_lines as l')->join('products as p', 'p.id', '=', 'l.product_id')->where('l.sale_id', $sale->id)
+                ->whereNull('l.staff_id')->where('p.is_container', false)
+                ->get(['l.id', 'l.product_id', 'l.qty', 'l.net_minor', 'p.commission_bp as product_bp'])
+                ->map(fn ($l) => (object) ((array) $l + ['staff_id' => $rep->id, 'staff_bp' => $rep->commission_bp, 'service_pass_id' => null, 'session_value_minor' => null])));
+        }
         foreach ($lines as $l) {
             $rate = (int) ($l->product_bp ?? $l->staff_bp);
             // A session from a pass is a free line: its value is the pass's price per session.

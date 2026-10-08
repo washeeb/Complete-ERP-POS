@@ -17,7 +17,7 @@ A person's **security level** is the highest level of role they can ever be give
 
 ## 15.2 Roles provided
 
-Owner · General Manager · Finance Manager · Accountant · Auditor · HR Manager · Payroll Officer · Purchasing Officer · Purchase Approver · Warehouse Manager · Storekeeper · Picker / Packer · Branch Manager · Supervisor · Cashier · Sales Rep · Van Sales Rep · Customer Service · Marketing · E-commerce Manager · Delivery Rider · Pharmacist · Pharmacy Technician · Waiter / Bartender · Kitchen Staff · Repair Technician · Tailor · Stylist / Therapist · IT Admin.
+Owner · General Manager · Finance Manager · Accountant · Auditor · HR Manager · Payroll Officer · Purchasing Officer · Purchase Approver · Warehouse Manager · Storekeeper · Picker / Packer · Branch Manager · Supervisor · Cashier · Sales Rep · Van Sales Rep · Customer Service · Marketing · E-commerce Manager · Delivery Rider · Van Sales Rep · Pharmacist · Pharmacy Technician · Waiter / Bartender · Kitchen Staff · Repair Technician · Tailor · Stylist / Therapist · IT Admin.
 
 You can change what a role allows under **People & access → Roles** (you can only add permissions you hold yourself).
 
@@ -69,6 +69,7 @@ After changing `.env`, run `php artisan optimize`.
 | Key | Action |
 |---|---|
 | F2 | Search / scan |
+| F3 | Today's route (vans) |
 | F4 | Choose customer |
 | F6 | Tables (Restaurant) |
 | F7 | Repairs (Electronics) |

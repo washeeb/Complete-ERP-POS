@@ -300,3 +300,12 @@ Errors use the standard body `{error, detail}`. For example: `wrong_status`, `no
   - The sale response adds `licence_keys: [{sale_line_id, key}]` and per line `id`, `staff_id`, `service_pass_id`.
 - **Sync:** `appointment` and `commission` travel in the `sales` group; `service_pass`, `service_pass_use` and `membership` in `customers`; `membership_plan` in `catalog`; `licence_key` in `stock`.
 - **Till app hosting:** `npm run build:server` (in `pos/`) builds the till into `server/public/pos`; the server serves it at `/pos/` (same origin as the API).
+
+## Distribution (Phase 10e)
+
+- **Bootstrap** adds `van` (null unless the till is a van's and the module is on): `{van: {id, code, name, vehicle_reg}, routes: [{id, code, name}], stops: [{route_id, customer_id, sequence}], weekday, month: {target_minor, sold_minor, visit_target}}`.
+- **Catalog:** per product `is_container`, `deposit_product_id`, `deposit_per_unit`.
+- `GET pos/van/today` → `{van}`; `POST pos/van/visits` `{id, customer_id, route_id?, outcome: sold|order|no_order|closed, note?, lat?, lng?, accuracy_m?, sale_id?, customer_order_id?, occurred_at}` (idempotent on id); `POST pos/van/orders` `{id, customer_id, lines: [{product_uom_id, qty}], note?, customer_ref?}` → `{status, order: {id, number, status, total_minor, hold_reason}}` (idempotent; confirmed or `on_hold`).
+- **Offline queue** (`POST pos/sync`): event types `visit` and `order` with the same payloads (id = event id).
+- **Sales:** a container product may have a minus quantity (empties handed back; engine id `container:<id>`, outside promotions). When the total is below zero, the only payment is `cash` with that negative amount (deposit paid out).
+- **Sync:** `visit` (sales group); `sales_route`, `rep_target` (customers); `van_settlement` with lines (warehouse); warehouses carry `is_van`, `vehicle_reg`, `rep_user_id`, `home_warehouse_id`.

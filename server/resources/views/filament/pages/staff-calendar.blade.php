@@ -43,7 +43,7 @@
     <style>
         .sc-filters { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; } .sc-filters label { display: grid; gap: 4px; font-size: .875rem; } .sc-nav { display: flex; gap: 6px; }
         .sc-wrap { overflow-x: auto; } .sc { border-collapse: collapse; font-size: .8rem; min-width: 100%; }
-        .sc th, .sc td { border: 1px solid rgb(0 0 0 / .08); padding: 2px 4px; vertical-align: top; min-width: 140px; } .sc .sc-time { min-width: 52px; width: 52px; text-align: right; }
+        .sc th, .sc td { border: 1px solid color-mix(in srgb, currentColor 8%, transparent); padding: 2px 4px; vertical-align: top; min-width: 140px; } .sc .sc-time { min-width: 52px; width: 52px; text-align: right; }
         .sc-appt { border-radius: 6px; padding: 2px 6px; margin: 1px 0; background: rgb(59 130 246 / .15); }
         .sc-arrived { background: rgb(245 158 11 / .2); } .sc-done { background: rgb(34 197 94 / .18); } .sc-no_show { background: rgb(239 68 68 / .15); text-decoration: line-through; }
         .muted { opacity: .65; font-size: .75rem; }

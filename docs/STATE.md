@@ -1,9 +1,21 @@
 # State (resume file)
 
-**Phase:** 10 — Industry modules wave 2 · **Status:** 10d (data import/export, stock adjustments) done on branch `phase-10d-data-exchange` (PR to `main`); next 10e Distribution, then 10f Manufacturing
-**Updated:** 2026-10-22 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–9, licensing and 10a–10c merged (PRs #1–#19)
+**Phase:** 10 — Industry modules wave 2 · **Status:** 10e (Sales & Distribution) + themes done on branch `phase-10e-distribution` (PR to `main`); next 10f Manufacturing
+**Updated:** 2026-10-24 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–9, licensing and 10a–10d merged (PRs #1–#20)
 
-## Phase 10d — done on branch `phase-10d-data-exchange` (PR to `main`)
+## Phase 10e — done on branch `phase-10e-distribution` (PR to `main`)
+- **Owner answers (2026-10-23):** fully offline phone app; credit within limit; load + daily settlement; routes/visits, targets/commission, orders for delivery, returns/empties.
+- **Server:** migration `2026_10_24_100001` (warehouse van fields; product containers; `routes`, `route_stops`, `visits`, `rep_targets`, `van_settlements` + lines; releases reserved modules); models `SalesRoute`, `RouteStop`, `Visit`, `RepTarget`, `VanSettlement(Line)`; `app/Domain/Distribution/{VanService, VanSettlementService, RouteService, DistributionReports}`; `VanController` (`pos/van/*`), bootstrap `van`, sync events `visit`/`order`; SaleService containers (minus lines, deposit pay-out); rep commission on van tills.
+- **Back office:** Distribution → Vans (load/unload/settle), Van settlements, Routes, Visits, Rep targets, Rep performance; Product → Returnable containers; permissions `distribution.routes`, `distribution.settle`; module 0.1.0.
+- **Till:** `pos/src/distribution.ts` (deposits, route, GPS), `screens/Van.tsx` (route, empties); van chip, Route (F3), Take order, Empties returned, deposit pay-out.
+- **Themes:** till picker (`pos/src/theme.ts`), back office (Filament switcher; pages fixed for dark), online shop footer.
+- **Tests:** DistributionTest (5), `distribution.test.ts`, e2e `van.spec.ts`; totals 321 Pest + 53 Vitest + 15 Playwright.
+- **Docs:** distribution.md, manual (08 checklist, 09 van phones + theme, 07 back-office theme, 15 F3), api.md, cashier.md, CHANGELOG 0.20.0, DECISIONS 10e + themes.
+
+## Phase 10d — done (merged, PR #20)
+- CSV/PDF export everywhere, CSV imports, stock adjustments, stock sheets — see manual chapter 14.
+
+## Phase 10d — details
 - **Server:** `Support/Exports/Exporter` (CSV/PDF, dompdf); `Filament/Support/{TableExport, ExportsPage}` (Export on every table and report page; AppServiceProvider); migration `2026_10_23_100001` (`stock_adjustments` + lines, `data_imports`); `Domain/Inventory/StockAdjustmentService`; `Domain/Imports/{CsvFile, Importer, ImportService, Importers/*}` (products, prices, customers, suppliers, opening stock, stock adjustment, stock count; `StockRows` stock sheet); `CatalogService::inputOf()/withPrice()`.
 - **Back office:** System → Import data (CSV); Stock → Stock adjustments (draft/submit/post, voucher PDF); Stock on hand → Stock sheet, Update stock from CSV; stock count → count sheet, import counts; Import shortcuts on Products, Customers, Suppliers.
 - **Permissions/settings:** `stock.adjust.approve` (Core 0.11.0); `stock.adjustment_approval_minor`; ADJ numbers.
@@ -140,9 +152,10 @@
 ## Licensing (merged, PR #12)
 - Signed activation keys, expiry with grace then read-only, daily check-in, tamper detection, watermarks — see docs/licensing.md. Dev licence valid to 2027-12-31 (dev key in `.local-secrets/license-dev.json`). Before the first customer release: production key (`license:keygen`), its public key in `config/license.php`, a licence server.
 
-## Next — Phase 10e (Sales & Distribution)
-- Owner answer: a phone app for reps, each van a warehouse.
-- Scope: van sales (van stock as a warehouse, load/unload transfers, sales and collections on the route), routes and visits, rep targets and commissions, B2B order taking on the phone, settlement at the end of the day. Then 10f Manufacturing (actual cost).
+## Next — Phase 10f (Manufacturing)
+- Owner answer: production at actual cost.
+- Scope: bills of materials (multi-level), routings/work centres, work orders (issue materials, report output, scrap), backflush, actual costing, QC, MRP suggestions.
+
 ## Owner decisions pending
 - Accountant check of the Ghana tax set-up (VAT/NHIL/GETFund rates and the payroll PAYE bands / SSNIT rates — Payroll → Tax and SSNIT rules) before go-live.
 - WooCommerce/Shopify: connect a real store only with the owner's keys.
@@ -169,4 +182,4 @@
   - in tests, `flushSession()` before switching users.
 
 ## Blockers
-- Merge PR `phase-10d-data-exchange` → `main` (asked in chat).
+- Merge PR `phase-10e-distribution` → `main` (asked in chat).

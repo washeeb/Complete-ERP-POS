@@ -1,11 +1,24 @@
 {
   "key": "distribution",
   "name": "Sales & Distribution",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "kind": "industry",
-  "stage": "planned",
+  "stage": "available",
   "phase": 10,
-  "description": "Routes, territories, van stock, offline order-taking, GPS check-ins, collections.",
-  "requires": ["core"],
-  "permissions": []
+  "description": "Vans as warehouses with their own till (fully offline on the rep’s phone), van loading and end-of-day settlement, routes and GPS visits, orders for delivery, credit within limits, rep targets and commission, returnable containers (empties).",
+  "requires": [
+    "core"
+  ],
+  "permissions": [
+    {
+      "key": "distribution.routes",
+      "label": "Set up vans, routes and rep targets",
+      "min_level": 4
+    },
+    {
+      "key": "distribution.settle",
+      "label": "Approve van settlements (stock differences and unloading; not your own)",
+      "min_level": 3
+    }
+  ]
 }

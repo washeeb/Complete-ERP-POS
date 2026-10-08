@@ -20,5 +20,5 @@
                 Standard day {{ $r['standard_day_hours'] ?? 8 }} hours (time beyond it is overtime).</p>
         </x-filament::section>
     @endif
-    <style>.pp { width: 100%; max-width: 480px; border-collapse: collapse; font-size: .875rem } .pp td, .pp th { padding: 4px 6px; border-bottom: 1px solid rgb(0 0 0 / .06); text-align: left } .pp .num { text-align: right } .pp-note { font-size: .85rem; margin-top: 10px }</style>
+    <style>.pp { width: 100%; max-width: 480px; border-collapse: collapse; font-size: .875rem } .pp td, .pp th { padding: 4px 6px; border-bottom: 1px solid color-mix(in srgb, currentColor 6%, transparent); text-align: left } .pp .num { text-align: right } .pp-note { font-size: .85rem; margin-top: 10px }</style>
 </x-filament-panels::page>

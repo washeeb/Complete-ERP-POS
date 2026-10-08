@@ -13,6 +13,9 @@ import { AlterationsScreen, StylePicker } from './Fashion'
 import { styleOf } from '../fashion'
 import { AppointmentsScreen, PassesScreen, StaffPrompt } from './Services'
 import { isService } from '../services'
+import { EmptiesDialog, recordVisit, RouteScreen } from './Van'
+import { achieved, withDeposits } from '../distribution'
+import { submitRoadEvent } from '../till'
 import { v7 as uuidv7 } from 'uuid'
 import { formatMoney, prettyQty, toMilli } from '../money'
 import type { Appointment, Services, ServicePass, StaffMember } from '../types'
@@ -68,6 +71,12 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   const [staffPick, setStaffPick] = useState<{ product: Product; pass?: { pass: ServicePass; item: number } } | null>(null)
   const [appointmentsOpen, setAppointmentsOpen] = useState(false)
   const [passesOpen, setPassesOpen] = useState(false)
+  // Distribution: today's route, empties handed back, an order for delivery instead of a sale, and the visit being made.
+  const [routeOpen, setRouteOpen] = useState(false)
+  const [emptiesOpen, setEmptiesOpen] = useState(false)
+  const [orderMode, setOrderMode] = useState(false)
+  const [routeCtx, setRouteCtx] = useState<{ customerId: string; routeId: string } | null>(null)
+  const containers = useMemo(() => products.filter((p) => p.is_container), [products])
   // Pharmacy: the prescription and the pharmacist's approval for prescription-only medicines in this sale.
   const [rx, setRx] = useState<Rx | null>(null)
   const [rxPrompt, setRxPrompt] = useState<{ message: string; payments?: Payment[]; approvals?: Approvals } | null>(null)
@@ -110,8 +119,8 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   }
   const list = boot.price_lists.find((l) => l.id === listId) ?? defaultList
   const money = (m: number) => formatMoney(m, boot.company.currency, boot.company.exponent)
-  const cart = useMemo(() => priceCart(lines, list, new Date(), { promotions, branchId: boot.branch.id, utcOffsetMinutes: utcOffset, coupon, saleDiscountBp: saleBp,
-    serviceBp: restaurant?.service_charge?.bp ?? 0 }), [lines, list, promotions, utcOffset, coupon, saleBp, boot.branch.id, restaurant])
+  const cart = useMemo(() => priceCart(withDeposits(lines, products), list, new Date(), { promotions, branchId: boot.branch.id, utcOffsetMinutes: utcOffset, coupon, saleDiscountBp: saleBp,
+    serviceBp: restaurant?.service_charge?.bp ?? 0 }), [lines, products, list, promotions, utcOffset, coupon, saleBp, boot.branch.id, restaurant])
   const results = useMemo(() => search(products, query), [products, query])
 
   useEffect(() => {
@@ -124,6 +133,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       if (e.key === 'F7' && !paying && online && electronics) { e.preventDefault(); setRepairsOpen(true) }
       if (e.key === 'F9' && !paying && online && fashion) { e.preventDefault(); setAlterationsOpen(true) }
       if (e.key === 'F10' && !paying && online && services) { e.preventDefault(); setAppointmentsOpen(true) }
+      if (e.key === 'F3' && !paying && boot.van) { e.preventDefault(); setRouteOpen(true) }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -166,6 +176,29 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
     setLines((l) => [...l, { key: `sn:${uuidv7()}`, product, unit: product.units.find((u) => u.is_base) ?? product.units[0], qtyMilli: serials.length * 1000, serials }])
     setSerialPick(null)
     searchRef.current?.focus()
+  }
+
+  /** Distribution: send the cart as an order for delivery (from the van's warehouse), queued if offline. */
+  async function sendOrder() {
+    if (!customer) return setMessage('An order is for a customer: choose the customer (F4) first.')
+    const orderLines = lines.filter((l) => !l.autoDeposit && l.qtyMilli > 0 && !l.product.is_container)
+    if (!orderLines.length) return setMessage('Add what the customer is ordering.')
+    setBusy(true)
+    try {
+      const id = uuidv7()
+      const r = await submitRoadEvent(online, 'order', { id, customer_id: customer.id, lines: orderLines.map((l) => ({ product_uom_id: l.unit.id, qty: (l.qtyMilli / 1000).toString() })) })
+      if (routeCtx?.customerId === customer.id) await recordVisit(online, customer.id, routeCtx.routeId, 'order', { customer_order_id: id }).catch(() => undefined)
+      setMessage(r.queued ? `Order for ${customer.name} saved on this phone; it is sent when there is signal.`
+        : `Order ${r.number} sent for ${customer.name}${r.status === 'on_hold' ? ' — it is on credit hold until the office releases it' : ''}.`)
+      setLines([])
+      setOrderMode(false)
+      setRouteCtx(null)
+      pickCustomer(null)
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(false)
+    }
   }
 
   /** A service done by a staff member (or nobody in particular); a session from a prepaid pass is a line at no charge. */
@@ -283,6 +316,14 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   }
 
   function startPay() {
+    if (orderMode) {
+      sendOrder()
+      return
+    }
+    if (cart.total < 0 && lines.length) { // only empties came back: pay the deposit out
+      if (window.confirm(`Pay out ${money(-cart.total)} in cash for the empties?`)) complete([{ method: 'cash', amount_minor: cart.total, tendered_minor: cart.total }])
+      return
+    }
     if (lines.some((l) => l.product.is_pack) && !customer) {
       setMessage('A prepaid pack belongs to a customer: choose the customer (F4) first.')
       return
@@ -348,6 +389,10 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       setSaleBp(0)
       setRx(null)
       setPayingBill(null)
+      if (routeCtx && customer?.id === routeCtx.customerId) { // a sale on the route is the visit's outcome
+        recordVisit(online, routeCtx.customerId, routeCtx.routeId, 'sold', { sale_id: sale.id }).catch(() => undefined)
+      }
+      setRouteCtx(null)
       pickCustomer(null)
       onPosted(sale)
     } catch (err) {
@@ -417,6 +462,11 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
           {online && electronics && <button type="button" onClick={() => setRepairsOpen(true)}>Repairs (F7)</button>}
           {online && fashion && <button type="button" onClick={() => setAlterationsOpen(true)}>Alterations (F9)</button>}
           {online && services && <button type="button" onClick={() => setAppointmentsOpen(true)}>Appointments (F10)</button>}
+          {boot.van && <span className="chip" aria-label="Van">Van {boot.van.van.code}{achieved(boot.van) !== null ? ` · ${achieved(boot.van)}% of target` : ''}</span>}
+          {boot.van && <button type="button" onClick={() => setRouteOpen(true)}>Route (F3)</button>}
+          {containers.length > 0 && <button type="button" onClick={() => setEmptiesOpen(true)}>Empties returned</button>}
+          {boot.van && <button type="button" className={orderMode ? 'primary' : ''} aria-pressed={orderMode} onClick={() => setOrderMode((m) => !m)}>
+            {orderMode ? 'Taking an order — tap to sell instead' : 'Take order'}</button>}
           {payingBill && <span className="chip" aria-label="Paying bill">Paying {payingBill.label}
             <button type="button" className="link" onClick={() => { setPayingBill(null); setLines([]) }} aria-label="Stop paying this bill">✕</button></span>}
           {online && <button type="button" onClick={() => setReturning(true)}>Return (F8)</button>}
@@ -472,11 +522,13 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
                     {l.serials && <div className="small muted mono">S/N {l.serials.join(', ')}</div>}
                     {l.markdown && <div className="small promo">Marked-down sticker</div>}
                     {l.staff && <div className="small muted">with {l.staff.name}</div>}
+                    {l.autoDeposit && <div className="small muted">Deposit for the containers</div>}
+                    {l.qtyMilli < 0 && <div className="small promo">Empties returned</div>}
                     {l.pass && <div className="small promo">Prepaid session · {l.pass.number}</div>}
                     {l.promotions.map((p) => <div key={p.id} className="small promo">{p.name} −{money(p.saving_minor)}</div>)}
                     {l.manual && <div className="small promo">Discount −{money(l.discount - l.promotions.reduce((a, p) => a + p.saving_minor, 0))}</div>}
                   </td>
-                  <td>{l.diningItemId || l.service || l.serials || l.repairJobId || l.alteration || l.pass || l.appointmentId ? prettyQty(l.qtyMilli) : (
+                  <td>{l.diningItemId || l.service || l.serials || l.repairJobId || l.alteration || l.pass || l.appointmentId || l.autoDeposit ? prettyQty(l.qtyMilli) : (
                     <input className="qty mono" inputMode="decimal" defaultValue={prettyQty(l.qtyMilli)} key={l.qtyMilli}
                       onBlur={(e) => changeQty(l, e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} aria-label={`Quantity of ${l.product.name}`} />)}</td>
                   <td>
@@ -489,7 +541,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
                   <td className="num">{l.price ? money(l.price.amount_minor) : 'no price'}</td>
                   <td className="num">{money(l.total)}</td>
                   <td>{!l.service && <button type="button" className="link" onClick={() => setEditing(l)} aria-label={`Discount ${l.product.name}`}>%</button>}
-                    {!l.diningItemId && <button type="button" className="link" onClick={() => setLines((x) => setQty(x, l.key, 0))} aria-label={`Remove ${l.service ? 'service charge' : l.product.name}`}>✕</button>}</td>
+                    {!l.diningItemId && !l.autoDeposit && <button type="button" className="link" onClick={() => setLines((x) => setQty(x, l.key, 0))} aria-label={`Remove ${l.service ? 'service charge' : l.product.name}`}>✕</button>}</td>
                 </tr>
               ))}
             </tbody>
@@ -512,7 +564,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
           </form>
           <div className="row">
             <button type="button" onClick={() => setLines([])} disabled={!lines.length}>Clear</button>
-            <button type="button" className="primary big" onClick={startPay} disabled={!lines.length}>Pay (F12)</button>
+            <button type="button" className="primary big" onClick={startPay} disabled={!lines.length || busy}>{orderMode ? 'Send order (F12)' : cart.total < 0 ? 'Pay out deposit (F12)' : 'Pay (F12)'}</button>
           </div>
         </div>
       </section>
@@ -538,6 +590,11 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       {stylePick && <StylePicker style={stylePick} products={products} onPick={(p) => { setStylePick(null); add(p, p.units.find((u) => u.is_base) ?? p.units[0]) }}
         onCancel={() => setStylePick(null)} />}
       {alterationsOpen && <AlterationsScreen currency={boot.company.currency} exponent={boot.company.exponent} onCollect={collectAlteration} onClose={() => setAlterationsOpen(false)} />}
+      {routeOpen && boot.van && <RouteScreen day={boot.van} customers={customers} online={online} onClose={() => setRouteOpen(false)}
+        onSell={(c, routeId) => { pickCustomer(c); setRouteCtx({ customerId: c.id, routeId }); setOrderMode(false); setRouteOpen(false) }}
+        onOrder={(c, routeId) => { pickCustomer(c); setRouteCtx({ customerId: c.id, routeId }); setOrderMode(true); setRouteOpen(false) }} />}
+      {emptiesOpen && <EmptiesDialog containers={containers} onCancel={() => setEmptiesOpen(false)}
+        onAdd={(p, q) => { setLines((l) => [...l, { key: `empties:${uuidv7()}`, product: p, unit: p.units.find((u) => u.is_base) ?? p.units[0], qtyMilli: -q }]); setEmptiesOpen(false) }} />}
       {staffPick && services && <StaffPrompt product={staffPick.product} staff={services.staff} onPick={(s) => addService(staffPick.product, s, staffPick.pass)}
         onCancel={() => setStaffPick(null)} />}
       {appointmentsOpen && services && <AppointmentsScreen products={products} services={services} customer={customer} onCheckout={checkoutAppointment}
