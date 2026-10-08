@@ -309,3 +309,9 @@ Errors use the standard body `{error, detail}`. For example: `wrong_status`, `no
 - **Offline queue** (`POST pos/sync`): event types `visit` and `order` with the same payloads (id = event id).
 - **Sales:** a container product may have a minus quantity (empties handed back; engine id `container:<id>`, outside promotions). When the total is below zero, the only payment is `cash` with that negative amount (deposit paid out).
 - **Sync:** `visit` (sales group); `sales_route`, `rep_target` (customers); `van_settlement` with lines (warehouse); warehouses carry `is_van`, `vehicle_reg`, `rep_user_id`, `home_warehouse_id`.
+
+## Digital receipts (Phase 12)
+- `POST /api/v1/pos/sales/{id}/send` `{channel: sms|whatsapp|email, to}` (staff token) → `{status, detail}`. The bootstrap's `send_receipt` lists the channels switched on.
+
+## Public API for other systems (Phase 12)
+- Separate from the till API: `/api/public/v1/…`, keys from System → API clients. Full description: `GET /api/public/v1/openapi.json`. See docs/integrations.md.

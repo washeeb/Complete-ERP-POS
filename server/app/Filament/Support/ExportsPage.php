@@ -27,7 +27,8 @@ trait ExportsPage
     protected function exportGroup(): ActionGroup
     {
         return ActionGroup::make([
-            Action::make('exportPageCsv')->label('Export to CSV (Excel)')->icon(Heroicon::OutlinedTableCells)->action(fn () => $this->exportPage('csv')),
+            Action::make('exportPageXlsx')->label('Export to Excel (.xlsx)')->icon(Heroicon::OutlinedTableCells)->action(fn () => $this->exportPage('xlsx')),
+            Action::make('exportPageCsv')->label('Export to CSV')->icon(Heroicon::OutlinedDocumentText)->action(fn () => $this->exportPage('csv')),
             Action::make('exportPagePdf')->label('Export to PDF')->icon(Heroicon::OutlinedDocumentArrowDown)->action(fn () => $this->exportPage('pdf')),
         ])->label('Export')->icon(Heroicon::OutlinedArrowDownTray)->button()->color('gray');
     }
@@ -61,7 +62,7 @@ trait ExportsPage
 
         return Erp::run(fn ($actor) => $format === 'pdf'
             ? app(Exporter::class)->pdf($actor, $title, $sheets, $this->exportFilters())
-            : app(Exporter::class)->csv($actor, $title, $sheets, $this->exportFilters()));
+            : ($format === 'xlsx' ? app(Exporter::class)->xlsx($actor, $title, $sheets, $this->exportFilters()) : app(Exporter::class)->csv($actor, $title, $sheets, $this->exportFilters())));
     }
 
     /** @return list<array{title: string, headings: list<string>, rows: list<list<string>>}> */

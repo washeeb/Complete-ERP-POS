@@ -21,3 +21,4 @@ Schedule::command('erp:reservation-reminders')->everyFiveMinutes()->withoutOverl
 Schedule::command('erp:appointment-reminders')->everyFiveMinutes()->withoutOverlapping(10);
 Schedule::command('erp:bill-memberships')->dailyAt('01:30')->withoutOverlapping(60); // head office only
 Schedule::command('erp:insights')->dailyAt('04:30')->withoutOverlapping(120); // forecasts and alerts (no AI model needed)
+Schedule::command('erp:reports')->everyFifteenMinutes()->withoutOverlapping(30); // scheduled reports by e-mail / WhatsApp

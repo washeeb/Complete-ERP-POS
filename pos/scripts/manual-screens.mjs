@@ -67,12 +67,14 @@ const shot = (page, name) => page.screenshot({ path: resolve(out, `${name}.png`)
     ['/admin/insights?tab=forecast', 'insights-forecast', null],
     ['/admin/alerts', 'insights-alerts', null],
     ['/admin/copilot', 'copilot', null],
+    ['/admin/messaging', 'messaging-setup', null],
+    ['/admin/report-builder', 'report-builder', null],
   ]) {
     await page.goto(base + path)
     await page.waitForLoadState('networkidle')
     if (action) {
       await page.getByRole('button', { name: action }).first().click()
-      await page.getByText('Export to CSV (Excel)').first().waitFor()
+      await page.getByText('Export to Excel (.xlsx)').first().waitFor()
       await page.waitForTimeout(500)
     }
     if (name === 'licence') { // show a placeholder instead of this machine's own installation code

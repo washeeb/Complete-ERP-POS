@@ -8,7 +8,8 @@ Every list in the back office (products, customers, invoices, stock on hand, sal
 
 | Choice | What you get | Use it for |
 |---|---|---|
-| **Export to CSV (Excel)** | A `.csv` file that opens in Excel, Google Sheets or LibreOffice | Working with the figures: sorting, totals, sending to your accountant |
+| **Export to Excel (.xlsx)** | An Excel workbook (numbers stay numbers; opens in Excel, Google Sheets, LibreOffice, Numbers) | Working with the figures: sorting, totals, sending to your accountant |
+| **Export to CSV** | A plain `.csv` file | Loading into another program |
 | **Export to PDF** | An A4 PDF with your company name, the title, the filters in use, who printed it, the date and page numbers | Printing, filing, e-mailing |
 
 - The file contains **what is on screen**: the same columns, search, filters and sort — but **all pages**, not only the page you are looking at. Filter first (e.g. one branch, one month), then export.
@@ -21,7 +22,7 @@ Every list in the back office (products, customers, invoices, stock on hand, sal
 
 ## 14.2 Importing data from CSV files
 
-**System → Import data (CSV)** — or the **Import … (CSV)** buttons on Products, Customers, Suppliers, Stock adjustments and stock counts.
+**System → Import data (CSV / Excel)** — or the **Import … (CSV)** buttons on Products, Customers, Suppliers, Stock adjustments and stock counts.
 
 ![The Import data page](img/import-data.png)
 

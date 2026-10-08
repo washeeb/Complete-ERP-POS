@@ -1,7 +1,7 @@
 {
   "key": "core",
   "name": "Core",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "kind": "core",
   "stage": "available",
   "description": "Company, branches, warehouses, tills, users, roles, devices, audit, modules, settings, catalog, prices and tax, stock ledger and the POS. Always installed.",
@@ -79,6 +79,12 @@
     {"key": "insights.view", "label": "See forecasts, stock health, customer and pricing insights, cash-flow forecast and alerts", "min_level": 3},
     {"key": "insights.loss_prevention", "label": "See loss-prevention risk scores for cashiers and shifts", "min_level": 4},
     {"key": "ai.copilot", "label": "Ask the copilot questions about the business (only data you may already see)", "min_level": 3},
-    {"key": "ai.usage.view", "label": "See the AI usage log (questions, answers, cost)", "min_level": 4}
+    {"key": "ai.usage.view", "label": "See the AI usage log (questions, answers, cost)", "min_level": 4},
+    {"key": "reports.build", "label": "Build, save and run reports (only data you may already see)", "min_level": 3},
+    {"key": "reports.schedule", "label": "Schedule reports to be sent by e-mail or WhatsApp", "min_level": 4},
+    {"key": "messaging.view", "label": "See the message log (SMS, WhatsApp, e-mail)", "min_level": 3},
+    {"key": "messaging.templates", "label": "Change message wording and switch customer messages on or off", "min_level": 4},
+    {"key": "messaging.manage", "label": "Set up the SMS and WhatsApp providers", "min_level": 4, "technical": true},
+    {"key": "api.manage", "label": "Create API keys and webhooks for other systems", "min_level": 5}
   ]
 }

@@ -2,6 +2,7 @@
 
 namespace App\Domain\Services;
 
+use App\Domain\Messaging\Messenger;
 use App\Domain\Modules\ModuleService;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
@@ -153,7 +154,7 @@ final class AppointmentService
         $n = 0;
         foreach (Tenant::all() as $tenant) {
             $hours = (int) $this->settings->get('services.reminder_hours', $tenant->id);
-            if ($hours <= 0 || SmsGateway::url($this->settings, $tenant->id) === '') {
+            if ($hours <= 0 || (SmsGateway::url($this->settings, $tenant->id) === '' && ! app(Messenger::class)->canText($tenant->id))) {
                 continue;
             }
             $due = Appointment::withoutGlobalScopes()->where('tenant_id', $tenant->id)->where('status', 'booked')->whereNotNull('phone')->whereNull('reminder_sent_at')

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.23.0] — 2026-10-28 · Phase 12 Reporting, notifications, integrations
+### Added
+- **Messaging:** SMS through Hubtel, Arkesel, mNotify or any gateway (webhook) — the client chooses; WhatsApp Business (Meta Cloud API, approved templates; off until keys); e-mail through any SMTP server. Editable templates with on/off per message; message log with automatic retries; test buttons.
+- **Notifications:** back-office bell for approvals waiting (purchase orders, bills, stock adjustments, deliveries, counts, van settlements, expense claims); customer messages for invoices and payments (off by default); booking and appointment messages now through the chosen provider.
+- **Digital receipts** from the till by SMS, WhatsApp or e-mail.
+- **Report builder:** 8 datasets, group-by and figures, periods, branch and filters, drill-down to the rows and source documents, totals; saved and **scheduled reports** (daily/weekly/monthly) by e-mail with the file, WhatsApp or the bell.
+- **Excel (.xlsx)** export everywhere and Excel import with preview and column matching.
+- **Dashboard** headline figures by role.
+- **Public REST API** (`/api/public/v1`) with scoped keys acting as a person, signed webhooks with retries, OpenAPI 3.1 description.
+- **Accounting export** for QuickBooks Online, Xero and Sage 50 / Pastel.
+- Permissions `reports.build`, `reports.schedule`, `messaging.view`, `messaging.templates`, `messaging.manage`, `api.manage` (Core 0.13.0); commands `erp:reports`; installation guide Chapter 16 (reference is now 17).
+
 ## [0.22.0] — 2026-10-27 · Phase 11 Insights and AI
 ### Added
 - **Insights** (no AI needed): demand forecast with weekday, payday and Ghana public-holiday effects, reorder quantities and min/max; stock health (dead stock, overstock, expiry risk, transfers between branches); customers (RFM segments, regulars who stopped coming, bought together, next-best offer); pricing (low margins, markdowns, promotion uplift); 8-week cash-flow forecast; loss prevention (cashier risk scores).

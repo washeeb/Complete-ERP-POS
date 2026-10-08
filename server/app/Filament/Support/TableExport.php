@@ -19,7 +19,7 @@ use Illuminate\Support\Str;
 
 /**
  * "Export" on every list in the back office (added to all tables in AppServiceProvider): what is on screen — the columns
- * shown, with the current search, filters and sort, all pages — as CSV or PDF. Values are the ones displayed (money with
+ * shown, with the current search, filters and sort, all pages — as Excel, CSV or PDF. Values are the ones displayed (money with
  * its currency, dates in local time), so the file matches the screen.
  */
 final class TableExport
@@ -27,7 +27,9 @@ final class TableExport
     public static function group(): ActionGroup
     {
         return ActionGroup::make([
-            Action::make('exportCsv')->label('Export to CSV (Excel)')->icon(Heroicon::OutlinedTableCells)
+            Action::make('exportXlsx')->label('Export to Excel (.xlsx)')->icon(Heroicon::OutlinedTableCells)
+                ->action(fn (HasTable $livewire) => self::download($livewire, 'xlsx')),
+            Action::make('exportCsv')->label('Export to CSV')->icon(Heroicon::OutlinedDocumentText)
                 ->action(fn (HasTable $livewire) => self::download($livewire, 'csv')),
             Action::make('exportPdf')->label('Export to PDF')->icon(Heroicon::OutlinedDocumentArrowDown)
                 ->action(fn (HasTable $livewire) => self::download($livewire, 'pdf')),
@@ -49,9 +51,11 @@ final class TableExport
         $sheet = ['title' => $title, 'headings' => array_map(fn (Column $c) => self::plain($c->getLabel()), $columns), 'rows' => $rows];
         $filters = self::filters($livewire);
 
-        return Erp::run(fn ($actor) => $format === 'pdf'
-            ? app(Exporter::class)->pdf($actor, $title, [$sheet], $filters, count($columns) > 5 ? 'landscape' : 'portrait')
-            : app(Exporter::class)->csv($actor, $title, [$sheet], $filters));
+        return Erp::run(fn ($actor) => match ($format) {
+            'pdf' => app(Exporter::class)->pdf($actor, $title, [$sheet], $filters, count($columns) > 5 ? 'landscape' : 'portrait'),
+            'xlsx' => app(Exporter::class)->xlsx($actor, $title, [$sheet], $filters),
+            default => app(Exporter::class)->csv($actor, $title, [$sheet], $filters),
+        });
     }
 
     /** The text a cell shows. */

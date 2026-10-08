@@ -1,4 +1,6 @@
 import qrcode from 'qrcode-generator'
+import { useState } from 'react'
+import { api, ApiError } from '../api'
 import { formatMoney, prettyQty, toMilli } from '../money'
 import type { Bootstrap, PostedSale } from '../types'
 
@@ -19,6 +21,41 @@ function ReceiptQr({ text }: { text: string }) {
     <svg className="receipt-qr" viewBox={`0 0 ${n + 4} ${n + 4}`} role="img" aria-label={`QR code ${text}`} shapeRendering="crispEdges">
       <rect width={n + 4} height={n + 4} fill="#fff" /><path d={d} fill="#000" />
     </svg>
+  )
+}
+
+const CHANNEL: Record<string, string> = { sms: 'SMS', whatsapp: 'WhatsApp', email: 'E-mail' }
+
+/** Send the receipt by SMS, WhatsApp or e-mail when the customer asks (needs the server: offline receipts are sent later). */
+export function SendReceipt({ sale, channels }: { sale: PostedSale; channels: ('sms' | 'whatsapp' | 'email')[] }) {
+  const [channel, setChannel] = useState(channels[0])
+  const [to, setTo] = useState('')
+  const [note, setNote] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  if (!channels.length) return null
+  if (sale.status === 'queued') return <p className="small no-print">Digital receipt: available once this sale reaches the server.</p>
+  const send = async () => {
+    setBusy(true)
+    setNote(null)
+    try {
+      const r = await api.sendReceipt(sale.id, channel, to.trim())
+      setNote(r.detail)
+    } catch (e) {
+      setNote(e instanceof ApiError ? e.message : 'Could not send.')
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <form className="row no-print send-receipt" onSubmit={(e) => { e.preventDefault(); void send() }}>
+      <select aria-label="Send by" value={channel} onChange={(e) => setChannel(e.target.value as typeof channel)}>
+        {channels.map((c) => <option key={c} value={c}>{CHANNEL[c]}</option>)}
+      </select>
+      <input aria-label="Send to" placeholder={channel === 'email' ? 'customer@example.com' : '024 123 4567'} type={channel === 'email' ? 'email' : 'tel'}
+        value={to} onChange={(e) => setTo(e.target.value)} required />
+      <button type="submit" disabled={busy || !to.trim()}>{busy ? 'Sending…' : 'Send receipt'}</button>
+      {note && <span className="small" role="status">{note}</span>}
+    </form>
   )
 }
 
@@ -121,6 +158,7 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
           ))}
         </div>
       )}
+      <SendReceipt sale={sale} channels={boot.send_receipt ?? []} />
       <div className="row no-print">
         <button type="button" onClick={() => window.print()}>Print receipt</button>
         <button type="button" className="primary big" autoFocus onClick={onNew}>New sale</button>

@@ -4,6 +4,7 @@ namespace App\Domain\Org;
 
 use App\Domain\Finance\ChartTemplate;
 use App\Domain\Hr\HrBaseline;
+use App\Domain\Messaging\Templates;
 use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
 use App\Domain\Support\Outbox;
@@ -81,6 +82,7 @@ final class TenantBaseline
             if (config('erp.node.role') !== 'branch') {
                 ChartTemplate::ensure($tenant);
                 HrBaseline::ensure($tenant);
+                Templates::seed($tenant); // message wording; branch servers receive it by sync
             }
         });
     }

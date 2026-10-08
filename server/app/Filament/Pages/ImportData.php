@@ -4,7 +4,9 @@ namespace App\Filament\Pages;
 
 use App\Domain\Imports\Importer;
 use App\Domain\Imports\ImportService;
+use App\Domain\Imports\SheetFile;
 use App\Domain\Inventory\InventoryService;
+use App\Domain\Support\DomainException;
 use App\Filament\Support\Erp;
 use App\Filament\Support\ExportsPage;
 use App\Models\Category;
@@ -36,9 +38,9 @@ class ImportData extends Page
 
     protected static string|UnitEnum|null $navigationGroup = 'System';
 
-    protected static ?string $navigationLabel = 'Import data (CSV)';
+    protected static ?string $navigationLabel = 'Import data (CSV / Excel)';
 
-    protected static ?string $title = 'Import data (CSV)';
+    protected static ?string $title = 'Import data (CSV / Excel)';
 
     protected static ?string $slug = 'import-data';
 
@@ -65,6 +67,12 @@ class ImportData extends Page
     public $file = null;
 
     public ?string $lastId = null;
+
+    /** @var array<string, string> expected column => the file's own heading ("match columns") */
+    public array $mapping = [];
+
+    /** @var array{headings: list<string>, rows: list<array>, total: int}|null the first rows of the uploaded file */
+    public ?array $preview = null;
 
     public static function canAccess(): bool
     {
@@ -186,6 +194,37 @@ class ImportData extends Page
         return Erp::run(fn ($actor) => $format === 'pdf' ? app(Exporter::class)->pdf($actor, $name, $sheet) : app(Exporter::class)->csv($actor, $name, $sheet));
     }
 
+    /** A file was chosen: read its headings and first rows, and suggest which of its columns are which. */
+    public function updatedFile(): void
+    {
+        $this->preview = null;
+        $this->mapping = [];
+        if (! $this->file) {
+            return;
+        }
+        try {
+            $data = SheetFile::read($this->file->getRealPath(), $this->file->getClientOriginalName());
+        } catch (DomainException $e) {
+            $this->addError('file', $e->getMessage());
+
+            return;
+        }
+        $this->preview = ['headings' => $data['headings'], 'rows' => array_map(fn ($r) => $r['values'], array_slice($data['rows'], 0, 5)), 'total' => count($data['rows'])];
+        foreach ($this->importer()->columns() as $c) {
+            if (! in_array($c['name'], $data['headings'], true)) {
+                // A heading that contains the column name (or the other way round) is probably it: "item_sku" for "sku".
+                $guess = collect($data['headings'])->first(fn ($h) => ! in_array($h, $this->importer()->headings(), true) && (str_contains($h, $c['name']) || str_contains($c['name'], $h)));
+                $this->mapping[$c['name']] = (string) $guess;
+            }
+        }
+    }
+
+    /** Expected columns the file does not have under their own name. */
+    public function unmatched(): array
+    {
+        return array_keys($this->mapping);
+    }
+
     public function check(): void
     {
         $this->runImport(false);
@@ -198,11 +237,11 @@ class ImportData extends Page
 
     private function runImport(bool $commit): void
     {
-        $this->validate(['file' => ['required', 'file', 'max:10240', 'mimes:csv,txt']], ['file.required' => 'Choose the CSV file first.', 'file.mimes' => 'The file must be a CSV file (Save As → CSV in Excel).']);
+        $this->validate(['file' => ['required', 'file', 'max:10240', 'mimes:csv,txt,xlsx']], ['file.required' => 'Choose the file first.', 'file.mimes' => 'The file must be CSV or Excel (.xlsx).']);
         $stored = $this->file->store('imports', 'local');
         $path = Storage::disk('local')->path($stored);
         try {
-            $import = Erp::run(fn ($actor) => app(ImportService::class)->run($actor, $this->type, $path, $this->file->getClientOriginalName(), $this->options(), $this->contextModel(), $commit));
+            $import = Erp::run(fn ($actor) => app(ImportService::class)->run($actor, $this->type, $path, $this->file->getClientOriginalName(), $this->options(), $this->contextModel(), $commit, $this->mapping));
         } catch (Halt) {
             return;
         }
@@ -216,6 +255,8 @@ class ImportData extends Page
         ($import->status === 'imported' || ($import->status === 'checked' && ! $n) ? $note->success() : $note->danger())->send();
         if ($import->status === 'imported') {
             $this->file = null;
+            $this->preview = null;
+            $this->mapping = [];
         }
     }
 

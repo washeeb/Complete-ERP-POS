@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Public\PublicApiController;
 use App\Http\Controllers\Api\V1\ChannelWebhookController;
 use App\Http\Controllers\Api\V1\DeviceAuthController;
 use App\Http\Controllers\Api\V1\ElectronicsController;
@@ -44,6 +45,7 @@ Route::prefix('v1')->group(function () {
         Route::post('shifts/close', [PosController::class, 'closeShift']);
         Route::post('sales', [PosController::class, 'postSale']);
         Route::get('sales/{id}', [PosController::class, 'showSale'])->whereUuid('id');
+        Route::post('sales/{id}/send', [PosController::class, 'sendReceipt'])->whereUuid('id')->middleware('throttle:pos-sync');
         Route::get('receipts', [PosController::class, 'lookupSale']);
         Route::post('returns', [PosController::class, 'postReturn']);
         Route::post('account-payments', [PosController::class, 'accountPayment']);
@@ -132,3 +134,23 @@ Broadcast::routes(['prefix' => 'v1/pos', 'middleware' => ['auth:sanctum', 'devic
 
 // Synclytics licence server (answers only when this installation is the licence server).
 Route::post('license/checkin', [LicenseServerController::class, 'checkin'])->middleware('throttle:30,1');
+
+// Public API v1 for other systems (keys under System → API clients; description at /api/public/v1/openapi.json).
+Route::prefix('public/v1')->group(function () {
+    Route::get('openapi.json', [PublicApiController::class, 'openapi']);
+    Route::middleware(['auth:sanctum', 'throttle:public-api'])->group(function () {
+        Route::get('products', [PublicApiController::class, 'products'])->middleware('api.client:products:read');
+        Route::get('products/{id}', [PublicApiController::class, 'product'])->whereUuid('id')->middleware('api.client:products:read');
+        Route::get('stock', [PublicApiController::class, 'stock'])->middleware('api.client:stock:read');
+        Route::get('customers', [PublicApiController::class, 'customers'])->middleware('api.client:customers:read');
+        Route::post('customers', [PublicApiController::class, 'createCustomer'])->middleware('api.client:customers:write');
+        Route::get('customers/{id}', [PublicApiController::class, 'customer'])->whereUuid('id')->middleware('api.client:customers:read');
+        Route::get('sales', [PublicApiController::class, 'sales'])->middleware('api.client:sales:read');
+        Route::get('invoices', [PublicApiController::class, 'invoices'])->middleware('api.client:invoices:read');
+        Route::get('invoices/{id}', [PublicApiController::class, 'invoice'])->whereUuid('id')->middleware('api.client:invoices:read');
+        Route::post('orders', [PublicApiController::class, 'createOrder'])->middleware('api.client:orders:write');
+        Route::get('webhooks', [PublicApiController::class, 'webhooks'])->middleware('api.client:webhooks:manage');
+        Route::post('webhooks', [PublicApiController::class, 'createWebhook'])->middleware('api.client:webhooks:manage');
+        Route::delete('webhooks/{id}', [PublicApiController::class, 'deleteWebhook'])->whereUuid('id')->middleware('api.client:webhooks:manage');
+    });
+});

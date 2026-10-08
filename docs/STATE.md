@@ -1,9 +1,18 @@
 # State (resume file)
 
-**Phase:** 11 — Insights and AI · **Status:** done on branch `phase-11-ai` (PR to `main`); next Phase 12
-**Updated:** 2026-10-27 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–10 and licensing merged (PRs #1–#22)
+**Phase:** 12 — Reporting, notifications, integrations · **Status:** done on branch `phase-12-reporting` (PR to `main`); next Phase 13 (hardening)
+**Updated:** 2026-10-28 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–11 and licensing merged (PRs #1–#23)
 
-## Phase 11 — done on branch `phase-11-ai` (PR to `main`)
+## Phase 12 — done on branch `phase-12-reporting` (PR to `main`)
+- **Owner answers:** SMS Hubtel/Arkesel/mNotify/webhook (client chooses); SMTP e-mail; WhatsApp built, off until keys; public API with scoped keys; QuickBooks, Xero, Sage exports.
+- **Server:** migration `2026_10_28_100001` (`notifications`, `message_providers`, `message_templates`, `messages`, `saved_reports`, `api_clients`, `webhook_endpoints`, `webhook_deliveries`); `app/Domain/Messaging/*` (Messenger, Gateways, Phone, Templates, ProviderSetup, Notifier, NotificationRelay, ReceiptSender), `app/Mail/PlainMessage`; `app/Domain/Reports/*` (ReportEngine, ReportService), command `erp:reports`; `app/Domain/Api/*` (ApiClients, OpenApi, WebhookDispatcher), `EnsureApiClient` middleware, `PublicApiController` (`/api/public/v1`); `Domain/Finance/AccountingExport`; `Support/Exports/XlsxWriter`, `Domain/Imports/SheetFile`; relay runs notifications, message retries, webhooks; panel database notifications.
+- **Back office:** System → Messaging, API clients; Messages → Message log, Templates; Reports → Report builder, Saved reports; Finance → Export to QuickBooks / Xero / Sage; Excel on every Export; Import data takes .xlsx with preview and column matching; dashboard stats.
+- **Till:** Send receipt (SMS / WhatsApp / e-mail) on the receipt screen.
+- **Permissions:** `reports.build`, `reports.schedule`, `messaging.view`, `messaging.templates`, `messaging.manage` (technical), `api.manage` (Core 0.13.0).
+- **Tests:** MessagingReportsApiTest (7); full suite 342 Pest + 53 Vitest. New screens checked in a real browser (manual screenshots).
+- **Docs:** integrations.md, api.md, manual chapter 16 (new; reference → 17) and 11/14 updates, CHANGELOG 0.23.0, DECISIONS 12.
+
+## Phase 11 — done (merged, PR #23)
 - **Owner answers:** no cloud AI for now (off by default, local Ollama optional); names masked + personal data local if cloud is used; copilot for managers and up; invoice scan, shop descriptions, cash-flow forecast, pricing advice.
 - **Server:** migration `2026_10_27_100001` (`ai_requests`, `ai_alerts`, `ai_documents`); `app/Domain/Analytics/*` (forecast, holidays, stock health, loss prevention, customers, pricing, cash flow, alerts); `app/Domain/Ai/*` (gateway, Ollama/Claude providers, masker, copilot + tools, invoice scanner, product writer); `config/ai.php`; command `erp:insights` (04:30); settings `ai.*`, `insights.margin_alert_pct`, new `choice` setting type.
 - **Back office:** Insights group — Ask your business, Insights (6 tabs), Alerts, AI usage log; Supplier bills → Scan an invoice (pre-fills the bill form); Product → Write description (AI).
@@ -170,7 +179,7 @@
 - Signed activation keys, expiry with grace then read-only, daily check-in, tamper detection, watermarks — see docs/licensing.md. Dev licence valid to 2027-12-31 (dev key in `.local-secrets/license-dev.json`). Before the first customer release: production key (`license:keygen`), its public key in `config/license.php`, a licence server.
 
 ## Next
-- Phase 12 — Reporting/BI, notifications (in-app, e-mail, SMS, WhatsApp), integrations/public API (OpenAPI), import wizards; ask the owner's decisions in a batch first.
+- Phase 13 — Hardening: security review, performance/load, accessibility, backup/restore drill, e-invoicing adapter (GRA E-VAT), installers for all modes; ask the owner's decisions in a batch first.
 
 ## Owner decisions pending
 - Accountant check of the Ghana tax set-up (VAT/NHIL/GETFund rates and the payroll PAYE bands / SSNIT rates — Payroll → Tax and SSNIT rules) before go-live.
