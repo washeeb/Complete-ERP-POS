@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.16.0] — 2026-10-20 · Phase 10a Electronics
+### Added
+- **Serial / IMEI numbers** on products ("Serial / IMEI numbers"), kept in the stock ledger:
+  - received by number (back office and handheld), sold, returned and transferred by number;
+  - offline gaps are flagged;
+  - numbers can be registered for stock already on hand.
+- **Warranty** months per product. Each unit sold carries its warranty end date, printed on the receipt with its number.
+- **Electronics → Serial numbers:** where every unit is, who bought it, its warranty and history.
+- **Repair job cards** (till Repairs F7 and Electronics → Repairs):
+  - warranty detected from the serial number;
+  - progress log;
+  - parts and labour from the price list, free under warranty;
+  - return to the supplier (RMA);
+  - collect and pay at the till, or hand over with parts written off.
+- **Trade-ins** at payment: a used item taken as part-payment, approved by a supervisor, into stock at the value given (account 1180 Trade-ins awaiting stock).
+- Role **Repair Technician**; permissions `electronics.repairs` and `electronics.trade_in`.
 ## [0.15.0] — 2026-10-19 · Phase 9d Restaurant extras
 ### Added
 - **Bookings:** guest, phone, party size, time and table, with no double booking. Booked tables show on the floor (late after 15 minutes). Seat, no-show, cancel.

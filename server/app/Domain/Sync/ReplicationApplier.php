@@ -6,6 +6,7 @@ use App\Domain\Customers\CustomerLedger;
 use App\Domain\Customers\Loyalty;
 use App\Domain\Customers\StoredValues;
 use App\Domain\Hr\AttendanceService;
+use App\Domain\Inventory\SerialRegistry;
 use App\Domain\Inventory\StockProjection;
 use App\Domain\Licensing\LicenseManager;
 use App\Domain\Support\Actor;
@@ -43,6 +44,11 @@ final class ReplicationApplier
 
         if ($type === 'stock_movement_batch') {
             $this->applyMovements($actor, $payload['movements'] ?? []);
+            if (! empty($payload['serials'])) {
+                SerialRegistry::applyRemote($payload['serials']); // which units moved (serial-numbered products)
+            }
+        } elseif ($type === 'serial_batch') {
+            SerialRegistry::applyRemote($payload['serials'] ?? []); // serials registered for stock already on hand
         } elseif ($type === 'customer_ledger_batch') {
             $this->customers->apply(array_map(fn ($r) => array_intersect_key($r, array_flip($this->columnsOf('customer_ledger'))), $payload['entries'] ?? []),
                 array_map(fn ($r) => array_intersect_key($r, array_flip($this->columnsOf('receivable_allocations'))), $payload['allocations'] ?? []));
@@ -117,6 +123,7 @@ final class ReplicationApplier
             case 'stock_count':
             case 'modifier_group':
             case 'dining_order':
+            case 'repair_job':
                 $table = array_key_first($c);
                 if ($table) {
                     $this->replaceSet($table, "{$type}_id", $id, $c[$table]); // lines belong to their document

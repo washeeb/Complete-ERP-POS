@@ -25,6 +25,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\RepeatableEntry;
@@ -172,7 +173,7 @@ class PurchaseOrderResource extends Resource
                 ->visible(fn (PurchaseOrder $record) => $record->isReceivable() && Erp::can('stock.receive', $record->warehouse))
                 ->modalWidth('4xl')
                 ->fillForm(fn (PurchaseOrder $record) => ['lines' => $record->lines()->get()->map(fn ($l) => [
-                    'purchase_order_line_id' => $l->id, 'item' => "{$l->sku} · {$l->name} ({$l->uom_code})", 'batched' => (bool) Product::find($l->product_id)?->track_batches,
+                    'purchase_order_line_id' => $l->id, 'item' => "{$l->sku} · {$l->name} ({$l->uom_code})", 'batched' => (bool) Product::find($l->product_id)?->track_batches, 'serialised' => (bool) Product::find($l->product_id)?->track_serials,
                     'qty' => Fields::qty(Qty::format(max(0, Qty::toMilli((string) $l->qty) - Qty::toMilli((string) $l->received_qty)))),
                 ])->all()])
                 ->schema(fn (PurchaseOrder $record) => [
@@ -184,8 +185,10 @@ class PurchaseOrderResource extends Resource
                             ->visible($record->warehouse->use_bins)->placeholder('Receiving dock'),
                         TextInput::make('batch_no')->label('Batch no.')->maxLength(60)->visible(fn (Get $get) => (bool) $get('batched'))->required(fn (Get $get) => (bool) $get('batched')),
                         DatePicker::make('expires_on')->label('Expiry')->visible(fn (Get $get) => (bool) $get('batched')),
+                        TagsInput::make('serials')->label('Serial / IMEI numbers (scan each)')->columnSpanFull()->visible(fn (Get $get) => (bool) $get('serialised')),
                         Hidden::make('purchase_order_line_id'),
                         Hidden::make('batched')->dehydrated(false),
+                        Hidden::make('serialised')->dehydrated(false),
                     ]),
                     Textarea::make('note'),
                 ])

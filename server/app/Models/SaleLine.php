@@ -17,7 +17,7 @@ class SaleLine extends Model
     protected function casts(): array
     {
         return ['qty' => 'decimal:3', 'factor' => 'decimal:6', 'unit_price_minor' => 'integer', 'line_total_minor' => 'integer',
-            'net_minor' => 'integer', 'tax_minor' => 'integer', 'tax_breakdown' => 'array', 'promotions' => 'array', 'manual_discount' => 'array',
+            'net_minor' => 'integer', 'tax_minor' => 'integer', 'tax_breakdown' => 'array', 'promotions' => 'array', 'manual_discount' => 'array', 'serials' => 'array',
             'list_total_minor' => 'integer', 'discount_minor' => 'integer'];
     }
 

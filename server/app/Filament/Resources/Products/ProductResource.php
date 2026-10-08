@@ -113,6 +113,13 @@ class ProductResource extends Resource
                     TagsInput::make('active_ingredients')->label('Active ingredients')->placeholder('Type, then Enter')
                         ->helperText('Used for allergy and interaction warnings.'),
                 ]),
+            Section::make('Serial numbers and warranty')->columns(2)->visible(fn () => ModuleService::enabledAnywhere('electronics'))
+                ->description('Electronics: each unit is received, transferred and sold by its serial / IMEI number; the warranty runs from the date sold.')
+                ->schema([
+                    Toggle::make('track_serials')->label('Serial / IMEI numbers')->inline(false)
+                        ->helperText('Needs "Track stock"; not with batches. Stock already on hand gets its numbers under Electronics → Serial numbers.'),
+                    TextInput::make('warranty_months')->label('Warranty (months)')->numeric()->minValue(0)->maxValue(120),
+                ]),
             Section::make('Restaurant')->columns(2)->visible(fn () => ModuleService::enabledAnywhere('restaurant'))
                 ->description('Dishes and drinks: where they are prepared, the choices offered, and the ingredients one portion uses (taken from stock when the bill is paid; switch "Track stock" off for the dish itself).')
                 ->schema([

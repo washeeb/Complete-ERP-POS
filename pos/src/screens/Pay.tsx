@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
 import { formatMoney, parseMoney } from '../money'
 import { evenSplit } from '../restaurant'
-import type { DiningOrder, Payment, TillCustomer } from '../types'
+import type { DiningOrder, Payment, Product, TillCustomer, TradeInItem } from '../types'
+import { TradeInDialog } from './Electronics'
 
 const LABEL: Record<string, string> = { cash: 'Cash', momo: 'Mobile money', card: 'Card', account: 'On account', points: 'Points', gift_card: 'Gift card', store_credit: 'Store credit',
-  deposit: 'Booking deposit', aggregator: 'Delivery app' }
+  deposit: 'Booking deposit', aggregator: 'Delivery app', trade_in: 'Trade-in' }
 const PLATFORM: Record<string, string> = { bolt_food: 'Bolt Food', glovo: 'Glovo', chowdeck: 'Chowdeck' }
 
 const MOMO = [
@@ -17,12 +18,19 @@ const MOMO = [
  * Split tender. Cash may exceed what is owed (change); mobile money and card are entered with
  * the reference from the confirmation message / terminal slip (manual until Paystack/Hubtel are wired in).
  */
-export function Pay({ total: bill, currency, exponent, busy, error, customer, tips = false, bill: order = null, onPay, onCancel }: {
+export type PayExtra = { tradeIns: TradeInItem[]; tradeInApproval: { username: string; pin: string } | null }
+
+export function Pay({ total: bill, currency, exponent, busy, error, customer, tips = false, bill: order = null, tradeInProducts = null, onPay, onCancel }: {
   total: number; currency: string; exponent: number; busy: boolean; error: string; customer?: TillCustomer | null
   tips?: boolean // Restaurant: ask for a tip, paid on top of the bill
   bill?: DiningOrder | null // Restaurant: the bill being paid (its booking deposit, or the delivery app that pays for it)
-  onPay: (payments: Payment[], tipMinor: number) => void; onCancel: () => void
+  tradeInProducts?: Product[] | null // Electronics: used items can be handed in as part-payment
+  onPay: (payments: Payment[], tipMinor: number, extra: PayExtra) => void; onCancel: () => void
 }) {
+  const [tradeIns, setTradeIns] = useState<TradeInItem[]>([])
+  const [tradeInApproval, setTradeInApproval] = useState<PayExtra['tradeInApproval']>(null)
+  const [tradingIn, setTradingIn] = useState(false)
+  const extra = (list = tradeIns): PayExtra => ({ tradeIns: list, tradeInApproval })
   const [tipInput, setTipInput] = useState('')
   const [guests, setGuests] = useState('')
   let tip = 0
@@ -50,7 +58,18 @@ export function Pay({ total: bill, currency, exponent, busy, error, customer, ti
   function quickPay(p: Pick<Payment, 'method' | 'provider' | 'reference'>, amount: number) {
     const next = [...payments, { ...p, amount_minor: amount, tendered_minor: amount } as Payment]
     setPayments(next)
-    if (next.reduce((a, x) => a + x.amount_minor, 0) === total) onPay(next, tip)
+    if (next.reduce((a, x) => a + x.amount_minor, 0) === total) onPay(next, tip, extra())
+  }
+
+  /** A trade-in: a payment of its value, and the item that goes into stock. */
+  function addTradeIn(item: TradeInItem, approval: PayExtra['tradeInApproval']) {
+    const list = [...tradeIns, item]
+    setTradeIns(list)
+    if (approval) setTradeInApproval(approval)
+    setTradingIn(false)
+    const next = [...payments, { method: 'trade_in', amount_minor: item.value_minor, tendered_minor: item.value_minor, reference: item.serial ?? undefined } as Payment]
+    setPayments(next)
+    if (next.reduce((a, x) => a + x.amount_minor, 0) === total) onPay(next, tip, { tradeIns: list, tradeInApproval: approval ?? tradeInApproval })
   }
 
   function add(tenderedOverride?: number) {
@@ -74,7 +93,7 @@ export function Pay({ total: bill, currency, exponent, busy, error, customer, ti
       setAmount('')
       setReference('')
       setPhone('')
-      if (next.reduce((a, x) => a + x.amount_minor, 0) === total) onPay(next, tip)
+      if (next.reduce((a, x) => a + x.amount_minor, 0) === total) onPay(next, tip, extra())
     } catch (e) {
       setFormError(e instanceof Error ? e.message : String(e))
     }
@@ -106,7 +125,10 @@ export function Pay({ total: bill, currency, exponent, busy, error, customer, ti
               <li key={i}>
                 {p.method === 'momo' ? MOMO.find((m) => m.id === p.provider)?.name : p.method === 'account' ? `On account (${customer?.name ?? ''})` : LABEL[p.method]} {money(p.amount_minor)}
                 {p.reference ? ` · ${p.reference}` : ''}
-                {!busy && <button type="button" className="link" onClick={() => setPayments(payments.filter((_, j) => j !== i))}>remove</button>}
+                {!busy && <button type="button" className="link" onClick={() => {
+                  if (p.method === 'trade_in') { const n = payments.slice(0, i).filter((x) => x.method === 'trade_in').length; setTradeIns(tradeIns.filter((_, j) => j !== n)) }
+                  setPayments(payments.filter((_, j) => j !== i))
+                }}>remove</button>}
               </li>
             ))}
           </ul>
@@ -153,6 +175,7 @@ export function Pay({ total: bill, currency, exponent, busy, error, customer, ti
               <button type="button" className="big primary" disabled={busy} onClick={() => quickPay({ method: 'aggregator', provider: order.platform!, reference: order.external_ref ?? '' }, due)}>
                 Paid by {PLATFORM[order.platform] ?? order.platform} ({money(due)})</button>
             )}
+            {tradeInProducts && <button type="button" disabled={busy} onClick={() => setTradingIn(true)}>Trade-in</button>}
             <div className="row wrap split">
               <label className="inline">Split between<input inputMode="numeric" value={guests} onChange={(e) => setGuests(e.target.value.replace(/\D/g, '').slice(0, 2))} aria-label="Guests sharing" placeholder="1" /> guests</label>
               {Number(guests) > 1 && <button type="button" onClick={() => setAmount((evenSplit(due, Number(guests) - payments.length)[0] / 10 ** exponent).toFixed(exponent))}>
@@ -180,9 +203,11 @@ export function Pay({ total: bill, currency, exponent, busy, error, customer, ti
           </>
         )}
         {(formError || error) && <p className="error" role="alert">{formError || error}</p>}
+        {tradingIn && tradeInProducts && <TradeInDialog products={tradeInProducts} currency={currency} exponent={exponent} due={due}
+          onAdd={addTradeIn} onCancel={() => setTradingIn(false)} />}
         <div className="row">
           <button type="button" onClick={onCancel} disabled={busy}>Back to cart (Esc)</button>
-          {due === 0 && <button type="button" className="primary big" disabled={busy} onClick={() => onPay(payments, tip)}>{busy ? 'Saving…' : 'Complete sale'}</button>}
+          {due === 0 && <button type="button" className="primary big" disabled={busy} onClick={() => onPay(payments, tip, extra())}>{busy ? 'Saving…' : 'Complete sale'}</button>}
         </div>
       </div>
     </div>

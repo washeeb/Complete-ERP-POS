@@ -6,7 +6,9 @@ import type { Price, PriceList, Product, PromotionRow, Unit } from './types'
 export type CartLine = { key: string; product: Product; unit: Unit; qtyMilli: number; manual?: { bp?: number; price_minor?: number } | null
   markdown?: { id: string; price_minor: number } | null
   // Restaurant: the bill item this line pays, the kitchen note (choices), and the service charge line.
-  diningItemId?: string; note?: string | null; service?: boolean }
+  diningItemId?: string; note?: string | null; service?: boolean
+  // Electronics: the serial / IMEI numbers sold on this line, and the repair job it pays for.
+  serials?: string[]; repairJobId?: string }
 
 /** Same rule as server PriceResolver: active at `at`, min_qty ≤ qty, highest tier, dated beats open-ended. */
 export function resolvePrice(product: Product, unitId: string, listId: string, qtyMilli: number, at: Date): Price | null {

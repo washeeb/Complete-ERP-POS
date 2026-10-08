@@ -26,6 +26,7 @@ final class ChartTemplate
         ['1150', 'Card settlements due', 'asset', '1100', false, null, 'card_clearing'],
         ['1160', 'Online payments due', 'asset', '1100', false, null, 'online_clearing'],
         ['1170', 'Petty cash', 'asset', '1100', false, null, 'petty_cash'],
+        ['1180', 'Trade-ins awaiting stock (clearing)', 'asset', '1100', false, null, 'trade_in_clearing'],
         ['1200', 'Receivables', 'asset', '1000', true, null, null],
         ['1210', 'Trade receivables (customer accounts)', 'asset', '1200', false, 'receivables', 'receivables'],
         ['1220', 'Staff advances and loans', 'asset', '1200', false, null, 'staff_loans'],

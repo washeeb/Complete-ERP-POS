@@ -18,6 +18,7 @@ use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\RepeatableEntry;
@@ -84,7 +85,7 @@ class StockTransferResource extends Resource
 
     public static function toFormData(StockTransfer $t): array
     {
-        return ['lines' => $t->lines()->get()->map(fn ($l) => ['product_uom_id' => $l->product_uom_id, 'qty' => Fields::qty($l->qty)])->all()];
+        return ['lines' => $t->lines()->get()->map(fn ($l) => ['product_uom_id' => $l->product_uom_id, 'qty' => Fields::qty($l->qty), 'serials' => $l->serials ?? []])->all()];
     }
 
     public static function form(Schema $schema): Schema
@@ -100,6 +101,7 @@ class StockTransferResource extends Resource
                 Repeater::make('lines')->hiddenLabel()->columns(3)->minItems(1)->addActionLabel('Add line')->schema([
                     Fields::productUnit()->columnSpan(2),
                     TextInput::make('qty')->label('Quantity')->required()->numeric()->minValue(0.001),
+                    TagsInput::make('serials')->label('Serial / IMEI numbers (serial-numbered items: one per unit)')->columnSpanFull(),
                 ]),
             ]),
         ]);

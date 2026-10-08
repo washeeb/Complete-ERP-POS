@@ -84,6 +84,7 @@ function Receive({ wh, done }: { wh: WmsWarehouse; done: (message: string) => vo
   const [po, setPo] = useState<WmsOrder | null>(null)
   const [now, setNow] = useState<Record<string, string>>({})
   const [lots, setLots] = useState<Record<string, { batch_no: string; expires_on: string }>>({}) // batch-tracked lines: from the pack
+  const [sns, setSns] = useState<Record<string, string>>({}) // serial-numbered lines: one number per unit (scanned)
   const [bin, setBin] = useState<string | null>(null)
   const [ref, setRef] = useState('')
   const [note, setNote] = useState('')
@@ -104,7 +105,8 @@ function Receive({ wh, done }: { wh: WmsWarehouse; done: (message: string) => vo
     setBusy(true)
     try {
       const lines = po.lines.filter((l) => Number(now[l.id] ?? 0) > 0).map((l) => ({ purchase_order_line_id: l.id, qty: now[l.id], bin_id: bin,
-        ...(l.track_batches ? { batch_no: lots[l.id]?.batch_no ?? '', expires_on: lots[l.id]?.expires_on || null } : {}) }))
+        ...(l.track_batches ? { batch_no: lots[l.id]?.batch_no ?? '', expires_on: lots[l.id]?.expires_on || null } : {}),
+        ...(l.track_serials ? { serials: (sns[l.id] ?? '').split(/[\s,]+/).filter(Boolean) } : {}) }))
       const r = await wms.receive({ purchase_order_id: po.id, client_id: clientId.current, supplier_ref: ref || undefined, lines })
       done(r.status === 'held' ? `${r.number}: more than ordered — waiting for a manager. Nothing is in stock yet.` : `${r.number} received into stock.`)
     } catch (e) {
@@ -150,6 +152,10 @@ function Receive({ wh, done }: { wh: WmsWarehouse; done: (message: string) => vo
                     <input aria-label={`Expiry ${l.name}`} type="date" value={lots[l.id]?.expires_on ?? ''}
                       onChange={(e) => setLots({ ...lots, [l.id]: { batch_no: lots[l.id]?.batch_no ?? '', expires_on: e.target.value } })} />
                   </div>
+                )}
+                {l.track_serials && Number(now[l.id] ?? 0) > 0 && (
+                  <textarea aria-label={`Serial numbers ${l.name}`} placeholder="Scan each serial / IMEI" rows={3} value={sns[l.id] ?? ''}
+                    onChange={(e) => setSns({ ...sns, [l.id]: e.target.value })} />
                 )}</td>
             </tr>
           ))}

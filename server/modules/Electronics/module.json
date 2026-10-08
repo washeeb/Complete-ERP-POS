@@ -1,11 +1,14 @@
 {
   "key": "electronics",
   "name": "Electronics / Technology",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "kind": "industry",
-  "stage": "planned",
+  "stage": "available",
   "phase": 10,
-  "description": "Serial/IMEI tracking, warranties, repair job cards, trade-ins, subscriptions.",
+  "description": "Serial/IMEI tracking, warranties, repair job cards with returns to the supplier, trade-ins.",
   "requires": ["core"],
-  "permissions": []
+  "permissions": [
+    {"key": "electronics.repairs", "label": "Take in repairs, update job cards and hand devices back", "min_level": 2},
+    {"key": "electronics.trade_in", "label": "Accept trade-ins at the till, or approve them", "min_level": 3}
+  ]
 }

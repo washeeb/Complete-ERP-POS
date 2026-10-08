@@ -13,6 +13,7 @@ use App\Models\Warehouse;
 use App\Security\Authorizer;
 use App\Support\Money;
 use App\Support\Qty;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Manual stock changes from the back office. Opening balances (once per product and warehouse)
@@ -40,7 +41,7 @@ final class InventoryService
 
     /** $qty is the signed change in the chosen unit, as a decimal string ("-2", "1.5"). */
     public function adjust(Actor $actor, Warehouse $warehouse, Product $product, ProductUom $unit, string $qty, string $type, string $reasonCode, ?string $note = null, ?string $unitCost = null,
-        ?string $batchNo = null, ?string $expiresOn = null): StockMovement
+        ?string $batchNo = null, ?string $expiresOn = null, array|string|null $serials = null): StockMovement
     {
         if (! $actor->user || ! $this->authz->allows($actor->user, 'stock.adjust', $warehouse)) {
             throw new AccessDenied;
@@ -75,11 +76,11 @@ final class InventoryService
 
         $reason = $type === 'opening' ? 'Opening balance' : self::ADJUSTMENT_REASONS[$reasonCode].($note ? ": {$note}" : '');
 
-        return $this->recorder->transaction(function () use ($actor, $warehouse, $product, $unit, $milli, $type, $reason, $cost, $batchNo, $expiresOn) {
+        return $this->recorder->transaction(function () use ($actor, $warehouse, $product, $unit, $milli, $type, $reason, $cost, $batchNo, $expiresOn, $serials) {
             // Batch-tracked: a named batch (new or existing); without one, stock out is taken earliest expiry first.
             $batch = $product->track_batches && trim((string) $batchNo) !== '' ? ['batch_id' => app(StockBatches::class)->ensure($actor, $product, (string) $batchNo, $expiresOn)] : [];
             [$movement] = $this->ledger->post($actor, $warehouse, $type, [
-                ['product' => $product, 'unit' => $unit, 'qty_milli' => $milli, 'unit_cost_minor' => $cost] + $batch,
+                ['product' => $product, 'unit' => $unit, 'qty_milli' => $milli, 'unit_cost_minor' => $cost, 'serials' => $serials] + $batch,
             ], $reason, 'manual', null);
             $this->recorder->audit->record($actor, "stock.{$type}", $product, [
                 'warehouse' => [null, $warehouse->code],
@@ -87,6 +88,46 @@ final class InventoryService
             ], $reason, $warehouse->branch_id);
 
             return $movement;
+        });
+    }
+
+    /**
+     * Serial numbers for units already on hand (stock held before serial tracking was switched on, or count gains):
+     * registers them in stock here, up to the quantity on hand that has no number yet. No stock moves.
+     */
+    public function registerSerials(Actor $actor, Warehouse $warehouse, Product $product, array|string $serials): int
+    {
+        if (! $actor->user || ! $this->authz->allows($actor->user, 'stock.adjust', $warehouse)) {
+            throw new AccessDenied;
+        }
+        if (! $product->track_serials) {
+            throw new DomainException("{$product->name} does not track serial numbers.");
+        }
+        $list = SerialRegistry::normalise($serials);
+
+        return $this->recorder->transaction(function () use ($actor, $warehouse, $product, $list) {
+            $onHand = intdiv(Qty::toMilli((string) (DB::table('stock_levels')->where('warehouse_id', $warehouse->id)->where('product_id', $product->id)->lockForUpdate()->value('on_hand') ?? '0')), 1000);
+            $numbered = DB::table('serial_numbers')->where('warehouse_id', $warehouse->id)->where('product_id', $product->id)->where('status', 'in_stock')->count();
+            if ($list === [] || count($list) > $onHand - $numbered) {
+                throw new DomainException(sprintf('%s: %d on hand here without a serial number; you entered %d.', $product->name, max(0, $onHand - $numbered), count($list)));
+            }
+            $rows = [];
+            foreach ($list as $s) {
+                $id = SerialRegistry::idFor($product->tenant_id, $product->id, $s);
+                $row = DB::table('serial_numbers')->where('id', $id)->lockForUpdate()->first();
+                if ($row && $row->status === 'in_stock') {
+                    throw new DomainException("{$product->name} {$s} is already in stock.");
+                }
+                $values = ['status' => 'in_stock', 'warehouse_id' => $warehouse->id, 'updated_at' => now()];
+                $row ? DB::table('serial_numbers')->where('id', $id)->update($values + ['version' => $row->version + 1])
+                    : DB::table('serial_numbers')->insert($values + ['id' => $id, 'tenant_id' => $product->tenant_id, 'product_id' => $product->id, 'serial' => $s,
+                        'origin_node' => (string) config('erp.node.id'), 'version' => 1, 'created_at' => now()]);
+                $rows[] = (array) DB::table('serial_numbers')->where('id', $id)->first();
+            }
+            $this->recorder->audit->record($actor, 'stock.serials_registered', $product, ['warehouse' => [null, $warehouse->code], 'serials' => [null, count($list)]], null, $warehouse->branch_id);
+            $this->recorder->outbox->publishRaw($actor, 'serial_batch', $rows[0]['id'], 1, 'stock.serials_registered', ['serials' => ['rows' => $rows, 'links' => []]]);
+
+            return count($list);
         });
     }
 }

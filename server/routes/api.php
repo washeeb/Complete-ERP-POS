@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\ChannelWebhookController;
 use App\Http\Controllers\Api\V1\DeviceAuthController;
+use App\Http\Controllers\Api\V1\ElectronicsController;
 use App\Http\Controllers\Api\V1\PosController;
 use App\Http\Controllers\Api\V1\RestaurantController;
 use App\Http\Controllers\Api\V1\SyncController;
@@ -43,6 +44,14 @@ Route::prefix('v1')->group(function () {
         Route::get('receipts', [PosController::class, 'lookupSale']);
         Route::post('returns', [PosController::class, 'postReturn']);
         Route::post('account-payments', [PosController::class, 'accountPayment']);
+
+        // Electronics: serial / warranty lookup and repair job cards.
+        Route::get('serials/{serial}', [ElectronicsController::class, 'serial'])->where('serial', '[A-Za-z0-9 \-]{2,80}');
+        Route::get('repairs', [ElectronicsController::class, 'index']);
+        Route::post('repairs', [ElectronicsController::class, 'open']);
+        Route::post('repairs/{id}/status', [ElectronicsController::class, 'status'])->whereUuid('id');
+        Route::post('repairs/{id}/lines', [ElectronicsController::class, 'lines'])->whereUuid('id');
+        Route::post('repairs/{id}/hand-over', [ElectronicsController::class, 'handOver'])->whereUuid('id');
 
         // Restaurant: bills shared by tills and waiter tablets (the module must be on at the branch).
         Route::prefix('restaurant')->group(function () {

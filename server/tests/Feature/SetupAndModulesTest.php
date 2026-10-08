@@ -77,7 +77,7 @@ it('reads manifests and only seeds permissions of released modules', function ()
 
     expect($reg->has('grocery'))->toBeTrue()
         ->and($reg->get('core')->isAvailable())->toBeTrue()
-        ->and(collect($reg->permissions())->pluck('module')->unique()->sort()->values()->all())->toBe(['core', 'grocery', 'pharmacy', 'restaurant']) // planned modules (manufacturing…) add none yet
+        ->and(collect($reg->permissions())->pluck('module')->unique()->sort()->values()->all())->toBe(['core', 'electronics', 'grocery', 'pharmacy', 'restaurant']) // planned modules (manufacturing…) add none yet
         ->and(Permission::count())->toBe(count($reg->permissions()));
 });
 
