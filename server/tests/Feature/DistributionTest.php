@@ -37,6 +37,8 @@ use App\Models\Visit;
 use App\Models\Warehouse;
 use App\Security\ScopeType;
 use App\Support\Qty;
+use App\Support\Settings;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 beforeEach(function () {
@@ -112,6 +114,24 @@ it('sets up a van as a warehouse with its own till, loads it and sells from it w
     expect($back->total_minor)->toBe(-4800)->and(fn () => vanSale($this, [[$this->malt, '-1']]))->toThrow(DomainException::class, 'above zero');
     app(AutoPoster::class)->run($this->tenant->id);
     expect(app(GlCheck::class)->run($this->tenant->id)['ok'])->toBeTrue();
+});
+
+it('books container deposits as money owed to customers when the setting is on', function () {
+    $gl = fn (string $key) => (int) DB::table('journal_lines')->join('accounts', 'accounts.id', '=', 'journal_lines.account_id')
+        ->where('accounts.system_key', $key)->sum('journal_lines.amount_minor');
+    app(VanService::class)->load($this->o, $this->van, [['product_uom_id' => $this->malt->units->first()->id, 'qty' => '48'], ['product_uom_id' => $this->crate->units->first()->id, 'qty' => '30']]);
+    app(Settings::class)->set($this->o, 'distribution.deposits_as_liability', true);
+
+    $sale = vanSale($this, [[$this->malt, '24'], [$this->crate, '24'], [$this->crate, '-4']]);
+    $deposit = (int) $sale->lines()->where('product_id', $this->crate->id)->sum('net_minor');
+    $malt = (int) $sale->lines()->where('product_id', $this->malt->id)->sum('net_minor');
+    vanSale($this, [[$this->crate, '-2']], [['method' => 'cash', 'amount_minor' => -4800, 'tendered_minor' => -4800]]);
+    $back = (int) Sale::latest('device_seq')->first()->lines()->sum('net_minor');
+    app(AutoPoster::class)->run($this->tenant->id);
+
+    expect($gl('container_deposits'))->toBe(-($deposit + $back))->and($gl('sales_pos'))->toBe(-$malt)
+        ->and($gl('containers_out'))->toBe(18 * 2000)->and($gl('cogs'))->toBe(24 * 700)
+        ->and(app(GlCheck::class)->run($this->tenant->id)['ok'])->toBeTrue();
 });
 
 it('records visits with GPS and takes orders on the road, credit-checked, once', function () {

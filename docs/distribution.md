@@ -24,6 +24,9 @@ Owner decisions: each van is a warehouse; reps sell from a phone that works **fu
 - Mark crates, bottles or gas cylinders as **returnable containers** (Product → Returnable containers); their price is the deposit.
 - On each product sold in them, choose the container and how many go with one unit (1 per bottle; 0.042 if a crate holds 24 and you sell single bottles — part crates are rounded up).
 - At the till the deposit line is added automatically. **Empties returned** takes containers back (a minus line at the deposit price); if only empties come back, the deposit is **paid out in cash**.
+- **How deposits are booked** (System → Settings → Distribution → *Book container deposits as money owed to customers*):
+  - **Off (default):** deposits count as sales of containers and empties bought back reduce sales; containers that leave cost their stock value (cost of sales).
+  - **On:** deposits go to *Container deposits held* (2340, a liability) and the containers out with customers stay an asset (*Returnable containers with customers*, 1330) until they come back. Use this when your accountant treats deposits as refundable. Switch only at the start of a month.
 - **Empties held by customers** (Rep performance page) lists what each customer still holds.
 
 ## End-of-day settlement (Distribution → Vans → Start end-of-day settlement)

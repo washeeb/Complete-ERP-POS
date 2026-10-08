@@ -1,9 +1,18 @@
 # State (resume file)
 
-**Phase:** 10 — Industry modules wave 2 · **Status:** 10e (Sales & Distribution) + themes done on branch `phase-10e-distribution` (PR to `main`); next 10f Manufacturing
-**Updated:** 2026-10-24 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–9, licensing and 10a–10d merged (PRs #1–#20)
+**Phase:** 10 — Industry modules wave 2 · **Status:** 10f (Manufacturing) + container-deposit option done on branch `phase-10f-manufacturing` (PR to `main`); wave 2 complete after merge
+**Updated:** 2026-10-26 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–9, licensing and 10a–10e merged (PRs #1–#21)
 
-## Phase 10e — done on branch `phase-10e-distribution` (PR to `main`)
+## Phase 10f — done on branch `phase-10f-manufacturing` (PR to `main`)
+- **Owner answer:** actual cost. Other choices in DECISIONS 10f.
+- **Server:** migrations `2026_10_25_100001` (container deposit accounts), `2026_10_26_100001` (`work_centres`, `boms` + `bom_lines`, `work_orders` + `work_order_materials`, `work_order_costs`, `qc_inspections`; accounts wip/production_absorbed/production_variance; releases reserved module); models `WorkCentre`, `Bom(Line)`, `WorkOrder`, `WorkOrderMaterial`, `WorkOrderCost`, `QcInspection`; `app/Domain/Manufacturing/{BomService, WorkOrderService, MrpPlanner}`; StockLedger types `production_issue` (strict), `production_return`, `production_output`, `by_product`; AutoPoster kind `production`; WO/QC numbers; sync group `production`.
+- **Container deposits:** setting `distribution.deposits_as_liability`; AutoPoster splits container lines to `container_deposits` and container stock to `containers_out`.
+- **Back office:** Manufacturing → Work orders (actions: release, output, quality check, issue, time, return, finish, cancel, job card), Bills of materials (in use / revision / make), Production planning (MRP), Work centres; `Filament/Support/MiniTable`.
+- **Permissions/roles:** `manufacturing.setup|produce|qc`; Production Manager, Machine Operator, Quality Inspector; module 0.1.0.
+- **Tests:** ManufacturingTest (5), DistributionTest +1 (deposits as liability); module tests now use Logistics as the planned example; full suite 327 Pest.
+- **Docs:** manufacturing.md, distribution.md (deposits), modules.md, manual 08 + 15, CHANGELOG 0.21.0, DECISIONS.
+
+## Phase 10e — done (merged, PR #21)
 - **Owner answers (2026-10-23):** fully offline phone app; credit within limit; load + daily settlement; routes/visits, targets/commission, orders for delivery, returns/empties.
 - **Server:** migration `2026_10_24_100001` (warehouse van fields; product containers; `routes`, `route_stops`, `visits`, `rep_targets`, `van_settlements` + lines; releases reserved modules); models `SalesRoute`, `RouteStop`, `Visit`, `RepTarget`, `VanSettlement(Line)`; `app/Domain/Distribution/{VanService, VanSettlementService, RouteService, DistributionReports}`; `VanController` (`pos/van/*`), bootstrap `van`, sync events `visit`/`order`; SaleService containers (minus lines, deposit pay-out); rep commission on van tills.
 - **Back office:** Distribution → Vans (load/unload/settle), Van settlements, Routes, Visits, Rep targets, Rep performance; Product → Returnable containers; permissions `distribution.routes`, `distribution.settle`; module 0.1.0.
@@ -152,9 +161,8 @@
 ## Licensing (merged, PR #12)
 - Signed activation keys, expiry with grace then read-only, daily check-in, tamper detection, watermarks — see docs/licensing.md. Dev licence valid to 2027-12-31 (dev key in `.local-secrets/license-dev.json`). Before the first customer release: production key (`license:keygen`), its public key in `config/license.php`, a licence server.
 
-## Next — Phase 10f (Manufacturing)
-- Owner answer: production at actual cost.
-- Scope: bills of materials (multi-level), routings/work centres, work orders (issue materials, report output, scrap), backflush, actual costing, QC, MRP suggestions.
+## Next
+- Phase 11 — AI analytics & copilot (forecasts, anomaly alerts, scoped copilot); ask the owner's decisions in a batch first.
 
 ## Owner decisions pending
 - Accountant check of the Ghana tax set-up (VAT/NHIL/GETFund rates and the payroll PAYE bands / SSNIT rates — Payroll → Tax and SSNIT rules) before go-live.

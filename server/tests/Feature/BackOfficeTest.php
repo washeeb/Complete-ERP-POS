@@ -154,9 +154,9 @@ it('reserves a planned module for a branch from the modules page', function () {
 
     Livewire::test(ManageModules::class)
         ->set('data.branch_id', $b['HQ']->id)
-        ->set('data.modules.manufacturing', 'reserved')
+        ->set('data.modules.logistics', 'reserved')
         ->call('save')
         ->assertNotified('Modules updated');
 
-    expect(app(ModuleService::class)->statuses($b['HQ']))->toHaveKey('manufacturing', 'reserved');
+    expect(app(ModuleService::class)->statuses($b['HQ']))->toHaveKey('logistics', 'reserved');
 });

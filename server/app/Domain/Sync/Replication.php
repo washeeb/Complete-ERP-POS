@@ -2,6 +2,7 @@
 
 namespace App\Domain\Sync;
 
+use App\Models\Bom;
 use App\Models\CustomerOrder;
 use App\Models\Delivery;
 use App\Models\Device;
@@ -23,6 +24,7 @@ use App\Models\Supplier;
 use App\Models\TaxGroup;
 use App\Models\User;
 use App\Models\VanSettlement;
+use App\Models\WorkOrder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -70,13 +72,16 @@ final class Replication
         'receivables' => ['label' => 'Quotations, customer orders, deliveries, invoices, payments, credit notes', 'direction' => 'both',
             'tables' => ['customer_order' => 'customer_orders', 'delivery' => 'deliveries', 'invoice' => 'invoices', 'credit_note' => 'credit_notes',
                 'customer_payment' => 'customer_payments']],
+        'production' => ['label' => 'Work centres, bills of materials, work orders and quality checks', 'direction' => 'both',
+            'tables' => ['work_centre' => 'work_centres', 'bom' => 'boms', 'work_order' => 'work_orders', 'work_order_cost' => 'work_order_costs',
+                'qc_inspection' => 'qc_inspections']],
     ];
 
     /** Master data: owned by HQ, read-only on branch nodes (conflict policy "HQ wins", spec §4.2). */
     public const MASTER_GROUPS = ['org', 'people', 'catalog', 'pricing'];
 
     /** Two-way groups head office passes on: what one branch server sends reaches the other branch servers too. */
-    public const RELAY_GROUPS = ['stock', 'purchasing', 'warehouse', 'customers', 'receivables'];
+    public const RELAY_GROUPS = ['stock', 'purchasing', 'warehouse', 'customers', 'receivables', 'production'];
 
     /** Documents whose lines travel inside their snapshot: class => [relation, table]. */
     public const CHILDREN = [
@@ -87,6 +92,8 @@ final class Replication
         StockCount::class => ['lines', 'stock_count_lines'],
         StockAdjustment::class => ['lines', 'stock_adjustment_lines'],
         VanSettlement::class => ['lines', 'van_settlement_lines'],
+        Bom::class => ['lines', 'bom_lines'],
+        WorkOrder::class => ['materials', 'work_order_materials'],
         SalesRoute::class => ['stops', 'route_stops'],
         ModifierGroup::class => ['options', 'modifier_options'],
         DiningOrder::class => ['items', 'dining_order_items'],

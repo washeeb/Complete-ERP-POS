@@ -473,6 +473,20 @@ Design:
 - **Released modules** now switch on where branches had reserved them (one migration covering all industry modules released so far).
 - **Deferred:** route optimisation and maps, van-to-van transfers, proof of delivery with signatures, offline returns with receipts.
 
+## Container deposits — both options (2026-10-26)
+- **Owner:** keep both. Setting `distribution.deposits_as_liability` (default off = sales, as in 10e). On: container lines' net goes to 2340 *Container deposits held* instead of till sales, and container stock sold/returned moves against 1330 *Returnable containers with customers* instead of cost of sales. Read at posting time, so it should be switched at the start of a month.
+
+## Phase 10f — Manufacturing (2026-10-26)
+- **Owner answer (2026-10-19):** actual cost. Other choices made without a further round of questions (industry defaults, revisit on request):
+- **BOMs** are versioned by revision; one in use per product; in use = immutable. Routing is stored on the BOM (JSON operations) so a BOM syncs as one snapshot with its lines.
+- **Work orders copy the BOM at release** (materials per unit incl. expected loss; operations with the work centre's rate at that time), so later BOM or rate changes do not touch running orders.
+- **Actual costing via WIP:** materials (ledger value at average cost), labour (minutes × rate) and by-products (at their average cost, credited) collect in 1340 WIP; good output is valued at WIP ÷ good units still expected, so the planned quantity absorbs the whole cost; scrap is a normal loss carried by good units; what remains at finish (late time, unreturned materials, rounding) goes to 5600. No revaluation of stock already sold.
+- **Backflush** per material and per operation (default on); production issues are strict (never negative stock). Returns go back at the order's own issue cost so WIP clears exactly.
+- **Quality checks** hold good output (no stock movement) until a `manufacturing.qc` holder passes (stock) or fails (scrap, reason required).
+- **Labour** is charged at work-centre rates to 5500 (a credit offsetting wages already expensed) — no link to payroll hours.
+- **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
+- **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
+
 ## Themes (2026-10-24)
 - **Owner request:** System, Dark and Light for the whole app.
 - Back office: Filament's built-in switcher (profile menu; per browser). Custom pages use `currentColor` mixes instead of fixed black borders so they read in both.

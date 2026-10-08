@@ -7,6 +7,7 @@ use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Models\Account;
 use App\Models\Tenant;
+use App\Support\Settings;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -27,7 +28,7 @@ final class AutoPoster
         'supplier_bills' => 'Supplier bills', 'supplier_payments' => 'Supplier payments', 'supplier_openings' => 'Supplier opening balances',
         'money_transfers' => 'Money moved between accounts', 'expense_claims' => 'Expense claims paid', 'depreciation' => 'Depreciation', 'asset_disposals' => 'Assets disposed of',
         'staff_loans' => 'Staff loans and advances paid out', 'payroll' => 'Payroll (approved)', 'payroll_payments' => 'Payroll paid',
-        'deposits' => 'Booking deposits (restaurant)',
+        'deposits' => 'Booking deposits (restaurant)', 'production' => 'Production labour and cost differences',
     ];
 
     /** How each kind of stock movement is balanced against the stock account. */
@@ -38,6 +39,7 @@ final class AutoPoster
         'adjustment' => 'stock_adjustment', 'count' => 'stock_adjustment',
         'opening' => 'opening_equity',
         'trade_in' => 'trade_in_clearing', // used items taken in on a sale (the sale's trade-in tender is on the other side)
+        'production_issue' => 'wip', 'production_return' => 'wip', 'production_output' => 'wip', 'by_product' => 'wip', // work orders
     ];
 
     /** Till tenders → the account the money (or claim) sits in. */
@@ -53,7 +55,13 @@ final class AutoPoster
 
     private ?string $hq = null;
 
-    public function __construct(private readonly GeneralLedger $gl, private readonly AssetService $assets) {}
+    public function __construct(private readonly GeneralLedger $gl, private readonly AssetService $assets, private readonly Settings $settings) {}
+
+    /** Container deposits held as owed to customers (setting) instead of counting as sales. */
+    private function depositsAsLiability(string $tenantId): bool
+    {
+        return (bool) $this->settings->get('distribution.deposits_as_liability', $tenantId);
+    }
 
     /**
      * @return array{posted: array<string, int>, errors: array<string, string>}
@@ -126,6 +134,7 @@ final class AutoPoster
             'payroll' => [$this->unpostedQuery('payroll_runs', 'payroll_run', $tenantId)->whereIn('s.status', ['approved', 'paid']), 's.period_end'],
             'payroll_payments' => [$this->unpostedQuery('payroll_runs', 'payroll_payment', $tenantId)->where('s.status', 'paid'), 's.paid_on'],
             'deposits' => [$this->unpostedQuery('deposit_movements', 'deposit_movement', $tenantId), $d('s.occurred_at')],
+            'production' => [$this->unpostedQuery('work_order_costs', 'work_order_cost', $tenantId), $d('s.occurred_at')],
         ];
     }
 
@@ -165,11 +174,19 @@ final class AutoPoster
         }
         $payments = DB::table('sale_payments')->whereIn('sale_id', array_column($rows, 'id'))->get(['sale_id', 'method', 'amount_minor'])->groupBy('sale_id');
         $codes = DB::table('branches')->pluck('code', 'id');
+        // Container deposits (net of empties bought back) per sale, when they are held as a liability rather than sales.
+        $deposits = $this->depositsAsLiability($actor->tenantId) ? DB::table('sale_lines as l')->join('products as p', 'p.id', '=', 'l.product_id')
+            ->where('p.is_container', true)->whereIn('l.sale_id', array_column($rows, 'id'))->groupBy('l.sale_id')
+            ->selectRaw('l.sale_id, SUM(l.net_minor)::bigint AS net')->pluck('net', 'sale_id') : collect();
         foreach (collect($rows)->groupBy(fn ($r) => "{$r->branch_id}|{$r->d}") as $group) {
             $lines = [];
             $first = $group->first();
             foreach ($group as $s) {
-                $lines[] = ['account' => 'sales_pos', 'amount' => -(int) $s->net_minor, 'branch_id' => $s->branch_id];
+                $deposit = (int) ($deposits[$s->id] ?? 0);
+                $lines[] = ['account' => 'sales_pos', 'amount' => -((int) $s->net_minor - $deposit), 'branch_id' => $s->branch_id];
+                if ($deposit !== 0) { // lines carry the sale's sign: empties bought back and returns are negative
+                    $lines[] = ['account' => 'container_deposits', 'amount' => -$deposit, 'branch_id' => $s->branch_id];
+                }
                 array_push($lines, ...$this->taxLines($s->tax_breakdown, -1, $s->branch_id));
                 if ((int) $s->tip_minor > 0) {
                     $lines[] = ['account' => 'tips_payable', 'amount' => -(int) $s->tip_minor, 'branch_id' => $s->branch_id]; // owed to the waiter
@@ -211,18 +228,45 @@ final class AutoPoster
         return count($rows);
     }
 
+    /** Work orders: labour and overhead charged into work in progress, and the cost left over when an order closes. */
+    private function production(Actor $actor, int $batch): int
+    {
+        $rows = $this->rows('production', $actor->tenantId, $batch, ['s.id', 's.branch_id', 's.kind', 's.amount_minor']);
+        $codes = DB::table('branches')->pluck('code', 'id');
+        foreach (collect($rows)->groupBy(fn ($r) => "{$r->branch_id}|{$r->d}") as $group) {
+            $lines = [];
+            $first = $group->first();
+            foreach ($group as $c) {
+                $a = (int) $c->amount_minor;
+                array_push($lines, ...($c->kind === 'labour'
+                    ? [['account' => 'wip', 'amount' => $a, 'branch_id' => $c->branch_id], ['account' => 'production_absorbed', 'amount' => -$a, 'branch_id' => $c->branch_id]]
+                    : [['account' => 'production_variance', 'amount' => $a, 'branch_id' => $c->branch_id], ['account' => 'wip', 'amount' => -$a, 'branch_id' => $c->branch_id]]));
+            }
+            $this->gl->post($actor, $first->d, 'auto', "Production {$codes[$first->branch_id]} {$first->d}", $lines,
+                $group->map(fn ($c) => ['work_order_cost', $c->id])->all(), 'production', late: true);
+        }
+
+        return count($rows);
+    }
+
     private function stock(Actor $actor, int $batch): int
     {
-        $rows = $this->rows('stock', $actor->tenantId, $batch, ['s.id', 's.branch_id', 's.type', 'ROUND(s.qty_entered * COALESCE(s.unit_cost_minor, 0))::bigint AS value']);
+        $rows = $this->rows('stock', $actor->tenantId, $batch, ['s.id', 's.branch_id', 's.type', 's.product_id', 'ROUND(s.qty_entered * COALESCE(s.unit_cost_minor, 0))::bigint AS value']);
         if (! $rows) {
             return 0;
         }
         $codes = DB::table('branches')->pluck('code', 'id');
+        // Containers sold with a held deposit are still ours: they move to "with customers" instead of cost of sales.
+        $containers = $this->depositsAsLiability($actor->tenantId)
+            ? array_flip(DB::table('products')->where('is_container', true)->whereIn('id', array_unique(array_column($rows, 'product_id')))->pluck('id')->all()) : [];
         foreach (collect($rows)->groupBy(fn ($r) => "{$r->branch_id}|{$r->d}") as $group) {
             $lines = [];
             $first = $group->first();
             foreach ($group as $m) {
                 $counter = self::STOCK_COUNTER[$m->type] ?? throw new DomainException("Stock movement type “{$m->type}” has no account.", 'gl_account_missing');
+                if (isset($containers[$m->product_id]) && in_array($m->type, ['sale', 'sale_return'], true)) {
+                    $counter = 'containers_out';
+                }
                 $lines[] = ['account' => 'inventory', 'amount' => (int) $m->value, 'branch_id' => $m->branch_id];
                 $lines[] = ['account' => $counter, 'amount' => -(int) $m->value, 'branch_id' => $m->branch_id];
             }

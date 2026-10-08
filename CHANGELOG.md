@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.21.0] — 2026-10-26 · Phase 10f Manufacturing
+### Added
+- **Work centres** with cost per hour (labour + overhead) and hours per day.
+- **Bills of materials:** multi-level (sub-assemblies), materials with expected loss, by-products, routing of operations, quality check flag; draft → in use → replaced with revisions; loop check; estimated cost per unit.
+- **Work orders at actual cost:** release (copies the BOM; optional sub-assembly orders), issue and return materials, backflush of materials and operations on output, recorded time, scrap, quality checks by a separate inspector, finish (left-over cost to production differences), cancel, job card PDF.
+- **Production planning (MRP):** what to make and what to buy, level by level, from customer orders, reorder levels and open work orders; raise draft work orders; work centre load.
+- Accounts 1340 Work in progress, 5500 Labour and overhead charged to production, 5600 Production cost differences; automatic posting of production costs.
+- Permissions `manufacturing.setup`, `manufacturing.produce`, `manufacturing.qc`; roles Production Manager, Machine Operator, Quality Inspector; module Manufacturing 0.1.0; sync group `production`.
+- **Container deposits:** setting to book them as a liability (2340 Container deposits held, containers out as asset 1330) instead of sales.
+
 ## [0.20.0] — 2026-10-24 · Phase 10e Sales & Distribution, themes
 ### Added
 - **Vans:** a van is a warehouse with its own till (the rep's phone sells fully offline); load and unload from the depot; end-of-day **van settlement** (expected vs counted, unload, cash from the shift, approval by another person, settlement sheet PDF).

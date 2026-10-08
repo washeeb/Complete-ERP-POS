@@ -23,7 +23,7 @@
 | Fashion & Boutique | industry | Available (Phase 10b) — see fashion.md |
 | Services & Packages | industry | Available (Phase 10c) — see services.md |
 | Sales & Distribution | industry | Available (Phase 10e) — see distribution.md |
-| Manufacturing | industry | Planned · Phase 10f |
+| Manufacturing | industry | Available (Phase 10f) — see manufacturing.md |
 | Logistics & Delivery | department | Planned · Phase 12 |
 | Assets & Maintenance | department | Planned · Phase 12 |
 | Projects & Tasks | department | Planned · Phase 12 |

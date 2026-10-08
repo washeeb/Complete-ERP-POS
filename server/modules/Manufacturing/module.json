@@ -1,11 +1,29 @@
 {
   "key": "manufacturing",
   "name": "Manufacturing",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "kind": "industry",
-  "stage": "planned",
+  "stage": "available",
   "phase": 10,
-  "description": "Multi-level BOM, routings, work orders, MRP, backflush, QC and production costing.",
-  "requires": ["core"],
-  "permissions": []
+  "description": "Multi-level bills of materials with by-products and routings, work centres, work orders (issue, backflush, output, scrap), labour and overhead, quality checks, production at actual cost, and MRP suggestions (what to make and what to buy).",
+  "requires": [
+    "core"
+  ],
+  "permissions": [
+    {
+      "key": "manufacturing.setup",
+      "label": "Set up work centres and bills of materials",
+      "min_level": 4
+    },
+    {
+      "key": "manufacturing.produce",
+      "label": "Run work orders (release, issue materials, report output and time, finish)",
+      "min_level": 2
+    },
+    {
+      "key": "manufacturing.qc",
+      "label": "Pass or fail production in quality checks",
+      "min_level": 3
+    }
+  ]
 }
