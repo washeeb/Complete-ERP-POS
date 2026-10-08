@@ -14,6 +14,7 @@ use App\Models\ModifierGroup;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\ProductUom;
+use App\Models\Supplier;
 use App\Models\TaxGroup;
 use App\Models\Uom;
 use App\Support\Money;
@@ -119,6 +120,14 @@ class ProductResource extends Resource
                     Toggle::make('track_serials')->label('Serial / IMEI numbers')->inline(false)
                         ->helperText('Needs "Track stock"; not with batches. Stock already on hand gets its numbers under Electronics → Serial numbers.'),
                     TextInput::make('warranty_months')->label('Warranty (months)')->numeric()->minValue(0)->maxValue(120),
+                ]),
+            Section::make('Consignment')->columns(2)->visible(fn () => ModuleService::enabledAnywhere('fashion'))
+                ->description('Stock that belongs to a supplier: received at no cost (Stock → adjustment "Consignment received"); each sale owes them their share, settled from Fashion → Sell-through & consignment.')
+                ->schema([
+                    Select::make('consignor_id')->label('Consignor (supplier)')->placeholder('Our own stock')->searchable()
+                        ->options(fn () => Supplier::orderBy('name')->pluck('name', 'id')),
+                    TextInput::make('consignment_bp')->label('Their share (basis points of the price before tax)')->numeric()->minValue(1)->maxValue(10000)
+                        ->helperText('6000 = 60 %.'),
                 ]),
             Section::make('Restaurant')->columns(2)->visible(fn () => ModuleService::enabledAnywhere('restaurant'))
                 ->description('Dishes and drinks: where they are prepared, the choices offered, and the ingredients one portion uses (taken from stock when the bill is paid; switch "Track stock" off for the dish itself).')

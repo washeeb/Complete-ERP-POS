@@ -8,6 +8,8 @@ use App\Domain\Customers\Loyalty;
 use App\Domain\Customers\StoredValues;
 use App\Domain\Devices\OfflineGrant;
 use App\Domain\Electronics\ElectronicsSales;
+use App\Domain\Fashion\AlterationService;
+use App\Domain\Fashion\ConsignmentService;
 use App\Domain\Inventory\SerialRegistry;
 use App\Domain\Inventory\StockLedger;
 use App\Domain\Modules\ModuleService;
@@ -79,6 +81,8 @@ final class SaleService
         private readonly DocumentNumbers $numbers,
         private readonly DiningSales $dining,
         private readonly ElectronicsSales $electronics,
+        private readonly AlterationService $alterations,
+        private readonly ConsignmentService $consignment,
     ) {}
 
     /** @return array{sale: Sale, replayed: bool} */
@@ -186,7 +190,13 @@ final class SaleService
             if (! empty($l['markdown_id']) && ! $offline && (! $markdown || $markdown->status !== 'active' || $markdown->valid_until->lt($occurredAt->copy()->startOfDay()))) {
                 throw new DomainException("{$product->name}: that markdown sticker is no longer valid.", 'markdown_invalid');
             }
-            $current = $markdown ? (object) ['amount_minor' => $markdown->price_minor] : $this->prices->resolve($list, $product->id, $unit->id, $qty, $occurredAt);
+            // Fashion: an alteration job at its agreed charge (outside price lists and promotions, like a sticker).
+            $alteration = $this->alterations->forLine($l, $branch, $product, $offline);
+            $current = match (true) {
+                (bool) $markdown => (object) ['amount_minor' => $markdown->price_minor],
+                (bool) $alteration => (object) ['amount_minor' => $alteration->charge_minor],
+                default => $this->prices->resolve($list, $product->id, $unit->id, $qty, $occurredAt),
+            };
             if ($current?->amount_minor !== $unitPrice) {
                 if (! $offline) {
                     throw new DomainException(
@@ -201,11 +211,12 @@ final class SaleService
                 ->map(fn ($r) => ['code' => $r->code, 'name' => $r->name, 'rate_bp' => $r->rate_bp])->values()->all();
             $manual = self::manualDiscount($l['manual'] ?? null, $unitPrice, $product->name);
             $key = (string) $i;
-            $engineLines[] = ['key' => $key, 'product_id' => $markdown ? 'markdown:'.$markdown->id : $product->id, 'category_id' => $markdown ? null : $product->category_id, 'qty_milli' => $qty,
+            $engineLines[] = ['key' => $key, 'product_id' => $markdown ? 'markdown:'.$markdown->id : ($alteration ? 'alteration:'.$alteration->id : $product->id),
+                'category_id' => $markdown || $alteration ? null : $product->category_id, 'qty_milli' => $qty,
                 'unit_price_minor' => $unitPrice, 'tax' => $rates, 'manual' => $manual];
             $serials = $product->track_serials ? SerialRegistry::normalise($l['serials'] ?? []) : [];
             $lines[] = compact('product', 'unit', 'qty', 'unitPrice', 'manual', 'rates', 'key', 'markdown', 'note', 'serials') + ['no' => $i + 1, 'given' => (int) ($l['line_total_minor'] ?? -1),
-                'service' => false, 'dining_item' => $diningItem, 'repair_job' => isset($l['repair_job_id']) ? (string) $l['repair_job_id'] : null];
+                'service' => false, 'dining_item' => $diningItem, 'repair_job' => isset($l['repair_job_id']) ? (string) $l['repair_job_id'] : null, 'alteration' => $alteration];
         }
         if ($lines === [] || $engineLines === []) {
             throw new DomainException('The cart is empty.');
@@ -371,7 +382,7 @@ final class SaleService
                         'markdown_id' => $l['markdown']?->id,
                         'prescription_id' => $rx && $l['product']->needsPrescription() ? $rx->id : null,
                         'dining_item_id' => $l['dining_item'], 'note' => $l['note'], 'is_service_charge' => $l['service'], 'serials' => ($l['serials'] ?? []) ?: null,
-                        'repair_job_id' => $l['repair_job'] ?? null,
+                        'repair_job_id' => $l['repair_job'] ?? null, 'alteration_id' => ($l['alteration'] ?? null)?->id,
                     ]);
                 }
                 foreach ($payments as $pay) {
@@ -402,6 +413,8 @@ final class SaleService
                 ], null, $branch->id);
                 $this->dining->settle($actor, $sale, $lines, $diningOrder, $branch, $offline, $flags);
                 $this->electronics->settle($actor, $sale, $warehouse, $tradeIns, $p, $offline, $flags);
+                $this->alterations->paidBySale($actor, $sale, array_values(array_filter(array_map(fn ($l) => ($l['alteration'] ?? null)?->id, $lines))), $offline, $flags);
+                $this->consignment->record($actor, $sale); // consignment stock: the consignor's share of each line
                 $this->recorder->outbox->publish($actor, $sale, 'sale.posted', ['receipt_no' => $receiptNo, 'offline' => $offline]);
 
                 if ($offline) {

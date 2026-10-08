@@ -1,6 +1,6 @@
 import { db, getDevice, getSession } from './db'
 import type { OfflineGrant } from './db'
-import type { Bootstrap, PostedSale, Product, PromotionRow, Returnable, Shift, TillCustomer, WmsBin, WmsBootstrap, WmsCount, WmsOrder, WmsTransfer, WmsUnit, Grocery, Pharmacy, Restaurant, DiningOrder, Floor, KitchenTicket, Reservation, RepairJob, SerialInfo } from './types'
+import type { Bootstrap, PostedSale, Product, PromotionRow, Returnable, Shift, TillCustomer, WmsBin, WmsBootstrap, WmsCount, WmsOrder, WmsTransfer, WmsUnit, Grocery, Pharmacy, Restaurant, DiningOrder, Floor, KitchenTicket, Reservation, RepairJob, SerialInfo, Fashion, Alteration } from './types'
 
 /** Error with the server's stable code ("price_changed", "no_shift"…) and a message safe to show. */
 export class ApiError extends Error {
@@ -62,7 +62,7 @@ export const api = {
     if (GATEWAY_DOWN.includes(res.status)) throw new ApiError('network', 'The server is not answering.', res.status)
     const body = await res.json().catch(() => ({}))
     if (!res.ok) throw new ApiError(body.error ?? 'server', body.detail ?? `Server error (${res.status})`, res.status)
-    return body as { version: string; generated_at: string; products: Product[]; promotions?: PromotionRow[]; utc_offset_minutes?: number; grocery?: Grocery | null; pharmacy?: Pharmacy | null; restaurant?: Restaurant | null; electronics?: boolean }
+    return body as { version: string; generated_at: string; products: Product[]; promotions?: PromotionRow[]; utc_offset_minutes?: number; grocery?: Grocery | null; pharmacy?: Pharmacy | null; restaurant?: Restaurant | null; electronics?: boolean; fashion?: Fashion | null }
   },
   /** Customers for lookup (ETag); null = unchanged. */
   customers: async (version?: string | null) => {
@@ -125,6 +125,15 @@ export const repairs = {
   status: (id: string, status: string, note?: string | null) => call<{ job: RepairJob }>(`pos/repairs/${id}/status`, { method: 'POST', body: JSON.stringify({ status, note }) }),
   lines: (id: string, lines: { product_uom_id: string; qty: string }[]) => call<{ job: RepairJob }>(`pos/repairs/${id}/lines`, { method: 'POST', body: JSON.stringify({ lines }) }),
   handOver: (id: string) => call<{ job: RepairJob }>(`pos/repairs/${id}/hand-over`, { method: 'POST' }),
+}
+
+/** Fashion: alteration jobs. */
+export const alterations = {
+  list: () => call<{ alterations: Alteration[]; product_id: string | null }>('pos/alterations'),
+  open: (body: { customer_id?: string | null; customer_name: string; phone?: string | null; garment: string; work: string; charge_minor: number; due_on?: string | null }) =>
+    call<{ alteration: Alteration }>('pos/alterations', { method: 'POST', body: JSON.stringify(body) }),
+  status: (id: string, status: string, tailor?: string | null) => call<{ alteration: Alteration }>(`pos/alterations/${id}/status`, { method: 'POST', body: JSON.stringify({ status, tailor }) }),
+  handOver: (id: string) => call<{ alteration: Alteration }>(`pos/alterations/${id}/hand-over`, { method: 'POST' }),
 }
 
 /** Kitchen screen: the enrolled kitchen device itself (no person signs in). */

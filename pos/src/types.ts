@@ -20,6 +20,13 @@ export type DiningOrder = {
   customer_id: string | null; waiter: string; status: 'open' | 'closed' | 'void'; note: string | null; opened_at: string; version: number; items: DiningItem[]
   platform?: string | null; external_ref?: string | null; reservation?: { number: string; deposit_left_minor: number } | null
 }
+// Fashion
+export type Style = { id: string; code: string; name: string; sizes: string[]; colours: string[]; season: string | null; collection: string | null }
+export type Fashion = { styles: Style[]; alteration_product_id: string | null }
+export type Alteration = {
+  id: string; number: string; customer_id: string | null; customer_name: string; phone: string | null; garment: string; work: string; charge_minor: number
+  status: string; status_label: string; due_on: string | null; tailor_name: string | null; received_at: string
+}
 // Electronics
 export type RepairJob = {
   id: string; number: string; customer_id: string | null; customer_name: string; phone: string | null; device: string; serial: string | null; fault: string
@@ -41,7 +48,7 @@ export type DiningTable = { id: string; code: string; area: string | null; seats
 export type Floor = { tables: DiningTable[]; stations: { code: string; name: string; auto_print: boolean }[]; orders: DiningOrder[]; server_time: string
   reservations?: Reservation[]; hold_minutes?: number }
 export type KitchenTicket = { order_id: string; number: string; label: string; kind: string; waiter: string; paid: boolean; items: DiningItem[] }
-export type Product = { id: string; sku: string; name: string; category_id?: string | null; plu?: string | null; drug?: Drug | null; station?: string | null; modifier_group_ids?: string[]; track_serials?: boolean; warranty_months?: number | null; track_stock: boolean; on_hand: string | null; tax: TaxRate[]; units: Unit[]; prices: Price[] }
+export type Product = { id: string; sku: string; name: string; category_id?: string | null; plu?: string | null; drug?: Drug | null; station?: string | null; modifier_group_ids?: string[]; track_serials?: boolean; warranty_months?: number | null; style_id?: string | null; size?: string | null; colour?: string | null; track_stock: boolean; on_hand: string | null; tax: TaxRate[]; units: Unit[]; prices: Price[] }
 export type PriceList = { id: string; code: string; name: string; prices_include_tax: boolean; is_default: boolean }
 
 export type Shift = {

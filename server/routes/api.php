@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\ChannelWebhookController;
 use App\Http\Controllers\Api\V1\DeviceAuthController;
 use App\Http\Controllers\Api\V1\ElectronicsController;
+use App\Http\Controllers\Api\V1\FashionController;
 use App\Http\Controllers\Api\V1\PosController;
 use App\Http\Controllers\Api\V1\RestaurantController;
 use App\Http\Controllers\Api\V1\SyncController;
@@ -52,6 +53,12 @@ Route::prefix('v1')->group(function () {
         Route::post('repairs/{id}/status', [ElectronicsController::class, 'status'])->whereUuid('id');
         Route::post('repairs/{id}/lines', [ElectronicsController::class, 'lines'])->whereUuid('id');
         Route::post('repairs/{id}/hand-over', [ElectronicsController::class, 'handOver'])->whereUuid('id');
+
+        // Fashion: alteration jobs.
+        Route::get('alterations', [FashionController::class, 'index']);
+        Route::post('alterations', [FashionController::class, 'open']);
+        Route::post('alterations/{id}/status', [FashionController::class, 'status'])->whereUuid('id');
+        Route::post('alterations/{id}/hand-over', [FashionController::class, 'handOver'])->whereUuid('id');
 
         // Restaurant: bills shared by tills and waiter tablets (the module must be on at the branch).
         Route::prefix('restaurant')->group(function () {

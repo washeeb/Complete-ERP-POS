@@ -17,6 +17,7 @@ use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\ProductUom;
 use App\Models\RecipeLine;
+use App\Models\Supplier;
 use App\Models\TaxGroup;
 use App\Models\TaxRate;
 use App\Models\Uom;
@@ -80,7 +81,13 @@ final class CatalogService
         }
 
         $product->fill(array_intersect_key($data, array_flip(['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu',
-            'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'fda_reg_no', 'station', 'track_serials', 'warranty_months'])));
+            'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'fda_reg_no', 'station', 'track_serials', 'warranty_months', 'consignor_id', 'consignment_bp'])));
+        // Fashion: consignment stock belongs to a supplier (the consignor), who is owed a share of each sale.
+        $product->consignor_id = $product->consignor_id ?: null;
+        $product->consignment_bp = $product->consignor_id ? (int) $product->consignment_bp : null;
+        if ($product->consignor_id && (! Supplier::find($product->consignor_id) || $product->consignment_bp < 1 || $product->consignment_bp > 10000)) {
+            throw new DomainException('Consignment: choose the consignor and their share (0.01–100 % of the price before tax).');
+        }
         // Electronics: serial / IMEI numbers per unit, and the warranty from the date sold.
         if ($product->track_serials && (! $product->track_stock || $product->track_batches)) {
             throw new DomainException('Serial numbers need stock tracking, and cannot be combined with batches.');
