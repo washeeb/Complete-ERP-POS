@@ -161,6 +161,36 @@ final class Settings
             'label' => 'Alteration product (SKU)',
             'help' => 'Alterations are paid at the till as this product at the agreed charge. Create it with stock tracking off; its tax group taxes the charge.',
         ],
+        'services.slot_minutes' => [
+            'type' => 'int', 'default' => 15, 'min' => 5, 'max' => 120, 'group' => 'Services',
+            'label' => 'Appointment times every (minutes)',
+            'help' => 'The steps offered when booking an appointment and the rows of the staff calendar.',
+        ],
+        'services.day_start' => [
+            'type' => 'string', 'default' => '08:00', 'max' => 5, 'group' => 'Services',
+            'label' => 'Calendar day starts at (HH:MM)',
+            'help' => 'The first time shown in the staff calendar and offered for bookings.',
+        ],
+        'services.day_end' => [
+            'type' => 'string', 'default' => '20:00', 'max' => 5, 'group' => 'Services',
+            'label' => 'Calendar day ends at (HH:MM)',
+            'help' => 'The last time shown in the staff calendar.',
+        ],
+        'services.reminder_hours' => [
+            'type' => 'int', 'default' => 24, 'min' => 0, 'max' => 72, 'group' => 'Services',
+            'label' => 'Text an appointment reminder this many hours before (0 = never)',
+            'help' => 'Sent by the SMS gateway below to customers whose phone number is on the appointment.',
+        ],
+        'services.sms_webhook_url' => [
+            'type' => 'string', 'default' => '', 'max' => 255, 'group' => 'Services',
+            'label' => 'SMS gateway address for appointment messages',
+            'help' => 'Leave empty to use the restaurant one. The address of your SMS provider (or a small bridge to it) that accepts {"to", "message", "reference"}.',
+        ],
+        'services.sms_confirmations' => [
+            'type' => 'bool', 'default' => true, 'group' => 'Services',
+            'label' => 'Text a confirmation when an appointment is booked',
+            'help' => 'Only when an SMS gateway is set and the appointment has a phone number.',
+        ],
         'receipt.footer' => [
             'type' => 'string', 'default' => 'Thank you for shopping with us.', 'max' => 200, 'group' => 'Receipts',
             'label' => 'Message at the bottom of receipts',

@@ -1,0 +1,96 @@
+# 14. Reference
+
+## 14.1 Security levels
+
+A person's **security level** is the highest level of role they can ever be given.
+
+| Level | Typical people |
+|---|---|
+| L6 · Owner | Owner / director (everything) |
+| L5 · Executive | General Manager, Finance Manager |
+| L4 · Manager | Branch Manager, Accountant, HR Manager, Warehouse Manager, Pharmacist, IT Admin |
+| L3 · Supervisor | Supervisor, Payroll Officer, Marketing |
+| L2 · Staff | Cashier, Storekeeper, Waiter, Tailor, Repair Technician, Stylist / Therapist, Sales Rep |
+| L1 · Restricted | Auditor (read-only), Kitchen Staff |
+
+**IT Admin** manages users, devices, modules and settings, but gets **no** access to sales, money or stock unless the owner also gives them a business role.
+
+## 14.2 Roles provided
+
+Owner · General Manager · Finance Manager · Accountant · Auditor · HR Manager · Payroll Officer · Purchasing Officer · Purchase Approver · Warehouse Manager · Storekeeper · Picker / Packer · Branch Manager · Supervisor · Cashier · Sales Rep · Van Sales Rep · Customer Service · Marketing · E-commerce Manager · Delivery Rider · Pharmacist · Pharmacy Technician · Waiter / Bartender · Kitchen Staff · Repair Technician · Tailor · Stylist / Therapist · IT Admin.
+
+You can change what a role allows under **People & access → Roles** (you can only add permissions you hold yourself).
+
+## 14.3 Settings in `.env`
+
+| Key | Meaning |
+|---|---|
+| `APP_ENV` | `production` on a live system |
+| `APP_DEBUG` | `false` on a live system (never `true`: it shows technical details) |
+| `APP_URL` | The address people use to reach this server |
+| `APP_KEY` | Encryption key (created once by `key:generate`). **Back it up, never change it.** |
+| `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | Database connection (`127.0.0.1`, `5432`, `erp`, `erp`, your password) |
+| `ERP_NODE_ROLE` | `hq` (head office or single server) or `branch` (branch server) |
+| `ERP_NODE_ID` | Short unique id of this server (`HQ`, `B01`…), stamped on every record |
+| `ERP_AUDIT_KEY` | Audit-log seal (created once by `erp:audit-key`). **Back it up, never change it.** |
+| `REVERB_*` | Live updates (optional, 4.9 / 5.9) |
+| `BROADCAST_CONNECTION`, `QUEUE_CONNECTION`, `CACHE_STORE`, `SESSION_DRIVER` | Leave as provided |
+
+After changing `.env`, run `php artisan optimize`.
+
+## 14.4 Network ports
+
+| Port | Used by | Open to |
+|---|---|---|
+| 8010 | Server on Windows (back office, tills) | Shop network (setup B), not the internet |
+| 80 / 443 | Server on Ubuntu (Nginx) | Network or internet (443 with HTTPS) |
+| 8080 | Live updates (Reverb) | Shop network on Windows; behind Nginx on Ubuntu |
+| 5432 | PostgreSQL | **This server only** — never open it to the network |
+| 22 | SSH (Ubuntu remote administration) | Your administrators only |
+
+## 14.5 Useful commands (in the `server` folder)
+
+| Command | What it does |
+|---|---|
+| `php artisan erp:install` | Create the company and owner (once) |
+| `php artisan erp:demo-catalog --as=<email>` | Sample products and stock — **test installations only** |
+| `php artisan migrate --seed --force` | Create or update the database structure (installation and updates) |
+| `php artisan optimize` / `optimize:clear` | Apply `.env` changes / clear cached settings |
+| `php artisan schedule:work` | The scheduler (normally runs as a task or cron, not by hand) |
+| `php artisan erp:sync` | Sync a branch server with head office now |
+| `php artisan erp:node:join <hq-url> <hq-id> <company-id>` | Pair a branch server with head office |
+| `php artisan erp:bill-memberships` | Raise membership invoices that are due (runs daily by itself) |
+| `php artisan license:status` | Licence state and limits |
+| `php artisan erp:audit-verify`, `erp:stock-check`, `erp:gl-check` | Health checks (Chapter 13) |
+
+## 14.6 Till keyboard shortcuts
+
+| Key | Action |
+|---|---|
+| F2 | Search / scan |
+| F4 | Choose customer |
+| F6 | Tables (Restaurant) |
+| F7 | Repairs (Electronics) |
+| F8 | Return |
+| F9 | Alterations (Fashion) |
+| F10 | Appointments (Services) |
+| F12 | Pay |
+
+## 14.7 Go-live checklist
+
+- [ ] Server installed; `/up` and `/admin` open; scheduler running.
+- [ ] Licence **Active** with the right modules and limits.
+- [ ] Two-factor sign-in set up for every manager; recovery codes stored safely.
+- [ ] Branches, warehouses and tills correct (codes cannot change later).
+- [ ] Tax groups checked by your accountant.
+- [ ] Products, barcodes and prices entered; opening stock counted and entered with costs.
+- [ ] Customers and suppliers with opening balances; finance opening balances (if licensed).
+- [ ] Every user created with the right role and scope; PINs set.
+- [ ] Every till enrolled, printing receipts, and tested **offline**.
+- [ ] Modules switched on and their checklists done.
+- [ ] Nightly backup running, copied off the server, and a **restore tested**.
+- [ ] `.env`, owner password and recovery codes stored in a safe place, not on the server.
+
+## 14.8 About this guide
+
+This guide is generated from the files in `docs/manual/` and updated with every release. The software version and date are on the cover page.

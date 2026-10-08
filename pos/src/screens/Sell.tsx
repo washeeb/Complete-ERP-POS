@@ -11,8 +11,11 @@ import { BillView, FloorView, ModifierPicker, type Choice } from './Restaurant'
 import { RepairsScreen, SerialPrompt } from './Electronics'
 import { AlterationsScreen, StylePicker } from './Fashion'
 import { styleOf } from '../fashion'
+import { AppointmentsScreen, PassesScreen, StaffPrompt } from './Services'
+import { isService } from '../services'
 import { v7 as uuidv7 } from 'uuid'
 import { formatMoney, prettyQty, toMilli } from '../money'
+import type { Appointment, Services, ServicePass, StaffMember } from '../types'
 import type { Alteration, Bootstrap, DiningItem, DiningOrder, Fashion, Grocery, Pharmacy, Restaurant, RepairJob, Style, TradeInItem, Payment, PostedSale, Product, PromotionRow, TillCustomer, Unit } from '../types'
 import { parseMoney } from '../money'
 import { ReturnScreen } from './ReturnScreen'
@@ -60,6 +63,11 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   const [fashion, setFashion] = useState<Fashion | null>(null)
   const [stylePick, setStylePick] = useState<Style | null>(null)
   const [alterationsOpen, setAlterationsOpen] = useState(false)
+  // Services: who did the service being added (and the pass session it uses), the appointment book, the customer's passes.
+  const [services, setServices] = useState<Services | null>(null)
+  const [staffPick, setStaffPick] = useState<{ product: Product; pass?: { pass: ServicePass; item: number } } | null>(null)
+  const [appointmentsOpen, setAppointmentsOpen] = useState(false)
+  const [passesOpen, setPassesOpen] = useState(false)
   // Pharmacy: the prescription and the pharmacist's approval for prescription-only medicines in this sale.
   const [rx, setRx] = useState<Rx | null>(null)
   const [rxPrompt, setRxPrompt] = useState<{ message: string; payments?: Payment[]; approvals?: Approvals } | null>(null)
@@ -81,6 +89,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       setRestaurant(cat?.restaurant ?? null)
       setElectronics(!!cat?.electronics)
       setFashion(cat?.fashion ?? null)
+      setServices(cat?.services ?? null)
     })
   }, [catalogVersion])
 
@@ -114,6 +123,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       if (e.key === 'F6' && !paying && online && restaurant) { e.preventDefault(); setFloorOpen(true) }
       if (e.key === 'F7' && !paying && online && electronics) { e.preventDefault(); setRepairsOpen(true) }
       if (e.key === 'F9' && !paying && online && fashion) { e.preventDefault(); setAlterationsOpen(true) }
+      if (e.key === 'F10' && !paying && online && services) { e.preventDefault(); setAppointmentsOpen(true) }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -131,6 +141,10 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
     if (style && !stylePick) {
       setQuery('')
       return setStylePick(style) // choose the size and colour from the grid
+    }
+    if (services?.staff.length && isService(product) && !unit) {
+      setQuery('')
+      return setStaffPick({ product }) // who is doing it (their commission)
     }
     if (product.track_serials) {
       setQuery('')
@@ -152,6 +166,27 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
     setLines((l) => [...l, { key: `sn:${uuidv7()}`, product, unit: product.units.find((u) => u.is_base) ?? product.units[0], qtyMilli: serials.length * 1000, serials }])
     setSerialPick(null)
     searchRef.current?.focus()
+  }
+
+  /** A service done by a staff member (or nobody in particular); a session from a prepaid pass is a line at no charge. */
+  function addService(product: Product, staff: StaffMember | null, pass?: { pass: ServicePass; item: number }, appointmentId?: string) {
+    setLines((l) => [...l, { key: `svc:${uuidv7()}`, product, unit: product.units.find((u) => u.is_base) ?? product.units[0], qtyMilli: 1000,
+      staff: staff ? { id: staff.id, name: staff.name } : null, pass: pass ? { id: pass.pass.id, item: pass.item, number: pass.pass.number } : null, appointmentId }])
+    setStaffPick(null)
+    setQuery('')
+    searchRef.current?.focus()
+  }
+
+  /** Check out an appointment: its service on the till, done by the person booked (the sale marks the appointment done). */
+  function checkoutAppointment(a: Appointment) {
+    const p = products.find((x) => x.id === a.product_id)
+    if (!p) return setMessage('Refresh the till: that service is not in its catalog.')
+    if (!customer && a.customer_id) {
+      const c = customers.find((x) => x.id === a.customer_id)
+      if (c) pickCustomer(c)
+    }
+    addService(p, { id: a.employee_id, name: a.employee_name ?? '', job_title: null }, undefined, a.id)
+    setAppointmentsOpen(false)
   }
 
   /** Collect an alteration: one line of the alteration product at the agreed charge (the sale marks it collected). */
@@ -248,6 +283,10 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   }
 
   function startPay() {
+    if (lines.some((l) => l.product.is_pack) && !customer) {
+      setMessage('A prepaid pack belongs to a customer: choose the customer (F4) first.')
+      return
+    }
     if (cart.unpriced.length) {
       setMessage(`No ${list.name} price for: ${cart.unpriced.map((l) => l.product.name).join(', ')}`)
       return
@@ -255,6 +294,10 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
     setPayError('')
     if (pharmacy && lines.some((l) => needsPrescription(l.product)) && !rx) {
       setRxPrompt({ message: '' })
+      return
+    }
+    if (cart.total === 0 && lines.length) {
+      complete([], {}) // only sessions from prepaid passes: nothing to pay
       return
     }
     setPaying(true)
@@ -366,12 +409,14 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
             <span className="chip" aria-label="Customer">
               {customer.name}{customer.credit_limit_minor !== null && ` · credit ${money(customer.available_minor ?? 0)}`}
               {online && <button type="button" className="link" onClick={() => setTakingPayment(true)}>Take payment</button>}
+              {online && services && <button type="button" className="link" onClick={() => setPassesOpen(true)}>Passes</button>}
               <button type="button" className="link" onClick={() => pickCustomer(null)} aria-label="Remove customer">✕</button>
             </span>
           ) : <button type="button" onClick={() => setPicking(true)}>Customer (F4)</button>}
           {online && restaurant && <button type="button" onClick={() => setFloorOpen(true)}>Tables (F6)</button>}
           {online && electronics && <button type="button" onClick={() => setRepairsOpen(true)}>Repairs (F7)</button>}
           {online && fashion && <button type="button" onClick={() => setAlterationsOpen(true)}>Alterations (F9)</button>}
+          {online && services && <button type="button" onClick={() => setAppointmentsOpen(true)}>Appointments (F10)</button>}
           {payingBill && <span className="chip" aria-label="Paying bill">Paying {payingBill.label}
             <button type="button" className="link" onClick={() => { setPayingBill(null); setLines([]) }} aria-label="Stop paying this bill">✕</button></span>}
           {online && <button type="button" onClick={() => setReturning(true)}>Return (F8)</button>}
@@ -426,10 +471,12 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
                     {l.note && <div className="small muted">{l.note}</div>}
                     {l.serials && <div className="small muted mono">S/N {l.serials.join(', ')}</div>}
                     {l.markdown && <div className="small promo">Marked-down sticker</div>}
+                    {l.staff && <div className="small muted">with {l.staff.name}</div>}
+                    {l.pass && <div className="small promo">Prepaid session · {l.pass.number}</div>}
                     {l.promotions.map((p) => <div key={p.id} className="small promo">{p.name} −{money(p.saving_minor)}</div>)}
                     {l.manual && <div className="small promo">Discount −{money(l.discount - l.promotions.reduce((a, p) => a + p.saving_minor, 0))}</div>}
                   </td>
-                  <td>{l.diningItemId || l.service || l.serials || l.repairJobId || l.alteration ? prettyQty(l.qtyMilli) : (
+                  <td>{l.diningItemId || l.service || l.serials || l.repairJobId || l.alteration || l.pass || l.appointmentId ? prettyQty(l.qtyMilli) : (
                     <input className="qty mono" inputMode="decimal" defaultValue={prettyQty(l.qtyMilli)} key={l.qtyMilli}
                       onBlur={(e) => changeQty(l, e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} aria-label={`Quantity of ${l.product.name}`} />)}</td>
                   <td>
@@ -491,6 +538,12 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       {stylePick && <StylePicker style={stylePick} products={products} onPick={(p) => { setStylePick(null); add(p, p.units.find((u) => u.is_base) ?? p.units[0]) }}
         onCancel={() => setStylePick(null)} />}
       {alterationsOpen && <AlterationsScreen currency={boot.company.currency} exponent={boot.company.exponent} onCollect={collectAlteration} onClose={() => setAlterationsOpen(false)} />}
+      {staffPick && services && <StaffPrompt product={staffPick.product} staff={services.staff} onPick={(s) => addService(staffPick.product, s, staffPick.pass)}
+        onCancel={() => setStaffPick(null)} />}
+      {appointmentsOpen && services && <AppointmentsScreen products={products} services={services} customer={customer} onCheckout={checkoutAppointment}
+        onClose={() => setAppointmentsOpen(false)} />}
+      {passesOpen && customer && <PassesScreen customer={customer} products={products} lines={lines}
+        onUse={(pass, item, product) => { setPassesOpen(false); setStaffPick({ product, pass: { pass, item } }) }} onClose={() => setPassesOpen(false)} />}
       {serialPick && <SerialPrompt product={serialPick} onDone={(s) => addSerials(serialPick, s)} onCancel={() => setSerialPick(null)} />}
       {repairsOpen && <RepairsScreen products={products} currency={boot.company.currency} exponent={boot.company.exponent}
         onCollect={collectRepair} onClose={() => setRepairsOpen(false)} />}

@@ -1,9 +1,26 @@
 # State (resume file)
 
-**Phase:** 10 — Industry modules wave 2 · **Status:** 10b (Fashion) done on branch `phase-10b-fashion` (PR to `main`); next 10c Services & Packages, then Distribution, Manufacturing
-**Updated:** 2026-10-21 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–9, licensing and 10a merged (PRs #1–#17)
+**Phase:** 10 — Industry modules wave 2 · **Status:** 10c (Services) + installation guide done on branch `phase-10c-services` (PR to `main`); next 10d Distribution, then Manufacturing
+**Updated:** 2026-10-22 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–9, licensing, 10a and 10b merged (PRs #1–#18)
 
-## Phase 10b — done (302 Pest + 45 Vitest + 13 Playwright)
+## Phase 10c — done (308 Pest + 49 Vitest + 14 Playwright)
+- **Server:**
+  - migration `2026_10_22_100001_create_services_tables`: `products.service_minutes`, `commission_bp`, `pack`, `licence_keys`; `employees.takes_appointments`, `commission_bp`; `service_passes`, `service_pass_uses`, `appointments`, `membership_plans`, `memberships`, `commissions`, `licence_keys`; `sale_lines.staff_id`, `service_pass_id`, `pass_item`, `appointment_id`; `payslips.commission_minor`; `invoices.membership_id`;
+  - `app/Domain/Services/{PassService, AppointmentService, MembershipService, CommissionService, LicenceKeyService, ServiceSales, SmsGateway}`; `app/Domain/Sales/InvoiceService` (shared with deliveries);
+  - SaleService/ReturnService hooks via `ServiceSales`; payroll earning COMMISSION; SMS relay handles appointments;
+  - `ServicesController` (`pos/services/*`); catalog `services` block; sale response `licence_keys`; empty payments allowed when the total is 0;
+  - commands `erp:appointment-reminders` (5 min), `erp:bill-memberships` (01:30, HQ only).
+- **Back office:** Services → Staff calendar, Appointments, Prepaid passes, Memberships, Membership plans, Commissions, Licence keys; Product → Services; Employee → takes appointments, commission %; role `service_staff`; `services.*` settings; module 0.1.0.
+- **Till:** `pos/src/services.ts`; `screens/Services.tsx` (staff prompt, appointments F10, passes); pass lines at 0 in `cart.ts`; receipt licence keys.
+- **Till hosting:** `npm run build:server` → `server/public/pos` (git-ignored), served at `/pos/`; release builds include it.
+- **Installation guide:** `docs/manual/00–14-*.md` → `Synclytics-ERP-POS-Installation-Guide.pdf` (`npm run manual`; screenshots `npm run manual:screens`, dev server on 8010). Update it every phase.
+- **Tests:** ServicesTest (6), SetupAndModulesTest (services permissions), `services.test.ts`, e2e `services.spec.ts`.
+- **Docs:** services.md, api.md, modules.md (statuses), cashier.md, DECISIONS 10c + guide, CHANGELOG 0.18.0.
+
+## Phase 10b — done (merged, PR #18)
+- Fashion: styles with a size × colour matrix, consignment, alterations, sell-through — see docs/fashion.md.
+
+## Phase 10b — details (302 Pest + 45 Vitest + 13 Playwright at the time)
 - **Server:**
   - migration `2026_10_21_100001_create_fashion_tables`: `styles`; `products.style_id`, `size`, `colour`, `consignor_id`, `consignment_bp`; `consignment_sales`; `alterations`; `sale_lines.alteration_id`;
   - `app/Domain/Fashion/{StyleService, ConsignmentService, AlterationService, FashionReports}`;
@@ -116,9 +133,9 @@
 ## Licensing (merged, PR #12)
 - Signed activation keys, expiry with grace then read-only, daily check-in, tamper detection, watermarks — see docs/licensing.md. Dev licence valid to 2027-12-31 (dev key in `.local-secrets/license-dev.json`). Before the first customer release: production key (`license:keygen`), its public key in `config/license.php`, a licence server.
 
-## Next — Phase 10c (Services & Packages)
-- Owner answer: both prepaid packs and recurring invoiced memberships.
-- Scope: service catalogue, packages/bundles, memberships with recurring invoices, prepaid session packs counted down at the till, appointments with staff calendars, commissions (salons, gyms, clinics); subscriptions and licence keys deferred from 10a.
+## Next — Phase 10d (Sales & Distribution)
+- Owner answer: a phone app for reps, each van a warehouse.
+- Scope: van sales (van stock as a warehouse, load/unload transfers, sales and collections on the route), routes and visits, rep targets and commissions, B2B order taking on the phone, settlement at the end of the day. Then 10e Manufacturing (actual cost).
 ## Owner decisions pending
 - Accountant check of the Ghana tax set-up (VAT/NHIL/GETFund rates and the payroll PAYE bands / SSNIT rates — Payroll → Tax and SSNIT rules) before go-live.
 - WooCommerce/Shopify: connect a real store only with the owner's keys.
@@ -145,4 +162,4 @@
   - in tests, `flushSession()` before switching users.
 
 ## Blockers
-- Merge PR `phase-10b-fashion` → `main` (asked in chat).
+- Merge PR `phase-10c-services` → `main` (asked in chat).

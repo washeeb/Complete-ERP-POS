@@ -2,8 +2,8 @@
 
 ## First run
 
-1. Install the server for your deployment mode (`docs/install/*`, written as each mode becomes runnable;
-   for development see `README.md`).
+1. Install the server for your deployment mode: see the **Installation & Setup Guide**
+   (`docs/manual/Synclytics-ERP-POS-Installation-Guide.pdf`; for development see `README.md`).
 2. Create the audit key, then the company and its owner:
    ```
    php artisan erp:audit-key

@@ -38,5 +38,8 @@ sign in with a username + PIN set under Users. Guides: `docs/user-manual/cashier
 
 Tests: `cd server && php artisan test` · `cd pos && npm test`.
 
-Production install guides (standalone, branch node, central server, cloud, POS devices) are written
-in the phases that make each mode runnable; see `docs/STATE.md`.
+**Installation & Setup Guide (PDF):** [docs/manual/Synclytics-ERP-POS-Installation-Guide.pdf](docs/manual/Synclytics-ERP-POS-Installation-Guide.pdf)
+— every setup (single PC, shop network, central, cloud, branch servers), requirements, modules, devices, backups,
+updates and troubleshooting. Source chapters: `docs/manual/*.md`; rebuild with `cd pos && npm run manual`.
+
+The server also hands out the till app at `/pos/` once it is built into it: `cd pos && npm run build:server`.

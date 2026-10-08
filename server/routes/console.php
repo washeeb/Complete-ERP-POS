@@ -18,3 +18,5 @@ Schedule::command('erp:expire-balances')->dailyAt('02:30')->withoutOverlapping(6
 Schedule::command('erp:gl-post')->everyFiveMinutes()->withoutOverlapping(30)->runInBackground();
 Schedule::command('license:checkin')->dailyAt('03:15')->withoutOverlapping(30);
 Schedule::command('erp:reservation-reminders')->everyFiveMinutes()->withoutOverlapping(10);
+Schedule::command('erp:appointment-reminders')->everyFiveMinutes()->withoutOverlapping(10);
+Schedule::command('erp:bill-memberships')->dailyAt('01:30')->withoutOverlapping(60); // head office only

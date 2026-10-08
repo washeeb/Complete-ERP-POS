@@ -3,10 +3,12 @@
 namespace App\Domain\Restaurant;
 
 use App\Domain\Channels\OutboxConsumers;
+use App\Domain\Services\SmsGateway;
 use App\Domain\Support\Actor;
 use App\Domain\Support\Recorder;
 use App\Models\Branch;
 use App\Models\OutboxEvent;
+use App\Models\Product;
 use App\Models\Reservation;
 use App\Models\Tenant;
 use App\Support\Settings;
@@ -15,7 +17,7 @@ use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 /**
- * SMS hook for bookings (owner decision 2026-10-18): a confirmation when a table is booked and a reminder before it,
+ * SMS hook for bookings (owner decision 2026-10-18) and, since Phase 10c, appointments: a confirmation when a table is booked and a reminder before it,
  * posted to the SMS gateway's address (Settings → Restaurant) as {"to", "message", "reference"}. Any SMS provider (or a
  * small bridge in front of one) can take it; no provider account is built in. A gateway that is down is retried.
  */
@@ -26,6 +28,9 @@ final class SmsRelay
     public function run(): int
     {
         return $this->consumers->consume('sms', function (OutboxEvent $e) {
+            if ($e->aggregate_type === 'appointment') {
+                return $this->appointment($e);
+            }
             $url = trim((string) $this->settings->get('restaurant.sms_webhook_url', $e->tenant_id));
             $row = $e->payload['snapshot']['row'] ?? [];
             if ($url === '' || empty($row['phone']) || ($row['status'] ?? '') !== 'booked') {
@@ -45,7 +50,31 @@ final class SmsRelay
             if ($res->failed()) {
                 throw new RuntimeException("SMS gateway answered {$res->status()}."); // the cursor stays: retried next run
             }
-        }, 200, fn (OutboxEvent $e) => $e->aggregate_type === 'reservation' && in_array($e->event_type, ['reservation.booked', 'reservation.reminder'], true));
+        }, 200, fn (OutboxEvent $e) => ($e->aggregate_type === 'reservation' && in_array($e->event_type, ['reservation.booked', 'reservation.reminder'], true))
+            || ($e->aggregate_type === 'appointment' && in_array($e->event_type, ['appointment.booked', 'appointment.reminder'], true)));
+    }
+
+    /** Services: "booked" (when confirmations are on) and "reminder" messages for an appointment. */
+    private function appointment(OutboxEvent $e): void
+    {
+        $url = SmsGateway::url($this->settings, $e->tenant_id);
+        $row = $e->payload['snapshot']['row'] ?? [];
+        if ($url === '' || empty($row['phone']) || ($row['status'] ?? '') !== 'booked'
+            || ($e->event_type === 'appointment.booked' && ! $this->settings->get('services.sms_confirmations', $e->tenant_id))) {
+            return;
+        }
+        $branch = Branch::withoutGlobalScopes()->find($row['branch_id']);
+        $tenant = Tenant::find($e->tenant_id);
+        $at = Carbon::parse($row['starts_at'])->setTimezone($branch?->timezone ?: ($tenant->timezone ?: 'UTC'));
+        $who = $tenant->name.($branch ? " {$branch->name}" : '');
+        $service = (string) Product::withoutGlobalScopes()->whereKey($row['product_id'])->value('name');
+        $message = $e->event_type === 'appointment.reminder'
+            ? "{$who}: reminder of your {$service} appointment today at {$at->format('H:i')} ({$row['number']})."
+            : "{$who}: {$service} booked for {$at->format('D j M, H:i')} ({$row['number']}).".($branch?->phone ? " To change it call {$branch->phone}." : '');
+        $res = Http::timeout(10)->acceptJson()->post($url, ['to' => $row['phone'], 'message' => $message, 'reference' => $row['number']]);
+        if ($res->failed()) {
+            throw new RuntimeException("SMS gateway answered {$res->status()}."); // the cursor stays: retried next run
+        }
     }
 
     /** Reminders due: bookings starting within the reminder window that have a phone and were not reminded yet. */

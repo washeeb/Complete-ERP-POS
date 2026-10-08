@@ -57,3 +57,11 @@ The top right shows **“Server not answering — working offline”** or **“N
 **Close shift** → count all cash in the drawer (including the float) → enter it. You see the
 expected amount and whether you are over or short only after entering your count. Add a note if
 there is a difference. Then sign out.
+
+## Services (salons, spas, gyms)
+
+- Adding a **service** asks **who is doing it** — tap the person (their commission).
+- **Appointments (F10):** today's bookings by staff member. **Arrived** when the customer comes in; **Check out** puts the service on the till with the right person. You can also book new appointments there.
+- **Passes** (next to the customer's name): the customer's prepaid sessions. **Use for …** adds the service at no charge. If the cart has only sessions, there is nothing to pay and the sale completes at once.
+- A **prepaid pack** can only be sold to a chosen customer (F4).
+- Software sold with a **licence key**: the key is printed on the receipt.

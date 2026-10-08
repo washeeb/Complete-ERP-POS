@@ -285,3 +285,18 @@ Errors use the standard body `{error, detail}`. For example: `wrong_status`, `no
   - `POST pos/alterations/{id}/hand-over` (free only; error `payment_needed`).
 - **Sales:** `POST pos/sales` lines take `alteration_id`. Such a line is the alteration product at the alteration's `charge_minor`; the engine product id is `alteration:<id>`, so it stays outside promotions. Error `alteration_invalid`; offline → review `alteration_conflict`.
 - **Consignment:** each sale or return of a product with `consignor_id` writes a `consignment_sales` row (the consignor's share of the line's net). It syncs up in the `sales` group.
+
+## Services (Phase 10c)
+
+- **Catalog:** `GET pos/catalog` adds per product `service_minutes`, `is_pack`, `licence_keys`, and `services` (null when the module is off at the till's branch): `{staff: [{id, name, job_title}], slot_minutes, day_start, day_end}`.
+- **Appointments** (staff token, `services.appointments`):
+  - `GET pos/services/appointments?date=YYYY-MM-DD` → `{date, staff, appointments}`;
+  - `POST pos/services/appointments` `{employee_id, product_id, starts_at, duration_minutes?, customer_id?, customer_name?, phone?, note?}` (201); `POST pos/services/appointments/{id}` changes one (errors `staff_busy`, `module_disabled`);
+  - `POST pos/services/appointments/{id}/status` `{status: booked|arrived|no_show|cancelled, reason?}`.
+- **Passes:** `GET pos/services/passes?customer_id=` → `{passes: [{id, number, name, expires_on, items: [{label, product_ids, sessions, remaining}]}]}` (`remaining` null = unlimited).
+- **Sales:** lines take `staff_id`, `service_pass_id` + `pass_item`, `appointment_id`.
+  - A pass line is priced 0; its engine product id is `pass:<id>` (outside promotions). Errors `pass_invalid`, `customer_required` (a pack needs a customer), `staff_invalid`, `appointment_invalid`, `licence_keys_out`; offline they become review items (`pass_conflict`, `pack_without_customer`, `staff_unknown`, `appointment_conflict`, `licence_key_short`).
+  - `payments` may be empty when the total is 0 (only sessions from passes).
+  - The sale response adds `licence_keys: [{sale_line_id, key}]` and per line `id`, `staff_id`, `service_pass_id`.
+- **Sync:** `appointment` and `commission` travel in the `sales` group; `service_pass`, `service_pass_use` and `membership` in `customers`; `membership_plan` in `catalog`; `licence_key` in `stock`.
+- **Till app hosting:** `npm run build:server` (in `pos/`) builds the till into `server/public/pos`; the server serves it at `/pos/` (same origin as the API).

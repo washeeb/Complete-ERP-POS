@@ -10,3 +10,4 @@ Thumbs.db
 .idea/
 .vscode/
 .local-secrets/
+docs/manual/.manual.html

@@ -42,7 +42,7 @@ export default function App() {
       const fresh = await api.catalog(cachedCat?.version)
       const savedAt = new Date().toISOString()
       await db.cache.put({ id: 'bootstrap', data: b, savedAt })
-      if (fresh) await db.cache.put({ id: 'catalog', version: fresh.version, products: fresh.products, promotions: fresh.promotions ?? [], utc_offset_minutes: fresh.utc_offset_minutes ?? 0, grocery: fresh.grocery ?? null, pharmacy: fresh.pharmacy ?? null, restaurant: fresh.restaurant ?? null, electronics: fresh.electronics ?? false, fashion: fresh.fashion ?? null, savedAt })
+      if (fresh) await db.cache.put({ id: 'catalog', version: fresh.version, products: fresh.products, promotions: fresh.promotions ?? [], utc_offset_minutes: fresh.utc_offset_minutes ?? 0, grocery: fresh.grocery ?? null, pharmacy: fresh.pharmacy ?? null, restaurant: fresh.restaurant ?? null, electronics: fresh.electronics ?? false, fashion: fresh.fashion ?? null, services: fresh.services ?? null, savedAt })
       return { b, products: fresh?.products ?? cachedCat!.products, version: fresh?.version ?? cachedCat!.version, live: true }
     } catch (e) {
       if (!(e instanceof ApiError && (e.code === 'network' || e.status === 401)) || !cachedBoot || !cachedCat) throw e
