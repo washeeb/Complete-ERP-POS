@@ -9,6 +9,8 @@ use App\Domain\Fashion\AlterationService;
 use App\Domain\Grocery\MarkdownService;
 use App\Domain\Licensing\LicenseManager;
 use App\Domain\Licensing\Watermark;
+use App\Domain\Messaging\ReceiptSender;
+use App\Domain\Messaging\Templates;
 use App\Domain\Modules\ModuleService;
 use App\Domain\Pos\PosSyncService;
 use App\Domain\Pos\ReturnService;
@@ -72,6 +74,7 @@ class PosController extends Controller
                 'id' => $l->id, 'code' => $l->code, 'name' => $l->name, 'prices_include_tax' => $l->prices_include_tax, 'is_default' => $l->is_default,
             ])->values(),
             'receipt_footer' => $settings->get('receipt.footer', $device->tenant_id),
+            'send_receipt' => array_values(array_filter(['sms', 'whatsapp', 'email'], fn ($ch) => (bool) Templates::find($device->tenant_id, 'receipt', $ch)?->is_active)),
             'license' => (fn ($s) => ['state' => $s['state'], 'read_only' => $s['read_only'], 'message' => $s['message'], 'ref' => Watermark::reference()])(app(LicenseManager::class)->status()),
             'shift' => $this->shiftJson($shifts->current($device), $shifts),
             'last_device_seq' => (int) Sale::where('device_id', $device->id)->max('device_seq'),
@@ -317,6 +320,15 @@ class PosController extends Controller
             ?? throw new DomainException('Sale not found on this device.', 'not_found');
 
         return response()->json(['sale' => $this->saleJson($sale)]);
+    }
+
+    /** Send a receipt by SMS, WhatsApp or e-mail (the customer asked for it). */
+    public function sendReceipt(Request $request, string $id): JsonResponse
+    {
+        $data = $request->validate(['channel' => ['required', 'in:sms,whatsapp,email'], 'to' => ['required', 'string', 'max:160']]);
+        $m = app(ReceiptSender::class)->send($this->device($request), $request->user(), $id, $data['channel'], $data['to']);
+
+        return response()->json(['status' => $m->status, 'detail' => $m->status === 'sent' ? 'Sent.' : ($m->status === 'queued' ? 'Will be sent shortly.' : (string) $m->error)]);
     }
 
     // -------------------------------------------------------------------

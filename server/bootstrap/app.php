@@ -4,6 +4,7 @@ use App\Domain\Support\AccessDenied;
 use App\Domain\Support\DomainException;
 use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\EnforceLicense;
+use App\Http\Middleware\EnsureApiClient;
 use App\Http\Middleware\EnsureDeviceToken;
 use App\Http\Middleware\EnsureMfaForLevel;
 use Illuminate\Foundation\Application;
@@ -24,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo('/admin/login'); // printable documents live outside the panel
         $middleware->alias([
             'device.token' => EnsureDeviceToken::class,
+            'api.client' => EnsureApiClient::class,
             'erp.mfa' => EnsureMfaForLevel::class,
             'license' => EnforceLicense::class,
         ]);

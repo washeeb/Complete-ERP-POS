@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Domain\Licensing\Watermark;
 use App\Filament\Auth\EditProfile;
+use App\Filament\Widgets\BusinessStats;
 use App\Http\Middleware\EnforceLicense;
 use App\Http\Middleware\RedirectToSetupWizard;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
@@ -45,12 +46,12 @@ class AdminPanelProvider extends PanelProvider
             ->colors(['primary' => Color::Slate])
             ->darkMode()
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
-            ->databaseNotifications(false)
+            ->databaseNotifications()->databaseNotificationsPolling('30s')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([Dashboard::class])
-            ->navigationGroups(['Sales', 'Online', 'Purchasing', 'Finance', 'HR & payroll', 'Stock', 'Restaurant', 'Pharmacy', 'Electronics', 'Fashion', 'Catalog', 'Pricing & tax', 'Company', 'People & access', 'System'])
-            ->widgets([AccountWidget::class])
+            ->navigationGroups(['Insights', 'Reports', 'Sales', 'Online', 'Purchasing', 'Finance', 'HR & payroll', 'Stock', 'Restaurant', 'Pharmacy', 'Electronics', 'Fashion', 'Catalog', 'Pricing & tax', 'Company', 'People & access', 'Messages', 'System'])
+            ->widgets([AccountWidget::class, BusinessStats::class])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

@@ -2,10 +2,13 @@
 
 namespace App\Console\Commands;
 
+use App\Domain\Api\WebhookDispatcher;
 use App\Domain\Channels\ChannelSync;
 use App\Domain\Channels\LiveRelay;
 use App\Domain\Channels\WebhookIntake;
 use App\Domain\Grocery\EslRelay;
+use App\Domain\Messaging\Messenger;
+use App\Domain\Messaging\NotificationRelay;
 use App\Domain\Restaurant\SmsRelay;
 use App\Models\SalesChannel;
 use App\Support\TenantContext;
@@ -23,7 +26,8 @@ class RelayCommand extends Command
 
     protected $description = 'Deliver live updates, store pushes and incoming store orders';
 
-    public function handle(LiveRelay $live, ChannelSync $sync, WebhookIntake $webhooks, EslRelay $esl, SmsRelay $sms): int
+    public function handle(LiveRelay $live, ChannelSync $sync, WebhookIntake $webhooks, EslRelay $esl, SmsRelay $sms, NotificationRelay $notify, Messenger $messenger,
+        WebhookDispatcher $hooks): int
     {
         $until = microtime(true) + (int) $this->option('seconds');
         do {
@@ -37,6 +41,13 @@ class RelayCommand extends Command
                 $work += $sms->run();
             } catch (\Throwable $e) {
                 Log::warning('Booking SMS not delivered; retrying next run', ['error' => $e->getMessage()]);
+            }
+            foreach (['Notifications' => fn () => $notify->run(), 'Messages' => fn () => $messenger->deliverDue(), 'Webhooks' => fn () => $hooks->run()] as $what => $step) {
+                try {
+                    $work += $step();
+                } catch (\Throwable $e) {
+                    Log::warning("{$what} not delivered; retrying next run", ['error' => $e->getMessage()]);
+                }
             }
             foreach (SalesChannel::withoutGlobalScopes()->where('status', 'active')->get() as $channel) {
                 app(TenantContext::class)->set($channel->tenant_id);

@@ -83,6 +83,7 @@ export type Bootstrap = {
   user: { id: string; name: string }
   price_lists: PriceList[]
   receipt_footer: string
+  send_receipt?: ('sms' | 'whatsapp' | 'email')[] // channels the business has switched on for digital receipts
   license?: { state: string; read_only: boolean; message: string | null; ref: string }
   shift: Shift | null
   last_device_seq: number

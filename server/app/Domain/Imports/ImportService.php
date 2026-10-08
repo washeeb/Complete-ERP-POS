@@ -65,15 +65,16 @@ final class ImportService
 
     /**
      * @param  array{skip_errors?: bool}  $options
+     * @param  array<string, string>  $mapping  expected column => the file's own heading (the "match columns" step)
      */
-    public function run(Actor $actor, string $type, string $path, string $fileName, array $options = [], ?Model $context = null, bool $commit = false): DataImport
+    public function run(Actor $actor, string $type, string $path, string $fileName, array $options = [], ?Model $context = null, bool $commit = false, array $mapping = []): DataImport
     {
         $importer = self::importer($type);
         if (! $actor->user || ! $this->authz->allowsAnywhere($actor->user, $importer->permission())) {
             throw new AccessDenied;
         }
         $options += $importer->optionDefaults();
-        $csv = CsvFile::read($path);
+        $csv = SheetFile::read($path, $fileName, $mapping); // CSV or Excel
         $missing = array_diff(array_column(array_filter($importer->columns(), fn ($c) => $c['required'] === true), 'name'), $csv['headings']);
         if ($missing) {
             throw new DomainException('The file is missing the column(s): '.implode(', ', $missing).'. Download the template to see the layout.');

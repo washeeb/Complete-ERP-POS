@@ -34,7 +34,7 @@
         <p class="im-desc">{{ $i->description() }}</p>
     </x-filament::section>
 
-    <x-filament::section heading="2. Get the file ready" description="Start from the template, or from your current data, fill it in Excel or Google Sheets, then save it as CSV.">
+    <x-filament::section heading="2. Get the file ready" description="Start from the template, or from your current data, and fill it in Excel or Google Sheets. Upload it as Excel (.xlsx) or CSV.">
         <div class="im-buttons">
             <x-filament::button color="gray" icon="heroicon-o-document-arrow-down" wire:click="downloadTemplate">Download template (CSV)</x-filament::button>
             <x-filament::button color="gray" icon="heroicon-o-book-open" wire:click="downloadGuide">Column guide (PDF)</x-filament::button>
@@ -59,10 +59,30 @@
 
     <x-filament::section heading="3. Upload, check, import">
         <div class="im-grid">
-            <label>CSV file <input type="file" wire:model="file" accept=".csv,text/csv,text/plain" class="im-file"></label>
+            <label>File (Excel .xlsx or CSV) <input type="file" wire:model="file" accept=".csv,.xlsx,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="im-file"></label>
             <div wire:loading wire:target="file" class="im-desc">Uploading…</div>
             @error('file')<p class="im-err">{{ $message }}</p>@enderror
         </div>
+        @if ($preview)
+            @if ($this->unmatched())
+                <div class="im-map">
+                    <p class="im-desc"><strong>Match columns:</strong> these columns were not found under their own name. Choose which of your columns holds each one (or leave it empty).</p>
+                    @foreach ($this->unmatched() as $col)
+                        <label><code>{{ $col }}</code>
+                            <x-filament::input.wrapper><x-filament::input.select wire:model.live="mapping.{{ $col }}">
+                                <option value="">— not in my file —</option>
+                                @foreach ($preview['headings'] as $h)<option value="{{ $h }}">{{ $h }}</option>@endforeach
+                            </x-filament::input.select></x-filament::input.wrapper>
+                        </label>
+                    @endforeach
+                </div>
+            @endif
+            <details class="im-cols" open><summary>Preview: first {{ count($preview['rows']) }} of {{ $preview['total'] }} row(s)</summary>
+                <div style="overflow-x:auto"><table class="im-t"><thead><tr>@foreach ($preview['headings'] as $h)<th>{{ $h }}</th>@endforeach</tr></thead><tbody>
+                @foreach ($preview['rows'] as $r)<tr>@foreach ($preview['headings'] as $h)<td>{{ $r[$h] ?? '' }}</td>@endforeach</tr>@endforeach
+                </tbody></table></div>
+            </details>
+        @endif
         <div class="im-opts">
             <label><input type="checkbox" wire:model="skipErrors"> Skip rows with errors (import the good rows; otherwise nothing is imported while any row has an error)</label>
             @if ($type === 'products')<label><input type="checkbox" wire:model="createMissing"> Create missing categories and brands</label>@endif
@@ -116,6 +136,7 @@
     <style>
         .im-grid { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; } .im-grid label { display: grid; gap: 4px; font-size: .875rem; min-width: 260px; }
         .im-desc { font-size: .85rem; opacity: .75; margin-top: 8px; } .im-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+        .im-map { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; margin: 8px 0; font-size: .875rem; } .im-map > p { grid-column: 1 / -1; } .im-map label { display: grid; gap: 4px; }
         .im-opts { display: grid; gap: 4px; font-size: .875rem; margin: 8px 0; } .im-file { font-size: .875rem; }
         .im-err { color: rgb(220 38 38); } .im-result { margin: 12px 0; font-size: .9rem; } .im-link { margin-left: 8px; text-decoration: underline; }
         .im-t { width: 100%; border-collapse: collapse; font-size: .8rem; margin-top: 8px; } .im-t th, .im-t td { padding: 4px 6px; border-bottom: 1px solid color-mix(in srgb, currentColor 6%, transparent); text-align: left; vertical-align: top; }

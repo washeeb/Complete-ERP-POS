@@ -487,6 +487,17 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Phase 12 — Reporting, notifications, integrations (2026-10-28)
+- **Owner answers:** build all four SMS options (Hubtel, Arkesel, mNotify, generic webhook) for the client to choose; any SMTP server for e-mail; WhatsApp Business built but off until keys; public API with scoped keys plus QuickBooks, Xero and Sage exports.
+- **Provider credentials** are per server, encrypted with that server's key and never synced or shown; templates (wording) are company data synced from head office. E-mail credentials stay in `.env` (Laravel mail), like other secrets.
+- **One message log** for every channel, retried with back-off; "not configured" is logged rather than dropped so the business sees what would have gone out.
+- **Customer messages a business might not want sent automatically start off** (invoice e-mail, payment SMS); receipts are only sent on request; booking/appointment messages keep their existing behaviour.
+- **Approvals in the bell** go to holders of the approving permission for that branch, never the submitter.
+- **Report builder over fixed datasets** (SQL in code, never from users), each behind its permission; branch grants filtered; scheduled reports run as their owner.
+- **Excel without a library:** a small writer/reader (zip + XML) instead of a large dependency.
+- **API keys act as a person** (service user) on top of scopes, so the API never exceeds back-office access and reuses RBAC; tokens are Sanctum (hashed), shown once; webhooks carry one event id across retries and an HMAC signature with a timestamp.
+- **Accounting exports** are journal-line files (one journal per entry) for an accountant using another program; accounts are matched by code.
+
 ## Phase 11 — Insights and AI (2026-10-27)
 - **Owner answers:** no cloud AI for now; if cloud is used, names masked and personal data local; copilot for managers and up; all four extras.
 - **Classical first:** forecasts, stock health, customer, pricing, cash-flow and loss-prevention analytics are plain arithmetic on the node — work offline, cost nothing, need no model. Alerts are node-local (recomputed where they run), not synced.

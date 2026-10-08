@@ -47,6 +47,8 @@ export const api = {
   login: (username: string, pin: string) =>
     call<{ token: string; expires_at: string | null; user: { id: string; name: string }; offline_grant: OfflineGrant | null }>('pos/login', { method: 'POST', auth: 'device', body: JSON.stringify({ username, pin }) }),
   logout: () => call<{ ok: boolean }>('pos/logout', { method: 'POST' }),
+  sendReceipt: (saleId: string, channel: 'sms' | 'whatsapp' | 'email', to: string) =>
+    call<{ status: string; detail: string }>(`pos/sales/${saleId}/send`, { method: 'POST', body: JSON.stringify({ channel, to }) }),
   bootstrap: () => call<Bootstrap>('pos/bootstrap'),
   /** null = unchanged since the given version (HTTP 304), so the cached copy is current. */
   catalog: async (version?: string | null) => {

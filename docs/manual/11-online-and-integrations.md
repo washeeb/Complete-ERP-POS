@@ -36,11 +36,8 @@ For every channel:
 
 Bolt Food, Glovo and Chowdeck orders can arrive by webhook (with the keys from **your** merchant account) or be entered by hand at the till. Set them up under **Online → Channels** with the type *Bolt Food (delivery app)*, *Glovo* or *Chowdeck*, then copy the webhook address into the app's merchant portal.
 
-## 11.4 SMS (booking and appointment confirmations and reminders)
+## 11.4 SMS, WhatsApp and e-mail
 
-There is no SMS provider built in. You give the address of **your** SMS provider (or a small bridge to it) that accepts a JSON message `{"to", "message", "reference"}`:
+Booking and appointment messages, digital receipts, invoice e-mails and scheduled reports go through **your own** SMS, WhatsApp and e-mail accounts. Setting them up is explained in **Chapter 16**.
 
-- Restaurant bookings: **System → Settings → Restaurant → SMS gateway address (booking messages)**.
-- Appointments: **System → Settings → Services → SMS gateway address for appointment messages** (leave empty to use the restaurant one).
-
-**Check:** book with your own phone number; you receive the confirmation within a minute.
+**Note:** if you set an *SMS gateway address* under Settings → Restaurant or Services in an earlier version, it keeps working for those messages until you choose an SMS provider in Chapter 16.
