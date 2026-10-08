@@ -16,6 +16,8 @@ use App\Domain\Pos\SaleService;
 use App\Domain\Pos\ShiftService;
 use App\Domain\Restaurant\DiningSales;
 use App\Domain\Sales\ReceivablesService;
+use App\Domain\Services\AppointmentService;
+use App\Domain\Services\LicenceKeyService;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Http\Controllers\Controller;
@@ -126,6 +128,13 @@ class PosController extends Controller
                 'styles' => Style::where('is_active', true)->orderBy('name')->get(['id', 'code', 'name', 'sizes', 'colours', 'season', 'collection'])->values(),
                 'alteration_product_id' => app(AlterationService::class)->product($device->tenant_id)?->id,
             ] : null,
+            // Services: staff who take appointments (the "done by" list) and the booking day (null when the module is off here).
+            'services' => app(ModuleService::class)->isEnabled($device->branch_id, 'services') ? [
+                'staff' => AppointmentService::staff($device->branch_id)->map(fn ($e) => ['id' => $e->id, 'name' => $e->name, 'job_title' => $e->job_title])->values(),
+                'slot_minutes' => (int) app(Settings::class)->get('services.slot_minutes', $device->tenant_id),
+                'day_start' => (string) app(Settings::class)->get('services.day_start', $device->tenant_id),
+                'day_end' => (string) app(Settings::class)->get('services.day_end', $device->tenant_id),
+            ] : null,
             // Restaurant: modifier choices, the service charge and tips (null when the module is off at this branch).
             'restaurant' => app(ModuleService::class)->isEnabled($device->branch_id, 'restaurant') ? [
                 'modifier_groups' => ModifierGroup::with('options')->where('is_active', true)->orderBy('name')->get()->map(fn ($g) => ['id' => $g->id, 'name' => $g->name,
@@ -141,6 +150,7 @@ class PosController extends Controller
                 'id' => $p->id, 'sku' => $p->sku, 'name' => $p->name, 'category_id' => $p->category_id, 'track_stock' => $p->track_stock, 'plu' => $p->plu,
                 'station' => $p->station, 'modifier_group_ids' => $p->modifier_group_ids ?? [], 'track_serials' => $p->track_serials, 'warranty_months' => $p->warranty_months,
                 'style_id' => $p->style_id, 'size' => $p->size, 'colour' => $p->colour,
+                'service_minutes' => $p->service_minutes, 'is_pack' => $p->pack !== null, 'licence_keys' => $p->licence_keys,
                 'drug' => $p->drug_schedule ? ['schedule' => $p->drug_schedule, 'generic_name' => $p->generic_name, 'strength' => $p->strength,
                     'dosage_form' => $p->dosage_form, 'active_ingredients' => $p->active_ingredients ?? []] : null,
                 'on_hand' => $p->track_stock ? (string) ($stock[$p->id] ?? '0.000') : null,
@@ -253,6 +263,8 @@ class PosController extends Controller
             'lines.*.serials' => ['nullable', 'array', 'max:500'], 'lines.*.serials.*' => ['string', 'max:80'],
             'lines.*.repair_job_id' => ['nullable', 'uuid'],
             'lines.*.alteration_id' => ['nullable', 'uuid'],
+            'lines.*.staff_id' => ['nullable', 'uuid'], 'lines.*.service_pass_id' => ['nullable', 'uuid'], 'lines.*.pass_item' => ['nullable', 'integer', 'min:0', 'max:50'],
+            'lines.*.appointment_id' => ['nullable', 'uuid'],
             'trade_ins' => ['nullable', 'array', 'max:10'], 'trade_ins.*.product_id' => ['required', 'uuid'], 'trade_ins.*.value_minor' => ['required', 'integer', 'min:1'],
             'trade_ins.*.serial' => ['nullable', 'string', 'max:80'], 'trade_ins.*.condition' => ['nullable', 'string', 'max:255'],
             'lines.*.dining_item_id' => ['nullable', 'uuid'],
@@ -262,7 +274,7 @@ class PosController extends Controller
             'totals.net_minor' => ['required', 'integer'],
             'totals.tax_minor' => ['required', 'integer'],
             'totals.total_minor' => ['required', 'integer'],
-            'payments' => ['required', 'array', 'min:1', 'max:10'],
+            'payments' => ['present', 'array', 'max:10'], // empty only when nothing is due (e.g. sessions from a prepaid pass)
             'payments.*.method' => ['required', 'string', 'max:20'],
             'payments.*.provider' => ['nullable', 'string', 'max:20'],
             'payments.*.amount_minor' => ['required', 'integer', 'min:1'],
@@ -387,8 +399,10 @@ class PosController extends Controller
             'lines' => $s->lines->map(fn ($l) => ['line_no' => $l->line_no, 'sku' => $l->sku, 'name' => $l->name, 'uom' => $l->uom_code,
                 'qty' => Qty::format(Qty::toMilli((string) $l->qty)), 'unit_price_minor' => $l->unit_price_minor, 'line_total_minor' => $l->line_total_minor,
                 'discount_minor' => (int) $l->discount_minor, 'promotions' => $l->promotions ?? [], 'note' => $l->note, 'serials' => $l->serials ?? [],
+                'id' => $l->id, 'staff_id' => $l->staff_id, 'service_pass_id' => $l->service_pass_id,
                 'warranty_until' => $l->serials ? SerialNumber::where('sale_id', $s->id)->whereIn('serial', $l->serials)->max('warranty_until') : null])->values(),
             'tip_minor' => (int) $s->tip_minor,
+            'licence_keys' => LicenceKeyService::forSale($s->id), // Services: printed on the receipt
             'order_number' => $s->dining_order_id ? DiningOrder::whereKey($s->dining_order_id)->value('number') : null,
             'kind' => $s->kind, 'discount_minor' => (int) $s->discount_minor, 'points_earned' => (int) $s->points_earned,
             'payments' => $s->payments->map(fn ($p) => ['method' => $p->method, 'provider' => $p->provider, 'amount_minor' => $p->amount_minor,

@@ -4,6 +4,7 @@ namespace App\Domain\Catalog;
 
 use App\Domain\Inventory\StockLedger;
 use App\Domain\Pharmacy\PharmacyService;
+use App\Domain\Services\PassService;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
@@ -81,7 +82,24 @@ final class CatalogService
         }
 
         $product->fill(array_intersect_key($data, array_flip(['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu',
-            'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'fda_reg_no', 'station', 'track_serials', 'warranty_months', 'consignor_id', 'consignment_bp'])));
+            'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'fda_reg_no', 'station', 'track_serials', 'warranty_months', 'consignor_id', 'consignment_bp',
+            'service_minutes', 'commission_bp', 'licence_keys'])));
+        // Services: a bookable service and how long it takes; a commission rate of its own; a prepaid pack; licence keys.
+        $product->service_minutes = ($product->service_minutes === null || $product->service_minutes === '') ? null : (int) $product->service_minutes;
+        $product->commission_bp = ($product->commission_bp === null || $product->commission_bp === '') ? null : (int) $product->commission_bp;
+        if (($product->service_minutes !== null && ($product->service_minutes < 5 || $product->service_minutes > 720))
+            || ($product->commission_bp !== null && ($product->commission_bp < 0 || $product->commission_bp > 10000))) {
+            throw new DomainException('Services: a duration of 5 to 720 minutes, and a commission of 0 to 100 %.');
+        }
+        if (array_key_exists('pack', $data)) {
+            $product->pack = PassService::normalisePack($data['pack']);
+        }
+        if (($product->pack || $product->licence_keys) && $product->track_stock) {
+            throw new DomainException('A prepaid pack or a licence-key product does not hold stock: switch "Track stock" off.');
+        }
+        if ($product->pack && $product->service_minutes) {
+            throw new DomainException('A prepaid pack is sold, not booked: leave its duration empty.');
+        }
         // Fashion: consignment stock belongs to a supplier (the consignor), who is owed a share of each sale.
         $product->consignor_id = $product->consignor_id ?: null;
         $product->consignment_bp = $product->consignor_id ? (int) $product->consignment_bp : null;

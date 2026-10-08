@@ -23,7 +23,7 @@ use ZipArchive;
  *     copy names the customer it was given to (`license:trace`);
  *  3. a release manifest: the hashes of the files that enforce licensing, signed with the Synclytics key —
  *     the installation refuses to run normally if they are changed, and only trusts production keys;
- *  4. optionally the till app (pos/dist), built with the same stamp.
+ *  4. optionally the till app, built with the same stamp into the release's public/pos (served by the server at /pos/).
  */
 class ReleaseBuildCommand extends Command
 {
@@ -85,13 +85,13 @@ class ReleaseBuildCommand extends Command
         // 4. Till app with the same stamp.
         if ($this->option('with-pos')) {
             $pos = $repo.DIRECTORY_SEPARATOR.'pos';
-            $b = Process::path($pos)->env(['VITE_BUILD_STAMP' => $build])->timeout(600)->run(['npm', 'run', 'build']);
+            $b = Process::path($pos)->env(['VITE_BUILD_STAMP' => $build, 'POS_OUT_DIR' => $root.DIRECTORY_SEPARATOR.'public'.DIRECTORY_SEPARATOR.'pos'])
+                ->timeout(600)->run(['npm', 'run', 'build:server']);
             if (! $b->successful()) {
                 $this->error('Till build failed: '.$b->errorOutput());
 
                 return self::FAILURE;
             }
-            $this->copyDir($pos.DIRECTORY_SEPARATOR.'dist', $dir.DIRECTORY_SEPARATOR.'pos');
         }
 
         $zip = $out.DIRECTORY_SEPARATOR.'synclytics-'.Str::slug($customer).'-'.$build.'.zip';
@@ -109,14 +109,5 @@ class ReleaseBuildCommand extends Command
         $this->line('Install it with `composer install --no-dev`, then `php artisan migrate --force`; the customer activates with their licence key.');
 
         return self::SUCCESS;
-    }
-
-    private function copyDir(string $from, string $to): void
-    {
-        @mkdir($to, 0755, true);
-        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($from, RecursiveDirectoryIterator::SKIP_DOTS), RecursiveIteratorIterator::SELF_FIRST) as $f) {
-            $target = $to.DIRECTORY_SEPARATOR.substr($f->getPathname(), strlen($from) + 1);
-            $f->isDir() ? @mkdir($target, 0755, true) : copy($f->getPathname(), $target);
-        }
     }
 }

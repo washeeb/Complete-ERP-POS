@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\ElectronicsController;
 use App\Http\Controllers\Api\V1\FashionController;
 use App\Http\Controllers\Api\V1\PosController;
 use App\Http\Controllers\Api\V1\RestaurantController;
+use App\Http\Controllers\Api\V1\ServicesController;
 use App\Http\Controllers\Api\V1\SyncController;
 use App\Http\Controllers\Api\V1\WmsController;
 use App\Http\Controllers\LicenseServerController;
@@ -59,6 +60,15 @@ Route::prefix('v1')->group(function () {
         Route::post('alterations', [FashionController::class, 'open']);
         Route::post('alterations/{id}/status', [FashionController::class, 'status'])->whereUuid('id');
         Route::post('alterations/{id}/hand-over', [FashionController::class, 'handOver'])->whereUuid('id');
+
+        // Services: appointments by staff member and a customer's prepaid passes (the module must be on at the branch).
+        Route::prefix('services')->group(function () {
+            Route::get('appointments', [ServicesController::class, 'day']);
+            Route::post('appointments', [ServicesController::class, 'book']);
+            Route::post('appointments/{id}', [ServicesController::class, 'book'])->whereUuid('id');
+            Route::post('appointments/{id}/status', [ServicesController::class, 'status'])->whereUuid('id');
+            Route::get('passes', [ServicesController::class, 'passes']);
+        });
 
         // Restaurant: bills shared by tills and waiter tablets (the module must be on at the branch).
         Route::prefix('restaurant')->group(function () {

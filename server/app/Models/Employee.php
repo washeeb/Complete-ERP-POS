@@ -23,7 +23,7 @@ class Employee extends Model
     {
         return ['date_of_birth' => 'date', 'hire_date' => 'date', 'contract_end' => 'date', 'termination_date' => 'date', 'overtime_junior' => 'boolean',
             'ssnit_exempt' => 'boolean', 'basic_salary_minor' => 'integer', 'transport_allowance_minor' => 'integer', 'meal_allowance_minor' => 'integer',
-            'welfare_minor' => 'integer', 'tier3_bp' => 'integer', 'overtime_rate_bp' => 'integer'];
+            'welfare_minor' => 'integer', 'tier3_bp' => 'integer', 'overtime_rate_bp' => 'integer', 'takes_appointments' => 'boolean', 'commission_bp' => 'integer'];
     }
 
     public function department(): BelongsTo

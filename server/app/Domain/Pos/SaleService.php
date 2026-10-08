@@ -19,6 +19,7 @@ use App\Domain\Pricing\PromotionEngine;
 use App\Domain\Pricing\PromotionService;
 use App\Domain\Pricing\TaxCalculator;
 use App\Domain\Restaurant\DiningSales;
+use App\Domain\Services\ServiceSales;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DocumentNumbers;
@@ -83,6 +84,7 @@ final class SaleService
         private readonly ElectronicsSales $electronics,
         private readonly AlterationService $alterations,
         private readonly ConsignmentService $consignment,
+        private readonly ServiceSales $services,
     ) {}
 
     /** @return array{sale: Sale, replayed: bool} */
@@ -192,9 +194,13 @@ final class SaleService
             }
             // Fashion: an alteration job at its agreed charge (outside price lists and promotions, like a sticker).
             $alteration = $this->alterations->forLine($l, $branch, $product, $offline);
+            // Services: who did it, a session paid from the customer's pass (no charge), the appointment being paid for.
+            $svc = $this->services->line($l, $customer, $product, $qty, $branch, $occurredAt, $offline, $flags);
+            $pass = $svc['pass'];
             $current = match (true) {
                 (bool) $markdown => (object) ['amount_minor' => $markdown->price_minor],
                 (bool) $alteration => (object) ['amount_minor' => $alteration->charge_minor],
+                (bool) $pass => (object) ['amount_minor' => 0],
                 default => $this->prices->resolve($list, $product->id, $unit->id, $qty, $occurredAt),
             };
             if ($current?->amount_minor !== $unitPrice) {
@@ -211,12 +217,14 @@ final class SaleService
                 ->map(fn ($r) => ['code' => $r->code, 'name' => $r->name, 'rate_bp' => $r->rate_bp])->values()->all();
             $manual = self::manualDiscount($l['manual'] ?? null, $unitPrice, $product->name);
             $key = (string) $i;
-            $engineLines[] = ['key' => $key, 'product_id' => $markdown ? 'markdown:'.$markdown->id : ($alteration ? 'alteration:'.$alteration->id : $product->id),
-                'category_id' => $markdown || $alteration ? null : $product->category_id, 'qty_milli' => $qty,
+            $engineLines[] = ['key' => $key, 'product_id' => match (true) {
+                (bool) $markdown => 'markdown:'.$markdown->id, (bool) $alteration => 'alteration:'.$alteration->id,
+                (bool) $pass => 'pass:'.$pass['pass']->id, default => $product->id,
+            }, 'category_id' => $markdown || $alteration || $pass ? null : $product->category_id, 'qty_milli' => $qty,
                 'unit_price_minor' => $unitPrice, 'tax' => $rates, 'manual' => $manual];
             $serials = $product->track_serials ? SerialRegistry::normalise($l['serials'] ?? []) : [];
             $lines[] = compact('product', 'unit', 'qty', 'unitPrice', 'manual', 'rates', 'key', 'markdown', 'note', 'serials') + ['no' => $i + 1, 'given' => (int) ($l['line_total_minor'] ?? -1),
-                'service' => false, 'dining_item' => $diningItem, 'repair_job' => isset($l['repair_job_id']) ? (string) $l['repair_job_id'] : null, 'alteration' => $alteration];
+                'service' => false, 'dining_item' => $diningItem, 'repair_job' => isset($l['repair_job_id']) ? (string) $l['repair_job_id'] : null, 'alteration' => $alteration, 'svc' => $svc];
         }
         if ($lines === [] || $engineLines === []) {
             throw new DomainException('The cart is empty.');
@@ -383,6 +391,8 @@ final class SaleService
                         'prescription_id' => $rx && $l['product']->needsPrescription() ? $rx->id : null,
                         'dining_item_id' => $l['dining_item'], 'note' => $l['note'], 'is_service_charge' => $l['service'], 'serials' => ($l['serials'] ?? []) ?: null,
                         'repair_job_id' => $l['repair_job'] ?? null, 'alteration_id' => ($l['alteration'] ?? null)?->id,
+                        'staff_id' => $l['svc']['staff_id'] ?? null, 'service_pass_id' => ($l['svc']['pass'] ?? null)['pass']->id ?? null,
+                        'pass_item' => ($l['svc']['pass'] ?? null)['item'] ?? null, 'appointment_id' => $l['svc']['appointment_id'] ?? null,
                     ]);
                 }
                 foreach ($payments as $pay) {
@@ -415,6 +425,7 @@ final class SaleService
                 $this->electronics->settle($actor, $sale, $warehouse, $tradeIns, $p, $offline, $flags);
                 $this->alterations->paidBySale($actor, $sale, array_values(array_filter(array_map(fn ($l) => ($l['alteration'] ?? null)?->id, $lines))), $offline, $flags);
                 $this->consignment->record($actor, $sale); // consignment stock: the consignor's share of each line
+                $this->services->settle($actor, $sale, array_values(array_filter(array_map(fn ($l) => $l['svc']['appointment_id'] ?? null, $lines))), $customer, $offline, $flags);
                 $this->recorder->outbox->publish($actor, $sale, 'sale.posted', ['receipt_no' => $receiptNo, 'offline' => $offline]);
 
                 if ($offline) {
@@ -666,7 +677,8 @@ final class SaleService
     {
         $keep = fn (array $a, array $keys) => array_intersect_key($a, array_flip($keys));
         $out = $keep($p, ['id', 'device_seq', 'occurred_at', 'price_list_id', 'shift_id', 'customer_id', 'coupon_code', 'sale_discount_bp', 'dining_order_id', 'tip_minor', 'trade_ins']);
-        $out['lines'] = array_map(fn ($l) => $keep($l, ['product_id', 'product_uom_id', 'qty', 'unit_price_minor', 'line_total_minor', 'manual', 'dining_item_id', 'service_charge', 'serials']), $p['lines'] ?? []);
+        $out['lines'] = array_map(fn ($l) => $keep($l, ['product_id', 'product_uom_id', 'qty', 'unit_price_minor', 'line_total_minor', 'manual', 'dining_item_id', 'service_charge', 'serials',
+            'staff_id', 'service_pass_id', 'pass_item', 'appointment_id']), $p['lines'] ?? []);
         $out['payments'] = array_map(fn ($x) => array_map('strval', $keep($x, ['method', 'provider', 'amount_minor', 'tendered_minor', 'reference'])), $p['payments'] ?? []);
         array_walk_recursive($out, fn (&$v) => $v = (string) $v);
         ksort($out);

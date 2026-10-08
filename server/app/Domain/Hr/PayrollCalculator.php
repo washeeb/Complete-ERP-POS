@@ -20,7 +20,7 @@ final class PayrollCalculator
 {
     /**
      * @param  array{basic_salary_minor: int, transport_allowance_minor: int, meal_allowance_minor: int, overtime_rate_bp: int, overtime_junior: bool, tier3_bp: int, welfare_minor: int, ssnit_exempt: bool}  $e
-     * @param  array{working_days: int, unpaid_days?: int, overtime_centi_hours?: int, tips_minor?: int, loans?: list<array{id: string, monthly_minor: int, balance_minor: int}>}  $month
+     * @param  array{working_days: int, unpaid_days?: int, overtime_centi_hours?: int, tips_minor?: int, commission_minor?: int, loans?: list<array{id: string, monthly_minor: int, balance_minor: int}>}  $month
      */
     public static function compute(array $e, array $rules, array $month): array
     {
@@ -35,7 +35,8 @@ final class PayrollCalculator
         $transport = (int) $e['transport_allowance_minor'];
         $meal = (int) $e['meal_allowance_minor'];
         $tips = max(0, (int) ($month['tips_minor'] ?? 0)); // Restaurant: tips received through the till, taxable income
-        $gross = $basicEarned + $transport + $meal + $overtime + $tips;
+        $commission = (int) ($month['commission_minor'] ?? 0); // Services: commission on work done (net of returns), taxable income
+        $gross = $basicEarned + $transport + $meal + $overtime + $tips + $commission;
 
         $s = $rules['ssnit'];
         $ssnitEmp = $e['ssnit_exempt'] ? 0 : self::pct($basicEarned, $s['employee_bp']);
@@ -54,7 +55,7 @@ final class PayrollCalculator
             $taxableOt = 0;
         }
         $allowances = ($rules['allowances_taxable'] ?? true) ? $transport + $meal : 0;
-        $taxable = max(0, $basicEarned + $allowances + $taxableOt + $tips - $ssnitEmp - $tier3Relief);
+        $taxable = max(0, $basicEarned + $allowances + $taxableOt + $tips + $commission - $ssnitEmp - $tier3Relief);
         $paye = self::paye($taxable, $rules['paye_bands']);
 
         $welfare = (int) $e['welfare_minor'];
@@ -77,6 +78,7 @@ final class PayrollCalculator
             ['code' => 'MEAL', 'label' => 'Meal allowance', 'kind' => 'earning', 'amount_minor' => $meal],
             ['code' => 'OVERTIME', 'label' => 'Overtime ('.number_format($otCenti / 100, 2).' h)', 'kind' => 'earning', 'amount_minor' => $overtime],
             ['code' => 'TIPS', 'label' => 'Tips', 'kind' => 'earning', 'amount_minor' => $tips],
+            ['code' => 'COMMISSION', 'label' => 'Commission', 'kind' => 'earning', 'amount_minor' => $commission],
             ['code' => 'SSNIT', 'label' => 'SSNIT (employee 5.5 %)', 'kind' => 'deduction', 'amount_minor' => $ssnitEmp],
             ['code' => 'PAYE', 'label' => 'Income tax (PAYE)', 'kind' => 'deduction', 'amount_minor' => $paye],
             ['code' => 'OT_TAX', 'label' => 'Tax on overtime', 'kind' => 'deduction', 'amount_minor' => $otTax],
@@ -88,7 +90,7 @@ final class PayrollCalculator
 
         return ['basic_minor' => $basicEarned, 'gross_minor' => $gross, 'taxable_minor' => $taxable, 'paye_minor' => $paye + $otTax,
             'ssnit_employee_minor' => $ssnitEmp, 'ssnit_employer_minor' => $ssnitEr, 'tier1_minor' => $tier1, 'tier2_minor' => $tier2, 'tier3_minor' => $tier3,
-            'welfare_minor' => $welfare, 'loans_minor' => $loans, 'net_minor' => $net, 'tips_minor' => $tips, 'lines' => $lines, 'loan_deductions' => $loanDeductions,
+            'welfare_minor' => $welfare, 'loans_minor' => $loans, 'net_minor' => $net, 'tips_minor' => $tips, 'commission_minor' => $commission, 'lines' => $lines, 'loan_deductions' => $loanDeductions,
             'unpaid_leave_days' => $unpaidDays, 'overtime_hours' => $otCenti / 100];
     }
 

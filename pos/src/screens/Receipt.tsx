@@ -66,6 +66,9 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
               </tr>
               {l.note && <tr className="small"><td /><td colSpan={4}>{l.note}</td></tr>}
               {(l.serials ?? []).length > 0 && <tr className="small"><td /><td colSpan={4}>S/N {l.serials!.join(', ')}{l.warranty_until ? ` · warranty to ${l.warranty_until}` : ''}</td></tr>}
+              {(sale.licence_keys ?? []).filter((k) => k.sale_line_id === l.id).map((k) => (
+                <tr key={k.key} className="small"><td /><td colSpan={4} className="mono">Licence key: {k.key}</td></tr>
+              ))}
               {(l.promotions ?? []).map((p, j) => (
                 <tr key={j} className="small promo-line"><td /><td colSpan={3}>{p.name}</td><td className="num">−{n(p.saving_minor)}</td></tr>
               ))}

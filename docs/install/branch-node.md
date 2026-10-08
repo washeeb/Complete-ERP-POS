@@ -4,6 +4,9 @@ A branch server runs the same application as head office, on a PC or small serve
 Tills at the branch talk to it over the shop LAN, so the branch keeps trading when the internet to HQ
 is down. It exchanges changes with HQ automatically (see `docs/sync.md`).
 
+> The step-by-step version for non-specialists is Chapter 10 of the **Installation & Setup Guide**
+> (`docs/manual/`).
+>
 > **Status:** the sync engine and pairing are complete and tested. The one-click Windows installer
 > (FrankenPHP single binary + PostgreSQL + scheduler service) is built in Phase 13. Until then, set a
 > branch server up like the development install below.

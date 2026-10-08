@@ -2,7 +2,6 @@
 
 namespace App\Domain\Sales;
 
-use App\Domain\Customers\CustomerLedger;
 use App\Domain\Inventory\StockLedger;
 use App\Domain\Pricing\TaxCalculator;
 use App\Domain\Support\AccessDenied;
@@ -16,7 +15,6 @@ use App\Models\CustomerOrderLine;
 use App\Models\Delivery;
 use App\Models\DeliveryLine;
 use App\Models\Invoice;
-use App\Models\InvoiceLine;
 use App\Models\Product;
 use App\Models\ProductUom;
 use App\Security\Authorizer;
@@ -34,7 +32,7 @@ final class DeliveryService
         private readonly Authorizer $authz,
         private readonly DocumentNumbers $numbers,
         private readonly StockLedger $stock,
-        private readonly CustomerLedger $receivables,
+        private readonly InvoiceService $invoices,
     ) {}
 
     /**
@@ -119,25 +117,7 @@ final class DeliveryService
 
     private function invoice(Actor $actor, CustomerOrder $order, Customer $customer, Delivery $delivery, array $lines): Invoice
     {
-        $today = now()->startOfDay();
-        $invoice = new Invoice;
-        $invoice->forceFill(['tenant_id' => $order->tenant_id, 'number' => $this->numbers->next($order->tenant_id, 'invoice'), 'customer_id' => $customer->id,
-            'branch_id' => $order->branch_id, 'customer_order_id' => $order->id, 'delivery_id' => $delivery->id, 'status' => 'posted',
-            'currency_code' => $order->currency_code, 'prices_include_tax' => $order->prices_include_tax,
-            'net_minor' => array_sum(array_column($lines, 'net_minor')), 'tax_minor' => array_sum(array_column($lines, 'tax_minor')),
-            'total_minor' => array_sum(array_column($lines, 'total_minor')), 'tax_breakdown' => TaxCalculator::sum(array_column($lines, 'tax_breakdown')),
-            'issued_on' => $today->toDateString(), 'due_on' => $today->copy()->addDays((int) $customer->payment_terms_days)->toDateString(),
-            'customer_name' => $customer->name, 'customer_tax_no' => $customer->tax_no, 'customer_ref' => $order->customer_ref])->save();
-        foreach ($lines as $i => $l) {
-            InvoiceLine::create(['invoice_id' => $invoice->id, 'line_no' => $i + 1] + $l);
-        }
-        $this->receivables->post($actor, $customer, 'invoice', $invoice->total_minor, $invoice->currency_code, 'invoice', $invoice->id, $invoice->number,
-            $invoice->due_on, $invoice->branch_id);
-        $this->receivables->applyCredits($actor, $customer); // money already on the account pays it straight away
-        $this->recorder->audit->record($actor, 'invoice.posted', $invoice, ['total_minor' => [null, $invoice->total_minor], 'due_on' => [null, $invoice->due_on->toDateString()]],
-            null, $invoice->branch_id);
-        $this->recorder->outbox->publish($actor, $invoice->load('lines'), 'invoice.posted');
-
-        return $invoice;
+        return $this->invoices->raise($actor, $customer, $lines, ['branch_id' => $order->branch_id, 'currency_code' => $order->currency_code,
+            'prices_include_tax' => $order->prices_include_tax, 'customer_order_id' => $order->id, 'delivery_id' => $delivery->id, 'customer_ref' => $order->customer_ref]);
     }
 }

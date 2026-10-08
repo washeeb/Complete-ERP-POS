@@ -1,11 +1,39 @@
 {
   "key": "services",
   "name": "Services & Packages",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "kind": "industry",
-  "stage": "planned",
+  "stage": "available",
   "phase": 10,
-  "description": "Service catalogue, packages, memberships, recurring billing, appointments, staff calendars.",
-  "requires": ["core"],
-  "permissions": []
+  "description": "Bookable services, appointments in staff calendars, prepaid packs counted down at the till, memberships and subscriptions billed by recurring invoice, staff commissions paid through payroll, software licence keys.",
+  "requires": [
+    "core"
+  ],
+  "permissions": [
+    {
+      "key": "services.appointments",
+      "label": "Book, change and cancel appointments; mark arrivals and no-shows",
+      "min_level": 2
+    },
+    {
+      "key": "services.passes",
+      "label": "See customers’ prepaid passes and void them",
+      "min_level": 3
+    },
+    {
+      "key": "services.memberships",
+      "label": "Set up membership plans; sign customers up, pause and cancel memberships",
+      "min_level": 4
+    },
+    {
+      "key": "services.commissions",
+      "label": "See staff commissions",
+      "min_level": 4
+    },
+    {
+      "key": "services.licence_keys",
+      "label": "Load licence keys and see the keys handed out",
+      "min_level": 4
+    }
+  ]
 }

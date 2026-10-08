@@ -3,6 +3,7 @@
 namespace App\Domain\Hr;
 
 use App\Domain\Banking\BankingService;
+use App\Domain\Services\CommissionService;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DocumentNumbers;
@@ -55,7 +56,10 @@ final class PayrollService
             $tz = Tenant::find($actor->tenantId)->timezone ?: 'UTC';
             $working = HrService::workingDays($start->toDateString(), $end->toDateString());
             $employees = Employee::where('hire_date', '<=', $end)->where(fn ($q) => $q->whereNull('termination_date')->orWhere('termination_date', '>=', $start))
-                ->where('basic_salary_minor', '>', 0)->orderBy('number')->get();
+                ->where(fn ($q) => $q->where('basic_salary_minor', '>', 0) // and commission-only staff who earned commission this month
+                    ->orWhereExists(fn ($c) => $c->from('commissions')->whereColumn('commissions.employee_id', 'employees.id')
+                        ->whereBetween('commissions.occurred_at', [$start->copy()->subDay(), $end->copy()->addDays(2)])))
+                ->orderBy('number')->get();
             foreach ($employees as $e) {
                 // Days outside employment this month, and approved unpaid leave, are not paid.
                 $outside = $e->hire_date->gt($start) ? HrService::workingDays($start->toDateString(), $e->hire_date->copy()->subDay()->toDateString()) : 0;
@@ -68,7 +72,8 @@ final class PayrollService
                     ->filter(fn ($l) => $l['balance_minor'] > 0)->values()->all();
                 $c = PayrollCalculator::compute($e->only(['basic_salary_minor', 'transport_allowance_minor', 'meal_allowance_minor', 'overtime_rate_bp', 'overtime_junior',
                     'tier3_bp', 'welfare_minor', 'ssnit_exempt']), $profile->rules, ['working_days' => $working, 'unpaid_days' => $unpaid,
-                        'overtime_centi_hours' => $sheet['overtime_centi'], 'loans' => $loans, 'tips_minor' => $this->tips($e->user_id, $start, $end, $tz)]);
+                        'overtime_centi_hours' => $sheet['overtime_centi'], 'loans' => $loans, 'tips_minor' => $this->tips($e->user_id, $start, $end, $tz),
+                        'commission_minor' => CommissionService::total($e->id, $start, $end, $tz)]);
                 Payslip::create(['id' => (string) Str::uuid7(), 'tenant_id' => $e->tenant_id, 'payroll_run_id' => $run->id, 'employee_id' => $e->id, 'branch_id' => $e->branch_id,
                     'employee' => ['name' => $e->name, 'number' => $e->number, 'job_title' => $e->job_title, 'department' => $e->department?->name,
                         'ssnit_no' => $e->ssnit_no, 'ghana_card_no' => $e->ghana_card_no, 'pay_method' => $e->pay_method, 'bank_name' => $e->bank_name,

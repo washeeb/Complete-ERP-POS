@@ -1,0 +1,120 @@
+# 9. Setting up tills and other devices
+
+## 9.1 How devices are set up
+
+Every till, handheld and kitchen screen is set up the same way:
+
+1. **Register** it in the back office: **System → Devices → New device**. You get a **one-time enrolment code** (valid 24 hours by default).
+2. On the device, open the till app address in Chrome or Edge and **enter the code**.
+3. People **sign in** on it (cashiers with username and PIN; kitchen screens need no sign-in).
+
+**Why:** only devices you registered can sell or see your data. Each device creates its own security key when it is enrolled, so a copied browser cannot pretend to be your till. A lost device is switched off with one click (**Revoke**).
+
+### Register a device
+
+**System → Devices → New device**:
+
+| Field | What to enter |
+|---|---|
+| Branch | Where the device is used |
+| Till (for POS devices) | The till it sells on (e.g. *Till 1*). Each selling device needs a till. |
+| Name | Something you will recognise: *Front counter PC*, *Waiter tablet 2*, *Handheld 1* |
+| Kind | **POS till** (tills and waiter tablets), **Handheld scanner** (warehouse), **Kitchen display** (kitchen or bar screen). *Self-checkout kiosk* is planned. |
+
+![Registering a device](img/device-new.png)
+
+Click **Create**. The code is shown **once**: write it down or keep the page open while you set up the device. If it expires, use **New code** on the device's row.
+
+## 9.2 The till app address
+
+| Setup | Address to open on the device |
+|---|---|
+| A (on the server PC itself) | `http://localhost:8010/pos/` |
+| B (Windows server on the shop network) | `http://<server-address>:8010/pos/` (e.g. `http://192.168.1.10:8010/pos/`) |
+| B/C (Ubuntu server on the network, no domain) | `http://<server-address>/pos/` |
+| D (cloud, with HTTPS) | `https://<your-domain>/pos/` |
+| E (branch server) | the **branch server's** address, as in B |
+
+## 9.3 Trust the server's network address (setups B, C and E without HTTPS)
+
+Browsers allow a web app to use its **security functions** (the till's own signing key, the offline PIN check), to **work offline** and to **install as an app** only when it comes from a secure address: `https://…` or `localhost`. A till on the shop network that opens `http://192.168.1.10:8010/pos/` must be told that this address is trusted. **This is required** — without it the till cannot even enrol. Do it **once on each till, tablet, handheld and kitchen screen** (not needed for setups A and D):
+
+1. In Chrome, open `chrome://flags/#unsafely-treat-insecure-origin-as-secure` (in Edge: `edge://flags/#unsafely-treat-insecure-origin-as-secure`).
+2. In the box, type the server address **without** `/pos/`, e.g. `http://192.168.1.10:8010`.
+3. Set the option to **Enabled** and click **Relaunch**.
+
+**Why:** the till proves it is your device by signing with a key it creates and keeps itself, and checks PINs offline; browsers only offer these functions to trusted addresses.
+
+**Check:** the till app shows *Set up this device* and enrolling with the code works.
+
+**Note:** This is safe on your own shop network. Never use plain `http://` over the internet — use HTTPS (Chapter 5). The Phase 13 installer will set up HTTPS on the shop network so this step disappears.
+
+## 9.4 Till PC (Windows)
+
+1. Install **Google Chrome** or use **Microsoft Edge**. Set the PC's clock to update automatically (as in 4.1, step 2).
+2. Do 9.3 if your setup needs it.
+3. Open the till address (9.2).
+4. **Install it as an app:** in Chrome, menu **⋮ → Cast, save and share → Install page as app…**; in Edge, menu **… → Apps → Install this site as an app**. A *POS* icon appears on the desktop and Start menu; use it from now on.
+   **Why:** the app opens full-screen without the address bar and starts even when the server is off.
+5. Enter the **enrolment code** and click **Enrol this device**:
+
+   ![The till asks for its enrolment code the first time](img/till-enrol.png)
+
+6. A cashier signs in with **username and PIN**, counts the drawer and **opens the shift**.
+
+**Check:** sell an item and print the receipt. Then pull out the network cable (or switch off Wi-Fi): the top shows *working offline*, and you can still sell. Plug it back in: the yellow banner disappears as the sale is sent.
+
+## 9.5 Tablet (Android)
+
+1. Update Chrome from the Play Store. Do 9.3 if needed (Chrome on Android has the same flags page).
+2. Open the till address, then Chrome menu **⋮ → Add to Home screen → Install**.
+3. Enrol and sign in as on a PC.
+
+**Tip:** waiter tablets in a restaurant are registered as **POS till** devices on a till of their branch.
+
+## 9.6 Receipt printer and cash drawer
+
+1. Install the printer's **Windows (or Android) driver** from the manufacturer, and print a Windows test page.
+2. In the printer's **Printing preferences**, choose paper **80 mm** (or 72 mm) receipt roll. For a cash drawer connected to the printer, switch on the driver's **cash drawer / open drawer before printing** option.
+3. Make it the **default printer** on that till PC.
+4. The first time you click **Print receipt**, in the browser's print window choose the printer, set **Margins: None**, **Scale: 100**, and untick **Headers and footers**. The browser remembers it.
+5. **Print without the print window** (recommended): edit the desktop shortcut of the till app (right-click → **Properties**), and at the end of **Target** add a space and `--kiosk-printing`. Start the till from that shortcut.
+
+**Why:** `--kiosk-printing` sends receipts straight to the default printer, which is faster and avoids mistakes at busy times.
+
+**Check:** a sale prints a full-width receipt and the drawer opens.
+
+## 9.7 Barcode scanner
+
+1. Plug it in (USB) or pair it (Bluetooth).
+2. Open Notepad and scan a product: the number appears and the cursor moves to a **new line**.
+3. If it does not move to a new line, scan the **"Add Enter / CR suffix"** setting barcode from the scanner's manual.
+
+**Why:** the till adds the product when the scanner "presses Enter" after the code.
+
+## 9.8 Handheld (warehouse)
+
+1. Register a device of kind **Handheld scanner** for the branch.
+2. On the phone: Chrome, do 9.3 if needed, open the till address (9.2), enrol with the code.
+3. Storekeepers sign in with **username and PIN**. They need a warehouse role (Storekeeper, Warehouse Manager…), not till access.
+
+**Note:** the handheld needs its branch's server to be reachable (it does not queue work offline). For warehouses with weak internet, use a branch server (Chapter 10).
+
+## 9.9 Kitchen screen (Restaurant)
+
+1. Register a device of kind **Kitchen display** for the branch.
+2. On the screen's PC or tablet: Chrome, do 9.3 if needed, open the till address, enrol with the code.
+3. Choose the **station** it shows (e.g. *KITCHEN* or *BAR*). No one signs in.
+4. Press **F11** (PC) for full screen.
+
+**Check:** send a dish from a till: it appears on the screen within a few seconds.
+
+## 9.10 Label scale (Grocery)
+
+Set the scale to print **EAN-13** labels starting with `21` (see Chapter 8, Grocery). The scale's own software holds each item's **PLU** (5-digit code) and price per kg; keep its PLU codes the same as the products' **scale codes**.
+
+## 9.11 When a device is lost, stolen or replaced
+
+- **Lost or stolen:** **System → Devices → Revoke** at once. Its access and every sign-in on it end immediately.
+- **Replacing a till that still has unsent sales:** on the old till press **Export unsent sales** (in the yellow banner). In the back office: **System → Sync Center → Import till file**. Then register and enrol the new device.
+- **Re-installing the same device:** register it as a new device (it gets the next receipt series letter, so receipt numbers never repeat).

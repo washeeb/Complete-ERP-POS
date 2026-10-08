@@ -47,12 +47,15 @@ final class HrService
                 throw new DomainException('Amounts cannot be negative.');
             }
         }
+        if ((int) ($data['commission_bp'] ?? 0) < 0 || (int) ($data['commission_bp'] ?? 0) > 10000) {
+            throw new DomainException('Commission: 0 to 100 %.');
+        }
         if (! empty($data['user_id']) && Employee::where('user_id', $data['user_id'])->when($e->exists, fn ($q) => $q->whereKeyNot($e->id))->exists()) {
             throw new DomainException('That sign-in already belongs to another employee.');
         }
         $fields = ['name', 'gender', 'date_of_birth', 'phone', 'email', 'address', 'ghana_card_no', 'ssnit_no', 'department_id', 'branch_id', 'job_title', 'employment_type',
             'hire_date', 'contract_end', 'pay_method', 'bank_name', 'bank_account_no', 'momo_number', 'basic_salary_minor', 'transport_allowance_minor', 'meal_allowance_minor',
-            'overtime_rate_bp', 'overtime_junior', 'tier3_bp', 'welfare_minor', 'ssnit_exempt', 'notes', 'user_id'];
+            'overtime_rate_bp', 'overtime_junior', 'tier3_bp', 'welfare_minor', 'ssnit_exempt', 'notes', 'user_id', 'takes_appointments', 'commission_bp'];
 
         return $this->recorder->transaction(function () use ($actor, $e, $data, $fields) {
             $values = [];

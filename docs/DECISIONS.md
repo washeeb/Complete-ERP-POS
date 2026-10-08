@@ -432,3 +432,25 @@ Design:
   - a lookbook on the online shop (styles with size/colour selectors);
   - consignment stock statements as PDFs;
   - garment measurements on customers.
+
+## Phase 10c — Services & Packages (2026-10-22)
+- **Owner answer (2026-10-19):** both prepaid packs and recurring invoiced memberships. Defaults chosen without further questions (recorded here):
+- **A service is an ordinary product with a duration** (`service_minutes`, no stock). Appointments are documents (APT numbers) with a staff member (`employees.takes_appointments`) and a time; overlapping open appointments for one person are refused under a row lock on the employee. Online booking from the web shop is deferred.
+- **Prepaid sessions are passes** (`service_passes` with items `{label, product_ids, sessions|null}`; append-only `service_pass_uses`, +1 used / −1 given back).
+  - A pack product (`products.pack`) sold to a customer issues one pass per unit; a membership issues one pass per billing period (valid for that period, no carry-over).
+  - Using a session is a till line at price 0 with engine id `pass:<id>` (outside promotions); the remaining count is re-checked under a lock in the sale transaction.
+  - **Revenue at sale** (packs) and at invoice (memberships); sessions used are free lines. Deferring pack revenue (liability until used) was not chosen, to keep the books simple for small businesses; it can be added later. The pass's value per session (net ÷ sessions) is kept as the commission base.
+  - A pack with sessions used cannot be returned at the till; a manager voids the pass and refunds what is fair.
+- **Memberships are invoiced, not sold at the till:** one invoice per period on its first day (Receivables), through the shared `InvoiceService`; billing runs at head office only (nightly, catching up missed periods; at most 24 per run per membership). Pause stops billing; resume bills from today; cancel runs to the end of the invoiced period.
+- **Commission = line net × rate** (product rate beats the person's), recorded per line in `commissions` in the sale's transaction, negative on returns (the return line keeps the original line's staff member). Payroll adds the month's commission as a taxable earning; employees without a basic salary are included in months they earned commission. Commission is booked with salaries (no separate account).
+- **Licence keys** (deferred from 10a): per product and branch, handed out FIFO with `SKIP LOCKED`; online a product out of keys stops the sale, offline it becomes a review item with a back-office "hand out keys still owed". Keys are stored as text (not encrypted with the node's APP_KEY, which other nodes do not share), hidden from serialisation, shown only to `services.licence_keys` and on the receipt; uniqueness by SHA-256 fingerprint.
+- **SMS for appointments** reuse the restaurant relay (outbox consumer `sms`); the Services gateway setting falls back to the restaurant one.
+- **Deferred:** online booking, deposits on appointments, deferred revenue for packs, resource booking (rooms, chairs), recurring appointments.
+
+## Installation guide and till hosting (2026-10-22)
+- **Owner request:** a complete PDF installation manual for every scenario, kept up to date as the phases progress, written for a lay person with the reason for each step.
+  - Source: Markdown chapters in `docs/manual/NN-*.md`; built into `docs/manual/Synclytics-ERP-POS-Installation-Guide.pdf` by `pos/scripts/manual.mjs` (marked + Playwright's Chromium; no new system tools). Screenshots from the local dev server by `pos/scripts/manual-screens.mjs` (dev credentials read from `.local-secrets`, never printed; the installation code is masked).
+  - **Rule:** every phase updates the affected chapters and rebuilds the PDF (CLAUDE.md end-of-task list).
+  - It documents what works **today** (manual installs on Windows and Ubuntu); Phase 13 installers will replace the manual steps and the guide will change with them.
+- **The server serves the till at `/pos/`** (Vite mode `server`, base `/pos/`, output `server/public/pos`, git-ignored; `release:build --with-pos` builds into the release). Same origin as the API, so no proxy or second web server; the service worker is scoped to `/pos/`.
+- **Windows hosting today** is PHP's built-in server started by Task Scheduler (one request at a time — fine for about 1–4 devices); Ubuntu (Nginx + PHP-FPM) is the recommended production host. **LAN tills without HTTPS** are made offline-capable with the browser's "treat insecure origin as secure" flag for the server address; internet-facing servers must use HTTPS (Let's Encrypt).

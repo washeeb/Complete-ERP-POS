@@ -129,6 +129,26 @@ class ProductResource extends Resource
                     TextInput::make('consignment_bp')->label('Their share (basis points of the price before tax)')->numeric()->minValue(1)->maxValue(10000)
                         ->helperText('6000 = 60 %.'),
                 ]),
+            Section::make('Services')->columns(3)->visible(fn () => ModuleService::enabledAnywhere('services'))
+                ->description('A bookable service has a duration (it appears in the appointment book). A prepaid pack is sold once and gives the customer sessions, used later at the till at no charge. Packs and licence-key products do not track stock.')
+                ->schema([
+                    TextInput::make('service_minutes')->label('Duration (minutes)')->numeric()->minValue(5)->maxValue(720)
+                        ->helperText('Fill in for a service that is booked, e.g. 45 for a haircut.'),
+                    TextInput::make('commission_bp')->label('Commission (basis points)')->numeric()->minValue(0)->maxValue(10000)
+                        ->helperText('Empty = the staff member’s own rate. 1000 = 10 % of the price before tax.'),
+                    Toggle::make('licence_keys')->label('Hands out a licence key')->inline(false)
+                        ->helperText('Software: one key per unit sold, from the keys loaded under Services → Licence keys.'),
+                    Repeater::make('pack.items')->label('Prepaid pack: what it includes')->defaultItems(0)->columns(3)->reorderable(false)->columnSpanFull()
+                        ->helperText('Leave empty if this is not a pack. Example: "10 massages" = one row with the massage services and 10 sessions.')
+                        ->schema([
+                            Select::make('product_ids')->label('Used for (services)')->multiple()->required()->searchable()
+                                ->options(fn () => Product::where('is_active', true)->whereNotNull('service_minutes')->orderBy('name')->pluck('name', 'id')),
+                            TextInput::make('sessions')->label('Sessions')->required()->numeric()->minValue(1)->maxValue(1000),
+                            TextInput::make('label')->label('Shown as (optional)')->maxLength(120),
+                        ]),
+                    TextInput::make('pack.valid_days')->label('Pack valid for (days)')->numeric()->minValue(1)->maxValue(3650)
+                        ->helperText('Empty = no expiry.'),
+                ]),
             Section::make('Restaurant')->columns(2)->visible(fn () => ModuleService::enabledAnywhere('restaurant'))
                 ->description('Dishes and drinks: where they are prepared, the choices offered, and the ingredients one portion uses (taken from stock when the bill is paid; switch "Track stock" off for the dish itself).')
                 ->schema([

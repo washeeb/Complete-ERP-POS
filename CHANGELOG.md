@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.18.0] — 2026-10-22 · Phase 10c Services & Packages
+### Added
+- **Services and staff:** bookable services with a duration; staff who take appointments; commission rates per person and per product.
+- **Appointments:** booking without double-booking staff, arrivals, no-shows, cancellations, changes; a staff calendar (day grid) in the back office; the appointment book at the till (F10) with check-out; SMS confirmations and reminders through your own gateway.
+- **Prepaid packs:** a pack product becomes a pass for the customer; sessions used at the till at no charge (Passes, per customer); returns give sessions back or void unused packs; passes can be voided.
+- **Memberships and subscriptions:** plans with a price per period (1, 3, 6 or 12 months) and sessions included per period; sign-up, pause, resume, cancel; each period invoiced to the customer's account (`erp:bill-memberships`, head office, nightly).
+- **Commissions:** per sale line for the person who did it (session value for passes), reversed by returns; Commissions report; paid through payroll as the earning *Commission* (commission-only staff included).
+- **Software licence keys:** loaded per product and branch, one handed out per unit sold and printed on the receipt; returned keys are never resold.
+- Role **Stylist / Therapist**; permissions `services.appointments`, `services.passes`, `services.memberships`, `services.commissions`, `services.licence_keys`; `services.*` settings.
+- **Installation & Setup Guide (PDF)** — `docs/manual/`, built with `npm run manual` (in `pos/`): definitions, choosing a setup, requirements, Windows and Ubuntu installation, licence, first set-up, modules, devices, branch servers, online integrations, backups, updates, troubleshooting, reference; screenshots with `npm run manual:screens`.
+- **The server hands out the till app at `/pos/`** (`npm run build:server`), so a production install needs no separate web server for tills; release builds include it.
+### Changed
+- Customer invoices are raised by one `InvoiceService` (deliveries and memberships).
+- A till sale with nothing to pay (only prepaid sessions) is accepted without payments.
+
 ## [0.17.0] — 2026-10-21 · Phase 10b Fashion & Boutique
 ### Added
 - **Styles** with sizes and colours, season and collection:

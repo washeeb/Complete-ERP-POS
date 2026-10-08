@@ -27,6 +27,15 @@ export type Alteration = {
   id: string; number: string; customer_id: string | null; customer_name: string; phone: string | null; garment: string; work: string; charge_minor: number
   status: string; status_label: string; due_on: string | null; tailor_name: string | null; received_at: string
 }
+// Services
+export type StaffMember = { id: string; name: string; job_title: string | null }
+export type Services = { staff: StaffMember[]; slot_minutes: number; day_start: string; day_end: string }
+export type Appointment = {
+  id: string; number: string; customer_id: string | null; customer_name: string; phone: string | null; employee_id: string; employee_name: string | null
+  product_id: string; service: string | null; starts_at: string; ends_at: string; status: 'booked' | 'arrived' | 'done' | 'no_show' | 'cancelled'; status_label: string; note: string | null
+}
+export type PassItem = { label: string; product_ids: string[]; sessions: number | null; remaining: number | null }
+export type ServicePass = { id: string; number: string; name: string; expires_on: string | null; items: PassItem[] }
 // Electronics
 export type RepairJob = {
   id: string; number: string; customer_id: string | null; customer_name: string; phone: string | null; device: string; serial: string | null; fault: string
@@ -48,7 +57,7 @@ export type DiningTable = { id: string; code: string; area: string | null; seats
 export type Floor = { tables: DiningTable[]; stations: { code: string; name: string; auto_print: boolean }[]; orders: DiningOrder[]; server_time: string
   reservations?: Reservation[]; hold_minutes?: number }
 export type KitchenTicket = { order_id: string; number: string; label: string; kind: string; waiter: string; paid: boolean; items: DiningItem[] }
-export type Product = { id: string; sku: string; name: string; category_id?: string | null; plu?: string | null; drug?: Drug | null; station?: string | null; modifier_group_ids?: string[]; track_serials?: boolean; warranty_months?: number | null; style_id?: string | null; size?: string | null; colour?: string | null; track_stock: boolean; on_hand: string | null; tax: TaxRate[]; units: Unit[]; prices: Price[] }
+export type Product = { id: string; sku: string; name: string; category_id?: string | null; plu?: string | null; drug?: Drug | null; station?: string | null; modifier_group_ids?: string[]; track_serials?: boolean; warranty_months?: number | null; style_id?: string | null; size?: string | null; colour?: string | null; service_minutes?: number | null; is_pack?: boolean; licence_keys?: boolean; track_stock: boolean; on_hand: string | null; tax: TaxRate[]; units: Unit[]; prices: Price[] }
 export type PriceList = { id: string; code: string; name: string; prices_include_tax: boolean; is_default: boolean }
 
 export type Shift = {
@@ -80,8 +89,9 @@ export type PostedSale = {
   id: string; receipt_no: string; device_seq: number; status: string; occurred_at: string; cashier: string; currency: string
   prices_include_tax: boolean; net_minor: number; tax_minor: number; total_minor: number; paid_minor: number; change_minor: number
   tax_breakdown: TaxLine[]
-  lines: { line_no: number; sku: string; name: string; uom: string; qty: string; unit_price_minor: number; line_total_minor: number; discount_minor?: number; promotions?: { name: string; saving_minor: number }[]; note?: string | null; serials?: string[]; warranty_until?: string | null }[]
+  lines: { line_no: number; sku: string; name: string; uom: string; qty: string; unit_price_minor: number; line_total_minor: number; discount_minor?: number; promotions?: { name: string; saving_minor: number }[]; note?: string | null; serials?: string[]; warranty_until?: string | null; id?: string; staff_id?: string | null; service_pass_id?: string | null }[]
   tip_minor?: number; order_number?: string | null
+  licence_keys?: { sale_line_id: string; key: string }[] // Services: software keys handed out, printed on the receipt
   kitchen?: { name: string; qty: string; note: string | null; station: string }[] // offline counter sale: ticket the till prints itself
   kind?: 'sale' | 'return'; discount_minor?: number; points_earned?: number
   payments: { method: string; provider: string | null; amount_minor: number; tendered_minor: number; reference: string | null; status: string }[]

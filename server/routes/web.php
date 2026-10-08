@@ -9,6 +9,16 @@ use Spatie\LaravelPasskeys\Http\Controllers\GeneratePasskeyAuthenticationOptions
 
 Route::get('/', fn () => redirect('/admin'));
 
+// The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;
+// these routes only catch the bare address and a till app that has not been built yet.
+Route::get('/pos', fn () => redirect('/pos/'));
+Route::get('/pos/{path?}', function () {
+    $index = public_path('pos/index.html');
+
+    return is_file($index) ? response()->file($index, ['Cache-Control' => 'no-cache'])
+        : response('The till app is not installed on this server yet. In the pos folder run: npm run build:server', 404);
+})->where('path', '.*');
+
 // Passkey sign-in for the back office (package routes, with our hardened login controller).
 Route::prefix('passkeys')->middleware('throttle:10,1')->group(function () {
     Route::get('authentication-options', GeneratePasskeyAuthenticationOptionsController::class)->name('passkeys.authentication_options');

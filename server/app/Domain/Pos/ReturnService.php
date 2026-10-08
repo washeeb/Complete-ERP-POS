@@ -10,6 +10,7 @@ use App\Domain\Inventory\SerialRegistry;
 use App\Domain\Inventory\StockLedger;
 use App\Domain\Pricing\PriceResolver;
 use App\Domain\Pricing\TaxCalculator;
+use App\Domain\Services\ServiceSales;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
@@ -124,7 +125,8 @@ final class ReturnService
                     throw new DomainException('A serial number given was not sold on that line.', 'serial_conflict');
                 }
                 $lines[] = ['no' => $i + 1, 'product' => Product::findOrFail($ol->product_id), 'unit' => ProductUom::with('uom')->findOrFail($ol->product_uom_id),
-                    'qty' => $qty, 'unit_price' => $ol->unit_price_minor, 'gross' => $gross, 'rates' => $rates, 'original_line_id' => $ol->id, 'serials' => $serials];
+                    'qty' => $qty, 'unit_price' => $ol->unit_price_minor, 'gross' => $gross, 'rates' => $rates, 'original_line_id' => $ol->id, 'serials' => $serials,
+                    'staff_id' => $ol->staff_id]; // Services: the commission on it comes back off the same person
             } else {
                 $unit = ProductUom::with('uom')->findOrFail($l['product_uom_id'] ?? null);
                 $product = Product::with('taxGroup.rates')->findOrFail($unit->product_id);
@@ -200,12 +202,13 @@ final class ReturnService
                     'product_uom_id' => $l['unit']->id, 'uom_code' => $l['unit']->uom->code, 'factor' => $l['unit']->factor, 'qty' => Qty::format(-$l['qty']),
                     'unit_price_minor' => $l['unit_price'], 'line_total_minor' => -$l['t']['gross'], 'net_minor' => -$l['t']['net'], 'tax_minor' => -$l['t']['tax'],
                     'tax_breakdown' => array_map(fn ($b) => ['amount_minor' => -$b['amount_minor']] + $b, $l['t']['breakdown']), 'original_line_id' => $l['original_line_id'],
-                    'serials' => $l['serials']]);
+                    'serials' => $l['serials'], 'staff_id' => $l['staff_id'] ?? null]);
             }
             // Goods come back into the batch they were sold from (batch-tracked products).
             $soldFrom = $original ? DB::table('stock_movements')->where('source_type', 'sale')->where('source_id', $original->id)->whereNotNull('batch_id')
                 ->orderByDesc('qty_base')->pluck('batch_id', 'product_id') : collect(); // pluck keeps the last row: the batch most was sold from
             app(ConsignmentService::class)->record($actor, $sale); // consignment stock: the consignor's share comes back
+            app(ServiceSales::class)->settleReturn($actor, $sale); // sessions given back, unused packs voided, commission and licence keys taken back
             $this->stock->post($actor, $warehouse, 'sale_return', array_map(fn ($l) => ['product' => $l['product'], 'unit' => $l['unit'], 'qty_milli' => $l['qty'], 'serials' => $l['serials']]
                 + (isset($soldFrom[$l['product']->id]) ? ['batch_id' => $soldFrom[$l['product']->id]] : []), $lines),
                 "Return {$receiptNo}".($original ? " of {$original->receipt_no}" : ''), 'sale', $sale->id, $occurredAt);

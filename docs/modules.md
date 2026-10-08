@@ -13,17 +13,17 @@
 
 | Module | Kind | Status |
 |---|---|---|
-| Core | core | Available — Phase 1 platform; Phase 2 catalog, prices/tax, stock ledger, POS |
-| Retail & Wholesale | industry | Planned · Phase 6 (wholesale customers, credit, B2B orders) |
-| Built-in Online Storefront | department | Available (0.4.0) — enable per branch, then add the shop under Online → Channels |
-| Grocery / Supermarket | industry | Planned · Phase 9 |
-| Restaurant / Café / Bar | industry | Planned · Phase 9 |
-| Pharmacy | industry | Planned · Phase 9 |
-| Manufacturing | industry | Planned · Phase 10 |
-| Fashion & Boutique | industry | Planned · Phase 10 |
-| Electronics / Technology | industry | Planned · Phase 10 |
-| Services & Packages | industry | Planned · Phase 10 |
-| Sales & Distribution | industry | Planned · Phase 10 |
+| Core | core | Available — platform, catalog, prices/tax, stock, POS, purchasing, sales, finance, HR |
+| Retail & Wholesale | industry | Planned (wholesale customers, credit and B2B orders are in Core since Phase 6) |
+| Built-in Online Storefront | department | Available — enable per branch, then add the shop under Online → Channels |
+| Grocery / Supermarket | industry | Available (Phase 9a) — see grocery.md |
+| Pharmacy | industry | Available (Phase 9b) — see pharmacy.md |
+| Restaurant / Café / Bar | industry | Available (Phases 9c–9d) — see restaurant.md |
+| Electronics / Technology | industry | Available (Phase 10a) — see electronics.md |
+| Fashion & Boutique | industry | Available (Phase 10b) — see fashion.md |
+| Services & Packages | industry | Available (Phase 10c) — see services.md |
+| Sales & Distribution | industry | Planned · Phase 10d |
+| Manufacturing | industry | Planned · Phase 10e |
 | Logistics & Delivery | department | Planned · Phase 12 |
 | Assets & Maintenance | department | Planned · Phase 12 |
 | Projects & Tasks | department | Planned · Phase 12 |

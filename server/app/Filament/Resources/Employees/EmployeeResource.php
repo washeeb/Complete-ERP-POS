@@ -77,20 +77,21 @@ class EmployeeResource extends Resource
         $m = fn ($v) => $v ? Money::format((int) $v, FinanceUi::currency()) : null;
 
         return $e->only(['name', 'gender', 'phone', 'email', 'address', 'ghana_card_no', 'ssnit_no', 'department_id', 'branch_id', 'job_title', 'employment_type',
-            'pay_method', 'bank_name', 'bank_account_no', 'momo_number', 'overtime_junior', 'ssnit_exempt', 'notes', 'user_id'])
-            + ['date_of_birth' => $e->date_of_birth?->toDateString(), 'hire_date' => $e->hire_date?->toDateString(), 'contract_end' => $e->contract_end?->toDateString(),
+            'pay_method', 'bank_name', 'bank_account_no', 'momo_number', 'overtime_junior', 'ssnit_exempt', 'notes', 'user_id', 'takes_appointments'])
+            + ['commission_pct' => $e->commission_bp / 100, 'date_of_birth' => $e->date_of_birth?->toDateString(), 'hire_date' => $e->hire_date?->toDateString(), 'contract_end' => $e->contract_end?->toDateString(),
                 'basic_salary' => $m($e->basic_salary_minor), 'transport_allowance' => $m($e->transport_allowance_minor), 'meal_allowance' => $m($e->meal_allowance_minor),
                 'welfare' => $m($e->welfare_minor), 'overtime_rate' => $e->overtime_rate_bp / 10000, 'tier3_pct' => $e->tier3_bp / 100];
     }
 
     public static function toDomain(array $d): array
     {
-        $out = collect($d)->except(['basic_salary', 'transport_allowance', 'meal_allowance', 'welfare', 'overtime_rate', 'tier3_pct'])->all();
+        $out = collect($d)->except(['basic_salary', 'transport_allowance', 'meal_allowance', 'welfare', 'overtime_rate', 'tier3_pct', 'commission_pct'])->all();
 
         return $out + ['basic_salary_minor' => FinanceUi::toMinor($d['basic_salary'] ?? 0), 'transport_allowance_minor' => FinanceUi::toMinor($d['transport_allowance'] ?? 0),
             'meal_allowance_minor' => FinanceUi::toMinor($d['meal_allowance'] ?? 0), 'welfare_minor' => FinanceUi::toMinor($d['welfare'] ?? 0),
             'overtime_rate_bp' => (int) round((float) ($d['overtime_rate'] ?? 1.5) * 10000), 'tier3_bp' => (int) round((float) ($d['tier3_pct'] ?? 0) * 100),
-            'overtime_junior' => (bool) ($d['overtime_junior'] ?? false), 'ssnit_exempt' => (bool) ($d['ssnit_exempt'] ?? false)];
+            'overtime_junior' => (bool) ($d['overtime_junior'] ?? false), 'ssnit_exempt' => (bool) ($d['ssnit_exempt'] ?? false),
+            'takes_appointments' => (bool) ($d['takes_appointments'] ?? false), 'commission_bp' => (int) round((float) ($d['commission_pct'] ?? 0) * 100)];
     }
 
     public static function form(Schema $schema): Schema
@@ -125,6 +126,10 @@ class EmployeeResource extends Resource
                 Toggle::make('ssnit_exempt')->label('Not in SSNIT (e.g. pensioner)'),
                 TextInput::make('tier3_pct')->label('Provident fund (Tier 3) % of basic')->numeric()->minValue(0)->maxValue(100)->default('0'),
                 TextInput::make('welfare')->label('Welfare dues')->numeric()->minValue(0),
+                TextInput::make('commission_pct')->label('Commission % (Services)')->numeric()->minValue(0)->maxValue(100)->default('0')
+                    ->helperText('Share of the price before tax of the services they do (a product can set its own rate). Paid with payroll.'),
+                Toggle::make('takes_appointments')->label('Takes appointments (Services)')
+                    ->helperText('Shows them in the staff calendar and the till’s "done by" list.'),
             ]),
             Section::make('Paid by')->columns(3)->schema([
                 Select::make('pay_method')->required()->options(Employee::PAY_METHODS)->default('bank')->live(),
