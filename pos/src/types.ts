@@ -57,13 +57,23 @@ export type DiningTable = { id: string; code: string; area: string | null; seats
 export type Floor = { tables: DiningTable[]; stations: { code: string; name: string; auto_print: boolean }[]; orders: DiningOrder[]; server_time: string
   reservations?: Reservation[]; hold_minutes?: number }
 export type KitchenTicket = { order_id: string; number: string; label: string; kind: string; waiter: string; paid: boolean; items: DiningItem[] }
-export type Product = { id: string; sku: string; name: string; category_id?: string | null; plu?: string | null; drug?: Drug | null; station?: string | null; modifier_group_ids?: string[]; track_serials?: boolean; warranty_months?: number | null; style_id?: string | null; size?: string | null; colour?: string | null; service_minutes?: number | null; is_pack?: boolean; licence_keys?: boolean; track_stock: boolean; on_hand: string | null; tax: TaxRate[]; units: Unit[]; prices: Price[] }
+export type Product = { id: string; sku: string; name: string; category_id?: string | null; plu?: string | null; drug?: Drug | null; station?: string | null; modifier_group_ids?: string[]; track_serials?: boolean; warranty_months?: number | null; style_id?: string | null; size?: string | null; colour?: string | null; service_minutes?: number | null; is_pack?: boolean; licence_keys?: boolean; is_container?: boolean; deposit_product_id?: string | null; deposit_per_unit?: string | null; track_stock: boolean; on_hand: string | null; tax: TaxRate[]; units: Unit[]; prices: Price[] }
 export type PriceList = { id: string; code: string; name: string; prices_include_tax: boolean; is_default: boolean }
 
 export type Shift = {
   id: string; status: 'open' | 'closed'; opened_at: string; opened_by: string; opening_float_minor: number
   expected_cash_minor: number | null; counted_cash_minor: number | null; over_short_minor: number | null
 }
+
+// Distribution: the van behind this till, today's route and the rep's month
+export type VanDay = {
+  van: { id: string; code: string; name: string; vehicle_reg: string | null }
+  routes: { id: string; code: string; name: string }[]
+  stops: { route_id: string; customer_id: string; sequence: number }[]
+  weekday: number
+  month: { target_minor: number | null; sold_minor: number; visit_target: number | null }
+}
+export type VisitOutcome = 'sold' | 'order' | 'no_order' | 'closed'
 
 export type Bootstrap = {
   company: { name: string; currency: string; exponent: number; timezone: string; legal_name: string | null; tin: string | null; vat_no: string | null }
@@ -78,6 +88,7 @@ export type Bootstrap = {
   last_device_seq: number
   catalog_version: string
   realtime?: Realtime | null
+  van?: VanDay | null
   server_time: string
 }
 

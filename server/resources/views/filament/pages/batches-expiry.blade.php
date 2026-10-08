@@ -65,8 +65,8 @@
     <style>
         .be-filters { display: flex; gap: 12px; } .be-filters label { display: grid; gap: 4px; font-size: .875rem; }
         .be-scroll { overflow-x: auto; } .be { width: 100%; border-collapse: collapse; font-size: .875rem; }
-        .be th, .be td { padding: 6px 8px; border-bottom: 1px solid rgb(0 0 0 / .06); text-align: left; } .be .num { text-align: right; }
-        .be-pct { width: 64px; padding: 2px 6px; border: 1px solid rgb(0 0 0 / .2); border-radius: 4px; background: transparent; color: inherit; text-align: right; }
+        .be th, .be td { padding: 6px 8px; border-bottom: 1px solid color-mix(in srgb, currentColor 6%, transparent); text-align: left; } .be .num { text-align: right; }
+        .be-pct { width: 64px; padding: 2px 6px; border: 1px solid color-mix(in srgb, currentColor 20%, transparent); border-radius: 4px; background: transparent; color: inherit; text-align: right; }
         .muted { opacity: .6; font-size: .8rem; } .mono { font-family: ui-monospace, monospace; }
     </style>
 </x-filament-panels::page>

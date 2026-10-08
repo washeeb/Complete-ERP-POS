@@ -167,7 +167,7 @@ class StockAdjustmentResource extends Resource
     {
         $t = self::lineRows($r);
         $head = '<tr>'.collect($t['headings'])->map(fn ($h) => '<th style="text-align:left;padding:4px 6px">'.e($h).'</th>')->implode('').'</tr>';
-        $body = collect($t['rows'])->map(fn ($row) => '<tr>'.collect($row)->map(fn ($v) => '<td style="padding:4px 6px;border-top:1px solid rgb(0 0 0 / .06)">'.e($v).'</td>')->implode('').'</tr>')->implode('');
+        $body = collect($t['rows'])->map(fn ($row) => '<tr>'.collect($row)->map(fn ($v) => '<td style="padding:4px 6px;border-top:1px solid color-mix(in srgb, currentColor 6%, transparent)">'.e($v).'</td>')->implode('').'</tr>')->implode('');
         $note = $r->status === 'posted' ? 'Value of the change at average cost: ' : 'If posted now (against stock on hand now), value at average cost: ';
 
         return '<table style="width:100%;font-size:.85rem;border-collapse:collapse">'.$head.$body.'</table><p style="margin-top:8px;font-size:.85rem">'.e($note.Money::format($t['total'], $t['currency'])).'</p>';

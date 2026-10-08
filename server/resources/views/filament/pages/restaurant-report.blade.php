@@ -39,6 +39,6 @@
     <style>
         .rr-filters { display: flex; gap: 12px; } .rr-filters label { display: grid; gap: 4px; font-size: .875rem; }
         .rr { width: 100%; border-collapse: collapse; font-size: .875rem; }
-        .rr th, .rr td { padding: 6px 8px; border-bottom: 1px solid rgb(0 0 0 / .06); text-align: left; } .rr .num { text-align: right; }
+        .rr th, .rr td { padding: 6px 8px; border-bottom: 1px solid color-mix(in srgb, currentColor 6%, transparent); text-align: left; } .rr .num { text-align: right; }
     </style>
 </x-filament-panels::page>

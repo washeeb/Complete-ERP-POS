@@ -41,8 +41,8 @@ Find the symptom, then try the fixes in order.
 | *The price … changed. Refresh the till* | The price changed at head office while the item was in the cart. Remove the line and add it again. |
 | *Open a shift on this till before selling* | Open the shift (count the float). |
 | *The till clock is ahead of the server* | Set the till's clock to automatic (Windows Settings → Time). |
-| Receipt is tiny or cut | Printer paper size 80 mm, margins *None*, scale 100 %, headers off (9.6). |
-| Scanner types the code but nothing happens | The scanner does not send Enter (9.7). |
+| Receipt is tiny or cut | Printer paper size 80 mm, margins *None*, scale 100 %, headers off (9.7). |
+| Scanner types the code but nothing happens | The scanner does not send Enter (9.8). |
 | Till did not pick up a new version | Close the till app completely and open it again (twice if needed). |
 
 ## Branch servers and online stores

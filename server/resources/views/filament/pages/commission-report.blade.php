@@ -35,7 +35,7 @@
     @endif
     <style>
         .cr-filters { display: flex; gap: 12px; flex-wrap: wrap; } .cr-filters label { display: grid; gap: 4px; font-size: .875rem; max-width: 280px; }
-        .cr { width: 100%; border-collapse: collapse; font-size: .875rem; } .cr th, .cr td { padding: 6px 8px; border-bottom: 1px solid rgb(0 0 0 / .06); text-align: left; }
+        .cr { width: 100%; border-collapse: collapse; font-size: .875rem; } .cr th, .cr td { padding: 6px 8px; border-bottom: 1px solid color-mix(in srgb, currentColor 6%, transparent); text-align: left; }
         .cr .num { text-align: right; } .muted { opacity: .6; font-size: .8rem; }
     </style>
 </x-filament-panels::page>

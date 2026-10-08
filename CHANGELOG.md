@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.20.0] — 2026-10-24 · Phase 10e Sales & Distribution, themes
+### Added
+- **Vans:** a van is a warehouse with its own till (the rep's phone sells fully offline); load and unload from the depot; end-of-day **van settlement** (expected vs counted, unload, cash from the shift, approval by another person, settlement sheet PDF).
+- **Routes and visits:** routes with weekdays and customers in order; on the phone **Route (F3)** with Sell / Take order / No order / Closed and GPS; visits offline-queued; Visits list with map links.
+- **Orders for delivery** taken on the phone (credit-checked, on hold over the limit), offline-queued.
+- **Credit sales from the van** within the customer's limit (existing on-account tender and offline checks).
+- **Rep targets and commission:** monthly targets; rep commission on van sales through payroll; **Rep performance** report (sales vs target, strike rate, orders, collections, missed customers, empties held).
+- **Returnable containers (empties):** deposit lines added automatically; empties handed back as minus lines; deposit paid out in cash when only empties come back.
+- **Themes:** System / Light / Dark on the till (every screen), in the back office (profile menu; custom pages fixed for dark) and in the online shop.
+- Permissions `distribution.routes`, `distribution.settle`; Van Sales Rep can use the till; module Sales & Distribution 0.1.0.
+### Fixed
+- Released modules now switch on at branches that had reserved them in the setup wizard (missed in earlier releases).
+
 ## [0.19.0] — 2026-10-23 · Phase 10d Data import & export, stock adjustments
 ### Added
 - **Export everywhere:** every back-office list and report page has **Export → CSV (Excel) / PDF** with the current search, filters and sort (all pages). PDFs carry the company, title, filters, who printed it, page numbers and the licence reference; CSVs have a UTF-8 byte-order mark and are protected against formula injection. Every export is audited; read-only licences block exports.

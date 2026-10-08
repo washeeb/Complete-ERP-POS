@@ -118,7 +118,7 @@
         .im-desc { font-size: .85rem; opacity: .75; margin-top: 8px; } .im-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
         .im-opts { display: grid; gap: 4px; font-size: .875rem; margin: 8px 0; } .im-file { font-size: .875rem; }
         .im-err { color: rgb(220 38 38); } .im-result { margin: 12px 0; font-size: .9rem; } .im-link { margin-left: 8px; text-decoration: underline; }
-        .im-t { width: 100%; border-collapse: collapse; font-size: .8rem; margin-top: 8px; } .im-t th, .im-t td { padding: 4px 6px; border-bottom: 1px solid rgb(0 0 0 / .06); text-align: left; vertical-align: top; }
-        .im-bad td { background: rgb(254 226 226 / .5); } .im-cols { margin-top: 8px; font-size: .875rem; }
+        .im-t { width: 100%; border-collapse: collapse; font-size: .8rem; margin-top: 8px; } .im-t th, .im-t td { padding: 4px 6px; border-bottom: 1px solid color-mix(in srgb, currentColor 6%, transparent); text-align: left; vertical-align: top; }
+        .im-bad td { background: rgb(239 68 68 / .15); } .im-cols { margin-top: 8px; font-size: .875rem; }
     </style>
 </x-filament-panels::page>

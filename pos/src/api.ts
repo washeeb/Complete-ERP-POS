@@ -1,6 +1,6 @@
 import { db, getDevice, getSession } from './db'
 import type { OfflineGrant } from './db'
-import type { Bootstrap, PostedSale, Product, PromotionRow, Returnable, Shift, TillCustomer, WmsBin, WmsBootstrap, WmsCount, WmsOrder, WmsTransfer, WmsUnit, Grocery, Pharmacy, Restaurant, DiningOrder, Floor, KitchenTicket, Reservation, RepairJob, SerialInfo, Fashion, Alteration, Services, Appointment, ServicePass, StaffMember } from './types'
+import type { Bootstrap, PostedSale, Product, PromotionRow, Returnable, Shift, TillCustomer, WmsBin, WmsBootstrap, WmsCount, WmsOrder, WmsTransfer, WmsUnit, Grocery, Pharmacy, Restaurant, DiningOrder, Floor, KitchenTicket, Reservation, RepairJob, SerialInfo, Fashion, Alteration, Services, Appointment, ServicePass, StaffMember, VanDay } from './types'
 
 /** Error with the server's stable code ("price_changed", "no_shift"…) and a message safe to show. */
 export class ApiError extends Error {
@@ -134,6 +134,17 @@ export const alterations = {
     call<{ alteration: Alteration }>('pos/alterations', { method: 'POST', body: JSON.stringify(body) }),
   status: (id: string, status: string, tailor?: string | null) => call<{ alteration: Alteration }>(`pos/alterations/${id}/status`, { method: 'POST', body: JSON.stringify({ status, tailor }) }),
   handOver: (id: string) => call<{ alteration: Alteration }>(`pos/alterations/${id}/hand-over`, { method: 'POST' }),
+}
+
+/** Distribution: the van's day, visits and orders taken on the road. */
+export type VisitBody = { id: string; customer_id: string; route_id?: string | null; outcome: string; note?: string | null; lat?: number | null; lng?: number | null
+  accuracy_m?: number | null; sale_id?: string | null; customer_order_id?: string | null; occurred_at: string }
+export type OrderBody = { id: string; customer_id: string; note?: string | null; lines: { product_uom_id: string; qty: string }[] }
+export const van = {
+  today: () => call<{ van: VanDay | null }>('pos/van/today'),
+  visit: (body: VisitBody) => call<{ status: string }>('pos/van/visits', { method: 'POST', body: JSON.stringify(body) }),
+  order: (body: OrderBody) => call<{ status: string; order: { id: string; number: string; status: string; total_minor: number; hold_reason: string | null } }>(
+    'pos/van/orders', { method: 'POST', body: JSON.stringify(body) }),
 }
 
 /** Services: the day's appointments by staff member, booking and changing them, and a customer's prepaid passes. */

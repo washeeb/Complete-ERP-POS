@@ -65,3 +65,15 @@ there is a difference. Then sign out.
 - **Passes** (next to the customer's name): the customer's prepaid sessions. **Use for …** adds the service at no charge. If the cart has only sessions, there is nothing to pay and the sale completes at once.
 - A **prepaid pack** can only be sold to a chosen customer (F4).
 - Software sold with a **licence key**: the key is printed on the receipt.
+
+## Vans (Sales & Distribution)
+
+- The chip at the top shows the van and how far you are towards this month's target.
+- **Route (F3):** today's customers in order. **Sell** (the visit is recorded when the sale is paid), **Take order** (the cart becomes an order for delivery — press **Send order**), **No order** or **Closed** (with a note). The phone adds its location if you allow it.
+- Bottles and crates: the deposit is added by itself. **Empties returned** takes containers back; if the customer only brings empties, **Pay out deposit** gives them the cash.
+- No signal? Keep going: sales, visits and orders are saved on the phone and sent when there is signal.
+- End of day: close the shift with your cash count, then settle the van with the storekeeper.
+
+## Light or dark
+
+Use the **Theme** switch at the bottom left: System, Light or Dark.

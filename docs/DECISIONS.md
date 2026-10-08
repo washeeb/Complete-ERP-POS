@@ -462,3 +462,20 @@ Design:
 - **Stock adjustment documents** complement (not replace) the single-product "Opening stock / adjustment": header reason with per-line override, modes add / remove / set (set is computed against stock on hand when posting, under a lock). Control: value at average cost above `stock.adjustment_approval_minor` needs `stock.adjust.approve` and a different person from the submitter; smaller ones can be posted by whoever may adjust stock. Posted adjustments are immutable; they sync in the `warehouse` group with their lines.
 - **Two stock-take routes:** stock counts (frozen expectations, blind, approval) with count sheets and CSV import of counted quantities (empty = not counted); and the stock-sheet round trip into a set-to adjustment (unchanged rows skipped) for quick corrections.
 - **Deferred:** Excel (.xlsx) files (CSV covers Excel and Sheets without a new dependency); scheduled exports by e-mail; importing employees, chart-of-accounts and opening journal lines; PDF versions of the existing print documents (browser "Save as PDF" remains).
+
+## Phase 10e — Sales & Distribution (2026-10-24)
+- **Owner answers (2026-10-23):** fully offline phone app; credit within the customer's limit; van loading plus a daily settlement; all four extras — routes and visit plans, rep targets and commission, orders for delivery, returns and empties.
+- **A van is a warehouse with its own till** (`warehouses.is_van`, `vehicle_reg`, `rep_user_id`, `home_warehouse_id`). The rep's phone is an ordinary POS device on that till, so offline selling, receipts, credit checks, returns, shifts and cash counts are the till's — nothing new to keep consistent. Loading/unloading are stock transfers dispatched and received at once.
+- **Settlement:** snapshot of the van's ledger quantities at start; counts and unload quantities per product; submit, then `distribution.settle` by someone else posts the differences as `count` movements on the van and unloads by transfer. Cash is not re-counted: it comes from the van till's closed shift(s) for the day.
+- **Visits and orders** are idempotent records keyed by the phone's id, sent directly or through the offline queue (new sync event types). Orders become customer orders at the van's home warehouse and go through the normal confirm (credit hold over the limit).
+- **Commission:** on a van till, lines without a staff member earn the cashier's employee commission (not on containers); reported against monthly targets.
+- **Containers:** a container product is sold at its deposit and bought back at the same price (a minus-quantity line, stock comes back). Deposits are booked as sales of containers rather than a deposit liability — simpler for small distributors; revisit with the accountant if needed. Deposit lines are added by the till from the product's container and containers-per-unit, rounded up to whole containers.
+- **Released modules** now switch on where branches had reserved them (one migration covering all industry modules released so far).
+- **Deferred:** route optimisation and maps, van-to-van transfers, proof of delivery with signatures, offline returns with receipts.
+
+## Themes (2026-10-24)
+- **Owner request:** System, Dark and Light for the whole app.
+- Back office: Filament's built-in switcher (profile menu; per browser). Custom pages use `currentColor` mixes instead of fixed black borders so they read in both.
+- Till app (all screens: till, handheld, kitchen): `<html data-theme>` with light tokens on `:root`, dark tokens under `[data-theme=dark]` and `prefers-color-scheme: dark` unless `[data-theme=light]`; choice in `localStorage`, applied before first paint; picker at the bottom left. The leftover Vite starter stylesheet was replaced with a small base.
+- Online shop: the same three choices in the footer (per visitor's browser).
+- Printed documents, receipts and PDFs stay black on white.

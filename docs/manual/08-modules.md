@@ -99,6 +99,20 @@ A branch can run several modules (for example Grocery and Restaurant for a super
 
 **Check:** pick any variant of a style at the till: the size × colour grid opens with the stock at that till.
 
+### Sales & Distribution (vans, routes, reps)
+
+1. **Distribution → Vans → New van:** branch, van code (e.g. `V01`), name, registration, rep and the warehouse it is loaded from. The van is created as a warehouse **with its own till**.
+2. Register the rep's phone as a **POS till** device on that van's till and enrol it (Chapter 9.4/9.5). It works **fully offline**.
+3. Give the rep the **Van Sales Rep** role at the branch and a PIN; in **HR & payroll → Employees** set their **Commission %** if they earn commission.
+4. **Routes:** Distribution → Routes → New route — the van, rep, weekdays and customers in visiting order.
+5. **Targets:** Distribution → Rep targets — monthly sales target per rep.
+6. **Returnable containers** (crates, bottles, gas cylinders): mark the container products as *returnable containers* (their price is the deposit) and choose the container on each product sold in them (Product → Returnable containers).
+7. Daily: **Load van** in the morning; in the evening **Start end-of-day settlement**, count, submit, and a supervisor approves (Chapter 14 and `docs/distribution.md`).
+
+**Why:** a van as a warehouse with its own till means every sale, receipt, shift and cash count works exactly as in a shop — offline too — and the daily settlement catches shortages the same day.
+
+**Check:** load a van, sell from the phone, then settle: the van's stock in *Stock on hand* matches what is left on it.
+
 ### Services & Packages (salons, spas, gyms, clinics, consultancies)
 
 1. **Services:** on each service (Catalog → Products → **Services**) enter the **duration** in minutes and switch **Track stock** off. Optionally a **commission** rate of its own.
@@ -123,4 +137,4 @@ A branch can run several modules (for example Grocery and Restaurant for a super
 
 ## 8.4 Planned modules
 
-These appear as **Planned** and can be reserved: **Sales & Distribution** (van sales, phone app), **Manufacturing** (bills of materials, production at actual cost), **Logistics & Delivery**, **Assets & Maintenance**, **Projects & Tasks**, **Helpdesk**. This guide gets a checklist for each as it is released.
+These appear as **Planned** and can be reserved: **Manufacturing** (bills of materials, production at actual cost), **Logistics & Delivery**, **Assets & Maintenance**, **Projects & Tasks**, **Helpdesk**. This guide gets a checklist for each as it is released.

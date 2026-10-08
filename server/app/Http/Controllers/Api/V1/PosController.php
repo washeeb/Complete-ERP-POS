@@ -85,6 +85,8 @@ class PosController extends Controller
                 'channels' => ['tenant.'.$device->tenant_id.'.catalog', $till ? 'tenant.'.$device->tenant_id.'.stock.'.$till->warehouse_id : null,
                     app(ModuleService::class)->isEnabled($branch, 'restaurant') ? 'tenant.'.$device->tenant_id.'.dining.'.$branch->id : null],
             ] : null,
+            // Distribution: the van behind this till, today's route and this month's target (null when not a van).
+            'van' => $till && app(ModuleService::class)->isEnabled($branch, 'distribution') ? VanController::today($till, $request->user()) : null,
             'server_time' => now()->toIso8601String(),
         ]);
     }
@@ -151,6 +153,7 @@ class PosController extends Controller
                 'station' => $p->station, 'modifier_group_ids' => $p->modifier_group_ids ?? [], 'track_serials' => $p->track_serials, 'warranty_months' => $p->warranty_months,
                 'style_id' => $p->style_id, 'size' => $p->size, 'colour' => $p->colour,
                 'service_minutes' => $p->service_minutes, 'is_pack' => $p->pack !== null, 'licence_keys' => $p->licence_keys,
+                'is_container' => $p->is_container, 'deposit_product_id' => $p->deposit_product_id, 'deposit_per_unit' => $p->deposit_per_unit === null ? null : (string) $p->deposit_per_unit,
                 'drug' => $p->drug_schedule ? ['schedule' => $p->drug_schedule, 'generic_name' => $p->generic_name, 'strength' => $p->strength,
                     'dosage_form' => $p->dosage_form, 'active_ingredients' => $p->active_ingredients ?? []] : null,
                 'on_hand' => $p->track_stock ? (string) ($stock[$p->id] ?? '0.000') : null,
@@ -258,7 +261,7 @@ class PosController extends Controller
             'lines.*.product_uom_id' => ['required', 'uuid'],
             'lines.*.qty' => ['required', 'string', 'max:20'],
             'lines.*.unit_price_minor' => ['required', 'integer', 'min:0'],
-            'lines.*.line_total_minor' => ['required', 'integer', 'min:0'],
+            'lines.*.line_total_minor' => ['required', 'integer'], // negative for empties handed back
             'lines.*.note' => ['nullable', 'string', 'max:255'],
             'lines.*.serials' => ['nullable', 'array', 'max:500'], 'lines.*.serials.*' => ['string', 'max:80'],
             'lines.*.repair_job_id' => ['nullable', 'uuid'],
@@ -277,7 +280,7 @@ class PosController extends Controller
             'payments' => ['present', 'array', 'max:10'], // empty only when nothing is due (e.g. sessions from a prepaid pass)
             'payments.*.method' => ['required', 'string', 'max:20'],
             'payments.*.provider' => ['nullable', 'string', 'max:20'],
-            'payments.*.amount_minor' => ['required', 'integer', 'min:1'],
+            'payments.*.amount_minor' => ['required', 'integer'], // negative only to pay out the deposit of empties
             'payments.*.tendered_minor' => ['nullable', 'integer', 'min:0'],
             'payments.*.reference' => ['nullable', 'string', 'max:80'],
             'payments.*.payer_phone' => ['nullable', 'string', 'max:20'],

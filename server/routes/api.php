@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\PosController;
 use App\Http\Controllers\Api\V1\RestaurantController;
 use App\Http\Controllers\Api\V1\ServicesController;
 use App\Http\Controllers\Api\V1\SyncController;
+use App\Http\Controllers\Api\V1\VanController;
 use App\Http\Controllers\Api\V1\WmsController;
 use App\Http\Controllers\LicenseServerController;
 use Illuminate\Support\Facades\Broadcast;
@@ -68,6 +69,13 @@ Route::prefix('v1')->group(function () {
             Route::post('appointments/{id}', [ServicesController::class, 'book'])->whereUuid('id');
             Route::post('appointments/{id}/status', [ServicesController::class, 'status'])->whereUuid('id');
             Route::get('passes', [ServicesController::class, 'passes']);
+        });
+
+        // Distribution: the van's day (route, target), visits and orders taken on the road.
+        Route::prefix('van')->group(function () {
+            Route::get('today', [VanController::class, 'show']);
+            Route::post('visits', [VanController::class, 'visit']);
+            Route::post('orders', [VanController::class, 'order']);
         });
 
         // Restaurant: bills shared by tills and waiter tablets (the module must be on at the branch).

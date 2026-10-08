@@ -167,7 +167,8 @@ final class SaleService
             $unit = ProductUom::with('uom')->where('product_id', $product->id)->when(! $offline, fn ($q) => $q->where('is_sellable', true))
                 ->find($l['product_uom_id'] ?? null) ?? throw new DomainException("{$product->name}: that unit is not sold.", 'product_unavailable');
             $qty = Qty::toMilli((string) $l['qty']);
-            if ($qty <= 0) {
+            // Distribution: empties (returnable containers) handed back come in as a line with a minus quantity.
+            if ($qty === 0 || ($qty < 0 && ! $product->is_container)) {
                 throw new DomainException("{$product->name}: quantity must be above zero.");
             }
             if ($qty % (10 ** (3 - $unit->uom->decimals)) !== 0) {
@@ -201,7 +202,7 @@ final class SaleService
                 (bool) $markdown => (object) ['amount_minor' => $markdown->price_minor],
                 (bool) $alteration => (object) ['amount_minor' => $alteration->charge_minor],
                 (bool) $pass => (object) ['amount_minor' => 0],
-                default => $this->prices->resolve($list, $product->id, $unit->id, $qty, $occurredAt),
+                default => $this->prices->resolve($list, $product->id, $unit->id, abs($qty), $occurredAt),
             };
             if ($current?->amount_minor !== $unitPrice) {
                 if (! $offline) {
@@ -219,8 +220,8 @@ final class SaleService
             $key = (string) $i;
             $engineLines[] = ['key' => $key, 'product_id' => match (true) {
                 (bool) $markdown => 'markdown:'.$markdown->id, (bool) $alteration => 'alteration:'.$alteration->id,
-                (bool) $pass => 'pass:'.$pass['pass']->id, default => $product->id,
-            }, 'category_id' => $markdown || $alteration || $pass ? null : $product->category_id, 'qty_milli' => $qty,
+                (bool) $pass => 'pass:'.$pass['pass']->id, $product->is_container => 'container:'.$product->id, default => $product->id,
+            }, 'category_id' => $markdown || $alteration || $pass || $product->is_container ? null : $product->category_id, 'qty_milli' => $qty,
                 'unit_price_minor' => $unitPrice, 'tax' => $rates, 'manual' => $manual];
             $serials = $product->track_serials ? SerialRegistry::normalise($l['serials'] ?? []) : [];
             $lines[] = compact('product', 'unit', 'qty', 'unitPrice', 'manual', 'rates', 'key', 'markdown', 'note', 'serials') + ['no' => $i + 1, 'given' => (int) ($l['line_total_minor'] ?? -1),
@@ -318,7 +319,7 @@ final class SaleService
         // Restaurant: the bill (dining order) being paid, and a tip on top of the total for the waiter.
         $diningOrder = $this->dining->checkPayment($p, $lines, $branch, $offline, $flags);
         $tip = (int) ($p['tip_minor'] ?? 0);
-        if ($tip < 0 || ($tip > $total && ! $offline)) {
+        if ($tip < 0 || ($tip > 0 && $tip > $total && ! $offline)) {
             throw new DomainException('Check the tip: it cannot be negative or more than the bill.', 'tip_invalid');
         }
         $tipUserId = $tip > 0 ? ($diningOrder?->waiter_id ?? $user->id) : null;
@@ -602,6 +603,12 @@ final class SaleService
             }
             $amount = (int) ($pay['amount_minor'] ?? 0);
             $tendered = (int) ($pay['tendered_minor'] ?? $amount);
+            if ($total < 0 && $method === 'cash' && $amount === $total && count($input) === 1) {
+                // Distribution: only empties came back — their deposit is paid out in cash.
+                $payments[] = ['method' => 'cash', 'provider' => null, 'amount_minor' => $amount, 'tendered_minor' => $amount, 'reference' => null, 'payer_phone' => null, 'status' => 'paid_out'];
+
+                return [$payments, $amount, 0];
+            }
             if ($amount <= 0) {
                 throw new DomainException('Each payment must be above zero.');
             }

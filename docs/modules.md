@@ -22,8 +22,8 @@
 | Electronics / Technology | industry | Available (Phase 10a) — see electronics.md |
 | Fashion & Boutique | industry | Available (Phase 10b) — see fashion.md |
 | Services & Packages | industry | Available (Phase 10c) — see services.md |
-| Sales & Distribution | industry | Planned · Phase 10d |
-| Manufacturing | industry | Planned · Phase 10e |
+| Sales & Distribution | industry | Available (Phase 10e) — see distribution.md |
+| Manufacturing | industry | Planned · Phase 10f |
 | Logistics & Delivery | department | Planned · Phase 12 |
 | Assets & Maintenance | department | Planned · Phase 12 |
 | Projects & Tasks | department | Planned · Phase 12 |

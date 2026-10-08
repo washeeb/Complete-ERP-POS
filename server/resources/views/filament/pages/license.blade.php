@@ -39,6 +39,6 @@
         .lic-head { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; } .lic-muted { opacity: .7; font-size: .85rem; }
         .lic-msg { margin-top: 10px; font-weight: 500; } .lic-t { margin-top: 10px; font-size: .875rem; border-collapse: collapse; }
         .lic-t td, .lic-t th { padding: 4px 12px 4px 0; text-align: left; }
-        .lic-code { width: 100%; font-family: ui-monospace, monospace; font-size: .8rem; padding: 8px; border: 1px solid rgb(0 0 0 / .15); border-radius: 6px; background: transparent; color: inherit; }
+        .lic-code { width: 100%; font-family: ui-monospace, monospace; font-size: .8rem; padding: 8px; border: 1px solid color-mix(in srgb, currentColor 15%, transparent); border-radius: 6px; background: transparent; color: inherit; }
     </style>
 </x-filament-panels::page>

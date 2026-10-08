@@ -47,7 +47,7 @@
     @endif
     <style>
         .sr-filters { display: flex; gap: 12px; flex-wrap: wrap; } .sr-filters label, .sr-stmt { display: grid; gap: 4px; font-size: .875rem; max-width: 280px; }
-        .sr { width: 100%; border-collapse: collapse; font-size: .875rem; } .sr th, .sr td { padding: 6px 8px; border-bottom: 1px solid rgb(0 0 0 / .06); text-align: left; }
+        .sr { width: 100%; border-collapse: collapse; font-size: .875rem; } .sr th, .sr td { padding: 6px 8px; border-bottom: 1px solid color-mix(in srgb, currentColor 6%, transparent); text-align: left; }
         .sr .num { text-align: right; } .muted { opacity: .6; font-size: .8rem; }
     </style>
 </x-filament-panels::page>

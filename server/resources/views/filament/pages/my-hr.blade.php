@@ -34,8 +34,8 @@
         </table>
     </x-filament::section>
     <style>
-        .mh-cards { display: flex; flex-wrap: wrap; gap: 12px; } .mh-card { border: 1px solid rgb(0 0 0 / .1); border-radius: 8px; padding: 10px 14px; min-width: 140px; }
+        .mh-cards { display: flex; flex-wrap: wrap; gap: 12px; } .mh-card { border: 1px solid color-mix(in srgb, currentColor 10%, transparent); border-radius: 8px; padding: 10px 14px; min-width: 140px; }
         .mh-num { font-size: 1.5rem; font-weight: 700; } .mh-small { font-size: .75rem; opacity: .7; }
-        .mh { width: 100%; border-collapse: collapse; font-size: .875rem; } .mh td, .mh th { padding: 6px 8px; border-bottom: 1px solid rgb(0 0 0 / .06); text-align: left; } .mh .num { text-align: right; }
+        .mh { width: 100%; border-collapse: collapse; font-size: .875rem; } .mh td, .mh th { padding: 6px 8px; border-bottom: 1px solid color-mix(in srgb, currentColor 6%, transparent); text-align: left; } .mh .num { text-align: right; }
     </style>
 </x-filament-panels::page>
