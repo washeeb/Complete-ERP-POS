@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Domain\Hr\HrService;
 use App\Filament\Support\Erp;
+use App\Filament\Support\ExportsPage;
 use App\Models\PayrollProfile;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
@@ -15,6 +16,8 @@ use Filament\Support\Icons\Heroicon;
 /** The PAYE bands and SSNIT rates payroll uses; an accountant checks and confirms them. */
 class PayrollProfilePage extends Page
 {
+    use ExportsPage;
+
     protected static bool $shouldRegisterNavigation = false;
 
     protected static ?string $slug = 'payroll-rules';
@@ -37,7 +40,7 @@ class PayrollProfilePage extends Page
     {
         $pct = fn ($bp) => rtrim(rtrim(number_format($bp / 100, 2, '.', ''), '0'), '.');
 
-        return [
+        return [$this->exportGroup(),
             Action::make('verify')->label('Check and confirm')->icon(Heroicon::OutlinedCheckBadge)->modalWidth('3xl')
                 ->visible(fn () => Erp::canAnywhere('payroll.approve') && $this->profile() !== null)
                 ->modalDescription('Compare with the current GRA PAYE bands and SSNIT rates. Saving records you as the person who checked them.')

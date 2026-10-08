@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Domain\Pharmacy\PharmacyReports;
 use App\Filament\Resources\Prescriptions\PrescriptionResource;
 use App\Filament\Support\Erp;
+use App\Filament\Support\ExportsPage;
 use App\Models\Warehouse;
 use BackedEnum;
 use Filament\Pages\Page;
@@ -15,6 +16,8 @@ use UnitEnum;
 /** Controlled-drug register (read from the stock ledger) and the NHIS claims export. */
 class ControlledDrugRegister extends Page
 {
+    use ExportsPage;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedLockClosed;
 
     protected static string|UnitEnum|null $navigationGroup = 'Pharmacy';

@@ -4,11 +4,13 @@ namespace App\Providers;
 
 use App\Domain\Sync\Transport\HttpSyncTransport;
 use App\Domain\Sync\Transport\SyncTransport;
+use App\Filament\Support\TableExport;
 use App\Models\User;
 use App\Modules\ModuleRegistry;
 use App\Security\Authorizer;
 use App\Support\Settings;
 use App\Support\TenantContext;
+use Filament\Tables\Table;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -32,6 +34,9 @@ class AppServiceProvider extends ServiceProvider
         if (! in_array(config('erp.node.role'), ['hq', 'branch', 'standalone'], true)) {
             throw new \RuntimeException('ERP_NODE_ROLE must be hq, branch or standalone.');
         }
+
+        // Every list in the back office can be exported (CSV / PDF) with its current search, filters and sort.
+        Table::configureUsing(fn (Table $table) => $table->pushHeaderActions([TableExport::group()]));
 
         // Dotted abilities are ERP permissions: $user->can('admin.users.manage', $branch).
         // No target = only a company-wide grant counts. Anything else falls through to policies.

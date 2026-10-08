@@ -6,6 +6,7 @@ use App\Domain\Budgets\BudgetService;
 use App\Domain\Finance\GeneralLedger;
 use App\Domain\Support\DomainException;
 use App\Filament\Support\Erp;
+use App\Filament\Support\ExportsPage;
 use App\Filament\Support\FinanceUi;
 use App\Models\Account;
 use App\Models\Branch;
@@ -20,6 +21,8 @@ use UnitEnum;
 /** Budgets per branch × income/expense account × month (owner decision 2026-10-13). */
 class Budgets extends Page
 {
+    use ExportsPage;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalculator;
 
     protected static string|UnitEnum|null $navigationGroup = 'Finance';

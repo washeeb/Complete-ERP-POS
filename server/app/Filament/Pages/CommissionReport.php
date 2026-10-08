@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Domain\Modules\ModuleService;
 use App\Domain\Services\CommissionService;
 use App\Filament\Support\Erp;
+use App\Filament\Support\ExportsPage;
 use App\Models\Commission;
 use App\Models\Tenant;
 use BackedEnum;
@@ -17,6 +18,8 @@ use UnitEnum;
 /** Commission earned by each staff member in a period (net of returns), and the lines behind it. Paid with payroll. */
 class CommissionReport extends Page
 {
+    use ExportsPage;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;
 
     protected static string|UnitEnum|null $navigationGroup = 'Services';

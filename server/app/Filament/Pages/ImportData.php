@@ -1,0 +1,242 @@
+<?php
+
+namespace App\Filament\Pages;
+
+use App\Domain\Imports\Importer;
+use App\Domain\Imports\ImportService;
+use App\Domain\Inventory\InventoryService;
+use App\Filament\Support\Erp;
+use App\Filament\Support\ExportsPage;
+use App\Models\Category;
+use App\Models\DataImport;
+use App\Models\StockAdjustment;
+use App\Models\StockCount;
+use App\Models\Warehouse;
+use App\Support\Exports\Exporter;
+use BackedEnum;
+use Filament\Notifications\Notification;
+use Filament\Pages\Page;
+use Filament\Support\Exceptions\Halt;
+use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Attributes\Url;
+use Livewire\WithFileUploads;
+use UnitEnum;
+
+/**
+ * Import data from CSV files: pick what to import, download the template (or your current data to edit), upload,
+ * **Check file** (nothing is saved), then **Import**. Every row goes through the same checks as the screens.
+ */
+class ImportData extends Page
+{
+    use ExportsPage, WithFileUploads;
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowUpTray;
+
+    protected static string|UnitEnum|null $navigationGroup = 'System';
+
+    protected static ?string $navigationLabel = 'Import data (CSV)';
+
+    protected static ?string $title = 'Import data (CSV)';
+
+    protected static ?string $slug = 'import-data';
+
+    protected static ?int $navigationSort = 3;
+
+    protected string $view = 'filament.pages.import-data';
+
+    #[Url]
+    public string $type = '';
+
+    #[Url]
+    public string $context = ''; // stock count / adjustment id
+
+    public string $warehouseId = '';
+
+    public string $reasonCode = 'correction';
+
+    public string $categoryId = '';
+
+    public bool $skipErrors = false;
+
+    public bool $createMissing = true;
+
+    public $file = null;
+
+    public ?string $lastId = null;
+
+    public static function canAccess(): bool
+    {
+        $user = Erp::user();
+
+        return $user !== null && app(ImportService::class)->available($user) !== [];
+    }
+
+    public function mount(): void
+    {
+        $types = $this->types();
+        if (! isset($types[$this->type])) {
+            $this->type = (string) array_key_first($types);
+        }
+        $this->warehouseId = $this->warehouseId ?: (string) (array_key_first($this->warehouses()) ?? '');
+    }
+
+    public function updatedType(): void
+    {
+        $this->context = '';
+        $this->lastId = null;
+    }
+
+    public function types(): array
+    {
+        return app(ImportService::class)->available(Erp::user());
+    }
+
+    public function importer(): Importer
+    {
+        return ImportService::importer($this->type);
+    }
+
+    public function warehouses(): array
+    {
+        $ids = Erp::branchIds('stock.adjust') ?? Erp::branchIds('stock.count');
+
+        return Warehouse::when($ids !== null, fn ($q) => $q->whereIn('branch_id', $ids))->orderBy('code')->get()->mapWithKeys(fn ($w) => [$w->id => "{$w->code} · {$w->name}"])->all();
+    }
+
+    public function categories(): array
+    {
+        return Category::orderBy('name')->pluck('name', 'id')->all();
+    }
+
+    public function reasons(): array
+    {
+        return InventoryService::ADJUSTMENT_REASONS;
+    }
+
+    /** The records a file can go into (open counts, draft adjustments). */
+    public function contexts(): array
+    {
+        return match ($this->importer()->contextType()) {
+            'stock_count' => StockCount::with('warehouse')->where('status', 'counting')->orderByDesc('started_at')->get()
+                ->mapWithKeys(fn ($c) => [$c->id => "{$c->number} · {$c->warehouse->code} · started {$c->started_at->format('j M H:i')}"])->all(),
+            'stock_adjustment' => StockAdjustment::with('warehouse')->where('status', 'draft')->orderByDesc('created_at')->get()
+                ->mapWithKeys(fn ($a) => [$a->id => "{$a->number} · {$a->warehouse->code} · {$this->reasons()[$a->reason_code]}"])->all(),
+            default => [],
+        };
+    }
+
+    public function contextModel(): ?Model
+    {
+        if ($this->context === '') {
+            return null;
+        }
+
+        return match ($this->importer()->contextType()) {
+            'stock_count' => StockCount::find($this->context),
+            'stock_adjustment' => StockAdjustment::find($this->context),
+            default => null,
+        };
+    }
+
+    public function options(): array
+    {
+        return ['skip_errors' => $this->skipErrors, 'create_missing' => $this->createMissing, 'warehouse_id' => $this->warehouseId ?: null,
+            'reason_code' => $this->reasonCode, 'category_id' => $this->categoryId ?: null];
+    }
+
+    /** Headings and one example row. */
+    public function downloadTemplate()
+    {
+        $i = $this->importer();
+
+        return Erp::run(fn ($actor) => app(Exporter::class)->csv($actor, "{$i->label()} template", [['title' => $i->label(), 'headings' => $i->headings(),
+            'rows' => [array_column($i->columns(), 'example')]]]));
+    }
+
+    /** What each column means, as a PDF to print. */
+    public function downloadGuide()
+    {
+        $i = $this->importer();
+
+        return Erp::run(fn ($actor) => app(Exporter::class)->pdf($actor, "{$i->label()} — column guide", [['title' => $i->label(), 'note' => $i->description(),
+            'headings' => ['Column', 'Required', 'What to put in it', 'Example'],
+            'rows' => array_map(fn ($c) => [$c['name'], $c['required'] === true ? 'Yes' : ($c['required'] === 'new' ? 'For new records' : 'No'), $c['help'], $c['example']], $i->columns())]],
+            [], 'portrait'));
+    }
+
+    /** Current data in the import layout (products, prices, customers, suppliers; the stock sheet; a count sheet). */
+    public function downloadCurrent(string $format = 'csv')
+    {
+        $i = $this->importer();
+        $rows = $i->exportRows(Erp::actor(), $this->options(), $this->contextModel());
+        if ($rows === null) {
+            Notification::make()->warning()->title($i->contextType() === 'stock_count' ? 'Choose the stock count first.' : 'Choose the warehouse first.')->send();
+
+            return null;
+        }
+        $name = match ($this->type) {
+            'stock_adjustment' => 'Stock sheet '.(Warehouse::find($this->contextModel()?->warehouse_id ?? $this->warehouseId)?->code ?? ''),
+            'stock_count' => 'Count sheet '.($this->contextModel()?->number ?? ''),
+            default => $i->label().' (current data)',
+        };
+        $sheet = [['title' => $name, 'headings' => $i->headings(), 'rows' => $rows]];
+
+        return Erp::run(fn ($actor) => $format === 'pdf' ? app(Exporter::class)->pdf($actor, $name, $sheet) : app(Exporter::class)->csv($actor, $name, $sheet));
+    }
+
+    public function check(): void
+    {
+        $this->runImport(false);
+    }
+
+    public function import(): void
+    {
+        $this->runImport(true);
+    }
+
+    private function runImport(bool $commit): void
+    {
+        $this->validate(['file' => ['required', 'file', 'max:10240', 'mimes:csv,txt']], ['file.required' => 'Choose the CSV file first.', 'file.mimes' => 'The file must be a CSV file (Save As → CSV in Excel).']);
+        $stored = $this->file->store('imports', 'local');
+        $path = Storage::disk('local')->path($stored);
+        try {
+            $import = Erp::run(fn ($actor) => app(ImportService::class)->run($actor, $this->type, $path, $this->file->getClientOriginalName(), $this->options(), $this->contextModel(), $commit));
+        } catch (Halt) {
+            return;
+        }
+        $this->lastId = $import->id;
+        $n = $import->rows_error;
+        $note = Notification::make()->title(match ($import->status) {
+            'checked' => $n ? "Checked: {$n} row(s) have errors — nothing was imported" : "Checked: all {$import->rows_total} row(s) are fine — nothing was imported yet",
+            'imported' => "Imported {$import->rows_ok} row(s)".($n ? ", skipped {$n} with errors" : ''),
+            default => "Not imported: {$n} row(s) have errors. Fix them (download the error report) or tick “Skip rows with errors”.",
+        });
+        ($import->status === 'imported' || ($import->status === 'checked' && ! $n) ? $note->success() : $note->danger())->send();
+        if ($import->status === 'imported') {
+            $this->file = null;
+        }
+    }
+
+    public function last(): ?DataImport
+    {
+        return $this->lastId ? DataImport::find($this->lastId) : null;
+    }
+
+    public function history()
+    {
+        return DataImport::orderByDesc('created_at')->limit(20)->get();
+    }
+
+    /** The rows that failed, with the reason in the first column, to fix and import again. */
+    public function downloadErrors(string $id)
+    {
+        $import = DataImport::findOrFail($id);
+        $headings = array_keys($import->errors[0]['values'] ?? []);
+
+        return Erp::run(fn ($actor) => app(Exporter::class)->csv($actor, 'Import errors '.$import->file_name, [['title' => 'Errors',
+            'headings' => ['row', 'error', ...$headings],
+            'rows' => array_map(fn ($e) => [$e['row'], $e['message'], ...array_values(array_map(fn ($h) => $e['values'][$h] ?? '', $headings))], $import->errors)]]));
+    }
+}

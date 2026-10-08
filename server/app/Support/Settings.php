@@ -161,6 +161,11 @@ final class Settings
             'label' => 'Alteration product (SKU)',
             'help' => 'Alterations are paid at the till as this product at the agreed charge. Create it with stock tracking off; its tax group taxes the charge.',
         ],
+        'stock.adjustment_approval_minor' => [
+            'type' => 'int', 'default' => 50000, 'min' => 0, 'max' => 1000000000, 'group' => 'Stock',
+            'label' => 'Stock adjustments above this value need a manager\'s approval (in pesewas/cents)',
+            'help' => 'Worked out at average cost (increases and decreases added up). 50000 = GHS 500. 0 = every adjustment document needs approval by someone else.',
+        ],
         'services.slot_minutes' => [
             'type' => 'int', 'default' => 15, 'min' => 5, 'max' => 120, 'group' => 'Services',
             'label' => 'Appointment times every (minutes)',

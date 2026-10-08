@@ -79,7 +79,7 @@ class TaxGroupResource extends SimpleCatalogResource
                     ->color(fn (TaxGroup $r) => $r->verified_at ? 'success' : 'warning'),
             ])
             ->modifyQueryUsing(fn ($query) => $query->with('rates'))
-            ->headerActions([CreateAction::make()->using(fn (array $data) => $save(null, $data))])
+            ->pushHeaderActions([CreateAction::make()->using(fn (array $data) => $save(null, $data))])
             ->recordActions([
                 EditAction::make()
                     ->fillForm(fn (TaxGroup $record) => $record->only('code', 'name') + ['rate_ids' => $record->rates->pluck('id')->all()])

@@ -1,6 +1,6 @@
-# 14. Reference
+# 15. Reference
 
-## 14.1 Security levels
+## 15.1 Security levels
 
 A person's **security level** is the highest level of role they can ever be given.
 
@@ -15,13 +15,13 @@ A person's **security level** is the highest level of role they can ever be give
 
 **IT Admin** manages users, devices, modules and settings, but gets **no** access to sales, money or stock unless the owner also gives them a business role.
 
-## 14.2 Roles provided
+## 15.2 Roles provided
 
 Owner · General Manager · Finance Manager · Accountant · Auditor · HR Manager · Payroll Officer · Purchasing Officer · Purchase Approver · Warehouse Manager · Storekeeper · Picker / Packer · Branch Manager · Supervisor · Cashier · Sales Rep · Van Sales Rep · Customer Service · Marketing · E-commerce Manager · Delivery Rider · Pharmacist · Pharmacy Technician · Waiter / Bartender · Kitchen Staff · Repair Technician · Tailor · Stylist / Therapist · IT Admin.
 
 You can change what a role allows under **People & access → Roles** (you can only add permissions you hold yourself).
 
-## 14.3 Settings in `.env`
+## 15.3 Settings in `.env`
 
 | Key | Meaning |
 |---|---|
@@ -38,7 +38,7 @@ You can change what a role allows under **People & access → Roles** (you can o
 
 After changing `.env`, run `php artisan optimize`.
 
-## 14.4 Network ports
+## 15.4 Network ports
 
 | Port | Used by | Open to |
 |---|---|---|
@@ -48,7 +48,7 @@ After changing `.env`, run `php artisan optimize`.
 | 5432 | PostgreSQL | **This server only** — never open it to the network |
 | 22 | SSH (Ubuntu remote administration) | Your administrators only |
 
-## 14.5 Useful commands (in the `server` folder)
+## 15.5 Useful commands (in the `server` folder)
 
 | Command | What it does |
 |---|---|
@@ -59,11 +59,12 @@ After changing `.env`, run `php artisan optimize`.
 | `php artisan schedule:work` | The scheduler (normally runs as a task or cron, not by hand) |
 | `php artisan erp:sync` | Sync a branch server with head office now |
 | `php artisan erp:node:join <hq-url> <hq-id> <company-id>` | Pair a branch server with head office |
+| `php artisan erp:stock-check` after a large import | Confirms stock levels still match the ledger |
 | `php artisan erp:bill-memberships` | Raise membership invoices that are due (runs daily by itself) |
 | `php artisan license:status` | Licence state and limits |
 | `php artisan erp:audit-verify`, `erp:stock-check`, `erp:gl-check` | Health checks (Chapter 13) |
 
-## 14.6 Till keyboard shortcuts
+## 15.6 Till keyboard shortcuts
 
 | Key | Action |
 |---|---|
@@ -76,7 +77,7 @@ After changing `.env`, run `php artisan optimize`.
 | F10 | Appointments (Services) |
 | F12 | Pay |
 
-## 14.7 Go-live checklist
+## 15.7 Go-live checklist
 
 - [ ] Server installed; `/up` and `/admin` open; scheduler running.
 - [ ] Licence **Active** with the right modules and limits.
@@ -91,6 +92,6 @@ After changing `.env`, run `php artisan optimize`.
 - [ ] Nightly backup running, copied off the server, and a **restore tested**.
 - [ ] `.env`, owner password and recovery codes stored in a safe place, not on the server.
 
-## 14.8 About this guide
+## 15.8 About this guide
 
 This guide is generated from the files in `docs/manual/` and updated with every release. The software version and date are on the cover page.

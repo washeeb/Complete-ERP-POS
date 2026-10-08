@@ -6,6 +6,7 @@ use App\Domain\Fashion\ConsignmentService;
 use App\Domain\Fashion\FashionReports;
 use App\Domain\Modules\ModuleService;
 use App\Filament\Support\Erp;
+use App\Filament\Support\ExportsPage;
 use App\Models\Branch;
 use App\Models\Style;
 use App\Models\Supplier;
@@ -19,6 +20,8 @@ use UnitEnum;
 /** Sell-through by style and season, and what consignors are owed (with settlement). */
 class StyleReport extends Page
 {
+    use ExportsPage;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartPie;
 
     protected static string|UnitEnum|null $navigationGroup = 'Fashion';

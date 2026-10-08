@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Domain\Banking\BankingService;
 use App\Domain\Support\DomainException;
 use App\Filament\Support\Erp;
+use App\Filament\Support\ExportsPage;
 use App\Filament\Support\FinanceUi;
 use App\Models\Account;
 use App\Models\BankAccount;
@@ -18,6 +19,8 @@ use Livewire\Attributes\Url;
 /** Tick statement lines and ledger lines that are the same money, and see what is left to explain. */
 class BankReconciliation extends Page
 {
+    use ExportsPage;
+
     protected static bool $shouldRegisterNavigation = false;
 
     protected static ?string $slug = 'bank-reconciliation';

@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Domain\Hr\AttendanceService;
 use App\Domain\Support\DomainException;
 use App\Filament\Support\Erp;
+use App\Filament\Support\ExportsPage;
 use App\Filament\Support\FinanceUi;
 use App\Models\Branch;
 use App\Models\Employee;
@@ -23,6 +24,8 @@ use UnitEnum;
 /** Hours from clock-ins on the tills; managers add missing clock-outs or void mistakes (with a reason). */
 class Timesheets extends Page
 {
+    use ExportsPage;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClock;
 
     protected static string|UnitEnum|null $navigationGroup = 'HR & payroll';

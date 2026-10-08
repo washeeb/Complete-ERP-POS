@@ -6,6 +6,7 @@ use App\Domain\Finance\FinancialReports as Reports;
 use App\Domain\Finance\GeneralLedger;
 use App\Domain\Finance\GlCheck;
 use App\Filament\Support\Erp;
+use App\Filament\Support\ExportsPage;
 use App\Filament\Support\FinanceUi;
 use App\Models\Account;
 use BackedEnum;
@@ -17,6 +18,8 @@ use UnitEnum;
 /** Trial balance, profit and loss, balance sheet, account ledger and the sub-ledger tie-out. */
 class FinancialReports extends Page
 {
+    use ExportsPage;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPresentationChartLine;
 
     protected static string|UnitEnum|null $navigationGroup = 'Finance';

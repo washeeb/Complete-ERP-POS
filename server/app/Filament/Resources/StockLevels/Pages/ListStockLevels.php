@@ -2,12 +2,17 @@
 
 namespace App\Filament\Resources\StockLevels\Pages;
 
+use App\Domain\Imports\Importers\StockRows;
 use App\Domain\Inventory\InventoryService;
+use App\Filament\Pages\ImportData;
 use App\Filament\Resources\StockLevels\StockLevelResource;
 use App\Filament\Support\Erp;
+use App\Filament\Support\Fields;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductUom;
 use App\Models\Warehouse;
+use App\Support\Exports\Exporter;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Radio;
@@ -26,6 +31,18 @@ class ListStockLevels extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('stockSheet')->label('Stock sheet (before a count)')->icon(Heroicon::OutlinedClipboardDocumentList)->color('gray')
+                ->modalDescription('The current stock standing of a warehouse, to print and count on paper or to fill in Excel. Leave out the system quantities for a blind count.')
+                ->schema([
+                    Select::make('warehouse_id')->label('Warehouse')->required()->options(fn () => Fields::warehouses('stock.view')),
+                    Select::make('category_id')->label('Category')->placeholder('All products')->options(fn () => Category::orderBy('name')->pluck('name', 'id')),
+                    Radio::make('show_qty')->label('System quantities')->options(['1' => 'Show them', '0' => 'Leave them out (blind count)'])->default('1'),
+                    Radio::make('format')->options(['pdf' => 'PDF (to print)', 'csv' => 'CSV (to fill in Excel)'])->default('pdf'),
+                    Radio::make('zero')->label('Products with no stock')->options(['1' => 'Include them', '0' => 'Leave them out'])->default('1'),
+                ])
+                ->action(fn (array $data) => $this->stockSheet($data)),
+            Action::make('updateFromCsv')->label('Update stock from CSV')->icon(Heroicon::OutlinedArrowUpTray)->color('gray')
+                ->visible(fn () => Erp::canAnywhere('stock.adjust'))->url(ImportData::getUrl(['type' => 'stock_adjustment'])),
             Action::make('adjust')->label('Opening stock / adjustment')->icon(Heroicon::OutlinedAdjustmentsHorizontal)
                 ->visible(fn () => Erp::canAnywhere('stock.adjust'))
                 ->modalDescription('Every change is recorded in the stock ledger with your name and reason; nothing is overwritten.')
@@ -63,5 +80,22 @@ class ListStockLevels extends ListRecords
                     ), 'Stock updated');
                 }),
         ];
+    }
+
+    /** Stock sheet: SKU, barcode, product, category, unit, system quantity (optional), and blank Counted / Difference columns. */
+    private function stockSheet(array $data)
+    {
+        $warehouse = Warehouse::findOrFail($data['warehouse_id']);
+        $show = (bool) $data['show_qty'];
+        $rows = [];
+        foreach (StockRows::standing($warehouse, $data['category_id'] ?? null, (bool) $data['zero']) as $s) {
+            $p = $s['product'];
+            $rows[] = [$p->sku, $s['barcode'], $p->name, $p->category, $p->unit, $show ? $s['on_hand'] : '', '', ''];
+        }
+        $sheet = ['title' => "Stock sheet {$warehouse->code}", 'headings' => ['SKU', 'Barcode', 'Product', 'Category', 'Unit', $show ? 'System qty' : 'System qty (hidden)', 'Counted', 'Difference'],
+            'rows' => $rows, 'note' => "{$warehouse->code} · {$warehouse->name} · stock standing at ".now()->format('j M Y H:i').' · Counted by: ______________  Checked by: ______________', 'numeric' => [5, 6, 7]];
+        $x = app(Exporter::class);
+
+        return Erp::run(fn ($actor) => $data['format'] === 'csv' ? $x->csv($actor, $sheet['title'], [$sheet], [$warehouse->code]) : $x->pdf($actor, $sheet['title'], [$sheet], [$warehouse->code], 'portrait'));
     }
 }

@@ -37,7 +37,7 @@ class WarehousesRelationManager extends RelationManager
                 TextColumn::make('name'),
                 IconColumn::make('is_active')->boolean()->label('Active'),
             ])
-            ->headerActions([
+            ->pushHeaderActions([
                 CreateAction::make()->using(fn (array $data): Model => Erp::run(fn ($actor) => app(OrgService::class)
                     ->saveWarehouse($actor, new Warehouse, $data + ['branch_id' => $this->getOwnerRecord()->id]))),
             ])

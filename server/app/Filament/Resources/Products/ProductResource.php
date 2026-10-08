@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Products;
 
+use App\Domain\Catalog\CatalogService;
 use App\Domain\Modules\ModuleService;
 use App\Filament\Resources\Products\Pages\CreateProduct;
 use App\Filament\Resources\Products\Pages\EditProduct;
@@ -214,21 +215,8 @@ class ProductResource extends Resource
     /** Model → form arrays (units/barcodes/prices) for editing. */
     public static function toFormData(Product $p): array
     {
-        $p->load('units.uom', 'units.barcodes', 'prices.priceList', 'prices.productUom');
-        $base = $p->units->firstWhere('is_base', true);
-
-        return [
-            'base_barcodes' => $base?->barcodes->pluck('code')->all() ?? [],
+        return CatalogService::inputOf($p) + [
             'recipe' => $p->recipe()->get()->map(fn ($r) => ['product_uom_id' => $r->ingredient_uom_id, 'qty' => rtrim(rtrim((string) $r->qty, '0'), '.')])->all(),
-            'units' => $p->units->where('is_base', false)->where('is_sellable', true)->values()->map(fn ($u) => [
-                'uom_id' => $u->uom_id, 'factor' => rtrim(rtrim((string) $u->factor, '0'), '.'), 'is_sellable' => $u->is_sellable,
-                'is_purchasable' => $u->is_purchasable, 'barcodes' => $u->barcodes->pluck('code')->all(),
-            ])->all(),
-            'prices' => $p->prices->map(fn ($x) => [
-                'price_list_id' => $x->price_list_id, 'uom_id' => $x->productUom->uom_id,
-                'min_qty' => rtrim(rtrim((string) $x->min_qty, '0'), '.'), 'amount' => Money::format($x->amount_minor, $x->priceList->currency_code),
-                'starts_at' => $x->starts_at?->toDateTimeString(), 'ends_at' => $x->ends_at?->toDateTimeString(),
-            ])->all(),
         ];
     }
 

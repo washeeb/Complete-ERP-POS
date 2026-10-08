@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Support\Erp;
+use App\Filament\Support\ExportsPage;
 use App\Models\Warehouse;
 use BackedEnum;
 use Filament\Pages\Page;
@@ -14,6 +15,8 @@ use UnitEnum;
 /** Stock lost — damaged, expired, spoiled, stolen, count shortages — at cost, by reason and by product. */
 class ShrinkReport extends Page
 {
+    use ExportsPage;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowTrendingDown;
 
     protected static string|UnitEnum|null $navigationGroup = 'Stock';

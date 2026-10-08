@@ -15,6 +15,7 @@ use App\Models\RepairJob;
 use App\Models\Role;
 use App\Models\Sale;
 use App\Models\SalesOrder;
+use App\Models\StockAdjustment;
 use App\Models\StockCount;
 use App\Models\StockTransfer;
 use App\Models\Supplier;
@@ -57,7 +58,8 @@ final class Replication
         'purchasing' => ['label' => 'Suppliers, purchase orders and goods received', 'direction' => 'both',
             'tables' => ['supplier' => 'suppliers', 'purchase_order' => 'purchase_orders', 'goods_receipt' => 'goods_receipts']],
         'warehouse' => ['label' => 'Bins, transfers, counts and reorder levels', 'direction' => 'both',
-            'tables' => ['bin' => 'bins', 'stock_transfer' => 'stock_transfers', 'stock_count' => 'stock_counts', 'reorder_rule' => 'reorder_rules']],
+            'tables' => ['bin' => 'bins', 'stock_transfer' => 'stock_transfers', 'stock_count' => 'stock_counts', 'reorder_rule' => 'reorder_rules',
+                'stock_adjustment' => 'stock_adjustments']],
         'customers' => ['label' => 'Customers and what they owe', 'direction' => 'both',
             'tables' => ['customer' => 'customers', 'customer_ledger_batch' => null, 'loyalty_batch' => null, 'stored_value' => 'stored_values', 'stored_value_batch' => null, 'patient_profile' => 'patient_profiles',
                 'reservation' => 'reservations', 'deposit_movement' => 'deposit_movements',
@@ -80,6 +82,7 @@ final class Replication
         GoodsReceipt::class => ['lines', 'goods_receipt_lines'],
         StockTransfer::class => ['lines', 'stock_transfer_lines'],
         StockCount::class => ['lines', 'stock_count_lines'],
+        StockAdjustment::class => ['lines', 'stock_adjustment_lines'],
         ModifierGroup::class => ['options', 'modifier_options'],
         DiningOrder::class => ['items', 'dining_order_items'],
         RepairJob::class => ['lines', 'repair_job_lines'],

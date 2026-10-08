@@ -101,7 +101,7 @@ class StoredValueResource extends Resource
                             ->map(fn ($e) => '<tr><td>'.e(substr($e->occurred_at, 0, 16)).'</td><td>'.e($e->type).'</td><td>'.e($e->doc_number).'</td><td class="text-right">'
                                 .e(CustomerResource::money((int) $e->amount_minor)).'</td></tr>')->implode('').'</table>'))]),
             ])
-            ->headerActions([self::sellAction()]);
+            ->pushHeaderActions([self::sellAction()]);
     }
 
     public static function getPages(): array

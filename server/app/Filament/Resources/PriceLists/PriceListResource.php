@@ -66,7 +66,7 @@ class PriceListResource extends SimpleCatalogResource
                 TextColumn::make('prices_count')->counts('prices')->label('Prices'),
                 IconColumn::make('is_active')->boolean()->label('Active'),
             ])
-            ->headerActions([CreateAction::make()->using(fn (array $data) => $save(null, $data))])
+            ->pushHeaderActions([CreateAction::make()->using(fn (array $data) => $save(null, $data))])
             ->recordActions([EditAction::make()->using(fn (PriceList $record, array $data) => $save($record, $data))]);
     }
 

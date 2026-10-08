@@ -44,7 +44,7 @@ class TillsRelationManager extends RelationManager
                 IconColumn::make('is_active')->boolean()->label('Active'),
             ])
             ->defaultSort('code')
-            ->headerActions([
+            ->pushHeaderActions([
                 CreateAction::make()->using(fn (array $data): Model => Erp::run(fn ($actor) => app(OrgService::class)
                     ->saveTill($actor, new Till, $data + ['branch_id' => $this->getOwnerRecord()->id]))),
             ])

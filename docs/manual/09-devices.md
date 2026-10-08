@@ -109,11 +109,15 @@ Browsers allow a web app to use its **security functions** (the till's own signi
 
 **Check:** send a dish from a till: it appears on the screen within a few seconds.
 
-## 9.10 Label scale (Grocery)
+## 9.10 Counting stock with a handheld
+
+During a stock count (Chapter 14.4) storekeepers scan the bin, then each product, and type the quantity. Counts from several handhelds go into the same count.
+
+## 9.11 Label scale (Grocery)
 
 Set the scale to print **EAN-13** labels starting with `21` (see Chapter 8, Grocery). The scale's own software holds each item's **PLU** (5-digit code) and price per kg; keep its PLU codes the same as the products' **scale codes**.
 
-## 9.11 When a device is lost, stolen or replaced
+## 9.12 When a device is lost, stolen or replaced
 
 - **Lost or stolen:** **System → Devices → Revoke** at once. Its access and every sign-in on it end immediately.
 - **Replacing a till that still has unsent sales:** on the old till press **Export unsent sales** (in the yellow banner). In the back office: **System → Sync Center → Import till file**. Then register and enrol the new device.

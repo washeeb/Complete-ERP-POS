@@ -66,7 +66,7 @@ class FiscalPeriodResource extends Resource
             ->filters([SelectFilter::make('year')->label('Financial year')->options(fn () => FiscalPeriod::distinct()->orderBy('year')->pluck('year', 'year'))])
             ->defaultSort('starts_on')
             ->paginated([12, 24, 'all'])->defaultPaginationPageOption(12)
-            ->headerActions([
+            ->pushHeaderActions([
                 Action::make('year')->label('Set up a financial year')->icon(Heroicon::OutlinedPlus)->color('gray')
                     ->visible(fn () => Erp::canAnywhere('finance.close'))
                     ->schema([TextInput::make('year')->label('Year (the calendar year it ends in)')->required()->numeric()->minValue(2000)->maxValue(2100)->default(now()->year)])

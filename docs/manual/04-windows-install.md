@@ -66,7 +66,11 @@ memory_limit = 512M
 upload_max_filesize = 20M
 post_max_size = 25M
 date.timezone = Africa/Accra
+upload_tmp_dir = "C:\Synclytics\tmp"
+sys_temp_dir = "C:\Synclytics\tmp"
 ```
+
+   Create the folder `C:\Synclytics\tmp` (it holds files while they are being uploaded, e.g. CSV imports).
 
    **Why:** these extensions let PHP talk to PostgreSQL (`pdo_pgsql`), handle money and text in every language (`bcmath`, which is built in, `intl`, `mbstring`), and protect secrets (`sodium`, `openssl`).
 6. Add PHP to the system path, so Windows finds `php` from any folder: Start → type `environment` → **Edit the system environment variables** → **Environment Variables…** → under *System variables* select **Path** → **Edit** → **New** → type `C:\php` → **OK** three times.
