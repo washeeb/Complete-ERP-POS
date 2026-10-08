@@ -41,6 +41,11 @@ final class Settings
             'label' => 'Stop sales when the system shows no stock',
             'help' => 'Off (recommended while stock counts are being set up): the till sells anyway and the shortfall shows as negative stock to investigate. On: the till refuses the sale.',
         ],
+        'distribution.deposits_as_liability' => [
+            'type' => 'bool', 'default' => false, 'group' => 'Distribution',
+            'label' => 'Book container deposits as money owed to customers',
+            'help' => 'Off: deposits on crates, bottles and cylinders count as sales, and empties bought back reduce sales. On: deposits are held as a liability (Container deposits held) and the containers out with customers stay an asset until they come back. Change it only at the start of a month so a month is not split between the two methods.',
+        ],
         'purchasing.over_receipt_pct' => [
             'type' => 'int', 'default' => 5, 'min' => 0, 'max' => 100, 'group' => 'Purchasing',
             'label' => 'Over-delivery accepted without a manager (%)',

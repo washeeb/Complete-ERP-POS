@@ -18,7 +18,8 @@ final class DocumentNumbers
         'employee' => 'EMP', 'employee_loan' => 'LN', 'payroll_run' => 'PAYR',
         'prescription' => 'RX', 'dining_order' => 'ORD', 'reservation' => 'RES', 'repair_job' => 'JOB', 'alteration' => 'ALT',
         'appointment' => 'APT', 'service_pass' => 'PASS', 'membership' => 'MEM',
-        'stock_adjustment' => 'ADJ', 'van_settlement' => 'VS'];
+        'stock_adjustment' => 'ADJ', 'van_settlement' => 'VS',
+        'work_order' => 'WO', 'qc_inspection' => 'QC'];
 
     public function next(string $tenantId, string $docType): string
     {

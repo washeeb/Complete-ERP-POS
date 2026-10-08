@@ -24,7 +24,7 @@ it('wizard creates branches with a warehouse, tills and per-branch modules', fun
     $b = setUpBranches($this->owner, [
         ['code' => 'HQ', 'name' => 'Head Office', 'is_hq' => true, 'tills' => 1, 'modules' => ['retail_wholesale']],
         ['code' => 'A', 'name' => 'Osu Grocery', 'is_hq' => false, 'tills' => 2, 'modules' => ['grocery']],
-        ['code' => 'B', 'name' => 'Food Court', 'is_hq' => false, 'tills' => 1, 'modules' => ['restaurant', 'grocery', 'manufacturing']],
+        ['code' => 'B', 'name' => 'Food Court', 'is_hq' => false, 'tills' => 1, 'modules' => ['restaurant', 'grocery', 'logistics']],
         ['code' => 'C', 'name' => 'Pharmacy', 'is_hq' => false, 'tills' => 1, 'modules' => ['pharmacy']],
     ]);
 
@@ -32,10 +32,10 @@ it('wizard creates branches with a warehouse, tills and per-branch modules', fun
         ->and(Warehouse::count())->toBe(4)
         ->and(Till::where('branch_id', $b['A']->id)->count())->toBe(2)
         ->and($this->modules->statuses($b['A']))->toBe(['core' => 'enabled', 'grocery' => 'enabled']) // released in Phase 9a
-        ->and($this->modules->statuses($b['B']))->toMatchArray(['restaurant' => 'enabled', 'grocery' => 'enabled', 'manufacturing' => 'reserved']) // restaurant released in 9c
+        ->and($this->modules->statuses($b['B']))->toMatchArray(['restaurant' => 'enabled', 'grocery' => 'enabled', 'logistics' => 'reserved']) // restaurant released in 9c
         ->and($this->modules->statuses($b['C']))->not->toHaveKey('grocery')
         ->and($this->modules->isEnabled($b['C'], 'pharmacy'))->toBeTrue() // released in Phase 9b
-        ->and($this->modules->isEnabled($b['B'], 'manufacturing'))->toBeFalse(); // reserved ≠ working
+        ->and($this->modules->isEnabled($b['B'], 'logistics'))->toBeFalse(); // reserved ≠ working
 });
 
 it('wizard runs once and needs exactly one HQ', function () {
@@ -52,10 +52,10 @@ it('wizard is refused to people without setup rights', function () {
 
 it('never enables an unreleased module, but reserves it', function () {
     $b = setUpBranches($this->owner);
-    expect(fn () => $this->modules->setStatus(actorFor($this->owner), $b['HQ'], 'manufacturing', 'enabled'))
+    expect(fn () => $this->modules->setStatus(actorFor($this->owner), $b['HQ'], 'logistics', 'enabled'))
         ->toThrow(DomainException::class, 'not released');
 
-    $row = $this->modules->setStatus(actorFor($this->owner), $b['HQ'], 'manufacturing', 'reserved', 'Planned workshop');
+    $row = $this->modules->setStatus(actorFor($this->owner), $b['HQ'], 'logistics', 'reserved', 'Planned delivery fleet');
     expect($row->status)->toBe('reserved');
 });
 
@@ -77,7 +77,7 @@ it('reads manifests and only seeds permissions of released modules', function ()
 
     expect($reg->has('grocery'))->toBeTrue()
         ->and($reg->get('core')->isAvailable())->toBeTrue()
-        ->and(collect($reg->permissions())->pluck('module')->unique()->sort()->values()->all())->toBe(['core', 'distribution', 'electronics', 'fashion', 'grocery', 'pharmacy', 'restaurant', 'services']) // planned modules (manufacturing…) add none yet
+        ->and(collect($reg->permissions())->pluck('module')->unique()->sort()->values()->all())->toBe(['core', 'distribution', 'electronics', 'fashion', 'grocery', 'manufacturing', 'pharmacy', 'restaurant', 'services']) // planned modules (logistics…) add none yet
         ->and(Permission::count())->toBe(count($reg->permissions()));
 });
 
