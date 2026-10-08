@@ -20,6 +20,18 @@ export type DiningOrder = {
   customer_id: string | null; waiter: string; status: 'open' | 'closed' | 'void'; note: string | null; opened_at: string; version: number; items: DiningItem[]
   platform?: string | null; external_ref?: string | null; reservation?: { number: string; deposit_left_minor: number } | null
 }
+// Electronics
+export type RepairJob = {
+  id: string; number: string; customer_id: string | null; customer_name: string; phone: string | null; device: string; serial: string | null; fault: string
+  accessories: string | null; status: string; status_label: string; in_warranty: boolean; estimate_minor: number | null; promised_on: string | null; received_at: string
+  rma_reference: string | null; log: { at: string; by: string; status: string; note: string | null }[]
+  lines: { product_id: string; product_uom_id: string; name: string; qty: string; unit_price_minor: number }[]
+}
+export type SerialInfo = {
+  serial: string; product_id: string; product: string | null; status: string; status_label: string; in_stock_here: boolean; sold_at: string | null
+  receipt_no: string | null; customer: string | null; warranty_until: string | null; in_warranty: boolean
+}
+export type TradeInItem = { product_id: string; name: string; serial: string | null; condition: string | null; value_minor: number }
 export type Reservation = {
   id: string; number: string; guest_name: string; phone: string | null; party_size: number; starts_at: string; duration_minutes: number
   dining_table_id: string | null; customer_id: string | null; note: string | null; status: 'booked' | 'seated' | 'no_show' | 'cancelled'
@@ -29,7 +41,7 @@ export type DiningTable = { id: string; code: string; area: string | null; seats
 export type Floor = { tables: DiningTable[]; stations: { code: string; name: string; auto_print: boolean }[]; orders: DiningOrder[]; server_time: string
   reservations?: Reservation[]; hold_minutes?: number }
 export type KitchenTicket = { order_id: string; number: string; label: string; kind: string; waiter: string; paid: boolean; items: DiningItem[] }
-export type Product = { id: string; sku: string; name: string; category_id?: string | null; plu?: string | null; drug?: Drug | null; station?: string | null; modifier_group_ids?: string[]; track_stock: boolean; on_hand: string | null; tax: TaxRate[]; units: Unit[]; prices: Price[] }
+export type Product = { id: string; sku: string; name: string; category_id?: string | null; plu?: string | null; drug?: Drug | null; station?: string | null; modifier_group_ids?: string[]; track_serials?: boolean; warranty_months?: number | null; track_stock: boolean; on_hand: string | null; tax: TaxRate[]; units: Unit[]; prices: Price[] }
 export type PriceList = { id: string; code: string; name: string; prices_include_tax: boolean; is_default: boolean }
 
 export type Shift = {
@@ -55,13 +67,13 @@ export type Bootstrap = {
 
 export type Realtime = { key: string; host: string; port: number; scheme: 'http' | 'https'; channels: (string | null)[] }
 
-export type Payment = { method: 'cash' | 'momo' | 'card' | 'account' | 'points' | 'gift_card' | 'store_credit' | 'deposit' | 'aggregator'; provider?: string; amount_minor: number; tendered_minor: number; reference?: string; payer_phone?: string }
+export type Payment = { method: 'cash' | 'momo' | 'card' | 'account' | 'points' | 'gift_card' | 'store_credit' | 'deposit' | 'aggregator' | 'trade_in'; provider?: string; amount_minor: number; tendered_minor: number; reference?: string; payer_phone?: string }
 
 export type PostedSale = {
   id: string; receipt_no: string; device_seq: number; status: string; occurred_at: string; cashier: string; currency: string
   prices_include_tax: boolean; net_minor: number; tax_minor: number; total_minor: number; paid_minor: number; change_minor: number
   tax_breakdown: TaxLine[]
-  lines: { line_no: number; sku: string; name: string; uom: string; qty: string; unit_price_minor: number; line_total_minor: number; discount_minor?: number; promotions?: { name: string; saving_minor: number }[]; note?: string | null }[]
+  lines: { line_no: number; sku: string; name: string; uom: string; qty: string; unit_price_minor: number; line_total_minor: number; discount_minor?: number; promotions?: { name: string; saving_minor: number }[]; note?: string | null; serials?: string[]; warranty_until?: string | null }[]
   tip_minor?: number; order_number?: string | null
   kitchen?: { name: string; qty: string; note: string | null; station: string }[] // offline counter sale: ticket the till prints itself
   kind?: 'sale' | 'return'; discount_minor?: number; points_earned?: number
@@ -73,7 +85,7 @@ export type WmsBin = { id: string; code: string; name: string | null; kind?: str
 export type WmsWarehouse = { id: string; code: string; name: string; use_bins: boolean; can: string[]; bins: WmsBin[] }
 export type WmsBootstrap = { user: { id: string; name: string }; device: { id: string; name: string; kind: string }; branch: { id: string; code: string; name: string }; warehouses: WmsWarehouse[] }
 export type WmsUnit = { product_uom_id: string; product_id: string; sku: string; name: string; uom_code: string; factor: string; decimals: number; units: { product_uom_id: string; uom_code: string; factor: string }[] }
-export type WmsOrderLine = { id: string; product_uom_id: string; sku: string; name: string; uom_code: string; ordered: string; received: string; barcodes: string[]; track_batches?: boolean }
+export type WmsOrderLine = { id: string; product_uom_id: string; sku: string; name: string; uom_code: string; ordered: string; received: string; barcodes: string[]; track_batches?: boolean; track_serials?: boolean }
 export type WmsOrder = { id: string; number: string; supplier: string; expected_on: string | null; lines: WmsOrderLine[] }
 export type WmsTransfer = { id: string; number: string; from: string; dispatched_at: string | null; lines: { id: string; sku: string; name: string; uom_code: string; qty: string; product_uom_id: string; barcodes: string[] }[] }
 export type WmsCount = { id: string; number: string; bin: string | null; bin_id: string | null; blind: boolean; counted: number; lines: number }

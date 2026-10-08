@@ -80,7 +80,15 @@ final class CatalogService
         }
 
         $product->fill(array_intersect_key($data, array_flip(['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu',
-            'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'fda_reg_no', 'station'])));
+            'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'fda_reg_no', 'station', 'track_serials', 'warranty_months'])));
+        // Electronics: serial / IMEI numbers per unit, and the warranty from the date sold.
+        if ($product->track_serials && (! $product->track_stock || $product->track_batches)) {
+            throw new DomainException('Serial numbers need stock tracking, and cannot be combined with batches.');
+        }
+        $product->warranty_months = ($product->warranty_months === null || $product->warranty_months === '') ? null : (int) $product->warranty_months;
+        if ($product->warranty_months !== null && ($product->warranty_months < 0 || $product->warranty_months > 120)) {
+            throw new DomainException('Warranty: 0 to 120 months.');
+        }
         // Restaurant: the kitchen station that prepares it, and the choices offered with it.
         $product->station = trim((string) $product->station) === '' ? null : strtoupper(trim((string) $product->station));
         if ($product->station !== null && ! preg_match('/^[A-Z0-9_-]{1,20}$/', $product->station)) {

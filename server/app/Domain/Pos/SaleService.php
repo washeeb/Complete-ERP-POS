@@ -7,6 +7,8 @@ use App\Domain\Customers\CustomerService;
 use App\Domain\Customers\Loyalty;
 use App\Domain\Customers\StoredValues;
 use App\Domain\Devices\OfflineGrant;
+use App\Domain\Electronics\ElectronicsSales;
+use App\Domain\Inventory\SerialRegistry;
 use App\Domain\Inventory\StockLedger;
 use App\Domain\Modules\ModuleService;
 use App\Domain\Pharmacy\PharmacyService;
@@ -76,6 +78,7 @@ final class SaleService
         private readonly ModuleService $modules,
         private readonly DocumentNumbers $numbers,
         private readonly DiningSales $dining,
+        private readonly ElectronicsSales $electronics,
     ) {}
 
     /** @return array{sale: Sale, replayed: bool} */
@@ -200,8 +203,9 @@ final class SaleService
             $key = (string) $i;
             $engineLines[] = ['key' => $key, 'product_id' => $markdown ? 'markdown:'.$markdown->id : $product->id, 'category_id' => $markdown ? null : $product->category_id, 'qty_milli' => $qty,
                 'unit_price_minor' => $unitPrice, 'tax' => $rates, 'manual' => $manual];
-            $lines[] = compact('product', 'unit', 'qty', 'unitPrice', 'manual', 'rates', 'key', 'markdown', 'note') + ['no' => $i + 1, 'given' => (int) ($l['line_total_minor'] ?? -1),
-                'service' => false, 'dining_item' => $diningItem];
+            $serials = $product->track_serials ? SerialRegistry::normalise($l['serials'] ?? []) : [];
+            $lines[] = compact('product', 'unit', 'qty', 'unitPrice', 'manual', 'rates', 'key', 'markdown', 'note', 'serials') + ['no' => $i + 1, 'given' => (int) ($l['line_total_minor'] ?? -1),
+                'service' => false, 'dining_item' => $diningItem, 'repair_job' => isset($l['repair_job_id']) ? (string) $l['repair_job_id'] : null];
         }
         if ($lines === [] || $engineLines === []) {
             throw new DomainException('The cart is empty.');
@@ -300,7 +304,14 @@ final class SaleService
         }
         $tipUserId = $tip > 0 ? ($diningOrder?->waiter_id ?? $user->id) : null;
 
+        // Electronics: used items handed in as part-payment (tender "trade_in").
+        $tradeIns = $this->electronics->checkTradeIns($device, $user, $p, $branch, $offline, $flags);
+
         [$payments, $paid, $change] = $this->payments($p['payments'] ?? [], $total + $tip);
+        $tradeTender = array_sum(array_map(fn ($x) => $x['method'] === 'trade_in' ? $x['amount_minor'] : 0, $payments));
+        if ($tradeTender !== $tradeIns['total']) {
+            throw new DomainException('The trade-in payment must equal the value of the items handed in.', 'trade_in_invalid');
+        }
 
         // On account (credit sale): within the customer's credit, or approved by a supervisor's PIN (owner decision: hold for approval).
         $onAccount = array_sum(array_map(fn ($x) => $x['method'] === 'account' ? $x['amount_minor'] : 0, $payments));
@@ -327,7 +338,7 @@ final class SaleService
         $actor = Actor::user($user, 'pos', $device->id);
 
         try {
-            $sale = $this->recorder->transaction(function () use ($p, $device, $till, $branch, $warehouse, $shift, $user, $list, $occurredAt, $hash, $receiptNo, $lines, $lineBreakdowns, $net, $tax, $total, $paid, $change, $payments, $actor, $offline, $grant, &$flags, $priceDiffs, $customer, $onAccount, $creditApprovedBy, $results, $discount, $coupon, $saleBp, $discountApprovedBy, $calc, $rx, $diningOrder, $tip, $tipUserId) {
+            $sale = $this->recorder->transaction(function () use ($p, $device, $till, $branch, $warehouse, $shift, $user, $list, $occurredAt, $hash, $receiptNo, $lines, $lineBreakdowns, $net, $tax, $total, $paid, $change, $payments, $actor, $offline, $grant, &$flags, $priceDiffs, $customer, $onAccount, $creditApprovedBy, $results, $discount, $coupon, $saleBp, $discountApprovedBy, $calc, $rx, $diningOrder, $tip, $tipUserId, $tradeIns) {
                 $sale = new Sale;
                 $sale->forceFill([
                     'id' => $p['id'], 'tenant_id' => $device->tenant_id, 'branch_id' => $branch->id, 'warehouse_id' => $warehouse->id,
@@ -359,7 +370,8 @@ final class SaleService
                         'discount_minor' => $results[$l['key']]['discount'], 'promotions' => $results[$l['key']]['promotions'], 'manual_discount' => $l['manual'],
                         'markdown_id' => $l['markdown']?->id,
                         'prescription_id' => $rx && $l['product']->needsPrescription() ? $rx->id : null,
-                        'dining_item_id' => $l['dining_item'], 'note' => $l['note'], 'is_service_charge' => $l['service'],
+                        'dining_item_id' => $l['dining_item'], 'note' => $l['note'], 'is_service_charge' => $l['service'], 'serials' => ($l['serials'] ?? []) ?: null,
+                        'repair_job_id' => $l['repair_job'] ?? null,
                     ]);
                 }
                 foreach ($payments as $pay) {
@@ -372,8 +384,11 @@ final class SaleService
                     $this->receivables->applyCredits($actor, $customer);
                 }
 
-                $stockEntries = $this->dining->stockEntries($lines); // dishes with a recipe use up their ingredients
+                $stockEntries = $this->dining->stockEntries($lines, $customer?->id, $sale->id); // dishes with a recipe use up their ingredients
                 $this->ledger->post($actor, $warehouse, 'sale', $stockEntries, "Sale {$receiptNo}", 'sale', $sale->id, $occurredAt, alreadyHappened: $offline);
+                foreach ($this->ledger->serialAnomalies() as $problem) {
+                    $flags[] = ['serial_problem', "Sold offline: {$problem}"]; // serial register to be put right
+                }
                 if ($offline) {
                     $expired = DB::table('stock_movements as m')->join('stock_batches as b', 'b.id', '=', 'm.batch_id')->where('m.source_type', 'sale')
                         ->where('m.source_id', $sale->id)->where('b.expires_on', '<', $occurredAt->toDateString())->pluck('b.batch_no')->unique();
@@ -386,6 +401,7 @@ final class SaleService
                     'receipt_no' => [null, $receiptNo], 'total_minor' => [null, $total], 'lines' => [null, count($lines)],
                 ], null, $branch->id);
                 $this->dining->settle($actor, $sale, $lines, $diningOrder, $branch, $offline, $flags);
+                $this->electronics->settle($actor, $sale, $warehouse, $tradeIns, $p, $offline, $flags);
                 $this->recorder->outbox->publish($actor, $sale, 'sale.posted', ['receipt_no' => $receiptNo, 'offline' => $offline]);
 
                 if ($offline) {
@@ -574,6 +590,13 @@ final class SaleService
                 $tendered = $amount;
             }
             // Restaurant: a booking deposit (its reservation number), or a delivery order the platform pays us for later.
+            if ($method === 'trade_in') { // Electronics: the value of used items handed in (checked against the trade-ins above)
+                $paid += $amount;
+                $payments[] = ['method' => 'trade_in', 'provider' => null, 'amount_minor' => $amount, 'tendered_minor' => $amount, 'reference' => null, 'payer_phone' => null,
+                    'status' => 'received_goods'];
+
+                continue;
+            }
             if ($method === 'deposit' || $method === 'aggregator') {
                 $reference = strtoupper(trim((string) ($pay['reference'] ?? '')));
                 if ($method === 'aggregator' && ! array_key_exists((string) ($pay['provider'] ?? ''), SalePayment::PLATFORMS)) {
@@ -629,8 +652,8 @@ final class SaleService
     private function canonical(array $p): array
     {
         $keep = fn (array $a, array $keys) => array_intersect_key($a, array_flip($keys));
-        $out = $keep($p, ['id', 'device_seq', 'occurred_at', 'price_list_id', 'shift_id', 'customer_id', 'coupon_code', 'sale_discount_bp', 'dining_order_id', 'tip_minor']);
-        $out['lines'] = array_map(fn ($l) => $keep($l, ['product_id', 'product_uom_id', 'qty', 'unit_price_minor', 'line_total_minor', 'manual', 'dining_item_id', 'service_charge']), $p['lines'] ?? []);
+        $out = $keep($p, ['id', 'device_seq', 'occurred_at', 'price_list_id', 'shift_id', 'customer_id', 'coupon_code', 'sale_discount_bp', 'dining_order_id', 'tip_minor', 'trade_ins']);
+        $out['lines'] = array_map(fn ($l) => $keep($l, ['product_id', 'product_uom_id', 'qty', 'unit_price_minor', 'line_total_minor', 'manual', 'dining_item_id', 'service_charge', 'serials']), $p['lines'] ?? []);
         $out['payments'] = array_map(fn ($x) => array_map('strval', $keep($x, ['method', 'provider', 'amount_minor', 'tendered_minor', 'reference'])), $p['payments'] ?? []);
         array_walk_recursive($out, fn (&$v) => $v = (string) $v);
         ksort($out);

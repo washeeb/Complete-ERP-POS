@@ -16,7 +16,7 @@ class GoodsReceiptLine extends Model
 
     protected function casts(): array
     {
-        return ['qty' => 'decimal:3', 'factor' => 'decimal:6', 'unit_cost_minor' => 'integer', 'net_minor' => 'integer'];
+        return ['qty' => 'decimal:3', 'factor' => 'decimal:6', 'unit_cost_minor' => 'integer', 'net_minor' => 'integer', 'serials' => 'array'];
     }
 
     public function receipt(): BelongsTo

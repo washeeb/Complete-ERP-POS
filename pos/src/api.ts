@@ -1,6 +1,6 @@
 import { db, getDevice, getSession } from './db'
 import type { OfflineGrant } from './db'
-import type { Bootstrap, PostedSale, Product, PromotionRow, Returnable, Shift, TillCustomer, WmsBin, WmsBootstrap, WmsCount, WmsOrder, WmsTransfer, WmsUnit, Grocery, Pharmacy, Restaurant, DiningOrder, Floor, KitchenTicket, Reservation } from './types'
+import type { Bootstrap, PostedSale, Product, PromotionRow, Returnable, Shift, TillCustomer, WmsBin, WmsBootstrap, WmsCount, WmsOrder, WmsTransfer, WmsUnit, Grocery, Pharmacy, Restaurant, DiningOrder, Floor, KitchenTicket, Reservation, RepairJob, SerialInfo } from './types'
 
 /** Error with the server's stable code ("price_changed", "no_shift"…) and a message safe to show. */
 export class ApiError extends Error {
@@ -62,7 +62,7 @@ export const api = {
     if (GATEWAY_DOWN.includes(res.status)) throw new ApiError('network', 'The server is not answering.', res.status)
     const body = await res.json().catch(() => ({}))
     if (!res.ok) throw new ApiError(body.error ?? 'server', body.detail ?? `Server error (${res.status})`, res.status)
-    return body as { version: string; generated_at: string; products: Product[]; promotions?: PromotionRow[]; utc_offset_minutes?: number; grocery?: Grocery | null; pharmacy?: Pharmacy | null; restaurant?: Restaurant | null }
+    return body as { version: string; generated_at: string; products: Product[]; promotions?: PromotionRow[]; utc_offset_minutes?: number; grocery?: Grocery | null; pharmacy?: Pharmacy | null; restaurant?: Restaurant | null; electronics?: boolean }
   },
   /** Customers for lookup (ETag); null = unchanged. */
   customers: async (version?: string | null) => {
@@ -116,6 +116,17 @@ export const dining = {
 export type WasteBody = { items: { product_id: string; product_uom_id: string; qty: string }[]; reason: string; approval?: { username: string; pin: string } | null }
 export type WasteResult = { value_minor: number; currency: string; lines: number; approved_by: string | null }
 
+/** Electronics: serial / warranty lookup and repair job cards. */
+export const repairs = {
+  serial: (s: string) => call<{ serials: SerialInfo[] }>(`pos/serials/${encodeURIComponent(s)}`),
+  list: (status: 'open' | 'recent' = 'open') => call<{ jobs: RepairJob[] }>(`pos/repairs?status=${status}`),
+  open: (body: { customer_id?: string | null; customer_name: string; phone?: string | null; serial?: string | null; device?: string | null; fault: string; accessories?: string | null }) =>
+    call<{ job: RepairJob }>('pos/repairs', { method: 'POST', body: JSON.stringify(body) }),
+  status: (id: string, status: string, note?: string | null) => call<{ job: RepairJob }>(`pos/repairs/${id}/status`, { method: 'POST', body: JSON.stringify({ status, note }) }),
+  lines: (id: string, lines: { product_uom_id: string; qty: string }[]) => call<{ job: RepairJob }>(`pos/repairs/${id}/lines`, { method: 'POST', body: JSON.stringify({ lines }) }),
+  handOver: (id: string) => call<{ job: RepairJob }>(`pos/repairs/${id}/hand-over`, { method: 'POST' }),
+}
+
 /** Kitchen screen: the enrolled kitchen device itself (no person signs in). */
 export const kds = {
   tickets: (station: string | null) => call<{ stations: Floor['stations']; tickets: KitchenTicket[]; server_time: string }>(`kds/tickets${station ? `?station=${encodeURIComponent(station)}` : ''}`, { auth: 'device' }),
@@ -133,7 +144,7 @@ export const wms = {
   lookup: (code: string, warehouseId: string) =>
     call<{ type: 'product'; unit: WmsUnit } | { type: 'bin'; bin: WmsBin }>(`wms/lookup?code=${encodeURIComponent(code)}&warehouse_id=${warehouseId}`),
   purchaseOrders: (warehouseId: string) => call<WmsOrder[]>(`wms/purchase-orders?warehouse_id=${warehouseId}`),
-  receive: (body: { purchase_order_id: string; client_id: string; supplier_ref?: string; lines: { purchase_order_line_id: string; qty: string; bin_id?: string | null; batch_no?: string; expires_on?: string | null }[] }) =>
+  receive: (body: { purchase_order_id: string; client_id: string; supplier_ref?: string; lines: { purchase_order_line_id: string; qty: string; bin_id?: string | null; batch_no?: string; expires_on?: string | null; serials?: string[] }[] }) =>
     call<{ id: string; number: string; status: 'posted' | 'held' }>('wms/receipts', { method: 'POST', body: JSON.stringify(body) }),
   binStock: (binId: string) => call<{ product_id: string; sku: string; name: string; on_hand: string }[]>(`wms/bin-stock?bin_id=${binId}`),
   putAway: (body: { warehouse_id: string; product_uom_id: string; qty: string; from_bin_id: string; to_bin_id: string }) =>

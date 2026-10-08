@@ -2,6 +2,7 @@
 
 namespace App\Domain\Purchasing;
 
+use App\Domain\Inventory\SerialRegistry;
 use App\Domain\Inventory\StockBatches;
 use App\Domain\Inventory\StockLedger;
 use App\Domain\Support\AccessDenied;
@@ -115,7 +116,7 @@ final class GoodsReceiptService
             $lines[] = ['line_no' => count($lines) + 1, 'purchase_order_line_id' => $poLine?->id, 'product_id' => $product->id, 'product_uom_id' => $unit->id,
                 'sku' => $product->sku, 'name' => $product->name, 'uom_code' => $unit->uom->code, 'factor' => $unit->factor, 'qty' => Qty::format($qty),
                 'unit_cost_minor' => $cost, 'net_minor' => Qty::divRound($qty * $cost, 1000), 'bin_id' => $r['bin_id'] ?? null]
-                + self::batchFields($product, $r);
+                + self::batchFields($product, $r) + self::serialFields($product, $unit, $qty, $r);
         }
         if ($lines === []) {
             throw new DomainException('Enter what was received.');
@@ -201,7 +202,7 @@ final class GoodsReceiptService
             foreach ($receiptMoves as $m) {
                 $unit = ProductUom::where('product_id', $m->product_id)->where('uom_id', $m->uom_id)->firstOrFail();
                 $entries[] = ['product' => Product::findOrFail($m->product_id), 'unit' => $unit, 'qty_milli' => -Qty::toMilli((string) $m->qty_entered),
-                    'bin_id' => $m->bin_id, 'unit_cost_minor' => $m->unit_cost_minor, 'batch_id' => $m->batch_id];
+                    'bin_id' => $m->bin_id, 'unit_cost_minor' => $m->unit_cost_minor, 'batch_id' => $m->batch_id, 'serials' => SerialRegistry::ofMovement($m->id)];
             }
             $this->ledger->post($actor, $grn->warehouse, 'receipt_reversal', $entries, "Reversal of {$grn->number}: {$reason}", 'goods_receipt', $grn->id);
             if ($grn->purchase_order_id) {
@@ -219,7 +220,7 @@ final class GoodsReceiptService
         foreach ($grn->lines()->get() as $l) {
             $product = Product::findOrFail($l->product_id);
             $entries[] = ['product' => $product, 'unit' => ProductUom::findOrFail($l->product_uom_id),
-                'qty_milli' => Qty::toMilli((string) $l->qty), 'unit_cost_minor' => $l->unit_cost_minor, 'bin_id' => $l->bin_id]
+                'qty_milli' => Qty::toMilli((string) $l->qty), 'unit_cost_minor' => $l->unit_cost_minor, 'bin_id' => $l->bin_id, 'serials' => $l->serials]
                 + ($product->track_batches ? ['batch_id' => $this->batches->ensure($actor, $product, (string) $l->batch_no, $l->expires_on)] : []);
             SupplierProduct::where('supplier_id', $grn->supplier_id)->where('product_uom_id', $l->product_uom_id)->update(['last_cost_minor' => $l->unit_cost_minor]);
         }
@@ -258,6 +259,21 @@ final class GoodsReceiptService
         if (! $actor->user || ! $this->authz->allows($actor->user, $permission, $warehouse)) {
             throw new AccessDenied;
         }
+    }
+
+    /** Serial-numbered products (Electronics) are received with the number of every unit. */
+    private static function serialFields(Product $product, ProductUom $unit, int $qty, array $r): array
+    {
+        if (! $product->track_serials) {
+            return [];
+        }
+        $serials = SerialRegistry::normalise($r['serials'] ?? []);
+        $units = Qty::toBaseMilli($qty, Qty::factorMicro($unit->factor)) / 1000;
+        if (count($serials) !== (int) $units) {
+            throw new DomainException("{$product->name}: scan the serial number of each unit received ({$units}).", 'serial_required');
+        }
+
+        return ['serials' => $serials];
     }
 
     /** Batch-tracked products are received with their batch number and expiry date (printed on the pack). */

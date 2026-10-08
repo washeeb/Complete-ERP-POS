@@ -1,8 +1,9 @@
 import { v7 as uuidv7 } from 'uuid'
+import { warrantyUntil } from './electronics'
 import { api, ApiError } from './api'
 import { db, getLocalShift, getSession, type OfflineGrant } from './db'
 import { enqueue, grantFor } from './offline'
-import type { Bootstrap, Payment, PostedSale, Shift } from './types'
+import type { Bootstrap, Payment, PostedSale, Shift, TradeInItem } from './types'
 import type { priceCart } from './cart'
 
 /**
@@ -82,6 +83,7 @@ export async function submitSale(args: {
   coupon?: string | null; saleDiscountBp?: number; discountApproval?: { username: string; pin: string } | null; offlineApproverId?: string | null
   prescription?: RxDetails | null; pharmacistApproval?: { username: string; pin: string } | null; pharmacistOfflineBy?: string | null
   diningOrderId?: string | null; tipMinor?: number; kitchenTickets?: boolean
+  tradeIns?: TradeInItem[]; tradeInApproval?: { username: string; pin: string } | null
 }): Promise<PostedSale> {
   const { boot, cart, payments } = args
   const local = await getLocalShift()
@@ -102,9 +104,12 @@ export async function submitSale(args: {
       ...(l.diningItemId ? { dining_item_id: l.diningItemId } : {}),
       ...(l.note ? { note: l.note } : {}),
       ...(l.service ? { service_charge: true } : {}),
+      ...(l.serials?.length ? { serials: l.serials } : {}),
+      ...(l.repairJobId ? { repair_job_id: l.repairJobId } : {}),
     })),
     ...(args.diningOrderId ? { dining_order_id: args.diningOrderId } : {}),
     ...(args.tipMinor ? { tip_minor: args.tipMinor } : {}),
+    ...(args.tradeIns?.length ? { trade_ins: args.tradeIns.map((t) => ({ product_id: t.product_id, serial: t.serial, condition: t.condition, value_minor: t.value_minor })) } : {}),
     coupon_code: args.coupon || null,
     sale_discount_bp: args.saleDiscountBp ?? 0,
     // Offline, a supervisor's PIN was checked against their offline sign-in on this till; the server checks their limit.
@@ -123,7 +128,8 @@ export async function submitSale(args: {
       // A supervisor's PIN goes to the server only, never into the offline queue.
       const { sale } = await api.postSale({ ...payload, ...(args.creditApproval ? { credit_approval: args.creditApproval } : {}),
         ...(args.discountApproval ? { discount_approval: args.discountApproval } : {}),
-        ...(args.pharmacistApproval ? { pharmacist_approval: args.pharmacistApproval } : {}) })
+        ...(args.pharmacistApproval ? { pharmacist_approval: args.pharmacistApproval } : {}),
+        ...(args.tradeInApproval ? { trade_in_approval: args.tradeInApproval } : {}) })
       await recordCash()
       return sale
     } catch (e) {
@@ -148,7 +154,8 @@ export async function submitSale(args: {
     change_minor: payments.reduce((a, p) => a + (p.tendered_minor - p.amount_minor), 0),
     tax_breakdown: cart.taxBreakdown,
     lines: cart.lines.map((l, i) => ({ line_no: i + 1, sku: l.product.sku, name: l.product.name, uom: l.unit.uom_code,
-      qty: (l.qtyMilli / 1000).toFixed(3), unit_price_minor: l.price!.amount_minor, line_total_minor: l.total, discount_minor: l.discount, promotions: l.promotions, note: l.note ?? null })),
+      qty: (l.qtyMilli / 1000).toFixed(3), unit_price_minor: l.price!.amount_minor, line_total_minor: l.total, discount_minor: l.discount, promotions: l.promotions, note: l.note ?? null, serials: l.serials ?? [],
+      warranty_until: l.serials?.length ? warrantyUntil(l.product.warranty_months) : null })),
     tip_minor: args.tipMinor ?? 0, order_number: null,
     // Restaurant counter sale while offline: the kitchen cannot see it yet, so the till prints the kitchen ticket.
     kitchen: args.kitchenTickets && !args.diningOrderId ? cart.lines.filter((l) => l.product.station && !l.service)

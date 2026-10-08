@@ -30,6 +30,7 @@ use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\Promotion;
 use App\Models\Sale;
+use App\Models\SerialNumber;
 use App\Models\Shift;
 use App\Models\StockLevel;
 use App\Models\Tenant;
@@ -117,6 +118,7 @@ class PosController extends Controller
                 'markdown_prefix' => (string) app(Settings::class)->get('grocery.markdown_prefix', $device->tenant_id),
                 'markdowns' => MarkdownService::activeFor($device->branch_id),
             ] : null,
+            'electronics' => app(ModuleService::class)->isEnabled($device->branch_id, 'electronics'), // trade-ins and repairs at this till
             // Restaurant: modifier choices, the service charge and tips (null when the module is off at this branch).
             'restaurant' => app(ModuleService::class)->isEnabled($device->branch_id, 'restaurant') ? [
                 'modifier_groups' => ModifierGroup::with('options')->where('is_active', true)->orderBy('name')->get()->map(fn ($g) => ['id' => $g->id, 'name' => $g->name,
@@ -130,7 +132,7 @@ class PosController extends Controller
             ] : null,
             'products' => $products->map(fn (Product $p) => [
                 'id' => $p->id, 'sku' => $p->sku, 'name' => $p->name, 'category_id' => $p->category_id, 'track_stock' => $p->track_stock, 'plu' => $p->plu,
-                'station' => $p->station, 'modifier_group_ids' => $p->modifier_group_ids ?? [],
+                'station' => $p->station, 'modifier_group_ids' => $p->modifier_group_ids ?? [], 'track_serials' => $p->track_serials, 'warranty_months' => $p->warranty_months,
                 'drug' => $p->drug_schedule ? ['schedule' => $p->drug_schedule, 'generic_name' => $p->generic_name, 'strength' => $p->strength,
                     'dosage_form' => $p->dosage_form, 'active_ingredients' => $p->active_ingredients ?? []] : null,
                 'on_hand' => $p->track_stock ? (string) ($stock[$p->id] ?? '0.000') : null,
@@ -240,6 +242,10 @@ class PosController extends Controller
             'lines.*.unit_price_minor' => ['required', 'integer', 'min:0'],
             'lines.*.line_total_minor' => ['required', 'integer', 'min:0'],
             'lines.*.note' => ['nullable', 'string', 'max:255'],
+            'lines.*.serials' => ['nullable', 'array', 'max:500'], 'lines.*.serials.*' => ['string', 'max:80'],
+            'lines.*.repair_job_id' => ['nullable', 'uuid'],
+            'trade_ins' => ['nullable', 'array', 'max:10'], 'trade_ins.*.product_id' => ['required', 'uuid'], 'trade_ins.*.value_minor' => ['required', 'integer', 'min:1'],
+            'trade_ins.*.serial' => ['nullable', 'string', 'max:80'], 'trade_ins.*.condition' => ['nullable', 'string', 'max:255'],
             'lines.*.dining_item_id' => ['nullable', 'uuid'],
             'lines.*.service_charge' => ['nullable', 'boolean'],
             'dining_order_id' => ['nullable', 'uuid'],
@@ -371,7 +377,8 @@ class PosController extends Controller
             'tax_breakdown' => $s->tax_breakdown,
             'lines' => $s->lines->map(fn ($l) => ['line_no' => $l->line_no, 'sku' => $l->sku, 'name' => $l->name, 'uom' => $l->uom_code,
                 'qty' => Qty::format(Qty::toMilli((string) $l->qty)), 'unit_price_minor' => $l->unit_price_minor, 'line_total_minor' => $l->line_total_minor,
-                'discount_minor' => (int) $l->discount_minor, 'promotions' => $l->promotions ?? [], 'note' => $l->note])->values(),
+                'discount_minor' => (int) $l->discount_minor, 'promotions' => $l->promotions ?? [], 'note' => $l->note, 'serials' => $l->serials ?? [],
+                'warranty_until' => $l->serials ? SerialNumber::where('sale_id', $s->id)->whereIn('serial', $l->serials)->max('warranty_until') : null])->values(),
             'tip_minor' => (int) $s->tip_minor,
             'order_number' => $s->dining_order_id ? DiningOrder::whereKey($s->dining_order_id)->value('number') : null,
             'kind' => $s->kind, 'discount_minor' => (int) $s->discount_minor, 'points_earned' => (int) $s->points_earned,

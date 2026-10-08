@@ -31,7 +31,13 @@ final class StockLedger
     private const STRICT = ['adjustment', 'opening', 'transfer_out', 'putaway', 'receipt_reversal', 'delivery']; // counts record what is there
 
     public function __construct(private readonly Settings $settings, private readonly Outbox $outbox, private readonly StockProjection $projection,
-        private readonly StockBatches $batches) {}
+        private readonly StockBatches $batches, private readonly SerialRegistry $serials) {}
+
+    /** Serial-number problems met by the last post of already-happened (offline) work, for the review queue. */
+    public function serialAnomalies(): array
+    {
+        return $this->serials->anomalies();
+    }
 
     /**
      * @param  list<array{product: Product, unit: ProductUom, qty_milli: int, unit_cost_minor?: ?int, bin_id?: string|false|null}>  $entries  qty signed, in the unit;
@@ -85,9 +91,12 @@ final class StockLedger
         }
 
         $entries = $this->withBatches($actor, $warehouse, $type, $entries, $alreadyHappened);
+        $this->serials->begin();
 
         $rows = [];
-        foreach ($entries as $e) {
+        $firstRow = [];
+        foreach ($entries as $idx => $e) {
+            $firstRow[$idx] = count($rows);
             $avg = $levels[$e['product']->id]->avg_cost_minor;
             // Outgoing stock is valued at the current average (cost of goods); incoming carries its own cost, or the average
             // when it has none (returns, count gains), so the stock value in the ledger follows the goods. A goods-received
@@ -132,10 +141,14 @@ final class StockLedger
             return $m;
         }, $rows);
         $this->projection->apply(array_map(fn (StockMovement $m) => $m->getAttributes(), $movements));
+        foreach ($entries as $idx => $e) { // which units moved (serial-numbered products)
+            $this->serials->apply($warehouse, $type, $e, $movements[$firstRow[$idx]]->id, $alreadyHappened, $occurredAt ?? $now);
+        }
+        $serials = $this->serials->changes();
 
         // Other nodes receive the movements themselves (not a recalculated quantity) and add them to their ledger.
         $this->outbox->publishRaw($actor, 'stock_movement_batch', $movements[0]->id, 1, "stock.{$type}",
-            ['movements' => array_map(fn (StockMovement $m) => $m->getAttributes(), $movements)]);
+            ['movements' => array_map(fn (StockMovement $m) => $m->getAttributes(), $movements)] + ($serials['rows'] ? ['serials' => $serials] : []));
 
         return $movements;
     }

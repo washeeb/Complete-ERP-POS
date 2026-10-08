@@ -1,7 +1,30 @@
 # State (resume file)
 
-**Phase:** 9 — Industry modules wave 1 · **Status:** 9d (Restaurant extras) done on branch `phase-9d-restaurant-extras` (PR to `main`); Phase 9 complete after merge — next Phase 10 per the master prompt
-**Updated:** 2026-10-19 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–8, licensing, 9a, 9b and 9c merged (PRs #1–#15)
+**Phase:** 10 — Industry modules wave 2 · **Status:** 10a (Electronics) done on branch `phase-10a-electronics` (PR to `main`); next 10b Fashion, then Services, Distribution, Manufacturing
+**Updated:** 2026-10-20 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–9 and licensing merged (PRs #1–#16)
+
+## Phase 10a — done (297 Pest + 43 Vitest + 12 Playwright)
+- **Owner answers (2026-10-19):** order Electronics → Fashion → Services → Distribution → Manufacturing; manufacturing at actual cost; services with both prepaid packs and recurring invoices; distribution via a phone app with vans as warehouses.
+- **Server:**
+  - migration `2026_10_20_100001_create_electronics_tables`: `products.track_serials` and `warranty_months`, `serial_numbers`, `stock_movement_serials`, `serials` on sale, GRN and transfer lines, `repair_jobs` and lines, `trade_ins`, account 1180;
+  - `app/Domain/Inventory/SerialRegistry` (in `StockLedger::post`);
+  - `app/Domain/Electronics/{RepairService, ElectronicsSales}`;
+  - serials through GRN, handheld, transfers, sales and returns;
+  - `InventoryService::registerSerials`; `ElectronicsController` (`pos/serials`, `pos/repairs`).
+- **Back office:**
+  - Electronics → Serial numbers (history, register for stock on hand) and Repairs (progress, parts and labour, hand over);
+  - Product → Serial numbers and warranty;
+  - serial inputs on PO receiving and transfers;
+  - role `technician`.
+- **Till:**
+  - `pos/src/electronics.ts`;
+  - `screens/Electronics.tsx` (serial prompt, trade-in, repairs with warranty check);
+  - Pay trade-in; receipt serials and warranty; handheld serial scanning.
+- **Tests:** ElectronicsTest (6), SetupAndModulesTest (electronics permissions), `electronics.test.ts`, e2e `electronics.spec.ts`.
+- **Docs:** electronics.md, api.md, DECISIONS 10 / 10a, CHANGELOG 0.16.0.
+
+## Phase 9 — done (merged, PRs #13–#16)
+- Grocery (batches, scale labels, markdowns), Pharmacy, Restaurant (floor, kitchen, recipes, tips) and Restaurant extras (bookings, deposits, SMS, delivery apps, waste) — see docs/grocery.md, pharmacy.md, restaurant.md.
 
 ## Phase 9d — done (291 Pest + 40 Vitest + 11 Playwright)
 - **Owner answers (2026-10-18):** bookings with an optional deposit and SMS; delivery apps by webhook and manual entry; kitchen staff log waste, a manager approves above a limit.
@@ -76,8 +99,8 @@
 ## Licensing (merged, PR #12)
 - Signed activation keys, expiry with grace then read-only, daily check-in, tamper detection, watermarks — see docs/licensing.md. Dev licence valid to 2027-12-31 (dev key in `.local-secrets/license-dev.json`). Before the first customer release: production key (`license:keygen`), its public key in `config/license.php`, a licence server.
 
-## Next — Phase 10
-- Industry modules wave 2: Manufacturing, Fashion, Electronics, Services & Packages, Distribution (master prompt §phases). Ask the owner's decisions in one batch before starting.
+## Next — Phase 10b (Fashion & Boutique)
+- Size × colour matrix: a style generates one product (SKU, barcode, price) per size and colour. Seasons and collections, a lookbook (online shop), consignment stock, alterations, style-based reporting.
 ## Owner decisions pending
 - Accountant check of the Ghana tax set-up (VAT/NHIL/GETFund rates and the payroll PAYE bands / SSNIT rates — Payroll → Tax and SSNIT rules) before go-live.
 - WooCommerce/Shopify: connect a real store only with the owner's keys.
@@ -104,4 +127,4 @@
   - in tests, `flushSession()` before switching users.
 
 ## Blockers
-- Merge PR `phase-9d-restaurant-extras` → `main` (asked in chat).
+- Merge PR `phase-10a-electronics` → `main` (asked in chat).

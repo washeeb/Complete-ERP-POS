@@ -381,3 +381,34 @@ Design:
   - booking deposits taken online;
   - a booking widget on the online shop;
   - automatic commission split on delivery payouts.
+
+## Phase 10 — Industry modules wave 2 (owner answers 2026-10-19)
+- **Order of delivery,** one PR each: Electronics, Fashion, Services & Packages, Distribution, Manufacturing.
+- **Manufacturing:** actual costing (materials issued plus work-centre rates).
+- **Services:** both prepaid packs and recurring invoiced memberships.
+- **Distribution:** a phone app with each van as a warehouse.
+- **Defaults stated to the owner:**
+  - Fashion: a size × colour matrix of products under a style.
+  - Electronics: serials scanned at receipt and sale; 12-month warranty by default, per product.
+
+## Phase 10a — Electronics (2026-10-20)
+- **Serials live in the stock ledger.** Ledger entries for `track_serials` products carry `serials`; `SerialRegistry` keeps `serial_numbers` in the same transaction, and `stock_movement_serials` links each unit to the movements that moved it (its history).
+  - A unit's id is a UUID v5 of company + product + number, so nodes agree. Changes ride along with the movement batch in sync, and the newer version wins.
+  - Numbers are normalised: upper case, without spaces or dashes.
+  - Serials cannot be combined with batches, and need stock tracking. Units are whole numbers.
+- **Where numbers are required:** receipts, opening stock, adjustments, transfers, till sales, returns and trade-ins. These are refused online without them.
+  - Elsewhere (counts, B2B deliveries, online orders, offline sales typed without a number) the stock moves anyway and the gap is reported. Offline sales add review `serial_problem`.
+  - `SerialRegistry::check()` compares numbered units in stock with the quantity on hand, per warehouse. It is shown as a count on the Serial numbers page and is kept out of `StockLedger::check()`, since gaps are legitimate until they are registered.
+- **Warranty** = product `warranty_months` from the sale date, stored on the unit when it is sold. A repair job opened with a number we sold inherits "in warranty".
+- **Repairs reuse the till.** Parts and labour are priced from the default price list and paid as ordinary sale lines tagged `repair_job_id`, so the stock, tax and the books need no special handling.
+  - Warranty or no-charge jobs are handed over: parts are written off by stock adjustment "Warranty repair JOB-…".
+  - Status moves along a fixed graph and is logged in the job. A job can go to the supplier (RMA) and come back.
+  - Jobs sync up in the `sales` group, with their lines as children.
+- **Trade-ins** are a tender (`trade_in`) plus a stock receipt of type `trade_in` at the value given, recorded in `trade_ins`.
+  - Both post to 1180 Trade-ins awaiting stock (clearing), which nets to zero. Inventory rises by the value, and the sale counts as fully paid.
+  - Acceptance needs `electronics.trade_in` or a supervisor's PIN. The trade-in cannot exceed what is due.
+- **Deferred:**
+  - subscriptions and licence keys (with Services & Packages, 10c);
+  - a serial picker for B2B deliveries;
+  - bin-level serial locations;
+  - warranty claims costed against suppliers.

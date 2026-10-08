@@ -5,6 +5,7 @@ namespace App\Domain\Pos;
 use App\Domain\Customers\CustomerLedger;
 use App\Domain\Customers\Loyalty;
 use App\Domain\Customers\StoredValues;
+use App\Domain\Inventory\SerialRegistry;
 use App\Domain\Inventory\StockLedger;
 use App\Domain\Pricing\PriceResolver;
 use App\Domain\Pricing\TaxCalculator;
@@ -116,8 +117,13 @@ final class ReturnService
                 }
                 $gross = Qty::divRound($ol->line_total_minor * $qty, Qty::toMilli((string) $ol->qty)); // the price actually paid
                 $rates = array_map(fn ($b) => ['code' => $b['code'], 'name' => $b['name'], 'rate_bp' => $b['rate_bp']], $ol->tax_breakdown ?? []);
+                // Serial-numbered: the units named, else the first ones sold on that line.
+                $serials = $ol->serials ? (SerialRegistry::normalise($l['serials'] ?? []) ?: array_slice($ol->serials, 0, intdiv($qty, 1000))) : null;
+                if ($serials && array_diff($serials, $ol->serials)) {
+                    throw new DomainException('A serial number given was not sold on that line.', 'serial_conflict');
+                }
                 $lines[] = ['no' => $i + 1, 'product' => Product::findOrFail($ol->product_id), 'unit' => ProductUom::with('uom')->findOrFail($ol->product_uom_id),
-                    'qty' => $qty, 'unit_price' => $ol->unit_price_minor, 'gross' => $gross, 'rates' => $rates, 'original_line_id' => $ol->id];
+                    'qty' => $qty, 'unit_price' => $ol->unit_price_minor, 'gross' => $gross, 'rates' => $rates, 'original_line_id' => $ol->id, 'serials' => $serials];
             } else {
                 $unit = ProductUom::with('uom')->findOrFail($l['product_uom_id'] ?? null);
                 $product = Product::with('taxGroup.rates')->findOrFail($unit->product_id);
@@ -126,7 +132,7 @@ final class ReturnService
                     ?? throw new DomainException("{$product->name} has no price to refund at.");
                 $rates = $product->taxGroup->rates->where('is_active', true)->map(fn ($r) => ['code' => $r->code, 'name' => $r->name, 'rate_bp' => $r->rate_bp])->values()->all();
                 $lines[] = ['no' => $i + 1, 'product' => $product, 'unit' => $unit, 'qty' => $qty, 'unit_price' => $price,
-                    'gross' => Qty::divRound($qty * $price, 1000), 'rates' => $rates, 'original_line_id' => null];
+                    'gross' => Qty::divRound($qty * $price, 1000), 'rates' => $rates, 'original_line_id' => null, 'serials' => SerialRegistry::normalise($l['serials'] ?? []) ?: null];
             }
         }
         if ($lines === []) {
@@ -192,12 +198,13 @@ final class ReturnService
                 SaleLine::create(['sale_id' => $sale->id, 'line_no' => $l['no'], 'product_id' => $l['product']->id, 'sku' => $l['product']->sku, 'name' => $l['product']->name,
                     'product_uom_id' => $l['unit']->id, 'uom_code' => $l['unit']->uom->code, 'factor' => $l['unit']->factor, 'qty' => Qty::format(-$l['qty']),
                     'unit_price_minor' => $l['unit_price'], 'line_total_minor' => -$l['t']['gross'], 'net_minor' => -$l['t']['net'], 'tax_minor' => -$l['t']['tax'],
-                    'tax_breakdown' => array_map(fn ($b) => ['amount_minor' => -$b['amount_minor']] + $b, $l['t']['breakdown']), 'original_line_id' => $l['original_line_id']]);
+                    'tax_breakdown' => array_map(fn ($b) => ['amount_minor' => -$b['amount_minor']] + $b, $l['t']['breakdown']), 'original_line_id' => $l['original_line_id'],
+                    'serials' => $l['serials']]);
             }
             // Goods come back into the batch they were sold from (batch-tracked products).
             $soldFrom = $original ? DB::table('stock_movements')->where('source_type', 'sale')->where('source_id', $original->id)->whereNotNull('batch_id')
                 ->orderByDesc('qty_base')->pluck('batch_id', 'product_id') : collect(); // pluck keeps the last row: the batch most was sold from
-            $this->stock->post($actor, $warehouse, 'sale_return', array_map(fn ($l) => ['product' => $l['product'], 'unit' => $l['unit'], 'qty_milli' => $l['qty']]
+            $this->stock->post($actor, $warehouse, 'sale_return', array_map(fn ($l) => ['product' => $l['product'], 'unit' => $l['unit'], 'qty_milli' => $l['qty'], 'serials' => $l['serials']]
                 + (isset($soldFrom[$l['product']->id]) ? ['batch_id' => $soldFrom[$l['product']->id]] : []), $lines),
                 "Return {$receiptNo}".($original ? " of {$original->receipt_no}" : ''), 'sale', $sale->id, $occurredAt);
 

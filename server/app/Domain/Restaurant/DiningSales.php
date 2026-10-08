@@ -134,7 +134,7 @@ final class DiningSales
      * Stock that leaves with the sale: a dish with a recipe uses up its ingredients (per base unit of the dish);
      * everything else leaves as itself. Service charge lines move no stock.
      */
-    public function stockEntries(array $lines): array
+    public function stockEntries(array $lines, ?string $customerId = null, ?string $saleId = null): array
     {
         $recipes = RecipeLine::with(['ingredient', 'unit'])->whereIn('product_id', array_map(fn ($l) => $l['product']->id, $lines))->get()->groupBy('product_id');
         $out = [];
@@ -150,7 +150,8 @@ final class DiningSales
 
                 continue;
             }
-            $out[] = ['product' => $l['product'], 'unit' => $l['unit'], 'qty_milli' => -$l['qty']] + ($l['markdown'] ? ['batch_id' => $l['markdown']->batch_id] : []);
+            $out[] = ['product' => $l['product'], 'unit' => $l['unit'], 'qty_milli' => -$l['qty'], 'serials' => $l['serials'] ?? null, 'customer_id' => $customerId, 'sale_id' => $saleId]
+                + ($l['markdown'] ? ['batch_id' => $l['markdown']->batch_id] : []);
         }
 
         return $out;

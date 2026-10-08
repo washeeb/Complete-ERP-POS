@@ -16,7 +16,7 @@ class StockTransferLine extends Model
 
     protected function casts(): array
     {
-        return ['qty' => 'decimal:3', 'received_qty' => 'decimal:3', 'factor' => 'decimal:6', 'unit_cost_minor' => 'decimal:4'];
+        return ['qty' => 'decimal:3', 'received_qty' => 'decimal:3', 'factor' => 'decimal:6', 'unit_cost_minor' => 'decimal:4', 'serials' => 'array'];
     }
 
     public function transfer(): BelongsTo

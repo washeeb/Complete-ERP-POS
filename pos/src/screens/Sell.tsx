@@ -8,9 +8,10 @@ import { queueMode, submitSale, type RxDetails } from '../till'
 import { generics, needsPrescription, warnings as rxWarnings } from '../pharmacy'
 import { billLines, groupsFor, kitchenNote } from '../restaurant'
 import { BillView, FloorView, ModifierPicker, type Choice } from './Restaurant'
+import { RepairsScreen, SerialPrompt } from './Electronics'
 import { v7 as uuidv7 } from 'uuid'
 import { formatMoney, prettyQty, toMilli } from '../money'
-import type { Bootstrap, DiningItem, DiningOrder, Grocery, Pharmacy, Restaurant, Payment, PostedSale, Product, PromotionRow, TillCustomer, Unit } from '../types'
+import type { Bootstrap, DiningItem, DiningOrder, Grocery, Pharmacy, Restaurant, RepairJob, TradeInItem, Payment, PostedSale, Product, PromotionRow, TillCustomer, Unit } from '../types'
 import { parseMoney } from '../money'
 import { ReturnScreen } from './ReturnScreen'
 import { cachedCustomers, refreshCustomers } from '../customers'
@@ -35,7 +36,8 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   const [customer, setCustomer] = useState<TillCustomer | null>(null)
   const [picking, setPicking] = useState(false)
   // seq: a retry of the same sale (after an approval) keeps its receipt number, so numbers have no gaps.
-  type Approvals = { credit?: { username: string; pin: string }; discount?: { username: string; pin: string }; offlineApproverId?: string; seq?: number; rx?: Rx; tip?: number }
+  type Approvals = { credit?: { username: string; pin: string }; discount?: { username: string; pin: string }; offlineApproverId?: string; seq?: number; rx?: Rx; tip?: number
+    tradeIns?: TradeInItem[]; tradeInApproval?: { username: string; pin: string } | null }
   const [approval, setApproval] = useState<{ payments: Payment[]; message: string; kind: 'credit' | 'discount' | 'discount_offline'; approvals: Approvals } | null>(null)
   const [promotions, setPromotions] = useState<PromotionRow[]>([])
   const [utcOffset, setUtcOffset] = useState(0)
@@ -48,6 +50,10 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   const [payingBill, setPayingBill] = useState<DiningOrder | null>(null)
   const [payNow, setPayNow] = useState(false)
   const [counterPick, setCounterPick] = useState<Product | null>(null)
+  // Electronics: serial numbers for the item being added; the repairs screen.
+  const [electronics, setElectronics] = useState(false)
+  const [serialPick, setSerialPick] = useState<Product | null>(null)
+  const [repairsOpen, setRepairsOpen] = useState(false)
   // Pharmacy: the prescription and the pharmacist's approval for prescription-only medicines in this sale.
   const [rx, setRx] = useState<Rx | null>(null)
   const [rxPrompt, setRxPrompt] = useState<{ message: string; payments?: Payment[]; approvals?: Approvals } | null>(null)
@@ -67,6 +73,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       setGrocery(cat?.grocery ?? null)
       setPharmacy(cat?.pharmacy ?? null)
       setRestaurant(cat?.restaurant ?? null)
+      setElectronics(!!cat?.electronics)
     })
   }, [catalogVersion])
 
@@ -98,6 +105,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       if (e.key === 'F4' && !paying) { e.preventDefault(); setPicking(true) }
       if (e.key === 'F8' && !paying && online) { e.preventDefault(); setReturning(true) }
       if (e.key === 'F6' && !paying && online && restaurant) { e.preventDefault(); setFloorOpen(true) }
+      if (e.key === 'F7' && !paying && online && electronics) { e.preventDefault(); setRepairsOpen(true) }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -111,6 +119,10 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   }
 
   function add(product: Product, unit?: Unit) {
+    if (product.track_serials) {
+      setQuery('')
+      return setSerialPick(product) // each unit by its serial / IMEI number
+    }
     if (restaurant && !unit && groupsFor(product, restaurant.modifier_groups).length) {
       setQuery('')
       return setCounterPick(product) // a dish with choices: ask them first
@@ -120,6 +132,25 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
     setQuery('')
     setMessage('')
     searchRef.current?.focus()
+  }
+
+  /** Serial-numbered units: one line with their numbers (the quantity is the number of units). */
+  function addSerials(product: Product, serials: string[]) {
+    setLines((l) => [...l, { key: `sn:${uuidv7()}`, product, unit: product.units.find((u) => u.is_base) ?? product.units[0], qtyMilli: serials.length * 1000, serials }])
+    setSerialPick(null)
+    searchRef.current?.focus()
+  }
+
+  /** Collect a repair: its parts and labour become the cart (the sale marks the job collected). */
+  function collectRepair(job: RepairJob) {
+    const missing = job.lines.filter((l) => !products.some((p) => p.id === l.product_id))
+    if (missing.length) return setMessage(`Refresh the till: ${missing.map((m) => m.name).join(', ')} not in its catalog.`)
+    setLines(job.lines.map((l, i) => {
+      const product = products.find((p) => p.id === l.product_id)!
+      return { key: `rj:${job.id}:${i}`, product, unit: product.units.find((u) => u.id === l.product_uom_id) ?? product.units[0], qtyMilli: Math.round(Number(l.qty) * 1000), repairJobId: job.id }
+    }))
+    setRepairsOpen(false)
+    setPayNow(true)
   }
 
   /** Counter sale of a dish with choices: its own line (the choices go to the kitchen as its note), plus priced extras. */
@@ -242,7 +273,8 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
         customerId: customer?.id ?? null, creditApproval: approvals.credit ?? null, discountApproval: approvals.discount ?? null,
         offlineApproverId: approvals.offlineApproverId ?? null, coupon: cart.couponApplied ? coupon : null, saleDiscountBp: saleBp,
         prescription: approvals.rx?.details ?? null, pharmacistApproval: approvals.rx?.approval ?? null, pharmacistOfflineBy: approvals.rx?.offlineBy ?? null,
-        diningOrderId: payingBill?.id ?? null, tipMinor: approvals.tip ?? 0, kitchenTickets: !!restaurant })
+        diningOrderId: payingBill?.id ?? null, tipMinor: approvals.tip ?? 0, kitchenTickets: !!restaurant,
+        tradeIns: approvals.tradeIns ?? [], tradeInApproval: approvals.tradeInApproval ?? null })
       setLines([])
       setPaying(false)
       setApproval(null)
@@ -316,6 +348,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
             </span>
           ) : <button type="button" onClick={() => setPicking(true)}>Customer (F4)</button>}
           {online && restaurant && <button type="button" onClick={() => setFloorOpen(true)}>Tables (F6)</button>}
+          {online && electronics && <button type="button" onClick={() => setRepairsOpen(true)}>Repairs (F7)</button>}
           {payingBill && <span className="chip" aria-label="Paying bill">Paying {payingBill.label}
             <button type="button" className="link" onClick={() => { setPayingBill(null); setLines([]) }} aria-label="Stop paying this bill">✕</button></span>}
           {online && <button type="button" onClick={() => setReturning(true)}>Return (F8)</button>}
@@ -368,11 +401,12 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
                 <tr key={l.key} className={l.price ? '' : 'unpriced'}>
                   <td>{l.service ? `Service charge (${(restaurant?.service_charge?.bp ?? 0) / 100} %)` : l.product.name}
                     {l.note && <div className="small muted">{l.note}</div>}
+                    {l.serials && <div className="small muted mono">S/N {l.serials.join(', ')}</div>}
                     {l.markdown && <div className="small promo">Marked-down sticker</div>}
                     {l.promotions.map((p) => <div key={p.id} className="small promo">{p.name} −{money(p.saving_minor)}</div>)}
                     {l.manual && <div className="small promo">Discount −{money(l.discount - l.promotions.reduce((a, p) => a + p.saving_minor, 0))}</div>}
                   </td>
-                  <td>{l.diningItemId || l.service ? prettyQty(l.qtyMilli) : (
+                  <td>{l.diningItemId || l.service || l.serials || l.repairJobId ? prettyQty(l.qtyMilli) : (
                     <input className="qty mono" inputMode="decimal" defaultValue={prettyQty(l.qtyMilli)} key={l.qtyMilli}
                       onBlur={(e) => changeQty(l, e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} aria-label={`Quantity of ${l.product.name}`} />)}</td>
                   <td>
@@ -416,7 +450,8 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       {paying && !approval && !rxPrompt && (
         <Pay total={cart.total} currency={boot.company.currency} exponent={boot.company.exponent} busy={busy} error={payError}
           customer={customer} tips={!!restaurant?.tips && online && payingBill?.kind !== 'delivery'} bill={payingBill}
-          onPay={(p, tip) => complete(p, { tip })} onCancel={() => setPaying(false)} />
+          tradeInProducts={electronics && online ? products : null}
+          onPay={(p, tip, extra) => complete(p, { tip, tradeIns: extra.tradeIns, tradeInApproval: extra.tradeInApproval })} onCancel={() => setPaying(false)} />
       )}
       {rxPrompt && pharmacy && (
         <PrescriptionForm message={rxPrompt.message} initial={rx} lines={lines} products={products} customer={customer} pharmacy={pharmacy}
@@ -430,6 +465,9 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
         onBack={() => { setBillOpen(null); setFloorOpen(true) }} />}
       {counterPick && restaurant && <ModifierPicker product={counterPick} restaurant={restaurant} tableService={false}
         onDone={(c) => addWithChoices(counterPick, c)} onCancel={() => setCounterPick(null)} />}
+      {serialPick && <SerialPrompt product={serialPick} onDone={(s) => addSerials(serialPick, s)} onCancel={() => setSerialPick(null)} />}
+      {repairsOpen && <RepairsScreen products={products} currency={boot.company.currency} exponent={boot.company.exponent}
+        onCollect={collectRepair} onClose={() => setRepairsOpen(false)} />}
       {picking && <CustomerPicker customers={customers} money={money} onPick={pickCustomer} onCancel={() => setPicking(false)} />}
       {approval && <CreditApproval title={approval.kind === 'credit' ? 'Supervisor approval — credit' : 'Supervisor approval — discount'} message={approval.message} busy={busy}
         onApprove={approve} onCancel={() => setApproval(null)} />}

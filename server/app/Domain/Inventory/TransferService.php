@@ -33,7 +33,7 @@ final class TransferService
         private readonly ReviewQueue $reviews,
     ) {}
 
-    /** @param array{from_warehouse_id?: string, to_warehouse_id?: string, note?: ?string, lines?: list<array{product_uom_id: string, qty: string}>} $data */
+    /** @param array{from_warehouse_id?: string, to_warehouse_id?: string, note?: ?string, lines?: list<array{product_uom_id: string, qty: string, serials?: array|string|null}>} $data */
     public function saveDraft(Actor $actor, StockTransfer $t, array $data): StockTransfer
     {
         $from = Warehouse::findOrFail($data['from_warehouse_id'] ?? $t->from_warehouse_id);
@@ -58,8 +58,12 @@ final class TransferService
                 if (! $product->track_stock) {
                     throw new DomainException("{$product->name} does not track stock.");
                 }
+                $serials = $product->track_serials ? SerialRegistry::normalise($r['serials'] ?? []) : null;
+                if ($serials !== null && $serials !== [] && count($serials) * 1000 !== Qty::toBaseMilli($qty, Qty::factorMicro($unit->factor))) {
+                    throw new DomainException("{$product->name}: one serial number per unit sent.");
+                }
                 $lines[] = ['line_no' => $i + 1, 'product_id' => $product->id, 'product_uom_id' => $unit->id, 'sku' => $product->sku, 'name' => $product->name,
-                    'uom_code' => $unit->uom->code, 'factor' => $unit->factor, 'qty' => Qty::format($qty)];
+                    'uom_code' => $unit->uom->code, 'factor' => $unit->factor, 'qty' => Qty::format($qty), 'serials' => $serials ?: null];
             }
             if ($lines === []) {
                 throw new DomainException('Add at least one line.');
@@ -99,7 +103,7 @@ final class TransferService
             $t = StockTransfer::lockForUpdate()->findOrFail($t->id);
             $lines = $t->lines()->get();
             $entries = $lines->map(fn ($l) => ['product' => Product::findOrFail($l->product_id), 'unit' => ProductUom::findOrFail($l->product_uom_id),
-                'qty_milli' => -Qty::toMilli((string) $l->qty)])->all();
+                'qty_milli' => -Qty::toMilli((string) $l->qty), 'serials' => $l->serials])->all(); // serial-numbered units: the ones named on the line
             $this->ledger->post($actor, $from, 'transfer_out', $entries, "{$t->number} to ".$t->toWarehouse->name, 'stock_transfer', $t->id);
             foreach ($lines as $l) { // what the goods cost the sender travels with them (per base unit)
                 $l->unit_cost_minor = DB::table('stock_levels')->where('warehouse_id', $from->id)->where('product_id', $l->product_id)->value('avg_cost_minor');
@@ -157,7 +161,9 @@ final class TransferService
                         }
                     }
                 } elseif ($got > 0) {
-                    $entries[] = ['product' => $product, 'unit' => $unit, 'qty_milli' => $got, 'bin_id' => $toBinId,
+                    // Serial-numbered: the units sent arrive (when fewer arrive, the first ones; the rest stay in transit and the transfer is flagged).
+                    $serialsIn = $product->track_serials ? array_slice($l->serials ?? [], 0, intdiv(Qty::toBaseMilli($got, Qty::factorMicro($unit->factor)), 1000)) : null;
+                    $entries[] = ['product' => $product, 'unit' => $unit, 'qty_milli' => $got, 'bin_id' => $toBinId, 'serials' => $serialsIn,
                         'unit_cost_minor' => StockProjection::costPerUnit($l->unit_cost_minor === null ? null : (string) $l->unit_cost_minor, (string) $unit->factor)];
                 }
                 $l->received_qty = Qty::format($got);

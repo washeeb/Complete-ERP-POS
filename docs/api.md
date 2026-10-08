@@ -253,3 +253,24 @@ Errors use the standard body `{error, detail}`. For example: `wrong_status`, `no
   - till: `POST pos/restaurant/waste` `{items: [{product_id, product_uom_id, qty}], reason, approval?}` → `{value_minor, currency, lines, approved_by}`; error `waste_needs_approval`;
   - kitchen screen: `GET kds/products`, and `POST kds/waste` with `username` and `pin` as well. A wrong PIN answers 401 and counts towards the lockout.
 - **SMS hook:** `POST {restaurant.sms_webhook_url}` `{to, message, reference}` on booking and as a reminder (`erp:reservation-reminders`, every 5 minutes).
+
+## Electronics (Phase 10a)
+
+- **Catalog:** `GET pos/catalog` adds, per product, `track_serials` and `warranty_months`, and `electronics` (true when the module is on at the till's branch).
+- **Serial numbers** — numbers are upper-cased with spaces and dashes removed:
+  - `POST pos/sales` lines take `serials` (one per unit; required for serial-numbered products online). Errors `serial_required`, `serial_conflict` (not in stock here); offline gaps become review `serial_problem`.
+  - The sale response lines carry `serials` and `warranty_until`.
+  - Returns take `serials` per line; by default, the first units sold on the original line.
+  - Handheld `POST wms/receipts` lines take `serials`, and `GET wms/purchase-orders` lines carry `track_serials`.
+- **Trade-ins:** `POST pos/sales` takes `trade_ins: [{product_id, serial?, condition?, value_minor}]` with tender `trade_in` for their total.
+  - The cashier needs `electronics.trade_in`, or `trade_in_approval: {username, pin}` from someone who has it.
+  - Errors: `trade_in_needs_approval`, `trade_in_invalid`. Offline without approval → review `trade_in_unapproved`.
+- **Repairs** (staff token, `electronics.repairs`):
+  - `GET pos/serials/{serial}` → `{serials: [{serial, product, status, receipt_no, customer, warranty_until, in_warranty, in_stock_here}]}`;
+  - `GET pos/repairs?status=open|recent`;
+  - `POST pos/repairs` `{customer_name, phone?, serial?, device?, fault, accessories?}`;
+  - `POST pos/repairs/{id}/status` `{status, note?, supplier_id?, rma_reference?}`;
+  - `POST pos/repairs/{id}/lines` `{lines: [{product_uom_id, qty}]}` (priced from the default price list; 0 under warranty);
+  - `POST pos/repairs/{id}/hand-over` (no charge only; error `payment_needed`).
+  - Sale lines with `repair_job_id` collect the job (`repair_closed` if it is not open).
+- **Sync:** serial changes travel with their stock movements (`stock_movement_batch.serials`); registrations without a movement go as `serial_batch`.

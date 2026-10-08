@@ -37,12 +37,13 @@ final class AutoPoster
         'transfer_out' => 'stock_in_transit', 'transfer_in' => 'stock_in_transit',
         'adjustment' => 'stock_adjustment', 'count' => 'stock_adjustment',
         'opening' => 'opening_equity',
+        'trade_in' => 'trade_in_clearing', // used items taken in on a sale (the sale's trade-in tender is on the other side)
     ];
 
     /** Till tenders → the account the money (or claim) sits in. */
     public const TENDER = ['cash' => 'cash_till', 'momo' => 'momo', 'card' => 'card_clearing', 'account' => 'receivables',
         'points' => 'loyalty', 'gift_card' => 'stored_value', 'store_credit' => 'stored_value',
-        'deposit' => 'customer_deposits', 'aggregator' => 'aggregator_receivable'];
+        'deposit' => 'customer_deposits', 'aggregator' => 'aggregator_receivable', 'trade_in' => 'trade_in_clearing'];
 
     /** Money received or paid elsewhere (back office, online). */
     public const METHOD = ['cash' => 'cash_office', 'momo' => 'momo', 'card' => 'card_clearing', 'bank' => 'bank', 'cheque' => 'bank',
