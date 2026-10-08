@@ -46,6 +46,46 @@ final class Settings
             'label' => 'Book container deposits as money owed to customers',
             'help' => 'Off: deposits on crates, bottles and cylinders count as sales, and empties bought back reduce sales. On: deposits are held as a liability (Container deposits held) and the containers out with customers stay an asset until they come back. Change it only at the start of a month so a month is not split between the two methods.',
         ],
+        'ai.provider' => [
+            'type' => 'choice', 'default' => 'off', 'group' => 'AI', 'options' => ['off' => 'Off — built-in insights only', 'ollama' => 'Local model (Ollama on your server)', 'claude' => 'Claude (cloud, within the monthly budget)'],
+            'label' => 'AI assistant',
+            'help' => 'Forecasts, alerts and insights always work without AI. The copilot, invoice scanning and product descriptions need a model: a local one (Ollama, nothing leaves your servers) or Claude in the cloud.',
+        ],
+        'ai.ollama_url' => [
+            'type' => 'string', 'default' => 'http://127.0.0.1:11434', 'max' => 200, 'group' => 'AI',
+            'label' => 'Ollama address',
+            'help' => 'Where the local model runs (see the installation guide, AI chapter).',
+        ],
+        'ai.ollama_model' => [
+            'type' => 'string', 'default' => 'qwen2.5:7b', 'max' => 80, 'group' => 'AI',
+            'label' => 'Local model for questions and writing',
+            'help' => 'Must support tools (function calling), e.g. qwen2.5:7b or llama3.1:8b.',
+        ],
+        'ai.ollama_vision_model' => [
+            'type' => 'string', 'default' => 'qwen2.5vl:7b', 'max' => 80, 'group' => 'AI',
+            'label' => 'Local model for reading invoices (images)',
+            'help' => 'A vision model, e.g. qwen2.5vl:7b or llama3.2-vision.',
+        ],
+        'ai.claude_model' => [
+            'type' => 'string', 'default' => 'claude-sonnet-5-5', 'max' => 80, 'group' => 'AI',
+            'label' => 'Claude model',
+            'help' => 'Used only when the AI assistant is set to Claude and the API key is in the server settings (.env: ANTHROPIC_API_KEY).',
+        ],
+        'ai.monthly_cap_usd' => [
+            'type' => 'int', 'default' => 0, 'min' => 0, 'max' => 10000, 'group' => 'AI',
+            'label' => 'Cloud AI budget per month (USD)',
+            'help' => 'Claude stops for the rest of the month when this is spent. 0 = no cloud AI.',
+        ],
+        'ai.personal_data_local' => [
+            'type' => 'bool', 'default' => true, 'group' => 'AI',
+            'label' => 'Keep personal data on your server',
+            'help' => 'On: questions that need customer or staff details are answered by the local model only (or without AI wording when none is set up). Names, phones and e-mails are always masked before anything goes to the cloud.',
+        ],
+        'insights.margin_alert_pct' => [
+            'type' => 'int', 'default' => 10, 'min' => 0, 'max' => 90, 'group' => 'AI',
+            'label' => 'Warn when a product’s margin is below (%)',
+            'help' => 'Selling price before tax compared with average cost. Products sold below cost are always flagged.',
+        ],
         'purchasing.over_receipt_pct' => [
             'type' => 'int', 'default' => 5, 'min' => 0, 'max' => 100, 'group' => 'Purchasing',
             'label' => 'Over-delivery accepted without a manager (%)',
@@ -236,6 +276,11 @@ final class Settings
             $value = (int) $value;
             if ($value < $def['min'] || $value > $def['max']) {
                 throw new DomainException("{$def['label']} must be between {$def['min']} and {$def['max']}.");
+            }
+        } elseif ($def['type'] === 'choice') {
+            $value = (string) $value;
+            if (! array_key_exists($value, $def['options'])) {
+                throw new DomainException("{$def['label']}: choose one of the options.");
             }
         } elseif ($def['type'] === 'bool') {
             $value = (bool) $value;

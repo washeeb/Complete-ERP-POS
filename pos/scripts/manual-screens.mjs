@@ -64,6 +64,9 @@ const shot = (page, name) => page.screenshot({ path: resolve(out, `${name}.png`)
     ['/admin/import-data?type=products', 'import-data', null],
     ['/admin/stock-adjustments/create', 'stock-adjustment-new', null],
     ['/admin/products', 'export-menu', 'Export'],
+    ['/admin/insights?tab=forecast', 'insights-forecast', null],
+    ['/admin/alerts', 'insights-alerts', null],
+    ['/admin/copilot', 'copilot', null],
   ]) {
     await page.goto(base + path)
     await page.waitForLoadState('networkidle')

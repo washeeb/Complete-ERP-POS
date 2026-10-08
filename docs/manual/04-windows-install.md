@@ -201,7 +201,7 @@ npm run build:server
 The server needs two programs running all the time:
 
 - the **web server**, which answers the back office and the tills;
-- the **scheduler**, which runs the routine jobs every minute (sending to online stores, syncing branches, posting to the accounts, reminders, the daily licence check-in).
+- the **scheduler**, which runs the routine jobs every minute (sending to online stores, syncing branches, posting to the accounts, reminders, the daily licence check-in, the nightly insights and alerts).
 
 We register them with Windows **Task Scheduler** so they start with the computer, even when nobody is signed in, and restart if they stop.
 

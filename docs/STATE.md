@@ -1,9 +1,17 @@
 # State (resume file)
 
-**Phase:** 10 — Industry modules wave 2 · **Status:** 10f (Manufacturing) + container-deposit option done on branch `phase-10f-manufacturing` (PR to `main`); wave 2 complete after merge
-**Updated:** 2026-10-26 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–9, licensing and 10a–10e merged (PRs #1–#21)
+**Phase:** 11 — Insights and AI · **Status:** done on branch `phase-11-ai` (PR to `main`); next Phase 12
+**Updated:** 2026-10-27 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–10 and licensing merged (PRs #1–#22)
 
-## Phase 10f — done on branch `phase-10f-manufacturing` (PR to `main`)
+## Phase 11 — done on branch `phase-11-ai` (PR to `main`)
+- **Owner answers:** no cloud AI for now (off by default, local Ollama optional); names masked + personal data local if cloud is used; copilot for managers and up; invoice scan, shop descriptions, cash-flow forecast, pricing advice.
+- **Server:** migration `2026_10_27_100001` (`ai_requests`, `ai_alerts`, `ai_documents`); `app/Domain/Analytics/*` (forecast, holidays, stock health, loss prevention, customers, pricing, cash flow, alerts); `app/Domain/Ai/*` (gateway, Ollama/Claude providers, masker, copilot + tools, invoice scanner, product writer); `config/ai.php`; command `erp:insights` (04:30); settings `ai.*`, `insights.margin_alert_pct`, new `choice` setting type.
+- **Back office:** Insights group — Ask your business, Insights (6 tabs), Alerts, AI usage log; Supplier bills → Scan an invoice (pre-fills the bill form); Product → Write description (AI).
+- **Permissions:** `insights.view`, `insights.loss_prevention`, `ai.copilot`, `ai.usage.view` (Core 0.12.0).
+- **Tests:** AiInsightsTest (8) with `tests/Support/FakeAiProvider`; full suite 335 Pest. Screens checked in a real browser (manual screenshots).
+- **Docs:** ai.md, manual chapter 15 (new; reference → 16), 00/03/04 updates, CHANGELOG 0.22.0, DECISIONS 11.
+
+## Phase 10f — done (merged, PR #22)
 - **Owner answer:** actual cost. Other choices in DECISIONS 10f.
 - **Server:** migrations `2026_10_25_100001` (container deposit accounts), `2026_10_26_100001` (`work_centres`, `boms` + `bom_lines`, `work_orders` + `work_order_materials`, `work_order_costs`, `qc_inspections`; accounts wip/production_absorbed/production_variance; releases reserved module); models `WorkCentre`, `Bom(Line)`, `WorkOrder`, `WorkOrderMaterial`, `WorkOrderCost`, `QcInspection`; `app/Domain/Manufacturing/{BomService, WorkOrderService, MrpPlanner}`; StockLedger types `production_issue` (strict), `production_return`, `production_output`, `by_product`; AutoPoster kind `production`; WO/QC numbers; sync group `production`.
 - **Container deposits:** setting `distribution.deposits_as_liability`; AutoPoster splits container lines to `container_deposits` and container stock to `containers_out`.
@@ -162,7 +170,7 @@
 - Signed activation keys, expiry with grace then read-only, daily check-in, tamper detection, watermarks — see docs/licensing.md. Dev licence valid to 2027-12-31 (dev key in `.local-secrets/license-dev.json`). Before the first customer release: production key (`license:keygen`), its public key in `config/license.php`, a licence server.
 
 ## Next
-- Phase 11 — AI analytics & copilot (forecasts, anomaly alerts, scoped copilot); ask the owner's decisions in a batch first.
+- Phase 12 — Reporting/BI, notifications (in-app, e-mail, SMS, WhatsApp), integrations/public API (OpenAPI), import wizards; ask the owner's decisions in a batch first.
 
 ## Owner decisions pending
 - Accountant check of the Ghana tax set-up (VAT/NHIL/GETFund rates and the payroll PAYE bands / SSNIT rates — Payroll → Tax and SSNIT rules) before go-live.

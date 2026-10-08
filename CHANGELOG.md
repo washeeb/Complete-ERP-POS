@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.22.0] — 2026-10-27 · Phase 11 Insights and AI
+### Added
+- **Insights** (no AI needed): demand forecast with weekday, payday and Ghana public-holiday effects, reorder quantities and min/max; stock health (dead stock, overstock, expiry risk, transfers between branches); customers (RFM segments, regulars who stopped coming, bought together, next-best offer); pricing (low margins, markdowns, promotion uplift); 8-week cash-flow forecast; loss prevention (cashier risk scores).
+- **Alerts**, refreshed nightly (`erp:insights`): running out, will expire unsold, low margin / below cost, unusual till patterns, cash shortfall; dealt with / not a problem.
+- **AI assistant** (off by default): local model through Ollama or Claude within a monthly budget; **Ask your business** copilot over read-only reports within each person's access (quick questions work without AI); **Scan an invoice** into the supplier bill form; **Write description (AI)** for products; AI usage log with masked prompts and cost.
+- Privacy: names, phones and e-mails masked before any cloud call; personal data kept on the server (setting).
+- Permissions `insights.view`, `insights.loss_prevention`, `ai.copilot`, `ai.usage.view` (Core 0.12.0); settings under System → Settings → AI; `ANTHROPIC_API_KEY` in `.env` (optional).
+- Installation guide: new Chapter 15 (insights, installing Ollama, switching the assistant on, safety); reference is now Chapter 16.
+
 ## [0.21.0] — 2026-10-26 · Phase 10f Manufacturing
 ### Added
 - **Work centres** with cost per hour (labour + overhead) and hours per day.

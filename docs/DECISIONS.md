@@ -487,6 +487,16 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Phase 11 — Insights and AI (2026-10-27)
+- **Owner answers:** no cloud AI for now; if cloud is used, names masked and personal data local; copilot for managers and up; all four extras.
+- **Classical first:** forecasts, stock health, customer, pricing, cash-flow and loss-prevention analytics are plain arithmetic on the node — work offline, cost nothing, need no model. Alerts are node-local (recomputed where they run), not synced.
+- **Forecast model:** deliberately simple and explainable (weighted recent level × weekday × payday × holiday), shrunk towards neutral factors, rather than a black box; 12 weeks of history.
+- **Loss prevention:** each cashier compared with the others excluding themselves; a flag needs ≥3 events, ≥2× peers and z ≥ 2, so one refund never flags anyone. The score is "look here", not proof — wording on screen says so. Till line voids and no-sale drawer opens are not captured yet.
+- **AI governance:** one gateway; provider off/ollama/claude (default off); Claude needs a key in `.env` and a budget > 0 (default 0); every call logged with the masked prompt; the AI reads through fixed read-only report functions (never SQL) with the person's own permissions; it never posts — invoice scans pre-fill a form, descriptions are drafts.
+- **Privacy:** masking of names (from tool results), phones and e-mails both ways; with "personal data local" on, a cloud conversation that needs customer/staff details continues on the local model, or shows the tables without AI wording.
+- **Local models:** defaults `qwen2.5:7b` (tools) and `qwen2.5vl:7b` (invoice photos); PDFs only with Claude.
+- **Company-wide figures** (cash, cash flow, customers, margins, supplier balances) need a company-wide grant; branch grants see their branches' sales and stock only.
+
 ## Themes (2026-10-24)
 - **Owner request:** System, Dark and Light for the whole app.
 - Back office: Filament's built-in switcher (profile menu; per browser). Custom pages use `currentColor` mixes instead of fixed black borders so they read in both.
