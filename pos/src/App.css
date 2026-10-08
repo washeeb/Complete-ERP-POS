@@ -161,3 +161,9 @@ fieldset.choices button.active, .segmented button.active { background: var(--pri
 
 .table-tile.reserved { background: var(--ok-bg); color: var(--ok-text); border-color: transparent; }
 .table-tile.late { outline: 3px solid var(--danger); }
+
+/* Fashion: size × colour picker */
+.style-grid { border-collapse: collapse; margin: 8px 0; }
+.style-grid th, .style-grid td { padding: 4px; text-align: center; }
+.style-grid button { min-width: 56px; min-height: 44px; }
+.style-grid button.out { opacity: .5; }

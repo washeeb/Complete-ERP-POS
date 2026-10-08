@@ -1,9 +1,26 @@
 # State (resume file)
 
-**Phase:** 10 — Industry modules wave 2 · **Status:** 10a (Electronics) done on branch `phase-10a-electronics` (PR to `main`); next 10b Fashion, then Services, Distribution, Manufacturing
-**Updated:** 2026-10-20 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–9 and licensing merged (PRs #1–#16)
+**Phase:** 10 — Industry modules wave 2 · **Status:** 10b (Fashion) done on branch `phase-10b-fashion` (PR to `main`); next 10c Services & Packages, then Distribution, Manufacturing
+**Updated:** 2026-10-21 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–9, licensing and 10a merged (PRs #1–#17)
 
-## Phase 10a — done (297 Pest + 43 Vitest + 12 Playwright)
+## Phase 10b — done (302 Pest + 45 Vitest + 13 Playwright)
+- **Server:**
+  - migration `2026_10_21_100001_create_fashion_tables`: `styles`; `products.style_id`, `size`, `colour`, `consignor_id`, `consignment_bp`; `consignment_sales`; `alterations`; `sale_lines.alteration_id`;
+  - `app/Domain/Fashion/{StyleService, ConsignmentService, AlterationService, FashionReports}`;
+  - SaleService and ReturnService hooks (alteration lines, consignment shares);
+  - `FashionController` (`pos/alterations`); catalog `fashion` block.
+- **Back office:**
+  - Fashion → Styles (grid, create sizes and colours, one price for all), Alterations, Sell-through & consignment (settle);
+  - Product → Consignment;
+  - role `tailor`; setting `fashion.alteration_sku`.
+- **Till:** `pos/src/fashion.ts`; `screens/Fashion.tsx` (style picker, alterations F9); alteration lines priced at their charge in `cart.ts`.
+- **Tests:** FashionTest (5), SetupAndModulesTest (fashion permissions), `fashion.test.ts`, e2e `fashion.spec.ts`.
+- **Docs:** fashion.md, api.md, DECISIONS 10b, CHANGELOG 0.17.0.
+
+## Phase 10a — done (merged, PR #17)
+- Electronics: serial/IMEI numbers in the ledger, warranties, repairs, trade-ins — see docs/electronics.md.
+
+## Phase 10a — details (297 Pest + 43 Vitest + 12 Playwright at the time)
 - **Owner answers (2026-10-19):** order Electronics → Fashion → Services → Distribution → Manufacturing; manufacturing at actual cost; services with both prepaid packs and recurring invoices; distribution via a phone app with vans as warehouses.
 - **Server:**
   - migration `2026_10_20_100001_create_electronics_tables`: `products.track_serials` and `warranty_months`, `serial_numbers`, `stock_movement_serials`, `serials` on sale, GRN and transfer lines, `repair_jobs` and lines, `trade_ins`, account 1180;
@@ -99,8 +116,9 @@
 ## Licensing (merged, PR #12)
 - Signed activation keys, expiry with grace then read-only, daily check-in, tamper detection, watermarks — see docs/licensing.md. Dev licence valid to 2027-12-31 (dev key in `.local-secrets/license-dev.json`). Before the first customer release: production key (`license:keygen`), its public key in `config/license.php`, a licence server.
 
-## Next — Phase 10b (Fashion & Boutique)
-- Size × colour matrix: a style generates one product (SKU, barcode, price) per size and colour. Seasons and collections, a lookbook (online shop), consignment stock, alterations, style-based reporting.
+## Next — Phase 10c (Services & Packages)
+- Owner answer: both prepaid packs and recurring invoiced memberships.
+- Scope: service catalogue, packages/bundles, memberships with recurring invoices, prepaid session packs counted down at the till, appointments with staff calendars, commissions (salons, gyms, clinics); subscriptions and licence keys deferred from 10a.
 ## Owner decisions pending
 - Accountant check of the Ghana tax set-up (VAT/NHIL/GETFund rates and the payroll PAYE bands / SSNIT rates — Payroll → Tax and SSNIT rules) before go-live.
 - WooCommerce/Shopify: connect a real store only with the owner's keys.
@@ -127,4 +145,4 @@
   - in tests, `flushSession()` before switching users.
 
 ## Blockers
-- Merge PR `phase-10a-electronics` → `main` (asked in chat).
+- Merge PR `phase-10b-fashion` → `main` (asked in chat).

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Domain\Customers\CustomerLedger;
 use App\Domain\Customers\CustomerService;
 use App\Domain\Devices\DeviceSignature;
+use App\Domain\Fashion\AlterationService;
 use App\Domain\Grocery\MarkdownService;
 use App\Domain\Licensing\LicenseManager;
 use App\Domain\Licensing\Watermark;
@@ -33,6 +34,7 @@ use App\Models\Sale;
 use App\Models\SerialNumber;
 use App\Models\Shift;
 use App\Models\StockLevel;
+use App\Models\Style;
 use App\Models\Tenant;
 use App\Models\Till;
 use App\Security\Authorizer;
@@ -119,6 +121,11 @@ class PosController extends Controller
                 'markdowns' => MarkdownService::activeFor($device->branch_id),
             ] : null,
             'electronics' => app(ModuleService::class)->isEnabled($device->branch_id, 'electronics'), // trade-ins and repairs at this till
+            // Fashion: styles for the size × colour picker, and the alteration product (null when the module is off here).
+            'fashion' => app(ModuleService::class)->isEnabled($device->branch_id, 'fashion') ? [
+                'styles' => Style::where('is_active', true)->orderBy('name')->get(['id', 'code', 'name', 'sizes', 'colours', 'season', 'collection'])->values(),
+                'alteration_product_id' => app(AlterationService::class)->product($device->tenant_id)?->id,
+            ] : null,
             // Restaurant: modifier choices, the service charge and tips (null when the module is off at this branch).
             'restaurant' => app(ModuleService::class)->isEnabled($device->branch_id, 'restaurant') ? [
                 'modifier_groups' => ModifierGroup::with('options')->where('is_active', true)->orderBy('name')->get()->map(fn ($g) => ['id' => $g->id, 'name' => $g->name,
@@ -133,6 +140,7 @@ class PosController extends Controller
             'products' => $products->map(fn (Product $p) => [
                 'id' => $p->id, 'sku' => $p->sku, 'name' => $p->name, 'category_id' => $p->category_id, 'track_stock' => $p->track_stock, 'plu' => $p->plu,
                 'station' => $p->station, 'modifier_group_ids' => $p->modifier_group_ids ?? [], 'track_serials' => $p->track_serials, 'warranty_months' => $p->warranty_months,
+                'style_id' => $p->style_id, 'size' => $p->size, 'colour' => $p->colour,
                 'drug' => $p->drug_schedule ? ['schedule' => $p->drug_schedule, 'generic_name' => $p->generic_name, 'strength' => $p->strength,
                     'dosage_form' => $p->dosage_form, 'active_ingredients' => $p->active_ingredients ?? []] : null,
                 'on_hand' => $p->track_stock ? (string) ($stock[$p->id] ?? '0.000') : null,
@@ -195,7 +203,7 @@ class PosController extends Controller
     {
         $tenant = app(TenantContext::class)->id();
         $parts = [];
-        foreach (['products', 'product_uoms', 'barcodes', 'prices', 'price_lists', 'tax_rates', 'tax_groups', 'uoms', 'promotions', 'markdowns', 'drug_interactions', 'modifier_groups', 'settings'] as $t) {
+        foreach (['products', 'product_uoms', 'barcodes', 'prices', 'price_lists', 'tax_rates', 'tax_groups', 'uoms', 'promotions', 'markdowns', 'drug_interactions', 'modifier_groups', 'settings', 'styles'] as $t) {
             $row = DB::table($t)->where('tenant_id', $tenant)->selectRaw('count(*) as c, max(updated_at) as u')->first();
             $parts[] = $t.':'.$row->c.':'.$row->u;
         }
@@ -244,6 +252,7 @@ class PosController extends Controller
             'lines.*.note' => ['nullable', 'string', 'max:255'],
             'lines.*.serials' => ['nullable', 'array', 'max:500'], 'lines.*.serials.*' => ['string', 'max:80'],
             'lines.*.repair_job_id' => ['nullable', 'uuid'],
+            'lines.*.alteration_id' => ['nullable', 'uuid'],
             'trade_ins' => ['nullable', 'array', 'max:10'], 'trade_ins.*.product_id' => ['required', 'uuid'], 'trade_ins.*.value_minor' => ['required', 'integer', 'min:1'],
             'trade_ins.*.serial' => ['nullable', 'string', 'max:80'], 'trade_ins.*.condition' => ['nullable', 'string', 'max:255'],
             'lines.*.dining_item_id' => ['nullable', 'uuid'],

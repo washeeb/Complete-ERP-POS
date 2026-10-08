@@ -156,6 +156,11 @@ final class Settings
             'label' => 'Show a booked table as reserved from (minutes before)',
             'help' => 'On the till’s floor view; a booking more than 15 minutes late is shown as late so the table can be released.',
         ],
+        'fashion.alteration_sku' => [
+            'type' => 'string', 'default' => 'ALTERATION', 'max' => 40, 'group' => 'Fashion',
+            'label' => 'Alteration product (SKU)',
+            'help' => 'Alterations are paid at the till as this product at the agreed charge. Create it with stock tracking off; its tax group taxes the charge.',
+        ],
         'receipt.footer' => [
             'type' => 'string', 'default' => 'Thank you for shopping with us.', 'max' => 200, 'group' => 'Receipts',
             'label' => 'Message at the bottom of receipts',

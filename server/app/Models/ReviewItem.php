@@ -40,6 +40,7 @@ class ReviewItem extends Model
         'serial_problem' => 'Serial-numbered item sold offline without its number, or with a number not in stock',
         'trade_in_unapproved' => 'Trade-in taken offline without a supervisor',
         'repair_conflict' => 'Repair job paid offline that was no longer open',
+        'alteration_conflict' => 'Alteration paid offline that was no longer open',
     ];
 
     protected $guarded = [];

@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.17.0] — 2026-10-21 · Phase 10b Fashion & Boutique
+### Added
+- **Styles** with sizes and colours, season and collection:
+  - one product per size × colour, created with SKU, internal EAN-13 barcode and the style price;
+  - one price for all;
+  - a grid of stock and sales on the style page.
+- **Size × colour picker at the till**, showing stock at that till; swing-tag barcodes add the exact variant.
+- **Consignment:** a product's consignor and their share, stock received at no cost, the share recorded on each sale (returns take it back), settlement raising a supplier bill.
+- **Alterations** (till F9 and Fashion → Alterations): agreed charge, ready-by date, progress, paid at the till at the agreed price or handed over free.
+- **Sell-through by style and season;** what consignors are owed, with Settle.
+- Role **Tailor**; permissions `fashion.alterations` and `fashion.consignment`; setting `fashion.alteration_sku`; adjustment reasons for consignment in and out.
 ## [0.16.0] — 2026-10-20 · Phase 10a Electronics
 ### Added
 - **Serial / IMEI numbers** on products ("Serial / IMEI numbers"), kept in the stock ledger:

@@ -5,6 +5,7 @@ namespace App\Domain\Pos;
 use App\Domain\Customers\CustomerLedger;
 use App\Domain\Customers\Loyalty;
 use App\Domain\Customers\StoredValues;
+use App\Domain\Fashion\ConsignmentService;
 use App\Domain\Inventory\SerialRegistry;
 use App\Domain\Inventory\StockLedger;
 use App\Domain\Pricing\PriceResolver;
@@ -204,6 +205,7 @@ final class ReturnService
             // Goods come back into the batch they were sold from (batch-tracked products).
             $soldFrom = $original ? DB::table('stock_movements')->where('source_type', 'sale')->where('source_id', $original->id)->whereNotNull('batch_id')
                 ->orderByDesc('qty_base')->pluck('batch_id', 'product_id') : collect(); // pluck keeps the last row: the batch most was sold from
+            app(ConsignmentService::class)->record($actor, $sale); // consignment stock: the consignor's share comes back
             $this->stock->post($actor, $warehouse, 'sale_return', array_map(fn ($l) => ['product' => $l['product'], 'unit' => $l['unit'], 'qty_milli' => $l['qty'], 'serials' => $l['serials']]
                 + (isset($soldFrom[$l['product']->id]) ? ['batch_id' => $soldFrom[$l['product']->id]] : []), $lines),
                 "Return {$receiptNo}".($original ? " of {$original->receipt_no}" : ''), 'sale', $sale->id, $occurredAt);

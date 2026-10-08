@@ -27,6 +27,8 @@ final class InventoryService
         'expired' => 'Expired',
         'spoilage' => 'Spoilage (fresh produce)',
         'kitchen_waste' => 'Kitchen waste',
+        'consignment_in' => 'Consignment received (no cost)',
+        'consignment_out' => 'Consignment returned to the consignor',
         'theft' => 'Theft / missing',
         'found' => 'Found / surplus',
         'own_use' => 'Own use / sample',

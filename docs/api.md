@@ -274,3 +274,14 @@ Errors use the standard body `{error, detail}`. For example: `wrong_status`, `no
   - `POST pos/repairs/{id}/hand-over` (no charge only; error `payment_needed`).
   - Sale lines with `repair_job_id` collect the job (`repair_closed` if it is not open).
 - **Sync:** serial changes travel with their stock movements (`stock_movement_batch.serials`); registrations without a movement go as `serial_batch`.
+
+## Fashion (Phase 10b)
+
+- **Catalog:** `GET pos/catalog` adds, per product, `style_id`, `size` and `colour`. It also adds `fashion` (null when the module is off at the till's branch): `{styles: [{id, code, name, sizes, colours, season, collection}], alteration_product_id}`.
+- **Alterations** (staff token, `fashion.alterations`):
+  - `GET pos/alterations` → `{alterations, product_id}`;
+  - `POST pos/alterations` `{customer_name, phone?, garment, work, charge_minor, due_on?}`;
+  - `POST pos/alterations/{id}/status` `{status: in_progress|ready, tailor?}`;
+  - `POST pos/alterations/{id}/hand-over` (free only; error `payment_needed`).
+- **Sales:** `POST pos/sales` lines take `alteration_id`. Such a line is the alteration product at the alteration's `charge_minor`; the engine product id is `alteration:<id>`, so it stays outside promotions. Error `alteration_invalid`; offline → review `alteration_conflict`.
+- **Consignment:** each sale or return of a product with `consignor_id` writes a `consignment_sales` row (the consignor's share of the line's net). It syncs up in the `sales` group.

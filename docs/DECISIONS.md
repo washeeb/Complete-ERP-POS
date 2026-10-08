@@ -412,3 +412,23 @@ Design:
   - a serial picker for B2B deliveries;
   - bin-level serial locations;
   - warranty claims costed against suppliers.
+
+## Phase 10b — Fashion & Boutique (2026-10-21)
+- **A style is a parent; each size × colour is an ordinary product** (`products.style_id`, `size`, `colour`).
+  - The till, stock ledger, promotions, price lists, barcodes and reports work unchanged; the style only groups the variants for the matrix views and the till picker.
+  - SKU `CODE-COLOUR-SIZE`, plus an internal EAN-13 starting with prefix 20 (in-store use).
+  - Generation is idempotent and keeps shared fields in line. Sizes or colours that already have products cannot be dropped, because products are never deleted.
+  - Styles are head-office master data (`catalog` group).
+- **Prices:** the style price seeds new variants on the default list. "One price for all" replaces only each variant's default-list, base-unit, undated row, leaving other lists and tiers alone.
+- **Consignment = product attribute + share,** owned by a supplier.
+  - Stock comes in by adjustment at cost 0, so cost of goods sold is 0 and the consignor's share becomes the cost when settled.
+  - Each sale or return line of such a product writes `consignment_sales` (share = net × bp, rounded half up; returns negative) in the sale's transaction.
+  - Settlement raises one supplier bill per consignor and branch (expense line to cost of sales) through `BillService`, so approval, payment and the books follow Payables. The rows are marked with the bill, so nothing is settled twice.
+- **Alterations** are paid like markdown stickers: a line of the configured non-stock alteration product at the job's agreed charge, kept out of promotions (`alteration:<id>`), validated online (open, same branch, the alteration product).
+  - Free jobs are handed over without a sale.
+  - Jobs are documents (ALT numbers) in the `sales` group.
+- **Sell-through** = sold ÷ (sold + on hand) for a period, by style and season, from sale lines and stock levels (no stored aggregates).
+- **Deferred:**
+  - a lookbook on the online shop (styles with size/colour selectors);
+  - consignment stock statements as PDFs;
+  - garment measurements on customers.

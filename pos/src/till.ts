@@ -106,6 +106,7 @@ export async function submitSale(args: {
       ...(l.service ? { service_charge: true } : {}),
       ...(l.serials?.length ? { serials: l.serials } : {}),
       ...(l.repairJobId ? { repair_job_id: l.repairJobId } : {}),
+      ...(l.alteration ? { alteration_id: l.alteration.id } : {}),
     })),
     ...(args.diningOrderId ? { dining_order_id: args.diningOrderId } : {}),
     ...(args.tipMinor ? { tip_minor: args.tipMinor } : {}),

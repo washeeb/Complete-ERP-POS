@@ -13,11 +13,11 @@ class Product extends Model
 {
     use BelongsToTenant, HasOriginNode, HasUuids;
 
-    protected $fillable = ['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu', 'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'fda_reg_no', 'active_ingredients', 'station', 'modifier_group_ids', 'track_serials', 'warranty_months'];
+    protected $fillable = ['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu', 'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'fda_reg_no', 'active_ingredients', 'station', 'modifier_group_ids', 'track_serials', 'warranty_months', 'style_id', 'size', 'colour', 'consignor_id', 'consignment_bp'];
 
     protected function casts(): array
     {
-        return ['track_stock' => 'boolean', 'is_active' => 'boolean', 'track_batches' => 'boolean', 'active_ingredients' => 'array', 'modifier_group_ids' => 'array', 'track_serials' => 'boolean', 'warranty_months' => 'integer'];
+        return ['track_stock' => 'boolean', 'is_active' => 'boolean', 'track_batches' => 'boolean', 'active_ingredients' => 'array', 'modifier_group_ids' => 'array', 'track_serials' => 'boolean', 'warranty_months' => 'integer', 'consignment_bp' => 'integer'];
     }
 
     public const SCHEDULES = ['otc' => 'Over the counter', 'pom' => 'Prescription only (POM)', 'controlled' => 'Controlled drug'];

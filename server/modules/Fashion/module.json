@@ -1,11 +1,14 @@
 {
   "key": "fashion",
   "name": "Fashion & Boutique",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "kind": "industry",
-  "stage": "planned",
+  "stage": "available",
   "phase": 10,
-  "description": "Size/colour matrix, seasons and collections, consignment, alterations.",
+  "description": "Styles with a size × colour matrix, seasons and collections, consignment stock and settlement, alterations, sell-through by style.",
   "requires": ["core"],
-  "permissions": []
+  "permissions": [
+    {"key": "fashion.alterations", "label": "Take in alterations, update them and hand them back", "min_level": 2},
+    {"key": "fashion.consignment", "label": "See consignment stock and what consignors are owed; settle them", "min_level": 4}
+  ]
 }

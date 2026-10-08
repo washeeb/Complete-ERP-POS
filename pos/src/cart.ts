@@ -8,7 +8,9 @@ export type CartLine = { key: string; product: Product; unit: Unit; qtyMilli: nu
   // Restaurant: the bill item this line pays, the kitchen note (choices), and the service charge line.
   diningItemId?: string; note?: string | null; service?: boolean
   // Electronics: the serial / IMEI numbers sold on this line, and the repair job it pays for.
-  serials?: string[]; repairJobId?: string }
+  serials?: string[]; repairJobId?: string
+  // Fashion: an alteration paid at its agreed charge (outside price lists and promotions).
+  alteration?: { id: string; charge_minor: number } | null }
 
 /** Same rule as server PriceResolver: active at `at`, min_qty ≤ qty, highest tier, dated beats open-ended. */
 export function resolvePrice(product: Product, unitId: string, listId: string, qtyMilli: number, at: Date): Price | null {
@@ -39,14 +41,16 @@ export type CartExtras = { promotions?: PromotionRow[]; branchId?: string; utcOf
 export function priceCart(lines: CartLine[], list: PriceList, at: Date, extras: CartExtras = {}) {
   // A markdown sticker carries its own price and stays out of promotions (same as the server).
   const regular = lines.filter((l) => !l.service)
-  const withPrice = regular.map((l) => ({ l, price: l.markdown
-    ? { price_list_id: list.id, product_uom_id: l.unit.id, min_qty: '1', amount_minor: l.markdown.price_minor, starts_at: null, ends_at: null }
+  const own = (l: CartLine) => l.markdown?.price_minor ?? l.alteration?.charge_minor
+  const withPrice = regular.map((l) => ({ l, price: own(l) !== undefined
+    ? { price_list_id: list.id, product_uom_id: l.unit.id, min_qty: '1', amount_minor: own(l)!, starts_at: null, ends_at: null }
     : resolvePrice(l.product, l.unit.id, list.id, l.qtyMilli, at) }))
   const running = activePromotions(extras.promotions ?? [], at, extras.branchId ?? '', list.id, extras.utcOffsetMinutes ?? 0)
   const calc = computePromotions({
     inclusive: list.prices_include_tax, promotions: running, coupon: extras.coupon ?? null, sale_discount_bp: extras.saleDiscountBp ?? 0,
-    lines: withPrice.filter((x) => x.price).map(({ l, price }) => ({ key: l.key, product_id: l.markdown ? `markdown:${l.markdown.id}` : l.product.id,
-      category_id: l.markdown ? null : l.product.category_id ?? null,
+    lines: withPrice.filter((x) => x.price).map(({ l, price }) => ({ key: l.key,
+      product_id: l.markdown ? `markdown:${l.markdown.id}` : l.alteration ? `alteration:${l.alteration.id}` : l.product.id,
+      category_id: l.markdown || l.alteration ? null : l.product.category_id ?? null,
       qty_milli: l.qtyMilli, unit_price_minor: price!.amount_minor, tax: l.product.tax, manual: l.manual ?? null })),
   })
   const byKey = new Map(calc.lines.map((r) => [r.key, r]))

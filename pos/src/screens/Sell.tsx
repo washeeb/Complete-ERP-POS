@@ -9,9 +9,11 @@ import { generics, needsPrescription, warnings as rxWarnings } from '../pharmacy
 import { billLines, groupsFor, kitchenNote } from '../restaurant'
 import { BillView, FloorView, ModifierPicker, type Choice } from './Restaurant'
 import { RepairsScreen, SerialPrompt } from './Electronics'
+import { AlterationsScreen, StylePicker } from './Fashion'
+import { styleOf } from '../fashion'
 import { v7 as uuidv7 } from 'uuid'
 import { formatMoney, prettyQty, toMilli } from '../money'
-import type { Bootstrap, DiningItem, DiningOrder, Grocery, Pharmacy, Restaurant, RepairJob, TradeInItem, Payment, PostedSale, Product, PromotionRow, TillCustomer, Unit } from '../types'
+import type { Alteration, Bootstrap, DiningItem, DiningOrder, Fashion, Grocery, Pharmacy, Restaurant, RepairJob, Style, TradeInItem, Payment, PostedSale, Product, PromotionRow, TillCustomer, Unit } from '../types'
 import { parseMoney } from '../money'
 import { ReturnScreen } from './ReturnScreen'
 import { cachedCustomers, refreshCustomers } from '../customers'
@@ -54,6 +56,10 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   const [electronics, setElectronics] = useState(false)
   const [serialPick, setSerialPick] = useState<Product | null>(null)
   const [repairsOpen, setRepairsOpen] = useState(false)
+  // Fashion: the size × colour picker for a style; alterations.
+  const [fashion, setFashion] = useState<Fashion | null>(null)
+  const [stylePick, setStylePick] = useState<Style | null>(null)
+  const [alterationsOpen, setAlterationsOpen] = useState(false)
   // Pharmacy: the prescription and the pharmacist's approval for prescription-only medicines in this sale.
   const [rx, setRx] = useState<Rx | null>(null)
   const [rxPrompt, setRxPrompt] = useState<{ message: string; payments?: Payment[]; approvals?: Approvals } | null>(null)
@@ -74,6 +80,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       setPharmacy(cat?.pharmacy ?? null)
       setRestaurant(cat?.restaurant ?? null)
       setElectronics(!!cat?.electronics)
+      setFashion(cat?.fashion ?? null)
     })
   }, [catalogVersion])
 
@@ -106,6 +113,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       if (e.key === 'F8' && !paying && online) { e.preventDefault(); setReturning(true) }
       if (e.key === 'F6' && !paying && online && restaurant) { e.preventDefault(); setFloorOpen(true) }
       if (e.key === 'F7' && !paying && online && electronics) { e.preventDefault(); setRepairsOpen(true) }
+      if (e.key === 'F9' && !paying && online && fashion) { e.preventDefault(); setAlterationsOpen(true) }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -119,6 +127,11 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   }
 
   function add(product: Product, unit?: Unit) {
+    const style = fashion && !unit ? styleOf(product, fashion.styles) : null
+    if (style && !stylePick) {
+      setQuery('')
+      return setStylePick(style) // choose the size and colour from the grid
+    }
     if (product.track_serials) {
       setQuery('')
       return setSerialPick(product) // each unit by its serial / IMEI number
@@ -139,6 +152,15 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
     setLines((l) => [...l, { key: `sn:${uuidv7()}`, product, unit: product.units.find((u) => u.is_base) ?? product.units[0], qtyMilli: serials.length * 1000, serials }])
     setSerialPick(null)
     searchRef.current?.focus()
+  }
+
+  /** Collect an alteration: one line of the alteration product at the agreed charge (the sale marks it collected). */
+  function collectAlteration(a: Alteration, productId: string) {
+    const p = products.find((x) => x.id === productId)
+    if (!p) return setMessage('Refresh the till: the alteration product is not in its catalog.')
+    setLines((l) => [...l, { key: `alt:${a.id}`, product: p, unit: p.units.find((u) => u.is_base) ?? p.units[0], qtyMilli: 1000, alteration: { id: a.id, charge_minor: a.charge_minor },
+      note: `${a.number} · ${a.garment}` }])
+    setAlterationsOpen(false)
   }
 
   /** Collect a repair: its parts and labour become the cart (the sale marks the job collected). */
@@ -349,6 +371,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
           ) : <button type="button" onClick={() => setPicking(true)}>Customer (F4)</button>}
           {online && restaurant && <button type="button" onClick={() => setFloorOpen(true)}>Tables (F6)</button>}
           {online && electronics && <button type="button" onClick={() => setRepairsOpen(true)}>Repairs (F7)</button>}
+          {online && fashion && <button type="button" onClick={() => setAlterationsOpen(true)}>Alterations (F9)</button>}
           {payingBill && <span className="chip" aria-label="Paying bill">Paying {payingBill.label}
             <button type="button" className="link" onClick={() => { setPayingBill(null); setLines([]) }} aria-label="Stop paying this bill">✕</button></span>}
           {online && <button type="button" onClick={() => setReturning(true)}>Return (F8)</button>}
@@ -406,7 +429,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
                     {l.promotions.map((p) => <div key={p.id} className="small promo">{p.name} −{money(p.saving_minor)}</div>)}
                     {l.manual && <div className="small promo">Discount −{money(l.discount - l.promotions.reduce((a, p) => a + p.saving_minor, 0))}</div>}
                   </td>
-                  <td>{l.diningItemId || l.service || l.serials || l.repairJobId ? prettyQty(l.qtyMilli) : (
+                  <td>{l.diningItemId || l.service || l.serials || l.repairJobId || l.alteration ? prettyQty(l.qtyMilli) : (
                     <input className="qty mono" inputMode="decimal" defaultValue={prettyQty(l.qtyMilli)} key={l.qtyMilli}
                       onBlur={(e) => changeQty(l, e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} aria-label={`Quantity of ${l.product.name}`} />)}</td>
                   <td>
@@ -465,6 +488,9 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
         onBack={() => { setBillOpen(null); setFloorOpen(true) }} />}
       {counterPick && restaurant && <ModifierPicker product={counterPick} restaurant={restaurant} tableService={false}
         onDone={(c) => addWithChoices(counterPick, c)} onCancel={() => setCounterPick(null)} />}
+      {stylePick && <StylePicker style={stylePick} products={products} onPick={(p) => { setStylePick(null); add(p, p.units.find((u) => u.is_base) ?? p.units[0]) }}
+        onCancel={() => setStylePick(null)} />}
+      {alterationsOpen && <AlterationsScreen currency={boot.company.currency} exponent={boot.company.exponent} onCollect={collectAlteration} onClose={() => setAlterationsOpen(false)} />}
       {serialPick && <SerialPrompt product={serialPick} onDone={(s) => addSerials(serialPick, s)} onCancel={() => setSerialPick(null)} />}
       {repairsOpen && <RepairsScreen products={products} currency={boot.company.currency} exponent={boot.company.exponent}
         onCollect={collectRepair} onClose={() => setRepairsOpen(false)} />}
