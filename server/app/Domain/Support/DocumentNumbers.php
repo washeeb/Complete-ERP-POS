@@ -17,7 +17,8 @@ final class DocumentNumbers
         'money_transfer' => 'MT', 'expense_claim' => 'EXP', 'fixed_asset' => 'FA',
         'employee' => 'EMP', 'employee_loan' => 'LN', 'payroll_run' => 'PAYR',
         'prescription' => 'RX', 'dining_order' => 'ORD', 'reservation' => 'RES', 'repair_job' => 'JOB', 'alteration' => 'ALT',
-        'appointment' => 'APT', 'service_pass' => 'PASS', 'membership' => 'MEM'];
+        'appointment' => 'APT', 'service_pass' => 'PASS', 'membership' => 'MEM',
+        'stock_adjustment' => 'ADJ'];
 
     public function next(string $tenantId, string $docType): string
     {

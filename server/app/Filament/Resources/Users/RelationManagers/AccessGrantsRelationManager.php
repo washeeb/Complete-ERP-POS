@@ -61,7 +61,7 @@ class AccessGrantsRelationManager extends RelationManager
                     ->queries(true: fn ($q) => $q->active(), false: fn ($q) => $q, blank: fn ($q) => $q),
             ])
             ->defaultSort('created_at', 'desc')
-            ->headerActions([
+            ->pushHeaderActions([
                 Action::make('grant')->label('Grant access')->icon(Heroicon::OutlinedPlus)
                     ->visible(fn () => Erp::can('admin.roles.manage'))
                     ->schema([

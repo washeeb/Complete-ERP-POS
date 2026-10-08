@@ -1,7 +1,7 @@
 {
   "key": "core",
   "name": "Core",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "kind": "core",
   "stage": "available",
   "description": "Company, branches, warehouses, tills, users, roles, devices, audit, modules, settings, catalog, prices and tax, stock ledger and the POS. Always installed.",
@@ -15,6 +15,7 @@
     {"key": "pricing.manage", "label": "Change prices, price lists and tax set-up", "min_level": 4},
     {"key": "stock.view", "label": "View stock levels and movements", "min_level": 1},
     {"key": "stock.adjust", "label": "Enter opening stock and stock adjustments", "min_level": 3},
+    {"key": "stock.adjust.approve", "label": "Approve and post stock adjustments above the approval limit (not your own)", "min_level": 4},
     {"key": "sales.view", "label": "View till sales, receipts and shifts", "min_level": 2},
     {"key": "orders.view", "label": "View online orders", "min_level": 2},
     {"key": "orders.manage", "label": "Prepare, fulfil and cancel online orders", "min_level": 3},

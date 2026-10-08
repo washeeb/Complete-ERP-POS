@@ -33,6 +33,9 @@ class AppServiceProvider extends ServiceProvider
             throw new \RuntimeException('ERP_NODE_ROLE must be hq, branch or standalone.');
         }
 
+        // Every list in the back office can be exported (CSV / PDF) with its current search, filters and sort.
+        \Filament\Tables\Table::configureUsing(fn (\Filament\Tables\Table $table) => $table->pushHeaderActions([\App\Filament\Support\TableExport::group()]));
+
         // Dotted abilities are ERP permissions: $user->can('admin.users.manage', $branch).
         // No target = only a company-wide grant counts. Anything else falls through to policies.
         Gate::before(function ($user, string $ability, array $args) {

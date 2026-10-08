@@ -9,6 +9,7 @@ use App\Models\Employee;
 use App\Models\LeaveRequest;
 use App\Models\LeaveType;
 use App\Models\Payslip;
+use App\Filament\Support\ExportsPage;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Pages\Page;
@@ -18,6 +19,8 @@ use UnitEnum;
 /** Self-service: your leave balances and requests, and your payslips. */
 class MyHr extends Page
 {
+    use ExportsPage;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserCircle;
 
     protected static string|UnitEnum|null $navigationGroup = 'HR & payroll';
@@ -70,7 +73,7 @@ class MyHr extends Page
 
     protected function getHeaderActions(): array
     {
-        return [
+        return [$this->exportGroup(), 
             Action::make('request')->label('Request leave')->icon(Heroicon::OutlinedPlus)
                 ->schema(LeaveRequestResource::requestForm(chooseEmployee: false))
                 ->action(fn (array $data) => Erp::run(fn ($actor) => app(HrService::class)->requestLeave($actor, $this->employee(), LeaveType::findOrFail($data['leave_type_id']),

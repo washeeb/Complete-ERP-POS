@@ -8,6 +8,7 @@ use App\Domain\Support\DomainException;
 use App\Filament\Support\Erp;
 use App\Models\Markdown;
 use App\Models\Warehouse;
+use App\Filament\Support\ExportsPage;
 use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -19,6 +20,8 @@ use UnitEnum;
 /** Batches on hand by expiry; near-expiry markdowns to apply; expired stock to write off; stickers to print. */
 class BatchesExpiry extends Page
 {
+    use ExportsPage;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalendar;
 
     protected static string|UnitEnum|null $navigationGroup = 'Stock';

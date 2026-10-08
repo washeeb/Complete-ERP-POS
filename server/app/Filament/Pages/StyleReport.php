@@ -9,6 +9,7 @@ use App\Filament\Support\Erp;
 use App\Models\Branch;
 use App\Models\Style;
 use App\Models\Supplier;
+use App\Filament\Support\ExportsPage;
 use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -19,6 +20,8 @@ use UnitEnum;
 /** Sell-through by style and season, and what consignors are owed (with settlement). */
 class StyleReport extends Page
 {
+    use ExportsPage;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartPie;
 
     protected static string|UnitEnum|null $navigationGroup = 'Fashion';

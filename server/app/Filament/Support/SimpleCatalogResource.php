@@ -46,7 +46,7 @@ abstract class SimpleCatalogResource extends Resource
             ->saveSimple($actor, $record ?? new (static::getModel()), $data, static::$managePermission));
 
         return $table
-            ->headerActions([CreateAction::make()->using(fn (array $data) => $save(null, $data))])
+            ->pushHeaderActions([CreateAction::make()->using(fn (array $data) => $save(null, $data))])
             ->recordActions([EditAction::make()->using(fn (Model $record, array $data) => $save($record, $data))]);
     }
 }

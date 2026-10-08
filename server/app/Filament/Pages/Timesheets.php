@@ -11,6 +11,7 @@ use App\Models\Employee;
 use App\Models\PayrollProfile;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Filament\Support\ExportsPage;
 use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -23,6 +24,8 @@ use UnitEnum;
 /** Hours from clock-ins on the tills; managers add missing clock-outs or void mistakes (with a reason). */
 class Timesheets extends Page
 {
+    use ExportsPage;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClock;
 
     protected static string|UnitEnum|null $navigationGroup = 'HR & payroll';

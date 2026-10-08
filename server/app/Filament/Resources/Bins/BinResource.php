@@ -101,7 +101,7 @@ class BinResource extends Resource
             ])
             ->filters([SelectFilter::make('warehouse_id')->label('Warehouse')->options(fn () => Warehouse::where('use_bins', true)->pluck('code', 'id'))])
             ->defaultSort('pick_order')
-            ->headerActions([
+            ->pushHeaderActions([
                 CreateAction::make()->using(fn (array $data): Model => $save(new Bin, $data)),
             ])
             ->recordActions([

@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Domain\Modules\ModuleService;
 use App\Filament\Support\Erp;
+use App\Filament\Support\ExportsPage;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
@@ -14,6 +15,8 @@ use UnitEnum;
 /** Tips owed per person (paid with payroll) and voided items, for a period. */
 class RestaurantReport extends Page
 {
+    use ExportsPage;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
 
     protected static string|UnitEnum|null $navigationGroup = 'Restaurant';

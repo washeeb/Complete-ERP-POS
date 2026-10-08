@@ -3,6 +3,11 @@
 **Phase:** 10 — Industry modules wave 2 · **Status:** 10c (Services) + installation guide done on branch `phase-10c-services` (PR to `main`); next 10d Distribution, then Manufacturing
 **Updated:** 2026-10-22 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–9, licensing, 10a and 10b merged (PRs #1–#18)
 
+## Phase 10d (data exchange) — IN PROGRESS on branch `phase-10d-data-exchange` (work-in-progress commit, no PR yet)
+- Owner request (2026-10-08): CSV/PDF export of everything viewable; stock adjustments (+/−/set); CSV imports for products and related data; stock sheet export before a count and stock update by CSV. Distribution moves to 10e, Manufacturing to 10f.
+- Done (not yet tested beyond DataExchangeTest's table export): `Support/Exports/Exporter` (CSV with BOM + formula-injection guard, PDF via dompdf), `Filament/Support/TableExport` on every table (AppServiceProvider; tables use pushHeaderActions), `ExportsPage` trait on report pages (exports the rendered tables), migration `2026_10_23_100001` (stock_adjustments + lines, data_imports), `StockAdjustmentService`, permission `stock.adjust.approve`, setting `stock.adjustment_approval_minor`, ADJ numbering, `Imports/{CsvFile, Importer, ImportService}`, `ProductsImporter` (needs `CatalogService::inputOf()` and `withPrice()` — not written yet).
+- To do: CatalogService helpers; Prices/Customers/Suppliers/OpeningStock/StockAdjustment/StockCount importers; Import data page (template, current-data export, check, import, error report, history); StockAdjustmentResource (+ voucher PDF); count sheet CSV/PDF on Stock on hand and Stock count; tests; run full suite; docs (manual chapter, CHANGELOG, DECISIONS).
+
 ## Phase 10c — done (308 Pest + 49 Vitest + 14 Playwright)
 - **Server:**
   - migration `2026_10_22_100001_create_services_tables`: `products.service_minutes`, `commission_bp`, `pack`, `licence_keys`; `employees.takes_appointments`, `commission_bp`; `service_passes`, `service_pass_uses`, `appointments`, `membership_plans`, `memberships`, `commissions`, `licence_keys`; `sale_lines.staff_id`, `service_pass_id`, `pass_item`, `appointment_id`; `payslips.commission_minor`; `invoices.membership_id`;

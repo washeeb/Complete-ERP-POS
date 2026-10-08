@@ -10,6 +10,7 @@ use App\Models\Appointment;
 use App\Models\Branch;
 use App\Models\Tenant;
 use App\Support\Settings;
+use App\Filament\Support\ExportsPage;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Pages\Page;
@@ -22,6 +23,8 @@ use UnitEnum;
 /** The day's appointments as a grid: one column per staff member, one row per time slot. */
 class StaffCalendar extends Page
 {
+    use ExportsPage;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTableCells;
 
     protected static string|UnitEnum|null $navigationGroup = 'Services';
@@ -106,7 +109,7 @@ class StaffCalendar extends Page
 
     protected function getHeaderActions(): array
     {
-        return [Action::make('book')->label('Book appointment')->schema(AppointmentResource::bookingFields())->modalWidth('4xl')
+        return [$this->exportGroup(), Action::make('book')->label('Book appointment')->schema(AppointmentResource::bookingFields())->modalWidth('4xl')
             ->fillForm(fn () => ['branch_id' => $this->branchId ?: null, 'starts_at' => Carbon::parse($this->date.' '.now($this->tz())->addHour()->format('H:00'), $this->tz())])
             ->action(fn (array $data) => Erp::run(fn ($actor) => app(AppointmentService::class)->book($actor, new Appointment, array_filter($data, fn ($v) => $v !== null && $v !== '')), 'Booked'))];
     }

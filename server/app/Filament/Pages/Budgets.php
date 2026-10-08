@@ -10,6 +10,7 @@ use App\Filament\Support\FinanceUi;
 use App\Models\Account;
 use App\Models\Branch;
 use App\Models\FiscalPeriod;
+use App\Filament\Support\ExportsPage;
 use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -20,6 +21,8 @@ use UnitEnum;
 /** Budgets per branch × income/expense account × month (owner decision 2026-10-13). */
 class Budgets extends Page
 {
+    use ExportsPage;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalculator;
 
     protected static string|UnitEnum|null $navigationGroup = 'Finance';

@@ -94,7 +94,7 @@ class ReorderRuleResource extends Resource
                 TextColumn::make('max_qty')->label('Max')->formatStateUsing(fn ($state) => Fields::qty($state)),
             ])
             ->filters([SelectFilter::make('warehouse_id')->label('Warehouse')->options(fn () => Warehouse::orderBy('code')->pluck('code', 'id'))])
-            ->headerActions([CreateAction::make()->using(fn (array $data): Model => $save($data))])
+            ->pushHeaderActions([CreateAction::make()->using(fn (array $data): Model => $save($data))])
             ->recordActions([EditAction::make()->using(fn (ReorderRule $record, array $data): Model => $save($data, $record))]);
     }
 
