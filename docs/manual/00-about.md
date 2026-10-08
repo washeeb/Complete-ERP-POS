@@ -48,6 +48,7 @@ The software is built in phases. This guide always describes the software **as i
 | Server installation | Step-by-step manual installation (this guide) on Windows or Ubuntu Linux | One-click installers for every setup (Phase 13) |
 | Till app | Runs in the Chrome or Edge browser and can be installed as an app; works offline | Optional desktop app with printer and cash-drawer drivers (Phase 13) |
 | Backups | Manual and scheduled database backups (Chapter 12) | Encrypted automatic backups with a tested restore (Phase 13) |
-| Industry modules | Grocery, Pharmacy, Restaurant, Electronics, Fashion, Services, Online Storefront | Distribution, Manufacturing, then Logistics, Assets, Projects and Helpdesk |
+| Industry modules | Grocery, Pharmacy, Restaurant, Electronics, Fashion, Services, Sales & Distribution, Manufacturing, Online Storefront | Logistics, Assets, Projects and Helpdesk |
+| Insights and AI | Forecasts, stock health, customers, pricing, cash flow, loss prevention and alerts (no AI needed); optional local AI assistant (Chapter 15) | Scheduled reports by e-mail (Phase 12) |
 
 **Warning:** Use the software with test data until your accountant has checked the tax set-up (Chapter 7, step 7) and you have practised a backup and a restore (Chapter 12).

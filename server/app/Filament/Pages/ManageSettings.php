@@ -7,6 +7,7 @@ use App\Filament\Support\Erp;
 use App\Support\Settings;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Pages\Page;
@@ -55,6 +56,7 @@ class ManageSettings extends Page
             $groups[$def['group']][] = match ($def['type']) {
                 'bool' => Toggle::make(self::field($key))->label($def['label'])->helperText($def['help']),
                 'string' => TextInput::make(self::field($key))->label($def['label'])->helperText($def['help'])->maxLength($def['max']),
+                'choice' => Select::make(self::field($key))->label($def['label'])->helperText($def['help'])->options($def['options'])->required()->selectablePlaceholder(false),
                 default => TextInput::make(self::field($key))->label($def['label'])->helperText($def['help'])
                     ->numeric()->integer()->required()->minValue($def['min'])->maxValue($def['max']),
             };

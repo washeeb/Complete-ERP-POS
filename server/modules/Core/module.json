@@ -1,7 +1,7 @@
 {
   "key": "core",
   "name": "Core",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "kind": "core",
   "stage": "available",
   "description": "Company, branches, warehouses, tills, users, roles, devices, audit, modules, settings, catalog, prices and tax, stock ledger and the POS. Always installed.",
@@ -75,6 +75,10 @@
     {"key": "admin.devices.manage", "label": "Register, enrol and revoke devices", "min_level": 4, "technical": true},
     {"key": "admin.modules.manage", "label": "Enable or disable modules per branch", "min_level": 4, "technical": true},
     {"key": "admin.settings.manage", "label": "Change system settings", "min_level": 4, "technical": true},
-    {"key": "audit.verify", "label": "Verify the audit hash chain", "min_level": 4, "technical": true}
+    {"key": "audit.verify", "label": "Verify the audit hash chain", "min_level": 4, "technical": true},
+    {"key": "insights.view", "label": "See forecasts, stock health, customer and pricing insights, cash-flow forecast and alerts", "min_level": 3},
+    {"key": "insights.loss_prevention", "label": "See loss-prevention risk scores for cashiers and shifts", "min_level": 4},
+    {"key": "ai.copilot", "label": "Ask the copilot questions about the business (only data you may already see)", "min_level": 3},
+    {"key": "ai.usage.view", "label": "See the AI usage log (questions, answers, cost)", "min_level": 4}
   ]
 }

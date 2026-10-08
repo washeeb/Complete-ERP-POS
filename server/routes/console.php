@@ -20,3 +20,4 @@ Schedule::command('license:checkin')->dailyAt('03:15')->withoutOverlapping(30);
 Schedule::command('erp:reservation-reminders')->everyFiveMinutes()->withoutOverlapping(10);
 Schedule::command('erp:appointment-reminders')->everyFiveMinutes()->withoutOverlapping(10);
 Schedule::command('erp:bill-memberships')->dailyAt('01:30')->withoutOverlapping(60); // head office only
+Schedule::command('erp:insights')->dailyAt('04:30')->withoutOverlapping(120); // forecasts and alerts (no AI model needed)

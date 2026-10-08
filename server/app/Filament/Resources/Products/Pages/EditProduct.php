@@ -2,10 +2,16 @@
 
 namespace App\Filament\Resources\Products\Pages;
 
+use App\Domain\Ai\AiGateway;
+use App\Domain\Ai\ProductWriter;
 use App\Domain\Catalog\CatalogService;
 use App\Filament\Resources\Products\ProductResource;
 use App\Filament\Support\Erp;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Model;
 
 class EditProduct extends EditRecord
@@ -15,6 +21,33 @@ class EditProduct extends EditRecord
     protected function mutateFormDataBeforeFill(array $data): array
     {
         return $data + ProductResource::toFormData($this->record);
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            // Draft an online-shop description with the AI; the person edits it before saving.
+            Action::make('describe')->label('Write description (AI)')->icon(Heroicon::OutlinedSparkles)->color('gray')
+                ->visible(fn () => Erp::canAnywhere('catalog.manage'))
+                ->modalDescription(fn () => app(AiGateway::class)->unavailableReason(Erp::user()->tenant_id) ?? 'A draft from the product details. Edit it as you like; nothing is saved until you press Save.')
+                ->fillForm(fn () => ['tone' => 'friendly', 'description' => $this->record->description])
+                ->schema([
+                    Select::make('tone')->options(['friendly' => 'Friendly', 'professional' => 'Professional', 'short' => 'Very short'])->label('Style'),
+                    Textarea::make('description')->rows(6)->maxLength(2000)
+                        ->hintAction(Action::make('draft')->label('Draft with AI')->icon(Heroicon::OutlinedSparkles)
+                            ->action(function ($set, $get) {
+                                $text = Erp::run(fn ($actor) => app(ProductWriter::class)->draft($actor, $this->record, (string) ($get('tone') ?: 'friendly')));
+                                if ($text) {
+                                    $set('description', $text);
+                                }
+                            })),
+                ])
+                ->action(function (array $data) {
+                    if (Erp::run(fn ($actor) => app(CatalogService::class)->saveProduct($actor, $this->record, ['description' => $data['description'] ?? null], 'Description written with AI help'), 'Description saved')) {
+                        $this->fillForm();
+                    }
+                }),
+        ];
     }
 
     protected function handleRecordUpdate(Model $record, array $data): Model
