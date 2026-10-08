@@ -2,9 +2,9 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Support\ExportsPage;
 use App\Domain\Hr\HrService;
 use App\Filament\Support\Erp;
+use App\Filament\Support\ExportsPage;
 use App\Models\PayrollProfile;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
@@ -40,7 +40,7 @@ class PayrollProfilePage extends Page
     {
         $pct = fn ($bp) => rtrim(rtrim(number_format($bp / 100, 2, '.', ''), '0'), '.');
 
-        return [$this->exportGroup(), 
+        return [$this->exportGroup(),
             Action::make('verify')->label('Check and confirm')->icon(Heroicon::OutlinedCheckBadge)->modalWidth('3xl')
                 ->visible(fn () => Erp::canAnywhere('payroll.approve') && $this->profile() !== null)
                 ->modalDescription('Compare with the current GRA PAYE bands and SSNIT rates. Saving records you as the person who checked them.')

@@ -73,6 +73,43 @@ final class CatalogService
         return array_values($out);
     }
 
+    /**
+     * A product's units (other than the base), base-unit barcodes and prices in the shape saveProduct() takes, so a caller
+     * can change one part (e.g. one price) and send the rest back unchanged.
+     *
+     * @return array{units: list<array>, base_barcodes: list<string>, prices: list<array>}
+     */
+    public static function inputOf(Product $p): array
+    {
+        $p->load('units.uom', 'units.barcodes', 'prices.priceList', 'prices.productUom');
+        $base = $p->units->firstWhere('is_base', true);
+
+        return [
+            'base_barcodes' => $base?->barcodes->pluck('code')->all() ?? [],
+            'units' => $p->units->where('is_base', false)->where('is_sellable', true)->values()->map(fn ($u) => [
+                'uom_id' => $u->uom_id, 'factor' => rtrim(rtrim((string) $u->factor, '0'), '.'), 'is_sellable' => $u->is_sellable,
+                'is_purchasable' => $u->is_purchasable, 'barcodes' => $u->barcodes->pluck('code')->all(),
+            ])->all(),
+            'prices' => $p->prices->map(fn ($x) => [
+                'price_list_id' => $x->price_list_id, 'uom_id' => $x->productUom->uom_id,
+                'min_qty' => rtrim(rtrim((string) $x->min_qty, '0'), '.'), 'amount' => Money::format($x->amount_minor, $x->priceList->currency_code),
+                'starts_at' => $x->starts_at?->toDateTimeString(), 'ends_at' => $x->ends_at?->toDateTimeString(),
+            ])->values()->all(),
+        ];
+    }
+
+    /** Price rows (as inputOf() gives them) with one row set: same list, unit, minimum quantity and dates are replaced. */
+    public static function withPrice(array $rows, string $listId, string $uomId, string $minQty, string $amount, ?string $starts = null, ?string $ends = null): array
+    {
+        $key = fn ($r) => implode('|', [$r['price_list_id'], $r['uom_id'], Qty::toMilli((string) ($r['min_qty'] ?? '1')),
+            empty($r['starts_at']) ? '' : Carbon::parse($r['starts_at'])->toDateTimeString(), empty($r['ends_at']) ? '' : Carbon::parse($r['ends_at'])->toDateTimeString()]);
+        $new = ['price_list_id' => $listId, 'uom_id' => $uomId, 'min_qty' => $minQty, 'amount' => $amount, 'starts_at' => $starts, 'ends_at' => $ends];
+        $rows = array_values(array_filter($rows, fn ($r) => $key($r) !== $key($new)));
+        $rows[] = $new;
+
+        return $rows;
+    }
+
     public function saveProduct(Actor $actor, Product $product, array $data, ?string $reason = null): Product
     {
         $this->require($actor, 'catalog.manage');

@@ -46,7 +46,7 @@ The wizard opens by itself the first time.
 
 For each staff member:
 
-1. **People & access → Users → New user**: name, username, email (for back-office users), and a **Security level (ceiling)** (the highest level of what they can ever be given — see Chapter 14).
+1. **People & access → Users → New user**: name, username, email (for back-office users), and a **Security level (ceiling)** (the highest level of what they can ever be given — see Chapter 15).
 2. On the next screen, **Grant access**: choose a **role** (Cashier, Supervisor, Branch Manager, Storekeeper, Accountant, Pharmacist, Waiter, Stylist / Therapist…) and **where it applies** (a till, a branch, a warehouse or the whole company).
 3. For anyone who sells or clocks in on a till: **Set POS PIN** (4–8 digits; simple PINs like 1234 are refused).
 
@@ -102,18 +102,21 @@ Module settings (Grocery, Pharmacy, Restaurant, Fashion, Services) are explained
 
 **Why:** products are never deleted (old receipts refer to them). Untick *For sale* instead.
 
+**Tip:** with many products, use **Import products (CSV)** instead of typing them one by one: download the template, fill it in Excel (SKU, name, category, barcodes, a price column per list) and import it. Chapter 14.2 explains how.
+
 ## Step 10 — Opening stock
 
 **Stock → Stock on hand → Opening stock / adjustment**, choosing *Opening balance*, for each product and warehouse: the quantity you counted and the **cost per unit**.
 
 **Why:** the cost is used for the value of your stock and the cost of goods sold in the accounts.
 
-**Tip:** count on a day you are closed, enter the counts, then start selling.
+**Tip:** count on a day you are closed, enter the counts, then start selling. For many products use **System → Import data (CSV) → Opening stock** (warehouse, SKU, quantity, unit cost per row).
 
 ## Step 11 — Customers and suppliers
 
 - **Sales → Customers**: customers who buy on credit or collect loyalty points. Credit limits and payment terms are set at head office. Customers who owe you money get an **opening balance**.
 - **Purchasing → Suppliers**: suppliers you buy from, with an **opening balance** if you owe them.
+- Both can be imported from CSV files (**Import customers / suppliers (CSV)** on their lists).
 
 ## Step 12 — Finance and HR (if licensed)
 

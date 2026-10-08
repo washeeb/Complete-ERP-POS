@@ -15,6 +15,7 @@ use App\Models\RepairJob;
 use App\Models\Role;
 use App\Models\Sale;
 use App\Models\SalesOrder;
+use App\Models\StockAdjustment;
 use App\Models\StockCount;
 use App\Models\StockTransfer;
 use App\Models\Supplier;
@@ -81,7 +82,7 @@ final class Replication
         GoodsReceipt::class => ['lines', 'goods_receipt_lines'],
         StockTransfer::class => ['lines', 'stock_transfer_lines'],
         StockCount::class => ['lines', 'stock_count_lines'],
-        \App\Models\StockAdjustment::class => ['lines', 'stock_adjustment_lines'],
+        StockAdjustment::class => ['lines', 'stock_adjustment_lines'],
         ModifierGroup::class => ['options', 'modifier_options'],
         DiningOrder::class => ['items', 'dining_order_items'],
         RepairJob::class => ['lines', 'repair_job_lines'],

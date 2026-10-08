@@ -37,6 +37,10 @@ Tax profile, chart of accounts, hardware and sync settings join the wizard in th
 | Turn modules on per branch | System → Modules |
 | Security settings | System → Settings |
 | Check the audit log is intact | System → Audit log → *Verify chain* |
+| Download a list or report | **Export** (top right) → CSV (Excel) or PDF — uses the current search and filters |
+| Import products, prices, customers, suppliers, opening stock | System → Import data (CSV): template, *Check file*, then *Import* |
+| Correct stock (damage, theft, found, mistakes) | Stock → Stock adjustments (approval above the limit in Settings → Stock) |
+| Stock take | Stock → Stock counts (count sheet PDF/CSV, import counts) or Stock on hand → Stock sheet |
 
 ## Backups, restore, upgrades
 

@@ -5,11 +5,11 @@ namespace App\Filament\Pages;
 use App\Domain\Hr\HrService;
 use App\Filament\Resources\LeaveRequests\LeaveRequestResource;
 use App\Filament\Support\Erp;
+use App\Filament\Support\ExportsPage;
 use App\Models\Employee;
 use App\Models\LeaveRequest;
 use App\Models\LeaveType;
 use App\Models\Payslip;
-use App\Filament\Support\ExportsPage;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Pages\Page;
@@ -73,7 +73,7 @@ class MyHr extends Page
 
     protected function getHeaderActions(): array
     {
-        return [$this->exportGroup(), 
+        return [$this->exportGroup(),
             Action::make('request')->label('Request leave')->icon(Heroicon::OutlinedPlus)
                 ->schema(LeaveRequestResource::requestForm(chooseEmployee: false))
                 ->action(fn (array $data) => Erp::run(fn ($actor) => app(HrService::class)->requestLeave($actor, $this->employee(), LeaveType::findOrFail($data['leave_type_id']),

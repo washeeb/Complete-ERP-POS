@@ -9,6 +9,8 @@ use DOMXPath;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Support\Icons\Heroicon;
+use Livewire\Drawer\Utils;
+use Livewire\Mechanisms\ExtendBlade\ExtendBlade;
 
 /**
  * "Export" on report pages (trial balance, aged debts, shrink, commissions, calendars…): every table the page shows, as
@@ -45,7 +47,16 @@ trait ExportsPage
 
     public function exportPage(string $format)
     {
-        $sheets = self::tablesFromHtml($this->render()->render(), strip_tags((string) $this->getTitle()));
+        // Render the page as Livewire does (so the view's $this is this page), then read its tables.
+        $revert = Utils::shareWithViews('__livewire', $this);
+        app(ExtendBlade::class)->startLivewireRendering($this);
+        try {
+            $html = $this->render()->with(['__livewire' => $this] + Utils::getPublicPropertiesDefinedOnSubclass($this))->render();
+        } finally {
+            app(ExtendBlade::class)->endLivewireRendering();
+            $revert();
+        }
+        $sheets = self::tablesFromHtml($html, strip_tags((string) $this->getTitle()));
         $title = TableExport::plain($this->getTitle());
 
         return Erp::run(fn ($actor) => $format === 'pdf'

@@ -40,6 +40,7 @@ final class CsvFile
             }
             if ($headings === null) {
                 $headings = array_map([self::class, 'key'], $cells);
+
                 continue;
             }
             if (count($rows) >= self::MAX_ROWS) {

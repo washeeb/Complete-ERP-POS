@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.19.0] — 2026-10-23 · Phase 10d Data import & export, stock adjustments
+### Added
+- **Export everywhere:** every back-office list and report page has **Export → CSV (Excel) / PDF** with the current search, filters and sort (all pages). PDFs carry the company, title, filters, who printed it, page numbers and the licence reference; CSVs have a UTF-8 byte-order mark and are protected against formula injection. Every export is audited; read-only licences block exports.
+- **Import data (CSV)** (System menu, and shortcuts on Products, Customers, Suppliers, Stock adjustments, Stock counts): products (create/update by SKU, barcodes, a price column per list, categories and brands created on request), prices (tiers and dated promotions), customers (with credit), suppliers, opening stock, stock adjustment lines and stock count results.
+  - Template, column guide (PDF) and "current data to edit" (round trip) per kind; **Check file** runs every row through the real services and undoes everything; import all-or-nothing or skipping bad rows; error report CSV; import history; audit log.
+  - Reads Excel/Sheets CSVs: comma, semicolon or tab; UTF-8 or Windows encoding; loose headings; numbers with separators; DD/MM/YYYY dates.
+- **Stock adjustments** (Stock → Stock adjustments): documents with any number of lines — increase (+), decrease (−) or set to a counted quantity — per warehouse and reason, with reference; draft, submit, approve and post; approval by another manager above a value limit (setting, default GHS 500); before/change/after preview with value; adjustment voucher PDF.
+- **Stock takes:** stock sheet (current stock standing, with or without system quantities, PDF or CSV) on Stock on hand; count sheets (PDF/CSV) and "Import counted quantities" on stock counts; "Update stock from a CSV file" as a set-to adjustment that skips unchanged rows.
+- Permission `stock.adjust.approve`; setting `stock.adjustment_approval_minor`; ADJ document numbers.
+- Installation guide: new chapter 14 (exporting, importing, stock adjustments, stock takes); php.ini upload folder.
+### Fixed
+- Imports and exports now write their audit rows inside a transaction (found testing in a real browser).
+
 ## [0.18.0] — 2026-10-22 · Phase 10c Services & Packages
 ### Added
 - **Services and staff:** bookable services with a duration; staff who take appointments; commission rates per person and per product.

@@ -72,6 +72,7 @@ final class ImportService
         if (! $actor->user || ! $this->authz->allowsAnywhere($actor->user, $importer->permission())) {
             throw new AccessDenied;
         }
+        $options += $importer->optionDefaults();
         $csv = CsvFile::read($path);
         $missing = array_diff(array_column(array_filter($importer->columns(), fn ($c) => $c['required'] === true), 'name'), $csv['headings']);
         if ($missing) {
@@ -114,16 +115,19 @@ final class ImportService
         }
 
         $status = ! $commit ? 'checked' : ($keep ? 'imported' : 'failed');
-        $import = DataImport::create(['id' => (string) Str::uuid7(), 'tenant_id' => $actor->tenantId, 'type' => $type, 'file_name' => mb_substr($fileName, 0, 255),
-            'stored_path' => $path, 'status' => $status, 'options' => $options, 'context_id' => $status === 'imported' ? $contextId : $givenContextId,
-            'rows_total' => count($csv['rows']), 'rows_ok' => count($csv['rows']) - count($errors), 'rows_error' => count($errors),
-            'summary' => $counts + ['ignored_columns' => $ignored, 'results' => array_slice($results, 0, 500)],
-            'errors' => array_slice($errors, 0, 1000), 'user_id' => $actor->id, 'user_name' => $actor->name, 'completed_at' => now()]);
-        $this->audit->record($actor, $status === 'imported' ? 'data.imported' : 'data.import_checked', $import, [
-            'type' => [null, $importer->label()], 'file' => [null, $fileName], 'rows' => [null, count($csv['rows'])], 'errors' => [null, count($errors)],
-        ] + array_map(fn ($n) => [null, $n], array_filter($counts)));
 
-        return $import;
+        return DB::transaction(function () use ($actor, $type, $fileName, $path, $status, $options, $contextId, $givenContextId, $csv, $errors, $counts, $ignored, $results, $importer) {
+            $import = DataImport::create(['id' => (string) Str::uuid7(), 'tenant_id' => $actor->tenantId, 'type' => $type, 'file_name' => mb_substr($fileName, 0, 255),
+                'stored_path' => $path, 'status' => $status, 'options' => $options, 'context_id' => $status === 'imported' ? $contextId : $givenContextId,
+                'rows_total' => count($csv['rows']), 'rows_ok' => count($csv['rows']) - count($errors), 'rows_error' => count($errors),
+                'summary' => $counts + ['ignored_columns' => $ignored, 'results' => array_slice($results, 0, 500)],
+                'errors' => array_slice($errors, 0, 1000), 'user_id' => $actor->id, 'user_name' => $actor->name, 'completed_at' => now()]);
+            $this->audit->record($actor, $status === 'imported' ? 'data.imported' : 'data.import_checked', $import, [
+                'type' => [null, $importer->label()], 'file' => [null, $fileName], 'rows' => [null, count($csv['rows'])], 'errors' => [null, count($errors)],
+            ] + array_map(fn ($n) => [null, $n], array_filter($counts)));
+
+            return $import;
+        });
     }
 
     /** Columns an importer accepts beyond its fixed list (e.g. price_<list code> for products). */

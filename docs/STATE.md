@@ -1,14 +1,16 @@
 # State (resume file)
 
-**Phase:** 10 — Industry modules wave 2 · **Status:** 10c (Services) + installation guide done on branch `phase-10c-services` (PR to `main`); next 10d Distribution, then Manufacturing
-**Updated:** 2026-10-22 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–9, licensing, 10a and 10b merged (PRs #1–#18)
+**Phase:** 10 — Industry modules wave 2 · **Status:** 10d (data import/export, stock adjustments) done on branch `phase-10d-data-exchange` (PR to `main`); next 10e Distribution, then 10f Manufacturing
+**Updated:** 2026-10-22 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–9, licensing and 10a–10c merged (PRs #1–#19)
 
-## Phase 10d (data exchange) — IN PROGRESS on branch `phase-10d-data-exchange` (work-in-progress commit, no PR yet)
-- Owner request (2026-10-08): CSV/PDF export of everything viewable; stock adjustments (+/−/set); CSV imports for products and related data; stock sheet export before a count and stock update by CSV. Distribution moves to 10e, Manufacturing to 10f.
-- Done (not yet tested beyond DataExchangeTest's table export): `Support/Exports/Exporter` (CSV with BOM + formula-injection guard, PDF via dompdf), `Filament/Support/TableExport` on every table (AppServiceProvider; tables use pushHeaderActions), `ExportsPage` trait on report pages (exports the rendered tables), migration `2026_10_23_100001` (stock_adjustments + lines, data_imports), `StockAdjustmentService`, permission `stock.adjust.approve`, setting `stock.adjustment_approval_minor`, ADJ numbering, `Imports/{CsvFile, Importer, ImportService}`, `ProductsImporter` (needs `CatalogService::inputOf()` and `withPrice()` — not written yet).
-- To do: CatalogService helpers; Prices/Customers/Suppliers/OpeningStock/StockAdjustment/StockCount importers; Import data page (template, current-data export, check, import, error report, history); StockAdjustmentResource (+ voucher PDF); count sheet CSV/PDF on Stock on hand and Stock count; tests; run full suite; docs (manual chapter, CHANGELOG, DECISIONS).
+## Phase 10d — done on branch `phase-10d-data-exchange` (PR to `main`)
+- **Server:** `Support/Exports/Exporter` (CSV/PDF, dompdf); `Filament/Support/{TableExport, ExportsPage}` (Export on every table and report page; AppServiceProvider); migration `2026_10_23_100001` (`stock_adjustments` + lines, `data_imports`); `Domain/Inventory/StockAdjustmentService`; `Domain/Imports/{CsvFile, Importer, ImportService, Importers/*}` (products, prices, customers, suppliers, opening stock, stock adjustment, stock count; `StockRows` stock sheet); `CatalogService::inputOf()/withPrice()`.
+- **Back office:** System → Import data (CSV); Stock → Stock adjustments (draft/submit/post, voucher PDF); Stock on hand → Stock sheet, Update stock from CSV; stock count → count sheet, import counts; Import shortcuts on Products, Customers, Suppliers.
+- **Permissions/settings:** `stock.adjust.approve` (Core 0.11.0); `stock.adjustment_approval_minor`; ADJ numbers.
+- **Tests:** DataExchangeTest (8); full suite 316 Pest. Real-browser check of upload → check and of PDF/CSV downloads.
+- **Docs:** manual chapter 14 (+ screenshots), CHANGELOG 0.19.0, DECISIONS 10d.
 
-## Phase 10c — done (308 Pest + 49 Vitest + 14 Playwright)
+## Phase 10c — done (merged, PR #19; 308 Pest + 49 Vitest + 14 Playwright at the time)
 - **Server:**
   - migration `2026_10_22_100001_create_services_tables`: `products.service_minutes`, `commission_bp`, `pack`, `licence_keys`; `employees.takes_appointments`, `commission_bp`; `service_passes`, `service_pass_uses`, `appointments`, `membership_plans`, `memberships`, `commissions`, `licence_keys`; `sale_lines.staff_id`, `service_pass_id`, `pass_item`, `appointment_id`; `payslips.commission_minor`; `invoices.membership_id`;
   - `app/Domain/Services/{PassService, AppointmentService, MembershipService, CommissionService, LicenceKeyService, ServiceSales, SmsGateway}`; `app/Domain/Sales/InvoiceService` (shared with deliveries);
@@ -138,9 +140,9 @@
 ## Licensing (merged, PR #12)
 - Signed activation keys, expiry with grace then read-only, daily check-in, tamper detection, watermarks — see docs/licensing.md. Dev licence valid to 2027-12-31 (dev key in `.local-secrets/license-dev.json`). Before the first customer release: production key (`license:keygen`), its public key in `config/license.php`, a licence server.
 
-## Next — Phase 10d (Sales & Distribution)
+## Next — Phase 10e (Sales & Distribution)
 - Owner answer: a phone app for reps, each van a warehouse.
-- Scope: van sales (van stock as a warehouse, load/unload transfers, sales and collections on the route), routes and visits, rep targets and commissions, B2B order taking on the phone, settlement at the end of the day. Then 10e Manufacturing (actual cost).
+- Scope: van sales (van stock as a warehouse, load/unload transfers, sales and collections on the route), routes and visits, rep targets and commissions, B2B order taking on the phone, settlement at the end of the day. Then 10f Manufacturing (actual cost).
 ## Owner decisions pending
 - Accountant check of the Ghana tax set-up (VAT/NHIL/GETFund rates and the payroll PAYE bands / SSNIT rates — Payroll → Tax and SSNIT rules) before go-live.
 - WooCommerce/Shopify: connect a real store only with the owner's keys.
@@ -167,4 +169,4 @@
   - in tests, `flushSession()` before switching users.
 
 ## Blockers
-- Merge PR `phase-10c-services` → `main` (asked in chat).
+- Merge PR `phase-10d-data-exchange` → `main` (asked in chat).

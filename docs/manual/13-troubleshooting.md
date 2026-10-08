@@ -15,6 +15,7 @@ Find the symptom, then try the fixes in order.
 | `ERP_AUDIT_KEY is missing` | Run `php artisan erp:audit-key` (only on a new installation — never replace an existing key). |
 | The page shows *500 Server Error* | Look at the end of `server/storage/logs/laravel.log` for the reason. After changing `.env`, always run `php artisan optimize`. |
 | Ubuntu: *Permission denied* in the log | `sudo chown -R www-data:www-data storage bootstrap/cache` |
+| Uploading a CSV file does nothing, or *failed to upload* | PHP cannot write its temporary upload file. Windows: check `upload_tmp_dir` in `php.ini` points to an existing folder (4.3 step 5) and restart the server task. |
 | `/pos/` says the till app is not installed | Build it: in `pos`, `npm install` then `npm run build:server` (4.7). |
 
 ## Back office

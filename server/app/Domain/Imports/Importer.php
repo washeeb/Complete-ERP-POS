@@ -5,6 +5,7 @@ namespace App\Domain\Imports;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * One kind of CSV import. Each row is applied through the same domain service a person would use on screen, so the
@@ -111,7 +112,7 @@ abstract class Importer
             $v = sprintf('%04d-%02d-%02d%s', $m[3], $m[2], $m[1], $m[4]);
         }
         try {
-            return \Illuminate\Support\Carbon::parse($v)->toDateTimeString();
+            return Carbon::parse($v)->toDateTimeString();
         } catch (\Throwable) {
             throw new DomainException("{$column}: \"{$value}\" is not a date (use YYYY-MM-DD).");
         }

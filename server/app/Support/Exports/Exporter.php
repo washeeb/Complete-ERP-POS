@@ -10,6 +10,7 @@ use App\Domain\Support\DomainException;
 use App\Models\Tenant;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -147,7 +148,7 @@ final class Exporter
         foreach ($sheets as $s) {
             $rows += is_countable($s['rows']) ? count($s['rows']) : 0;
         }
-        $this->audit->record($actor, 'data.exported', 'export', ['export' => [null, $name], 'format' => [null, $format],
-            'rows' => [null, $rows ?: 'streamed']] + ($filters ? ['filters' => [null, implode('; ', $filters)]] : []));
+        DB::transaction(fn () => $this->audit->record($actor, 'data.exported', 'export', ['export' => [null, $name], 'format' => [null, $format],
+            'rows' => [null, $rows ?: 'streamed']] + ($filters ? ['filters' => [null, implode('; ', $filters)]] : [])));
     }
 }

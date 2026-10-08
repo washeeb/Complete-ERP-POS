@@ -57,6 +57,32 @@ final class StockAdjustmentService
         });
     }
 
+    /**
+     * Save a draft from the screen: the header and all its lines (the lines replace the earlier ones).
+     *
+     * @param  array{warehouse_id?: string, reason_code?: string, reference?: ?string, note?: ?string, lines?: list<array>}  $data
+     */
+    public function saveDraft(Actor $actor, StockAdjustment $a, array $data): StockAdjustment
+    {
+        return $this->recorder->transaction(function () use ($actor, $a, $data) {
+            $a = $a->exists ? $this->update($actor, $a, array_intersect_key($data, array_flip(['reason_code', 'reference', 'note'])))
+                : $this->create($actor, Warehouse::findOrFail($data['warehouse_id'] ?? null), $data);
+            foreach (StockAdjustmentLine::where('stock_adjustment_id', $a->id)->pluck('id') as $id) {
+                $this->removeLine($actor, $a, $id);
+            }
+            foreach (array_values($data['lines'] ?? []) as $i => $l) {
+                $unit = ProductUom::find($l['product_uom_id'] ?? null) ?? throw new DomainException('Line '.($i + 1).': choose the product and unit.');
+                try {
+                    $this->addLine($actor, $a, ['product_id' => $unit->product_id] + $l);
+                } catch (DomainException $e) {
+                    throw new DomainException('Line '.($i + 1).': '.$e->getMessage());
+                }
+            }
+
+            return $a->fresh('lines');
+        });
+    }
+
     /** Change the header of a draft. */
     public function update(Actor $actor, StockAdjustment $a, array $data): StockAdjustment
     {
