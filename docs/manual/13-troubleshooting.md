@@ -55,7 +55,15 @@ Find the symptom, then try the fixes in order.
 | Online store not updating | Is the scheduler running (4.8 / 5.9)? Is the channel **Active**? Look at the channel's failed updates and **Retry failed updates**. |
 | No SMS arrive | Check the SMS gateway address in Settings and that the phone number is on the booking. Test your provider separately. |
 
-## Health checks (run in the `server` folder)
+## Health checks
+
+**System → Health** shows the state of the server at a glance: database, scheduler, live updates, last backup and its check, disk space, live-site settings, HTTPS, e-mail, licence, and anything stuck (messages, webhooks, GRA E-VAT, sync). Each line says what to do.
+
+![System → Health](img/health.png)
+
+The same checks run with `php artisan erp:health` (useful for monitoring tools: it fails when something needs fixing).
+
+### Individual checks (run in the `server` folder)
 
 | Command | What it checks |
 |---|---|

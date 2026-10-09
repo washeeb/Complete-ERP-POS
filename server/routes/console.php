@@ -22,3 +22,7 @@ Schedule::command('erp:appointment-reminders')->everyFiveMinutes()->withoutOverl
 Schedule::command('erp:bill-memberships')->dailyAt('01:30')->withoutOverlapping(60); // head office only
 Schedule::command('erp:insights')->dailyAt('04:30')->withoutOverlapping(120); // forecasts and alerts (no AI model needed)
 Schedule::command('erp:reports')->everyFifteenMinutes()->withoutOverlapping(30); // scheduled reports by e-mail / WhatsApp
+Schedule::command('erp:backup')->dailyAt(config('backup.time', '02:00'))->withoutOverlapping(240); // encrypted backup to every destination
+Schedule::command('erp:backup --verify')->weeklyOn(7, '04:00')->withoutOverlapping(240); // weekly restore check
+Schedule::command('erp:evat-batch')->everyFifteenMinutes()->withoutOverlapping(30); // GRA E-VAT daily batch (daily mode)
+Schedule::command('erp:health --beat')->everyMinute(); // heartbeat for System → Health

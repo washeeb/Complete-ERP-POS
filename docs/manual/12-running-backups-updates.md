@@ -7,79 +7,55 @@
 | Cashiers | Open the shift with the float; close it with the cash count | Till |
 | Supervisor | Look at the **Review queue** and resolve items | Sales → Review queue |
 | Manager | Check no till shows a red banner (*refused*) or a long yellow queue | Tills; System → Devices (*Last seen*) |
-| IT / owner | Check yesterday's **backup** exists (12.2) | Backup folder |
+| IT / owner | Check **System → Health** is all green (backup made last night, scheduler running) | System → Health |
 | Head office | Check branch servers synced recently (setup E) | System → Sync Center |
 
-**Every month:** verify the audit log (**System → Audit log → Verify chain**), check stock (`php artisan erp:stock-check`), and practise a restore (12.3) every three months.
+**Every month:** verify the audit log (**System → Audit log → Verify chain**), check stock (`php artisan erp:stock-check`), take the USB backup drive home if you use one, and every three months practise a full restore on a spare PC (12.3).
 
-## 12.2 Backups
+## 12.2 Backups (automatic, encrypted)
 
 **Why:** a theft, fire, failed disk or ransomware attack can destroy the server. A backup kept **somewhere else** is the only way to get your sales, stock and accounts back.
 
-A complete backup has three parts:
+The server makes a backup **every night at 02:00** by itself. Each backup holds everything needed to start again: the **database**, the **`.env` settings** (with the keys that unlock stored secrets and seal the audit log) and the **uploaded files**. It is **encrypted** with your backup passphrase, so a lost USB drive or a leaked cloud folder reveals nothing. Every Sunday the newest backup is **checked**: decrypted, read, and — where the database user may create a scratch database — fully restored into it and compared, without touching your live data.
 
-1. the **database** (all your data);
-2. the **`.env` file** (holds `APP_KEY` and `ERP_AUDIT_KEY` — without them some stored secrets cannot be read and the audit log cannot be verified);
-3. **uploaded files** (receipt photos, documents) in `server/storage/app`.
+### The backup passphrase
 
-**Warning:** a backup on the same disk as the server is not a backup. Copy it daily to another place: a USB disk you take home, another PC, or cloud storage.
+The installers create it and show it once. Otherwise, in the `server` folder run `php artisan erp:backup:key`.
 
-### Windows: automatic daily backup
+**Warning:** write the passphrase on paper and keep it **away from the server** (with the owner, or in a safe). Without it no backup can be restored.
 
-1. Create the folder for backups, ideally on a second disk or USB drive, e.g. `D:\SynclyticsBackups`.
-2. In Notepad create `C:\Synclytics\backup.ps1` with this content (put your database password in the third line):
+### Where backups go
 
-   ```
-   $stamp = Get-Date -Format "yyyy-MM-dd_HHmm"
-   $dest = "D:\SynclyticsBackups"
-   $env:PGPASSWORD = "<db-password>"
-   New-Item -ItemType Directory -Force $dest | Out-Null
-   & "C:\Program Files\PostgreSQL\17\bin\pg_dump.exe" -h 127.0.0.1 -U erp -F c -f "$dest\erp_$stamp.dump" erp
-   Copy-Item "C:\Synclytics\server\.env" "$dest\env_$stamp.txt"
-   Compress-Archive -Path "C:\Synclytics\server\storage\app" -DestinationPath "$dest\files_$stamp.zip" -Force
-   Get-ChildItem $dest -File | Where-Object LastWriteTime -lt (Get-Date).AddDays(-30) | Remove-Item
-   ```
+The server keeps the last 7 itself. Add at least one place **outside the server** under **System → Backups → Add destination** (a test file is written and removed before it is saved):
 
-3. Schedule it every night (PowerShell **as administrator**):
+| Destination | What to fill in | Good for |
+|---|---|---|
+| **Folder** — USB drive, second disk, network share | The folder, e.g. `E:\Backups` (Windows) or `/mnt/usb/backups` | Shops: rotate two USB drives, one always at home |
+| **S3-compatible storage** — Backblaze B2, Wasabi, AWS | Endpoint, region, bucket, access key and secret (from your storage account; give the key access to that bucket only) | Cloud copies at low cost |
+| **Google Drive** | OAuth client ID and secret, a refresh token, and the Drive folder ID (from a Google Cloud project in **your** Google account — your IT person sets this up once) | Businesses already on Google Workspace |
+| **Another server (SFTP)** | Address, port, user, password or private key, folder | Head office or a hosting account |
 
-   ```
-   Register-ScheduledTask -TaskName "Synclytics Backup" -Trigger (New-ScheduledTaskTrigger -Daily -At 23:30) -Principal (New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest) -Action (New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File C:\Synclytics\backup.ps1")
-   Start-ScheduledTask "Synclytics Backup"
-   ```
+**Keep the newest …** says how many backups each destination keeps; older ones there are deleted automatically.
 
-4. Protect the script (it contains the database password): right-click `backup.ps1` → Properties → Security → allow only *Administrators* and *SYSTEM*.
+![System → Backups](img/backups.png)
 
-**Check:** after a minute, `D:\SynclyticsBackups` contains an `erp_….dump`, an `env_….txt` and a `files_….zip` file.
+**Check:** **Back up now**, then the backup shows ✓ for each destination, and **Check the newest backup** reports *Readable* or *Restore drill passed*. **System → Health** then shows *Backups OK*.
 
-### Ubuntu: automatic daily backup
-
-```
-sudo mkdir -p /var/backups/synclytics && sudo chown postgres /var/backups/synclytics
-sudo nano /etc/cron.d/synclytics-backup
-```
-
-Paste (one line per job) and save:
-
-```
-30 23 * * * postgres pg_dump -F c -f /var/backups/synclytics/erp_$(date +\%F).dump erp
-35 23 * * * root cp /var/www/synclytics/server/.env /var/backups/synclytics/env_$(date +\%F).txt && tar czf /var/backups/synclytics/files_$(date +\%F).tgz -C /var/www/synclytics/server/storage app
-0 1 * * * root find /var/backups/synclytics -type f -mtime +30 -delete
-```
-
-Then copy `/var/backups/synclytics` to another place every day (another server, or cloud storage with a tool such as `rclone`; your provider's snapshot feature is a good extra).
+**Note:** on Windows set `BACKUP_PG_BIN=C:\Synclytics\pgsql\bin` (the installer does this). For the full restore drill the database user needs permission to create a scratch database: the installers give it; on an existing server an administrator runs `ALTER ROLE erp CREATEDB;` in PostgreSQL.
 
 ## 12.3 Restoring from a backup
 
 Use this after a disaster, or to practise on a spare PC.
 
-1. Install the server software exactly as in Chapter 4 or 5, **up to and including** creating the database (4.2 / 5.3), putting the software in place and `composer install`. **Do not** run `key:generate`, `erp:audit-key`, `migrate` or `erp:install`.
-2. Put back the `.env` file from the backup (rename `env_….txt` to `.env` in the `server` folder). Change `APP_URL` and `DB_PASSWORD` if they differ on the new machine.
-3. Restore the database:
-   - Windows: `& "C:\Program Files\PostgreSQL\17\bin\pg_restore.exe" -h 127.0.0.1 -U erp -d erp --no-owner erp_<date>.dump`
-   - Ubuntu: `sudo -u postgres pg_restore -d erp --no-owner --role=erp /path/erp_<date>.dump`
-4. Restore the uploaded files into `server/storage/app`.
-5. In the `server` folder: `php artisan migrate --seed --force` then `php artisan optimize`.
-6. Start the server (4.8 / 5.9).
+1. Install the server software on the new machine with the installer or script (Chapter 4 or 5) — it creates an empty company you will replace.
+2. Copy the newest `.synbak` backup file to it (from the USB drive, cloud storage or **System → Backups → Download** on the old server if it still works).
+3. Put your **backup passphrase** in the new server's `.env` as `BACKUP_PASSPHRASE=…`, then in the `server` folder:
+   ```
+   php artisan erp:backup:restore C:\path\synclytics-hq-20261029-020000.synbak
+   ```
+   It checks the backup, asks for confirmation, and replaces the data.
+4. The backup's settings are saved next to `.env` as `.env.from-backup`. Copy `APP_KEY` and `ERP_AUDIT_KEY` from it into `.env` (they must match the backup), then `php artisan optimize`.
+5. Restart the server (Task Scheduler on Windows, or reboot).
 
 **Check:** `php artisan erp:audit-verify` reports the chain intact, `php artisan erp:stock-check` passes, and yesterday's sales are in **Sales → Till sales**. If this is a new machine, re-activate the licence (Chapter 6.6).
 

@@ -4,6 +4,33 @@ Ubuntu is the recommended system for a head-office, central or cloud server, and
 
 This chapter assumes **Ubuntu Server 24.04 LTS**, freshly installed, on a cloud server (VPS) or a computer at your premises. You run every command as a user that may use `sudo` (the cloud provider's default user, often `ubuntu` or `root`).
 
+## 5.0 The quick ways (recommended)
+
+**A. The install script** — does everything in 5.2–5.9 on a plain Ubuntu server:
+
+1. Do 5.1 (get the server, connect to it). Copy the release ZIP and `install.sh` (both from Synclytics) to the server, e.g. with WinSCP.
+2. Run (with your own domain and e-mail for the HTTPS certificate; leave both out for a server used only inside your network):
+   ```
+   sudo bash install.sh --zip ~/synclytics-<customer>-<build>.zip --domain erp.yourcompany.com --email you@yourcompany.com
+   ```
+   For a branch server add `--role branch --node-id B01`.
+3. Write down the **backup passphrase** it shows, then answer its questions to create your company and the owner.
+
+Running it again with a newer ZIP updates the software and keeps your data, `.env` and keys.
+
+**B. Docker** (if your host prefers containers):
+
+1. Install Docker (`curl -fsSL https://get.docker.com | sudo sh`).
+2. In the release folder: `cp installer/docker/.env.docker.example installer/docker/.env` and edit it: `APP_URL`, a long random `DB_PASSWORD`, a `BACKUP_PASSPHRASE` (12+ characters, written down), and e-mail settings (Chapter 16).
+3. `sudo docker compose -f installer/docker/docker-compose.yml up -d --build`
+4. The first start prints an `APP_KEY` and `ERP_AUDIT_KEY` in `docker compose logs app`: copy both into `installer/docker/.env` straight away — they must never change.
+5. Create your company: `sudo docker compose -f installer/docker/docker-compose.yml exec app php artisan erp:install`.
+6. Put HTTPS in front (your host's load balancer, or Caddy / Traefik).
+
+**Why Docker:** the whole server (PHP, web server, scheduler, live updates) is one image that runs the same everywhere; the database and your files live in Docker volumes that survive updates (`up -d --build` with a new release).
+
+The rest of this chapter is the manual way.
+
 ## 5.1 Get the server and connect to it
 
 ### Cloud server (setup D)
@@ -154,7 +181,7 @@ server {
 
     # The till app: its own files, and index.html for anything else under /pos/
     location /pos/ {
-        try_files $uri $uri/ /pos/index.html;
+        try_files $uri /pos/index.html;
     }
     location = /pos/sw.js { add_header Cache-Control "no-cache"; }
     location = /pos/index.html { add_header Cache-Control "no-cache"; }

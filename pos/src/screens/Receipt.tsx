@@ -1,6 +1,7 @@
 import qrcode from 'qrcode-generator'
 import { useState } from 'react'
 import { api, ApiError } from '../api'
+import { isDesktop, openHardwareSetup, printReceipt } from '../hardware'
 import { formatMoney, prettyQty, toMilli } from '../money'
 import type { Bootstrap, PostedSale } from '../types'
 
@@ -57,6 +58,24 @@ export function SendReceipt({ sale, channels }: { sale: PostedSale; channels: ('
       {note && <span className="small" role="status">{note}</span>}
     </form>
   )
+}
+
+/** Desktop till with a receipt printer: print silently (and open the drawer after cash); otherwise the print window. */
+function PrintButton({ sale, boot }: { sale: PostedSale; boot: Bootstrap }) {
+  const [note, setNote] = useState<string | null>(null)
+  const print = async () => {
+    setNote(null)
+    try {
+      if (!(await printReceipt(sale, boot))) window.print()
+    } catch (e) {
+      setNote(`Printer: ${String(e)} — use the print window instead.`)
+      window.print()
+    }
+  }
+  return <>
+    <button type="button" onClick={() => void print()}>Print receipt</button>
+    {note && <span className="small" role="alert">{note}</span>}
+  </>
 }
 
 /**
@@ -137,6 +156,13 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
           </tbody>
         </table>
         <hr />
+        {sale.fiscal?.code && (
+          <div className="center gra">
+            <p className="small">GRA E-VAT {sale.fiscal.code}</p>
+            {sale.fiscal.qr && <ReceiptQr text={sale.fiscal.qr} />}
+          </div>
+        )}
+        {sale.fiscal && !sale.fiscal.code && sale.fiscal.mode === 'realtime' && <p className="small center">GRA E-VAT: being reported.</p>}
         <footer className="center">
           <ReceiptQr text={sale.receipt_no} />
           <p>{boot.receipt_footer}</p>
@@ -160,7 +186,8 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
       )}
       <SendReceipt sale={sale} channels={boot.send_receipt ?? []} />
       <div className="row no-print">
-        <button type="button" onClick={() => window.print()}>Print receipt</button>
+        <PrintButton sale={sale} boot={boot} />
+        {isDesktop() && <button type="button" onClick={() => void openHardwareSetup()}>Printer and scale set-up</button>}
         <button type="button" className="primary big" autoFocus onClick={onNew}>New sale</button>
       </div>
     </div>

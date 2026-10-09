@@ -30,6 +30,7 @@ jobs:
       DB_DATABASE: erp_test
       DB_USERNAME: erp
       DB_PASSWORD: erp
+      BACKUP_PG_BIN: /usr/lib/postgresql/17/bin
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
@@ -37,6 +38,12 @@ jobs:
           php-version: '8.4'
           extensions: pdo_pgsql, intl, bcmath, sodium, zip, gd
           coverage: none
+      - name: PostgreSQL 17 client tools (backups use pg_dump / pg_restore / psql)
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -q && sudo apt-get install -y -q postgresql-client-17
       - run: composer install --no-interaction --prefer-dist
       - run: cp .env.example .env && php artisan key:generate
       - name: Second database (branch server in node-sync tests)
