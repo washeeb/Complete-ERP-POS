@@ -120,9 +120,10 @@ final class AutoPoster
             'customer_openings' => [$this->unpostedQuery('customer_ledger', 'customer_ledger', $tenantId)->where('s.type', 'opening'), $d('s.occurred_at')],
             'online_orders' => [$this->unpostedQuery('sales_orders', 'sales_order', $tenantId)->where('s.status', 'fulfilled'), $d('s.fulfilled_at')],
             'shifts' => [$this->unpostedQuery('shifts', 'shift', $tenantId)->where('s.status', 'closed')->where('s.over_short_minor', '<>', 0), $d('s.closed_at')],
-            'loyalty' => [$this->unpostedQuery('loyalty_ledger', 'loyalty_ledger', $tenantId)->whereIn('s.type', ['earn', 'reverse', 'expire']), $d('s.occurred_at')],
+            'loyalty' => [$this->unpostedQuery('loyalty_ledger', 'loyalty_ledger', $tenantId)->whereIn('s.type', ['earn', 'reverse', 'expire', 'opening']), $d('s.occurred_at')],
             'stored_value' => [$this->unpostedQuery('stored_value_ledger', 'stored_value_ledger', $tenantId)
-                ->where(fn ($w) => $w->where('s.type', 'expire')->orWhere(fn ($i) => $i->where('s.type', 'issue')->where('s.doc_type', 'gift_card_sale'))), $d('s.occurred_at')],
+                ->where(fn ($w) => $w->where('s.type', 'expire')->orWhere(fn ($i) => $i->where('s.type', 'issue')
+                    ->whereIn('s.doc_type', ['gift_card_sale', 'gift_card_opening', 'store_credit_opening']))), $d('s.occurred_at')],
             'supplier_bills' => [$this->unpostedQuery('supplier_bills', 'supplier_bill', $tenantId)->where('s.status', 'posted'), 's.bill_date'],
             'supplier_payments' => [$this->unpostedQuery('supplier_payments', 'supplier_payment', $tenantId), 's.paid_on'],
             'supplier_openings' => [$this->unpostedQuery('supplier_ledger', 'supplier_ledger', $tenantId)->where('s.type', 'opening'), $d('s.occurred_at')],
@@ -362,29 +363,38 @@ final class AutoPoster
         return count($rows);
     }
 
-    /** Points earned are a cost and a debt to the customer (1 point = 1 pesewa); points taken back or expired reverse it. */
+    /**
+     * Points earned are a cost and a debt to the customer (1 point = 1 pesewa); points taken back or expired reverse it.
+     * Points brought over from an old system (opening) are a debt already owed: against opening balances, not a cost.
+     */
     private function loyalty(Actor $actor, int $batch): int
     {
-        $rows = $this->rows('loyalty', $actor->tenantId, $batch, ['s.id', 's.points']);
+        $rows = $this->rows('loyalty', $actor->tenantId, $batch, ['s.id', 's.points', 's.type']);
         foreach (collect($rows)->groupBy('d') as $d => $group) {
-            $sum = (int) $group->sum('points');
-            $this->gl->post($actor, $d, 'auto', "Loyalty points {$d}", [
-                ['account' => 'loyalty_expense', 'amount' => $sum, 'branch_id' => $this->hq],
-                ['account' => 'loyalty', 'amount' => -$sum, 'branch_id' => $this->hq],
-            ], $group->map(fn ($r) => ['loyalty_ledger', $r->id])->all(), 'loyalty', late: true);
+            $lines = [];
+            foreach ($group->groupBy(fn ($r) => $r->type === 'opening' ? 'opening_equity' : 'loyalty_expense') as $counter => $part) {
+                $sum = (int) $part->sum('points');
+                $lines[] = ['account' => $counter, 'amount' => $sum, 'branch_id' => $this->hq];
+                $lines[] = ['account' => 'loyalty', 'amount' => -$sum, 'branch_id' => $this->hq];
+            }
+            $this->gl->post($actor, $d, 'auto', "Loyalty points {$d}", $lines, $group->map(fn ($r) => ['loyalty_ledger', $r->id])->all(), 'loyalty', late: true);
         }
 
         return count($rows);
     }
 
-    /** Gift cards sold in the back office (money in, debt to the holder) and balances that expired (income). */
+    /** Gift cards sold in the back office (money in, debt to the holder), balances brought over at go-live, and balances that expired (income). */
     private function stored_value(Actor $actor, int $batch): int
     {
-        $rows = $this->rows('stored_value', $actor->tenantId, $batch, ['s.id', 's.type', 's.amount_minor', 's.doc_number']);
+        $rows = $this->rows('stored_value', $actor->tenantId, $batch, ['s.id', 's.type', 's.amount_minor', 's.doc_number', 's.doc_type']);
         foreach (collect($rows)->groupBy('d') as $d => $group) {
             $lines = [];
             foreach ($group as $r) {
-                $counter = $r->type === 'expire' ? 'breakage' : (self::METHOD[strtok((string) $r->doc_number, ' ')] ?? 'cash_office');
+                $counter = match (true) {
+                    $r->type === 'expire' => 'breakage',
+                    str_ends_with((string) $r->doc_type, '_opening') => 'opening_equity', // unspent cards brought over from an old system
+                    default => self::METHOD[strtok((string) $r->doc_number, ' ')] ?? 'cash_office',
+                };
                 $lines[] = ['account' => 'stored_value', 'amount' => -(int) $r->amount_minor, 'branch_id' => $this->hq];
                 $lines[] = ['account' => $counter, 'amount' => (int) $r->amount_minor, 'branch_id' => $this->hq];
             }

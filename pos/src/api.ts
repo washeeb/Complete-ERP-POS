@@ -49,6 +49,8 @@ export const api = {
   logout: () => call<{ ok: boolean }>('pos/logout', { method: 'POST' }),
   sendReceipt: (saleId: string, channel: 'sms' | 'whatsapp' | 'email', to: string) =>
     call<{ status: string; detail: string }>(`pos/sales/${saleId}/send`, { method: 'POST', body: JSON.stringify({ channel, to }) }),
+  reportProblem: (message: string, screen: string, context: Record<string, unknown>) =>
+    call<{ number: string; sent: boolean }>('pos/problems', { method: 'POST', body: JSON.stringify({ message, screen, context }) }),
   bootstrap: () => call<Bootstrap>('pos/bootstrap'),
   /** null = unchanged since the given version (HTTP 304), so the cached copy is current. */
   catalog: async (version?: string | null) => {

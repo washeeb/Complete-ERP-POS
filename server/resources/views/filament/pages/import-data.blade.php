@@ -7,6 +7,13 @@
                 @foreach ($this->types() as $k => $label)<option value="{{ $k }}">{{ $label }}</option>@endforeach
             </x-filament::input.select></x-filament::input.wrapper></label>
 
+            <label>Coming from <x-filament::input.wrapper><x-filament::input.select wire:model.live="source">
+                @foreach ($this->sources() as $k => $label)<option value="{{ $k }}">{{ $label }}</option>@endforeach
+            </x-filament::input.select></x-filament::input.wrapper></label>
+            @if (array_key_exists('as_of', $i->optionDefaults()))
+                <label>Balances as of (go-live date) <x-filament::input.wrapper><x-filament::input type="date" wire:model="asOf" /></x-filament::input.wrapper></label>
+            @endif
+
             @if ($ctx === 'stock_count')
                 <label>Stock count <x-filament::input.wrapper><x-filament::input.select wire:model.live="context">
                     <option value="">Choose an open count…</option>
@@ -38,7 +45,7 @@
         <div class="im-buttons">
             <x-filament::button color="gray" icon="heroicon-o-document-arrow-down" wire:click="downloadTemplate">Download template (CSV)</x-filament::button>
             <x-filament::button color="gray" icon="heroicon-o-book-open" wire:click="downloadGuide">Column guide (PDF)</x-filament::button>
-            @if (in_array($type, ['products', 'prices', 'customers', 'suppliers'], true))
+            @if (in_array($type, ['products', 'prices', 'customers', 'suppliers', 'accounts'], true))
                 <x-filament::button color="gray" icon="heroicon-o-table-cells" wire:click="downloadCurrent('csv')">Download current data to edit (CSV)</x-filament::button>
             @elseif ($ctx === 'stock_adjustment')
                 <x-filament::button color="gray" icon="heroicon-o-table-cells" wire:click="downloadCurrent('csv')">Stock sheet — current stock standing (CSV)</x-filament::button>

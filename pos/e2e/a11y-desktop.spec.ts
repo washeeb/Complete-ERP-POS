@@ -25,7 +25,7 @@ const catalogBody = { version: 'v1', generated_at: new Date().toISOString(), utc
     units: [{ id: 'u-milo', uom_code: 'PC', uom_name: 'Piece', decimals: 0, factor: '1.000000', is_base: true, barcodes: [] }],
     prices: [{ price_list_id: 'pl', product_uom_id: 'u-milo', min_qty: '1', amount_minor: 5800, starts_at: null, ends_at: null }] }] }
 
-async function serve(page: Page) {
+async function serve(page: Page, opts: { practice?: boolean; problems?: unknown[] } = {}) {
   const json = (route: Route, status: number, body: unknown) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) })
   await page.route('**/up', (r) => r.fulfill({ status: 200, body: 'ok' }))
   await page.route('**/api/v1/**', async (route) => {
@@ -34,7 +34,8 @@ async function serve(page: Page) {
     switch (`${req.method()} ${path}`) {
       case 'POST devices/enroll': return json(route, 201, { device_id: 'dev-1', token: 'device-token', kind: 'pos' })
       case 'POST pos/login': return json(route, 200, { token: 't-efua', expires_at: null, user: { id: 'u-efua', name: 'Efua' }, offline_grant: grant('482613') })
-      case 'GET pos/bootstrap': return json(route, 200, bootstrap)
+      case 'GET pos/bootstrap': return json(route, 200, opts.practice ? { ...bootstrap, company: { ...bootstrap.company, name: 'Demo Ltd — PRACTICE', practice: true } } : bootstrap)
+      case 'POST pos/problems': opts.problems?.push(req.postDataJSON()); return json(route, 201, { number: 'SUP-HQ-000001', sent: true })
       case 'GET pos/catalog': return json(route, 200, catalogBody)
       case 'GET pos/customers': return json(route, 200, { version: 'c', customers: [] })
       case 'POST pos/sales': {
@@ -105,4 +106,24 @@ test('the desktop till prints the receipt silently on the receipt printer and op
   expect(call.openDrawer).toBe(true)
   expect(text).toContain('Receipt HQ-T01A-000001')
   expect(text).toContain('GRA E-VAT GRA-77')
+})
+
+test('a practice till says PRACTICE, and a cashier can report a problem with the screen and the recent errors', async ({ page }) => {
+  const problems: { message: string; screen: string; context: { screen: string; online: boolean; errors: unknown[] } }[] = []
+  await serve(page, { practice: true, problems })
+  await signInAndSell(page)
+  await expect(page.getByText(/PRACTICE — nothing here is real/)).toBeVisible()
+  await axe(page, 'Receipt (practice)')
+  await page.getByRole('button', { name: 'Report a problem' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Report a problem' })
+  await expect(dialog).toBeVisible()
+  await axe(page, 'Report a problem')
+  await expect(dialog.getByRole('button', { name: 'Send' })).toBeDisabled()
+  await dialog.getByLabel('Describe it').fill('The receipt printer prints blank paper.')
+  await dialog.getByRole('button', { name: 'Send' }).click()
+  await expect(dialog.getByText('Thank you — problem SUP-HQ-000001 is recorded and support has been told.')).toBeVisible()
+  expect(problems).toHaveLength(1)
+  expect(problems[0]).toMatchObject({ message: 'The receipt printer prints blank paper.', screen: 'receipt', context: { screen: 'receipt', online: true } })
+  await dialog.getByRole('button', { name: 'Close' }).click()
+  await expect(dialog).toBeHidden()
 })

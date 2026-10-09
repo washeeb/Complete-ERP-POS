@@ -4,6 +4,7 @@ namespace App\Domain\Api;
 
 use App\Domain\Channels\OutboxConsumers;
 use App\Models\OutboxEvent;
+use App\Models\Tenant;
 use App\Models\WebhookDelivery;
 use App\Models\WebhookEndpoint;
 use Illuminate\Support\Facades\Http;
@@ -49,6 +50,9 @@ final class WebhookDispatcher
             $data = array_filter(['id' => $e->aggregate_id, 'number' => $row['number'] ?? $row['receipt_no'] ?? null, 'sku' => $row['sku'] ?? null,
                 'name' => $row['name'] ?? null, 'status' => $row['status'] ?? null, 'total_minor' => isset($row['total_minor']) ? (int) $row['total_minor'] : null,
                 'customer_id' => $row['customer_id'] ?? null, 'branch_id' => $row['branch_id'] ?? null], fn ($v) => $v !== null);
+            if (Tenant::isPractice($e->tenant_id)) {
+                return; // a practice company's events never reach other systems
+            }
             foreach (WebhookEndpoint::withoutGlobalScopes()->where('tenant_id', $e->tenant_id)->where('is_active', true)->get() as $endpoint) {
                 if (in_array($event, $endpoint->events ?? [], true)) {
                     WebhookDelivery::create(['webhook_endpoint_id' => $endpoint->id, 'event' => $event, 'event_id' => $e->id, 'status' => 'pending', 'next_attempt_at' => now(),

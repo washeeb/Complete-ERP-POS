@@ -15,7 +15,25 @@ class Tenant extends Model
 
     protected function casts(): array
     {
-        return ['setup_completed_at' => 'datetime'];
+        return ['setup_completed_at' => 'datetime', 'is_practice' => 'boolean'];
+    }
+
+    /** @var array<string, bool> */
+    private static array $practice = [];
+
+    /** A practice (training) company: nothing it does is sent to GRA, customers, online stores or other systems. */
+    public static function isPractice(?string $tenantId): bool
+    {
+        if ($tenantId === null) {
+            return false;
+        }
+
+        return self::$practice[$tenantId] ??= (bool) static::whereKey($tenantId)->value('is_practice');
+    }
+
+    public static function forgetPractice(): void
+    {
+        self::$practice = [];
     }
 
     public function branches(): HasMany

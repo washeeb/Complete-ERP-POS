@@ -12,4 +12,10 @@ return [
     'audit_key' => env('ERP_AUDIT_KEY'),
 
     'modules_path' => base_path('modules'),
+
+    // Shown in problem reports and the pilot report; raised with each release (CHANGELOG).
+    'version' => '0.25.0',
+
+    // Where "Report a problem" and the daily pilot report go when the go-live plan names no support address.
+    'support_email' => env('ERP_SUPPORT_EMAIL'),
 ];

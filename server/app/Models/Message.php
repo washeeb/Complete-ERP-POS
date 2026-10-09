@@ -11,7 +11,7 @@ class Message extends Model
 {
     use BelongsToTenant, HasUuids;
 
-    public const STATUSES = ['queued' => 'Waiting to send', 'sent' => 'Sent', 'failed' => 'Failed', 'not_configured' => 'Not sent (no provider set up)'];
+    public const STATUSES = ['queued' => 'Waiting to send', 'sent' => 'Sent', 'failed' => 'Failed', 'not_configured' => 'Not sent (no provider set up)', 'practice' => 'Not sent (practice company)'];
 
     public const CHANNELS = ['sms' => 'SMS', 'whatsapp' => 'WhatsApp', 'email' => 'E-mail'];
 

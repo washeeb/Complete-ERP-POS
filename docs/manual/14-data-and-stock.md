@@ -37,6 +37,12 @@ Every list in the back office (products, customers, invoices, stock on hand, sal
 | **Opening stock** | The go-live quantity and cost of a product in a warehouse | Warehouse + SKU |
 | **Stock adjustment lines** | Increase, decrease or "set to" lines in a stock adjustment | SKU or barcode |
 | **Stock count results** | Counted quantities in an open stock count | SKU or barcode (+ bin) |
+| **Chart of accounts (migration)** | Adds an account from the old books (QuickBooks types accepted) | Code, else name |
+| **Opening trial balance (migration)** | One line of the opening journal on the go-live date | Account code or name |
+| **Customer / supplier balances owed (migration)** | What a customer owed you / you owed a supplier on the go-live date | Code, phone or name |
+| **Loyalty points / gift cards (migration)** | Points and unspent cards brought over from the old system | Customer; card number |
+
+The migration imports are explained in Chapter 17.2. **Coming from** (QuickBooks, another till system, or our templates) matches the old system's column names for you.
 
 ### Step by step
 

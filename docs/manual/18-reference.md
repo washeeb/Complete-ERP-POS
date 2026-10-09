@@ -1,6 +1,6 @@
-# 17. Reference
+# 18. Reference
 
-## 17.1 Security levels
+## 18.1 Security levels
 
 A person's **security level** is the highest level of role they can ever be given.
 
@@ -15,13 +15,13 @@ A person's **security level** is the highest level of role they can ever be give
 
 **IT Admin** manages users, devices, modules and settings, but gets **no** access to sales, money or stock unless the owner also gives them a business role.
 
-## 17.2 Roles provided
+## 18.2 Roles provided
 
 Owner · General Manager · Finance Manager · Accountant · Auditor · HR Manager · Payroll Officer · Purchasing Officer · Purchase Approver · Warehouse Manager · Storekeeper · Picker / Packer · Branch Manager · Supervisor · Cashier · Sales Rep · Van Sales Rep · Customer Service · Marketing · E-commerce Manager · Delivery Rider · Production Manager · Machine Operator · Quality Inspector · Pharmacist · Pharmacy Technician · Waiter / Bartender · Kitchen Staff · Repair Technician · Tailor · Stylist / Therapist · IT Admin.
 
 You can change what a role allows under **People & access → Roles** (you can only add permissions you hold yourself).
 
-## 17.3 Settings in `.env`
+## 18.3 Settings in `.env`
 
 | Key | Meaning |
 |---|---|
@@ -37,13 +37,14 @@ You can change what a role allows under **People & access → Roles** (you can o
 | `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` | Outgoing e-mail (Chapter 16.1). `MAIL_MAILER=log` only writes e-mails to the log |
 | `BACKUP_PASSPHRASE`, `BACKUP_PG_BIN`, `BACKUP_TIME`, `BACKUP_KEEP_LOCAL` | Backups (Chapter 12.2). **Keep a written copy of the passphrase away from the server.** |
 | `GRA_EVAT_URL`, `GRA_EVAT_KEY`, `GRA_EVAT_TIN`, `GRA_EVAT_TIMEOUT` | GRA E-VAT access from GRA (Chapter 11.5) |
+| `ERP_SUPPORT_EMAIL` | Where problem reports and the evening pilot report go when the go-live plan names no address (Chapter 17.6) |
 | `SESSION_SECURE_COOKIE` | `true` once the site uses HTTPS (the Ubuntu script sets it) |
 | `ANTHROPIC_API_KEY` | Only if you choose Claude (cloud AI) in Chapter 15. Leave empty for no cloud AI. |
 | `BROADCAST_CONNECTION`, `QUEUE_CONNECTION`, `CACHE_STORE`, `SESSION_DRIVER` | Leave as provided |
 
 After changing `.env`, run `php artisan optimize`.
 
-## 17.4 Network ports
+## 18.4 Network ports
 
 | Port | Used by | Open to |
 |---|---|---|
@@ -53,7 +54,7 @@ After changing `.env`, run `php artisan optimize`.
 | 5432 | PostgreSQL | **This server only** — never open it to the network |
 | 22 | SSH (Ubuntu remote administration) | Your administrators only |
 
-## 17.5 Useful commands (in the `server` folder)
+## 18.5 Useful commands (in the `server` folder)
 
 | Command | What it does |
 |---|---|
@@ -73,11 +74,12 @@ After changing `.env`, run `php artisan optimize`.
 | `php artisan erp:evat-batch --now` | Send the GRA E-VAT till sales waiting (daily mode) |
 | `php artisan erp:load-test` | Speed test of sales and reports on a test system (leaves no data) |
 | `php artisan erp:reports` | Send scheduled reports that are due (runs every 15 minutes by itself) |
+| `php artisan erp:pilot-report --show` / `--now` | Print / e-mail the pilot report now (sent every evening by itself during a pilot — Chapter 17.6) |
 | `php artisan erp:insights` | Refresh forecasts and alerts now (runs daily at 04:30 by itself) |
 | `php artisan license:status` | Licence state and limits |
 | `php artisan erp:audit-verify`, `erp:stock-check`, `erp:gl-check` | Health checks (Chapter 13) |
 
-## 17.6 Till keyboard shortcuts
+## 18.6 Till keyboard shortcuts
 
 | Key | Action |
 |---|---|
@@ -91,21 +93,18 @@ After changing `.env`, run `php artisan optimize`.
 | F10 | Appointments (Services) |
 | F12 | Pay |
 
-## 17.7 Go-live checklist
+## 18.7 Go-live checklist
 
-- [ ] Server installed; `/up` and `/admin` open; scheduler running.
-- [ ] Licence **Active** with the right modules and limits.
-- [ ] Two-factor sign-in set up for every manager; recovery codes stored safely.
-- [ ] Branches, warehouses and tills correct (codes cannot change later).
-- [ ] Tax groups checked by your accountant.
-- [ ] Products, barcodes and prices entered; opening stock counted and entered with costs.
-- [ ] Customers and suppliers with opening balances; finance opening balances (if licensed).
-- [ ] Every user created with the right role and scope; PINs set.
-- [ ] Every till enrolled, printing receipts, and tested **offline**.
-- [ ] Modules switched on and their checklists done.
-- [ ] Nightly backup running, copied off the server, and a **restore tested**.
-- [ ] `.env`, owner password and recovery codes stored in a safe place, not on the server.
+The checklist lives in the software: **System → Go-live** (Chapter 17) shows each step in order and ticks most of them by itself. Before the go-live day also confirm:
 
-## 17.8 About this guide
+- [ ] Licence **Active** with the right modules and limits; two-step sign-in for every manager, recovery codes stored safely.
+- [ ] Branch, warehouse and till codes correct (they cannot change later); tax groups checked by your accountant.
+- [ ] Every user with the right role and scope; PINs set; IT Admin without business roles.
+- [ ] Every till enrolled, printing, opening the drawer, and tested **offline**.
+- [ ] Nightly backup running, copied off the server, and a **restore practised** (Chapter 12.3); **System → Health** all green.
+- [ ] `.env`, the backup passphrase, the owner password and recovery codes stored safely, away from the server.
+- [ ] Everyone knows the rollback plan (Chapter 17.8).
+
+## 18.8 About this guide
 
 This guide is generated from the files in `docs/manual/` and updated with every release. The software version and date are on the cover page.

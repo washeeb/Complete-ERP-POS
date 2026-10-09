@@ -2,12 +2,18 @@
 
 namespace App\Domain\Imports;
 
+use App\Domain\Imports\Importers\AccountsImporter;
+use App\Domain\Imports\Importers\CustomerBalancesImporter;
 use App\Domain\Imports\Importers\CustomersImporter;
+use App\Domain\Imports\Importers\GiftCardsImporter;
+use App\Domain\Imports\Importers\LoyaltyPointsImporter;
+use App\Domain\Imports\Importers\OpeningBalancesImporter;
 use App\Domain\Imports\Importers\OpeningStockImporter;
 use App\Domain\Imports\Importers\PricesImporter;
 use App\Domain\Imports\Importers\ProductsImporter;
 use App\Domain\Imports\Importers\StockAdjustmentImporter;
 use App\Domain\Imports\Importers\StockCountImporter;
+use App\Domain\Imports\Importers\SupplierBalancesImporter;
 use App\Domain\Imports\Importers\SuppliersImporter;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
@@ -38,6 +44,13 @@ final class ImportService
         'opening_stock' => OpeningStockImporter::class,
         'stock_adjustment' => StockAdjustmentImporter::class,
         'stock_count' => StockCountImporter::class,
+        // Data migration (Phase 14): the books and balances on the go-live date.
+        'accounts' => AccountsImporter::class,
+        'opening_balances' => OpeningBalancesImporter::class,
+        'customer_balances' => CustomerBalancesImporter::class,
+        'supplier_balances' => SupplierBalancesImporter::class,
+        'loyalty_points' => LoyaltyPointsImporter::class,
+        'gift_cards' => GiftCardsImporter::class,
     ];
 
     public function __construct(private readonly Authorizer $authz, private readonly AuditLog $audit) {}
@@ -75,6 +88,7 @@ final class ImportService
         }
         $options += $importer->optionDefaults();
         $csv = SheetFile::read($path, $fileName, $mapping); // CSV or Excel
+        $csv = ImportSources::prepare((string) ($options['source'] ?? 'excel'), $type, $csv); // QuickBooks / other till exports
         $missing = array_diff(array_column(array_filter($importer->columns(), fn ($c) => $c['required'] === true), 'name'), $csv['headings']);
         if ($missing) {
             throw new DomainException('The file is missing the column(s): '.implode(', ', $missing).'. Download the template to see the layout.');
@@ -106,6 +120,16 @@ final class ImportService
                     $msg = 'Could not be imported: '.Str::limit($e->getMessage(), 160);
                     $errors[] = ['row' => $r['line'], 'ref' => $ref, 'message' => $msg, 'values' => $r['values']];
                     $results[] = ['row' => $r['line'], 'ref' => $ref, 'outcome' => 'error', 'message' => $msg];
+                }
+            }
+            if ($errors === [] || ! empty($options['skip_errors'])) {
+                try {
+                    DB::transaction(fn () => $importer->finish($actor, $options, $context));
+                } catch (DomainException|AccessDenied $e) {
+                    $msg = $e instanceof AccessDenied ? 'You are not allowed to do this.' : $e->getMessage();
+                    $errors[] = ['row' => 0, 'ref' => 'whole file', 'message' => $msg, 'values' => []];
+                    $results[] = ['row' => 0, 'ref' => 'whole file', 'outcome' => 'error', 'message' => $msg];
+                    $options['skip_errors'] = false; // a file-level failure is never skipped
                 }
             }
             $keep = $commit && ($errors === [] || ! empty($options['skip_errors']));

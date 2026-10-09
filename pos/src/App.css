@@ -174,3 +174,8 @@ fieldset.choices button.active, .segmented button.active { background: var(--pri
 
 /* Theme picker (every screen, bottom left) */
 .theme-picker { position: fixed; left: 12px; bottom: 12px; z-index: 20; font-size: .8rem; padding: 4px 8px; min-height: 0; border-radius: 999px; }
+
+/* Practice company (Phase 14) and "Report a problem" */
+.banner.practice { background: #6d28d9; color: #fff; font-weight: 600; justify-content: center; }
+.report-problem { position: fixed; left: 50%; transform: translateX(-50%); bottom: 12px; z-index: 20; font-size: .8rem; padding: 4px 12px; min-height: 0; border-radius: 999px; }
+.ok-text { color: var(--ok-text); }
