@@ -10,8 +10,9 @@ return [
 
     'tagline' => 'Engineering Solutions. Empowering Businesses.',
 
-    // Who issues licences and gives support (shown in licence messages). Defaults to the product name.
-    'vendor' => env('BRAND_VENDOR') ?: (env('BRAND_NAME') ?: 'SES Labs'),
+    // The company that makes, licenses and supports the product (the publisher), as opposed to the product name:
+    // licence messages, copyright and installer "Publisher". A reseller under white-label sets BRAND_VENDOR.
+    'vendor' => env('BRAND_VENDOR') ?: 'SyncLytics',
 
     'website' => env('BRAND_WEBSITE') ?: null,
 

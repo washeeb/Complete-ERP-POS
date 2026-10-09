@@ -65,12 +65,14 @@ writeFileSync(join(out.pos, 'icon-maskable-512.png'), await png(mark, 512, { pad
 // Guide and training covers.
 copyFileSync(join(src, 'logo.svg'), join(out.docs, 'product-logo.svg'))
 
-// Desktop till: its name and publisher come from brand.json (window title, Start menu, installer).
+// Desktop till: its name and publisher come from brand.json (window title, Start menu, installer). The publisher is
+// the company (as Windows shows "Publisher" in Apps & features), the product name stays on everything else.
 const slug = brand.name.toLowerCase().replace(/[^a-z0-9]+/g, '')
 const confPath = join(out.tauri, 'tauri.conf.json')
 const conf = JSON.parse(readFileSync(confPath, 'utf8'))
 Object.assign(conf, { productName: `${brand.name} Till`, identifier: `app.${slug}.till` })
-Object.assign(conf.bundle, { publisher: brand.name, shortDescription: `${brand.name} till`,
+const company = brand.company ?? brand.name
+Object.assign(conf.bundle, { publisher: company, copyright: `Copyright © ${company}`, shortDescription: `${brand.name} till`,
   longDescription: `The ${brand.name} till with silent receipt printing (ESC/POS), cash drawer and scale support. It opens the till from your business server.` })
 writeFileSync(confPath, JSON.stringify(conf, null, 2) + '\n')
 

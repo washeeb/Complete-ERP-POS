@@ -10,6 +10,9 @@
 #ifndef Brand
   #define Brand "SES Labs"
 #endif
+#ifndef Publisher
+  #define Publisher "SyncLytics"
+#endif
 #ifndef AppVersion
   #define AppVersion "0.0.0"
 #endif
@@ -21,7 +24,10 @@
 AppId={{6B1C4E5A-3C7D-4F51-9A0B-5E2D7C9A1F33}
 AppName={#Brand} server
 AppVersion={#AppVersion}
-AppPublisher={#Brand}
+AppPublisher={#Publisher}
+AppCopyright=Copyright (C) {#Publisher}
+VersionInfoCompany={#Publisher}
+VersionInfoProductName={#Brand}
 DefaultDirName=C:\{#Slug}
 DisableDirPage=yes
 DisableProgramGroupPage=yes

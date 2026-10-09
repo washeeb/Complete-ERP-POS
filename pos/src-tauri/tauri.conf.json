@@ -26,13 +26,14 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "publisher": "SES Labs",
+    "publisher": "SyncLytics",
     "shortDescription": "SES Labs till",
     "longDescription": "The SES Labs till with silent receipt printing (ESC/POS), cash drawer and scale support. It opens the till from your business server.",
     "windows": {
       "nsis": {
         "installMode": "perMachine"
       }
-    }
+    },
+    "copyright": "Copyright © SyncLytics"
   }
 }

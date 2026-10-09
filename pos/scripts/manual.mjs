@@ -71,7 +71,7 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>${brand.na
 </style></head><body>
 <div class="cover"><img class="cover-logo" src="img/product-logo.svg" alt="${brand.name}"><h1>${brand.name}</h1><div class="sub">${brand.tagline}</div><div class="sub">Installation &amp; Setup Guide</div>
 <div class="sub">Requirements · Definitions · Every installation scenario · Modules · Devices · Daily running · Troubleshooting</div>
-<div class="meta">Software version ${release[1] ?? version} (${release[2] ?? ''}) · Guide generated ${new Date().toISOString().slice(0, 10)}<br>This guide is updated with every release.</div></div>
+<div class="meta">${brand.company ? `Published by ${brand.company}<br>` : ''}Software version ${release[1] ?? version} (${release[2] ?? ''}) · Guide generated ${new Date().toISOString().slice(0, 10)}<br>This guide is updated with every release.</div></div>
 <nav class="toc"><h1>Contents</h1><ol>${tocHtml}</ol></nav>
 ${chapters}
 </body></html>`
