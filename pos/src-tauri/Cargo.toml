@@ -2,7 +2,7 @@
 name = "erp-till"
 version = "0.24.0"
 description = "The till app for Windows with silent receipt printing, cash drawer and scale"
-authors = ["Ervanta"]
+authors = ["SES Labs"]
 edition = "2021"
 rust-version = "1.77"
 

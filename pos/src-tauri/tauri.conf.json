@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Ervanta Till",
+  "productName": "SES Labs Till",
   "version": "0.24.0",
-  "identifier": "app.ervanta.till",
+  "identifier": "app.seslabs.till",
   "build": {
     "frontendDist": "setup"
   },
@@ -26,9 +26,9 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "publisher": "Ervanta",
-    "shortDescription": "Ervanta till",
-    "longDescription": "The Ervanta till with silent receipt printing (ESC/POS), cash drawer and scale support. It opens the till from your business server.",
+    "publisher": "SES Labs",
+    "shortDescription": "SES Labs till",
+    "longDescription": "The SES Labs till with silent receipt printing (ESC/POS), cash drawer and scale support. It opens the till from your business server.",
     "windows": {
       "nsis": {
         "installMode": "perMachine"

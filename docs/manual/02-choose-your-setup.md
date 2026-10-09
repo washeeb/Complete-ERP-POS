@@ -1,6 +1,6 @@
 # 2. Choose your setup
 
-There are five ways to run Ervanta. They use the **same software**; only where the server sits changes. You can start small and grow later (for example, start with one shop and add a cloud head office when you open a second branch).
+There are five ways to run SES Labs. They use the **same software**; only where the server sits changes. You can start small and grow later (for example, start with one shop and add a cloud head office when you open a second branch).
 
 ## The five setups at a glance
 

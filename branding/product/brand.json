@@ -1,7 +1,8 @@
 {
-  "name": "Ervanta",
-  "tagline": "Till, stock and books in one",
-  "color": "#0F766E",
-  "accent": "#F5B942",
-  "tile": "#0F4C5C"
+  "name": "SES Labs",
+  "slug": "SESLabs",
+  "tagline": "Engineering Solutions. Empowering Businesses.",
+  "color": "#031E4C",
+  "accent": "#06AAAA",
+  "tile": "#031E4C"
 }

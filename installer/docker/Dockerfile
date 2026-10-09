@@ -1,6 +1,6 @@
-# The business server (Ervanta) — server image for cloud / head-office servers (setups C and D).
+# The business server (SES Labs) — server image for cloud / head-office servers (setups C and D).
 # Build from the folder that holds `server/` (and `pos/` for source checkouts):
-#   docker build -f installer/docker/Dockerfile -t ervanta .
+#   docker build -f installer/docker/Dockerfile -t seslabs .
 # A release ZIP already contains the built till app in server/public/pos; a source checkout builds it here.
 
 # 1. Front-end assets: the till app (from pos/, when present) and the back office's own assets.

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# The business server (Ervanta) — one-command installation on a plain Ubuntu 24.04 server (setups B, C, D and branch servers),
+# The business server (SES Labs) — one-command installation on a plain Ubuntu 24.04 server (setups B, C, D and branch servers),
 # doing what Chapter 5 of the installation guide describes by hand.
 #
-#   sudo bash install.sh --zip ~/ervanta-<customer>-<build>.zip [--domain erp.example.com --email you@example.com]
-#                        [--role hq|branch --node-id HQ] [--dir /var/www/ervanta]
+#   sudo bash install.sh --zip ~/ses-labs-<customer>-<build>.zip [--domain erp.example.com --email you@example.com]
+#                        [--role hq|branch --node-id HQ] [--dir /var/www/seslabs]
 #
 # Safe to run again (an update): it keeps .env, the database and every key, and only adds what is missing.
 set -euo pipefail
 
-SLUG="ervanta" # the product name in folder, service and site names
+SLUG="seslabs" # the product name in folder, service and site names
 ZIP=""; SRC=""; DOMAIN=""; EMAIL=""; ROLE="hq"; NODE_ID="HQ"; DIR="/var/www/${SLUG}"; CI_MODE=0; PHP_V="8.4"; PG_MAJOR=17
 while [ $# -gt 0 ]; do
   case "$1" in

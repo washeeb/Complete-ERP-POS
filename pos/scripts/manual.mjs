@@ -11,7 +11,7 @@ import { chromium } from '@playwright/test'
 const here = dirname(fileURLToPath(import.meta.url))
 const dir = resolve(here, '../../docs/manual')
 const brand = JSON.parse(readFileSync(resolve(here, '../../branding/product/brand.json'), 'utf8'))
-const out = join(dir, `${brand.name}-Installation-Guide.pdf`)
+const out = join(dir, `${brand.name.replace(/\s+/g, '-')}-Installation-Guide.pdf`)
 const files = readdirSync(dir).filter((f) => /^\d\d-.*\.md$/.test(f)).sort()
 if (!files.length) throw new Error(`No chapters found in ${dir}`)
 

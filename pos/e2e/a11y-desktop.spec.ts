@@ -39,7 +39,7 @@ async function serve(page: Page, opts: { practice?: boolean; problems?: unknown[
       case 'POST pos/login': return json(route, 200, { token: 't-efua', expires_at: null, user: { id: 'u-efua', name: 'Efua' }, offline_grant: grant('482613') })
       case 'GET pos/bootstrap': {
         const brand = opts.brand ? { brand: { color: '#B45309', on_color: '#FFFFFF', logo_url: '/brand/demo/logo?v=1', logo_dark_url: '/brand/demo/logo?v=1', icon_url: '/brand/demo/logo?v=1',
-          receipt_logo: true, powered_by: 'Powered by Ervanta', product: 'Ervanta' } } : {}
+          receipt_logo: true, powered_by: 'Powered by SES Labs', product: 'SES Labs' } } : {}
         return json(route, 200, opts.practice ? { ...bootstrap, ...brand, company: { ...bootstrap.company, name: 'Demo Ltd — PRACTICE', practice: true } } : { ...bootstrap, ...brand })
       }
       case 'POST pos/problems': opts.problems?.push(req.postDataJSON()); return json(route, 201, { number: 'SUP-HQ-000001', sent: true })
@@ -106,7 +106,7 @@ test('the desktop till prints the receipt silently on the receipt printer and op
   await serve(page, { brand: true })
   await signInAndSell(page)
   await expect(page.getByRole('img', { name: 'Demo Ltd' })).toBeVisible() // the company logo on the receipt
-  await expect(page.getByText('Powered by Ervanta')).toBeVisible()
+  await expect(page.getByText('Powered by SES Labs')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Printer and scale set-up' })).toBeVisible()
   await page.getByRole('button', { name: 'Print receipt' }).click()
   await expect.poll(async () => page.evaluate(() => (window as unknown as { __calls: { cmd: string }[] }).__calls.map((c) => c.cmd))).toContain('print_raw')
@@ -115,7 +115,7 @@ test('the desktop till prints the receipt silently on the receipt printer and op
   expect(call.openDrawer).toBe(true)
   expect(text).toContain('Receipt HQ-T01A-000001')
   expect(text).toContain('GRA E-VAT GRA-77')
-  expect(text).toContain('Powered by Ervanta')
+  expect(text).toContain('Powered by SES Labs')
   const bytes = Buffer.from(call.data, 'base64')
   const at = bytes.indexOf(Buffer.from([0x1d, 0x76, 0x30, 0x00])) // the logo as a raster image, before the company name
   expect(at).toBeGreaterThan(0)

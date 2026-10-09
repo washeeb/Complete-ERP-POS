@@ -1,15 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Ervanta">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SES Labs">
+  <!-- Generated from ses-lettermark.svg by compose.py: the full SES on a white tile -->
+  <rect x="4" y="4" width="504" height="504" rx="112" fill="#FFFFFF" stroke="#D7DEE8" stroke-width="8"/>
+  <g transform="translate(40.96 33.16) scale(0.22284)">
   <defs>
-    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#14B8A6"/>
-      <stop offset="1" stop-color="#0F4C5C"/>
+    <linearGradient id="m-e" x1="0" y1="663" x2="0" y2="1093" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#038C8D"/><stop offset="1" stop-color="#06AAAA"/>
     </linearGradient>
+    <linearGradient id="m-sweep" x1="640" y1="0" x2="1300" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#03204F"/><stop offset=".42" stop-color="#0A6A84"/><stop offset=".8" stop-color="#05A3A5"/><stop offset="1" stop-color="#07ABAB"/>
+    </linearGradient>
+    <linearGradient id="m-tail" x1="1180" y1="0" x2="1660" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0A5E80"/><stop offset="1" stop-color="#031E4C"/>
+    </linearGradient>
+    <clipPath id="m-body"><path id="m-bodyPath" d="M310 663 L782 663 C712 700 655 770 628 840 L305 840 C283 840 265 857 265 879 C265 901 283 918 305 918 L575 918 C625 918 670 945 712 985 L880 1145 C893 1158 905 1165 925 1165 L1660 1165 C1682 1165 1700 1150 1700 1129 C1700 1108 1682 1093 1660 1093 L1440 1093 C1320 1093 1225 1000 1225 878 C1225 760 1320 660 1445 660 L1906 660 L1702 840 L1460 840 C1438 840 1422 857 1422 879 C1422 901 1438 918 1462 918 L1695 918 C1800 918 1900 1010 1900 1130 C1900 1250 1800 1338 1695 1338 L870 1338 C835 1338 805 1325 780 1300 L600 1120 C585 1105 565 1093 545 1093 L265 1093 C160 1093 70 1000 70 885 C70 770 175 663 310 663 Z"/></clipPath>
   </defs>
-  <!-- Placeholder mark: three ledger lines forming an "E" (till, stock, books in one), the middle one running on
-       like a receipt; the gold dot is the point of sale. Replace this file with the final mark (square, 512×512). -->
-  <rect width="512" height="512" rx="116" fill="url(#tile)"/>
-  <rect x="132" y="128" width="200" height="56" rx="28" fill="#FFFFFF"/>
-  <rect x="132" y="228" width="248" height="56" rx="28" fill="#FFFFFF" opacity=".92"/>
-  <rect x="132" y="328" width="200" height="56" rx="28" fill="#FFFFFF"/>
-  <circle cx="380" cy="156" r="34" fill="#F5B942"/>
+  
+  <path d="M310 663 L782 663 C712 700 655 770 628 840 L305 840 C283 840 265 857 265 879 C265 901 283 918 305 918 L575 918 C625 918 670 945 712 985 L880 1145 C893 1158 905 1165 925 1165 L1660 1165 C1682 1165 1700 1150 1700 1129 C1700 1108 1682 1093 1660 1093 L1440 1093 C1320 1093 1225 1000 1225 878 C1225 760 1320 660 1445 660 L1906 660 L1702 840 L1460 840 C1438 840 1422 857 1422 879 C1422 901 1438 918 1462 918 L1695 918 C1800 918 1900 1010 1900 1130 C1900 1250 1800 1338 1695 1338 L870 1338 C835 1338 805 1325 780 1300 L600 1120 C585 1105 565 1093 545 1093 L265 1093 C160 1093 70 1000 70 885 C70 770 175 663 310 663 Z" fill="#031E4C"/>
+  
+  <g clip-path="url(#m-body)">
+    <polygon points="640,880 1306,1160 1176,1345 640,1345" fill="url(#m-sweep)"/>
+    <polygon points="1306,1160 1710,1160 1710,1345 1176,1345" fill="url(#m-tail)"/>
+  </g>
+  
+  <path d="M148 1167 L577 1167 L673 1265 C640 1310 600 1338 563 1338 L18 1338 Z" fill="#031E4C"/>
+  
+  <path d="M888 663 L1328 663 C1258 705 1205 770 1180 840 L905 840 C883 840 866 857 866 879 C866 901 883 918 905 918 L1180 918 C1200 1000 1250 1060 1312 1093 L888 1093 L706 912 C695 900 682 892 668 885 C690 770 785 663 888 663 Z" fill="url(#m-e)"/>
+  </g>
 </svg>

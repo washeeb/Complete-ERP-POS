@@ -1,6 +1,6 @@
 # 17. Going live
 
-This chapter takes a business from its old way of working (another till system, QuickBooks, Excel sheets or paper) to running on Ervanta, safely. Everything here is on one page in the back office: **System → Go-live** (owner and general manager).
+This chapter takes a business from its old way of working (another till system, QuickBooks, Excel sheets or paper) to running on SES Labs, safely. Everything here is on one page in the back office: **System → Go-live** (owner and general manager).
 
 **Why a plan:** going live touches money, stock and every member of staff on the same day. A written plan, a checked set of figures and a way back make it a calm day instead of a risky one.
 

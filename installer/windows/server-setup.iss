@@ -1,11 +1,14 @@
 ; The business server's Windows installer (setup.exe). Build with Inno Setup 6:
-;   iscc /DReleaseZip=C:\path\ervanta-<customer>-<build>.zip /DAppVersion=0.26.0 installer\windows\server-setup.iss
-; The product name comes from /DBrand (default Ervanta); the icon is app.ico (npm run brand).
+;   iscc /DReleaseZip=C:\path\ses-labs-<customer>-<build>.zip /DAppVersion=0.26.0 installer\windows\server-setup.iss
+; The product name comes from /DBrand (default SES Labs) and /DSlug (no spaces: folder and service); the icon is app.ico (npm run brand).
 ; The installer copies the release and install.ps1, asks a few questions, then runs install.ps1 in a visible window
 ; (it downloads PostgreSQL, PHP and Composer from their official sites, so the PC needs internet during installation).
 
+#ifndef Slug
+  #define Slug "SESLabs"
+#endif
 #ifndef Brand
-  #define Brand "Ervanta"
+  #define Brand "SES Labs"
 #endif
 #ifndef AppVersion
   #define AppVersion "0.0.0"
@@ -19,13 +22,13 @@ AppId={{6B1C4E5A-3C7D-4F51-9A0B-5E2D7C9A1F33}
 AppName={#Brand} server
 AppVersion={#AppVersion}
 AppPublisher={#Brand}
-DefaultDirName=C:\{#Brand}
+DefaultDirName=C:\{#Slug}
 DisableDirPage=yes
 DisableProgramGroupPage=yes
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-OutputBaseFilename={#Brand}-server-setup-{#AppVersion}
+OutputBaseFilename={#Slug}-server-setup-{#AppVersion}
 SetupIconFile=app.ico
 UninstallDisplayIcon={app}\installer\app.ico
 Compression=lzma2
@@ -40,15 +43,15 @@ Source: "install.ps1"; DestDir: "{app}\installer"; Flags: ignoreversion
 Source: "app.ico"; DestDir: "{app}\installer"; Flags: ignoreversion
 
 [Run]
-Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\installer\install.ps1"" -Release ""{app}\installer\release.zip"" -Dir ""{app}"" -Setup {code:SetupType} -Role {code:Role} -NodeId {code:NodeId} -Brand ""{#Brand}"""; \
+Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\installer\install.ps1"" -Release ""{app}\installer\release.zip"" -Dir ""{app}"" -Setup {code:SetupType} -Role {code:Role} -NodeId {code:NodeId} -Brand ""{#Brand}"" -Slug {#Slug}"; \
   StatusMsg: "Installing the database, PHP and the server (this takes several minutes)…"; Flags: waituntilterminated
 
 [UninstallRun]
-Filename: "powershell.exe"; Parameters: "-NoProfile -Command ""'{#Brand} Web','{#Brand} Scheduler','{#Brand} Live' | ForEach-Object {{ Unregister-ScheduledTask -TaskName $_ -Confirm:$false -ErrorAction SilentlyContinue }; sc.exe stop {#Brand}DB; sc.exe delete {#Brand}DB"""; \
+Filename: "powershell.exe"; Parameters: "-NoProfile -Command ""'{#Brand} Web','{#Brand} Scheduler','{#Brand} Live' | ForEach-Object {{ Unregister-ScheduledTask -TaskName $_ -Confirm:$false -ErrorAction SilentlyContinue }; sc.exe stop {#Slug}DB; sc.exe delete {#Slug}DB"""; \
   Flags: runhidden; RunOnceId: "StopServices"
 
 [Messages]
-FinishedLabel=The {#Brand} server is installed.%n%nOpen the back office at the address shown in the installation window (for example http://localhost:8010/admin). The database files and backups in C:\{#Brand} are kept if you uninstall.
+FinishedLabel=The {#Brand} server is installed.%n%nOpen the back office at the address shown in the installation window (for example http://localhost:8010/admin). The database files and backups in C:\{#Slug} are kept if you uninstall.
 
 [Code]
 var

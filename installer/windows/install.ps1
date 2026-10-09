@@ -1,18 +1,19 @@
 ﻿<#
 .SYNOPSIS
-  Installs the business server (Ervanta) on a Windows PC (setup A: one PC; setup B: shop server; branch servers),
+  Installs the business server (SES Labs) on a Windows PC (setup A: one PC; setup B: shop server; branch servers),
   doing what Chapter 4 of the installation guide describes by hand. Run as administrator. Safe to run again (update).
 
 .EXAMPLE
-  powershell -ExecutionPolicy Bypass -File install.ps1 -Release C:\Downloads\ervanta-shop-B1234.zip -Setup B
+  powershell -ExecutionPolicy Bypass -File install.ps1 -Release C:\Downloads\ses-labs-shop-B1234.zip -Setup B
 #>
 param(
   [Parameter(Mandatory = $true)][string]$Release,              # the release ZIP, or a folder holding server\
   [ValidateSet('A', 'B')][string]$Setup = 'B',                 # A: only this PC uses it; B: tills on the network use it
   [ValidateSet('hq', 'branch')][string]$Role = 'hq',
   [string]$NodeId = 'HQ',
-  [string]$Brand = 'Ervanta',                                 # the product name: folder, service and task names
-  [string]$Dir = "C:\$Brand",
+  [string]$Brand = 'SES Labs',                                 # the product name, as people see it (task and firewall names)
+  [string]$Slug = 'SESLabs',                                   # the same without spaces (folder and Windows service)
+  [string]$Dir = "C:\$Slug",
   [int]$Port = 8010,
   [string]$PhpDir = 'C:\php',
   [string]$PgVersion = '17.6-1',                               # PostgreSQL build from get.enterprisedb.com (binaries ZIP)
@@ -53,9 +54,9 @@ if (-not (Test-Path "$PgData\PG_VERSION")) {
   Run "$pgBin\initdb.exe" @('-D', $PgData, '-U', 'postgres', '--pwfile', $pwFile, '-E', 'UTF8', '--locale=C', '-A', 'scram-sha-256')
   Remove-Item $pwFile
   Add-Content $secrets "postgres superuser password: $superPw"
-  Run "$pgBin\pg_ctl.exe" @('register', '-N', "$($Brand)DB", '-D', $PgData, '-S', 'auto', '-o', "`"-p $PgPort`"")
+  Run "$pgBin\pg_ctl.exe" @('register', '-N', "$($Slug)DB", '-D', $PgData, '-S', 'auto', '-o', "`"-p $PgPort`"")
 }
-Start-Service "$($Brand)DB" -ErrorAction SilentlyContinue
+Start-Service "$($Slug)DB" -ErrorAction SilentlyContinue
 icacls $secrets /inheritance:r /grant:r 'Administrators:F' 'SYSTEM:F' | Out-Null
 
 # ---------------------------------------------------------------------------------------------------------------

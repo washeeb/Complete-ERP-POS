@@ -247,7 +247,7 @@ it('builds a stamped, signed release whose manifest matches the delivered files'
             ->and($manifest['files'])->toHaveKey('app/Security/Authorizer.php')
             ->and(Watermark::reveal(file_get_contents("{$root}/app/Models/Customer.php")))->toBe(["{$build->id}|Kofi Stores"])
             ->and(file_exists("{$root}/.env"))->toBeFalse()
-            ->and(glob("{$out}/ervanta-kofi-stores-{$build->id}.zip"))->toHaveCount(1);
+            ->and(glob("{$out}/ses-labs-kofi-stores-{$build->id}.zip"))->toHaveCount(1);
     } finally {
         @unlink($keyFile);
         File::deleteDirectory($out);

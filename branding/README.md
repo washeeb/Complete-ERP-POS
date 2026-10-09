@@ -4,10 +4,14 @@ Two brands meet on every screen:
 
 | | Whose | Where it is set | Where it shows |
 |---|---|---|---|
-| **Product brand** | The software (currently **Ervanta**) | `branding/product/` + `server/config/brand.php` (`BRAND_NAME`, `BRAND_VENDOR`, `BRAND_WEBSITE`) | Sign-in page of a multi-company server, "Powered by …", favicons and app icons, the desktop till app, installers, the guide covers, licence messages |
+| **Product brand** | The software (currently **SES Labs**) | `branding/product/` + `server/config/brand.php` (`BRAND_NAME`, `BRAND_VENDOR`, `BRAND_WEBSITE`) | Sign-in page of a multi-company server, "Powered by …", favicons and app icons, the desktop till app, installers, the guide covers, licence messages |
 | **Client brand** | Each company using it | Back office → **Company → Branding**, or the setup wizard's "Your brand" step | Back office (logo, icon, colour), tills (top-bar icon, accent, receipt logo — printed as dithered black-and-white on thermal printers), invoices/statements/prints, PDF exports, online shop |
 
 The client's brand leads; a small "Powered by <product>" stays unless the licence names the `white_label` feature (`php artisan license:issue … --features=finance,hr,white_label`).
+
+## The SES Labs logo
+
+`product/ses-lettermark.svg` is the SES lettermark (SES Labs), **traced as vector shapes** from the owner's logo (navy `#031E4C`, teal `#06AAAA`). `product/compose.py` builds `logo.svg` (light backgrounds), `logo-dark.svg` (navy turned light, for dark backgrounds) and `mark.svg` (the full SES on a white rounded tile — the app icon) from it. The owner's original artwork goes in `product/original/` as the master copy; check the trace against it.
 
 ## Changing the product's logo or name
 

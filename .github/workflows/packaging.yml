@@ -58,7 +58,7 @@ jobs:
           curl -fsS http://localhost/admin/login | grep -q 'Sign in'
           sudo bash installer/ubuntu/install.sh --source "$GITHUB_WORKSPACE" --ci
           curl -fsS http://localhost/up
-          cd /var/www/ervanta/server && sudo -u www-data php artisan erp:backup && sudo -u www-data php artisan erp:backup --verify
+          cd /var/www/seslabs/server && sudo -u www-data php artisan erp:backup && sudo -u www-data php artisan erp:backup --verify
 
   windows-installer:
     runs-on: windows-latest
@@ -79,7 +79,7 @@ jobs:
         shell: pwsh
         run: |
           if (-not ((Invoke-WebRequest http://127.0.0.1:8010/admin/login -UseBasicParsing).Content -match 'Sign in')) { throw 'login page missing' }
-          Set-Location C:\Ervanta\server; C:\php\php.exe artisan erp:backup; C:\php\php.exe artisan erp:backup --verify
+          Set-Location C:\SESLabs\server; C:\php\php.exe artisan erp:backup; C:\php\php.exe artisan erp:backup --verify
       - name: Build setup.exe
         shell: pwsh
         run: |
@@ -88,7 +88,7 @@ jobs:
           & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DReleaseZip=$env:GITHUB_WORKSPACE\release.zip" /DAppVersion=0.26.0 installer\windows\server-setup.iss
       - uses: actions/upload-artifact@v4
         with:
-          name: ervanta-server-setup
+          name: seslabs-server-setup
           path: installer/windows/Output/*.exe
 
   desktop-till:
@@ -111,7 +111,7 @@ jobs:
         run: npx tauri build
       - uses: actions/upload-artifact@v4
         with:
-          name: ervanta-till-windows
+          name: seslabs-till-windows
           path: |
             pos/src-tauri/target/release/bundle/msi/*.msi
             pos/src-tauri/target/release/bundle/nsis/*.exe

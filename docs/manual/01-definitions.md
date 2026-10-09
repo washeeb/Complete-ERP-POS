@@ -38,8 +38,8 @@ You do not need to remember these. Come back to this page whenever a word is unc
 |---|---|
 | **Core** | The part every business has: company, branches, users, products, prices, tax, stock, tills, customers, purchasing, sales, finance and HR (if licensed). |
 | **Module** | An extra package for a type of business, switched on **per branch**: Grocery, Pharmacy, Restaurant, Electronics, Fashion, Services, Online Storefront, and more later. A branch can use several. |
-| **Licence** | The key from Ervanta that allows the software to run. It sets how many branches, devices and users you may have and which modules and features (Finance, HR & payroll) you bought. |
-| **Installation code** | A code starting with `SYNREQ-` that your server shows on the Licence page. You send it to Ervanta to receive your licence key (starting with `SYN1-`). |
+| **Licence** | The key from SES Labs that allows the software to run. It sets how many branches, devices and users you may have and which modules and features (Finance, HR & payroll) you bought. |
+| **Installation code** | A code starting with `SYNREQ-` that your server shows on the Licence page. You send it to SES Labs to receive your licence key (starting with `SYN1-`). |
 | **Read-only** | What happens when a licence expires or is withdrawn: you can still see everything, but nothing can be changed or sold. Nothing is deleted. |
 
 ## Working offline and with several sites

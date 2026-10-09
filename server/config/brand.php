@@ -6,17 +6,17 @@
  * the product name is this file (or BRAND_NAME in .env) plus new artwork.
  */
 return [
-    'name' => env('BRAND_NAME') ?: 'Ervanta',
+    'name' => env('BRAND_NAME') ?: 'SES Labs',
 
-    'tagline' => 'Till, stock and books in one',
+    'tagline' => 'Engineering Solutions. Empowering Businesses.',
 
     // Who issues licences and gives support (shown in licence messages). Defaults to the product name.
-    'vendor' => env('BRAND_VENDOR') ?: (env('BRAND_NAME') ?: 'Ervanta'),
+    'vendor' => env('BRAND_VENDOR') ?: (env('BRAND_NAME') ?: 'SES Labs'),
 
     'website' => env('BRAND_WEBSITE') ?: null,
 
     // The product's colour (back office before a client chooses theirs; online shop accents).
-    'color' => '#0F766E',
+    'color' => '#031E4C',
 
     'logo' => '/brand/logo.svg',
     'logo_dark' => '/brand/logo-dark.svg',

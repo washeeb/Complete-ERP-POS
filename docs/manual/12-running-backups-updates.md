@@ -41,7 +41,7 @@ The server keeps the last 7 itself. Add at least one place **outside the server*
 
 **Check:** **Back up now**, then the backup shows ✓ for each destination, and **Check the newest backup** reports *Readable* or *Restore drill passed*. **System → Health** then shows *Backups OK*.
 
-**Note:** on Windows set `BACKUP_PG_BIN=C:\Ervanta\pgsql\bin` (the installer does this). For the full restore drill the database user needs permission to create a scratch database: the installers give it; on an existing server an administrator runs `ALTER ROLE erp CREATEDB;` in PostgreSQL.
+**Note:** on Windows set `BACKUP_PG_BIN=C:\SESLabs\pgsql\bin` (the installer does this). For the full restore drill the database user needs permission to create a scratch database: the installers give it; on an existing server an administrator runs `ALTER ROLE erp CREATEDB;` in PostgreSQL.
 
 ## 12.3 Restoring from a backup
 
@@ -51,7 +51,7 @@ Use this after a disaster, or to practise on a spare PC.
 2. Copy the newest `.synbak` backup file to it (from the USB drive, cloud storage or **System → Backups → Download** on the old server if it still works).
 3. Put your **backup passphrase** in the new server's `.env` as `BACKUP_PASSPHRASE=…`, then in the `server` folder:
    ```
-   php artisan erp:backup:restore C:\path\ervanta-hq-20261029-020000.synbak
+   php artisan erp:backup:restore C:\path\ses-labs-hq-20261029-020000.synbak
    ```
    It checks the backup, asks for confirmation, and replaces the data.
 4. The backup's settings are saved next to `.env` as `.env.from-backup`. Copy `APP_KEY` and `ERP_AUDIT_KEY` from it into `.env` (they must match the backup), then `php artisan optimize`.
@@ -63,11 +63,11 @@ Use this after a disaster, or to practise on a spare PC.
 
 ## 12.4 Updating the software
 
-Ervanta sends you a new release ZIP. Update outside trading hours.
+SES Labs sends you a new release ZIP. Update outside trading hours.
 
 1. **Take a backup** (run the backup task now) and check it.
-2. Stop the server: Windows — Task Scheduler → *End* both Ervanta tasks; Ubuntu — `sudo systemctl stop nginx`.
-3. Extract the new ZIP **over** the existing folder (`C:\Ervanta` or `/var/www/ervanta`). Your `.env` and `storage` are kept.
+2. Stop the server: Windows — Task Scheduler → *End* both SES Labs tasks; Ubuntu — `sudo systemctl stop nginx`.
+3. Extract the new ZIP **over** the existing folder (`C:\SESLabs` or `/var/www/seslabs`). Your `.env` and `storage` are kept.
 4. In the `server` folder:
 
    ```

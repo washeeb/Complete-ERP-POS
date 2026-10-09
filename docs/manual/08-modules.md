@@ -22,7 +22,7 @@ A branch can run several modules (for example Grocery and Restaurant for a super
 |---|---|
 | **Available** | Released: can be switched on now. |
 | **Planned · Phase N** | Not built yet. You may **reserve** it for a branch; it switches on by itself when that phase is released. Nothing is shown as working before it exists. |
-| **Not licensed** | Your licence does not include it. Ask Ervanta. |
+| **Not licensed** | Your licence does not include it. Ask SES Labs. |
 
 **Note:** switching a module **off** hides it and stops new work. It **never deletes** data; switching it on again brings everything back.
 

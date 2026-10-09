@@ -2,11 +2,11 @@
 
 ## [0.26.0] — 2026-10-31 · Product name and branding
 ### Changed
-- The product is now called **Ervanta** (one setting: `config/brand.php` / `BRAND_NAME`; artwork in `branding/product`). The former company name no longer appears anywhere a user, customer or integrator looks: screens, messages, licence texts, installers (`C:\Ervanta`, `ErvantaDB`, `/var/www/ervanta`, Docker image `ervanta`), the desktop till ("Ervanta Till"), guides. Webhook headers are now `X-Webhook-Event`, `X-Webhook-Delivery`, `X-Webhook-Signature` (and `X-Webhook-Timestamp`, `X-Webhook-Id` for the generic REST shop). The installation guide is `Ervanta-Installation-Guide.pdf`.
+- The product is now called **SES Labs** — *Engineering Solutions. Empowering Businesses.* — with the owner's SES lettermark (traced as vector in `branding/product/ses-lettermark.svg`; app icon = the full SES on a white tile) (one setting: `config/brand.php` / `BRAND_NAME`; artwork in `branding/product`). The former company name no longer appears anywhere a user, customer or integrator looks: screens, messages, licence texts, installers (`C:\SESLabs`, `SESLabsDB`, `/var/www/seslabs`, Docker image `seslabs`), the desktop till ("SES Labs Till"), guides. Webhook headers are now `X-Webhook-Event`, `X-Webhook-Delivery`, `X-Webhook-Signature` (and `X-Webhook-Timestamp`, `X-Webhook-Id` for the generic REST shop). The installation guide is `SES-Labs-Installation-Guide.pdf`.
 ### Added
-- **Product brand placeholder** (mark, logo, dark logo) and `npm run brand`, which makes every favicon, home-screen icon (incl. maskable), the Windows `.ico`, the desktop till's icons and name, and the guide-cover logo from it.
+- **Product brand** files (mark, logo, dark logo, built by `branding/product/compose.py`) and `npm run brand`, which makes every favicon, home-screen icon (incl. maskable), the Windows `.ico`, the desktop till's icons and name, and the guide-cover logo from it.
 - **Client branding** (Company → Branding, and a "Your brand" step in the setup wizard): logo, dark-background logo, square icon and brand colour, shown on the back office, the sign-in page of a single-company server, tills (icon, accent, receipt logo — printed as dithered black-and-white on thermal printers, cached for offline), invoices and other prints, PDF exports and the online shop. The colour is suggested from the logo, with a readability warning; a monogram (initials on the colour) stands in until an icon is uploaded. Uploads are checked and re-encoded; SVGs are cleaned and served with a locked-down content policy. Logos sync to branch servers and are in backups. Practice companies copy them.
-- **White-label**: "Powered by Ervanta" in footers and on receipts and documents, removed by a licence that names `white_label`.
+- **White-label**: "Powered by SES Labs" in footers and on receipts and documents, removed by a licence that names `white_label`.
 
 ## [0.25.0] — 2026-10-30 · Phase 14 Pilot and launch
 ### Added

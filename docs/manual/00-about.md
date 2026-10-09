@@ -1,6 +1,6 @@
 # About this guide
 
-This guide takes you from an empty computer to a working shop, restaurant, pharmacy or chain of branches running **Ervanta**. It is written for someone who is **not** an IT professional. Every step says **what** to do, and where it helps, **why** it is needed.
+This guide takes you from an empty computer to a working shop, restaurant, pharmacy or chain of branches running **SES Labs**. It is written for someone who is **not** an IT professional. Every step says **what** to do, and where it helps, **why** it is needed.
 
 ## How to read it
 
