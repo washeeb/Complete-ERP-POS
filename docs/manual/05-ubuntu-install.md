@@ -181,7 +181,7 @@ server {
 
     # The till app: its own files, and index.html for anything else under /pos/
     location /pos/ {
-        try_files $uri $uri/ /pos/index.html;
+        try_files $uri /pos/index.html;
     }
     location = /pos/sw.js { add_header Cache-Control "no-cache"; }
     location = /pos/index.html { add_header Cache-Control "no-cache"; }

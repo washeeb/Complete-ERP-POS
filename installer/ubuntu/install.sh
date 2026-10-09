@@ -112,7 +112,7 @@ server {
     root ${DIR}/server/public;
     index index.php;
     client_max_body_size 25m;
-    location /pos/ { try_files \$uri \$uri/ /pos/index.html; }
+    location /pos/ { try_files \$uri /pos/index.html; }
     location / { try_files \$uri \$uri/ /index.php?\$query_string; }
     location ~ \.php\$ {
         fastcgi_pass unix:/run/php/php${PHP_V}-fpm.sock;
