@@ -138,7 +138,9 @@ class GoLive extends Page
 
     public function markStepAction(): Action
     {
-        return Action::make('markStep')->label(fn (array $arguments) => match ($arguments['do'] ?? 'done') { 'skip' => 'Not needed', 'undo' => 'Undo', default => 'Done' })
+        return Action::make('markStep')->label(fn (array $arguments) => match ($arguments['do'] ?? 'done') {
+            'skip' => 'Not needed', 'undo' => 'Undo', default => 'Done'
+        })
             ->link()->size('sm')
             ->schema(fn (array $arguments) => ($arguments['do'] ?? 'done') === 'undo' ? [] : [TextInput::make('note')->label('Note (optional)')->maxLength(255)])
             ->action(fn (array $data, array $arguments) => Erp::run(fn ($actor) => app(GoLiveService::class)->markStep($actor, $arguments['key'], $arguments['do'] ?? 'done', $data['note'] ?? null)));

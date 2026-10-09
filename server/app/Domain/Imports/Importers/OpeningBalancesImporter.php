@@ -6,7 +6,6 @@ use App\Domain\Finance\JournalService;
 use App\Domain\Imports\Importer;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
-use App\Models\Account;
 use App\Models\Branch;
 use App\Models\JournalEntry;
 use App\Models\Tenant;

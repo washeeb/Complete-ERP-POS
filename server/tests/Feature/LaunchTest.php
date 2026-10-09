@@ -4,8 +4,10 @@ use App\Domain\Access\AccessService;
 use App\Domain\Api\WebhookDispatcher;
 use App\Domain\Devices\DeviceService;
 use App\Domain\Fiscal\FiscalService;
+use App\Domain\Imports\CsvFile;
 use App\Domain\Imports\ImportService;
 use App\Domain\Imports\ImportSources;
+use App\Domain\Inventory\InventoryService;
 use App\Domain\Launch\GoLiveService;
 use App\Domain\Launch\PilotReport;
 use App\Domain\Launch\PracticeCompany;
@@ -16,18 +18,22 @@ use App\Domain\Pos\ShiftService;
 use App\Domain\Pricing\PriceResolver;
 use App\Domain\Pricing\PromotionEngine;
 use App\Domain\Support\AccessDenied;
+use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
+use App\Domain\Support\Recorder;
 use App\Filament\Pages\GoLive;
 use App\Filament\Pages\ImportData;
 use App\Filament\Resources\SupportReports\SupportReportResource;
+use App\Livewire\ReportProblem;
+use App\Mail\PlainMessage;
 use App\Models\Account;
 use App\Models\BackupRun;
 use App\Models\Customer;
 use App\Models\GoLivePlan;
+use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\SupportReport;
-use App\Models\Tenant;
 use App\Models\Till;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -40,6 +46,7 @@ use App\Support\TenantContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Livewire\Livewire;
 
 beforeEach(function () {
     [$this->tenant, $this->owner] = installCompany();
@@ -60,7 +67,7 @@ function migrate($t, string $type, string $source, array $rows, bool $commit = t
         fputcsv($f, $r, escape: '');
     }
     fclose($f);
-    $headings = array_map(fn ($h) => \App\Domain\Imports\CsvFile::key($h), $rows[0]);
+    $headings = array_map(fn ($h) => CsvFile::key($h), $rows[0]);
     $mapping = ImportSources::suggest($source, $type, $headings, ImportService::importer($type)->headings());
 
     return $t->imports->run($t->o, $type, $path, 'old.csv', ['source' => $source, 'as_of' => now()->toDateString()] + $options, null, $commit, $mapping);
@@ -142,7 +149,7 @@ it('plans the go-live, runs a parallel run against the old system, goes live wit
     $seller = staff($this->owner, 'kojo', 2, 'cashier', ScopeType::Till, $till->id);
     $shift = app(ShiftService::class)->open($device, $seller, 0);
     $unit = $milo->units->first();
-    $list = \App\Models\PriceList::where('code', 'RETAIL')->first();
+    $list = PriceList::where('code', 'RETAIL')->first();
     $price = app(PriceResolver::class)->resolve($list, $milo->id, $unit->id, Qty::toMilli('2'), now())->amount_minor;
     $calc = PromotionEngine::compute(['lines' => [['key' => '0', 'product_id' => $milo->id, 'category_id' => null, 'qty_milli' => Qty::toMilli('2'), 'unit_price_minor' => $price,
         'tax' => $milo->taxGroup->rates->map(fn ($r) => ['code' => $r->code, 'name' => $r->name, 'rate_bp' => $r->rate_bp])->values()->all(), 'manual' => null]],
@@ -167,7 +174,7 @@ it('plans the go-live, runs a parallel run against the old system, goes live wit
     Mail::fake();
     $report = app(PilotReport::class)->send(GoLivePlan::first());
     expect(implode("\n", $report['lines']))->toContain('HQ')->toContain('A Milo rung up only here')->and($report['sent_to'])->toBe('support@synclytics.test');
-    Mail::assertSent(\App\Mail\PlainMessage::class, fn ($m) => $m->hasTo('support@synclytics.test') && str_contains($m->subjectLine, 'Pilot report'));
+    Mail::assertSent(PlainMessage::class, fn ($m) => $m->hasTo('support@synclytics.test') && str_contains($m->subjectLine, 'Pilot report'));
     expect(app(PilotReport::class)->due())->toBe([]); // sent today already
 
     // Going live needs today's backup, and a reason while required steps are open.
@@ -186,7 +193,7 @@ it('plans the go-live, runs a parallel run against the old system, goes live wit
 
 it('makes a practice company that copies the shop, signs staff in with their own password, and never sends anything out', function () {
     $milo = makeProduct($this->owner, 'MILO', 'Milo 400g', retail: '58.00');
-    app(\App\Domain\Inventory\InventoryService::class)->adjust($this->o, $this->wh, $milo, $milo->units->first(), '30', 'opening', '', null, '40.00');
+    app(InventoryService::class)->adjust($this->o, $this->wh, $milo, $milo->units->first(), '30', 'opening', '', null, '40.00');
     $cashier = staff($this->owner, 'efua', 2, 'cashier', ScopeType::Branch, $this->hq->id);
     app(AccessService::class)->setPin($this->o, $cashier, '4826');
     $realProducts = Product::count();
@@ -216,8 +223,8 @@ it('makes a practice company that copies the shop, signs staff in with their own
     Mail::assertNothingSent();
     app(TenantContext::class)->set($practice->id);
     WebhookEndpoint::create(['tenant_id' => $practice->id, 'url' => 'https://hooks.example.test/x', 'secret' => 'x', 'events' => ['product.updated'], 'is_active' => true]);
-    $practiceOwner = \App\Domain\Support\Actor::user(User::withoutGlobalScopes()->where('tenant_id', $practice->id)->where('username', $this->owner->username)->first(), 'web');
-    $recorder = app(\App\Domain\Support\Recorder::class);
+    $practiceOwner = Actor::user(User::withoutGlobalScopes()->where('tenant_id', $practice->id)->where('username', $this->owner->username)->first(), 'web');
+    $recorder = app(Recorder::class);
     $recorder->transaction(fn () => $recorder->save($practiceOwner, Product::where('sku', 'MILO')->first()->forceFill(['name' => 'Milo 400g tin']), 'product.updated'));
     app(WebhookDispatcher::class)->run();
     expect(WebhookDelivery::count())->toBe(0);
@@ -242,7 +249,7 @@ it('takes problem reports from the back office and the till and e-mails them to 
     $this->golive->savePlan($this->o, ['support_email' => 'help@synclytics.test']);
     $r = app(SupportReports::class)->report($this->o, 'back_office', 'Posting the stock count said something went wrong.', '/admin/stock-counts/1', ['browser' => 'Edge']);
     expect($r->number)->toStartWith('SUP-')->and($r->sent_at)->not->toBeNull()->and($r->context['server']['version'])->toBe(config('erp.version'));
-    Mail::assertSent(\App\Mail\PlainMessage::class, fn ($m) => $m->hasTo('help@synclytics.test') && str_contains($m->text, 'stock count'));
+    Mail::assertSent(PlainMessage::class, fn ($m) => $m->hasTo('help@synclytics.test') && str_contains($m->text, 'stock count'));
     expect(fn () => app(SupportReports::class)->report($this->o, 'back_office', 'x'))->toThrow(DomainException::class, 'few words');
 
     // From a till: device + cashier signed in by PIN.
@@ -270,7 +277,7 @@ it('shows the go-live page, problem reports and the import sources to the right 
     $this->get(SupportReportResource::getUrl())->assertOk();
     $this->get(ImportData::getUrl().'?type=opening_balances&source=quickbooks')->assertOk()->assertSee('Balances as of')->assertSee('QuickBooks');
     $this->get('/admin')->assertOk()->assertSee('Report a problem');
-    \Livewire\Livewire::test(\App\Livewire\ReportProblem::class)->set('message', 'hi')->call('send')->assertHasErrors('message')
+    Livewire::test(ReportProblem::class)->set('message', 'hi')->call('send')->assertHasErrors('message')
         ->set('message', 'The dashboard shows yesterday twice.')->set('page', '/admin')->call('send')->assertHasNoErrors();
     expect(SupportReport::where('source', 'back_office')->value('page'))->toBe('/admin');
     $this->flushSession();
