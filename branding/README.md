@@ -11,7 +11,7 @@ The client's brand leads; a small "Powered by <product>" stays unless the licenc
 
 ## The SES Labs logo
 
-`product/ses-lettermark.svg` is the SES lettermark (SES Labs), **traced as vector shapes** from the owner's logo (navy `#031E4C`, teal `#06AAAA`). `product/compose.py` builds `logo.svg` (light backgrounds), `logo-dark.svg` (navy turned light, for dark backgrounds) and `mark.svg` (the full SES on a white rounded tile — the app icon) from it. The owner's original artwork goes in `product/original/` as the master copy; check the trace against it.
+`product/ses-lettermark.svg` is the SES lettermark (SES Labs), **traced as vector shapes** from the owner's logo (navy `#031E4C`, teal `#06AAAA`). `product/compose.py` builds `logo.svg` (light backgrounds), `logo-dark.svg` (navy turned light, for dark backgrounds) and `mark.svg` (the full SES on a white rounded tile — the app icon) from it. The owner's original artwork is the master copy: `product/original/SES Connected Accent Logo.png` (2000 × 2000, transparent background — some viewers draw the transparent areas black). The trace was checked against it on 2026-10-09: overlaid at the same scale, the outlines match to within a few pixels, so the vector files are used everywhere (they stay sharp at every size and have a dark-theme version). Trace again from this file if the logo ever changes.
 
 ## Changing the product's logo or name
 
