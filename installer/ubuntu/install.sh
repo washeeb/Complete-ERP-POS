@@ -63,6 +63,7 @@ cd "$DIR/server"
 say "3/9 The database (why: everything the business records lives here)"
 ENV_FILE="$DIR/server/.env"
 # PostgreSQL 17's own cluster (another version already on the machine keeps its port; 17 then gets the next one).
+pg_lsclusters -h | awk -v v="${PG_MAJOR}" '$1==v && $2=="main"' | grep -q . || pg_createcluster "${PG_MAJOR}" main >/dev/null  # some images turn off the automatic cluster
 pg_ctlcluster "${PG_MAJOR}" main start 2>/dev/null || true
 PG_PORT="$(pg_lsclusters -h | awk -v v="${PG_MAJOR}" '$1==v && $2=="main" {print $3}')"; PG_PORT="${PG_PORT:-5432}"
 PSQL="sudo -u postgres psql -p ${PG_PORT}"

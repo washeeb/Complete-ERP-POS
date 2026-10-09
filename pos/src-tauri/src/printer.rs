@@ -26,9 +26,10 @@ pub fn list() -> Vec<String> {
 #[cfg(windows)]
 mod spooler {
     use windows::core::{PCWSTR, PWSTR};
+    use windows::Win32::Foundation::HANDLE;
     use windows::Win32::Graphics::Printing::{
         ClosePrinter, EndDocPrinter, EndPagePrinter, EnumPrintersW, OpenPrinterW, StartDocPrinterW, StartPagePrinter, WritePrinter, DOC_INFO_1W,
-        PRINTER_ENUM_CONNECTIONS, PRINTER_ENUM_LOCAL, PRINTER_HANDLE, PRINTER_INFO_4W,
+        PRINTER_ENUM_CONNECTIONS, PRINTER_ENUM_LOCAL, PRINTER_INFO_4W,
     };
 
     fn wide(s: &str) -> Vec<u16> {
@@ -40,7 +41,7 @@ mod spooler {
         let mut doc = wide("Synclytics receipt");
         let mut raw = wide("RAW");
         unsafe {
-            let mut h = PRINTER_HANDLE::default();
+            let mut h = HANDLE::default();
             OpenPrinterW(PCWSTR(pname.as_ptr()), &mut h, None).map_err(|e| format!("Printer \"{name}\" not found: {e}"))?;
             let info = DOC_INFO_1W { pDocName: PWSTR(doc.as_mut_ptr()), pOutputFile: PWSTR::null(), pDatatype: PWSTR(raw.as_mut_ptr()) };
             let result = (|| -> Result<(), String> {
