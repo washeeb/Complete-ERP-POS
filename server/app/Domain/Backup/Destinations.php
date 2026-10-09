@@ -47,19 +47,19 @@ final class Destinations
     public static function list(string $type, array $c): array
     {
         $names = match ($type) {
-            'folder' => self::folder($c, fn ($dir) => array_map('basename', glob($dir.DIRECTORY_SEPARATOR.'synclytics-*.synbak') ?: [])),
+            'folder' => self::folder($c, fn ($dir) => array_map('basename', glob($dir.DIRECTORY_SEPARATOR.'*.synbak') ?: [])),
             's3' => (function () use ($c) {
-                $xml = self::s3Request($c, 'GET', '', null, ['list-type' => '2', 'prefix' => self::s3Key($c, 'synclytics-')])->body();
+                $xml = self::s3Request($c, 'GET', '', null, ['list-type' => '2', 'prefix' => self::s3Key($c, '')])->body();
                 preg_match_all('#<Key>([^<]+)</Key>#', $xml, $m);
 
                 return array_map('basename', $m[1]);
             })(),
             'gdrive' => array_column(self::gdriveFiles($c), 'name'),
-            'sftp' => self::sftp($c, fn (SFTP $s, $dir) => array_values(array_filter((array) $s->nlist($dir), fn ($n) => str_starts_with($n, 'synclytics-') && str_ends_with($n, '.synbak')))),
+            'sftp' => self::sftp($c, fn (SFTP $s, $dir) => array_values(array_filter((array) $s->nlist($dir), fn ($n) => str_ends_with($n, '.synbak')))),
             default => [],
         };
-        $names = array_values(array_filter($names, fn ($n) => preg_match('/^synclytics-.*\.synbak$/', $n)));
-        rsort($names); // names carry the date and time, so newest first
+        $names = array_values(array_filter($names, fn ($n) => preg_match('/^[a-z0-9][a-z0-9._-]*\.synbak$/', $n)));
+        usort($names, [self::class, 'newestFirst']); // by the date and time in the name, whatever the prefix
 
         return $names;
     }
@@ -92,8 +92,8 @@ final class Destinations
     public static function test(string $type, array $c): void
     {
         $tmp = tempnam(sys_get_temp_dir(), 'bt');
-        file_put_contents($tmp, 'Synclytics backup test');
-        $name = 'synclytics-test-'.Str::lower(Str::random(6)).'.synbak';
+        file_put_contents($tmp, 'backup test');
+        $name = 'test-'.Str::lower(Str::random(6)).'.synbak';
         try {
             self::put($type, $c, $tmp, $name);
             if (! in_array($name, self::list($type, $c), true)) {
@@ -201,7 +201,7 @@ final class Destinations
         $folder = str_replace("'", '', (string) ($c['folder_id'] ?? ''));
 
         return Http::withToken(self::gdriveToken($c))->timeout(30)->get('https://www.googleapis.com/drive/v3/files', [
-            'q' => "'{$folder}' in parents and name contains 'synclytics-' and trashed = false", 'fields' => 'files(id,name)', 'pageSize' => 1000,
+            'q' => "'{$folder}' in parents and name contains '.synbak' and trashed = false", 'fields' => 'files(id,name)', 'pageSize' => 1000,
         ])->throw()->json('files') ?? [];
     }
 
@@ -238,5 +238,13 @@ final class Destinations
         $dir = rtrim((string) ($c['path'] ?: '.'), '/');
 
         return $do($s, $dir);
+    }
+
+    /** Newest first by the YYYYMMDD-HHMMSS stamp in a backup's name (the product-name prefix may have changed). */
+    public static function newestFirst(string $a, string $b): int
+    {
+        $stamp = fn (string $n) => preg_match('/(\d{8}-\d{6})/', $n, $m) ? $m[1] : '00000000-000000';
+
+        return [$stamp($b), $b] <=> [$stamp($a), $a];
     }
 }

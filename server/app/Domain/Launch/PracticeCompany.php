@@ -13,6 +13,7 @@ use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
 use App\Models\Branch;
+use App\Models\BrandAsset;
 use App\Models\Customer;
 use App\Models\Role;
 use App\Models\RoleAssignment;
@@ -88,7 +89,7 @@ final class PracticeCompany
                 [$tenant, $owner, $logins] = $this->recorder->transaction(function () use ($actor, $real, $snapshot, $newPermissions, $context) {
                     $tenant = new Tenant(['name' => mb_substr($real->name, 0, 200).' — PRACTICE', 'slug' => $this->slug($real->slug.'-practice'),
                         'country_code' => $real->country_code, 'currency_code' => $real->currency_code, 'locale' => $real->locale, 'timezone' => $real->timezone]);
-                    $tenant->forceFill(['is_practice' => true, 'practice_of' => $real->id]);
+                    $tenant->forceFill(['is_practice' => true, 'practice_of' => $real->id, 'brand_color' => $real->brand_color, 'brand_receipt_logo' => $real->brand_receipt_logo]);
                     $tenant->save();
                     Tenant::forgetPractice();
                     $context->set($tenant->id);
@@ -127,6 +128,11 @@ final class PracticeCompany
                                 // a module that cannot be switched on here simply stays off in practice
                             }
                         }
+                    }
+                    foreach (BrandAsset::withoutGlobalScopes()->where('tenant_id', $real->id)->where('bytes', '>', 0)->get() as $a) { // the same logo (the PRACTICE bar says it is not real)
+                        $copy = $a->replicate(['id', 'tenant_id']);
+                        $copy->forceFill(['tenant_id' => $tenant->id]);
+                        $this->recorder->save($system, $copy, 'brand.asset_added', 'Copied for the practice company');
                     }
                     foreach ($snapshot['settings'] as $s) {
                         DB::table('settings')->insertOrIgnore(['id' => (string) Str::uuid7(), 'tenant_id' => $tenant->id, 'key' => $s->key, 'value' => $s->value,

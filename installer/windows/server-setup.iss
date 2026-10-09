@@ -1,8 +1,18 @@
-; Synclytics ERP — Windows installer (setup.exe). Build with Inno Setup 6:
-;   iscc /DReleaseZip=C:\path\synclytics-<customer>-<build>.zip /DAppVersion=0.24.0 installer\windows\synclytics.iss
+; The business server's Windows installer (setup.exe). Build with Inno Setup 6:
+;   iscc /DReleaseZip=C:\path\ses-labs-<customer>-<build>.zip /DAppVersion=0.26.0 installer\windows\server-setup.iss
+; The product name comes from /DBrand (default SES Labs) and /DSlug (no spaces: folder and service); the icon is app.ico (npm run brand).
 ; The installer copies the release and install.ps1, asks a few questions, then runs install.ps1 in a visible window
 ; (it downloads PostgreSQL, PHP and Composer from their official sites, so the PC needs internet during installation).
 
+#ifndef Slug
+  #define Slug "SESLabs"
+#endif
+#ifndef Brand
+  #define Brand "SES Labs"
+#endif
+#ifndef Publisher
+  #define Publisher "SyncLytics"
+#endif
 #ifndef AppVersion
   #define AppVersion "0.0.0"
 #endif
@@ -12,16 +22,21 @@
 
 [Setup]
 AppId={{6B1C4E5A-3C7D-4F51-9A0B-5E2D7C9A1F33}
-AppName=Synclytics ERP server
+AppName={#Brand} server
 AppVersion={#AppVersion}
-AppPublisher=Synclytics
-DefaultDirName=C:\Synclytics
+AppPublisher={#Publisher}
+AppCopyright=Copyright (C) {#Publisher}
+VersionInfoCompany={#Publisher}
+VersionInfoProductName={#Brand}
+DefaultDirName=C:\{#Slug}
 DisableDirPage=yes
 DisableProgramGroupPage=yes
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-OutputBaseFilename=synclytics-erp-server-setup-{#AppVersion}
+OutputBaseFilename={#Slug}-server-setup-{#AppVersion}
+SetupIconFile=app.ico
+UninstallDisplayIcon={app}\installer\app.ico
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -31,17 +46,18 @@ MinVersion=10.0
 [Files]
 Source: "{#ReleaseZip}"; DestDir: "{app}\installer"; DestName: "release.zip"; Flags: ignoreversion
 Source: "install.ps1"; DestDir: "{app}\installer"; Flags: ignoreversion
+Source: "app.ico"; DestDir: "{app}\installer"; Flags: ignoreversion
 
 [Run]
-Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\installer\install.ps1"" -Release ""{app}\installer\release.zip"" -Dir ""{app}"" -Setup {code:SetupType} -Role {code:Role} -NodeId {code:NodeId}"; \
+Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\installer\install.ps1"" -Release ""{app}\installer\release.zip"" -Dir ""{app}"" -Setup {code:SetupType} -Role {code:Role} -NodeId {code:NodeId} -Brand ""{#Brand}"" -Slug {#Slug}"; \
   StatusMsg: "Installing the database, PHP and the server (this takes several minutes)…"; Flags: waituntilterminated
 
 [UninstallRun]
-Filename: "powershell.exe"; Parameters: "-NoProfile -Command ""'Synclytics Web','Synclytics Scheduler','Synclytics Live' | ForEach-Object {{ Unregister-ScheduledTask -TaskName $_ -Confirm:$false -ErrorAction SilentlyContinue }; sc.exe stop SynclyticsDB; sc.exe delete SynclyticsDB"""; \
+Filename: "powershell.exe"; Parameters: "-NoProfile -Command ""'{#Brand} Web','{#Brand} Scheduler','{#Brand} Live' | ForEach-Object {{ Unregister-ScheduledTask -TaskName $_ -Confirm:$false -ErrorAction SilentlyContinue }; sc.exe stop {#Slug}DB; sc.exe delete {#Slug}DB"""; \
   Flags: runhidden; RunOnceId: "StopServices"
 
 [Messages]
-FinishedLabel=The Synclytics server is installed.%n%nOpen the back office at the address shown in the installation window (for example http://localhost:8010/admin). The database files and backups in C:\Synclytics are kept if you uninstall.
+FinishedLabel=The {#Brand} server is installed.%n%nOpen the back office at the address shown in the installation window (for example http://localhost:8010/admin). The database files and backups in C:\{#Slug} are kept if you uninstall.
 
 [Code]
 var

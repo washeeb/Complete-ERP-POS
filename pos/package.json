@@ -13,7 +13,8 @@
     "e2e": "playwright test",
     "manual": "node scripts/manual.mjs",
     "manual:screens": "node scripts/manual-screens.mjs",
-    "training": "node scripts/training.mjs"
+    "training": "node scripts/training.mjs",
+    "brand": "node scripts/brand.mjs"
   },
   "dependencies": {
     "dexie": "^4.4.6",

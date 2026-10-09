@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { cachedImage } from '../brand'
 import { isDesktop, readScale } from '../hardware'
 import { api, ApiError } from '../api'
 import { addMarkdown, addToCart, addWeighed, findByBarcode, priceCart, qtyAllowed, search, setManual, setQty, type CartLine } from '../cart'
@@ -443,7 +444,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   return (
     <div className="sell">
       <header className="topbar">
-        <div><strong>{boot.branch.code} · {boot.till?.name}</strong> <span className="muted">{boot.user.name}</span></div>
+        <div><BrandIcon boot={boot} /><strong>{boot.branch.code} · {boot.till?.name}</strong> <span className="muted">{boot.user.name}</span></div>
         <label className="inline">
           Price list
           <select value={listId} onChange={(e) => setListId(e.target.value)} aria-label="Price list">
@@ -812,4 +813,15 @@ function AccountPayment({ customer, money, exponent, onDone }: {
       )}
     </div>
   )
+}
+/** The company's icon in the top bar (cached for offline use). */
+function BrandIcon({ boot }: { boot: Bootstrap }) {
+  const [src, setSrc] = useState<string | null>(null)
+  const url = boot.brand?.icon_url ?? null
+  useEffect(() => {
+    let live = true
+    void cachedImage(url).then((s) => { if (live) setSrc(s) })
+    return () => { live = false }
+  }, [url])
+  return src ? <img className="brand-icon" src={src} alt="" /> : null
 }

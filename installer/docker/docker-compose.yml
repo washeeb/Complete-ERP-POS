@@ -1,4 +1,4 @@
-# Synclytics ERP on one server with Docker (cloud / head office). See installation guide, Chapter 5 (Docker).
+# The business server (SES Labs) on one server with Docker (cloud / head office). See installation guide, Chapter 5 (Docker).
 #   cp installer/docker/.env.docker.example installer/docker/.env   # then fill it in
 #   docker compose -f installer/docker/docker-compose.yml up -d --build
 services:
@@ -21,7 +21,7 @@ services:
     build:
       context: ../..
       dockerfile: installer/docker/Dockerfile
-    image: synclytics-erp:latest
+    image: seslabs:latest
     restart: unless-stopped
     depends_on:
       db:

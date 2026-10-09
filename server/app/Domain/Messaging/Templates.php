@@ -47,7 +47,7 @@ final class Templates
             'email' => ['Payment received — {number}', "Dear {customer},\n\nWe received {amount} ({number}). Your balance is now {balance}.\n\nThank you.\n{company}", false, null],
         ]],
         'scheduled_report' => ['Scheduled report', '{company} {report} {period} {rows}', [
-            'email' => ['{report} — {period}', "Attached: {report} for {period} ({rows} row(s)).\n\nSent automatically by {company}'s Synclytics ERP. Change the schedule under Reports.", true, null],
+            'email' => ['{report} — {period}', "Attached: {report} for {period} ({rows} row(s)).\n\nSent automatically by {company}'s business system. Change the schedule under Reports.", true, null],
             'whatsapp' => [null, '{company}: {report} for {period} is ready ({rows} row(s)). It was e-mailed to the recipients.', true, 'report_ready'],
         ]],
     ];

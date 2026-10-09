@@ -4,7 +4,7 @@ namespace App\Domain\Licensing\Vendor;
 
 use App\Domain\Licensing\LicenseException;
 
-/** Synclytics' signing key (licence server / vendor workstation only; never shipped to customers). */
+/** The vendor's signing key (licence server / vendor workstation only; never shipped to customers). */
 final class VendorKeys
 {
     /** @return array{kid: string, secret: string} */
@@ -13,7 +13,7 @@ final class VendorKeys
         $path ??= config('license.server.private_key_path');
         $kid ??= config('license.server.kid');
         if (! $path || ! is_readable($path)) {
-            throw new LicenseException('The Synclytics signing key is not available on this machine (LICENSE_PRIVATE_KEY_PATH).', 'license_vendor');
+            throw new LicenseException('The licence signing key is not available on this machine (LICENSE_PRIVATE_KEY_PATH).', 'license_vendor');
         }
         $data = json_decode((string) file_get_contents($path), true);
         $secret = base64_decode((string) ($data['secret'] ?? ''), true);

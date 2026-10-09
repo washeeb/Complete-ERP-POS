@@ -24,8 +24,9 @@
     </style>
 </head>
 <body>
-<div class="ref">Ref {{ $ref }}</div>
+<div class="ref">Ref {{ $ref }}@if (! empty($powered)) · {{ $powered }}@endif</div>
 <div class="head">
+    @if (! empty($logo))<img src="{{ $logo }}" alt="" style="float:right;max-height:34px;max-width:160px">@endif
     <div class="company">{{ $company }}</div>
     <h1>{{ $title }}</h1>
     <div class="meta">Printed {{ $at->format('j M Y, H:i') }} by {{ $by }}@if ($filters) · {{ implode(' · ', $filters) }}@endif</div>

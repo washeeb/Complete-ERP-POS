@@ -73,6 +73,6 @@ The same checks run with `php artisan erp:health` (useful for monitoring tools: 
 | `php artisan erp:gl-check` | The accounts agree with sales, stock, customers and suppliers (Finance) |
 | `php artisan license:status` | Licence state, limits and last check-in |
 
-## Getting help from Synclytics
+## Getting help from SES Labs
 
 Send: what you were doing, the exact message (a screenshot helps), the time it happened, and the last lines of `server/storage/logs/laravel.log`. **Never** send your `.env` file, passwords, PINs or recovery codes.

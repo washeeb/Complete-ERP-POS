@@ -11,7 +11,7 @@ class LicenseStatusCommand extends Command
 {
     protected $signature = 'license:status';
 
-    protected $description = 'Show the licence state and this installation\'s code (to send to Synclytics)';
+    protected $description = 'Show the licence state and this installation\'s code (to send to your supplier)';
 
     public function handle(LicenseManager $license): int
     {

@@ -8,10 +8,10 @@ This chapter assumes **Ubuntu Server 24.04 LTS**, freshly installed, on a cloud 
 
 **A. The install script** — does everything in 5.2–5.9 on a plain Ubuntu server:
 
-1. Do 5.1 (get the server, connect to it). Copy the release ZIP and `install.sh` (both from Synclytics) to the server, e.g. with WinSCP.
+1. Do 5.1 (get the server, connect to it). Copy the release ZIP and `install.sh` (both from SES Labs) to the server, e.g. with WinSCP.
 2. Run (with your own domain and e-mail for the HTTPS certificate; leave both out for a server used only inside your network):
    ```
-   sudo bash install.sh --zip ~/synclytics-<customer>-<build>.zip --domain erp.yourcompany.com --email you@yourcompany.com
+   sudo bash install.sh --zip ~/ses-labs-<customer>-<build>.zip --domain erp.yourcompany.com --email you@yourcompany.com
    ```
    For a branch server add `--role branch --node-id B01`.
 3. Write down the **backup passphrase** it shows, then answer its questions to create your company and the owner.
@@ -105,13 +105,13 @@ sudo apt install -y nodejs
 ## 5.5 Put the software in place
 
 1. Copy your release ZIP to the server (with WinSCP, into your home folder).
-2. Unpack it into `/var/www/synclytics`:
+2. Unpack it into `/var/www/seslabs`:
 
 ```
-sudo mkdir -p /var/www/synclytics
-sudo unzip ~/synclytics-*.zip -d /var/www/synclytics
-sudo chown -R $USER:www-data /var/www/synclytics
-cd /var/www/synclytics/server
+sudo mkdir -p /var/www/seslabs
+sudo unzip ~/ses-labs-*.zip -d /var/www/seslabs
+sudo chown -R $USER:www-data /var/www/seslabs
+cd /var/www/seslabs/server
 ```
 
 **Check:** `ls` shows `artisan`, `app`, `public` and other folders.
@@ -158,7 +158,7 @@ The reasons for each command are the same as in Chapter 4, section 4.6. The last
 If you received the source code instead of a release, also build the till app:
 
 ```
-cd /var/www/synclytics/pos && npm install && npm run build:server && cd ../server
+cd /var/www/seslabs/pos && npm install && npm run build:server && cd ../server
 ```
 
 ## 5.7 Configure Nginx
@@ -166,7 +166,7 @@ cd /var/www/synclytics/pos && npm install && npm run build:server && cd ../serve
 Create the site file:
 
 ```
-sudo nano /etc/nginx/sites-available/synclytics
+sudo nano /etc/nginx/sites-available/seslabs
 ```
 
 Paste this, replacing `erp.yourshop.com` with your domain (or the server's IP address):
@@ -175,7 +175,7 @@ Paste this, replacing `erp.yourshop.com` with your domain (or the server's IP ad
 server {
     listen 80;
     server_name erp.yourshop.com;
-    root /var/www/synclytics/server/public;
+    root /var/www/seslabs/server/public;
     index index.php index.html;
     client_max_body_size 25M;
 
@@ -210,7 +210,7 @@ server {
 Switch it on:
 
 ```
-sudo ln -s /etc/nginx/sites-available/synclytics /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/seslabs /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl reload nginx
 ```
@@ -249,7 +249,7 @@ Answer the questions (your e-mail, accept the terms, choose to **redirect** HTTP
 **The scheduler** runs the routine jobs. Add it to the system's timer (cron):
 
 ```
-echo "* * * * * www-data cd /var/www/synclytics/server && php artisan schedule:run >> /dev/null 2>&1" | sudo tee /etc/cron.d/synclytics
+echo "* * * * * www-data cd /var/www/seslabs/server && php artisan schedule:run >> /dev/null 2>&1" | sudo tee /etc/cron.d/seslabs
 ```
 
 **Why:** every minute it sends changes to online stores, syncs branch servers, posts to the accounts, sends reminders and, once a day, checks the licence.
@@ -272,17 +272,17 @@ echo "* * * * * www-data cd /var/www/synclytics/server && php artisan schedule:r
 2. Create the service:
 
    ```
-   sudo nano /etc/systemd/system/synclytics-live.service
+   sudo nano /etc/systemd/system/seslabs-live.service
    ```
 
    ```
    [Unit]
-   Description=Synclytics live updates
+   Description=SES Labs live updates
    After=network.target
 
    [Service]
    User=www-data
-   WorkingDirectory=/var/www/synclytics/server
+   WorkingDirectory=/var/www/seslabs/server
    ExecStart=/usr/bin/php artisan reverb:start --host=127.0.0.1 --port=8080
    Restart=always
    RestartSec=5
@@ -294,12 +294,12 @@ echo "* * * * * www-data cd /var/www/synclytics/server && php artisan schedule:r
 3. Start it:
 
    ```
-   cd /var/www/synclytics/server && php artisan optimize
+   cd /var/www/seslabs/server && php artisan optimize
    sudo systemctl daemon-reload
-   sudo systemctl enable --now synclytics-live
+   sudo systemctl enable --now seslabs-live
    ```
 
-**Check:** `systemctl status synclytics-live` shows *active (running)*.
+**Check:** `systemctl status seslabs-live` shows *active (running)*.
 
 ## 5.10 Next steps
 

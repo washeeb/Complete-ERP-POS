@@ -27,7 +27,7 @@ final class TillFileImport
     public function import(Actor $actor, string $content): array
     {
         $file = json_decode($content, true);
-        if (! is_array($file) || ($file['format'] ?? null) !== 'synclytics-till-queue-1' || ! isset($file['device_id'], $file['body'], $file['signature'])) {
+        if (! is_array($file) || ! in_array($file['format'] ?? null, ['till-queue-1', 'synclytics-till-queue-1'], true) || ! isset($file['device_id'], $file['body'], $file['signature'])) {
             throw new DomainException('This is not a till queue file.', 'malformed');
         }
         $device = Device::where('tenant_id', $actor->tenantId)->find($file['device_id'])

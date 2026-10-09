@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
-# Synclytics ERP — one-command installation on a plain Ubuntu 24.04 server (setups B, C, D and branch servers),
+# The business server (SES Labs) — one-command installation on a plain Ubuntu 24.04 server (setups B, C, D and branch servers),
 # doing what Chapter 5 of the installation guide describes by hand.
 #
-#   sudo bash install.sh --zip ~/synclytics-<customer>-<build>.zip [--domain erp.example.com --email you@example.com]
-#                        [--role hq|branch --node-id HQ] [--dir /var/www/synclytics]
+#   sudo bash install.sh --zip ~/ses-labs-<customer>-<build>.zip [--domain erp.example.com --email you@example.com]
+#                        [--role hq|branch --node-id HQ] [--dir /var/www/seslabs]
 #
 # Safe to run again (an update): it keeps .env, the database and every key, and only adds what is missing.
 set -euo pipefail
 
-ZIP=""; SRC=""; DOMAIN=""; EMAIL=""; ROLE="hq"; NODE_ID="HQ"; DIR="/var/www/synclytics"; CI_MODE=0; PHP_V="8.4"; PG_MAJOR=17
+SLUG="seslabs" # the product name in folder, service and site names
+ZIP=""; SRC=""; DOMAIN=""; EMAIL=""; ROLE="hq"; NODE_ID="HQ"; DIR="/var/www/${SLUG}"; CI_MODE=0; PHP_V="8.4"; PG_MAJOR=17
 while [ $# -gt 0 ]; do
   case "$1" in
     --zip) ZIP="$2"; shift 2 ;;
@@ -50,8 +51,8 @@ fi
 say "2/9 The software in ${DIR}"
 mkdir -p "$DIR"
 if [ -n "$ZIP" ]; then
-  unzip -oq "$ZIP" -d /tmp/synclytics-release
-  SRC="$(dirname "$(find /tmp/synclytics-release -maxdepth 3 -name artisan -path '*server/artisan' | head -1)")/.."
+  unzip -oq "$ZIP" -d /tmp/${SLUG}-release
+  SRC="$(dirname "$(find /tmp/${SLUG}-release -maxdepth 3 -name artisan -path '*server/artisan' | head -1)")/.."
 fi
 [ -f "$SRC/server/artisan" ] || die "no server/artisan in the release"
 # Code is replaced; .env, storage (uploads, backups, logs) are kept on updates.
@@ -105,7 +106,7 @@ chown -R www-data:www-data "$DIR/server/storage" "$DIR/server/bootstrap/cache"
 chgrp www-data .env
 
 say "7/9 Web server (nginx + PHP-FPM)"
-cat > /etc/nginx/sites-available/synclytics <<NGINX
+cat > /etc/nginx/sites-available/${SLUG} <<NGINX
 server {
     listen 80;
     server_name ${DOMAIN:-_};
@@ -123,7 +124,7 @@ server {
     location ~ /\.(?!well-known) { deny all; }
 }
 NGINX
-ln -sf /etc/nginx/sites-available/synclytics /etc/nginx/sites-enabled/synclytics
+ln -sf /etc/nginx/sites-available/${SLUG} /etc/nginx/sites-enabled/${SLUG}
 rm -f /etc/nginx/sites-enabled/default
 sed -i -e 's/^upload_max_filesize.*/upload_max_filesize = 20M/' -e 's/^post_max_size.*/post_max_size = 25M/' -e 's/^memory_limit.*/memory_limit = 512M/' \
   -e 's|^;\?date.timezone.*|date.timezone = Africa/Accra|' "/etc/php/${PHP_V}/fpm/php.ini"
@@ -132,11 +133,11 @@ systemctl reload nginx 2>/dev/null || service nginx restart
 systemctl restart "php${PHP_V}-fpm" 2>/dev/null || service "php${PHP_V}-fpm" restart
 
 say "8/9 Scheduler and live updates (why: posting, sync, messages, backups, reports run every minute)"
-echo "* * * * * www-data cd ${DIR}/server && php artisan schedule:run >> /dev/null 2>&1" > /etc/cron.d/synclytics
+echo "* * * * * www-data cd ${DIR}/server && php artisan schedule:run >> /dev/null 2>&1" > /etc/cron.d/${SLUG}
 if [ "$CI_MODE" = 0 ] && command -v systemctl >/dev/null; then
-  cat > /etc/systemd/system/synclytics-reverb.service <<UNIT
+  cat > /etc/systemd/system/${SLUG}-reverb.service <<UNIT
 [Unit]
-Description=Synclytics live updates (Reverb)
+Description=${SLUG} live updates (Reverb)
 After=network.target
 [Service]
 User=www-data
@@ -147,7 +148,7 @@ RestartSec=5
 [Install]
 WantedBy=multi-user.target
 UNIT
-  systemctl daemon-reload && systemctl enable --now synclytics-reverb
+  systemctl daemon-reload && systemctl enable --now ${SLUG}-reverb
 fi
 
 say "9/9 HTTPS"

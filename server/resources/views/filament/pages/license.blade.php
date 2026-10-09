@@ -23,13 +23,13 @@
                 <tr><td>Industry modules</td><td>{{ $s['modules'] === null ? 'all' : (implode(', ', $s['modules']) ?: 'none') }}</td></tr>
             </table>
             @if ($lc = $this->lastCheckin())
-                <p class="lic-muted">Last confirmed with the Synclytics licence server: {{ $lc->last_checkin_at?->format('j M Y H:i') ?? 'never' }}</p>
+                <p class="lic-muted">Last confirmed with the licence server: {{ $lc->last_checkin_at?->format('j M Y H:i') ?? 'never' }}</p>
             @endif
         @endif
     </x-filament::section>
     @if ($this->canManage())
         <x-filament::section heading="Installation code">
-            <p>To activate or renew, send this code to Synclytics. You will receive a licence key; enter it with “Enter licence key”.</p>
+            <p>To activate or renew, send this code to {{ config('brand.vendor') }}. You will receive a licence key; enter it with “Enter licence key”.</p>
             <textarea readonly rows="3" class="lic-code" onclick="this.select()">{{ $this->installationCode() }}</textarea>
         </x-filament::section>
     @elseif ($s['read_only'])

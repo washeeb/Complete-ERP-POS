@@ -4,11 +4,18 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? $shop->name }}</title>
+    @php($brand = \App\Domain\Branding\Branding::forTenant(\App\Models\Tenant::find($shop->tenant_id)))
+    <link rel="icon" href="{{ $brand['icon_url'] }}">
+    <meta name="theme-color" content="{{ $brand['color'] }}">
     <script>try{var t=localStorage.getItem('shop-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}</script>
     <style>
         :root { --bg:#f7f7f5; --card:#fff; --ink:#1d1d1b; --muted:#6b6b66; --line:#e3e3de; --accent:#14532d; --warn:#9a3412; }
         :root[data-theme="dark"] { --bg:#141413; --card:#1f1f1d; --ink:#ececea; --muted:#a3a39c; --line:#33332f; --accent:#4ade80; --warn:#fb923c; color-scheme:dark; }
         @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#141413; --card:#1f1f1d; --ink:#ececea; --muted:#a3a39c; --line:#33332f; --accent:#4ade80; --warn:#fb923c; color-scheme:dark; } }
+        @if ($brand['custom_color'] && \App\Domain\Branding\Branding::contrast($brand['color'], '#F7F7F5') >= 4.5) :root:not([data-theme="dark"]) { --accent: {{ $brand['color'] }}; } @endif
+        .brand-logo { height:44px; max-width:220px; object-fit:contain; display:block; }
+        :root[data-theme="dark"] .brand-logo.light-only { display:none; } .brand-logo.dark-only { display:none; } :root[data-theme="dark"] .brand-logo.dark-only { display:block; }
+        @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .brand-logo.light-only { display:none; } :root:not([data-theme="light"]) .brand-logo.dark-only { display:block; } }
         .theme-picker { width:auto; padding:4px 8px; font-size:.8rem; }
         * { box-sizing: border-box; }
         body { margin:0; font:16px/1.5 system-ui, sans-serif; background:var(--bg); color:var(--ink); }
@@ -42,7 +49,14 @@
 <div data-shop="{{ $shop->id }}" data-currency="{{ $shop->priceList->currency_code }}" data-exponent="{{ \App\Support\Money::exponent($shop->priceList->currency_code) }}" data-zero="{{ \App\Support\Money::display(0, $shop->priceList->currency_code) }}"
      data-realtime="{{ ($rt = \App\Http\Controllers\StorefrontController::realtime()) ? json_encode($rt) : '' }}">
 <header>
-    <a href="{{ route('shop.index', $shop->settings['slug']) }}"><h1>{{ $shop->name }}</h1></a>
+    <a href="{{ route('shop.index', $shop->settings['slug']) }}" aria-label="{{ $shop->name }} — home">
+        @if ($brand['has_logo'])
+            <img class="brand-logo light-only" src="{{ $brand['logo_url'] }}" alt="{{ $shop->name }}">
+            <img class="brand-logo dark-only" src="{{ $brand['logo_dark_url'] }}" alt="{{ $shop->name }}">
+        @else
+            <h1>{{ $shop->name }}</h1>
+        @endif
+    </a>
     <nav>
         @if ($rt)<small class="muted" data-live="connecting">Live</small>@endif
         <a class="btn" href="{{ route('shop.cart', $shop->settings['slug']) }}">Your order{{ ! empty($cartCount) ? " ({$cartCount})" : '' }}</a>
@@ -54,7 +68,7 @@
     @if ($errors->any())<div class="notice error" role="alert">{{ implode(' ', $errors->all()) }}</div>@endif
     @yield('content')
 </main>
-<footer class="muted"><small>{{ $shop->branch->name }}</small>
+<footer class="muted"><small>{{ $shop->branch->name }}@if ($brand['powered_by']) · {{ $brand['powered_by'] }}@endif</small>
     <select class="theme-picker" aria-label="Theme" onchange="var t=this.value;var d=document.documentElement;if(t==='system'){delete d.dataset.theme;try{localStorage.removeItem('shop-theme')}catch(e){}}else{d.dataset.theme=t;try{localStorage.setItem('shop-theme',t)}catch(e){}}">
         <option value="system">Theme: System</option><option value="light">Theme: Light</option><option value="dark">Theme: Dark</option>
     </select>

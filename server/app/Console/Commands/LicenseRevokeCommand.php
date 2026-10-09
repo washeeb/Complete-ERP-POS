@@ -5,12 +5,12 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
-/** Synclytics only: withdraw a licence; the installation becomes read-only at its next check-in. */
+/** Vendor only: withdraw a licence; the installation becomes read-only at its next check-in. */
 class LicenseRevokeCommand extends Command
 {
     protected $signature = 'license:revoke {id : licence id} {reason : shown to the customer}';
 
-    protected $description = 'Synclytics only: revoke a licence (takes effect at the installation\'s next check-in)';
+    protected $description = 'Vendor only: revoke a licence (takes effect at the installation\'s next check-in)';
 
     public function handle(): int
     {

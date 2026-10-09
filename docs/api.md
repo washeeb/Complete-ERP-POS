@@ -120,7 +120,7 @@ Bodies and answers may be gzip (`Content-Encoding` / `Accept-Encoding`).
 |---|---|---|---|
 | WooCommerce | `X-WC-Webhook-Signature` (base64 HMAC-SHA256) | `X-WC-Webhook-Delivery-ID` | `X-WC-Webhook-Topic` |
 | Shopify | `X-Shopify-Hmac-Sha256` (base64 HMAC-SHA256) | `X-Shopify-Webhook-Id` | `X-Shopify-Topic` |
-| Generic REST | `X-Synclytics-Signature` = hex HMAC-SHA256 of `{X-Synclytics-Timestamp}.{body}` (5-min window) | `X-Synclytics-Event-Id` | body field `topic` (default `order.created`) |
+| Generic REST | `X-Webhook-Signature` = hex HMAC-SHA256 of `{X-Webhook-Timestamp}.{body}` (5-min window) | `X-Webhook-Id` | body field `topic` (default `order.created`) |
 
 Responses: `200 {"ok":true,"status":"received"}`, `200 {"ok":true,"status":"duplicate"}` (same delivery id again), `401 {"error":"bad_signature"}`; unknown or draft channels and bodies over 2 MB are refused with the standard error body. Paused channels still store webhooks. The order is created asynchronously by `erp:relay`.
 

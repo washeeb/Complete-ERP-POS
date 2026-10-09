@@ -92,10 +92,10 @@ Every till, handheld and kitchen screen has a **Theme** switch at the bottom lef
 
 ### The desktop till app (silent printing, cash drawer, scale)
 
-For a Windows till PC with a receipt printer, a cash drawer or a weighing scale, install **Synclytics Till** (`Synclytics Till_<version>_x64-setup.exe`, from Synclytics) instead of using the browser:
+For a Windows till PC with a receipt printer, a cash drawer or a weighing scale, install **SES Labs Till** (`SES Labs Till_<version>_x64-setup.exe`, from SES Labs) instead of using the browser:
 
 1. Install the receipt printer's Windows driver (or note the IP address of a network receipt printer).
-2. Run the Synclytics Till setup. On first start it asks for the **server address** (e.g. `http://192.168.1.10:8010`).
+2. Run the SES Labs Till setup. On first start it asks for the **server address** (e.g. `http://192.168.1.10:8010`).
 3. **Receipt printer:** choose it from the list (or type `tcp://<printer-ip>:9100` for a network printer); tick **Open the cash drawer** if the drawer is plugged into the printer; **Print a test receipt**.
 4. **Scale:** choose its COM port and speed (usually 9600), then **Read the scale** with something on it.
 5. **Save and open the till.** Enrol and sign in as with any till (9.1).
@@ -104,7 +104,7 @@ Receipts then print straight away without a print window, the drawer opens after
 
 **Why:** the app sends the receipt to the printer in the printer's own language (ESC/POS), which is faster and more reliable than a browser print window, and can talk to the drawer and scale, which a browser cannot.
 
-**Note:** the app only opens your Synclytics server — no other website — so the printer and drawer cannot be reached from anywhere else.
+**Note:** the app only opens your SES Labs server — no other website — so the printer and drawer cannot be reached from anywhere else.
 
 ## 9.8 Barcode scanner
 

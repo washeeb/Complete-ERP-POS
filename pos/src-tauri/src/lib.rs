@@ -1,4 +1,4 @@
-//! Synclytics Till (desktop). A window on the till served by the shop's Synclytics server, plus what a browser cannot
+//! The desktop till. A window on the till served by the shop's own server, plus what a browser cannot
 //! do: print receipts silently on an ESC/POS printer (installed Windows printer or network printer on port 9100),
 //! open the cash drawer through the printer, and read a weighing scale on a serial (COM) port.
 //!
@@ -146,7 +146,7 @@ pub fn run() {
             // The window may only show the local set-up page or the chosen server.
             let handle = app.handle().clone();
             tauri::WebviewWindowBuilder::new(app, "main", start)
-                .title("Synclytics Till")
+                .title(app.package_info().name.clone()) // the product name (tauri.conf.json productName)
                 .inner_size(1366.0, 800.0)
                 .min_inner_size(1024.0, 640.0)
                 .maximized(true)
@@ -164,5 +164,5 @@ pub fn run() {
             get_config, set_server, open_setup, set_hardware, list_printers, print_raw, open_drawer, list_scale_ports, read_scale
         ])
         .run(tauri::generate_context!())
-        .expect("error while running the Synclytics till");
+        .expect("error while running the till");
 }

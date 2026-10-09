@@ -5,12 +5,12 @@ namespace App\Console\Commands;
 use App\Domain\Licensing\Vendor\VendorKeys;
 use Illuminate\Console\Command;
 
-/** Synclytics only: create the signing key pair. The private file must be kept offline / on the licence server only. */
+/** Vendor only: create the signing key pair. The private file must be kept offline / on the licence server only. */
 class LicenseKeygenCommand extends Command
 {
     protected $signature = 'license:keygen {--kid= : key id, e.g. syn-2026-1} {--out= : where to write the PRIVATE key file (outside the application folder)}';
 
-    protected $description = 'Synclytics only: generate a licence signing key pair';
+    protected $description = 'Vendor only: generate a licence signing key pair';
 
     public function handle(): int
     {

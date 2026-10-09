@@ -1,6 +1,6 @@
-# Synclytics ERP — server image for cloud / head-office servers (setups C and D).
+# The business server (SES Labs) — server image for cloud / head-office servers (setups C and D).
 # Build from the folder that holds `server/` (and `pos/` for source checkouts):
-#   docker build -f installer/docker/Dockerfile -t synclytics-erp .
+#   docker build -f installer/docker/Dockerfile -t seslabs .
 # A release ZIP already contains the built till app in server/public/pos; a source checkout builds it here.
 
 # 1. Front-end assets: the till app (from pos/, when present) and the back office's own assets.
@@ -37,17 +37,17 @@ RUN set -eux; \
     docker-php-ext-install -j"$(nproc)" pdo_pgsql intl bcmath zip gd opcache pcntl; \
     apt-get purge -y --auto-remove libicu-dev libpq-dev libzip-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev gnupg; \
     rm -rf /var/lib/apt/lists/*
-COPY installer/docker/php.ini /usr/local/etc/php/conf.d/synclytics.ini
-COPY installer/docker/php-fpm.conf /usr/local/etc/php-fpm.d/zz-synclytics.conf
+COPY installer/docker/php.ini /usr/local/etc/php/conf.d/erp.ini
+COPY installer/docker/php-fpm.conf /usr/local/etc/php-fpm.d/zz-erp.conf
 COPY installer/docker/nginx.conf /etc/nginx/sites-available/default
-COPY installer/docker/supervisord.conf /etc/supervisor/conf.d/synclytics.conf
-COPY installer/docker/entrypoint.sh /usr/local/bin/synclytics-entrypoint
+COPY installer/docker/supervisord.conf /etc/supervisor/conf.d/erp.conf
+COPY installer/docker/entrypoint.sh /usr/local/bin/erp-entrypoint
 WORKDIR /var/www/server
 COPY --from=vendor --chown=www-data:www-data /app /var/www/server
-RUN chmod +x /usr/local/bin/synclytics-entrypoint && rm -f .env && mkdir -p storage/app/private storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
+RUN chmod +x /usr/local/bin/erp-entrypoint && rm -f .env && mkdir -p storage/app/private storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 ENV BACKUP_PG_BIN=/usr/lib/postgresql/${PG_MAJOR}/bin
 EXPOSE 80 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s CMD curl -fs http://localhost/up || exit 1
-ENTRYPOINT ["synclytics-entrypoint"]
+ENTRYPOINT ["erp-entrypoint"]
 CMD ["supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]

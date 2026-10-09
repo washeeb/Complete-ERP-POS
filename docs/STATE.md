@@ -1,9 +1,16 @@
 # State (resume file)
 
-**Phase:** 14 — Pilot and launch · **Status:** done on branch `phase-14-launch` (PR to `main`); all 14 phases of the plan built — next: a real pilot
-**Updated:** 2026-10-30 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–13 and licensing merged (PRs #1–#25)
+**Phase:** Branding (after Phase 14) · **Status:** done on branch `branding` (PR to `main`); all 14 phases built — next: a real pilot
+**Updated:** 2026-10-31 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–14 and licensing merged (PRs #1–#26)
 
-## Phase 14 — done on branch `phase-14-launch` (PR to `main`)
+## Product name and branding — done on branch `branding` (PR to `main`)
+- **Owner answers:** product name **SES Labs** (no company name anywhere visible); licence-controlled white-label.
+- **Product brand:** `branding/product/{mark,logo,logo-dark}.svg` + `brand.json` (traced from `original/`) → `npm run brand` (pos) writes `server/public/brand/*`, `server/public/favicon.ico`, `installer/windows/app.ico`, `pos/public` icons, `pos/src-tauri/icons` + `tauri.conf.json` name; `config/brand.php` (`BRAND_NAME`, `BRAND_VENDOR`, `BRAND_WEBSITE`); publisher/licensor = SyncLytics (`BRAND_VENDOR`, `brand.json` `company`: licence messages, installer and till Publisher/copyright, guide cover); product name SES Labs everywhere else (code, installers `server-setup.iss`/`-Brand`/`SLUG`, Docker, desktop till, guides → `SES-Labs-Installation-Guide.pdf`); webhook headers `X-Webhook-*`.
+- **Client brand:** migration `2026_10_31_100001` (`brand_assets`; `tenants.brand_color`, `brand_receipt_logo`); `app/Domain/Branding/Branding`; `BrandAssetController` (`/brand/{slug}/{kind}`); `Filament/Support/PanelBrand`; page Company → Branding (`BrandingPage`); setup wizard "Your brand" step; prints, PDF exports, online shop; till bootstrap `brand`, `pos/src/brand.ts` (cache, accent, dithered ESC/POS logo), Receipt/Sell; practice copies; replication `brand_asset`.
+- **Tests:** BrandingTest (5); `brand.test.ts` (3); e2e receipt logo printed as raster + axe with branding. Totals: 358 Pest, 62 Vitest, 18 Playwright. Sample client logo `branding/samples/demo-client-logo.svg` (made up) used in the guide screenshots.
+- **Docs:** `branding/README.md`; manual 7 (Your brand), 18 (env); CHANGELOG 0.26.0; DECISIONS.
+
+## Phase 14 — done (merged, PR #26)
 - **Owner answers:** migration from Excel/CSV, QuickBooks, another till system, or fresh (all); training: quick card, role guides, practice mode, video scripts (all); cut-over parallel (default) / one day / one till first; pilot one shop (default) / several / internal dry run.
 - **Server:** migration `2026_10_30_100001` (`tenants.is_practice`, `practice_of`; `go_live_plans`, `parallel_days`, `support_reports`); `app/Domain/Imports/ImportSources` + importers `Accounts`, `OpeningBalances`, `CustomerBalances`, `SupplierBalances`, `LoyaltyPoints`, `GiftCards` (+ `Lookup`; `Importer::finish` hook; suppliers without codes); AutoPoster posts loyalty `opening` and `*_opening` stored values to opening equity; `app/Domain/Launch/{GoLiveService, PracticeCompany, SupportReports, PilotReport}`; practice guards in FiscalService, Messenger (status `practice`), WebhookDispatcher, ChannelSync; `erp:pilot-report` (every 15 min); `config('erp.version')`, `ERP_SUPPORT_EMAIL`; till API `POST pos/problems`, bootstrap `company.practice`.
 - **Back office:** System → Go-live (plan, checklist, figures check, parallel run, practice company, pilot report, go-live backup, go live / roll back), System → Problem reports; "Report a problem" (top bar) for everyone; PRACTICE banner; Import data "Coming from" + "Balances as of".
@@ -76,7 +83,7 @@
 - **Back office:** Services → Staff calendar, Appointments, Prepaid passes, Memberships, Membership plans, Commissions, Licence keys; Product → Services; Employee → takes appointments, commission %; role `service_staff`; `services.*` settings; module 0.1.0.
 - **Till:** `pos/src/services.ts`; `screens/Services.tsx` (staff prompt, appointments F10, passes); pass lines at 0 in `cart.ts`; receipt licence keys.
 - **Till hosting:** `npm run build:server` → `server/public/pos` (git-ignored), served at `/pos/`; release builds include it.
-- **Installation guide:** `docs/manual/00–14-*.md` → `Synclytics-ERP-POS-Installation-Guide.pdf` (`npm run manual`; screenshots `npm run manual:screens`, dev server on 8010). Update it every phase.
+- **Installation guide:** `docs/manual/00–14-*.md` → `SES-Labs-Installation-Guide.pdf` (`npm run manual`; screenshots `npm run manual:screens`, dev server on 8010). Update it every phase.
 - **Tests:** ServicesTest (6), SetupAndModulesTest (services permissions), `services.test.ts`, e2e `services.spec.ts`.
 - **Docs:** services.md, api.md, modules.md (statuses), cashier.md, DECISIONS 10c + guide, CHANGELOG 0.18.0.
 

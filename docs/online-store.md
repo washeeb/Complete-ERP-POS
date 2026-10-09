@@ -28,7 +28,7 @@ domain change ──(same transaction)──▶ outbox_events
 | Built-in online shop | — (reads live) | checkout | Needs the **Online Storefront** module on for the branch. Address `/shop/{address}` |
 | WooCommerce | products, prices, stock (REST v3) | webhook `order.created` / `order.updated` | Key + secret from WooCommerce → Settings → Advanced → REST API (read/write). HTTPS required |
 | Shopify | `productSet`, `inventorySetQuantities` (GraphQL Admin 2026-07) | webhook `orders/create` | Custom-app access token + location id. Shopify order fulfilment is not sent yet |
-| Generic REST | JSON POST of product state | signed webhook | For any other shop: HMAC-SHA256 of `timestamp.body`, headers `X-Synclytics-*` |
+| Generic REST | JSON POST of product state | signed webhook | For any other shop: HMAC-SHA256 of `timestamp.body`, headers `X-Webhook-*` |
 | Jumia, Glovo, Bolt Food, WhatsApp | planned | planned | Listed but cannot be activated until built |
 
 Each channel has:

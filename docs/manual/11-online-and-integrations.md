@@ -1,6 +1,6 @@
 # 11. Online stores, delivery apps and SMS
 
-These connect your system to other services. Each one is used **only with your own account and keys** at that service. Synclytics never creates accounts for you.
+These connect your system to other services. Each one is used **only with your own account and keys** at that service. SES Labs never creates accounts for you.
 
 **Warning:** treat every key and secret you paste here like a password. They are stored encrypted and never shown again.
 
@@ -11,11 +11,11 @@ These connect your system to other services. Each one is used **only with your o
 
 ## 11.2 Online stores (Online → Channels)
 
-| Type | Set-up at the store | In Synclytics |
+| Type | Set-up at the store | In SES Labs |
 |---|---|---|
 | **Built-in online shop** | none | Online Storefront module on (Chapter 8); channel type *Built-in online shop*; choose the address |
-| **WooCommerce** | WooCommerce → Settings → Advanced → REST API: create a key with **Read/Write**. Webhooks: *Order created* and *Order updated* to the address Synclytics shows, with your webhook secret | Channel type *WooCommerce*: store address, key, secret, webhook secret |
-| **Shopify** | Create a custom app with Admin API access to products, inventory and orders; note the access token and your location id. Webhook *Order creation* to the address Synclytics shows | Channel type *Shopify*: shop address, token, location id, webhook secret |
+| **WooCommerce** | WooCommerce → Settings → Advanced → REST API: create a key with **Read/Write**. Webhooks: *Order created* and *Order updated* to the address SES Labs shows, with your webhook secret | Channel type *WooCommerce*: store address, key, secret, webhook secret |
+| **Shopify** | Create a custom app with Admin API access to products, inventory and orders; note the access token and your location id. Webhook *Order creation* to the address SES Labs shows | Channel type *Shopify*: shop address, token, location id, webhook secret |
 | **Other shops (generic)** | Must accept JSON product updates and send signed order webhooks | Channel type *Generic REST* |
 
 For every channel:
@@ -30,7 +30,7 @@ For every channel:
 
 **Check:** change a price; within a minute it is on the store. Place a test order on the store; it appears under **Online → Online orders** with its stock reserved.
 
-**Tip:** **Compare with store** lists differences between the store and Synclytics and fixes them; it also runs automatically every 15 minutes.
+**Tip:** **Compare with store** lists differences between the store and SES Labs and fixes them; it also runs automatically every 15 minutes.
 
 ## 11.3 Delivery apps (Restaurant)
 

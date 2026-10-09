@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
- * The licence server's answer to a check-in (Synclytics side). Every check-in is kept: the same licence on two
+ * The licence server's answer to a check-in (vendor side). Every check-in is kept: the same licence on two
  * machines, a modified copy, or usage over the licence shows up here. A renewed key (issued for the same
  * installation, superseding this one) is handed back automatically.
  */
@@ -20,7 +20,7 @@ final class CheckinServer
         $message = null;
         $renewed = null;
         if (! $lic) {
-            [$status, $message] = ['unknown_license', 'This licence is not known to Synclytics.'];
+            [$status, $message] = ['unknown_license', 'This licence is not known to '.config('brand.vendor').'.'];
         } elseif ($lic->revoked_at) {
             [$status, $message] = ['revoked', $lic->revoked_reason];
         } elseif ($lic->installation_id !== ($report['installation_id'] ?? null)) {

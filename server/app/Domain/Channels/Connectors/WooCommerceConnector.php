@@ -40,7 +40,7 @@ final class WooCommerceConnector implements ChannelConnector
             'stock_quantity' => $product->track_stock ? max(0, $state['available']) : null,
             'regular_price' => $state['price_minor'] === null ? '' : Money::format($state['price_minor'], $channel->priceList->currency_code),
             'catalog_visibility' => $state['price_minor'] === null ? 'hidden' : 'visible', // no price on this list = not for sale there
-            'meta_data' => [['key' => '_synclytics_product_uom_id', 'value' => $mapping->product_uom_id]],
+            'meta_data' => [['key' => '_erp_product_uom_id', 'value' => $mapping->product_uom_id]],
         ];
         $response = $mapping->external_id
             ? $this->client($channel)->put("products/{$mapping->external_id}", $body)

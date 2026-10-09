@@ -1,13 +1,13 @@
 [package]
-name = "synclytics-till"
+name = "erp-till"
 version = "0.24.0"
-description = "Synclytics ERP till for Windows: the till app with silent receipt printing, cash drawer and scale"
-authors = ["Synclytics"]
+description = "The till app for Windows with silent receipt printing, cash drawer and scale"
+authors = ["SES Labs"]
 edition = "2021"
 rust-version = "1.77"
 
 [lib]
-name = "synclytics_till_lib"
+name = "erp_till_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

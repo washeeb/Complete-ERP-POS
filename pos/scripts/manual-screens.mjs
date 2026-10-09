@@ -72,6 +72,7 @@ const shot = (page, name) => page.screenshot({ path: resolve(out, `${name}.png`)
     ['/admin/backups', 'backups', null],
     ['/admin/health', 'health', null],
     ['/admin/go-live', 'go-live', null],
+    ['/admin/branding', 'branding', null],
     ['/admin/import-data?type=opening_balances&source=quickbooks', 'import-migration', null],
   ]) {
     await page.goto(base + path)

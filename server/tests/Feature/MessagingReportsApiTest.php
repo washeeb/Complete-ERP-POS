@@ -207,9 +207,9 @@ it('serves the public API with scoped keys acting as a person, and sends signed 
     app(WebhookDispatcher::class)->run();
     expect($d->fresh()->status)->toBe('sent');
     Http::assertSent(function ($req) use ($secret, $d) {
-        [$t, $v1] = array_map(fn ($p) => explode('=', $p, 2)[1], explode(',', $req->header('X-Synclytics-Signature')[0]));
+        [$t, $v1] = array_map(fn ($p) => explode('=', $p, 2)[1], explode(',', $req->header('X-Webhook-Signature')[0]));
 
-        return $req->header('X-Synclytics-Delivery')[0] === $d->event_id && hash_equals(hash_hmac('sha256', "{$t}.".$req->body(), $secret), $v1);
+        return $req->header('X-Webhook-Delivery')[0] === $d->event_id && hash_equals(hash_hmac('sha256', "{$t}.".$req->body(), $secret), $v1);
     });
 
     // A branch-limited client acting as a branch manager sees only that branch; revoked keys stop at once.

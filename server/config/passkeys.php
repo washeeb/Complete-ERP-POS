@@ -23,7 +23,7 @@ return [
     // Passkeys are bound to this host name. Set APP_URL to the real domain before staff enrol
     // passkeys; changing the domain later means everyone re-enrols.
     'relying_party' => [
-        'name' => env('APP_NAME', 'Synclytics ERP'),
+        'name' => env('APP_NAME', env('BRAND_NAME', 'SES Labs')),
         'id' => parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST),
         'icon' => null,
     ],

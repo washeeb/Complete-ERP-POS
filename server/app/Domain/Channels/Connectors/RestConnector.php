@@ -15,8 +15,8 @@ use Illuminate\Support\Str;
 /**
  * Generic connector for a custom site or middleware. We POST JSON to {base_url}/products and
  * {base_url}/orders/{id}/status; they POST orders to our webhook URL. Both directions are signed:
- * X-Synclytics-Signature = hex HMAC-SHA256(secret, timestamp + "." + raw body), X-Synclytics-Timestamp
- * within 5 minutes, X-Synclytics-Event-Id for replay protection (docs/api.md).
+ * X-Webhook-Signature = hex HMAC-SHA256(secret, timestamp + "." + raw body), X-Webhook-Timestamp
+ * within 5 minutes, X-Webhook-Id for replay protection (docs/api.md).
  */
 final class RestConnector implements ChannelConnector
 {
@@ -48,8 +48,8 @@ final class RestConnector implements ChannelConnector
 
     public function verifyWebhook(SalesChannel $channel, Request $request): bool
     {
-        $ts = (string) $request->header('X-Synclytics-Timestamp');
-        $given = (string) $request->header('X-Synclytics-Signature');
+        $ts = (string) $request->header('X-Webhook-Timestamp');
+        $given = (string) $request->header('X-Webhook-Signature');
         if (! ctype_digit($ts) || abs(time() - (int) $ts) > 300 || $given === '' || ! $channel->webhook_secret) {
             return false;
         }
@@ -59,7 +59,7 @@ final class RestConnector implements ChannelConnector
 
     public function webhookMeta(Request $request): array
     {
-        return ['delivery_id' => (string) $request->header('X-Synclytics-Event-Id'), 'topic' => (string) ($request->json('topic') ?? 'order.created')];
+        return ['delivery_id' => (string) $request->header('X-Webhook-Id'), 'topic' => (string) ($request->json('topic') ?? 'order.created')];
     }
 
     public function normaliseOrder(SalesChannel $channel, string $topic, array $p): ?array
@@ -91,9 +91,9 @@ final class RestConnector implements ChannelConnector
         $raw = json_encode($body);
         $ts = (string) time();
         $r = Http::withHeaders([
-            'X-Synclytics-Timestamp' => $ts,
-            'X-Synclytics-Event-Id' => (string) Str::uuid7(),
-            'X-Synclytics-Signature' => hash_hmac('sha256', $ts.'.'.$raw, (string) $channel->webhook_secret),
+            'X-Webhook-Timestamp' => $ts,
+            'X-Webhook-Id' => (string) Str::uuid7(),
+            'X-Webhook-Signature' => hash_hmac('sha256', $ts.'.'.$raw, (string) $channel->webhook_secret),
         ])->withBody($raw, 'application/json')->timeout(20)->post(rtrim((string) $channel->base_url, '/').'/'.$path);
         if ($r->status() === 429 || $r->serverError()) {
             throw new DomainException("{$channel->name} is busy ({$r->status()}) — will retry", 'retryable');

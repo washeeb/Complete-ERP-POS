@@ -16,12 +16,12 @@ use RecursiveIteratorIterator;
 use ZipArchive;
 
 /**
- * Synclytics only: build the copy delivered to one customer (owner decision 2026-10-15).
+ * Vendor only: build the copy delivered to one customer (owner decision 2026-10-15).
  *
  *  1. the committed server code (git HEAD — nothing uncommitted, no .env, no secrets);
  *  2. a hidden build stamp in every PHP file of app/ (zero-width characters in a trailing comment), so a leaked
  *     copy names the customer it was given to (`license:trace`);
- *  3. a release manifest: the hashes of the files that enforce licensing, signed with the Synclytics key —
+ *  3. a release manifest: the hashes of the files that enforce licensing, signed with the vendor's key —
  *     the installation refuses to run normally if they are changed, and only trusts production keys;
  *  4. optionally the till app, built with the same stamp into the release's public/pos (served by the server at /pos/).
  */
@@ -30,7 +30,7 @@ class ReleaseBuildCommand extends Command
     protected $signature = 'release:build {--customer= : who this copy is for} {--license= : their licence id, if known}
         {--key= : path to the private key file} {--out= : output folder (default ../dist)} {--with-pos : also build the till app}';
 
-    protected $description = 'Synclytics only: build a stamped, signed release for one customer';
+    protected $description = 'Vendor only: build a stamped, signed release for one customer';
 
     public function handle(): int
     {
@@ -94,7 +94,7 @@ class ReleaseBuildCommand extends Command
             }
         }
 
-        $zip = $out.DIRECTORY_SEPARATOR.'synclytics-'.Str::slug($customer).'-'.$build.'.zip';
+        $zip = $out.DIRECTORY_SEPARATOR.Str::slug((string) config('brand.name')).'-'.Str::slug($customer).'-'.$build.'.zip';
         $z = new ZipArchive;
         $z->open($zip, ZipArchive::CREATE | ZipArchive::OVERWRITE);
         foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS)) as $f) {

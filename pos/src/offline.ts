@@ -110,7 +110,7 @@ export async function exportQueueFile(): Promise<Blob> {
   const device = await getDevice()
   const items = await db.queue.orderBy('seq').toArray()
   const body = JSON.stringify({ events: items.map((q) => ({ id: q.id, type: q.type, payload: q.payload, grant: asSigned(q.grant) })) })
-  const file = { format: 'synclytics-till-queue-1', device_id: device?.deviceId, exported_at: new Date().toISOString(), body, signature: await signBody(body) }
+  const file = { format: 'till-queue-1', device_id: device?.deviceId, exported_at: new Date().toISOString(), body, signature: await signBody(body) }
   return new Blob([JSON.stringify(file)], { type: 'application/json' })
 }
 

@@ -35,7 +35,7 @@ final class BackupService
         if (! $lock->get()) {
             throw new DomainException('A backup is already running.');
         }
-        $name = 'synclytics-'.Str::slug((string) config('erp.node.id', 'node')).'-'.now()->format('Ymd-His').'.synbak';
+        $name = Str::slug((string) config('brand.name')).'-'.Str::slug((string) config('erp.node.id', 'node')).'-'.now()->format('Ymd-His').'.synbak';
         $run = BackupRun::create(['file_name' => $name, 'status' => 'running', 'started_by' => mb_substr($by, 0, 120), 'started_at' => now()]);
         $work = $this->workDir($run->id);
         try {
@@ -285,8 +285,8 @@ final class BackupService
 
     private function pruneLocal(): void
     {
-        $files = glob($this->localDir().DIRECTORY_SEPARATOR.'synclytics-*.synbak') ?: [];
-        rsort($files);
+        $files = glob($this->localDir().DIRECTORY_SEPARATOR.'*.synbak') ?: [];
+        usort($files, fn ($a, $b) => Destinations::newestFirst(basename($a), basename($b)));
         foreach (array_slice($files, max(1, (int) config('backup.keep_local'))) as $old) {
             @unlink($old);
         }

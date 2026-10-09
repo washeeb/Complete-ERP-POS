@@ -15,6 +15,7 @@ const files = readdirSync(dir).filter((f) => /^\d\d-.*\.md$/.test(f)).sort()
 if (!files.length) throw new Error(`No training files in ${dir}`)
 const changelog = readFileSync(resolve(here, '../../CHANGELOG.md'), 'utf8')
 const release = changelog.match(/^## \[([^\]]+)\]/m)?.[1] ?? ''
+const brand = JSON.parse(readFileSync(resolve(here, '../../branding/product/brand.json'), 'utf8'))
 
 const base = `
   body { font: 10.5pt/1.5 "Segoe UI", Arial, sans-serif; color: #1f2937; margin: 0; }
@@ -44,7 +45,7 @@ for (const f of files) {
   await page.goto(pathToFileURL(tmp).href, { waitUntil: 'load' })
   const out = join(outDir, `${basename(f, '.md').replace(/^\d\d-/, '')}.pdf`)
   await page.pdf({ path: out, format: 'A4', printBackground: true, displayHeaderFooter: true, headerTemplate: '<div></div>',
-    footerTemplate: `<div style="font:7.5pt Segoe UI,Arial;color:#6b7280;width:100%;padding:0 12mm;display:flex;justify-content:space-between"><span>Synclytics ERP + POS · ${title}${release ? ` · version ${release}` : ''}</span><span><span class="pageNumber"></span>/<span class="totalPages"></span></span></div>`,
+    footerTemplate: `<div style="font:7.5pt Segoe UI,Arial;color:#6b7280;width:100%;padding:0 12mm;display:flex;justify-content:space-between"><span>${brand.name} · ${title}${release ? ` · version ${release}` : ''}</span><span><span class="pageNumber"></span>/<span class="totalPages"></span></span></div>`,
     margin: isCard ? { top: '10mm', bottom: '12mm', left: '10mm', right: '10mm' } : { top: '16mm', bottom: '18mm', left: '15mm', right: '15mm' } })
   await page.close()
   rmSync(tmp, { force: true })

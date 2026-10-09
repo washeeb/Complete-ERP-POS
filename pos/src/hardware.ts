@@ -1,3 +1,4 @@
+import { receiptRaster } from './brand'
 import { receiptEscPos } from './escpos'
 import type { Bootstrap, PostedSale } from './types'
 
@@ -23,7 +24,8 @@ export async function printReceipt(sale: PostedSale, boot: Bootstrap): Promise<b
   const cfg = await hardware()
   if (!t || !cfg?.printer) return false
   const cash = sale.payments.some((p) => p.method === 'cash')
-  await t.core.invoke('print_raw', { data: receiptEscPos(sale, boot).toBase64(), openDrawer: cash })
+  const logo = await receiptRaster(boot).catch(() => null) // the company logo, from the till's cache when offline
+  await t.core.invoke('print_raw', { data: receiptEscPos(sale, boot, logo).toBase64(), openDrawer: cash })
   return true
 }
 

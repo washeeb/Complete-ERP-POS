@@ -1,22 +1,24 @@
 ﻿<#
 .SYNOPSIS
-  Synclytics ERP — installs the server on a Windows PC (setup A: one PC; setup B: shop server; branch servers),
+  Installs the business server (SES Labs) on a Windows PC (setup A: one PC; setup B: shop server; branch servers),
   doing what Chapter 4 of the installation guide describes by hand. Run as administrator. Safe to run again (update).
 
 .EXAMPLE
-  powershell -ExecutionPolicy Bypass -File install.ps1 -Release C:\Downloads\synclytics-shop-B1234.zip -Setup B
+  powershell -ExecutionPolicy Bypass -File install.ps1 -Release C:\Downloads\ses-labs-shop-B1234.zip -Setup B
 #>
 param(
   [Parameter(Mandatory = $true)][string]$Release,              # the release ZIP, or a folder holding server\
   [ValidateSet('A', 'B')][string]$Setup = 'B',                 # A: only this PC uses it; B: tills on the network use it
   [ValidateSet('hq', 'branch')][string]$Role = 'hq',
   [string]$NodeId = 'HQ',
-  [string]$Dir = 'C:\Synclytics',
+  [string]$Brand = 'SES Labs',                                 # the product name, as people see it (task and firewall names)
+  [string]$Slug = 'SESLabs',                                   # the same without spaces (folder and Windows service)
+  [string]$Dir = "C:\$Slug",
   [int]$Port = 8010,
   [string]$PhpDir = 'C:\php',
   [string]$PgVersion = '17.6-1',                               # PostgreSQL build from get.enterprisedb.com (binaries ZIP)
-  [string]$PgDir = 'C:\Synclytics\pgsql',
-  [string]$PgData = 'C:\Synclytics\pgdata',
+  [string]$PgDir = "$Dir\pgsql",
+  [string]$PgData = "$Dir\pgdata",
   [int]$PgPort = 5432,
   [switch]$Ci,                                                 # automated test: no company creation, no firewall
   [switch]$SkipCompany
@@ -52,9 +54,9 @@ if (-not (Test-Path "$PgData\PG_VERSION")) {
   Run "$pgBin\initdb.exe" @('-D', $PgData, '-U', 'postgres', '--pwfile', $pwFile, '-E', 'UTF8', '--locale=C', '-A', 'scram-sha-256')
   Remove-Item $pwFile
   Add-Content $secrets "postgres superuser password: $superPw"
-  Run "$pgBin\pg_ctl.exe" @('register', '-N', 'SynclyticsDB', '-D', $PgData, '-S', 'auto', '-o', "`"-p $PgPort`"")
+  Run "$pgBin\pg_ctl.exe" @('register', '-N', "$($Slug)DB", '-D', $PgData, '-S', 'auto', '-o', "`"-p $PgPort`"")
 }
-Start-Service SynclyticsDB -ErrorAction SilentlyContinue
+Start-Service "$($Slug)DB" -ErrorAction SilentlyContinue
 icacls $secrets /inheritance:r /grant:r 'Administrators:F' 'SYSTEM:F' | Out-Null
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -149,9 +151,9 @@ $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) 
 $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
 $trigger = New-ScheduledTaskTrigger -AtStartup
 $tasks = @{
-  'Synclytics Web' = "artisan serve --host=$listen --port=$Port"
-  'Synclytics Scheduler' = 'artisan schedule:work'
-  'Synclytics Live' = 'artisan reverb:start --host=0.0.0.0 --port=8080'
+  "$Brand Web" = "artisan serve --host=$listen --port=$Port"
+  "$Brand Scheduler" = 'artisan schedule:work'
+  "$Brand Live" = 'artisan reverb:start --host=0.0.0.0 --port=8080'
 }
 foreach ($name in $tasks.Keys) {
   Unregister-ScheduledTask -TaskName $name -Confirm:$false -ErrorAction SilentlyContinue
@@ -160,8 +162,8 @@ foreach ($name in $tasks.Keys) {
   Start-ScheduledTask -TaskName $name
 }
 if ($Setup -eq 'B' -and -not $Ci) {
-  if (-not (Get-NetFirewallRule -DisplayName 'Synclytics server' -ErrorAction SilentlyContinue)) {
-    New-NetFirewallRule -DisplayName 'Synclytics server' -Direction Inbound -Protocol TCP -LocalPort $Port, 8080 -Action Allow -Profile Private, Domain | Out-Null
+  if (-not (Get-NetFirewallRule -DisplayName "$Brand server" -ErrorAction SilentlyContinue)) {
+    New-NetFirewallRule -DisplayName "$Brand server" -Direction Inbound -Protocol TCP -LocalPort $Port, 8080 -Action Allow -Profile Private, Domain | Out-Null
   }
 }
 

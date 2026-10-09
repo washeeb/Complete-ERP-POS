@@ -21,6 +21,7 @@ export type CacheRecord =
   | { id: 'bootstrap'; data: Bootstrap; savedAt: string }
   | { id: 'catalog'; version: string; products: Product[]; promotions?: PromotionRow[]; utc_offset_minutes?: number; grocery?: Grocery | null; pharmacy?: Pharmacy | null; restaurant?: Restaurant | null; electronics?: boolean; fashion?: Fashion | null; services?: Services | null; savedAt: string }
   | { id: 'customers'; version: string; customers: TillCustomer[]; savedAt: string }
+  | { id: `brand:${string}`; url: string; dataUrl: string; savedAt: string }
 
 export type OfflineGrant = {
   v: number; id: string; device_id: string; user_id: string; user_name: string; username: string; issued_at: string; expires_at: string

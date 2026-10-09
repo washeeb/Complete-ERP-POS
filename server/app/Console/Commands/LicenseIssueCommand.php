@@ -9,7 +9,7 @@ use App\Domain\Support\Actor;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
-/** Synclytics only: issue a licence key for an installation code. */
+/** Vendor only: issue a licence key for an installation code. */
 class LicenseIssueCommand extends Command
 {
     protected $signature = 'license:issue
@@ -19,7 +19,7 @@ class LicenseIssueCommand extends Command
         {--branches= : maximum branches (blank = unlimited)}
         {--devices= : maximum tills and devices}
         {--users= : maximum active users}
-        {--features= : comma list of finance,hr (blank = all)}
+        {--features= : comma list of finance,hr,white_label (blank = all except white_label, which must be named to hide "Powered by")}
         {--modules= : comma list of industry modules (blank = all)}
         {--grace=14 : grace days after expiry}
         {--checkin=30 : days the installation may go without reaching the licence server (0 = no check-in)}
@@ -28,7 +28,7 @@ class LicenseIssueCommand extends Command
         {--key= : path to the private key file (default LICENSE_PRIVATE_KEY_PATH)}
         {--activate : development only — also activate it on this installation}';
 
-    protected $description = 'Synclytics only: issue a signed licence key';
+    protected $description = 'Vendor only: issue a signed licence key';
 
     public function handle(): int
     {

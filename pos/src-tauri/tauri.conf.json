@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Synclytics Till",
+  "productName": "SES Labs Till",
   "version": "0.24.0",
-  "identifier": "com.synclytics.till",
+  "identifier": "app.seslabs.till",
   "build": {
     "frontendDist": "setup"
   },
@@ -26,13 +26,14 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "publisher": "Synclytics",
-    "shortDescription": "Synclytics ERP till",
-    "longDescription": "The Synclytics ERP till with silent receipt printing (ESC/POS), cash drawer and scale support. It opens the till from your Synclytics server.",
+    "publisher": "SyncLytics",
+    "shortDescription": "SES Labs till",
+    "longDescription": "The SES Labs till with silent receipt printing (ESC/POS), cash drawer and scale support. It opens the till from your business server.",
     "windows": {
       "nsis": {
         "installMode": "perMachine"
       }
-    }
+    },
+    "copyright": "Copyright © SyncLytics"
   }
 }
