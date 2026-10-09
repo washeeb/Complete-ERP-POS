@@ -3,7 +3,7 @@
 ## First run
 
 1. Install the server for your deployment mode: see the **Installation & Setup Guide**
-   (`docs/manual/Synclytics-ERP-POS-Installation-Guide.pdf`; for development see `README.md`).
+   (`docs/manual/Ervanta-Installation-Guide.pdf`; for development see `README.md`).
 2. Create the audit key, then the company and its owner:
    ```
    php artisan erp:audit-key

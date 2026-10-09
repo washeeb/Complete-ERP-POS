@@ -2,6 +2,7 @@
 
 namespace App\Support\Exports;
 
+use App\Domain\Branding\Branding;
 use App\Domain\Licensing\LicenseManager;
 use App\Domain\Licensing\Watermark;
 use App\Domain\Support\Actor;
@@ -138,7 +139,7 @@ final class Exporter
         $tenant = Tenant::find($actor->tenantId);
         $html = view('exports.table', ['title' => $name, 'sheets' => $prepared, 'filters' => $filters, 'truncated' => $truncated,
             'company' => Watermark::stamp($tenant?->name ?? ''), 'by' => $actor->name, 'at' => now()->setTimezone($tenant?->timezone ?: 'UTC'),
-            'ref' => Watermark::reference()])->render();
+            'ref' => Watermark::reference(), 'logo' => Branding::logoDataUri($actor->tenantId, svgOk: false), 'powered' => Branding::poweredBy()])->render();
 
         $options = new Options;
         $options->setIsRemoteEnabled(false); // never fetch anything from the network while rendering

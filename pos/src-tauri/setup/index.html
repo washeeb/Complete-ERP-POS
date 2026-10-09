@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Synclytics Till — set-up</title>
+  <title>Till set-up</title>
   <style>
     :root { color-scheme: light dark; --bg: #f8fafc; --fg: #0f172a; --muted: #475569; --card: #fff; --line: #cbd5e1; --accent: #334155; --bad: #b91c1c; }
     @media (prefers-color-scheme: dark) { :root { --bg: #0f172a; --fg: #e2e8f0; --muted: #94a3b8; --card: #1e293b; --line: #334155; --accent: #e2e8f0; --bad: #f87171; } }
@@ -18,8 +18,8 @@
 </head>
 <body>
 <main>
-  <h1>Synclytics Till</h1>
-  <p id="intro">Connect this till to your Synclytics server, and choose the receipt printer, cash drawer and scale.</p>
+  <h1>Till set-up</h1>
+  <p id="intro">Connect this till to your business server, and choose the receipt printer, cash drawer and scale.</p>
 
   <section aria-labelledby="h-server">
     <h2 id="h-server">1. Server</h2>
@@ -47,7 +47,7 @@
   const $ = (id) => document.getElementById(id);
   const say = (id, text, bad) => { $(id).textContent = text; $(id).className = 'msg' + (bad ? ' bad' : ''); };
   const params = new URLSearchParams(location.search);
-  if (params.has('blocked')) say('msg', 'That address is not your Synclytics server, so the till did not open it.', true);
+  if (params.has('blocked')) say('msg', 'That address is not your business server, so the till did not open it.', true);
 
   async function load() {
     const cfg = await T.invoke('get_config');
@@ -67,7 +67,7 @@
     try {
       await saveHardware();
       // ESC @ (reset), text, 4 line feeds, GS V 1 (cut)
-      const bytes = [0x1b, 0x40, ...new TextEncoder().encode('Synclytics Till\nTest receipt - printer works.\n\n\n\n'), 0x1d, 0x56, 0x01];
+      const bytes = [0x1b, 0x40, ...new TextEncoder().encode('Test receipt - printer works.\n\n\n\n'), 0x1d, 0x56, 0x01];
       await T.invoke('print_raw', { data: btoa(String.fromCharCode(...bytes)), openDrawer: $('drawer').checked });
       say('testmsg', 'Sent to the printer.');
     } catch (e) { say('testmsg', String(e), true); }

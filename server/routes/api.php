@@ -133,7 +133,7 @@ Route::prefix('v1')->group(function () {
 // Live updates for tills: private channel auth with the staff token (POST /api/v1/pos/broadcasting/auth).
 Broadcast::routes(['prefix' => 'v1/pos', 'middleware' => ['auth:sanctum', 'device.token:pos']]);
 
-// Synclytics licence server (answers only when this installation is the licence server).
+// The licence server (answers only when this installation is the licence server).
 Route::post('license/checkin', [LicenseServerController::class, 'checkin'])->middleware('throttle:30,1');
 
 // Public API v1 for other systems (keys under System → API clients; description at /api/public/v1/openapi.json).

@@ -34,15 +34,33 @@ The wizard opens by itself the first time.
 
 1. **Deployment** — how the system runs: *Standalone single PC* (setup A/B), *Central on-premise server* (setup C), or *Cloud HQ* (setups D/E). This records your starting layout; you can grow later.
 2. **Company** — trading name, country, base currency and time zone. Optionally the **legal entity**: registered name, **TIN** and **VAT number**, needed for VAT invoices (you can add it later under *Company*).
-3. **Branches & modules** — one row per branch:
+3. **Your brand** (optional) — the company **logo**, a **square icon** and the **brand colour** (leave the colour empty and it is taken from the logo). You can do this later under *Company → Branding* (below).
+4. **Branches & modules** — one row per branch:
    - **Code** (1–6 letters/digits, e.g. `HQ`, `KSI`). It appears in every receipt number and **cannot be changed later**.
    - **Name**, the number of **tills**, and whether it is the **head office** (exactly one).
    - **Modules** for that branch (Grocery, Pharmacy, Restaurant, Electronics, Fashion, Services, Online Storefront…). You can change these later (Chapter 8).
-4. Click **Finish setup**.
+5. Click **Finish setup**.
 
 **Why:** each branch automatically gets a main warehouse and the tills you asked for. Receipt numbers look like `HQ-T01A-000123`: branch, till, device series and number.
 
 **Check:** *Company → Branches* lists your branches with their warehouses and tills.
+
+### Your brand: logo, icon and colour
+
+**Company → Branding.** Your brand is what staff and customers see: the back office's top bar, the till, printed receipts, invoices, statements, PDF exports and your online shop.
+
+1. **Logo** — your logo with the name, on a transparent background (PNG) or as SVG, at least 600 pixels wide. Choose **Upload**.
+2. **Logo for dark backgrounds** (optional) — a light version for dark mode and dark headers. Without it, the normal logo is used.
+3. **Square icon** — the symbol alone, at least 256 × 256 pixels. It is the browser-tab icon and the small icon on the till. Until you add one, your **initials on your colour** are used.
+4. **Brand colour** — pick it, type it (`#0F766E`), or press **Use … from your logo**. If the colour is too light to read on white, the page says so: choose a darker shade.
+5. **Print the logo on till receipts** — receipt printers print it in black and white (it is converted for them).
+6. Press **Save colour and receipts**, and look at the **Preview**: the till accent, a receipt and an invoice.
+
+![Company → Branding with the previews](img/branding.png)
+
+**Why:** customers trust a receipt or invoice that carries the shop's own logo, and staff recognise their own system. The images are checked and made smaller when you upload them, and they reach branch servers and backups like the rest of your data.
+
+**Note:** a small line *“Powered by Ervanta”* stays at the bottom of the back office, receipts and documents. A **white-label licence** removes it (ask Ervanta).
 
 ## Step 5 — People and access
 
@@ -139,4 +157,4 @@ Do a full test day with made-up sales:
 3. Check *Sales → Review queue*, *Stock → Stock on hand* and, if licensed, *Finance → Reports → Trial balance*.
 4. Take a backup and **restore it on another PC** (Chapter 12).
 
-**Check:** when all four work, remove the test data the easy way — make a fresh installation for go-live, or ask Synclytics for help — and enter your real opening figures.
+**Check:** when all four work, remove the test data the easy way — make a fresh installation for go-live, or ask Ervanta for help — and enter your real opening figures.

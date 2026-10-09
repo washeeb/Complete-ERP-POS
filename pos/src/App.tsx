@@ -13,6 +13,7 @@ import type { Bootstrap, PostedSale, Product } from './types'
 import './App.css'
 import { applyTheme, getTheme, THEMES, type ThemeChoice } from './theme'
 import { problemContext } from './problems'
+import { applyBrand } from './brand'
 
 type Stage = 'loading' | 'enroll' | 'login' | 'open-shift' | 'sell' | 'receipt' | 'close-shift' | 'handheld' | 'kitchen' | 'error'
 
@@ -34,6 +35,8 @@ export default function App() {
   const [live, setLive] = useState<LiveState>('off')
   const sending = useRef(false)
   const online = conn === 'online'
+
+  useEffect(() => applyBrand(boot), [boot]) // the company's colour as the till's accent
 
   /** Fetch start-up data and catalog; fall back to the cached copies when the server is unreachable. */
   const fetchOrCache = useCallback(async (): Promise<{ b: Bootstrap; products: Product[]; version: string | null; live: boolean }> => {

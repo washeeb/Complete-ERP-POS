@@ -35,7 +35,7 @@ beforeEach(function () {
     $this->licenses = app(LicenseService::class);
 });
 
-/** Replace the licence (as Synclytics would issue it) and forget the cached state. */
+/** Replace the licence (as the vendor would issue it) and forget the cached state. */
 function relicense(array $over = []): string
 {
     $key = activateTestLicense($over);
@@ -150,7 +150,7 @@ it('checks in with the licence server: confirmed, revoked, renewed, forged answe
     expect($this->licenses->checkIn())->toMatchArray(['ok' => true, 'status' => 'active']);
     expect(DB::table('vendor_checkins')->value('answer'))->toBe('active')->and(json_decode(DB::table('vendor_checkins')->value('report'), true)['counts']['branches'])->toBe(2);
 
-    // A renewal issued by Synclytics is handed over at the next check-in.
+    // A renewal issued by the vendor is handed over at the next check-in.
     $renewed = LicenseIssuer::issue(['customer' => 'Test', 'request_code' => $req, 'expires_at' => now()->addYears(2)->toDateString(), 'server_url' => 'https://licence.example',
         'checkin_days' => 30], TestCase::$licenseKeys);
     DB::table('vendor_licenses')->where('id', $issued['license_id'])->update(['superseded_by' => $renewed['license_id']]);
@@ -247,7 +247,7 @@ it('builds a stamped, signed release whose manifest matches the delivered files'
             ->and($manifest['files'])->toHaveKey('app/Security/Authorizer.php')
             ->and(Watermark::reveal(file_get_contents("{$root}/app/Models/Customer.php")))->toBe(["{$build->id}|Kofi Stores"])
             ->and(file_exists("{$root}/.env"))->toBeFalse()
-            ->and(glob("{$out}/synclytics-kofi-stores-{$build->id}.zip"))->toHaveCount(1);
+            ->and(glob("{$out}/ervanta-kofi-stores-{$build->id}.zip"))->toHaveCount(1);
     } finally {
         @unlink($keyFile);
         File::deleteDirectory($out);

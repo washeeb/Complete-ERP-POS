@@ -76,8 +76,8 @@ final class WebhookDispatcher
             $t = time();
             $d->attempts++;
             try {
-                $res = Http::timeout(10)->withHeaders(['X-Synclytics-Event' => $d->event, 'X-Synclytics-Delivery' => $d->event_id,
-                    'X-Synclytics-Signature' => "t={$t},v1=".hash_hmac('sha256', "{$t}.{$body}", (string) $endpoint->secret)])
+                $res = Http::timeout(10)->withHeaders(['X-Webhook-Event' => $d->event, 'X-Webhook-Delivery' => $d->event_id,
+                    'X-Webhook-Signature' => "t={$t},v1=".hash_hmac('sha256', "{$t}.{$body}", (string) $endpoint->secret)])
                     ->withBody($body, 'application/json')->post($endpoint->url);
                 $ok = $res->successful();
                 $code = $res->status();

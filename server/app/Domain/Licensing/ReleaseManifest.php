@@ -4,7 +4,7 @@ namespace App\Domain\Licensing;
 
 /**
  * Tamper detection for release builds. `release:build` hashes the files that enforce licensing and signs the list
- * with the Synclytics key; at run time the app checks the signature and the hashes. A changed file makes the
+ * with the vendor's key; at run time the app checks the signature and the hashes. A changed file makes the
  * installation read-only and is reported at check-in. (A determined attacker with the source can still remove
  * checks; this raises the cost and leaves evidence — see docs/licensing.md.)
  */
@@ -68,7 +68,7 @@ final class ReleaseManifest
         $body = $m;
         unset($body['sig']);
         if (! Signer::verifyWithTrusted($body, (string) ($m['sig'] ?? ''), $m['kid'] ?? null) || ($m['kid'] ?? '') === 'dev') {
-            $problems[] = 'The release manifest is not signed by Synclytics.';
+            $problems[] = 'The release manifest is not signed by '.config('brand.vendor').'.';
         } else {
             $now = self::hashes(base_path());
             foreach ($m['files'] ?? [] as $path => $hash) {

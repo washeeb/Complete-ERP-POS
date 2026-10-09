@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Domain\Branding\Branding;
 use App\Domain\Customers\CustomerLedger;
 use App\Domain\Customers\CustomerService;
 use App\Domain\Devices\DeviceSignature;
@@ -77,6 +78,9 @@ class PosController extends Controller
                 'id' => $l->id, 'code' => $l->code, 'name' => $l->name, 'prices_include_tax' => $l->prices_include_tax, 'is_default' => $l->is_default,
             ])->values(),
             'receipt_footer' => $settings->get('receipt.footer', $device->tenant_id),
+            // The company's brand (Company → Branding): logo for the screen and the printed receipt, colour, and the product line.
+            'brand' => (fn ($b) => ['color' => $b['color'], 'on_color' => $b['on_color'], 'logo_url' => $b['logo_url'], 'logo_dark_url' => $b['logo_dark_url'],
+                'icon_url' => $b['icon_url'], 'receipt_logo' => $b['receipt_logo'], 'powered_by' => $b['powered_by'], 'product' => config('brand.name')])(Branding::forTenant($tenant)),
             'send_receipt' => array_values(array_filter(['sms', 'whatsapp', 'email'], fn ($ch) => (bool) Templates::find($device->tenant_id, 'receipt', $ch)?->is_active)),
             'license' => (fn ($s) => ['state' => $s['state'], 'read_only' => $s['read_only'], 'message' => $s['message'], 'ref' => Watermark::reference()])(app(LicenseManager::class)->status()),
             'shift' => $this->shiftJson($shifts->current($device), $shifts),

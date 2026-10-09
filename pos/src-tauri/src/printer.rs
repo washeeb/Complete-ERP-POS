@@ -38,7 +38,7 @@ mod spooler {
 
     pub fn send(name: &str, bytes: &[u8]) -> Result<(), String> {
         let pname = wide(name);
-        let mut doc = wide("Synclytics receipt");
+        let mut doc = wide("Receipt");
         let mut raw = wide("RAW");
         unsafe {
             let mut h = HANDLE::default();

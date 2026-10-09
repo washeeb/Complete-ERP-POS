@@ -1,4 +1,5 @@
 import { formatMoney, prettyQty, toMilli } from './money'
+import type { Raster } from './brand'
 import type { Bootstrap, PostedSale } from './types'
 
 /**
@@ -47,6 +48,13 @@ export class EscPos {
     return this
   }
 
+  /** A black-and-white image (GS v 0, raster), e.g. the company logo. */
+  image(r: { width: number; height: number; bytesPerRow: number; data: Uint8Array }): this {
+    this.bytes.push(GS, 0x76, 0x30, 0, r.bytesPerRow & 0xff, r.bytesPerRow >> 8, r.height & 0xff, r.height >> 8)
+    for (const b of r.data) this.bytes.push(b)
+    return this
+  }
+
   cut(): this { this.feed(4); this.bytes.push(GS, 0x56, 0x01); return this }
 
   toBytes(): Uint8Array { return Uint8Array.from(this.bytes) }
@@ -67,10 +75,12 @@ const PC858: Record<string, number> = {
 const PLAIN_UNITS = new Set(['PC', 'EA', 'PCS'])
 
 /** The receipt as the printed (browser) one, in ESC/POS. */
-export function receiptEscPos(sale: PostedSale, boot: Bootstrap): EscPos {
+export function receiptEscPos(sale: PostedSale, boot: Bootstrap, logo: Raster | null = null): EscPos {
   const m = (v: number) => formatMoney(v, sale.currency, boot.company.exponent)
   const when = new Date(sale.occurred_at).toLocaleString('en-GB', { timeZone: boot.company.timezone, dateStyle: 'medium', timeStyle: 'short' })
-  const p = new EscPos().align('center').bold(true).double(true).line(boot.company.name).double(false).bold(false)
+  const p = new EscPos().align('center')
+  if (logo) p.image(logo).feed()
+  p.bold(true).double(true).line(boot.company.name).double(false).bold(false)
   if (boot.company.legal_name && boot.company.legal_name !== boot.company.name) p.line(boot.company.legal_name)
   p.line(boot.branch.name + (boot.branch.address ? ` · ${boot.branch.address}` : ''))
   if (boot.branch.phone) p.line(`Tel ${boot.branch.phone}`)
@@ -101,5 +111,6 @@ export function receiptEscPos(sale: PostedSale, boot: Bootstrap): EscPos {
   }
   p.feed().qr(sale.receipt_no).feed().line(boot.receipt_footer)
   if (boot.license?.ref) p.line(`Ref ${boot.license.ref}`)
+  if (boot.brand?.powered_by) p.line(boot.brand.powered_by)
   return p.cut()
 }

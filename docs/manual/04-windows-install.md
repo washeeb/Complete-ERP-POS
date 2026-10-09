@@ -2,21 +2,21 @@
 
 Follow every step in order. Allow about two hours the first time. You need an internet connection during installation.
 
-In this chapter the software goes in `C:\Synclytics` and PHP in `C:\php`. If you choose other folders, change them in every command.
+In this chapter the software goes in `C:\Ervanta` and PHP in `C:\php`. If you choose other folders, change them in every command.
 
 ## 4.0 The quick way: the installer (recommended)
 
-Synclytics gives you **`synclytics-erp-server-setup-<version>.exe`** with your release. It does everything in 4.2–4.9 for you.
+Ervanta gives you **`Ervanta-server-setup-<version>.exe`** with your release. It does everything in 4.2–4.9 for you.
 
 1. Do 4.1 (prepare the computer) first.
 2. Double-click the setup file, click **Yes** when Windows asks for permission (it must install a database and services).
-3. Choose **Setup A** (this PC is also the till) or **Setup B** (shop server for tills on the network). Leave the server id as **HQ** unless Synclytics gave you a branch server id (Chapter 10).
+3. Choose **Setup A** (this PC is also the till) or **Setup B** (shop server for tills on the network). Leave the server id as **HQ** unless Ervanta gave you a branch server id (Chapter 10).
 4. A blue window shows each step. It downloads PostgreSQL, PHP and Composer from their official sites (about 400 MB — keep the internet on), creates the database with its own random password, the settings, the keys, the tables, and the start-up tasks.
 5. At the end it shows the **backup passphrase** — write it on paper and keep it away from the server (Chapter 12) — and asks for your company name and the owner's account.
 
 **Why:** the installer follows exactly the manual steps below, so you can still read them to understand what was done, or do them by hand on an unusual PC.
 
-**Note:** the passwords the installer created (database) are in `C:\Synclytics\installer-secrets.txt`, readable by administrators only. Running the installer again (a newer version) updates the software and keeps your data, settings and keys.
+**Note:** the passwords the installer created (database) are in `C:\Ervanta\installer-secrets.txt`, readable by administrators only. Running the installer again (a newer version) updates the software and keeps your data, settings and keys.
 
 **Advanced:** the same steps without the setup file: `powershell -ExecutionPolicy Bypass -File install.ps1 -Release <release.zip> -Setup B` (as administrator).
 
@@ -84,11 +84,11 @@ memory_limit = 512M
 upload_max_filesize = 20M
 post_max_size = 25M
 date.timezone = Africa/Accra
-upload_tmp_dir = "C:\Synclytics\tmp"
-sys_temp_dir = "C:\Synclytics\tmp"
+upload_tmp_dir = "C:\Ervanta\tmp"
+sys_temp_dir = "C:\Ervanta\tmp"
 ```
 
-   Create the folder `C:\Synclytics\tmp` (it holds files while they are being uploaded, e.g. CSV imports).
+   Create the folder `C:\Ervanta\tmp` (it holds files while they are being uploaded, e.g. CSV imports).
 
    **Why:** these extensions let PHP talk to PostgreSQL (`pdo_pgsql`), handle money and text in every language (`bcmath`, which is built in, `intl`, `mbstring`), and protect secrets (`sodium`, `openssl`).
 6. Add PHP to the system path, so Windows finds `php` from any folder: Start → type `environment` → **Edit the system environment variables** → **Environment Variables…** → under *System variables* select **Path** → **Edit** → **New** → type `C:\php` → **OK** three times.
@@ -108,19 +108,19 @@ sys_temp_dir = "C:\Synclytics\tmp"
 
 ## 4.5 Put the software in place
 
-Synclytics gives you the software as a ZIP file named like `synclytics-<your-company>-<build>.zip`.
+Ervanta gives you the software as a ZIP file named like `ervanta-<your-company>-<build>.zip`.
 
-1. Create the folder `C:\Synclytics`.
-2. Extract the ZIP into it, so that `C:\Synclytics\server\artisan` exists.
+1. Create the folder `C:\Ervanta`.
+2. Extract the ZIP into it, so that `C:\Ervanta\server\artisan` exists.
 
-**Note:** If you were given the **source code** (for example through Git) instead of a release ZIP, place it so that `C:\Synclytics\server` and `C:\Synclytics\pos` exist, and also do step 4.7 (*Build the till app*).
+**Note:** If you were given the **source code** (for example through Git) instead of a release ZIP, place it so that `C:\Ervanta\server` and `C:\Ervanta\pos` exist, and also do step 4.7 (*Build the till app*).
 
 ## 4.6 Configure the server
 
 Open PowerShell and go to the server folder:
 
 ```
-cd C:\Synclytics\server
+cd C:\Ervanta\server
 ```
 
 1. **Download the server's libraries:**
@@ -129,7 +129,7 @@ cd C:\Synclytics\server
    composer install --no-dev --optimize-autoloader
    ```
 
-   **Why:** the release contains only Synclytics' own code; this downloads the open-source libraries it builds on, at the exact versions it was tested with. `--no-dev` leaves out testing tools.
+   **Why:** the release contains only Ervanta's own code; this downloads the open-source libraries it builds on, at the exact versions it was tested with. `--no-dev` leaves out testing tools.
 
 2. **Create the settings file** from the example:
 
@@ -202,17 +202,17 @@ cd C:\Synclytics\server
 
 ## 4.7 Build the till app (source code only)
 
-Skip this if your release ZIP already contains `C:\Synclytics\server\public\pos\index.html`.
+Skip this if your release ZIP already contains `C:\Ervanta\server\public\pos\index.html`.
 
 ```
-cd C:\Synclytics\pos
+cd C:\Ervanta\pos
 npm install
 npm run build:server
 ```
 
 **Why:** this turns the till's source code into the app the server hands out at `/pos/`, including the offline files that let tills keep selling without the server.
 
-**Check:** the file `C:\Synclytics\server\public\pos\index.html` now exists.
+**Check:** the file `C:\Ervanta\server\public\pos\index.html` now exists.
 
 ## 4.8 Start the server automatically
 
@@ -226,14 +226,14 @@ We register them with Windows **Task Scheduler** so they start with the computer
 Open **PowerShell as administrator** and paste this whole block. For setup A, change `0.0.0.0` to `127.0.0.1` on the second line (only this PC may reach the server).
 
 ```
-$app = "C:\Synclytics\server"; $php = "C:\php\php.exe"
+$app = "C:\Ervanta\server"; $php = "C:\php\php.exe"
 $listen = "0.0.0.0"
 $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
 $trigger = New-ScheduledTaskTrigger -AtStartup
-Register-ScheduledTask -TaskName "Synclytics Web" -Trigger $trigger -Settings $settings -Principal $principal -Action (New-ScheduledTaskAction -Execute $php -Argument "artisan serve --host=$listen --port=8010" -WorkingDirectory $app)
-Register-ScheduledTask -TaskName "Synclytics Scheduler" -Trigger $trigger -Settings $settings -Principal $principal -Action (New-ScheduledTaskAction -Execute $php -Argument "artisan schedule:work" -WorkingDirectory $app)
-Start-ScheduledTask "Synclytics Web"; Start-ScheduledTask "Synclytics Scheduler"
+Register-ScheduledTask -TaskName "Ervanta Web" -Trigger $trigger -Settings $settings -Principal $principal -Action (New-ScheduledTaskAction -Execute $php -Argument "artisan serve --host=$listen --port=8010" -WorkingDirectory $app)
+Register-ScheduledTask -TaskName "Ervanta Scheduler" -Trigger $trigger -Settings $settings -Principal $principal -Action (New-ScheduledTaskAction -Execute $php -Argument "artisan schedule:work" -WorkingDirectory $app)
+Start-ScheduledTask "Ervanta Web"; Start-ScheduledTask "Ervanta Scheduler"
 ```
 
 **Why:** `ExecutionTimeLimit 0` stops Windows from ending the tasks after three days (its default). `SYSTEM` runs them without anyone signed in.
@@ -241,7 +241,7 @@ Start-ScheduledTask "Synclytics Web"; Start-ScheduledTask "Synclytics Scheduler"
 **Setup B only — let the tills through the Windows firewall:**
 
 ```
-New-NetFirewallRule -DisplayName "Synclytics server" -Direction Inbound -Protocol TCP -LocalPort 8010 -Action Allow -Profile Private,Domain
+New-NetFirewallRule -DisplayName "Ervanta server" -Direction Inbound -Protocol TCP -LocalPort 8010 -Action Allow -Profile Private,Domain
 ```
 
 **Why:** Windows blocks incoming connections by default. This opens only port 8010, and only on private (shop) networks, not public Wi-Fi.
@@ -254,7 +254,7 @@ New-NetFirewallRule -DisplayName "Synclytics server" -Direction Inbound -Protoco
 
 3. Setup B: on another PC on the network, open `http://<server-address>:8010/admin` — the same page appears.
 
-**Tip:** To stop or restart the server, open **Task Scheduler**, click *Task Scheduler Library*, right-click *Synclytics Web* or *Synclytics Scheduler* and choose **End**, then **Run**.
+**Tip:** To stop or restart the server, open **Task Scheduler**, click *Task Scheduler Library*, right-click *Ervanta Web* or *Ervanta Scheduler* and choose **End**, then **Run**.
 
 ## 4.9 Optional: live updates (instant price and stock changes on tills)
 
@@ -274,9 +274,9 @@ Without live updates, tills check for changes every 60 seconds, which is enough 
 3. In PowerShell as administrator, add a third task:
 
    ```
-   Register-ScheduledTask -TaskName "Synclytics Live" -Trigger (New-ScheduledTaskTrigger -AtStartup) -Settings (New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1)) -Principal (New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest) -Action (New-ScheduledTaskAction -Execute "C:\php\php.exe" -Argument "artisan reverb:start --host=0.0.0.0 --port=8080" -WorkingDirectory "C:\Synclytics\server")
-   Start-ScheduledTask "Synclytics Live"
-   New-NetFirewallRule -DisplayName "Synclytics live" -Direction Inbound -Protocol TCP -LocalPort 8080 -Action Allow -Profile Private,Domain
+   Register-ScheduledTask -TaskName "Ervanta Live" -Trigger (New-ScheduledTaskTrigger -AtStartup) -Settings (New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1)) -Principal (New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest) -Action (New-ScheduledTaskAction -Execute "C:\php\php.exe" -Argument "artisan reverb:start --host=0.0.0.0 --port=8080" -WorkingDirectory "C:\Ervanta\server")
+   Start-ScheduledTask "Ervanta Live"
+   New-NetFirewallRule -DisplayName "Ervanta live" -Direction Inbound -Protocol TCP -LocalPort 8080 -Action Allow -Profile Private,Domain
    ```
 
 **Check:** sign in on a till, change a price in the back office, and the till shows the new price within a few seconds.

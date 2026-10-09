@@ -1,6 +1,6 @@
 # Licensing and anti-piracy
 
-Every installation needs a **licence key from Synclytics**. Keys are signed with Synclytics' private key (Ed25519) and checked by the software **offline**. Head office also **checks in** with the Synclytics licence server every day.
+Every installation needs a **licence key from Ervanta**. Keys are signed with Ervanta' private key (Ed25519) and checked by the software **offline**. Head office also **checks in** with the Ervanta licence server every day.
 
 ## What the customer sees
 
@@ -17,17 +17,17 @@ The licence also limits the number of **branches**, **tills and devices**, **act
 ## Activating (customer)
 
 1. Sign in as the owner or general manager: you are taken to **Settings → Licence**.
-2. Send Synclytics the **installation code** shown there (it starts with `SYNREQ-`).
+2. Send Ervanta the **installation code** shown there (it starts with `SYNREQ-`).
 3. Paste the key you receive (it starts with `SYN1-`) with **Enter licence key**.
 
-To renew, Synclytics issues a new key. It reaches head office by itself at the next daily check-in, or you can paste it the same way. Branch servers receive the licence from head office.
+To renew, Ervanta issues a new key. It reaches head office by itself at the next daily check-in, or you can paste it the same way. Branch servers receive the licence from head office.
 
-## Issuing (Synclytics only)
+## Issuing (Ervanta only)
 
 One-time set-up:
 
 ```bash
-php artisan license:keygen --kid=syn-2026-1 --out=/secure/offline/synclytics-license.key
+php artisan license:keygen --kid=syn-2026-1 --out=/secure/offline/ervanta-license.key
 ```
 
 1. Add the printed public-key line to `config/license.php` → `public_keys`, then commit it.
@@ -36,7 +36,7 @@ php artisan license:keygen --kid=syn-2026-1 --out=/secure/offline/synclytics-lic
 Issue a key for an installation code:
 
 ```bash
-php artisan license:issue --key=/secure/…/synclytics-license.key --customer="Kofi Stores" --code=SYNREQ-… --until=2027-10-31 --branches=3 --devices=6 --users=15 --features=finance,hr --modules=grocery --server=https://licence.synclytics.com
+php artisan license:issue --key=/secure/…/ervanta-license.key --customer="Kofi Stores" --code=SYNREQ-… --until=2027-10-31 --branches=3 --devices=6 --users=15 --features=finance,hr --modules=grocery --server=https://licence.ervanta.com
 ```
 
 - **Renew:** issue a new key with `--replaces=<old licence id>`. The installation picks it up at its next check-in.
@@ -46,7 +46,7 @@ php artisan license:issue --key=/secure/…/synclytics-license.key --customer="K
 ## Protection layers
 
 1. **Signed keys bound to the installation**: a random installation id, plus a fingerprint of the machine (OS machine id and database cluster id). A copied server or database asks to be re-activated.
-2. **Daily check-in**: answers are signed by Synclytics, so a fake licence server cannot keep a revoked copy alive.
+2. **Daily check-in**: answers are signed by Ervanta, so a fake licence server cannot keep a revoked copy alive.
 3. **Release builds** (`php artisan release:build --customer=… --key=… [--with-pos]`): one copy per customer, built from committed code only (no `.env`, no secrets).
    - A **hidden build stamp** goes into every PHP file under `app/` and into the till app, so a leaked copy names the customer it was given to.
    - A **signed manifest** of the files that enforce licensing is included. If any of them is changed, the installation becomes read-only and reports it at check-in.

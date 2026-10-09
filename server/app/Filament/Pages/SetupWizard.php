@@ -2,12 +2,15 @@
 
 namespace App\Filament\Pages;
 
+use App\Domain\Branding\Branding;
 use App\Domain\Org\OrgService;
 use App\Filament\Support\Erp;
 use App\Models\Tenant;
 use App\Modules\ModuleRegistry;
 use BackedEnum;
 use Filament\Forms\Components\CheckboxList;
+use Filament\Forms\Components\ColorPicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
@@ -22,8 +25,10 @@ use Filament\Schemas\Components\Text;
 use Filament\Schemas\Components\Wizard;
 use Filament\Schemas\Components\Wizard\Step;
 use Filament\Schemas\Schema;
+use Filament\Support\Exceptions\Halt;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 
 /**
@@ -98,6 +103,17 @@ class SetupWizard extends Page
                         TextInput::make('legal_entity.vat_no')->label('VAT number')->maxLength(30),
                     ]),
                 ]),
+                Step::make('Your brand')->icon(Heroicon::OutlinedSwatch)->schema([
+                    Text::make(new HtmlString('Your logo and colour appear on the back office, the tills, receipts, invoices and your online shop. <strong>Optional</strong> — you can add or change them later under Company → Branding.')),
+                    Grid::make(2)->schema([
+                        FileUpload::make('brand.logo')->label('Logo (PNG with transparent background, or SVG)')->disk('local')->directory('brand-uploads')->visibility('private')
+                            ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'])->maxSize(2048)->image()->imagePreviewHeight('90'),
+                        FileUpload::make('brand.icon')->label('Square icon (optional — your initials are used until you add one)')->disk('local')->directory('brand-uploads')->visibility('private')
+                            ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'])->maxSize(2048)->image()->imagePreviewHeight('90'),
+                        ColorPicker::make('brand.color')->label('Brand colour (leave empty to take it from your logo)')->regex('/^#[0-9A-Fa-f]{6}$/'),
+                        Toggle::make('brand.receipt_logo')->label('Print the logo on till receipts')->default(true),
+                    ]),
+                ]),
                 Step::make('Branches & modules')->icon(Heroicon::OutlinedBuildingStorefront)->schema([
                     Text::make(new HtmlString('Each branch gets a main warehouse and the tills you ask for. <strong>Industry modules</strong> are chosen per branch; ones not released yet are <em>reserved</em> and switch on when their phase ships — they are never shown as working before then.')),
                     Repeater::make('branches')->label('Branches')->minItems(1)->maxItems(50)->reorderable(false)
@@ -129,7 +145,38 @@ class SetupWizard extends Page
     public function save(): void
     {
         $data = $this->form->getState();
+        $brand = $data['brand'] ?? [];
+        unset($data['brand']);
         Erp::run(fn ($actor) => app(OrgService::class)->completeSetup($actor, $data), 'Company set up');
+        $this->saveBrand($brand);
         $this->redirect(Dashboard::getUrl());
+    }
+
+    /** The brand step: after the company exists. A logo problem never undoes the setup — it is reported, and fixed on Company → Branding. */
+    private function saveBrand(array $brand): void
+    {
+        $disk = Storage::disk('local');
+        try {
+            Erp::run(function ($actor) use ($brand, $disk) {
+                $branding = app(Branding::class);
+                foreach (['logo', 'icon'] as $kind) {
+                    if (! empty($brand[$kind])) {
+                        $branding->upload($actor, $kind, $disk->path($brand[$kind]));
+                    }
+                }
+                $color = ($brand['color'] ?? null) ?: Branding::suggestColor($actor->tenantId);
+                $branding->saveSettings($actor, $color, (bool) ($brand['receipt_logo'] ?? true));
+
+                return true;
+            });
+        } catch (Halt) {
+            // shown by Erp::run; the company is set up either way
+        } finally {
+            foreach (['logo', 'icon'] as $kind) {
+                if (! empty($brand[$kind])) {
+                    $disk->delete($brand[$kind]);
+                }
+            }
+        }
     }
 }

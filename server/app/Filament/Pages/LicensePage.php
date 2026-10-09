@@ -16,7 +16,7 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\DB;
 use UnitEnum;
 
-/** Licence status, the installation code to send to Synclytics, and where the key is entered. */
+/** Licence status, the installation code to send to the supplier, and where the key is entered. */
 class LicensePage extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedKey;

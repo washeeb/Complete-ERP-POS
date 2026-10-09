@@ -1,4 +1,4 @@
-# Synclytics ERP + POS
+# Ervanta
 
 Modular, offline-first ERP + POS for retail/wholesale (Ghana-first, multi-country by configuration),
 with per-branch industry modules and real-time online-store sync. Spec: [ERP-POS-MASTER-PROMPT.md](ERP-POS-MASTER-PROMPT.md).
@@ -38,7 +38,7 @@ sign in with a username + PIN set under Users. Guides: `docs/user-manual/cashier
 
 Tests: `cd server && php artisan test` · `cd pos && npm test`.
 
-**Installation & Setup Guide (PDF):** [docs/manual/Synclytics-ERP-POS-Installation-Guide.pdf](docs/manual/Synclytics-ERP-POS-Installation-Guide.pdf)
+**Installation & Setup Guide (PDF):** [docs/manual/Ervanta-Installation-Guide.pdf](docs/manual/Ervanta-Installation-Guide.pdf)
 — every setup (single PC, shop network, central, cloud, branch servers), requirements, modules, devices, backups,
 updates and troubleshooting. Source chapters: `docs/manual/*.md`; rebuild with `cd pos && npm run manual`.
 

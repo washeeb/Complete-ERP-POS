@@ -14,15 +14,15 @@ use Illuminate\Support\Str;
 use Throwable;
 
 /**
- * Activation (offline: the customer sends the installation code, Synclytics sends back a signed key) and the
- * check-in with the Synclytics licence server (head office, daily): it reports what the installation is using and
+ * Activation (offline: the customer sends the installation code, the vendor sends back a signed key) and the
+ * check-in with the licence server (head office, daily): it reports what the installation is using and
  * whether this copy was modified, and receives a signed answer — still active, revoked, or a renewed key.
  */
 final class LicenseService
 {
     public function __construct(private readonly Authorizer $authz, private readonly AuditLog $audit, private readonly Outbox $outbox) {}
 
-    /** The code the customer sends to Synclytics to get a key for this installation. */
+    /** The code the customer sends to the supplier to get a key for this installation. */
     public static function installationCode(): string
     {
         return 'SYNREQ-'.Signer::b64(Signer::canonical([
@@ -54,7 +54,7 @@ final class LicenseService
         }
         $p = LicenseKey::verify($key);
         if (($p['installation_id'] ?? null) !== DB::table('system_meta')->where('key', 'installation_id')->value('value')) {
-            throw new LicenseException('This key was issued for a different installation. Send Synclytics the installation code shown on this page.', 'license_invalid');
+            throw new LicenseException('This key was issued for a different installation. Send '.config('brand.vendor').' the installation code shown on this page.', 'license_invalid');
         }
 
         return LicenseManager::bypass(fn () => DB::transaction(function () use ($actor, $key, $p) {

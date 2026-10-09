@@ -7,7 +7,7 @@ use App\Domain\Licensing\Vendor\VendorKeys;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-/** Synclytics licence server: answers installations' check-ins (only when LICENSE_SERVER=true). */
+/** The licence server (vendor side): answers installations' check-ins (only when LICENSE_SERVER=true). */
 class LicenseServerController extends Controller
 {
     public function checkin(Request $request): JsonResponse

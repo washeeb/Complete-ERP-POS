@@ -9,7 +9,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-/** Issues signed licence keys (Synclytics side). */
+/** Issues signed licence keys (vendor side). */
 final class LicenseIssuer
 {
     /**
@@ -17,7 +17,7 @@ final class LicenseIssuer
      *               grace_days?: int, checkin_days?: ?int, server_url?: ?string, dev?: bool}  $o
      * @return array{license_id: string, key: string, payload: array}
      */
-    public static function issue(array $o, array $keys, string $issuedBy = 'Synclytics', bool $record = true): array
+    public static function issue(array $o, array $keys, ?string $issuedBy = null, bool $record = true): array
     {
         $req = LicenseService::readInstallationCode($o['request_code']);
         $payload = [
@@ -31,7 +31,7 @@ final class LicenseIssuer
         $key = LicenseKey::encode($payload, Signer::sign($payload, $keys['secret']));
         if ($record) {
             DB::table('vendor_licenses')->insert(['id' => $payload['license_id'], 'customer' => $o['customer'], 'installation_id' => $req['installation_id'],
-                'payload' => json_encode($payload), 'license_key' => $key, 'issued_by' => $issuedBy, 'created_at' => now(), 'updated_at' => now()]);
+                'payload' => json_encode($payload), 'license_key' => $key, 'issued_by' => $issuedBy ?? config('brand.vendor'), 'created_at' => now(), 'updated_at' => now()]);
         }
 
         return ['license_id' => $payload['license_id'], 'key' => $key, 'payload' => $payload];

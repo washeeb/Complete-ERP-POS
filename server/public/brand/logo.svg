@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 300" role="img" aria-label="Ervanta">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#14B8A6"/>
+      <stop offset="1" stop-color="#0F4C5C"/>
+    </linearGradient>
+  </defs>
+  <!-- Placeholder logo for light backgrounds: the mark and the name. Replace with the final artwork (keep about 4:1). -->
+  <g transform="translate(22 22) scale(.5)">
+    <rect width="512" height="512" rx="116" fill="url(#tile)"/>
+    <rect x="132" y="128" width="200" height="56" rx="28" fill="#FFFFFF"/>
+    <rect x="132" y="228" width="248" height="56" rx="28" fill="#FFFFFF" opacity=".92"/>
+    <rect x="132" y="328" width="200" height="56" rx="28" fill="#FFFFFF"/>
+    <circle cx="380" cy="156" r="34" fill="#F5B942"/>
+  </g>
+  <text x="330" y="196" font-family="'Segoe UI Variable Display','Segoe UI',Inter,'Helvetica Neue',Arial,sans-serif" font-size="150" font-weight="700" letter-spacing="-3" fill="#0F2E3A">ervanta</text>
+</svg>

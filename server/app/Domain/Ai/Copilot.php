@@ -127,7 +127,9 @@ final class Copilot
     {
         $today = now($tenant->timezone ?: 'UTC')->toDateString();
 
-        return "You are the business copilot of {$tenant->name}, a business in Ghana using the Synclytics ERP. Today is {$today}. Money is in {$tenant->currency_code}.\n"
+        $product = config('brand.name');
+
+        return "You are the business copilot of {$tenant->name}, a business in Ghana using {$product}. Today is {$today}. Money is in {$tenant->currency_code}.\n"
             ."Answer only from the results of the tools; call a tool for every figure and never invent or estimate numbers. If the tools cannot answer, say so and suggest which report to open.\n"
             ."Keep answers short: a sentence or a few bullets, say which period the figures cover, and point out anything unusual. Placeholders such as [Customer 2] or [Staff 1] stand for real names: use them exactly as given.\n"
             .'You cannot change anything: if asked to post, approve, order or pay, explain where in the system the person can do it.';

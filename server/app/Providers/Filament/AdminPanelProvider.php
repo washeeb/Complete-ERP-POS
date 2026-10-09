@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Domain\Licensing\Watermark;
 use App\Filament\Auth\EditProfile;
+use App\Filament\Support\PanelBrand;
 use App\Filament\Widgets\BusinessStats;
 use App\Http\Middleware\EnforceLicense;
 use App\Http\Middleware\RedirectToSetupWizard;
@@ -15,7 +16,6 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Support\Colors\Color;
 use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -35,7 +35,12 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->brandName('Synclytics ERP')
+            // Client brand first (Company → Branding), the product's until a company has its own.
+            ->brandName(fn () => PanelBrand::name())
+            ->brandLogo(fn () => PanelBrand::logo())
+            ->darkModeBrandLogo(fn () => PanelBrand::darkLogo())
+            ->brandLogoHeight('2.25rem')
+            ->favicon(fn () => PanelBrand::favicon())
             ->login()
             ->profile(EditProfile::class, isSimple: false)
             // Authenticator app with recovery codes. Who must use it is decided per person by
@@ -43,7 +48,7 @@ class AdminPanelProvider extends PanelProvider
             ->multiFactorAuthentication([AppAuthentication::make()->recoverable()])
             ->requiresMultiFactorAuthentication()
             ->multiFactorAuthenticationRequiredMiddlewareName('erp.mfa')
-            ->colors(['primary' => Color::Slate])
+            ->colors(fn () => PanelBrand::colors())
             ->darkMode()
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->databaseNotifications()->databaseNotificationsPolling('30s')
@@ -74,6 +79,7 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::PAGE_END, fn () => Blade::render('@livewire(\'passkeys\')'), scopes: EditProfile::class)
             ->renderHook(PanelsRenderHook::BODY_START, fn () => view('license.banner'))
             ->renderHook(PanelsRenderHook::BODY_START, fn () => view('launch.practice-banner'))
+            ->renderHook(PanelsRenderHook::FOOTER, fn () => view('branding.powered-by'))
             // "Report a problem" for everyone signed in (pilot support, Phase 14).
             ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => Blade::render('@livewire(\'report-problem\')'))
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => new HtmlString(Watermark::meta()))

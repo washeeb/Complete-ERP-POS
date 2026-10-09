@@ -1,6 +1,7 @@
 import qrcode from 'qrcode-generator'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api, ApiError } from '../api'
+import { cachedImage } from '../brand'
 import { isDesktop, openHardwareSetup, printReceipt } from '../hardware'
 import { formatMoney, prettyQty, toMilli } from '../money'
 import type { Bootstrap, PostedSale } from '../types'
@@ -23,6 +24,18 @@ function ReceiptQr({ text }: { text: string }) {
       <rect width={n + 4} height={n + 4} fill="#fff" /><path d={d} fill="#000" />
     </svg>
   )
+}
+
+/** The company logo at the top of the receipt (from the till's cache when offline); nothing when there is none. */
+function ReceiptLogo({ boot }: { boot: Bootstrap }) {
+  const [src, setSrc] = useState<string | null>(null)
+  const url = boot.brand?.receipt_logo ? boot.brand.logo_url : null
+  useEffect(() => {
+    let live = true
+    void cachedImage(url).then((s) => { if (live) setSrc(s) })
+    return () => { live = false }
+  }, [url])
+  return src ? <img className="receipt-logo" src={src} alt={boot.company.name} /> : null
 }
 
 const CHANNEL: Record<string, string> = { sms: 'SMS', whatsapp: 'WhatsApp', email: 'E-mail' }
@@ -93,7 +106,7 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
     <div className="receipt-screen">
       <div className="receipt" aria-label={`Receipt ${sale.receipt_no}`}>
         <header className="center">
-          <div className="receipt-logo" aria-label="Logo">LOGO</div>
+          <ReceiptLogo boot={boot} />
           <h2>{boot.company.name}</h2>
           {boot.company.legal_name && boot.company.legal_name !== boot.company.name && <p>{boot.company.legal_name}</p>}
           <p>{boot.branch.name}{boot.branch.address ? ` · ${boot.branch.address}` : ''}</p>
@@ -167,6 +180,7 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
           <ReceiptQr text={sale.receipt_no} />
           <p>{boot.receipt_footer}</p>
           {boot.license?.ref && <p className="receipt-ref">Ref {boot.license.ref}</p>}
+          {boot.brand?.powered_by && <p className="receipt-ref">{boot.brand.powered_by}</p>}
         </footer>
       </div>
       {sale.status === 'queued' && (sale.kitchen?.length ?? 0) > 0 && (

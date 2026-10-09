@@ -23,7 +23,7 @@ final class LicenseKey
     {
         $key = preg_replace('/\s+/', '', $key);
         if (! str_starts_with($key, 'SYN1-') || substr_count($key, '.') !== 1) {
-            throw new LicenseException('That is not a Synclytics licence key.', 'license_invalid');
+            throw new LicenseException('That is not a licence key for this software.', 'license_invalid');
         }
         [$p, $sig] = explode('.', substr($key, 5));
         $json = Signer::unb64($p);
@@ -40,7 +40,7 @@ final class LicenseKey
     {
         $k = self::decode($key);
         if (! Signer::verifyWithTrusted($k['payload'], $k['signature'], $k['payload']['kid'] ?? null)) {
-            throw new LicenseException('This licence key was not issued by Synclytics (signature check failed).', 'license_invalid');
+            throw new LicenseException('This licence key was not issued by '.config('brand.vendor').' (signature check failed).', 'license_invalid');
         }
 
         return $k['payload'];

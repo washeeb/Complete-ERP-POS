@@ -37,6 +37,7 @@ You can change what a role allows under **People & access → Roles** (you can o
 | `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` | Outgoing e-mail (Chapter 16.1). `MAIL_MAILER=log` only writes e-mails to the log |
 | `BACKUP_PASSPHRASE`, `BACKUP_PG_BIN`, `BACKUP_TIME`, `BACKUP_KEEP_LOCAL` | Backups (Chapter 12.2). **Keep a written copy of the passphrase away from the server.** |
 | `GRA_EVAT_URL`, `GRA_EVAT_KEY`, `GRA_EVAT_TIN`, `GRA_EVAT_TIMEOUT` | GRA E-VAT access from GRA (Chapter 11.5) |
+| `BRAND_NAME`, `BRAND_VENDOR`, `BRAND_WEBSITE` | The product's name, who supplies it, and its website (normally left as delivered) |
 | `ERP_SUPPORT_EMAIL` | Where problem reports and the evening pilot report go when the go-live plan names no address (Chapter 17.6) |
 | `SESSION_SECURE_COOKIE` | `true` once the site uses HTTPS (the Ubuntu script sets it) |
 | `ANTHROPIC_API_KEY` | Only if you choose Claude (cloud AI) in Chapter 15. Leave empty for no cloud AI. |

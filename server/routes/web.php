@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BrandAssetController;
 use App\Http\Controllers\ExpenseReceiptController;
 use App\Http\Controllers\PrintController;
 use App\Http\Controllers\StorefrontController;
@@ -11,6 +12,9 @@ Route::get('/', fn () => redirect('/admin'));
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;
 // these routes only catch the bare address and a till app that has not been built yet.
+// A company's logo, icon or monogram (Company → Branding), public: it prints on receipts and shows in the online shop.
+Route::get('/brand/{slug}/{kind}', BrandAssetController::class)->where(['slug' => '[a-z0-9-]+', 'kind' => 'logo|logo_dark|icon|monogram\.svg'])->name('brand.asset');
+
 Route::get('/pos', fn () => redirect('/pos/'));
 Route::get('/pos/{path?}', function () {
     $index = public_path('pos/index.html');

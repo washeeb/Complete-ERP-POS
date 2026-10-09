@@ -65,8 +65,8 @@ final class ProviderSetup
             throw new DomainException('Switch the provider on first.');
         }
         $m = $channel === 'whatsapp'
-            ? $this->messenger->send($actor->tenantId, 'whatsapp', $to, 'Test message from Synclytics ERP', null, 'TEST', $actor->name, 'hello_world')
-            : $this->messenger->send($actor->tenantId, 'sms', $to, 'Test message from Synclytics ERP: SMS works.', null, 'TEST', $actor->name);
+            ? $this->messenger->send($actor->tenantId, 'whatsapp', $to, 'Test message from '.config('brand.name'), null, 'TEST', $actor->name, 'hello_world')
+            : $this->messenger->send($actor->tenantId, 'sms', $to, 'Test message from '.config('brand.name').': SMS works.', null, 'TEST', $actor->name);
         $row->forceFill(['tested_at' => now(), 'test_result' => $m->status === 'sent' ? 'Sent' : mb_substr((string) $m->error, 0, 250)])->save();
 
         return $m;

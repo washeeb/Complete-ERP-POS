@@ -117,7 +117,7 @@ class MessagingSetup extends Page
                 Text::make('Mail driver: '.config('mail.default').' · From: '.config('mail.from.address').(config('mail.default') === 'log' ? ' — e-mails are only written to the log file, not sent. Set MAIL_MAILER=smtp to send.' : '')),
                 Actions::make([Action::make('testEmail')->label('Send a test e-mail')->color('gray')->schema([TextInput::make('to')->label('E-mail address')->required()->email()])
                     ->action(fn (array $data) => $this->report(Erp::run(fn ($actor) => app(Messenger::class)->send($actor->tenantId, 'email', $data['to'],
-                        'This is a test e-mail from Synclytics ERP. E-mail works.', 'Test e-mail', 'TEST', $actor->name))))]),
+                        'This is a test e-mail from '.config('brand.name').'. E-mail works.', 'Test e-mail', 'TEST', $actor->name))))]),
             ]),
         ]);
     }

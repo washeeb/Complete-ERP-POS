@@ -10,7 +10,7 @@ use App\Models\SalesOrder;
 use Illuminate\Http\Request;
 
 /**
- * Delivery apps (Bolt Food, Glovo, Chowdeck): orders in only. They post to our webhook URL in the signed Synclytics
+ * Delivery apps (Bolt Food, Glovo, Chowdeck): orders in only. They post to our webhook URL in the signed
  * format (as the generic REST channel, docs/api.md), directly or through the integration partner that bridges their
  * merchant API; nothing is pushed to them. Orders become delivery bills for the kitchen (Restaurant module).
  */

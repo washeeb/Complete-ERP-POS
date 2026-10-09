@@ -185,8 +185,8 @@ it('takes delivery-app orders keyed in at the till or by webhook, and records th
         $raw = json_encode(['topic' => 'order.created', 'order' => $order]);
         $ts = (string) time();
 
-        return $this->call('POST', "/api/v1/channels/{$ch->id}/webhooks", [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_X_SYNCLYTICS_TIMESTAMP' => $ts,
-            'HTTP_X_SYNCLYTICS_EVENT_ID' => (string) Str::uuid7(), 'HTTP_X_SYNCLYTICS_SIGNATURE' => hash_hmac('sha256', $ts.'.'.$raw, 'glovo-test-secret')], $raw);
+        return $this->call('POST', "/api/v1/channels/{$ch->id}/webhooks", [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_X_WEBHOOK_TIMESTAMP' => $ts,
+            'HTTP_X_WEBHOOK_ID' => (string) Str::uuid7(), 'HTTP_X_WEBHOOK_SIGNATURE' => hash_hmac('sha256', $ts.'.'.$raw, 'glovo-test-secret')], $raw);
     };
     $send(['id' => 'g-77', 'number' => 'GL-77', 'customer' => ['name' => 'Kofi', 'phone' => '0201234567'], 'lines' => [['sku' => 'JOL', 'qty' => '2', 'note' => 'no pepper']]])->assertOk();
     $send(['id' => 'g-78', 'lines' => [['sku' => 'NOPE', 'qty' => '1']]])->assertOk();

@@ -50,9 +50,9 @@ final class OpenApi
 
         return [
             'openapi' => '3.1.0',
-            'info' => ['title' => 'Synclytics ERP public API', 'version' => '1.0.0',
+            'info' => ['title' => config('brand.name').' public API', 'version' => '1.0.0',
                 'description' => "Keys are created under System → API clients. Send them as `Authorization: Bearer <key>`. A key carries scopes and acts as a person: it never sees more than that person may in the back office.\n\n"
-                    .'Webhooks are POSTed as JSON {id, type, created_at, data} with headers X-Synclytics-Event, X-Synclytics-Delivery and X-Synclytics-Signature: t=<unix time>,v1=<hex HMAC-SHA256 of "t.body" with the webhook secret>. Retries reuse the same id — de-duplicate on it. Events: '
+                    .'Webhooks are POSTed as JSON {id, type, created_at, data} with headers X-Webhook-Event, X-Webhook-Delivery and X-Webhook-Signature: t=<unix time>,v1=<hex HMAC-SHA256 of "t.body" with the webhook secret>. Retries reuse the same id — de-duplicate on it. Events: '
                     .implode(', ', array_keys(ApiClients::EVENTS)).'.'],
             'servers' => [['url' => rtrim((string) config('app.url'), '/').'/api/public/v1']],
             'components' => ['securitySchemes' => ['apiKey' => ['type' => 'http', 'scheme' => 'bearer', 'description' => 'Scopes: '.implode(', ', array_keys(ApiClients::SCOPES))]]],

@@ -83,6 +83,8 @@ export type Bootstrap = {
   user: { id: string; name: string }
   price_lists: PriceList[]
   receipt_footer: string
+  /** The company's brand (Company → Branding); missing on servers older than 0.26. */
+  brand?: { color: string; on_color: string; logo_url: string | null; logo_dark_url: string | null; icon_url: string; receipt_logo: boolean; powered_by: string | null; product: string }
   send_receipt?: ('sms' | 'whatsapp' | 'email')[] // channels the business has switched on for digital receipts
   license?: { state: string; read_only: boolean; message: string | null; ref: string }
   shift: Shift | null

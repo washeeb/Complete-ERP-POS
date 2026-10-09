@@ -46,7 +46,7 @@ final class BackupCrypto
         $src = fopen($in, 'rb');
         if (fread($src, strlen(self::MAGIC)) !== self::MAGIC) {
             fclose($src);
-            throw new DomainException('This is not a Synclytics backup file.');
+            throw new DomainException('This is not a backup file made by this software.');
         }
         $salt = fread($src, SODIUM_CRYPTO_PWHASH_SALTBYTES);
         $header = fread($src, SODIUM_CRYPTO_SECRETSTREAM_XCHACHA20POLY1305_HEADERBYTES);
