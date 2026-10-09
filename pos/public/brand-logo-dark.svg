@@ -5,7 +5,7 @@
       <stop offset="0" stop-color="#038C8D"/><stop offset="1" stop-color="#06AAAA"/>
     </linearGradient>
     <linearGradient id="sweep-d" x1="640" y1="0" x2="1300" y2="0" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#E8EEF6"/><stop offset=".42" stop-color="#0A6A84"/><stop offset=".8" stop-color="#05A3A5"/><stop offset="1" stop-color="#07ABAB"/>
+      <stop offset="0" stop-color="#E8EEF6"/><stop offset=".42" stop-color="#3FBFC4"/><stop offset=".8" stop-color="#05A3A5"/><stop offset="1" stop-color="#07ABAB"/>
     </linearGradient>
     <linearGradient id="tail-d" x1="1180" y1="0" x2="1660" y2="0" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#5FB7C9"/><stop offset="1" stop-color="#E8EEF6"/>

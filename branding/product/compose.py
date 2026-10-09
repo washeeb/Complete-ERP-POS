@@ -17,7 +17,7 @@ for navy in ['#031E4C', '#03204F']:
     dark = dark.replace(navy, '#E8EEF6')
 dark = dark.replace('id="e"', 'id="e-d"').replace('url(#e)', 'url(#e-d)').replace('id="sweep"', 'id="sweep-d"').replace('url(#sweep)', 'url(#sweep-d)') \
     .replace('id="tail"', 'id="tail-d"').replace('url(#tail)', 'url(#tail-d)').replace('id="body"', 'id="body-d"').replace('url(#body)', 'url(#body-d)').replace('id="bodyPath"', 'id="bodyPath-d"')
-dark = dark.replace('#0A5E80', '#5FB7C9')
+dark = dark.replace('#0A5E80', '#5FB7C9').replace('#0A6A84', '#3FBFC4')  # the sweep stays light enough to read on dark
 save('logo-dark.svg', '  <!-- Generated from ses-lettermark.svg by compose.py (for dark backgrounds) -->\n  ' + dark, 'viewBox="0 640 1930 720"')
 # Square icon: white rounded tile, the lettermark 84 % wide, centred.
 w = 512 * 0.84
