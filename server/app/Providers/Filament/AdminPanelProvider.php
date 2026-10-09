@@ -73,6 +73,9 @@ class AdminPanelProvider extends PanelProvider
                 '<x-authenticate-passkey><x-filament::button color="gray" icon="heroicon-o-finger-print" class="w-full mt-2">Sign in with a passkey</x-filament::button></x-authenticate-passkey>'))
             ->renderHook(PanelsRenderHook::PAGE_END, fn () => Blade::render('@livewire(\'passkeys\')'), scopes: EditProfile::class)
             ->renderHook(PanelsRenderHook::BODY_START, fn () => view('license.banner'))
+            ->renderHook(PanelsRenderHook::BODY_START, fn () => view('launch.practice-banner'))
+            // "Report a problem" for everyone signed in (pilot support, Phase 14).
+            ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => Blade::render('@livewire(\'report-problem\')'))
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => new HtmlString(Watermark::meta()))
             ->authMiddleware([
                 Authenticate::class,

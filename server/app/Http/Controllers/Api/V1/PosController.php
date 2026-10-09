@@ -8,6 +8,7 @@ use App\Domain\Devices\DeviceSignature;
 use App\Domain\Fashion\AlterationService;
 use App\Domain\Fiscal\FiscalService;
 use App\Domain\Grocery\MarkdownService;
+use App\Domain\Launch\SupportReports;
 use App\Domain\Licensing\LicenseManager;
 use App\Domain\Licensing\Watermark;
 use App\Domain\Messaging\ReceiptSender;
@@ -66,7 +67,7 @@ class PosController extends Controller
         $entity = $branch->legalEntity ?? LegalEntity::first();
 
         return response()->json([
-            'company' => ['name' => $tenant->name, 'currency' => $tenant->currency_code, 'exponent' => Money::exponent($tenant->currency_code),
+            'company' => ['name' => $tenant->name, 'currency' => $tenant->currency_code, 'exponent' => Money::exponent($tenant->currency_code), 'practice' => (bool) $tenant->is_practice,
                 'timezone' => $branch->timezone ?? $tenant->timezone, 'legal_name' => $entity?->name, 'tin' => $entity?->tin, 'vat_no' => $entity?->vat_no],
             'branch' => ['id' => $branch->id, 'code' => $branch->code, 'name' => $branch->name, 'address' => $branch->address, 'phone' => $branch->phone],
             'till' => $till ? ['id' => $till->id, 'code' => $till->code, 'name' => $till->name, 'warehouse' => $till->warehouse->name] : null,
@@ -334,6 +335,18 @@ class PosController extends Controller
         $m = app(ReceiptSender::class)->send($this->device($request), $request->user(), $id, $data['channel'], $data['to']);
 
         return response()->json(['status' => $m->status, 'detail' => $m->status === 'sent' ? 'Sent.' : ($m->status === 'queued' ? 'Will be sent shortly.' : (string) $m->error)]);
+    }
+
+    /** "Report a problem" from the till: the cashier's words, the screen, the till app's version and its last errors. */
+    public function reportProblem(Request $request): JsonResponse
+    {
+        $data = $request->validate(['message' => ['required', 'string', 'min:5', 'max:5000'], 'screen' => ['nullable', 'string', 'max:120'],
+            'context' => ['nullable', 'array', 'max:20']]);
+        $device = $this->device($request);
+        $r = app(SupportReports::class)->report(Actor::user($request->user(), 'pos', $device->id), 'till', $data['message'], $data['screen'] ?? null,
+            ($data['context'] ?? []) + ['device' => $device->name, 'till_id' => $device->till_id], $device->id, $device->branch_id);
+
+        return response()->json(['number' => $r->number, 'sent' => $r->sent_at !== null], 201);
     }
 
     // -------------------------------------------------------------------

@@ -44,6 +44,10 @@ final class FiscalService
 
     public function mode(string $tenantId): string
     {
+        if (Tenant::isPractice($tenantId)) {
+            return 'off'; // a practice company never reports to GRA
+        }
+
         return (string) $this->settings->get('evat.mode', $tenantId);
     }
 

@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Domain\Imports\Importer;
 use App\Domain\Imports\ImportService;
+use App\Domain\Imports\ImportSources;
 use App\Domain\Imports\SheetFile;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Support\DomainException;
@@ -11,6 +12,7 @@ use App\Filament\Support\Erp;
 use App\Filament\Support\ExportsPage;
 use App\Models\Category;
 use App\Models\DataImport;
+use App\Models\GoLivePlan;
 use App\Models\StockAdjustment;
 use App\Models\StockCount;
 use App\Models\Warehouse;
@@ -60,6 +62,13 @@ class ImportData extends Page
 
     public string $categoryId = '';
 
+    /** Where the file comes from: our template, QuickBooks or another till system (fills in "match columns"). */
+    #[Url]
+    public string $source = 'excel';
+
+    /** The go-live date opening balances are "as of". */
+    public string $asOf = '';
+
     public bool $skipErrors = false;
 
     public bool $createMissing = true;
@@ -88,6 +97,22 @@ class ImportData extends Page
             $this->type = (string) array_key_first($types);
         }
         $this->warehouseId = $this->warehouseId ?: (string) (array_key_first($this->warehouses()) ?? '');
+        if (! isset(ImportSources::LABELS[$this->source])) {
+            $this->source = 'excel';
+        }
+        $this->asOf = $this->asOf ?: (GoLivePlan::first()?->go_live_on?->toDateString() ?? now()->toDateString());
+    }
+
+    public function sources(): array
+    {
+        return ImportSources::LABELS;
+    }
+
+    public function updatedSource(): void
+    {
+        if ($this->file) {
+            $this->updatedFile();
+        }
     }
 
     public function updatedType(): void
@@ -151,7 +176,7 @@ class ImportData extends Page
     public function options(): array
     {
         return ['skip_errors' => $this->skipErrors, 'create_missing' => $this->createMissing, 'warehouse_id' => $this->warehouseId ?: null,
-            'reason_code' => $this->reasonCode, 'category_id' => $this->categoryId ?: null];
+            'reason_code' => $this->reasonCode, 'category_id' => $this->categoryId ?: null, 'source' => $this->source, 'as_of' => $this->asOf ?: now()->toDateString()];
     }
 
     /** Headings and one example row. */
@@ -210,8 +235,11 @@ class ImportData extends Page
             return;
         }
         $this->preview = ['headings' => $data['headings'], 'rows' => array_map(fn ($r) => $r['values'], array_slice($data['rows'], 0, 5)), 'total' => count($data['rows'])];
+        $known = ImportSources::suggest($this->source, $this->type, $data['headings'], $this->importer()->headings()); // QuickBooks / other till names
         foreach ($this->importer()->columns() as $c) {
-            if (! in_array($c['name'], $data['headings'], true)) {
+            if (isset($known[$c['name']])) {
+                $this->mapping[$c['name']] = $known[$c['name']];
+            } elseif (! in_array($c['name'], $data['headings'], true)) {
                 // A heading that contains the column name (or the other way round) is probably it: "item_sku" for "sku".
                 $guess = collect($data['headings'])->first(fn ($h) => ! in_array($h, $this->importer()->headings(), true) && (str_contains($h, $c['name']) || str_contains($c['name'], $h)));
                 $this->mapping[$c['name']] = (string) $guess;

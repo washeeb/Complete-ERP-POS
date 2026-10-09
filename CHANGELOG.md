@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.25.0] — 2026-10-30 · Phase 14 Pilot and launch
+### Added
+- **Data migration** from Excel/CSV, **QuickBooks** and **other till systems** (Loyverse, Square, Lightspeed, Odoo…): a "Coming from" choice on Import data matches the old system's column names; SKUs and supplier codes made from names when missing; QuickBooks sub-items and types understood. New imports: chart of accounts, opening trial balance (one opening journal; control-account lines skipped), customer balances (negative = store credit), supplier balances, loyalty points, gift cards and store credit — all posted against "Opening balances (to clear)".
+- **System → Go-live**: the plan (data sources; parallel run / one day / one till first; one shop / several / internal dry run), an ordered checklist that ticks itself from the data, the figures check against the old system (with the ledger tie-out), the parallel run (old system's daily totals next to ours), the go-live backup, go live and roll back.
+- **Practice company** for training: a copy of branches, tills, settings, products, prices and stock with made-up customers; staff keep their password, PIN and two-step code (e-mail with "+practice"); a PRACTICE bar everywhere; nothing is sent to GRA, customers, online stores or webhooks.
+- **Report a problem** in the back office and on the till (with the page, versions and recent errors), e-mailed to support; System → Problem reports. **Pilot report** e-mailed every evening during the pilot (`erp:pilot-report`).
+- **Training material** (`docs/training`, `npm run training`): cashier quick card, supervisor, storekeeper, accountant and manager/owner guides, video scripts. Installation guide chapter 17 "Going live" with the rollback plan (reference is now chapter 18).
+
 ## [0.24.0] — 2026-10-29 · Phase 13 Hardening
 ### Added
 - **Automatic encrypted backups** every night (database, settings, uploaded files; Argon2id + XChaCha20-Poly1305) to a USB/second-drive folder, S3-compatible storage, Google Drive or SFTP, with retention per destination; weekly check (decrypt, read, restore drill into a scratch database); `erp:backup`, `erp:backup:restore`, `erp:backup:key`; System → Backups.

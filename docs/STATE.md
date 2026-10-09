@@ -1,9 +1,18 @@
 # State (resume file)
 
-**Phase:** 13 — Hardening · **Status:** done on branch `phase-13-hardening` (PR to `main`); next Phase 14 (pilot & launch)
-**Updated:** 2026-10-29 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–12 and licensing merged (PRs #1–#24)
+**Phase:** 14 — Pilot and launch · **Status:** done on branch `phase-14-launch` (PR to `main`); all 14 phases of the plan built — next: a real pilot
+**Updated:** 2026-10-30 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–13 and licensing merged (PRs #1–#25)
 
-## Phase 13 — done on branch `phase-13-hardening` (PR to `main`)
+## Phase 14 — done on branch `phase-14-launch` (PR to `main`)
+- **Owner answers:** migration from Excel/CSV, QuickBooks, another till system, or fresh (all); training: quick card, role guides, practice mode, video scripts (all); cut-over parallel (default) / one day / one till first; pilot one shop (default) / several / internal dry run.
+- **Server:** migration `2026_10_30_100001` (`tenants.is_practice`, `practice_of`; `go_live_plans`, `parallel_days`, `support_reports`); `app/Domain/Imports/ImportSources` + importers `Accounts`, `OpeningBalances`, `CustomerBalances`, `SupplierBalances`, `LoyaltyPoints`, `GiftCards` (+ `Lookup`; `Importer::finish` hook; suppliers without codes); AutoPoster posts loyalty `opening` and `*_opening` stored values to opening equity; `app/Domain/Launch/{GoLiveService, PracticeCompany, SupportReports, PilotReport}`; practice guards in FiscalService, Messenger (status `practice`), WebhookDispatcher, ChannelSync; `erp:pilot-report` (every 15 min); `config('erp.version')`, `ERP_SUPPORT_EMAIL`; till API `POST pos/problems`, bootstrap `company.practice`.
+- **Back office:** System → Go-live (plan, checklist, figures check, parallel run, practice company, pilot report, go-live backup, go live / roll back), System → Problem reports; "Report a problem" (top bar) for everyone; PRACTICE banner; Import data "Coming from" + "Balances as of".
+- **Till:** PRACTICE banner; "Report a problem" (bottom of the screen) with the screen and the till's last errors (`pos/src/problems.ts`).
+- **Permissions:** `golive.manage` (Owner, General Manager), `support.view` (technical) — Core 0.14.0.
+- **Tests:** LaunchTest (5: QuickBooks + other-POS migration tying to zero, go-live flow with parallel run/pilot report/rollback, practice company copy + guards, problem reports back office/till, screens); `problems.test.ts`; e2e practice + report a problem (axe). Totals: 353 Pest, 59 Vitest, 18 Playwright.
+- **Docs:** manual chapter 17 Going live (new; reference → 18), 14.2 imports, 18 env/commands/checklist; `docs/training/*` + PDFs (`npm run training`); go-live.md; launch-checklist.md; CHANGELOG 0.25.0; DECISIONS 14.
+
+## Phase 13 — done (merged, PR #25)
 - **Owner answers:** backups to USB/folder, S3-compatible, Google Drive, SFTP; Windows installer + Docker + Ubuntu script; desktop till now; all three E-VAT modes selectable.
 - **Server:** migration `2026_10_29_100001` (`backup_destinations`, `backup_runs`, `fiscal_submissions`); `app/Domain/Backup/{BackupCrypto, Destinations, BackupService}`, `config/backup.php`, commands `erp:backup` (+ `--verify`), `erp:backup:restore`, `erp:backup:key`; `app/Domain/Fiscal/{FiscalAdapter, GraEvatAdapter, FiscalService, FiscalRelay}`, `config/fiscal.php`, `erp:evat-batch`, settings `evat.mode`, `evat.daily_time`, receipt `fiscal`; `SystemHealth` + `erp:health` (scheduler heartbeat every minute, relay heartbeat); `SecurityHeaders` middleware; `erp:load-test`; phpseclib.
 - **Back office:** System → Backups, Health; Finance → GRA E-VAT.
@@ -188,7 +197,7 @@
 - Signed activation keys, expiry with grace then read-only, daily check-in, tamper detection, watermarks — see docs/licensing.md. Dev licence valid to 2027-12-31 (dev key in `.local-secrets/license-dev.json`). Before the first customer release: production key (`license:keygen`), its public key in `config/license.php`, a licence server.
 
 ## Next
-- Phase 14 — Pilot & launch: data migration, training material, go-live runbook, rollback plan; ask the owner's decisions in a batch first. Before a pilot: third-party penetration test, GRA E-VAT sandbox verification with real credentials.
+- All phases of the master plan are built. Before the first real pilot: third-party penetration test; GRA E-VAT sandbox verification with real credentials; record the training videos (scripts in docs/training); run the internal dry run in the practice company; then follow System → Go-live with the pilot shop.
 
 ## Owner decisions pending
 - Accountant check of the Ghana tax set-up (VAT/NHIL/GETFund rates and the payroll PAYE bands / SSNIT rates — Payroll → Tax and SSNIT rules) before go-live.

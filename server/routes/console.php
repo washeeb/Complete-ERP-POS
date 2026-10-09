@@ -26,3 +26,4 @@ Schedule::command('erp:backup')->dailyAt(config('backup.time', '02:00'))->withou
 Schedule::command('erp:backup --verify')->weeklyOn(7, '04:00')->withoutOverlapping(240); // weekly restore check
 Schedule::command('erp:evat-batch')->everyFifteenMinutes()->withoutOverlapping(30); // GRA E-VAT daily batch (daily mode)
 Schedule::command('erp:health --beat')->everyMinute(); // heartbeat for System → Health
+Schedule::command('erp:pilot-report')->everyFifteenMinutes()->withoutOverlapping(30); // evening pilot report while a pilot runs

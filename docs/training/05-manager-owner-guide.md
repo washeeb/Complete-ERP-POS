@@ -1,0 +1,35 @@
+# Manager and owner guide
+
+You decide who may do what, approve what is above your staff's limits, and read the business. Everything is in the back office (web browser).
+
+## Who may do what
+
+- **People & access → Users**: one account per person, never shared. Give each person a **role** for the right branch (a cashier for their till's branch, a supervisor for the shop).
+- Limits (discounts, purchase approvals, credit) come with the role; change them on the person's access.
+- The **IT Admin** sets up devices and users but sees no sales or money unless you also give them a business role.
+- Owners and managers must use **two-step sign-in** (an authenticator app or a passkey).
+
+## Daily (ten minutes)
+
+1. **Dashboard**: sales today against last week, stock alerts, anything waiting for your approval.
+2. **Insights → Alerts**: unusual voids or refunds, items about to run out, margins that fell.
+3. Approve purchase orders, stock adjustments and expense claims that wait for you.
+
+## Going live
+
+**System → Go-live** leads you through it:
+
+1. **Plan** — where the data comes from, how you switch over (*parallel run* is safest), how the pilot runs.
+2. **Checklist** — each step in order; most turn green by themselves when done.
+3. **Practice company** — create it, give your staff practice logins, let them practise for a few days.
+4. **Check the figures** — with your accountant, against the old system.
+5. **Parallel run** — every evening, type in the old system's day totals; explain any difference.
+6. **Take the go-live backup**, then **Go live**. If things go badly wrong, **Go back to the old system** and follow the rollback plan (installation guide, chapter 17.8).
+
+## When staff report a problem
+
+Staff tap **Report a problem**. Support gets an e-mail; you and IT see the list under **System → Problem reports**. During the pilot, a **pilot report** is e-mailed every evening: sales per branch, cash over/short, tills that were offline, the parallel-run difference and open problems.
+
+## Practise first
+
+In the **practice company**: give a new cashier access to one till only, approve a large discount, read the insights for last week.

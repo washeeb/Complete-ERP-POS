@@ -46,6 +46,7 @@ Route::prefix('v1')->group(function () {
         Route::post('sales', [PosController::class, 'postSale']);
         Route::get('sales/{id}', [PosController::class, 'showSale'])->whereUuid('id');
         Route::post('sales/{id}/send', [PosController::class, 'sendReceipt'])->whereUuid('id')->middleware('throttle:pos-sync');
+        Route::post('problems', [PosController::class, 'reportProblem'])->middleware('throttle:pos-sync');
         Route::get('receipts', [PosController::class, 'lookupSale']);
         Route::post('returns', [PosController::class, 'postReturn']);
         Route::post('account-payments', [PosController::class, 'accountPayment']);

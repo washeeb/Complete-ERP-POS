@@ -1,6 +1,6 @@
 # Launch checklist (Phase 13)
 
-Go live only when every line is ticked. Most are checked automatically on **System → Health** / `php artisan erp:health`.
+Go live only when every line is ticked. Most are checked automatically on **System → Health** / `php artisan erp:health`. The data migration, figures check, parallel run, go-live backup and rollback are run from **System → Go-live** (Phase 14, `docs/go-live.md`, installation guide chapter 17).
 
 | # | Check | How |
 |---|---|---|
@@ -21,4 +21,6 @@ Go live only when every line is ticked. Most are checked automatically on **Syst
 | 15 | Audit chain verifies | System → Audit log → Verify chain |
 | 16 | Disk space healthy | Health: *Disk space* |
 | 17 | Staff trained on the till; supervisor knows the review queue | Training |
-| 18 | Rollback plan: last backup file + passphrase available; how to reinstall (Chapter 12.3) | Owner |
+| 18 | Rollback plan known (guide 17.8); go-live backup taken today and copied off the server | System → Go-live |
+| 19 | Figures match the old system; "Opening balances (to clear)" is zero | System → Go-live → Check the figures |
+| 20 | Support e-mail set; problem reports and the pilot report arrive | System → Go-live → Plan; Show today's report |

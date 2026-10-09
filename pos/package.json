@@ -12,7 +12,8 @@
     "test": "vitest run",
     "e2e": "playwright test",
     "manual": "node scripts/manual.mjs",
-    "manual:screens": "node scripts/manual-screens.mjs"
+    "manual:screens": "node scripts/manual-screens.mjs",
+    "training": "node scripts/training.mjs"
   },
   "dependencies": {
     "dexie": "^4.4.6",

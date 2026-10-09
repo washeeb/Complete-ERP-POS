@@ -42,6 +42,12 @@ abstract class Importer
         return $context;
     }
 
+    /**
+     * After the rows, inside the import's transaction: e.g. post the opening trial balance the rows built up. A
+     * DomainException here fails the whole file (it is reported against row 0).
+     */
+    public function finish(Actor $actor, array $options, ?Model $context): void {}
+
     /** Current data in this file's layout (to edit and import again), or null if there is none. */
     public function exportRows(Actor $actor, array $options, ?Model $context): ?iterable
     {

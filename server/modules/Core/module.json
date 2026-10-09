@@ -1,7 +1,7 @@
 {
   "key": "core",
   "name": "Core",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "kind": "core",
   "stage": "available",
   "description": "Company, branches, warehouses, tills, users, roles, devices, audit, modules, settings, catalog, prices and tax, stock ledger and the POS. Always installed.",
@@ -85,6 +85,8 @@
     {"key": "messaging.view", "label": "See the message log (SMS, WhatsApp, e-mail)", "min_level": 3},
     {"key": "messaging.templates", "label": "Change message wording and switch customer messages on or off", "min_level": 4},
     {"key": "messaging.manage", "label": "Set up the SMS and WhatsApp providers", "min_level": 4, "technical": true},
-    {"key": "api.manage", "label": "Create API keys and webhooks for other systems", "min_level": 5}
+    {"key": "api.manage", "label": "Create API keys and webhooks for other systems", "min_level": 5},
+    {"key": "golive.manage", "label": "Plan going live: migration checklist, parallel run, practice company, pilot reports", "min_level": 5},
+    {"key": "support.view", "label": "See and close problem reports sent by staff", "min_level": 4, "technical": true}
   ]
 }

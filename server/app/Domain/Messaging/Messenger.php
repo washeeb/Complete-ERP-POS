@@ -7,6 +7,7 @@ use App\Mail\PlainMessage;
 use App\Models\Message;
 use App\Models\MessageProvider;
 use App\Models\MessageTemplate;
+use App\Models\Tenant;
 use App\Support\Settings;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -109,6 +110,11 @@ final class Messenger
 
     private function deliver(Message $m, ?string $fallbackWebhook): void
     {
+        if (Tenant::isPractice($m->tenant_id)) { // training: logged, never sent to a real phone or mailbox
+            $m->forceFill(['status' => 'practice', 'next_attempt_at' => null, 'error' => 'Practice company: messages are never sent.'])->save();
+
+            return;
+        }
         $provider = $m->channel === 'email' ? null : $this->provider($m->tenant_id, $m->channel);
         if ($m->channel !== 'email' && ! $provider && ! ($m->channel === 'sms' && $fallbackWebhook)) {
             $m->forceFill(['status' => 'not_configured', 'next_attempt_at' => null, 'error' => 'No '.Message::CHANNELS[$m->channel].' provider is set up (Messaging → Providers).'])->save();

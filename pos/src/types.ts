@@ -76,7 +76,7 @@ export type VanDay = {
 export type VisitOutcome = 'sold' | 'order' | 'no_order' | 'closed'
 
 export type Bootstrap = {
-  company: { name: string; currency: string; exponent: number; timezone: string; legal_name: string | null; tin: string | null; vat_no: string | null }
+  company: { name: string; currency: string; exponent: number; timezone: string; legal_name: string | null; tin: string | null; vat_no: string | null; practice?: boolean }
   branch: { id: string; code: string; name: string; address: string | null; phone: string | null }
   till: { id: string; code: string; name: string; warehouse: string } | null
   device: { id: string; name: string; receipt_series: string | null }

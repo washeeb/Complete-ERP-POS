@@ -12,6 +12,7 @@ import { Sell } from './screens/Sell'
 import type { Bootstrap, PostedSale, Product } from './types'
 import './App.css'
 import { applyTheme, getTheme, THEMES, type ThemeChoice } from './theme'
+import { problemContext } from './problems'
 
 type Stage = 'loading' | 'enroll' | 'login' | 'open-shift' | 'sell' | 'receipt' | 'close-shift' | 'handheld' | 'kitchen' | 'error'
 
@@ -167,6 +168,9 @@ export default function App() {
     <div className="app">
       <ThemePicker />
       <div className={`status status-${conn} no-print`} role="status">{LABELS[conn]}{online && live === 'live' ? ' · live' : ''}</div>
+      {boot?.company.practice && (
+        <div className="banner practice no-print" role="status">PRACTICE — nothing here is real: made-up sales, no money, nothing sent to GRA or customers.</div>
+      )}
       {boot?.license?.message && (
         <div className={`banner no-print ${boot.license.read_only ? 'bad' : 'warn'}`} role="alert">{boot.license.read_only ? 'Read-only: ' : ''}{boot.license.message}</div>
       )}
@@ -189,6 +193,9 @@ export default function App() {
       {stage === 'handheld' && <Handheld onLogout={logout} />}
       {stage === 'kitchen' && <Kitchen />}
       {stage === 'close-shift' && boot && <CloseShift boot={boot} online={online} onClosed={logout} onCancel={() => setStage('sell')} />}
+      {boot && ['sell', 'receipt', 'open-shift', 'close-shift', 'handheld'].includes(stage) && (
+        <ReportProblem screen={stage} online={online} queued={queue.pending} />
+      )}
       {stage === 'error' && (
         <div className="card narrow">
           <h1>Something needs attention</h1>
@@ -208,5 +215,54 @@ function ThemePicker() {
       onChange={(e) => { const t = e.target.value as ThemeChoice; setTheme(t); applyTheme(t) }}>
       {(Object.keys(THEMES) as ThemeChoice[]).map((t) => <option key={t} value={t}>Theme: {THEMES[t]}</option>)}
     </select>
+  )
+}
+
+/** "Report a problem" (bottom of the screen while signed in): the cashier's words go to support with the screen and the till's last errors. */
+function ReportProblem({ screen, online, queued }: { screen: string; online: boolean; queued: number }) {
+  const [open, setOpen] = useState(false)
+  const [text, setText] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [result, setResult] = useState('')
+  const [error, setError] = useState('')
+
+  async function send(e: React.FormEvent) {
+    e.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      const r = await api.reportProblem(text.trim(), screen, problemContext({ screen, online, queued }))
+      setResult(`Thank you — problem ${r.number} is recorded${r.sent ? ' and support has been told' : ''}.`)
+      setText('')
+    } catch (err) {
+      setError(err instanceof ApiError && err.code !== 'network' ? err.message : 'No connection to the server: tell your supervisor, or try again when the status says Connected.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <>
+      <button type="button" className="report-problem no-print" onClick={() => { setOpen(true); setResult(''); setError('') }}>Report a problem</button>
+      {open && (
+        <div className="modal" role="dialog" aria-modal="true" aria-label="Report a problem" onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}>
+          <form className="card pay" onSubmit={send}>
+            <h2>Report a problem</h2>
+            {result ? <p className="ok-text">{result}</p> : <p className="muted">What were you doing, and what happened?</p>}
+            {error && <p className="error">{error}</p>}
+            {!result && (
+              <label>Describe it
+                <textarea value={text} onChange={(e) => setText(e.target.value)} rows={4} minLength={5} maxLength={5000} required autoFocus
+                  placeholder="e.g. I pressed Print and nothing came out." />
+              </label>
+            )}
+            <div className="row">
+              <button type="button" onClick={() => setOpen(false)}>{result ? 'Close' : 'Cancel'}</button>
+              {!result && <button type="submit" className="primary" disabled={busy || text.trim().length < 5}>{busy ? 'Sending…' : 'Send'}</button>}
+            </div>
+          </form>
+        </div>
+      )}
+    </>
   )
 }

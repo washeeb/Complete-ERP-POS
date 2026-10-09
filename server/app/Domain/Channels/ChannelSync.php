@@ -15,6 +15,7 @@ use App\Models\Product;
 use App\Models\ProductUom;
 use App\Models\SalesChannel;
 use App\Models\SalesOrder;
+use App\Models\Tenant;
 use App\Support\Qty;
 use App\Support\TenantContext;
 use Illuminate\Http\Client\ConnectionException;
@@ -41,8 +42,8 @@ final class ChannelSync
     /** Turn new outbox events into jobs for this channel. */
     public function dispatch(SalesChannel $channel): int
     {
-        if (! $channel->isActive() || $channel->type === 'storefront' || ConnectorRegistry::isDelivery($channel->type)) {
-            return 0; // delivery apps take orders only
+        if (! $channel->isActive() || $channel->type === 'storefront' || ConnectorRegistry::isDelivery($channel->type) || Tenant::isPractice($channel->tenant_id)) {
+            return 0; // delivery apps take orders only; a practice company never updates a real online store
         }
 
         return $this->consumers->consume('channel:'.$channel->id, function (OutboxEvent $e) use ($channel) {
@@ -84,6 +85,9 @@ final class ChannelSync
     public function runDue(SalesChannel $channel, int $limit = 100): array
     {
         $stats = ['done' => 0, 'failed' => 0];
+        if (Tenant::isPractice($channel->tenant_id)) {
+            return $stats; // practice company: nothing goes to real online stores
+        }
         $connector = $this->connectors->for($channel->type);
         $jobs = ChannelJob::withoutGlobalScopes()->where('channel_id', $channel->id)->where('status', 'pending')
             ->where('next_attempt_at', '<=', now())->orderBy('next_attempt_at')->limit($limit)->get();
