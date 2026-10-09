@@ -36,7 +36,9 @@ jobs:
           docker compose -f installer/docker/docker-compose.yml exec -T app php artisan erp:backup --verify
           docker compose -f installer/docker/docker-compose.yml exec -T app php artisan erp:health || true
       - if: failure()
-        run: docker compose -f installer/docker/docker-compose.yml logs --tail 200
+        run: |
+          docker compose -f installer/docker/docker-compose.yml logs --tail 200
+          docker compose -f installer/docker/docker-compose.yml exec -T app sh -c 'tail -n 80 storage/logs/*.log' || true
 
   ubuntu-script:
     runs-on: ubuntu-24.04

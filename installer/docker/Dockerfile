@@ -27,7 +27,8 @@ FROM php:8.4-fpm-bookworm
 ARG PG_MAJOR=17
 RUN set -eux; \
     apt-get update; \
-    apt-get install -y --no-install-recommends nginx supervisor curl ca-certificates gnupg libicu-dev libpq-dev libzip-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev; \
+    apt-get install -y --no-install-recommends nginx supervisor curl ca-certificates gnupg libicu-dev libpq-dev libzip-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
+        libicu72 libpq5 libzip4 libpng16-16 libjpeg62-turbo libfreetype6; \
     install -d /usr/share/postgresql-common/pgdg; \
     curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc; \
     echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list; \
