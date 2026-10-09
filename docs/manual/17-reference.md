@@ -35,6 +35,9 @@ You can change what a role allows under **People & access → Roles** (you can o
 | `ERP_AUDIT_KEY` | Audit-log seal (created once by `erp:audit-key`). **Back it up, never change it.** |
 | `REVERB_*` | Live updates (optional, 4.9 / 5.9) |
 | `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` | Outgoing e-mail (Chapter 16.1). `MAIL_MAILER=log` only writes e-mails to the log |
+| `BACKUP_PASSPHRASE`, `BACKUP_PG_BIN`, `BACKUP_TIME`, `BACKUP_KEEP_LOCAL` | Backups (Chapter 12.2). **Keep a written copy of the passphrase away from the server.** |
+| `GRA_EVAT_URL`, `GRA_EVAT_KEY`, `GRA_EVAT_TIN`, `GRA_EVAT_TIMEOUT` | GRA E-VAT access from GRA (Chapter 11.5) |
+| `SESSION_SECURE_COOKIE` | `true` once the site uses HTTPS (the Ubuntu script sets it) |
 | `ANTHROPIC_API_KEY` | Only if you choose Claude (cloud AI) in Chapter 15. Leave empty for no cloud AI. |
 | `BROADCAST_CONNECTION`, `QUEUE_CONNECTION`, `CACHE_STORE`, `SESSION_DRIVER` | Leave as provided |
 
@@ -63,6 +66,12 @@ After changing `.env`, run `php artisan optimize`.
 | `php artisan erp:node:join <hq-url> <hq-id> <company-id>` | Pair a branch server with head office |
 | `php artisan erp:stock-check` after a large import | Confirms stock levels still match the ledger |
 | `php artisan erp:bill-memberships` | Raise membership invoices that are due (runs daily by itself) |
+| `php artisan erp:backup` / `erp:backup --verify` | Encrypted backup now / check the newest one (both also run by themselves) |
+| `php artisan erp:backup:key` | Create the backup passphrase (once) |
+| `php artisan erp:backup:restore <file>` | Put a backup back (replaces the data) — Chapter 12.3 |
+| `php artisan erp:health` | All health checks (System → Health); fails when something needs fixing |
+| `php artisan erp:evat-batch --now` | Send the GRA E-VAT till sales waiting (daily mode) |
+| `php artisan erp:load-test` | Speed test of sales and reports on a test system (leaves no data) |
 | `php artisan erp:reports` | Send scheduled reports that are due (runs every 15 minutes by itself) |
 | `php artisan erp:insights` | Refresh forecasts and alerts now (runs daily at 04:30 by itself) |
 | `php artisan license:status` | Licence state and limits |

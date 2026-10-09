@@ -41,3 +41,23 @@ Bolt Food, Glovo and Chowdeck orders can arrive by webhook (with the keys from *
 Booking and appointment messages, digital receipts, invoice e-mails and scheduled reports go through **your own** SMS, WhatsApp and e-mail accounts. Setting them up is explained in **Chapter 16**.
 
 **Note:** if you set an *SMS gateway address* under Settings → Restaurant or Services in an earlier version, it keeps working for those messages until you choose an SMS provider in Chapter 16.
+
+## 11.5 GRA E-VAT (electronic VAT invoicing)
+
+Once GRA has onboarded your business for E-VAT, it gives you the E-VAT address and your API key.
+
+1. Put them in the server's `.env` (head office): `GRA_EVAT_URL=…`, `GRA_EVAT_KEY=…`, `GRA_EVAT_TIN=<your TIN>`, then `php artisan optimize`. Use GRA's **sandbox** address first.
+2. **System → Settings → GRA E-VAT → Report to GRA**, choose one:
+
+| Mode | What happens | Receipts |
+|---|---|---|
+| **Each sale and invoice as it happens** | Every till sale and invoice is sent at once. If GRA or the internet is down, it is sent automatically later. | Carry GRA's code and QR code when GRA answers within a few seconds |
+| **Till sales in a daily batch** | Till sales are sent together after the batch time (e.g. 23:30); invoices still go one by one | No GRA code |
+| **Invoices and credit notes only** | Only invoices to business customers are reported | — |
+
+3. **Finance → GRA E-VAT** lists every report: *Accepted by GRA* (with GRA's reference), *Waiting to send*, or *Refused by GRA* (with GRA's reason — fix it, e.g. the customer's TIN, then **Send again**).
+
+**Why:** GRA requires VAT-registered businesses to report invoices electronically. The mode lets you start with invoices only, and move to real-time when your tills are reliably online.
+
+**Note:** test with GRA's sandbox and compare a few documents in Finance → GRA E-VAT with what GRA shows before switching to the production address. `docs/evat.md` describes the fields sent.
+

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { isDesktop, readScale } from '../hardware'
 import { api, ApiError } from '../api'
 import { addMarkdown, addToCart, addWeighed, findByBarcode, priceCart, qtyAllowed, search, setManual, setQty, type CartLine } from '../cart'
 import { findMarkdown, parseScaleLabel, productForPlu } from '../scale'
@@ -530,7 +531,11 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
                   </td>
                   <td>{l.diningItemId || l.service || l.serials || l.repairJobId || l.alteration || l.pass || l.appointmentId || l.autoDeposit ? prettyQty(l.qtyMilli) : (
                     <input className="qty mono" inputMode="decimal" defaultValue={prettyQty(l.qtyMilli)} key={l.qtyMilli}
-                      onBlur={(e) => changeQty(l, e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} aria-label={`Quantity of ${l.product.name}`} />)}</td>
+                      onBlur={(e) => changeQty(l, e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} aria-label={`Quantity of ${l.product.name}`} />)}
+                    {isDesktop() && l.unit.decimals > 0 && !l.diningItemId && (
+                      <button type="button" className="small" aria-label={`Weigh ${l.product.name} on the scale`}
+                        onClick={() => void readScale().then((kg) => (kg ? changeQty(l, kg) : setMessage('No scale is set up on this till.'))).catch((e) => setMessage(String(e)))}>Weigh</button>
+                    )}</td>
                   <td>
                     {l.product.units.length > 1 ? (
                       <select value={l.unit.id} onChange={(e) => changeUnit(l, e.target.value)} aria-label="Unit">

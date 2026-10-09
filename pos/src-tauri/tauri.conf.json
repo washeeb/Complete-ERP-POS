@@ -1,0 +1,38 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Synclytics Till",
+  "version": "0.24.0",
+  "identifier": "com.synclytics.till",
+  "build": {
+    "frontendDist": "setup"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis",
+      "msi"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "publisher": "Synclytics",
+    "shortDescription": "Synclytics ERP till",
+    "longDescription": "The Synclytics ERP till with silent receipt printing (ESC/POS), cash drawer and scale support. It opens the till from your Synclytics server.",
+    "windows": {
+      "nsis": {
+        "installMode": "perMachine"
+      }
+    }
+  }
+}

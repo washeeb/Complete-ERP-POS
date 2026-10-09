@@ -1,0 +1,42 @@
+# Synclytics ERP on one server with Docker (cloud / head office). See installation guide, Chapter 5 (Docker).
+#   cp installer/docker/.env.docker.example installer/docker/.env   # then fill it in
+#   docker compose -f installer/docker/docker-compose.yml up -d --build
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-erp}
+      POSTGRES_USER: ${DB_USERNAME:-erp}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-erp}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build:
+      context: ../..
+      dockerfile: installer/docker/Dockerfile
+    image: synclytics-erp:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${REVERB_PUBLIC_PORT:-8080}:8080"
+    volumes:
+      - storage:/var/www/server/storage   # uploads, backups kept on the server, logs
+      - ${BACKUP_HOST_DIR:-./backups}:/backups   # a host folder (second disk / USB mount) you can add as a backup destination
+
+volumes:
+  db-data:
+  storage:

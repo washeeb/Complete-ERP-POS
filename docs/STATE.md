@@ -1,9 +1,18 @@
 # State (resume file)
 
-**Phase:** 12 — Reporting, notifications, integrations · **Status:** done on branch `phase-12-reporting` (PR to `main`); next Phase 13 (hardening)
-**Updated:** 2026-10-28 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–11 and licensing merged (PRs #1–#23)
+**Phase:** 13 — Hardening · **Status:** done on branch `phase-13-hardening` (PR to `main`); next Phase 14 (pilot & launch)
+**Updated:** 2026-10-29 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–12 and licensing merged (PRs #1–#24)
 
-## Phase 12 — done on branch `phase-12-reporting` (PR to `main`)
+## Phase 13 — done on branch `phase-13-hardening` (PR to `main`)
+- **Owner answers:** backups to USB/folder, S3-compatible, Google Drive, SFTP; Windows installer + Docker + Ubuntu script; desktop till now; all three E-VAT modes selectable.
+- **Server:** migration `2026_10_29_100001` (`backup_destinations`, `backup_runs`, `fiscal_submissions`); `app/Domain/Backup/{BackupCrypto, Destinations, BackupService}`, `config/backup.php`, commands `erp:backup` (+ `--verify`), `erp:backup:restore`, `erp:backup:key`; `app/Domain/Fiscal/{FiscalAdapter, GraEvatAdapter, FiscalService, FiscalRelay}`, `config/fiscal.php`, `erp:evat-batch`, settings `evat.mode`, `evat.daily_time`, receipt `fiscal`; `SystemHealth` + `erp:health` (scheduler heartbeat every minute, relay heartbeat); `SecurityHeaders` middleware; `erp:load-test`; phpseclib.
+- **Back office:** System → Backups, Health; Finance → GRA E-VAT.
+- **Installers:** `installer/windows/{install.ps1, synclytics.iss}`, `installer/ubuntu/install.sh`, `installer/docker/*` (+ `.dockerignore`); CI workflow `packaging.yml` builds and smoke-tests all of them and the desktop till; main CI installs PostgreSQL 17 client tools.
+- **Desktop till:** `pos/src-tauri` (Tauri 2: printer RAW/9100, drawer, serial scale, set-up page, navigation lock); `pos/src/{escpos.ts, hardware.ts}`; Receipt silent print + set-up; Sell "Weigh".
+- **Tests:** HardeningTest (6, real pg_dump backup); `escpos.test.ts`; e2e `a11y-desktop.spec.ts` (axe WCAG 2.2 AA + desktop print); cargo test (scale parsing) in CI. Totals: 348 Pest, 57 Vitest, 17 Playwright. Rust, Docker and Inno Setup are not installed locally: the desktop till, Docker image and installers are verified only in CI (packaging.yml).
+- **Docs:** security-review.md, performance.md, launch-checklist.md, evat.md; manual 4.0, 5.0, 9.7, 11.5, 12.2–12.3, 13, 17; CHANGELOG 0.24.0; DECISIONS 13.
+
+## Phase 12 — done (merged, PR #24)
 - **Owner answers:** SMS Hubtel/Arkesel/mNotify/webhook (client chooses); SMTP e-mail; WhatsApp built, off until keys; public API with scoped keys; QuickBooks, Xero, Sage exports.
 - **Server:** migration `2026_10_28_100001` (`notifications`, `message_providers`, `message_templates`, `messages`, `saved_reports`, `api_clients`, `webhook_endpoints`, `webhook_deliveries`); `app/Domain/Messaging/*` (Messenger, Gateways, Phone, Templates, ProviderSetup, Notifier, NotificationRelay, ReceiptSender), `app/Mail/PlainMessage`; `app/Domain/Reports/*` (ReportEngine, ReportService), command `erp:reports`; `app/Domain/Api/*` (ApiClients, OpenApi, WebhookDispatcher), `EnsureApiClient` middleware, `PublicApiController` (`/api/public/v1`); `Domain/Finance/AccountingExport`; `Support/Exports/XlsxWriter`, `Domain/Imports/SheetFile`; relay runs notifications, message retries, webhooks; panel database notifications.
 - **Back office:** System → Messaging, API clients; Messages → Message log, Templates; Reports → Report builder, Saved reports; Finance → Export to QuickBooks / Xero / Sage; Excel on every Export; Import data takes .xlsx with preview and column matching; dashboard stats.
@@ -179,7 +188,7 @@
 - Signed activation keys, expiry with grace then read-only, daily check-in, tamper detection, watermarks — see docs/licensing.md. Dev licence valid to 2027-12-31 (dev key in `.local-secrets/license-dev.json`). Before the first customer release: production key (`license:keygen`), its public key in `config/license.php`, a licence server.
 
 ## Next
-- Phase 13 — Hardening: security review, performance/load, accessibility, backup/restore drill, e-invoicing adapter (GRA E-VAT), installers for all modes; ask the owner's decisions in a batch first.
+- Phase 14 — Pilot & launch: data migration, training material, go-live runbook, rollback plan; ask the owner's decisions in a batch first. Before a pilot: third-party penetration test, GRA E-VAT sandbox verification with real credentials.
 
 ## Owner decisions pending
 - Accountant check of the Ghana tax set-up (VAT/NHIL/GETFund rates and the payroll PAYE bands / SSNIT rates — Payroll → Tax and SSNIT rules) before go-live.

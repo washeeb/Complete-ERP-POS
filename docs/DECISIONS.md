@@ -487,6 +487,14 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Phase 13 — Hardening (2026-10-29)
+- **Owner answers:** backups to all four destinations (USB/second drive, S3-compatible, Google Drive, SFTP); Windows installer, Docker Compose and an Ubuntu script; build the desktop till now; all three E-VAT modes for the developer to choose.
+- **Backups are built in, not scripts:** one encrypted file (pg_dump custom format + .env + private files + manifest with row counts) per run; passphrase in `.env` and on paper; destinations are node-local with encrypted credentials; S3 by our own SigV4 signing (verified against AWS's published example) instead of the AWS SDK; SFTP with phpseclib; Google Drive by REST with the client's own OAuth app. The restore drill uses separate `psql` sessions and a scratch database so the live connection is never touched; without CREATEDB it reports "not run" rather than failing.
+- **E-VAT** is a pluggable adapter; the GRA payload follows the usual E-VAT structure but must be confirmed in GRA's sandbox (GRA gives the spec to onboarded taxpayers). Realtime tries inline with a short timeout so the receipt can carry the code; otherwise the relay sends it.
+- **Installers automate the manual chapters** (same steps, same choices), so the guide stays the reference; Windows keeps `artisan serve` + Task Scheduler (as Chapter 4) rather than a new web server; PostgreSQL from EDB's binaries ZIP registered as a service (no installer UI).
+- **Desktop till = a window on the server's till** plus hardware commands; navigation is restricted to the configured server, so the bridge cannot be reached from other sites. ESC/POS is generated in the PWA (tested in Vitest) and sent raw.
+- **Security headers** without a full CSP for the back office (Filament/Livewire inline scripts); frame-ancestors/object-src/base-uri/form-action locked.
+
 ## Phase 12 — Reporting, notifications, integrations (2026-10-28)
 - **Owner answers:** build all four SMS options (Hubtel, Arkesel, mNotify, generic webhook) for the client to choose; any SMTP server for e-mail; WhatsApp Business built but off until keys; public API with scoped keys plus QuickBooks, Xero and Sage exports.
 - **Provider credentials** are per server, encrypted with that server's key and never synced or shown; templates (wording) are company data synced from head office. E-mail credentials stay in `.env` (Laravel mail), like other secrets.

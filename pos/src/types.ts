@@ -104,6 +104,7 @@ export type PostedSale = {
   lines: { line_no: number; sku: string; name: string; uom: string; qty: string; unit_price_minor: number; line_total_minor: number; discount_minor?: number; promotions?: { name: string; saving_minor: number }[]; note?: string | null; serials?: string[]; warranty_until?: string | null; id?: string; staff_id?: string | null; service_pass_id?: string | null }[]
   tip_minor?: number; order_number?: string | null
   licence_keys?: { sale_line_id: string; key: string }[] // Services: software keys handed out, printed on the receipt
+  fiscal?: { status: string; code: string | null; qr: string | null; mode: string } | null // GRA E-VAT
   kitchen?: { name: string; qty: string; note: string | null; station: string }[] // offline counter sale: ticket the till prints itself
   kind?: 'sale' | 'return'; discount_minor?: number; points_earned?: number
   payments: { method: string; provider: string | null; amount_minor: number; tendered_minor: number; reference: string | null; status: string }[]

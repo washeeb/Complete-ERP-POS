@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.24.0] — 2026-10-29 · Phase 13 Hardening
+### Added
+- **Automatic encrypted backups** every night (database, settings, uploaded files; Argon2id + XChaCha20-Poly1305) to a USB/second-drive folder, S3-compatible storage, Google Drive or SFTP, with retention per destination; weekly check (decrypt, read, restore drill into a scratch database); `erp:backup`, `erp:backup:restore`, `erp:backup:key`; System → Backups.
+- **GRA E-VAT** with three selectable modes (each sale as it happens with the GRA code/QR on the receipt, a daily batch, or invoices only); retries; Finance → GRA E-VAT.
+- **System → Health** / `erp:health` (scheduler, relay, backups and restore check, disk, live-site settings, HTTPS, e-mail, licence, stuck queues).
+- **Installers:** Windows `setup.exe` (Inno Setup + `install.ps1`: PostgreSQL 17, PHP 8.4, Composer, start-up tasks), Ubuntu `install.sh`, Docker image + compose; all built and smoke-tested in CI.
+- **Desktop till (Tauri):** silent ESC/POS receipt printing (Windows printer or network 9100), cash-drawer kick after cash, scale reading on COM ports, locked to the shop's server.
+- Security headers on every answer; WCAG 2.2 AA automated checks of the till (contrast fix); `erp:load-test`; security review, performance results, launch checklist.
+
 ## [0.23.0] — 2026-10-28 · Phase 12 Reporting, notifications, integrations
 ### Added
 - **Messaging:** SMS through Hubtel, Arkesel, mNotify or any gateway (webhook) — the client chooses; WhatsApp Business (Meta Cloud API, approved templates; off until keys); e-mail through any SMTP server. Editable templates with on/off per message; message log with automatic retries; test buttons.

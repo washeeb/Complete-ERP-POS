@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Synclytics Till — set-up</title>
+  <style>
+    :root { color-scheme: light dark; --bg: #f8fafc; --fg: #0f172a; --muted: #475569; --card: #fff; --line: #cbd5e1; --accent: #334155; --bad: #b91c1c; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #0f172a; --fg: #e2e8f0; --muted: #94a3b8; --card: #1e293b; --line: #334155; --accent: #e2e8f0; --bad: #f87171; } }
+    * { box-sizing: border-box; } body { margin: 0; font: 16px/1.5 system-ui, sans-serif; background: var(--bg); color: var(--fg); }
+    main { max-width: 640px; margin: 48px auto; padding: 0 16px; } h1 { font-size: 1.6rem; margin: 0 0 4px; } p { color: var(--muted); }
+    section { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin: 16px 0; }
+    label { display: grid; gap: 4px; margin: 12px 0; font-weight: 600; } input, select { font: inherit; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
+    button { font: inherit; padding: 10px 16px; border-radius: 8px; border: 0; background: var(--accent); color: var(--bg); cursor: pointer; margin-right: 8px; }
+    button.secondary { background: transparent; color: var(--fg); border: 1px solid var(--line); } .msg { min-height: 1.5em; } .bad { color: var(--bad); }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; } :focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Synclytics Till</h1>
+  <p id="intro">Connect this till to your Synclytics server, and choose the receipt printer, cash drawer and scale.</p>
+
+  <section aria-labelledby="h-server">
+    <h2 id="h-server">1. Server</h2>
+    <label>Server address <input id="server" placeholder="http://192.168.1.10:8010" autocomplete="off" required></label>
+    <p>The address of the shop server (or head office) — the same one tills use in a browser, without <code>/pos</code>.</p>
+  </section>
+
+  <section aria-labelledby="h-hw">
+    <h2 id="h-hw">2. Receipt printer, drawer and scale (optional)</h2>
+    <label>Receipt printer
+      <select id="printer"><option value="">— print through the normal print window —</option></select>
+    </label>
+    <label>…or a network printer <input id="netprinter" placeholder="tcp://192.168.1.50:9100"></label>
+    <label class="row"><input type="checkbox" id="drawer"> Open the cash drawer (connected to the printer) after cash sales</label>
+    <div class="row"><button type="button" class="secondary" id="test">Print a test receipt</button><span class="msg" id="testmsg" role="status"></span></div>
+    <label>Scale (COM port) <select id="scale"><option value="">— no scale —</option></select></label>
+    <label>Scale speed (baud) <select id="baud"><option>9600</option><option>4800</option><option>2400</option><option>19200</option></select></label>
+    <div class="row"><button type="button" class="secondary" id="weigh">Read the scale</button><span class="msg" id="weighmsg" role="status"></span></div>
+  </section>
+
+  <div class="row"><button type="button" id="save">Save and open the till</button><span class="msg" id="msg" role="status"></span></div>
+</main>
+<script>
+  const T = window.__TAURI__.core;
+  const $ = (id) => document.getElementById(id);
+  const say = (id, text, bad) => { $(id).textContent = text; $(id).className = 'msg' + (bad ? ' bad' : ''); };
+  const params = new URLSearchParams(location.search);
+  if (params.has('blocked')) say('msg', 'That address is not your Synclytics server, so the till did not open it.', true);
+
+  async function load() {
+    const cfg = await T.invoke('get_config');
+    $('server').value = cfg.server || '';
+    for (const p of await T.invoke('list_printers')) $('printer').append(new Option(p, p));
+    for (const p of await T.invoke('list_scale_ports')) $('scale').append(new Option(p, p));
+    if (cfg.printer && cfg.printer.startsWith('tcp://')) $('netprinter').value = cfg.printer; else $('printer').value = cfg.printer || '';
+    $('drawer').checked = !!cfg.drawer;
+    $('scale').value = cfg.scale_port || '';
+    $('baud').value = String(cfg.scale_baud || 9600);
+  }
+  async function saveHardware() {
+    await T.invoke('set_hardware', { printer: $('netprinter').value.trim() || $('printer').value || null, drawer: $('drawer').checked,
+      scalePort: $('scale').value || null, scaleBaud: Number($('baud').value) });
+  }
+  $('test').onclick = async () => {
+    try {
+      await saveHardware();
+      // ESC @ (reset), text, 4 line feeds, GS V 1 (cut)
+      const bytes = [0x1b, 0x40, ...new TextEncoder().encode('Synclytics Till\nTest receipt - printer works.\n\n\n\n'), 0x1d, 0x56, 0x01];
+      await T.invoke('print_raw', { data: btoa(String.fromCharCode(...bytes)), openDrawer: $('drawer').checked });
+      say('testmsg', 'Sent to the printer.');
+    } catch (e) { say('testmsg', String(e), true); }
+  };
+  $('weigh').onclick = async () => {
+    try { await saveHardware(); say('weighmsg', (await T.invoke('read_scale')) + ' kg'); } catch (e) { say('weighmsg', String(e), true); }
+  };
+  $('save').onclick = async () => {
+    try { await saveHardware(); await T.invoke('set_server', { server: $('server').value }); } catch (e) { say('msg', String(e), true); }
+  };
+  load().catch((e) => say('msg', String(e), true));
+</script>
+</body>
+</html>

@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Domain\Fiscal\FiscalService;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
@@ -45,6 +46,16 @@ final class Settings
             'type' => 'bool', 'default' => false, 'group' => 'Distribution',
             'label' => 'Book container deposits as money owed to customers',
             'help' => 'Off: deposits on crates, bottles and cylinders count as sales, and empties bought back reduce sales. On: deposits are held as a liability (Container deposits held) and the containers out with customers stay an asset until they come back. Change it only at the start of a month so a month is not split between the two methods.',
+        ],
+        'evat.mode' => [
+            'type' => 'choice', 'default' => 'off', 'group' => 'GRA E-VAT', 'options' => FiscalService::MODES,
+            'label' => 'Report to GRA (E-VAT)',
+            'help' => 'Each sale as it happens: the GRA code and QR print on the receipt (when GRA answers within a few seconds; otherwise sent shortly after). Daily batch: till sales go together once a day, receipts carry no GRA code. Invoices only: till sales are not reported. Needs GRA_EVAT_URL and GRA_EVAT_KEY in the server settings (.env).',
+        ],
+        'evat.daily_time' => [
+            'type' => 'string', 'default' => '23:30', 'max' => 5, 'group' => 'GRA E-VAT',
+            'label' => 'Daily batch time (HH:MM)',
+            'help' => 'In daily mode, the till sales are sent after this time each day (and anything left over is sent the next day).',
         ],
         'ai.provider' => [
             'type' => 'choice', 'default' => 'off', 'group' => 'AI', 'options' => ['off' => 'Off — built-in insights only', 'ollama' => 'Local model (Ollama on your server)', 'claude' => 'Claude (cloud, within the monthly budget)'],

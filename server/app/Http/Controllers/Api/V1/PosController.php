@@ -6,6 +6,7 @@ use App\Domain\Customers\CustomerLedger;
 use App\Domain\Customers\CustomerService;
 use App\Domain\Devices\DeviceSignature;
 use App\Domain\Fashion\AlterationService;
+use App\Domain\Fiscal\FiscalService;
 use App\Domain\Grocery\MarkdownService;
 use App\Domain\Licensing\LicenseManager;
 use App\Domain\Licensing\Watermark;
@@ -28,6 +29,7 @@ use App\Models\Customer;
 use App\Models\Device;
 use App\Models\DiningOrder;
 use App\Models\DrugInteraction;
+use App\Models\FiscalSubmission;
 use App\Models\LegalEntity;
 use App\Models\ModifierGroup;
 use App\Models\PatientProfile;
@@ -290,6 +292,9 @@ class PosController extends Controller
         ]);
         $device = $this->device($request);
         $result = $sales->post($device, $request->user(), $request->all());
+        if (! $result['replayed']) {
+            app(FiscalService::class)->submitSaleNow($result['sale']); // E-VAT realtime: the GRA code on the receipt
+        }
 
         return response()->json(['sale' => $this->saleJson($result['sale']), 'replayed' => $result['replayed']], $result['replayed'] ? 200 : 201);
     }
@@ -422,6 +427,8 @@ class PosController extends Controller
             'kind' => $s->kind, 'discount_minor' => (int) $s->discount_minor, 'points_earned' => (int) $s->points_earned,
             'payments' => $s->payments->map(fn ($p) => ['method' => $p->method, 'provider' => $p->provider, 'amount_minor' => $p->amount_minor,
                 'tendered_minor' => $p->tendered_minor, 'reference' => $p->reference, 'status' => $p->status])->values(),
+            'fiscal' => ($f = FiscalSubmission::where('doc_type', 'sale')->where('doc_id', $s->id)->first(['status', 'gra_reference', 'qr_code', 'mode']))
+                ? ['status' => $f->status, 'code' => $f->gra_reference, 'qr' => $f->qr_code, 'mode' => $f->mode] : null,
         ];
     }
 }

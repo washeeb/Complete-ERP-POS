@@ -4,6 +4,24 @@ Follow every step in order. Allow about two hours the first time. You need an in
 
 In this chapter the software goes in `C:\Synclytics` and PHP in `C:\php`. If you choose other folders, change them in every command.
 
+## 4.0 The quick way: the installer (recommended)
+
+Synclytics gives you **`synclytics-erp-server-setup-<version>.exe`** with your release. It does everything in 4.2–4.9 for you.
+
+1. Do 4.1 (prepare the computer) first.
+2. Double-click the setup file, click **Yes** when Windows asks for permission (it must install a database and services).
+3. Choose **Setup A** (this PC is also the till) or **Setup B** (shop server for tills on the network). Leave the server id as **HQ** unless Synclytics gave you a branch server id (Chapter 10).
+4. A blue window shows each step. It downloads PostgreSQL, PHP and Composer from their official sites (about 400 MB — keep the internet on), creates the database with its own random password, the settings, the keys, the tables, and the start-up tasks.
+5. At the end it shows the **backup passphrase** — write it on paper and keep it away from the server (Chapter 12) — and asks for your company name and the owner's account.
+
+**Why:** the installer follows exactly the manual steps below, so you can still read them to understand what was done, or do them by hand on an unusual PC.
+
+**Note:** the passwords the installer created (database) are in `C:\Synclytics\installer-secrets.txt`, readable by administrators only. Running the installer again (a newer version) updates the software and keeps your data, settings and keys.
+
+**Advanced:** the same steps without the setup file: `powershell -ExecutionPolicy Bypass -File install.ps1 -Release <release.zip> -Setup B` (as administrator).
+
+If you used the installer, continue with Chapter 6 (licence). The rest of this chapter is the manual way.
+
 ## 4.1 Prepare the computer
 
 1. **Install all Windows updates** (Start → Settings → Windows Update), restart, and repeat until none are left.

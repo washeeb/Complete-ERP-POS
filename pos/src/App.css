@@ -1,5 +1,5 @@
 :root {
-  --bg: #f4f5f7; --panel: #ffffff; --text: #111827; --muted: #6b7280; --line: #e5e7eb;
+  --bg: #f4f5f7; --panel: #ffffff; --text: #111827; --muted: #5b6270; /* 5.2:1 on --bg (WCAG AA) */ --line: #e5e7eb;
   --primary: #1f2937; --primary-text: #ffffff; --accent: #2563eb; --danger: #b91c1c; --warn-bg: #fef3c7; --warn-text: #78350f;
   --ok-bg: #dcfce7; --ok-text: #14532d; --bad-bg: #fee2e2; --bad-text: #7f1d1d; color-scheme: light;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 16px; color: var(--text);
