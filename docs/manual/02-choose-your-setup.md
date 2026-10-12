@@ -6,7 +6,7 @@ There are five ways to run SES Labs. They use the **same software**; only where 
 
 | | Setup | Best for | Server | Where tills connect |
 |---|---|---|---|---|
-| **A** | **One computer** | A small shop with one till | The till PC itself (Windows) | The same PC (`http://localhost:8010/pos/`) |
+| **A** | **One computer** | A small shop with one till | The till PC itself (Windows) | The same PC (`https://localhost/pos/`) |
 | **B** | **One shop, several tills** | A shop, pharmacy or restaurant with 2–20 tills and devices | One PC or small server in the shop (Windows or Ubuntu) | Over the shop's network (LAN / Wi-Fi) |
 | **C** | **Central server for several branches** | Branches joined by a private network (VPN) or in one building | A server at head office (Ubuntu recommended) | Over the private network |
 | **D** | **Cloud head office** | Several branches in different towns, owner wants to see everything from anywhere | A rented cloud server with a domain name and HTTPS (Ubuntu) | Over the internet |
@@ -33,7 +33,7 @@ Answer these questions in order:
 
 - One Windows 10/11 PC (the till) with a receipt printer and barcode scanner.
 - Chapters: 3 → **4 (Windows)** → 6 → 7 → 8 → 9 → 12.
-- The till opens at `http://localhost:8010/pos/` on the same PC, so no extra network set-up is needed.
+- The till opens at `https://localhost/pos/` on the same PC, so no extra network set-up is needed.
 
 ### B — One shop, several tills
 

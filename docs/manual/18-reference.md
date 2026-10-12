@@ -49,9 +49,10 @@ After changing `.env`, run `php artisan optimize`.
 
 | Port | Used by | Open to |
 |---|---|---|
-| 8010 | Server on Windows (back office, tills) | Shop network (setup B), not the internet |
-| 80 / 443 | Server on Ubuntu (Nginx) | Network or internet (443 with HTTPS) |
-| 8080 | Live updates (Reverb) | Shop network on Windows; behind Nginx on Ubuntu |
+| 443 | The web server: Caddy on Windows, Nginx on Ubuntu (back office, tills, live updates) | Shop network, or the internet with an internet name |
+| 80 | Sends visitors on to https; on a Windows shop server, also hands out its certificate (`/ca.crt`) | As 443 |
+| 9001–9004 | PHP workers behind the web server (Windows) | **This server only** |
+| 8080 | Live updates (Reverb) | **This server only** on Windows (reached through 443); behind Nginx on Ubuntu |
 | 5432 | PostgreSQL | **This server only** — never open it to the network |
 | 22 | SSH (Ubuntu remote administration) | Your administrators only |
 

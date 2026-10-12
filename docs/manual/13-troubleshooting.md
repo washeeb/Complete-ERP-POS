@@ -32,7 +32,8 @@ Find the symptom, then try the fixes in order.
 
 | Symptom | Cause and fix |
 |---|---|
-| Till shows *working offline* but the server is up | Network or Wi-Fi between till and server. Open `http://<server-address>:8010/up` on the till's browser. On Windows servers, check the firewall rule (4.8). |
+| Till shows *working offline* but the server is up | Network or Wi-Fi between till and server. Open `https://<server-address>/up` on the till's browser. On Windows servers, check the firewall rule (4.8, step 8). |
+| The browser warns *Your connection is not private* | The device does not trust the server's certificate yet (4.9), or the server's address changed since installation (run the installer again, then 4.9 on each device). |
 | The till does not work at all when the server is off | Offline was never enabled on that device: setups B/C/E need 9.3; then open the till once while the server is on. |
 | Enrolling a till fails on a network address (`http://192.168…`) | The browser does not trust the address yet: do 9.3 on that device. |
 | Cashier cannot sign in offline | They must have signed in on **this** till while it was online within the offline period (System → Settings → Offline till sign-in lasts). |

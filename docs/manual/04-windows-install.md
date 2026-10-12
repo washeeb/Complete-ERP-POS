@@ -10,9 +10,11 @@ SES Labs gives you **`SESLabs-server-setup-<version>.exe`** with your release. I
 
 1. Do 4.1 (prepare the computer) first.
 2. Double-click the setup file, click **Yes** when Windows asks for permission (it must install a database and services).
-3. Choose **Setup A** (this PC is also the till) or **Setup B** (shop server for tills on the network). Leave the server id as **HQ** unless SES Labs gave you a branch server id (Chapter 10).
-4. A blue window shows each step. It downloads PostgreSQL, PHP and Composer from their official sites (about 400 MB — keep the internet on), creates the database with its own random password, the settings, the keys, the tables, and the start-up tasks.
-5. At the end it shows the **backup passphrase** — write it on paper and keep it away from the server (Chapter 12) — and asks for your company name and the owner's account.
+3. Choose **Setup A** (this PC is also the till) or **Setup B** (shop server for tills on the network). Leave the server id as **HQ** unless SyncLytics gave you a branch server id (Chapter 10).
+4. **Reached from the internet?** Leave both boxes empty for a server used only in the shop (the usual case). Only if this server has an internet name pointing to it (for example `shop.example.com`, with ports 80 and 443 forwarded to it by your router), type that name and an e-mail address.
+   **Why:** with an internet name, a free certificate from Let's Encrypt is fetched and renewed automatically. Without one, the server makes its own certificate for the shop network (4.9).
+5. A blue window shows each step. It downloads PostgreSQL, PHP, Composer and the **Caddy** web server from their official sites (about 450 MB; keep the internet on) and checks each download against its published checksum. It then creates the database with its own random password, the settings, the keys, the tables, and the start-up tasks.
+6. At the end it shows the **backup passphrase** — write it on paper and keep it away from the server (Chapter 12) — and asks for your company name and the owner's account.
 
 **Why:** the installer follows exactly the manual steps below, so you can still read them to understand what was done, or do them by hand on an unusual PC.
 
@@ -20,7 +22,9 @@ SES Labs gives you **`SESLabs-server-setup-<version>.exe`** with your release. I
 
 **Advanced:** the same steps without the setup file: `powershell -ExecutionPolicy Bypass -File install.ps1 -Release <release.zip> -Setup B` (as administrator).
 
-If you used the installer, continue with Chapter 6 (licence). The rest of this chapter is the manual way.
+The server is then reached over **https** only: `https://localhost/admin` (setup A), or `https://<server-address>/admin` (setup B, for example `https://192.168.1.10/admin`). For setup B, every till, tablet and other PC must trust the server once: see **4.9**.
+
+If you used the installer, do 4.9 (setup B), then continue with Chapter 6 (licence). The rest of this chapter is the manual way.
 
 ## 4.1 Prepare the computer
 
@@ -143,7 +147,8 @@ cd C:\SESLabs\server
    ```
    APP_ENV=production
    APP_DEBUG=false
-   APP_URL=http://<server-address>:8010
+   APP_URL=https://<server-address>
+   SESSION_SECURE_COOKIE=true
    DB_PASSWORD=<db-password>
    ERP_NODE_ROLE=hq
    ERP_NODE_ID=HQ
@@ -152,7 +157,7 @@ cd C:\SESLabs\server
    - `<server-address>`: `localhost` for setup A; the fixed address from 4.1 (e.g. `192.168.1.10`) for setup B.
    - For a **branch server**, use `ERP_NODE_ROLE=branch` and the branch server's id (e.g. `B01`) as given in Chapter 10.
 
-   **Why:** `.env` tells the software where its database is, what address it is reached on, and that it is a live system (`APP_DEBUG=false` hides technical error details from users).
+   **Why:** `.env` tells the software where its database is, what address it is reached on, and that it is a live system (`APP_DEBUG=false` hides technical error details from users). `SESSION_SECURE_COOKIE=true` makes browsers send the sign-in cookie only over https.
 
    **Warning:** `.env` will hold your secret keys. Never e-mail it, never put it on a shared drive, and include it in your backups (Chapter 12).
 
@@ -216,70 +221,203 @@ npm run build:server
 
 ## 4.8 Start the server automatically
 
-The server needs two programs running all the time:
+The server needs these programs running all the time:
 
-- the **web server**, which answers the back office and the tills;
-- the **scheduler**, which runs the routine jobs every minute (sending to online stores, syncing branches, posting to the accounts, reminders, the daily licence check-in, the nightly insights and alerts).
+- the **web server (Caddy)**: the only program the tills and browsers talk to. It serves everything over **https**, so passwords, PINs and sales cannot be read by anyone else on the network;
+- **PHP workers**: they run SES Labs itself, behind the web server. Each one serves one request at a time, so there are four;
+- the **scheduler**: it runs the routine jobs every minute (sending to online stores, syncing branches, posting to the accounts, reminders, the daily licence check-in, the nightly insights and alerts);
+- **live updates (Reverb)**: they tell tills about price and stock changes within seconds. They are reached through the web server, so no extra port is open.
 
-We register them with Windows **Task Scheduler** so they start with the computer, even when nobody is signed in, and restart if they stop.
+We register them with Windows **Task Scheduler**, so they start with the computer even when nobody is signed in, and restart if they stop.
 
-Open **PowerShell as administrator** and paste this whole block. For setup A, change `0.0.0.0` to `127.0.0.1` on the second line (only this PC may reach the server).
+**Step 1: get Caddy.** Download `caddy_2.10.0_windows_amd64.zip` from the official releases page `https://github.com/caddyserver/caddy/releases` and unzip it to `C:\SESLabs\caddy`.
+
+**Why:** Caddy is a widely used web server that gets and renews https certificates by itself.
+
+**Step 2: protect its data folder.** In PowerShell as administrator:
+
+```
+New-Item -ItemType Directory -Force C:\SESLabs\caddy\data
+icacls C:\SESLabs\caddy\data /inheritance:r /grant:r "Administrators:(OI)(CI)F" "SYSTEM:(OI)(CI)F"
+```
+
+**Why:** on the shop network Caddy acts as its own small certificate authority, and its secret key lives in this folder. Only administrators may read it.
+
+**Step 3: the settings file.** Create `C:\SESLabs\Caddyfile` with Notepad. This example is for setup B with address `192.168.1.10` and computer name `shopserver`; change both. For setup A, use `localhost` as the address, remove the whole `http://…` block, and add the line `default_bind 127.0.0.1` under `admin off`.
+
+```
+{
+	admin off
+	skip_install_trust
+	storage file_system "C:/SESLabs/caddy/data"
+	pki {
+		ca local {
+			name "SES Labs on shopserver"
+			root_cn "SES Labs shopserver Root"
+			intermediate_cn "SES Labs shopserver Intermediate"
+		}
+	}
+}
+
+http://192.168.1.10, http://shopserver {
+	handle /ca.crt {
+		root * "C:/SESLabs/caddy/data/pki/authorities/local"
+		rewrite * /root.crt
+		header Content-Type application/x-x509-ca-cert
+		file_server
+	}
+	handle {
+		redir https://{host}{uri} permanent
+	}
+}
+
+192.168.1.10, shopserver {
+	tls internal
+	root * "C:/SESLabs/server/public"
+	encode zstd gzip
+	request_body {
+		max_size 25MB
+	}
+	header -Server
+	@hidden {
+		path_regexp /\.
+		not path /.well-known/*
+	}
+	handle @hidden {
+		respond 404
+	}
+	@live path /app/* /apps/*
+	handle @live {
+		reverse_proxy 127.0.0.1:8080
+	}
+	handle /pos/* {
+		header /pos/sw.js Cache-Control no-cache
+		try_files {path} /pos/index.html
+		file_server
+	}
+	handle {
+		php_fastcgi 127.0.0.1:9001 127.0.0.1:9002 127.0.0.1:9003 127.0.0.1:9004 {
+			lb_policy least_conn
+			lb_try_duration 10s
+			read_timeout 300s
+		}
+		file_server
+	}
+}
+```
+
+**Why:**
+- *Plain http* only hands out the server's certificate (4.9) and sends everything else to https.
+- *Hidden files* such as `.env` are never served.
+- *Live updates* use the same https address.
+- *The till app* falls back to its own start page, so it works offline.
+- *Everything else* goes to the PHP workers.
+
+For a server with an **internet name**:
+- remove the `http://…` block and the `tls internal` line;
+- write the name instead of the address;
+- add `email you@example.com` under `admin off`.
+
+Caddy then gets a Let's Encrypt certificate by itself.
+
+**Check:** `C:\SESLabs\caddy\caddy.exe validate --config C:\SESLabs\Caddyfile --adapter caddyfile` ends with *Valid configuration*.
+
+**Step 4: the PHP worker.** Create `C:\SESLabs\php-worker.cmd`:
+
+```
+@echo off
+set PHP_FCGI_MAX_REQUESTS=0
+:run
+"C:\php\php-cgi.exe" -b 127.0.0.1:%1
+ping -n 3 127.0.0.1 >nul
+goto run
+```
+
+**Why:** PHP on Windows stops a worker after 500 requests unless told otherwise. The loop restarts it if it ever stops.
+
+**Step 5: in `.env`,** add or change these lines (with your address), then run `php artisan optimize`:
+
+```
+REVERB_APP_ID=<random-1>
+REVERB_APP_KEY=<random-2>
+REVERB_APP_SECRET=<random-3>
+REVERB_HOST=192.168.1.10
+REVERB_PORT=443
+REVERB_SCHEME=https
+REVERB_PUBLISH_HOST=127.0.0.1
+REVERB_PUBLISH_PORT=8080
+REVERB_PUBLISH_SCHEME=http
+```
+
+Use three random values of your own (letters and digits, at least 20 characters each).
+
+**Why:** tills connect to live updates through the https address. The server itself sends to them directly on the same PC.
+
+**Step 6: the start-up tasks.** Open **PowerShell as administrator** and paste this whole block:
 
 ```
 $app = "C:\SESLabs\server"; $php = "C:\php\php.exe"
-$listen = "0.0.0.0"
-$settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+$settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
 $trigger = New-ScheduledTaskTrigger -AtStartup
-Register-ScheduledTask -TaskName "SES Labs Web" -Trigger $trigger -Settings $settings -Principal $principal -Action (New-ScheduledTaskAction -Execute $php -Argument "artisan serve --host=$listen --port=8010" -WorkingDirectory $app)
 Register-ScheduledTask -TaskName "SES Labs Scheduler" -Trigger $trigger -Settings $settings -Principal $principal -Action (New-ScheduledTaskAction -Execute $php -Argument "artisan schedule:work" -WorkingDirectory $app)
-Start-ScheduledTask "SES Labs Web"; Start-ScheduledTask "SES Labs Scheduler"
+Register-ScheduledTask -TaskName "SES Labs Live" -Trigger $trigger -Settings $settings -Principal $principal -Action (New-ScheduledTaskAction -Execute $php -Argument "artisan reverb:start --host=127.0.0.1 --port=8080" -WorkingDirectory $app)
+foreach ($i in 1..4) { Register-ScheduledTask -TaskName "SES Labs PHP $i" -Trigger $trigger -Settings $settings -Principal $principal -Action (New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"`"C:\SESLabs\php-worker.cmd`" $(9000 + $i)`"" -WorkingDirectory $app) }
+Register-ScheduledTask -TaskName "SES Labs Web" -Trigger $trigger -Settings $settings -Principal $principal -Action (New-ScheduledTaskAction -Execute "C:\SESLabs\caddy\caddy.exe" -Argument "run --config C:\SESLabs\Caddyfile --adapter caddyfile" -WorkingDirectory "C:\SESLabs\caddy")
+Get-ScheduledTask -TaskName "SES Labs *" | Start-ScheduledTask
 ```
 
 **Why:** `ExecutionTimeLimit 0` stops Windows from ending the tasks after three days (its default). `SYSTEM` runs them without anyone signed in.
 
-**Setup B only — let the tills through the Windows firewall:**
+**Step 7: trust the server on this PC.** Wait 10 seconds, then:
 
 ```
-New-NetFirewallRule -DisplayName "SES Labs server" -Direction Inbound -Protocol TCP -LocalPort 8010 -Action Allow -Profile Private,Domain
+Import-Certificate -FilePath C:\SESLabs\caddy\data\pki\authorities\local\root.crt -CertStoreLocation Cert:\LocalMachine\Root
 ```
 
-**Why:** Windows blocks incoming connections by default. This opens only port 8010, and only on private (shop) networks, not public Wi-Fi.
+**Why:** the server's own browser then accepts its certificate (other devices: 4.9). Skip this step for a server with an internet name.
+
+**Step 8 (setup B only): let the tills through the Windows firewall:**
+
+```
+New-NetFirewallRule -DisplayName "SES Labs server" -Direction Inbound -Protocol TCP -LocalPort 80,443 -Action Allow -Profile Private,Domain
+```
+
+**Why:** Windows blocks incoming connections by default. This opens only the web server's two ports, and only on private (shop) networks, not public Wi-Fi. The database, the PHP workers and live updates stay reachable from this PC only.
 
 **Check:**
-1. In a browser on the server, open `http://localhost:8010/up` — it shows a page saying *Application up*.
-2. Open `http://localhost:8010/admin` — the sign-in page appears:
+1. In a browser on the server, open `https://localhost/up` (setup A) or `https://<server-address>/up` (setup B). It shows a page saying *Application up*, with no certificate warning.
+2. Open `…/admin`: the sign-in page appears:
 
    ![The back-office sign-in page](img/admin-login.png)
 
-3. Setup B: on another PC on the network, open `http://<server-address>:8010/admin` — the same page appears.
+3. Setup B: on another PC that trusts the server (4.9), open `https://<server-address>/admin`. The same page appears.
 
-**Tip:** To stop or restart the server, open **Task Scheduler**, click *Task Scheduler Library*, right-click *SES Labs Web* or *SES Labs Scheduler* and choose **End**, then **Run**.
+**Tip:** to restart the server, open **Task Scheduler**, click *Task Scheduler Library*, right-click *SES Labs Web* (or a *PHP*, *Scheduler* or *Live* task), and choose **End**, then **Run**.
 
-## 4.9 Optional: live updates (instant price and stock changes on tills)
+## 4.9 Let tills and other PCs trust this server (setup B)
 
-Without live updates, tills check for changes every 60 seconds, which is enough for most shops. To make changes appear within seconds:
+On the shop network the server uses **its own certificate**. A certificate is what proves to a browser that it is really talking to your server and that nobody can read along. Each till, tablet, handheld, kitchen screen and office PC must be told **once** to trust it. Without this, browsers show a warning, and the till refuses to enrol: it only uses its security functions on a trusted address.
 
-1. In `.env`, set three random values of your own (letters and digits, at least 20 characters each):
+**On a Windows PC (also for the SES Labs Till desktop app):** open PowerShell **as administrator** and type, with your server's address:
 
-   ```
-   REVERB_APP_ID=<random-1>
-   REVERB_APP_KEY=<random-2>
-   REVERB_APP_SECRET=<random-3>
-   REVERB_HOST=<server-address>
-   REVERB_PORT=8080
-   ```
+```
+Invoke-WebRequest http://192.168.1.10/ca.crt -OutFile $env:TEMP\seslabs.crt
+Import-Certificate -FilePath $env:TEMP\seslabs.crt -CertStoreLocation Cert:\LocalMachine\Root
+```
 
-2. Run `php artisan optimize` again.
-3. In PowerShell as administrator, add a third task:
+**On an Android tablet or phone:**
+1. In Chrome, open `http://<server-address>/ca.crt`. It downloads a file.
+2. Open **Settings → Security (and privacy) → More security settings → Encryption & credentials → Install a certificate → CA certificate**, confirm with **Install anyway**, and choose the downloaded file. The wording differs a little between makes.
 
-   ```
-   Register-ScheduledTask -TaskName "SES Labs Live" -Trigger (New-ScheduledTaskTrigger -AtStartup) -Settings (New-ScheduledTaskSettingsSet -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1)) -Principal (New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest) -Action (New-ScheduledTaskAction -Execute "C:\php\php.exe" -Argument "artisan reverb:start --host=0.0.0.0 --port=8080" -WorkingDirectory "C:\SESLabs\server")
-   Start-ScheduledTask "SES Labs Live"
-   New-NetFirewallRule -DisplayName "SES Labs live" -Direction Inbound -Protocol TCP -LocalPort 8080 -Action Allow -Profile Private,Domain
-   ```
+**Check:** open `https://<server-address>/pos/`. It opens with a padlock and no warning.
 
-**Check:** sign in on a till, change a price in the back office, and the till shows the new price within a few seconds.
+**Why this is safe:** the certificate is made by your own server, for your own server. Its secret key never leaves the server and is readable by administrators only.
+
+**Note:**
+- The certificate is valid for the server's address and computer name at the time of installation. If you ever give the server a different address, run the installer again, then repeat this step on each device.
+- A server with an internet name uses a public Let's Encrypt certificate instead, which every device already trusts. Skip this section.
+- Live updates (instant price and stock changes on tills) are set up by the installer and need nothing more.
 
 ## 4.10 Next steps
 

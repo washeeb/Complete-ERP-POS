@@ -89,9 +89,9 @@ class PosController extends Controller
             // Live updates (Reverb). null = not configured on this server; the till then polls.
             'realtime' => config('broadcasting.default') === 'reverb' && config('broadcasting.connections.reverb.key') ? [
                 'key' => config('broadcasting.connections.reverb.key'),
-                'host' => config('broadcasting.connections.reverb.options.host'),
-                'port' => (int) config('broadcasting.connections.reverb.options.port'),
-                'scheme' => config('broadcasting.connections.reverb.options.scheme'),
+                'host' => config('broadcasting.connections.reverb.client.host'),
+                'port' => (int) config('broadcasting.connections.reverb.client.port'),
+                'scheme' => config('broadcasting.connections.reverb.client.scheme'),
                 'channels' => ['tenant.'.$device->tenant_id.'.catalog', $till ? 'tenant.'.$device->tenant_id.'.stock.'.$till->warehouse_id : null,
                     app(ModuleService::class)->isEnabled($branch, 'restaurant') ? 'tenant.'.$device->tenant_id.'.dining.'.$branch->id : null],
             ] : null,

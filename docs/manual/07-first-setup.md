@@ -6,7 +6,7 @@ Do these steps once, at head office, in this order. Allow a day for a single sho
 
 ## Step 1 — Sign in for the first time
 
-1. Open the back office: `http://<server-address>:8010/admin` (Windows server) or `https://<your-domain>/admin` (Ubuntu).
+1. Open the back office: `https://<server-address>/admin` (Windows server) or `https://<your-domain>/admin` (Ubuntu).
 2. Sign in with the owner's **email and password** (from `erp:install`).
 
 ## Step 2 — Set up two-factor sign-in

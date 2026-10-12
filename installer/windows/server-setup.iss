@@ -1,5 +1,5 @@
 ; The business server's Windows installer (setup.exe). Build with Inno Setup 6:
-;   iscc /DReleaseZip=C:\path\ses-labs-<customer>-<build>.zip /DAppVersion=0.27.0 installer\windows\server-setup.iss
+;   iscc /DReleaseZip=C:\path\ses-labs-<customer>-<build>.zip /DAppVersion=0.28.0 installer\windows\server-setup.iss
 ; The product name comes from /DBrand (default SES Labs) and /DSlug (no spaces: folder and service); the icon is app.ico (npm run brand).
 ; The installer copies the release and install.ps1, asks a few questions, then runs install.ps1 in a visible window
 ; (it downloads PostgreSQL, PHP and Composer from their official sites, so the PC needs internet during installation).
@@ -49,20 +49,23 @@ Source: "install.ps1"; DestDir: "{app}\installer"; Flags: ignoreversion
 Source: "app.ico"; DestDir: "{app}\installer"; Flags: ignoreversion
 
 [Run]
-Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\installer\install.ps1"" -Release ""{app}\installer\release.zip"" -Dir ""{app}"" -Setup {code:SetupType} -Role {code:Role} -NodeId {code:NodeId} -Brand ""{#Brand}"" -Slug {#Slug}"; \
+Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\installer\install.ps1"" -Release ""{app}\installer\release.zip"" -Dir ""{app}"" -Setup {code:SetupType} -Role {code:Role} -NodeId {code:NodeId} -Brand ""{#Brand}"" -Slug {#Slug}{code:InternetArgs}"; \
   StatusMsg: "Installing the database, PHP and the server (this takes several minutes)…"; Flags: waituntilterminated
 
 [UninstallRun]
-Filename: "powershell.exe"; Parameters: "-NoProfile -Command ""'{#Brand} Web','{#Brand} Scheduler','{#Brand} Live' | ForEach-Object {{ Unregister-ScheduledTask -TaskName $_ -Confirm:$false -ErrorAction SilentlyContinue }; sc.exe stop {#Slug}DB; sc.exe delete {#Slug}DB"""; \
+; Stops and removes the tasks (web server, PHP workers, scheduler, live updates), the firewall rule and this server's own
+; certificate authority from the trusted list; the data folder is kept.
+Filename: "powershell.exe"; Parameters: "-NoProfile -Command ""Get-ScheduledTask -TaskName '{#Brand} *' -ErrorAction SilentlyContinue | ForEach-Object {{ Stop-ScheduledTask -InputObject $_; Unregister-ScheduledTask -InputObject $_ -Confirm:$false }; Get-Process caddy, php-cgi -ErrorAction SilentlyContinue | Where-Object {{ $_.Path -like '{app}\*' -or $_.Path -like 'C:\php\*' } | Stop-Process -Force; Get-ChildItem Cert:\LocalMachine\Root | Where-Object {{ $_.Subject -like 'CN={#Brand} * Root*' } | Remove-Item; Remove-NetFirewallRule -DisplayName '{#Brand} server' -ErrorAction SilentlyContinue; sc.exe stop {#Slug}DB; sc.exe delete {#Slug}DB"""; \
   Flags: runhidden; RunOnceId: "StopServices"
 
 [Messages]
-FinishedLabel=The {#Brand} server is installed.%n%nOpen the back office at the address shown in the installation window (for example http://localhost:8010/admin). The database files and backups in C:\{#Slug} are kept if you uninstall.
+FinishedLabel=The {#Brand} server is installed.%n%nOpen the back office at the address shown in the installation window (for example https://localhost/admin). The database files and backups in C:\{#Slug} are kept if you uninstall.
 
 [Code]
 var
   TypePage: TInputOptionWizardPage;
   RolePage: TInputQueryWizardPage;
+  NetPage: TInputQueryWizardPage;
 
 procedure InitializeWizard;
 begin
@@ -75,6 +78,17 @@ begin
     'For a branch server, type its id given by head office (for example B01).');
   RolePage.Add('Server id:', False);
   RolePage.Values[0] := 'HQ';
+  NetPage := CreateInputQueryPage(RolePage.ID, 'Reached from the internet?', 'Leave both empty for a server used only in the shop (Chapter 4.9).',
+    'Only if this server has an internet name pointing to it, with ports 80 and 443 forwarded to it by the router: type the name and an e-mail for certificate notices. A free certificate is then fetched and renewed automatically.');
+  NetPage.Add('Internet name (for example shop.example.com):', False);
+  NetPage.Add('E-mail for certificate notices:', False);
+end;
+
+function InternetArgs(Param: String): String;
+begin
+  Result := '';
+  if Trim(NetPage.Values[0]) <> '' then
+    Result := ' -Domain "' + Lowercase(Trim(NetPage.Values[0])) + '" -Email "' + Trim(NetPage.Values[1]) + '"';
 end;
 
 function SetupType(Param: String): String;

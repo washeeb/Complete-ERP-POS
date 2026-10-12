@@ -1,9 +1,22 @@
 # State (resume file)
 
-**Phase:** Penetration test pack (after Branding) · **Status:** done on branch `pentest-prep` (PR to `main`); all 14 phases built. Next: owner sends the request for quote; GRA sandbox; training videos; dry run
-**Updated:** 2026-10-12 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–14, licensing and branding merged (PRs #1–#27)
+**Phase:** Windows HTTPS (after the penetration test pack) · **Status:** done on branch `windows-https` (PR to `main`); all 14 phases built. Next: owner sends the pentest request for quote; GRA sandbox; training videos; dry run
+**Updated:** 2026-10-12 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–14, licensing, branding and the pentest pack merged (PRs #1–#28)
 
-## Penetration test pack — done on branch `pentest-prep`
+## Windows server: Caddy + HTTPS — done on branch `windows-https`
+- **Installer:** `installer/windows/install.ps1`.
+  - New step 4/10, Caddy: `-CaddyVersion` (2.10.0, SHA-512 verified), `-Domain`, `-Email`, `-Workers` (4). It writes `C:\SESLabs\Caddyfile` and `php-worker.cmd`.
+  - Tasks: `<Brand> Web` (Caddy), `<Brand> PHP 1..N`, Scheduler, Live (Reverb on 127.0.0.1:8080).
+  - Trusts its local certificate authority on the server and copies it to `C:\SESLabs\SESLabs-certificate.crt`.
+  - Firewall allows 80 and 443 only.
+  - Every run sets `APP_URL=https://…`, `SESSION_SECURE_COOKIE`, `REVERB_*` (client: site:443 https; publish: 127.0.0.1:8080 http) and creates the Reverb keys.
+- **Setup wizard:** `server-setup.iss` has a "Reached from the internet?" page (`InternetArgs`). Uninstall removes the tasks, processes, the trusted certificate authority and the firewall rule.
+- **Server:** `config/broadcasting.php` `reverb.options` reads `REVERB_PUBLISH_*` (falling back to `REVERB_*`); the new `reverb.client` is what the till bootstrap and the storefront hand out. Test in `ShopifyAndLiveTest`.
+- **CI** (`packaging.yml` windows-installer): checks over https://localhost; `.env` gives 404; the `/pos/` deep link; 8010 closed and 8080 loopback only; an update run.
+- **Docs:** manual 4.0/4.6/4.8/4.9 (new: trusting the server), 1, 2, 6, 7, 9, 13, 18.4; launch checklist 2; the pentest scope; CHANGELOG 0.28.0; DECISIONS.
+- **Not changed:** the Ubuntu script (nginx; HTTPS only with a domain; Reverb on 8080) and Docker.
+
+## Penetration test pack — merged (PR #28)
 - **Owner answers:** test machine at the SyncLytics office; grey box; Ghana-based and international firms; certified testers.
 - **Docs:** `docs/pentest/`
   - `README` (the owner's steps);
@@ -22,7 +35,7 @@
   - `security-review.md` follow-up;
   - `training.mjs` takes a folder and pattern;
   - CHANGELOG 0.27.0; DECISIONS.
-- **Known item the firm will likely report:** the Windows installer serves the app with `php artisan serve` over plain HTTP on 8010 (and Reverb on 8080). Worth replacing with a production web server and HTTPS before the test (owner to decide).
+- The Windows `php artisan serve` / plain-http item was fixed before the test (Windows HTTPS, above).
 
 ## Product name and branding — merged (PR #27)
 - **Owner answers:** product name **SES Labs** (no company name anywhere visible); licence-controlled white-label.

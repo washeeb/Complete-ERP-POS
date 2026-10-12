@@ -40,9 +40,9 @@ impl AppState {
     }
 }
 
-/// "http://192.168.1.10:8010" → origin used to allow navigation and to open the till.
+/// "https://192.168.1.10" → origin used to allow navigation and to open the till.
 fn origin(server: &str) -> Result<url::Url, String> {
-    let u = url::Url::parse(server.trim()).map_err(|_| "That is not a web address, e.g. http://192.168.1.10:8010".to_string())?;
+    let u = url::Url::parse(server.trim()).map_err(|_| "That is not a web address, e.g. https://192.168.1.10".to_string())?;
     if u.scheme() != "http" && u.scheme() != "https" {
         return Err("The address must start with http:// or https://".into());
     }
