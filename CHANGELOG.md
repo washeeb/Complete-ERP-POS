@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.27.0] — 2026-10-12 · Penetration test pack
+### Added
+- **`docs/pentest/`**: everything needed to have an outside firm test SES Labs before the first internet-facing pilot (owner decisions: test machine at the SyncLytics office, grey box, Ghana-based and international firms, certified testers).
+  - Scope and rules of engagement: OWASP WSTG / ASVS level 2 / API Top 10, CVSS 3.1, forbidden actions, deliverables, free retest.
+  - Request for quote: size table, tester certifications (OSCP/OSWE/CREST or equivalent), weighted evaluation.
+  - Building the isolated test machine.
+  - Findings handling: fix deadlines by severity; Critical and High block the pilot; contract clauses.
+  - The two documents for firms are also in `docs/pentest/pdf/` (`npm run pentest`), marked Confidential.
+- **`php artisan erp:pentest-setup --license=<key or file>`** fills a new, empty installation with:
+  - two made-up companies, to test company isolation;
+  - one sign-in per kind of role (owner, general manager, accountant, auditor, IT admin, branch manager, supervisor, cashiers), with till PINs;
+  - sample data;
+  - a till waiting to be paired;
+  - a wide API key and a read-products-only one.
+  It activates the test licence first and is all-or-nothing. Every secret goes to a private file, nothing to the screen. It refuses to run where a company already exists.
+- Launch checklist line 21 and installation guide 17.9 (the independent security test); 18.5 lists the command.
+### Changed
+- `scripts/training.mjs` builds PDFs for any docs folder (`node scripts/training.mjs <folder> [pattern]`), with an optional footer note.
+
 ## [0.26.0] — 2026-10-31 · Product name and branding
 ### Changed
 - The product is now called **SES Labs** — *Engineering Solutions. Empowering Businesses.* — with the owner's SES lettermark (traced as vector in `branding/product/ses-lettermark.svg`; app icon = the full SES on a white tile) (one setting: `config/brand.php` / `BRAND_NAME`; artwork in `branding/product`). The product name replaces the company name on screens, messages, installers (`C:\SESLabs`, `SESLabsDB`, `/var/www/seslabs`, Docker image `seslabs`), the desktop till ("SES Labs Till"), guides. Webhook headers are now `X-Webhook-Event`, `X-Webhook-Delivery`, `X-Webhook-Signature` (and `X-Webhook-Timestamp`, `X-Webhook-Id` for the generic REST shop). The installation guide is `SES-Labs-Installation-Guide.pdf`.

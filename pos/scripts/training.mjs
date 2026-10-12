@@ -1,6 +1,8 @@
 // Builds the training material (docs/training/*.md) into one PDF each, in docs/training/pdf/:
 // the cashier quick card (two columns, to print and keep at the till), the role guides and the video scripts.
 // Run from the pos folder: npm run training. Same tools as the installation guide (marked + Playwright's Chromium).
+// Other folders: node scripts/training.mjs <folder> [file pattern] (npm run pentest: the documents sent to testing firms).
+// A first line <!-- footer: text --> adds that text to the page footer (e.g. Confidential).
 import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { basename, dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -8,11 +10,12 @@ import { marked } from 'marked'
 import { chromium } from '@playwright/test'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const dir = resolve(here, '../../docs/training')
+const dir = resolve(here, '../..', process.argv[2] ? join('docs', process.argv[2]) : 'docs/training')
+const only = process.argv[3] ? new RegExp(process.argv[3]) : /^\d\d-.*\.md$/
 const outDir = join(dir, 'pdf')
 mkdirSync(outDir, { recursive: true })
-const files = readdirSync(dir).filter((f) => /^\d\d-.*\.md$/.test(f)).sort()
-if (!files.length) throw new Error(`No training files in ${dir}`)
+const files = readdirSync(dir).filter((f) => only.test(f) && f.endsWith('.md')).sort()
+if (!files.length) throw new Error(`No matching files in ${dir}`)
 const changelog = readFileSync(resolve(here, '../../CHANGELOG.md'), 'utf8')
 const release = changelog.match(/^## \[([^\]]+)\]/m)?.[1] ?? ''
 const brand = JSON.parse(readFileSync(resolve(here, '../../branding/product/brand.json'), 'utf8'))
@@ -36,6 +39,7 @@ const browser = await chromium.launch()
 for (const f of files) {
   const md = readFileSync(join(dir, f), 'utf8')
   const isCard = md.includes('<!-- layout: card -->')
+  const note = md.match(/^<!-- footer: (.+?) -->/)?.[1]
   const [, title = basename(f, '.md'), rest = md] = md.match(/^(?:<!--.*-->\s*)?#\s+(.+)\n([\s\S]*)$/) ?? []
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title><style>${base}${isCard ? card : ''}</style></head>
 <body><h1>${title}</h1><div class="content">${marked.parse(rest)}</div></body></html>`
@@ -45,7 +49,7 @@ for (const f of files) {
   await page.goto(pathToFileURL(tmp).href, { waitUntil: 'load' })
   const out = join(outDir, `${basename(f, '.md').replace(/^\d\d-/, '')}.pdf`)
   await page.pdf({ path: out, format: 'A4', printBackground: true, displayHeaderFooter: true, headerTemplate: '<div></div>',
-    footerTemplate: `<div style="font:7.5pt Segoe UI,Arial;color:#6b7280;width:100%;padding:0 12mm;display:flex;justify-content:space-between"><span>${brand.name} · ${title}${release ? ` · version ${release}` : ''}</span><span><span class="pageNumber"></span>/<span class="totalPages"></span></span></div>`,
+    footerTemplate: `<div style="font:7.5pt Segoe UI,Arial;color:#6b7280;width:100%;padding:0 12mm;display:flex;justify-content:space-between"><span>${note ? `${note} · ` : ''}${brand.name} · ${title}${release ? ` · version ${release}` : ''}</span><span><span class="pageNumber"></span>/<span class="totalPages"></span></span></div>`,
     margin: isCard ? { top: '10mm', bottom: '12mm', left: '10mm', right: '10mm' } : { top: '16mm', bottom: '18mm', left: '15mm', right: '15mm' } })
   await page.close()
   rmSync(tmp, { force: true })

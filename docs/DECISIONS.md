@@ -487,6 +487,23 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Penetration test pack (2026-10-12)
+- **Owner answers:**
+  - environment: a test machine at the SyncLytics office (not hosted);
+  - test type: grey box (test sign-ins, no source code);
+  - firms: quotes from Ghana-based and international firms;
+  - testers: certified testers required.
+- **We prepare, the owner contracts.** The firm must be independent, so we do not test ourselves in its place. We make its paid days count instead:
+  - a precise scope;
+  - one sign-in per role, because role-to-role and company-to-company access are the highest-value targets in multi-tenant business software;
+  - a ready test machine.
+- **The test copy is built by a command, not by hand:**
+  - It refuses any installation that already has a company, so it can never run where real data is.
+  - It is one database transaction: a wrong licence key leaves the installation empty and the command can be re-run.
+  - It creates a second company only so that isolation can be attacked.
+  - Secrets go to one private file (0600), never the screen, ready for an encrypted hand-over.
+- **Severity drives the pilot:** Critical and High findings block it until they are retested, with deadlines of 72 hours and 14 days. Medium needs a dated plan. Every fix starts with a test that performs the attack, as in the rest of the codebase.
+
 ## Product name and branding (2026-10-31)
 - **Product and publisher are separate (2026-10-09 owner clarification):** the owner wanted a product name that is not the company name, not to hide the company. Industry practice (Microsoft Teams / Microsoft Corporation, QuickBooks / Intuit) is the product name on the product and the company as publisher and licensor. So **SES Labs** is on every screen, receipt, icon and "Powered by"; **SyncLytics** is the publisher: licence messages ("Contact SyncLytics to renew"), Windows "Publisher" and copyright for the desktop till and the server installer, and "Published by" on the guide cover. It is one setting (`BRAND_VENDOR`, `brand.json` `company`), so a white-label reseller can replace it. The company's own Synclytics logos are not product artwork and stay out of the repo.
 - **Owner answers:** the product must not carry the company name. After a first proposal (Ervanta, from the owner's shortlist) the owner chose **SES Labs**, tagline **"Engineering Solutions. Empowering Businesses."** (2026-10-31). A trademark and domain check is the owner's. Branding: **licence-controlled white-label** — client brand first with "Powered by SES Labs", removable by the licence feature `white_label`. Folder, service and package names use the space-free `SESLabs` / `seslabs` / `ses-labs`.

@@ -23,4 +23,4 @@ Scope: server (Laravel + Filament), till PWA, desktop till, sync, public API, in
 | Dependencies | `composer audit` and `npm audit --audit-level=high` in CI on every push | OK |
 | Transport | HTTPS required for internet-facing servers (health check warns); `SESSION_SECURE_COOKIE=true` set by the Ubuntu script with HTTPS | OK |
 
-Residual risks / follow-ups (Phase 14): penetration test by a third party before the first internet-facing pilot; a full CSP for the back office (Filament/Livewire need inline scripts today); rate limiting of back-office sign-in per IP is Laravel's default (5/min).
+Residual risks / follow-ups (Phase 14): penetration test by a third party before the first internet-facing pilot (pack ready in `docs/pentest/`, 2026-10-12: scope, request for quote, test machine via `erp:pentest-setup`, findings handling); a full CSP for the back office (Filament/Livewire need inline scripts today); rate limiting of back-office sign-in per IP is Laravel's default (5/min).

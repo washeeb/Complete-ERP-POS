@@ -46,7 +46,7 @@ php artisan license:issue --key=/secure/…/ses-labs-license.key --customer="Kof
 ## Protection layers
 
 1. **Signed keys bound to the installation**: a random installation id, plus a fingerprint of the machine (OS machine id and database cluster id). A copied server or database asks to be re-activated.
-2. **Daily check-in**: answers are signed by SES Labs, so a fake licence server cannot keep a revoked copy alive.
+2. **Daily check-in**: answers are signed by SyncLytics, so a fake licence server cannot keep a revoked copy alive.
 3. **Release builds** (`php artisan release:build --customer=… --key=… [--with-pos]`): one copy per customer, built from committed code only (no `.env`, no secrets).
    - A **hidden build stamp** goes into every PHP file under `app/` and into the till app, so a leaked copy names the customer it was given to.
    - A **signed manifest** of the files that enforce licensing is included. If any of them is changed, the installation becomes read-only and reports it at check-in.
