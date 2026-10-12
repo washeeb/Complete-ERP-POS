@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.29.1] — 2026-10-12 · First-run fixes (found on a test PC)
+### Fixed
+- **A new owner could not set up two-step sign-in** ("500 Server Error" on *Set up two-factor authentication*).
+  - Cause: an installation that is not yet activated is read-only, and saving the two-step secret and recovery codes was blocked like any other change. Two-step sign-in comes before the licence page, so the owner could reach neither.
+  - Fix: securing one's own sign-in is now allowed before activation. It is still audited. Business data stays read-only until the licence is entered.
+  - `FirstSignInTest` follows a real first sign-in: two-step set-up, then the licence page, then the setup wizard.
+
 ## [0.29.0] — 2026-10-12 · Ubuntu server: Caddy and HTTPS always
 ### Changed
 - **The Ubuntu script (`installer/ubuntu/install.sh`) now always serves over HTTPS with Caddy** instead of nginx, which served plain http unless a domain was given. Caddy is installed from its official signed apt source; certbot is no longer used.

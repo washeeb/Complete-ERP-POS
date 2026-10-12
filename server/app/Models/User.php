@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domain\Licensing\LicenseManager;
 use App\Domain\Support\Actor;
 use App\Domain\Support\Recorder;
 use App\Models\Concerns\HasOriginNode;
@@ -91,7 +92,9 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
     public function saveAppAuthenticationSecret(#[SensitiveParameter] ?string $secret): void
     {
         $this->app_authentication_secret = $secret;
-        app(Recorder::class)->save(Actor::user($this, 'web'), $this, $secret ? 'auth.mfa_enabled' : 'auth.mfa_disabled');
+        // Securing one's own sign-in is allowed even while the installation is read-only (not yet activated): the
+        // owner must set up two-step sign-in before reaching the licence page. It is still audited.
+        LicenseManager::bypass(fn () => app(Recorder::class)->save(Actor::user($this, 'web'), $this, $secret ? 'auth.mfa_enabled' : 'auth.mfa_disabled'));
     }
 
     public function getAppAuthenticationHolderName(): string
@@ -107,6 +110,6 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
     public function saveAppAuthenticationRecoveryCodes(#[SensitiveParameter] ?array $codes): void
     {
         $this->app_authentication_recovery_codes = $codes;
-        app(Recorder::class)->save(Actor::user($this, 'web'), $this, 'auth.mfa_recovery_codes_changed');
+        LicenseManager::bypass(fn () => app(Recorder::class)->save(Actor::user($this, 'web'), $this, 'auth.mfa_recovery_codes_changed'));
     }
 }
