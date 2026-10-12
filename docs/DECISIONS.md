@@ -487,6 +487,14 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Licence signing key (2026-10-12)
+- **Owner:** "create the real key now" (rather than a test-only route) when the first test PC needed a licence.
+- **Key and storage:**
+  - Key `syn-2026-1` (Ed25519); public half committed in `config/license.php`.
+  - Private half in the git-ignored `.local-secrets/` on the development PC, with an offline copy (USB in a safe) to be made by the owner.
+  - It moves to the licence server when that is set up.
+- **Development keys** remain accepted only in non-release builds (`LICENSE_DEV_PUBLIC_KEY`), as before.
+
 ## Ubuntu server: Caddy + HTTPS always (2026-10-12)
 - **Owner:** "do the same for the Ubuntu installer".
 - **Caddy replaces nginx and certbot on Ubuntu too.**

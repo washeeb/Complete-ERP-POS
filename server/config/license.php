@@ -9,6 +9,8 @@
 return [
     // kid => base64 Ed25519 public key. Add the output of `php artisan license:keygen` here before the first release.
     'public_keys' => [
+        // SyncLytics' signing key (created 2026-10-12; the private half is kept offline, never in the repository).
+        'syn-2026-1' => 'ZqIAUk+2GZnXxbcj6I4Uapc7HGtUdQRdqEhwz3YydZY=',
     ],
 
     // Development / test signing key (public part only). Ignored in release builds.

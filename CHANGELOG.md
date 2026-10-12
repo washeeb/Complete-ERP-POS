@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.29.2] — 2026-10-12 · SyncLytics' licence signing key
+### Added
+- **SyncLytics' production signing key** (`syn-2026-1`):
+  - its public half is now part of the software (`config/license.php`), so installations accept licence keys from SyncLytics;
+  - until now only development keys existed, and an installer-built server could not be activated at all;
+  - the private half is kept outside the repository.
+### Fixed
+- `license:issue --checkin=0` now issues a key without a check-in requirement, as documented (it silently became 30 days).
+
 ## [0.29.1] — 2026-10-12 · First-run fixes (found on a test PC)
 ### Fixed
 - **A new owner could not set up two-step sign-in** ("500 Server Error" on *Set up two-factor authentication*).

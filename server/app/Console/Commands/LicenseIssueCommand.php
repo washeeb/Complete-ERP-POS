@@ -44,7 +44,7 @@ class LicenseIssueCommand extends Command
         $issued = LicenseIssuer::issue(['customer' => $this->option('customer'), 'request_code' => $code, 'expires_at' => $this->option('until'),
             'branches' => $int($this->option('branches')), 'devices' => $int($this->option('devices')), 'users' => $int($this->option('users')),
             'features' => $list($this->option('features')), 'modules' => $list($this->option('modules')), 'grace_days' => (int) $this->option('grace'),
-            'checkin_days' => (int) $this->option('checkin') ?: null, 'server_url' => $this->option('server') ?: null, 'dev' => $keys['kid'] === 'dev'], $keys);
+            'checkin_days' => (int) $this->option('checkin'), 'server_url' => $this->option('server') ?: null, 'dev' => $keys['kid'] === 'dev'], $keys);
         if ($old = $this->option('replaces')) {
             DB::table('vendor_licenses')->where('id', $old)->update(['superseded_by' => $issued['license_id'], 'updated_at' => now()]);
         }
