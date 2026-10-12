@@ -4,6 +4,7 @@ namespace App\Security;
 
 use App\Domain\Licensing\LicenseManager;
 use App\Models\Branch;
+use App\Models\Industry;
 use App\Models\Permission;
 use App\Models\RoleAssignment;
 use App\Models\Till;
@@ -83,6 +84,7 @@ final class Authorizer
             [$type, $id] = explode(':', $g['scope'], 2);
             $ids = array_merge($ids, match ($type) {
                 ScopeType::LegalEntity->value => Branch::where('legal_entity_id', $id)->pluck('id')->all(),
+                ScopeType::Industry->value => Branch::where('industry_id', $id)->pluck('id')->all(),
                 ScopeType::Branch->value => [$id],
                 // Narrower scopes don't grant the whole branch.
                 default => [],
@@ -179,12 +181,14 @@ final class Authorizer
             return array_values(array_filter([
                 $tenant,
                 $branch->legal_entity_id ? ScopeType::LegalEntity->value.':'.$branch->legal_entity_id : null,
+                $branch->industry_id ? ScopeType::Industry->value.':'.$branch->industry_id : null,
                 ScopeType::Branch->value.':'.$branch->id,
             ]));
         };
 
         return match (true) {
             $target instanceof Branch => $branchPath($target->id),
+            $target instanceof Industry => [$tenant, ScopeType::Industry->value.':'.$target->id],
             $target instanceof Warehouse => [...$branchPath($target->branch_id), ScopeType::Warehouse->value.':'.$target->id],
             $target instanceof Till => [...$branchPath($target->branch_id),
                 ScopeType::Warehouse->value.':'.$target->warehouse_id, ScopeType::Till->value.':'.$target->id],

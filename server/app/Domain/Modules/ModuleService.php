@@ -5,6 +5,7 @@ namespace App\Domain\Modules;
 use App\Domain\Branding\Branding;
 use App\Domain\Licensing\LicenseException;
 use App\Domain\Licensing\LicenseManager;
+use App\Domain\Org\IndustryService;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
@@ -71,6 +72,10 @@ final class ModuleService
                     throw new DomainException("{$this->registry->get($key)->name} on this branch depends on {$module->name}.");
                 }
             }
+        }
+
+        if ($status === self::ENABLED) {
+            app(IndustryService::class)->ensureFor($actor, $branch, $moduleKey); // one industry per branch
         }
 
         $row = BranchModule::withoutGlobalScopes()->firstOrNew(['branch_id' => $branch->id, 'module_key' => $moduleKey]);

@@ -49,6 +49,7 @@ class RoleAssignment extends Model
         $name = match ($this->scope_type) {
             ScopeType::Tenant => null,
             ScopeType::LegalEntity => LegalEntity::find($this->scope_id)?->name,
+            ScopeType::Industry => Industry::find($this->scope_id)?->name,
             ScopeType::Branch => Branch::find($this->scope_id)?->name,
             ScopeType::Warehouse => Warehouse::find($this->scope_id)?->name,
             ScopeType::Till => Till::find($this->scope_id)?->name,

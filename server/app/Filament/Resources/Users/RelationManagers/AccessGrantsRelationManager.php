@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Users\RelationManagers;
 use App\Domain\Access\AccessService;
 use App\Filament\Support\Erp;
 use App\Models\Branch;
+use App\Models\Industry;
 use App\Models\LegalEntity;
 use App\Models\Role;
 use App\Models\RoleAssignment;
@@ -74,6 +75,7 @@ class AccessGrantsRelationManager extends RelationManager
                             ->visible(fn (Get $get) => $get('scope_type') && $get('scope_type') !== 'tenant')
                             ->options(fn (Get $get) => match ($get('scope_type')) {
                                 'legal_entity' => LegalEntity::pluck('name', 'id'),
+                                'industry' => Industry::orderBy('sort')->pluck('name', 'id'),
                                 'branch' => Branch::orderBy('code')->get()->mapWithKeys(fn ($b) => [$b->id => "{$b->code} · {$b->name}"]),
                                 'warehouse' => Warehouse::orderBy('code')->get()->mapWithKeys(fn ($w) => [$w->id => "{$w->code} · {$w->name}"]),
                                 'till' => Till::with('branch')->get()->mapWithKeys(fn ($t) => [$t->id => "{$t->branch->code}-{$t->code} · {$t->name}"]),

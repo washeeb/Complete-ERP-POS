@@ -121,7 +121,8 @@ final class CatalogService
         $product->fill(array_intersect_key($data, array_flip(['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu',
             'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'fda_reg_no', 'station', 'track_serials', 'warranty_months', 'consignor_id', 'consignment_bp',
             'service_minutes', 'commission_bp', 'licence_keys',
-            'is_container', 'deposit_product_id', 'deposit_per_unit'])));
+            'is_container', 'deposit_product_id', 'deposit_per_unit', 'industry_id'])));
+        $product->industry_id = $product->industry_id ?: null; // null = shared by every industry (products from before industries)
         // Distribution: returnable containers (crates, bottles, gas cylinders) and the container sold with each unit.
         $product->deposit_product_id = $product->deposit_product_id ?: null;
         if ($product->deposit_product_id) {
@@ -272,7 +273,8 @@ final class CatalogService
     public function savePriceList(Actor $actor, PriceList $list, array $data): PriceList
     {
         $this->require($actor, 'pricing.manage');
-        $list->fill(array_intersect_key($data, array_flip(['code', 'name', 'prices_include_tax', 'is_default', 'pos_selectable', 'branch_id', 'is_active'])));
+        $list->fill(array_intersect_key($data, array_flip(['code', 'name', 'prices_include_tax', 'is_default', 'pos_selectable', 'branch_id', 'is_active', 'industry_id'])));
+        $list->industry_id = $list->industry_id ?: null;
         $list->code = strtoupper(trim($list->code));
         $list->tenant_id = $actor->tenantId;
         $list->currency_code ??= $actor->user->tenant->currency_code;

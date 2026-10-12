@@ -6,6 +6,7 @@ use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Models\User;
 use App\Security\Authorizer;
+use App\Support\IndustryContext;
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Filament\Support\Exceptions\Halt;
@@ -42,12 +43,24 @@ final class Erp
         return $user !== null && app(Authorizer::class)->allowsAnywhere($user, $permission);
     }
 
-    /** @return list<string>|null null = all branches */
+    /**
+     * Branches this person may see for $permission, narrowed to the industry chosen in the switcher.
+     *
+     * @return list<string>|null null = all branches
+     */
     public static function branchIds(string $permission): ?array
     {
         $user = self::user();
+        if (! $user) {
+            return [];
+        }
+        $ids = app(Authorizer::class)->branchIds($user, $permission);
+        $industry = IndustryContext::branchIds();
+        if ($industry === null) {
+            return $ids;
+        }
 
-        return $user ? app(Authorizer::class)->branchIds($user, $permission) : [];
+        return $ids === null ? $industry : array_values(array_intersect($ids, $industry));
     }
 
     /**

@@ -7,7 +7,9 @@ use App\Filament\Resources\PriceLists\Pages\ListPriceLists;
 use App\Filament\Support\Erp;
 use App\Filament\Support\SimpleCatalogResource;
 use App\Models\Branch;
+use App\Models\Industry;
 use App\Models\PriceList;
+use App\Support\IndustryContext;
 use BackedEnum;
 use Filament\Actions\CreateAction;
 use Filament\Actions\EditAction;
@@ -43,6 +45,8 @@ class PriceListResource extends SimpleCatalogResource
                 ->helperText('Retail shelf prices normally include tax. Cannot change once the list has prices.'),
             Toggle::make('is_default')->label('Default list (used when the till starts a sale)'),
             Toggle::make('pos_selectable')->label('Cashier can switch to it at the till')->default(true),
+            Select::make('industry_id')->label('Industry')->options(fn () => Industry::where('is_active', true)->orderBy('sort')->pluck('name', 'id'))
+                ->default(fn () => IndustryContext::selected())->placeholder('All industries (shared)')->visible(fn () => Industry::exists()),
             Select::make('branch_id')->label('Only at branch')->placeholder('All branches')
                 ->options(fn () => Branch::orderBy('code')->get()->mapWithKeys(fn ($b) => [$b->id => "{$b->code} · {$b->name}"])),
             Toggle::make('is_active')->default(true),
@@ -55,6 +59,7 @@ class PriceListResource extends SimpleCatalogResource
             ->savePriceList($actor, $record ?? new PriceList, $data));
 
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->when(IndustryContext::selected(), fn ($q, $id) => $q->where(fn ($w) => $w->whereNull('industry_id')->orWhere('industry_id', $id))))
             ->columns([
                 TextColumn::make('code'),
                 TextColumn::make('name'),
@@ -62,6 +67,7 @@ class PriceListResource extends SimpleCatalogResource
                 IconColumn::make('prices_include_tax')->boolean()->label('Incl. tax'),
                 IconColumn::make('is_default')->boolean()->label('Default'),
                 IconColumn::make('pos_selectable')->boolean()->label('At till'),
+                TextColumn::make('industry.name')->label('Industry')->placeholder('Shared')->visible(fn () => Industry::exists()),
                 TextColumn::make('branch.code')->label('Branch')->placeholder('All'),
                 TextColumn::make('prices_count')->counts('prices')->label('Prices'),
                 IconColumn::make('is_active')->boolean()->label('Active'),

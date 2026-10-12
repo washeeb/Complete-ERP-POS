@@ -13,7 +13,7 @@ class Product extends Model
 {
     use BelongsToTenant, HasOriginNode, HasUuids;
 
-    protected $fillable = ['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu', 'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'fda_reg_no', 'active_ingredients', 'station', 'modifier_group_ids', 'track_serials', 'warranty_months', 'style_id', 'size', 'colour', 'consignor_id', 'consignment_bp', 'service_minutes', 'commission_bp', 'pack', 'licence_keys', 'is_container', 'deposit_product_id', 'deposit_per_unit'];
+    protected $fillable = ['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu', 'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'fda_reg_no', 'active_ingredients', 'station', 'modifier_group_ids', 'track_serials', 'warranty_months', 'style_id', 'size', 'colour', 'consignor_id', 'consignment_bp', 'service_minutes', 'commission_bp', 'pack', 'licence_keys', 'is_container', 'deposit_product_id', 'deposit_per_unit', 'industry_id'];
 
     protected function casts(): array
     {
@@ -70,5 +70,10 @@ class Product extends Model
     public function stockLevels(): HasMany
     {
         return $this->hasMany(StockLevel::class);
+    }
+
+    public function industry(): BelongsTo
+    {
+        return $this->belongsTo(Industry::class);
     }
 }

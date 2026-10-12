@@ -10,6 +10,7 @@ use App\Filament\Resources\Products\Pages\ListProducts;
 use App\Filament\Support\Erp;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Industry;
 use App\Models\KitchenStation;
 use App\Models\ModifierGroup;
 use App\Models\PriceList;
@@ -18,6 +19,7 @@ use App\Models\ProductUom;
 use App\Models\Supplier;
 use App\Models\TaxGroup;
 use App\Models\Uom;
+use App\Support\IndustryContext;
 use App\Support\Money;
 use App\Support\Qty;
 use BackedEnum;
@@ -87,6 +89,10 @@ class ProductResource extends Resource
             Section::make('Product')->columns(3)->schema([
                 TextInput::make('sku')->label('SKU')->required()->maxLength(40)->regex('/^[A-Za-z0-9][A-Za-z0-9._-]*$/'),
                 TextInput::make('name')->required()->maxLength(160)->columnSpan(2),
+                Select::make('industry_id')->label('Industry')->options(fn () => Industry::where('is_active', true)->orderBy('sort')->pluck('name', 'id'))
+                    ->default(fn () => IndustryContext::selected())->placeholder('All industries (shared)')
+                    ->visible(fn () => Industry::exists())
+                    ->helperText('Each industry has its own catalogue: its tills and screens show only its products. Shared items are sold by every industry.'),
                 Select::make('category_id')->label('Category')->options(fn () => Category::where('is_active', true)->orderBy('name')->pluck('name', 'id'))->searchable(),
                 Select::make('brand_id')->label('Brand')->options(fn () => Brand::orderBy('name')->pluck('name', 'id'))->searchable(),
                 Select::make('tax_group_id')->label('Tax')->required()
@@ -242,6 +248,7 @@ class ProductResource extends Resource
                         ->orWhereHas('barcodes', fn ($b) => $b->where('code', trim($search))))),
                 TextColumn::make('name')->sortable()->wrap(),
                 TextColumn::make('category.name')->label('Category')->toggleable(),
+                TextColumn::make('industry.name')->label('Industry')->placeholder('Shared')->toggleable()->visible(fn () => Industry::exists()),
                 TextColumn::make('price')->label($default ? $default->name.' price' : 'Price')
                     ->state(function (Product $r) use ($default) {
                         $p = $r->prices->first(fn ($x) => $x->price_list_id === $default?->id && $x->product_uom_id === $r->units->firstWhere('is_base', true)?->id
@@ -253,7 +260,9 @@ class ProductResource extends Resource
                     ->state(fn (Product $r) => $r->track_stock ? rtrim(rtrim(Qty::format((int) $r->stockLevels->sum(fn ($l) => Qty::toMilli((string) $l->on_hand))), '0'), '.').' '.$r->baseUom->code : 'not tracked'),
                 IconColumn::make('is_active')->boolean()->label('For sale'),
             ])
-            ->modifyQueryUsing(fn (Builder $query) => $query->with('category', 'baseUom', 'units', 'prices', 'stockLevels'))
+            ->modifyQueryUsing(fn (Builder $query) => $query->with('category', 'industry', 'baseUom', 'units', 'prices', 'stockLevels')
+                // The industry chosen at the top: its own products and the shared ones.
+                ->when(IndustryContext::selected(), fn ($q, $id) => $q->where(fn ($w) => $w->whereNull('industry_id')->orWhere('industry_id', $id))))
             ->filters([
                 SelectFilter::make('category_id')->label('Category')->options(fn () => Category::orderBy('name')->pluck('name', 'id')),
                 TernaryFilter::make('is_active')->label('For sale'),

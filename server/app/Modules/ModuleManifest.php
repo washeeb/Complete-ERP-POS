@@ -18,6 +18,7 @@ final class ModuleManifest
         public readonly string $description,
         public readonly array $requires,
         public readonly array $permissions,
+        public readonly bool $addon = false, // an industry module that sits alongside a branch's industry (e.g. Sales & Distribution)
     ) {}
 
     public static function fromArray(array $m): self
@@ -32,7 +33,14 @@ final class ModuleManifest
             description: $m['description'] ?? '',
             requires: $m['requires'] ?? [],
             permissions: $m['permissions'] ?? [],
+            addon: (bool) ($m['addon'] ?? false),
         );
+    }
+
+    /** An industry module that makes a branch a branch of that industry (one per branch). */
+    public function definesIndustry(): bool
+    {
+        return $this->kind === 'industry' && ! $this->addon;
     }
 
     public function isAvailable(): bool

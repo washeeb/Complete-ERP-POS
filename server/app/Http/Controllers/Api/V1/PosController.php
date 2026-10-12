@@ -96,7 +96,7 @@ class PosController extends Controller
                 'denominations' => collect(CashControl::denominations($tenant->currency_code))->map(fn ($d, $k) => ['key' => $k, 'label' => $d[0], 'value' => $d[1]])->values(),
             ] : ['vaults' => false, 'sessions' => [], 'denominations' => collect(CashControl::denominations($tenant->currency_code))->map(fn ($d, $k) => ['key' => $k, 'label' => $d[0], 'value' => $d[1]])->values()],
             'last_device_seq' => (int) Sale::where('device_id', $device->id)->max('device_seq'),
-            'catalog_version' => $this->catalogVersion(),
+            'catalog_version' => $this->catalogVersion($branch->industry_id),
             // Live updates (Reverb). null = not configured on this server; the till then polls.
             'realtime' => config('broadcasting.default') === 'reverb' && config('broadcasting.connections.reverb.key') ? [
                 'key' => config('broadcasting.connections.reverb.key'),
@@ -116,16 +116,19 @@ class PosController extends Controller
     public function catalog(Request $request): JsonResponse
     {
         $device = $this->device($request);
-        $version = $this->catalogVersion();
+        $version = $this->catalogVersion(Branch::find($device->branch_id)?->industry_id);
         // The till caches the catalog for offline use and asks only when something changed.
         if ($request->header('If-None-Match') === '"'.$version.'"') {
             return response()->json(null, 304)->setEtag($version);
         }
         $till = Till::find($device->till_id);
-        $lists = $this->lists(Branch::find($device->branch_id))->pluck('id');
+        $branch = Branch::find($device->branch_id);
+        $lists = $this->lists($branch)->pluck('id');
         $now = now();
 
         $products = Product::where('is_active', true)
+            // A branch of an industry sells that industry's catalogue (and items shared by all industries).
+            ->when($branch->industry_id, fn ($q) => $q->where(fn ($w) => $w->whereNull('industry_id')->orWhere('industry_id', $branch->industry_id)))
             ->with(['taxGroup.rates' => fn ($q) => $q->where('is_active', true), 'units' => fn ($q) => $q->where('is_sellable', true),
                 'units.uom', 'units.barcodes',
                 'prices' => fn ($q) => $q->whereIn('price_list_id', $lists)->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>', $now))])
@@ -233,7 +236,7 @@ class PosController extends Controller
         return ['allergies' => $p?->allergies ?? [], 'nhis_no' => $p?->nhis_no, 'nhis_expires_on' => $p?->nhis_expires_on?->toDateString()];
     }
 
-    private function catalogVersion(): string
+    private function catalogVersion(?string $industryId = null): string
     {
         $tenant = app(TenantContext::class)->id();
         $parts = [];
@@ -243,6 +246,7 @@ class PosController extends Controller
         }
         $parts[] = 'tax_group_rates:'.DB::table('tax_group_rates')->count();
         $parts[] = 'stock:'.DB::table('stock_levels')->where('tenant_id', $tenant)->max('updated_at');
+        $parts[] = 'industry:'.$industryId; // each industry's tills cache their own catalogue
 
         return substr(hash('sha256', implode('|', $parts)), 0, 32);
     }
@@ -383,6 +387,7 @@ class PosController extends Controller
             ->where(fn ($q) => $q->where('pos_selectable', true)->orWhere('is_default', true)
                 ->orWhereIn('id', Customer::where('is_active', true)->whereNotNull('price_list_id')->select('price_list_id'))) // customers' own lists
             ->where(fn ($q) => $q->whereNull('branch_id')->orWhere('branch_id', $branch->id))
+            ->when($branch->industry_id, fn ($q) => $q->where(fn ($w) => $w->whereNull('industry_id')->orWhere('industry_id', $branch->industry_id)))
             ->orderByDesc('is_default')->orderBy('name')->get();
     }
 

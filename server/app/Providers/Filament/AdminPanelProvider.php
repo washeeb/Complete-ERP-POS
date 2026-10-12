@@ -6,6 +6,8 @@ use App\Domain\Licensing\Watermark;
 use App\Filament\Auth\EditProfile;
 use App\Filament\Support\PanelBrand;
 use App\Filament\Widgets\BusinessStats;
+use App\Filament\Widgets\IndustryHighlights;
+use App\Filament\Widgets\IndustryOverview;
 use App\Http\Middleware\EnforceLicense;
 use App\Http\Middleware\RedirectToSetupWizard;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
@@ -56,7 +58,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([Dashboard::class])
             ->navigationGroups(['Insights', 'Reports', 'Sales', 'Cash', 'Online', 'Purchasing', 'Finance', 'HR & payroll', 'Stock', 'Restaurant', 'Pharmacy', 'Electronics', 'Fashion', 'Catalog', 'Pricing & tax', 'Company', 'People & access', 'Messages', 'System'])
-            ->widgets([AccountWidget::class, BusinessStats::class])
+            ->widgets([AccountWidget::class, BusinessStats::class, IndustryOverview::class, IndustryHighlights::class])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -82,6 +84,8 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::FOOTER, fn () => view('branding.powered-by'))
             // "Report a problem" for everyone signed in (pilot support, Phase 14).
             ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => Blade::render('@livewire(\'report-problem\')'))
+            // Industries: show one industry (its branches, catalogue, stock, sales, reports) or all.
+            ->renderHook(PanelsRenderHook::GLOBAL_SEARCH_BEFORE, fn () => Blade::render('@livewire(\'industry-switcher\')'))
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => new HtmlString(Watermark::meta()))
             ->authMiddleware([
                 Authenticate::class,
