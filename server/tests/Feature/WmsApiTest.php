@@ -51,7 +51,7 @@ it('signs a storekeeper in on a handheld (no till access needed) and refuses peo
     wms($this, 'GET', 'bootstrap')->assertOk()->assertJsonPath('warehouses.0.use_bins', true)
         ->assertJsonPath('warehouses.0.can', ['stock.receive', 'stock.transfer', 'stock.count'])->assertJsonPath('warehouses.0.bins.0.code', 'A-01');
 
-    $cashier = staff($this->owner, 'esi', 2, 'cashier', ScopeType::Branch, $this->branches['HQ']->id);
+    $cashier = staff($this->owner, 'esi', 2, 'teller', ScopeType::Branch, $this->branches['HQ']->id);
     app(AccessService::class)->setPin(actorFor($this->owner), $cashier, '559301');
     app('auth')->forgetGuards();
     $this->withToken($this->deviceToken)->postJson('/api/v1/pos/login', ['username' => 'esi', 'pin' => '559301'])->assertForbidden();

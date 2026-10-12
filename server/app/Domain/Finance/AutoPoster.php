@@ -24,7 +24,7 @@ final class AutoPoster
     public const KINDS = [
         'sales' => 'Till sales and returns', 'stock' => 'Stock movements (at cost)', 'invoices' => 'Customer invoices', 'credit_notes' => 'Credit notes',
         'customer_payments' => 'Customer payments', 'customer_openings' => 'Customer opening balances', 'online_orders' => 'Online orders',
-        'shifts' => 'Till cash over / short', 'loyalty' => 'Loyalty points', 'stored_value' => 'Gift cards and store credit',
+        'shifts' => 'Till cash over / short', 'cash' => 'Till vaults, cash handovers and cash differences', 'loyalty' => 'Loyalty points', 'stored_value' => 'Gift cards and store credit',
         'supplier_bills' => 'Supplier bills', 'supplier_payments' => 'Supplier payments', 'supplier_openings' => 'Supplier opening balances',
         'money_transfers' => 'Money moved between accounts', 'expense_claims' => 'Expense claims paid', 'depreciation' => 'Depreciation', 'asset_disposals' => 'Assets disposed of',
         'staff_loans' => 'Staff loans and advances paid out', 'payroll' => 'Payroll (approved)', 'payroll_payments' => 'Payroll paid',
@@ -119,7 +119,9 @@ final class AutoPoster
             'customer_payments' => [$this->unpostedQuery('customer_payments', 'customer_payment', $tenantId), 's.received_on'],
             'customer_openings' => [$this->unpostedQuery('customer_ledger', 'customer_ledger', $tenantId)->where('s.type', 'opening'), $d('s.occurred_at')],
             'online_orders' => [$this->unpostedQuery('sales_orders', 'sales_order', $tenantId)->where('s.status', 'fulfilled'), $d('s.fulfilled_at')],
-            'shifts' => [$this->unpostedQuery('shifts', 'shift', $tenantId)->where('s.status', 'closed')->where('s.over_short_minor', '<>', 0), $d('s.closed_at')],
+            // A shift on a vault is settled by the cash chain (kind "cash"): the cashier's count, not the teller's, decides.
+            'shifts' => [$this->unpostedQuery('shifts', 'shift', $tenantId)->where('s.status', 'closed')->where('s.over_short_minor', '<>', 0)->whereNull('s.vault_session_id'), $d('s.closed_at')],
+            'cash' => [$this->unpostedQuery('cash_movements', 'cash_movement', $tenantId), $d('s.occurred_at')],
             'loyalty' => [$this->unpostedQuery('loyalty_ledger', 'loyalty_ledger', $tenantId)->whereIn('s.type', ['earn', 'reverse', 'expire', 'opening']), $d('s.occurred_at')],
             'stored_value' => [$this->unpostedQuery('stored_value_ledger', 'stored_value_ledger', $tenantId)
                 ->where(fn ($w) => $w->where('s.type', 'expire')->orWhere(fn ($i) => $i->where('s.type', 'issue')
@@ -358,6 +360,20 @@ final class AutoPoster
                 ['account' => 'cash_till', 'amount' => (int) $s->over_short_minor, 'branch_id' => $s->branch_id],
                 ['account' => 'cash_over_short', 'amount' => -(int) $s->over_short_minor, 'branch_id' => $s->branch_id],
             ], [['shift', $s->id]], 'shifts', late: true);
+        }
+
+        return count($rows);
+    }
+
+    /** Cash moved between the cash accounts by the vault chain (CashControl): one entry each, so every step can be traced. */
+    private function cash(Actor $actor, int $batch): int
+    {
+        $rows = $this->rows('cash', $actor->tenantId, $batch, ['s.id', 's.branch_id', 's.from_account', 's.to_account', 's.amount_minor', 's.memo', 's.party_type', 's.party_id']);
+        foreach ($rows as $m) {
+            $this->gl->post($actor, $m->d, 'auto', $m->memo, [
+                ['account' => $m->to_account, 'amount' => (int) $m->amount_minor, 'branch_id' => $m->branch_id, 'party_type' => $m->party_type, 'party_id' => $m->party_id],
+                ['account' => $m->from_account, 'amount' => -(int) $m->amount_minor, 'branch_id' => $m->branch_id],
+            ], [['cash_movement', $m->id]], 'cash', late: true);
         }
 
         return count($rows);

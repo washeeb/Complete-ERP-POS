@@ -41,7 +41,7 @@ it('limits a branch-scoped role to its own branch and what is inside it', functi
 it('gives a till-scoped cashier only that till, not the whole branch', function () {
     $till = Till::where('branch_id', $this->branches['BA']->id)->orderBy('code')->first();
     $other = Till::where('branch_id', $this->branches['BA']->id)->orderBy('code')->skip(1)->first();
-    $cashier = staff($this->owner, 'esi', 2, 'cashier', ScopeType::Till, $till->id);
+    $cashier = staff($this->owner, 'esi', 2, 'teller', ScopeType::Till, $till->id);
 
     expect($this->authz->allows($cashier, 'pos.access', $till))->toBeTrue()
         ->and($this->authz->allows($cashier, 'pos.access', $other))->toBeFalse()
@@ -56,7 +56,7 @@ it('denies everything with no assignment, and denies unknown permissions', funct
 });
 
 it('stops honouring expired, revoked or inactive access', function () {
-    $c = staff($this->owner, 'abena', 2, 'cashier', ScopeType::Branch, $this->branches['HQ']->id);
+    $c = staff($this->owner, 'abena', 2, 'teller', ScopeType::Branch, $this->branches['HQ']->id);
     expect($this->authz->allows($c, 'pos.access', $this->branches['HQ']))->toBeTrue();
 
     $grant = RoleAssignment::where('user_id', $c->id)->first();
@@ -85,7 +85,7 @@ it('ignores a role above the user\'s security ceiling even if it is in the table
 });
 
 it('refuses self-granting', function () {
-    $this->access->grant(actorFor($this->owner), $this->owner, Role::where('key', 'cashier')->first(), ScopeType::Tenant, $this->tenant->id);
+    $this->access->grant(actorFor($this->owner), $this->owner, Role::where('key', 'teller')->first(), ScopeType::Tenant, $this->tenant->id);
 })->throws(DomainException::class, 'yourself');
 
 it('refuses granting a role above the person\'s level', function () {
@@ -101,7 +101,7 @@ it('keeps IT Admin technical: it cannot hand out business access', function () {
         ->and($this->authz->allows($it, 'pos.access', $this->branches['HQ']))->toBeFalse()
         ->and($this->authz->allows($it, 'setup.company.manage'))->toBeFalse();
 
-    $this->access->grant(actorFor($it), $c, Role::where('key', 'cashier')->first(), ScopeType::Branch, $this->branches['HQ']->id);
+    $this->access->grant(actorFor($it), $c, Role::where('key', 'teller')->first(), ScopeType::Branch, $this->branches['HQ']->id);
 })->throws(AccessDenied::class);
 
 it('refuses adding business permissions to a technical role', function () {
@@ -147,7 +147,7 @@ it('isolates companies from each other', function () {
 
     expect($this->authz->allows($this->owner, 'setup.company.manage', $otherBranches['XX']))->toBeFalse();
 
-    $this->access->grant(actorFor($this->owner), $otherOwner, Role::withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->where('key', 'cashier')->first(),
+    $this->access->grant(actorFor($this->owner), $otherOwner, Role::withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->where('key', 'teller')->first(),
         ScopeType::Tenant, $this->tenant->id);
 })->throws(AccessDenied::class);
 

@@ -17,7 +17,7 @@ class Shift extends Model
 
     protected function casts(): array
     {
-        return ['opened_at' => 'datetime', 'closed_at' => 'datetime', 'opening_float_minor' => 'integer', 'expected_cash_minor' => 'integer', 'counted_cash_minor' => 'integer', 'over_short_minor' => 'integer'];
+        return ['opened_at' => 'datetime', 'closed_at' => 'datetime', 'opening_float_minor' => 'integer', 'expected_cash_minor' => 'integer', 'counted_cash_minor' => 'integer', 'over_short_minor' => 'integer', 'counted_denoms' => 'array'];
     }
 
     public function till(): BelongsTo

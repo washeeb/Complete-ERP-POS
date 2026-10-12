@@ -56,7 +56,7 @@ it('adds an employee and prepares, approves and shows the payroll on screen', fu
 });
 
 it('lets staff request leave and see payslips themselves, and managers approve it', function () {
-    $staff = withMfa(staff($this->owner, 'esi', 2, 'cashier', ScopeType::Branch, $this->branches['HQ']->id));
+    $staff = withMfa(staff($this->owner, 'esi', 2, 'teller', ScopeType::Branch, $this->branches['HQ']->id));
     app(HrService::class)->saveEmployee(actorFor($this->hrm), new Employee, ['name' => 'Esi', 'user_id' => $staff->id, 'branch_id' => $this->branches['HQ']->id,
         'hire_date' => now()->subYear()->toDateString(), 'pay_method' => 'cash', 'employment_type' => 'permanent', 'basic_salary_minor' => 150000]);
     $this->flushSession();
@@ -77,7 +77,7 @@ it('lets staff request leave and see payslips themselves, and managers approve i
 });
 
 it('keeps HR and payroll from people without access, including IT admin', function () {
-    foreach ([staff($this->owner, 'it', 4, 'it_admin'), staff($this->owner, 'cash', 2, 'cashier')] as $u) {
+    foreach ([staff($this->owner, 'it', 4, 'it_admin'), staff($this->owner, 'cash', 2, 'teller')] as $u) {
         $this->flushSession();
         $this->actingAs(withMfa($u));
         $this->get(EmployeeResource::getUrl())->assertForbidden();

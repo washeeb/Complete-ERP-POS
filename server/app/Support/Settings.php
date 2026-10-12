@@ -42,6 +42,11 @@ final class Settings
             'label' => 'Stop sales when the system shows no stock',
             'help' => 'Off (recommended while stock counts are being set up): the till sells anyway and the shortfall shows as negative stock to investigate. On: the till refuses the sale.',
         ],
+        'cash.vaults' => [
+            'type' => 'bool', 'default' => false, 'group' => 'Tills and cash',
+            'label' => 'Cash control with vaults (Teller → Cashier → Income Controller)',
+            'help' => 'Off: whoever closes a till counts the drawer, and the difference is booked as cash over/short. On: each till has a vault (cash tray with its own float) per shift; the Cashier issues the float and assigns the teller, receives and recounts the vault blind, and hands the day to the Income Controller, who counts it blind again, decides any differences and records the bank deposit.',
+        ],
         'distribution.deposits_as_liability' => [
             'type' => 'bool', 'default' => false, 'group' => 'Distribution',
             'label' => 'Book container deposits as money owed to customers',

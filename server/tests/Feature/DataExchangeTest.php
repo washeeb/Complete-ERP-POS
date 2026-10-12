@@ -114,7 +114,7 @@ it('checks a product file without saving, then creates and updates products with
     $rows = iterator_to_array(ImportService::importer('products')->exportRows($this->o, [], null), false);
     expect(collect($rows)->firstWhere(0, 'SUGAR-1')[1])->toBe('Sugar 1 kg');
 
-    $cashier = staff($this->owner, 'efua', 2, 'cashier', ScopeType::Branch, $this->hq->id);
+    $cashier = staff($this->owner, 'efua', 2, 'teller', ScopeType::Branch, $this->hq->id);
     expect(fn () => $this->imports->run(actorFor($cashier), 'products', $file, 'x.csv', [], null, true))->toThrow(AccessDenied::class)
         ->and(DataImport::count())->toBe(3);
 });

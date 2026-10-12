@@ -55,7 +55,7 @@ beforeEach(function () {
     $this->till = Till::where('branch_id', $this->hq->id)->first();
     [$this->device] = app(DeviceService::class)->register(actorFor($this->owner), ['branch_id' => $this->hq->id, 'till_id' => $this->till->id, 'name' => 'T1', 'kind' => 'pos']);
     $this->device->forceFill(['status' => 'active'])->save();
-    $this->cashier = staff($this->owner, 'efua', 2, 'cashier', ScopeType::Till, $this->till->id);
+    $this->cashier = staff($this->owner, 'efua', 2, 'teller', ScopeType::Till, $this->till->id);
     $this->pharmacist = staff($this->owner, 'kwame', 4, 'pharmacist', ScopeType::Branch, $this->hq->id);
     app(AccessService::class)->setPin(actorFor($this->owner), $this->pharmacist, '771204');
     $this->shift = app(ShiftService::class)->open($this->device, $this->cashier, 0);
@@ -175,7 +175,7 @@ it('gives pharmacy tills the drug details and interaction table, and allergies o
 
         return $login;
     };
-    $till = staff($this->owner, 'efua2', 2, 'cashier');
+    $till = staff($this->owner, 'efua2', 2, 'teller');
     app(AccessService::class)->setPin(actorFor($this->owner), $till, '482613');
 
     $cashierToken = $token('efua2');

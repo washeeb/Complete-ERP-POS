@@ -74,7 +74,7 @@ it('imports a bank statement, matches it to the books, posts the charges and rec
     $r = $svc->reconciliation($bank, '2026-10-31');
     expect(bal(($this->acc)('bank_charges')->id))->toBe(3250)
         ->and($r['ledger'])->toBe(346750)->and($r['statement'])->toBe(346750)->and($r['outstanding'])->toBe(0)->and($r['difference'])->toBe(0);
-    expect(fn () => $svc->import(actorFor(staff($this->owner, 'cash', 2, 'cashier')), $bank, 'x.csv', $csv, $map))->toThrow(AccessDenied::class);
+    expect(fn () => $svc->import(actorFor(staff($this->owner, 'cash', 2, 'teller')), $bank, 'x.csv', $csv, $map))->toThrow(AccessDenied::class);
     expect(app(GlCheck::class)->run($this->tenant->id)['ok'])->toBeTrue()->and($opening)->not->toBeNull();
 });
 
@@ -97,7 +97,7 @@ it('takes an expense claim from receipt to petty cash: approved within the limit
     $small = $exp->submit(actorFor($sup), $this->hq, ['spent_on' => now()->toDateString(), 'account_id' => $fuel, 'description' => 'Fuel for delivery van', 'amount_minor' => 30000]);
     $big = $exp->submit(actorFor($sup), $this->hq, ['spent_on' => now()->toDateString(), 'account_id' => $fuel, 'description' => 'Generator repair', 'amount_minor' => 80000]);
     expect($small->number)->toStartWith('EXP-')
-        ->and(fn () => $exp->submit(actorFor(staff($this->owner, 'efua', 2, 'cashier', ScopeType::Branch, $this->hq->id)), $this->hq,
+        ->and(fn () => $exp->submit(actorFor(staff($this->owner, 'efua', 2, 'teller', ScopeType::Branch, $this->hq->id)), $this->hq,
             ['spent_on' => now()->toDateString(), 'account_id' => $fuel, 'description' => 'x', 'amount_minor' => 100]))->toThrow(AccessDenied::class)
         ->and(fn () => $exp->submit(actorFor($sup), $this->hq, ['spent_on' => now()->toDateString(), 'account_id' => ($this->acc)('bank')->id, 'description' => 'x', 'amount_minor' => 100]))
         ->toThrow(DomainException::class, 'not an expense account');
@@ -145,7 +145,7 @@ it('depreciates assets straight-line each month, exactly to the residual, and ta
         ->and(bal($acc))->toBe(0)
         ->and(bal(($this->acc)('disposal')->id))->toBe(1000000 - 4 * 27775 - 900000)
         ->and(FixedAsset::sole()->status)->toBe('disposed')
-        ->and(fn () => $assets->register(actorFor(staff($this->owner, 'cash', 2, 'cashier')), []))->toThrow(AccessDenied::class);
+        ->and(fn () => $assets->register(actorFor(staff($this->owner, 'cash', 2, 'teller')), []))->toThrow(AccessDenied::class);
     Carbon::setTestNow();
 });
 

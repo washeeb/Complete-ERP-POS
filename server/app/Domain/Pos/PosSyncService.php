@@ -74,7 +74,7 @@ final class PosSyncService
                 }
                 $existed = Shift::whereKey($p['id'])->exists();
                 $shift = $this->shifts->open($device, $user, (int) $p['opening_float_minor'], $p['id'],
-                    Carbon::parse($p['opened_at']), offline: true);
+                    Carbon::parse($p['opened_at']), offline: true, vaultSessionId: $p['vault_session_id'] ?? null);
                 if (! $existed) {
                     $this->flagGrant($device, $grant, $user, Carbon::parse($p['opened_at']), 'shift', $shift->id, 'Shift opened');
                 }
@@ -94,7 +94,7 @@ final class PosSyncService
                     ?? throw new DomainException('The shift being closed was not received.', 'no_shift');
                 $wasClosed = $shift->status === 'closed';
                 $this->shifts->close($device, $user, (int) $p['counted_cash_minor'], $p['note'] ?? null, $shift->id,
-                    Carbon::parse($p['closed_at']), offline: true);
+                    Carbon::parse($p['closed_at']), offline: true, denoms: is_array($p['denoms'] ?? null) ? $p['denoms'] : null);
 
                 return ['status' => $wasClosed ? 'duplicate' : 'accepted'];
 

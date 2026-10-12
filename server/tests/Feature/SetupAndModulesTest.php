@@ -82,13 +82,13 @@ it('reads manifests and only seeds permissions of released modules', function ()
 });
 
 it('re-seeding never re-adds a permission an admin removed from a role', function () {
-    $cashier = Role::where('key', 'cashier')->first();
+    $cashier = Role::where('key', 'teller')->first();
     $cashier->permissions()->detach('pos.access');
 
     app(DatabaseSeeder::class)->run(app(AccessCatalogSync::class), app(TenantBaseline::class));
 
     expect($cashier->fresh()->permissionKeys())->not->toContain('pos.access')
-        ->and(Role::where('key', 'cashier')->count())->toBe(1);
+        ->and(Role::where('key', 'teller')->count())->toBe(1);
 });
 
 it('validates branch codes used in document numbers', function () {

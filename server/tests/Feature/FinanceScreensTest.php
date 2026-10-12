@@ -82,7 +82,7 @@ it('enters a bill from goods received, pays it, and shows what is owed', functio
 });
 
 it('keeps finance away from people without access, including IT admin', function () {
-    foreach ([staff($this->owner, 'it', 4, 'it_admin'), staff($this->owner, 'esi', 2, 'cashier')] as $u) {
+    foreach ([staff($this->owner, 'it', 4, 'it_admin'), staff($this->owner, 'esi', 2, 'teller')] as $u) {
         $this->flushSession();
         $this->actingAs(withMfa($u));
         $this->get(AccountResource::getUrl())->assertForbidden();

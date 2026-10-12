@@ -131,7 +131,7 @@ it('shows what to order and creates draft orders per supplier', function () {
 });
 
 it('hides purchasing from people without access', function () {
-    $cashier = withMfa(staff($this->owner, 'esi', 2, 'cashier', ScopeType::Branch, $this->branches['HQ']->id));
+    $cashier = withMfa(staff($this->owner, 'esi', 2, 'teller', ScopeType::Branch, $this->branches['HQ']->id));
     $this->actingAs($cashier);
 
     $this->get(PurchaseOrderResource::getUrl())->assertForbidden();

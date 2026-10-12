@@ -55,7 +55,7 @@ beforeEach(function () {
     $this->till = Till::where('branch_id', $this->hq->id)->first();
     [$this->device] = app(DeviceService::class)->register(actorFor($this->owner), ['branch_id' => $this->hq->id, 'till_id' => $this->till->id, 'name' => 'T1', 'kind' => 'pos']);
     $this->device->forceFill(['status' => 'active'])->save();
-    $this->cashier = staff($this->owner, 'efua', 2, 'cashier', ScopeType::Till, $this->till->id);
+    $this->cashier = staff($this->owner, 'efua', 2, 'teller', ScopeType::Till, $this->till->id);
     $this->shift = app(ShiftService::class)->open($this->device, $this->cashier, 0);
     $this->seq = 0;
     $this->inv = app(InventoryService::class);
@@ -201,7 +201,7 @@ it('gives grocery tills their scale and sticker settings only where the module i
 
         return $this->withToken($login)->getJson('/api/v1/pos/catalog')->json();
     };
-    $u = staff($this->owner, 'efua2', 2, 'cashier');
+    $u = staff($this->owner, 'efua2', 2, 'teller');
     app(AccessService::class)->setPin(actorFor($this->owner), $u, '482613');
     $hq = $catalog($this->till);
     expect($hq['grocery'])->toMatchArray(['scale_prefixes' => ['21'], 'markdown_prefix' => '29'])

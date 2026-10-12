@@ -15,6 +15,7 @@ use App\Domain\Licensing\Watermark;
 use App\Domain\Messaging\ReceiptSender;
 use App\Domain\Messaging\Templates;
 use App\Domain\Modules\ModuleService;
+use App\Domain\Pos\CashControl;
 use App\Domain\Pos\PosSyncService;
 use App\Domain\Pos\ReturnService;
 use App\Domain\Pos\SaleService;
@@ -45,6 +46,7 @@ use App\Models\StockLevel;
 use App\Models\Style;
 use App\Models\Tenant;
 use App\Models\Till;
+use App\Models\VaultSession;
 use App\Security\Authorizer;
 use App\Support\Money;
 use App\Support\Qty;
@@ -84,6 +86,15 @@ class PosController extends Controller
             'send_receipt' => array_values(array_filter(['sms', 'whatsapp', 'email'], fn ($ch) => (bool) Templates::find($device->tenant_id, 'receipt', $ch)?->is_active)),
             'license' => (fn ($s) => ['state' => $s['state'], 'read_only' => $s['read_only'], 'message' => $s['message'], 'ref' => Watermark::reference()])(app(LicenseManager::class)->status()),
             'shift' => $this->shiftJson($shifts->current($device), $shifts),
+            // Cash control: the vaults the cashier issued to this teller at this till, and the notes and coins to count.
+            'cash' => app(CashControl::class)->enabled($device->tenant_id) ? [
+                'vaults' => true,
+                'sessions' => $till ? app(CashControl::class)->sessionsFor($request->user(), $till)->map(fn (VaultSession $s) => [
+                    'id' => $s->id, 'vault' => $s->vault->name, 'float_minor' => $s->float_minor, 'status' => $s->status,
+                    'issued_by' => $s->issued_by_name, 'business_date' => $s->business_date->toDateString(),
+                ])->values() : [],
+                'denominations' => collect(CashControl::denominations($tenant->currency_code))->map(fn ($d, $k) => ['key' => $k, 'label' => $d[0], 'value' => $d[1]])->values(),
+            ] : ['vaults' => false, 'sessions' => [], 'denominations' => collect(CashControl::denominations($tenant->currency_code))->map(fn ($d, $k) => ['key' => $k, 'label' => $d[0], 'value' => $d[1]])->values()],
             'last_device_seq' => (int) Sale::where('device_id', $device->id)->max('device_seq'),
             'catalog_version' => $this->catalogVersion(),
             // Live updates (Reverb). null = not configured on this server; the till then polls.
@@ -241,8 +252,10 @@ class PosController extends Controller
         $data = $request->validate([
             'opening_float_minor' => ['required', 'integer', 'min:0', 'max:100000000000'],
             'id' => ['nullable', 'uuid'], // till-generated, so the same shift can later be referenced offline
+            'vault_session_id' => ['nullable', 'uuid'], // cash control: the vault the cashier issued to this teller
         ]);
-        $shift = $shifts->open($this->device($request), $request->user(), (int) $data['opening_float_minor'], $data['id'] ?? null);
+        $shift = $shifts->open($this->device($request), $request->user(), (int) $data['opening_float_minor'], $data['id'] ?? null,
+            vaultSessionId: $data['vault_session_id'] ?? null);
 
         return response()->json(['shift' => $this->shiftJson($shift, $shifts)], 201);
     }
@@ -252,10 +265,14 @@ class PosController extends Controller
         $data = $request->validate([
             'counted_cash_minor' => ['required', 'integer', 'min:0', 'max:100000000000'],
             'note' => ['nullable', 'string', 'max:255'],
+            'denoms' => ['nullable', 'array'], // the count note by note: {key: count}
+            'denoms.*' => ['integer', 'min:0', 'max:1000000'],
         ]);
-        $shift = $shifts->close($this->device($request), $request->user(), (int) $data['counted_cash_minor'], $data['note'] ?? null);
+        $shift = $shifts->close($this->device($request), $request->user(), (int) $data['counted_cash_minor'], $data['note'] ?? null,
+            denoms: $data['denoms'] ?? null);
 
-        return response()->json(['shift' => $this->shiftJson($shift, $shifts, reveal: true)]);
+        // On a vault the result stays blind too: the cashier counts it next, against the teller's count.
+        return response()->json(['shift' => $this->shiftJson($shift, $shifts, reveal: ! $shift->vault_session_id)]);
     }
 
     public function postSale(Request $request, SaleService $sales): JsonResponse

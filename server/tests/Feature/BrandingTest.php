@@ -73,7 +73,7 @@ it('takes a company logo, resizes and cleans it, suggests the colour, and serves
     expect(DB::table('outbox_events')->where('aggregate_type', 'brand_asset')->count())->toBeGreaterThanOrEqual(3); // replicated like other company data
 
     // Only people who may change the company set-up may change its brand.
-    $cashier = staff($this->owner, 'efua', 2, 'cashier', ScopeType::Branch, $this->branches['HQ']->id);
+    $cashier = staff($this->owner, 'efua', 2, 'teller', ScopeType::Branch, $this->branches['HQ']->id);
     expect(fn () => $this->branding->upload(actorFor($cashier), 'logo', $big))->toThrow(AccessDenied::class);
 });
 
@@ -122,7 +122,7 @@ it('brands the back office, the till, printed documents and PDFs — and white-l
     app('auth')->forgetGuards();
     $till = Till::where('branch_id', $this->branches['HQ']->id)->first();
     [$device, $code] = app(DeviceService::class)->register($this->o, ['branch_id' => $this->branches['HQ']->id, 'till_id' => $till->id, 'name' => 'Till 1', 'kind' => 'pos']);
-    $cashier = staff($this->owner, 'esi', 2, 'cashier', ScopeType::Till, $till->id);
+    $cashier = staff($this->owner, 'esi', 2, 'teller', ScopeType::Till, $till->id);
     app(AccessService::class)->setPin($this->o, $cashier, '4826');
     $deviceToken = $this->postJson('/api/v1/devices/enroll', ['device_id' => $device->id, 'code' => $code, 'public_key' => str_repeat('k', 64)])->json('token');
     $login = $this->withToken($deviceToken)->postJson('/api/v1/pos/login', ['username' => 'esi', 'pin' => '4826'])->json();
@@ -145,7 +145,7 @@ it('brands the back office, the till, printed documents and PDFs — and white-l
 });
 
 it('keeps the branding page to people who manage the company', function () {
-    $cashier = staff($this->owner, 'efua', 2, 'cashier', ScopeType::Branch, $this->branches['HQ']->id);
+    $cashier = staff($this->owner, 'efua', 2, 'teller', ScopeType::Branch, $this->branches['HQ']->id);
     $this->actingAs(withMfa($cashier));
     $this->get(BrandingPage::getUrl())->assertForbidden();
 });

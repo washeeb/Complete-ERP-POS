@@ -51,7 +51,7 @@ function newCustomer($t, string $name = 'Ama'): Customer
 }
 
 it('starts unactivated: nothing can be changed until a genuine key for this installation is entered', function () {
-    $cashier = staff($this->owner, 'efua', 2, 'cashier');
+    $cashier = staff($this->owner, 'efua', 2, 'teller');
     License::query()->update(['is_current' => false]);
     LicenseManager::forget();
     expect(app(LicenseManager::class)->status()['state'])->toBe('unlicensed')
@@ -93,7 +93,7 @@ it('warns before expiry, keeps working through the grace period, then turns read
     // No printing; tills cannot sign in or sell, and their queued work is kept for later (423, not refused).
     $this->actingAs($this->owner)->get(route('print.statement', ['customer' => Customer::value('id'), 'from' => now()->toDateString(), 'to' => now()->toDateString()]))->assertStatus(423)->assertSee('Printing and downloads are switched off');
     $till = Till::where('branch_id', $this->branches['HQ']->id)->first();
-    $cashier = LicenseManager::bypass(fn () => staff($this->owner, 'esi', 2, 'cashier', ScopeType::Till, $till->id));
+    $cashier = LicenseManager::bypass(fn () => staff($this->owner, 'esi', 2, 'teller', ScopeType::Till, $till->id));
     LicenseManager::bypass(fn () => app(AccessService::class)->setPin(actorFor($this->owner), $cashier, '482613'));
     [$device, $code] = LicenseManager::bypass(fn () => app(DeviceService::class)->register(actorFor($this->owner), ['branch_id' => $till->branch_id, 'till_id' => $till->id, 'name' => 'T', 'kind' => 'pos']));
     $token = LicenseManager::bypass(fn () => $this->postJson('/api/v1/devices/enroll', ['code' => $code, 'public_key' => str_repeat('k', 64)])->json('token'));
@@ -261,7 +261,7 @@ it('lets the owner grant roles on a licence without HR, without granting what th
     $till = Till::where('branch_id', $this->branches['BA']->id)->first();
     $access = app(AccessService::class);
     $cashier = staff($this->owner, 'kojo', 2);
-    $access->grant(actorFor($this->owner), $cashier, Role::where('key', 'cashier')->first(), ScopeType::Till, $till->id);
+    $access->grant(actorFor($this->owner), $cashier, Role::where('key', 'teller')->first(), ScopeType::Till, $till->id);
     app(Authorizer::class)->forget();
 
     // The grant stands, the licence still decides use: the cashier sells, but HR stays switched off.

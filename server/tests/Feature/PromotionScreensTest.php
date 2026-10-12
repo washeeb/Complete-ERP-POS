@@ -48,7 +48,7 @@ it('sells a gift card from the screen and shows its balance and history', functi
 });
 
 it('keeps promotions and gift cards from people without access', function () {
-    $this->actingAs(withMfa(staff($this->owner, 'esi', 2, 'cashier', ScopeType::Branch, $this->branches['HQ']->id)));
+    $this->actingAs(withMfa(staff($this->owner, 'esi', 2, 'teller', ScopeType::Branch, $this->branches['HQ']->id)));
     $this->get(PromotionResource::getUrl('create'))->assertForbidden();
     $this->get(StoredValueResource::getUrl())->assertForbidden();
 });
