@@ -1,4 +1,6 @@
-# Cashier guide (till)
+# Teller guide (till)
+
+The person who sells at a till is the **Teller** (called *Cashier* before version 0.30). Where your shop uses vaults, the **Cashier** issues and receives the cash trays: see the *Cashier and Income Controller guide* in `docs/training`.
 
 ## Start of day
 
@@ -6,7 +8,7 @@
    device first (System → Devices) and give you the code.
 2. **Sign in** with your username and PIN (on-screen keypad or keyboard). Five wrong PINs lock it
    for 15 minutes; a manager can reset it.
-3. **Open shift:** count the cash in the drawer and enter it as the opening float.
+3. **Open shift:** count the cash in the drawer and enter it as the opening float. With vaults: choose the vault the Cashier issued to you, confirm you counted its float, and open.
 
 ## Selling
 

@@ -14,7 +14,7 @@ return [
     'modules_path' => base_path('modules'),
 
     // Shown in problem reports and the pilot report; raised with each release (CHANGELOG).
-    'version' => '0.29.3',
+    'version' => '0.30.0',
 
     // Where "Report a problem" and the daily pilot report go when the go-live plan names no support address.
     // Where problem reports and the pilot report go when the go-live plan names no address: the publisher's support by default.

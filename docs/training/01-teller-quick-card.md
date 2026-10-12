@@ -1,5 +1,5 @@
 <!-- layout: card -->
-# Cashier quick card
+# Teller quick card
 
 Keep this card at the till. Practise first in the **practice company** (a purple **PRACTICE** bar shows at the top): nothing there is real.
 
@@ -7,6 +7,7 @@ Keep this card at the till. Practise first in the **practice company** (a purple
 
 1. **Sign in** — your username and PIN. Five wrong PINs lock you out for 15 minutes; a supervisor can reset it.
 2. **Open shift** — count the cash in the drawer and type it in as the opening float.
+   **With vaults** (your shop uses a Cashier): take the tray the Cashier gives you, count the float in it, choose your vault on the till, tick *I have counted the float* and open. If the float is wrong, do not open: give the tray back.
 
 ## Selling
 
@@ -45,7 +46,9 @@ The bottom right says **"Server not answering — working offline"** or **"No ne
 
 ## End of the shift
 
-**Close shift** → count **all** the cash in the drawer (float included) → type it in. Only then do you see over/short. Add a note if there is a difference. Sign out.
+**Close shift** → count **all** the cash in the drawer (float included), note by note and coin by coin → **Close shift**. Only then do you see over/short. Add a note if there is a difference. Sign out.
+
+**With vaults:** you do not see the expected figure. Close the tray and hand it to the Cashier, who counts it again.
 
 ## Something wrong?
 

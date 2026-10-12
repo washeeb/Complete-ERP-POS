@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.30.0] — 2026-10-12 · Cash control: vaults, Teller → Cashier → Income Controller
+### Added
+- **Cash control with vaults** (setting *Tills and cash → Cash control with vaults*, off by default; owner decisions 2026-10-12).
+  - **Shifts:** *Morning* (07:00–14:00) and *Afternoon* (14:00–21:00) by default; they can be changed and more added (**Cash → Shifts and vaults**).
+  - **Vaults:** each till has one vault (a cash tray with its own standard float) per shift.
+  - **The chain:**
+    - The **Cashier** issues the float and assigns the teller (**Cash → Cash desk**).
+    - The **Teller** can only open the till on that vault, confirms counting the float, and closes with a count note by note and coin by coin. They are not shown the expected figure.
+    - The Cashier receives and counts the tray **blind**, and hands the day to the **Income Controller** (**Cash → Income control**), who counts it blind again.
+    - A count that differs from the previous person's gets one blind recount; the second count stands.
+  - **Differences** are recorded against the person responsible and decided by the Income Controller: cash over/short, or charged to the staff member. A charge is recovered from pay as a staff loan of the new kind *Cash shortage*, over up to 12 months, and needs an employee record.
+  - **Bank deposit:** the Income Controller records it with the slip number, as a money transfer the bank reconciliation ticks off.
+  - **Separation of duties is enforced:**
+    - nobody issues a vault to themselves or receives their own;
+    - the Income Controller cannot receive a handover they made;
+    - nobody decides their own difference.
+- **Books:**
+  - new accounts 1115 *Cash with cashiers* and 1125 *Cash differences awaiting approval*;
+  - every move is an append-only `cash_movements` row (protected by a database trigger), posted by the auto-poster (new kind *cash*): office → till (float) → cashier → office → bank;
+  - shifts on a vault no longer post their own over/short.
+- **Roles:**
+  - **Teller** is the former *Cashier* role, renamed by migration; existing grants keep working.
+  - New **Cashier** (level 3) and **Income Controller** (level 4).
+  - Eight `cash.*` permissions (Core 0.15.0), given to General Manager, Finance Manager, Branch Manager (set-up and view) and Auditor (view).
+- **Till:**
+  - the open-shift screen shows the vaults issued to the signed-in teller;
+  - the close screen counts by notes and coins (GH₵200 to 1p), with a running total;
+  - offline opens and closes carry the vault and the count.
+- **Sync:** shifts and vaults travel with company set-up (down); vault sessions, handovers, differences and cash movements form the new *cash* group (both ways).
+- **Docs:**
+  - installation guide 7 (Step 14, cash control), 17.7 and 18.2;
+  - new training guide *Cashier and Income Controller*; the quick card is now the *Teller quick card*;
+  - user manual;
+  - the penetration-test accounts now include a teller, a cashier and an income controller.
+### Changed
+- The person at the till is called **Teller** in reports, the sales list and the AI assistant (the data field is unchanged).
+
 ## [0.29.3] — 2026-10-12 · Granting roles on a licence without HR
 ### Fixed
 - **"You can't grant Cashier here: you don't hold all of its permissions"** for the owner, on any installation licensed without HR & payroll (found on a test PC).

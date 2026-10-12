@@ -487,6 +487,30 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Cash control: vaults and the Teller → Cashier → Income Controller chain (2026-10-12)
+- **Owner answers:**
+  - a vault is a cash tray with its own float, one per till per shift (shifts configurable, default Morning/Afternoon);
+  - blind counts at every step;
+  - the Cashier does not sell;
+  - differences are flagged, explained and approved, and a shortage can be charged to staff;
+  - the Income Controller records and reconciles the bank deposit;
+  - cash chain first, industries after.
+- **Optional per company** (setting `cash.vaults`, off by default): a one-PC shop keeps the simple "count at close". Off, nothing changes; on, a till opens only on an issued vault.
+- **Blind recount, not a hidden comparison:** a count that differs from the previous person's is not accepted the first time. The counter is asked to recount without seeing either figure, and the second count stands.
+  - The vault's recount is remembered in the row (`cashier_recounts`). The handover's is held by the Income Control page, a deliberate simplification: the controller is the last step.
+  - The teller's close never reveals the expected figure on a vault (so cash cannot be adjusted before the Cashier counts it), offline included.
+- **Accountability follows the verified count:**
+  - the teller's difference is the Cashier's count minus the system's expected cash (the teller's own count is kept for the reconciliation);
+  - the Cashier's difference is the Income Controller's count minus what the Cashier declared.
+- **Money in the books moves in steps** (`cash_movements`, append-only, one GL entry each):
+  - office → till (float) → *Cash with cashiers* → office → bank;
+  - differences park in *Cash differences awaiting approval* until decided, so an undecided difference is visible on the balance sheet.
+  - A staff charge reuses staff loans (kind `shortage`, paid from the differences account), so payroll recovers it with no new mechanism.
+- **Roles:**
+  - the old "Cashier" (sells) is renamed **Teller** by migration (key and name), so existing grants and tests keep their meaning;
+  - the new **Cashier** and **Income Controller** have no `pos.access` (segregation of duties);
+  - branch managers set up vaults but do not handle the chain.
+
 ## Granting roles vs the licence (2026-10-12)
 - **The grant rule:** "the granter must hold every permission of the role" is checked against the granter's roles, ignoring licence switches (`Authorizer::holds`).
 - **Use is separate:** what anyone can actually use stays licence-filtered (`allows`). A role granted while HR is unlicensed gives HR rights only once HR is licensed.
