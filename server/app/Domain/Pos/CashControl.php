@@ -132,7 +132,7 @@ final class CashControl
         if ($name === '' || ! preg_match('/^\d{2}:\d{2}/', $from) || ! preg_match('/^\d{2}:\d{2}/', $to)) {
             throw new DomainException('Give the shift a name and its start and end times.');
         }
-        if (ShiftTemplate::where('name', $name)->where('id', '<>', $tpl->id ?? '')->exists()) {
+        if (ShiftTemplate::where('name', $name)->when($tpl->exists, fn ($q) => $q->whereKeyNot($tpl->getKey()))->exists()) {
             throw new DomainException('A shift with that name exists.');
         }
         $tpl->fill(['name' => mb_substr($name, 0, 40), 'starts_at' => substr($from, 0, 5), 'ends_at' => substr($to, 0, 5),

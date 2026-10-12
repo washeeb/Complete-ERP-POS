@@ -3,16 +3,22 @@
 use App\Domain\Access\AccessService;
 use App\Domain\Devices\DeviceService;
 use App\Domain\Finance\AutoPoster;
+use App\Domain\Hr\HrService;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Pos\CashControl;
 use App\Domain\Pricing\PriceResolver;
 use App\Domain\Pricing\TaxCalculator;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\DomainException;
+use App\Filament\Pages\CashDesk;
+use App\Filament\Pages\CashSetup;
+use App\Filament\Pages\IncomeControl;
 use App\Models\Account;
 use App\Models\CashHandover;
 use App\Models\CashMovement;
 use App\Models\CashVariance;
+use App\Models\Employee;
+use App\Models\EmployeeLoan;
 use App\Models\MoneyTransfer;
 use App\Models\PriceList;
 use App\Models\Shift;
@@ -23,6 +29,8 @@ use App\Models\Warehouse;
 use App\Security\ScopeType;
 use App\Support\Qty;
 use App\Support\Settings;
+use Filament\Actions\Testing\TestAction;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -51,6 +59,8 @@ beforeEach(function () {
 /** Sign the teller in on the till (device token + PIN) and return the session token. */
 function tellerToken($t): string
 {
+    app('auth')->forgetGuards(); // a back-office sign-in earlier in the test must not leak into the till's
+    app('auth')->setDefaultDriver(config('auth.defaults.guard'));
     $token = $t->withToken($t->deviceToken)->postJson('/api/v1/pos/login', ['username' => 'esi', 'pin' => '4826'])->assertOk()->json('token');
     app('auth')->forgetGuards();
 
@@ -145,16 +155,16 @@ it('recovers a shortage from pay when the teller is an employee, and keeps cash 
     $short = CashVariance::sole();
     expect($short->amount_minor)->toBe(-3000);
 
-    $employee = app(App\Domain\Hr\HrService::class)->saveEmployee(actorFor($this->owner), new App\Models\Employee, ['name' => 'Esi Teller', 'branch_id' => $this->branches['HQ']->id,
+    $employee = app(HrService::class)->saveEmployee(actorFor($this->owner), new Employee, ['name' => 'Esi Teller', 'branch_id' => $this->branches['HQ']->id,
         'hire_date' => now()->startOfYear()->toDateString(), 'employment_type' => 'permanent', 'pay_method' => 'cash', 'user_id' => $this->teller->id, 'basic_salary_minor' => 200000]);
     $this->cash->decide(actorFor($this->controller), $short, 'charge_staff', 'Shortage agreed with the teller', months: 3);
-    $loan = App\Models\EmployeeLoan::sole();
+    $loan = EmployeeLoan::sole();
     expect($loan->employee_id)->toBe($employee->id)->and($loan->kind)->toBe('shortage')->and($loan->principal_minor)->toBe(3000)->and($loan->monthly_minor)->toBe(1000);
 
     app(AutoPoster::class)->run($this->tenant->id);
     expect(cashBalance('cash_differences'))->toBe(0)->and(cashBalance('staff_loans'))->toBe(3000);
 
-    expect(fn () => CashMovement::query()->update(['amount_minor' => 1]))->toThrow(Illuminate\Database\QueryException::class);
+    expect(fn () => CashMovement::query()->update(['amount_minor' => 1]))->toThrow(QueryException::class);
 });
 
 it('lets the cashier cancel an unused float, and keeps the old simple close when cash control is off', function () {
@@ -167,4 +177,47 @@ it('lets the cashier cancel an unused float, and keeps the old simple close when
     $this->withToken($token)->postJson('/api/v1/pos/shifts/open', ['opening_float_minor' => 5000])->assertCreated();
     $closed = $this->withToken($token)->postJson('/api/v1/pos/shifts/close', ['counted_cash_minor' => 5000])->assertOk()->json('shift');
     expect($closed['expected_cash_minor'])->toBe(5000)->and(VaultSession::where('status', 'open')->exists())->toBeFalse();
+});
+
+it('shows the cash desk to the cashier and income control to the income controller, and works through their screens', function () {
+    Filament\Facades\Filament::setCurrentPanel(Filament\Facades\Filament::getPanel('admin'));
+    $this->actingAs(withMfa($this->teller), 'web')->get(CashDesk::getUrl())->assertForbidden();
+
+    $this->flushSession();
+    app('auth')->forgetGuards();
+    $this->actingAs(withMfa($this->cashier), 'web')->get(CashDesk::getUrl())->assertOk()->assertSee($this->vault->name)->assertSee('Issue float');
+    Livewire\Livewire::test(CashDesk::class)
+        ->callAction(TestAction::make('issue')->arguments(['vault' => $this->vault->id]), ['teller' => $this->teller->id, 'float' => '150.00'])
+        ->assertHasNoActionErrors();
+    $session = VaultSession::sole();
+    expect($session->float_minor)->toBe(15000)->and($session->teller_id)->toBe($this->teller->id);
+
+    // The teller works the shift on the till; the cashier then receives the tray through the screen.
+    $token = tellerToken($this);
+    $this->withToken($token)->postJson('/api/v1/pos/shifts/open', ['opening_float_minor' => 0, 'vault_session_id' => $session->id])->assertCreated();
+    $this->withToken($token)->postJson('/api/v1/pos/shifts/close', ['counted_cash_minor' => 0, 'denoms' => ['n100' => 1, 'n50' => 1]])->assertOk();
+    $this->flushSession();
+    app('auth')->forgetGuards();
+    $this->actingAs(withMfa($this->cashier->fresh()), 'web');
+    Livewire\Livewire::test(CashDesk::class)
+        ->callAction(TestAction::make('receive')->arguments(['session' => $session->id]), ['denoms' => ['n100' => 1, 'n50' => 1]])
+        ->assertNotified('Vault received');
+    Livewire\Livewire::test(CashDesk::class)->callAction('handOver', ['sessions' => [$session->id]])->assertHasNoActionErrors();
+    $handover = CashHandover::sole();
+
+    $this->flushSession();
+    app('auth')->forgetGuards();
+    $this->actingAs(withMfa($this->controller), 'web')->get(IncomeControl::getUrl())->assertOk()->assertSee($handover->number);
+    Livewire\Livewire::test(IncomeControl::class)
+        ->callAction(TestAction::make('receive')->arguments(['handover' => $handover->id]), ['denoms' => ['n100' => 1, 'n50' => 1]])
+        ->assertNotified('Handover received');
+    expect($handover->fresh()->status)->toBe('received')->and(CashVariance::count())->toBe(0);
+
+    // Shifts and vaults: an Evening shift gives every till a third vault.
+    $this->flushSession();
+    app('auth')->forgetGuards();
+    $this->actingAs(withMfa($this->owner), 'web')->get(CashSetup::getUrl())->assertOk()->assertSee('Morning');
+    Livewire\Livewire::test(CashSetup::class)->callAction('template', ['name' => 'Evening', 'starts_at' => '18:00', 'ends_at' => '23:00', 'sort' => 3, 'is_active' => true])
+        ->assertHasNoActionErrors();
+    expect(Vault::where('till_id', $this->till->id)->count())->toBe(3);
 });
