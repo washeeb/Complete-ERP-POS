@@ -487,6 +487,18 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Ubuntu server: Caddy + HTTPS always (2026-10-12)
+- **Owner:** "do the same for the Ubuntu installer".
+- **Caddy replaces nginx and certbot on Ubuntu too.**
+  - One web server and one Caddyfile shape on both platforms, so one guide and one set of CI checks.
+  - It gives a local certificate authority for servers without a domain, with short-lived certificates renewed automatically (nginx would have needed our own openssl CA plus a renewal timer), and Let's Encrypt with renewal built in.
+  - Installed from Caddy's signed apt repository, not a downloaded binary.
+- **PHP stays PHP-FPM over its unix socket.** The `caddy` user joins `www-data` for socket access.
+- **Admin API off.** Changes are applied with `systemctl restart caddy`. The packaged `reload` needs the admin endpoint, and leaving that on localhost would let any local account reconfigure the web server.
+- **The script switches on `ufw`** (SSH on the port `sshd -T` reports, plus 80 and 443). Before, the script opened nothing, but Reverb listened on 0.0.0.0:8080; it is now loopback-only.
+- **Updates retire nginx** only when it served nothing but our site. Otherwise the script stops rather than take ports another site uses.
+- **The Docker image keeps nginx inside the container** and expects the host's HTTPS proxy in front; it is unchanged.
+
 ## Windows server: Caddy + PHP FastCGI + HTTPS (2026-10-12)
 - **Owner:** yes to replacing `php artisan serve` over http before the penetration test, so the firm is not paid to report something we already know.
 - **Caddy over IIS or nginx for Windows.**

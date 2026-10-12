@@ -31,7 +31,7 @@ Click **Create**. The code is shown **once**: write it down or keep the page ope
 |---|---|
 | A (on the server PC itself) | `https://localhost/pos/` |
 | B (Windows server on the shop network) | `https://<server-address>/pos/` (e.g. `https://192.168.1.10/pos/`). Trust the server first (4.9). |
-| B/C (Ubuntu server on the network, no domain) | `http://<server-address>/pos/` |
+| B/C (Ubuntu server on the network, no domain) | `https://<server-address>/pos/`. Trust the server first (4.9). |
 | D (cloud, with HTTPS) | `https://<your-domain>/pos/` |
 | E (branch server) | the **branch server's** address, as in B |
 
@@ -39,9 +39,9 @@ Click **Create**. The code is shown **once**: write it down or keep the page ope
 
 Browsers allow a web app to use its **security functions** (the till's own signing key, the offline PIN check), to **work offline** and to **install as an app** only when it comes from a secure address: `https://…` or `localhost`. **This is required**: without it the till cannot even enrol.
 
-- **Windows server (setups A, B and E):** the server is reached over `https` with its own certificate. Each device trusts it once, as in **4.9**. Nothing else is needed.
+- **A server without an internet name** (Windows or Ubuntu): it is reached over `https` with its own certificate. Each device trusts it once, as in **4.9**. Nothing else is needed.
 - **Setup D and servers with an internet name:** nothing to do. The certificate is a public one.
-- **Ubuntu server on the shop network without a domain (setup C):** that server is still reached over plain `http://`, so each till, tablet, handheld and kitchen screen must be told once that the address is trusted:
+- **Only for a server you set up by hand without https** (not recommended): each till, tablet, handheld and kitchen screen must be told once that the plain `http://` address is trusted:
 
 1. In Chrome, open `chrome://flags/#unsafely-treat-insecure-origin-as-secure` (in Edge: `edge://flags/#unsafely-treat-insecure-origin-as-secure`).
 2. In the box, type the server address **without** `/pos/`, e.g. `http://192.168.1.10`.

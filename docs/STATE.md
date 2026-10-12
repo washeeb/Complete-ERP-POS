@@ -1,9 +1,23 @@
 # State (resume file)
 
-**Phase:** Windows HTTPS (after the penetration test pack) · **Status:** done on branch `windows-https` (PR to `main`); all 14 phases built. Next: owner sends the pentest request for quote; GRA sandbox; training videos; dry run
+**Phase:** Ubuntu HTTPS (after Windows HTTPS) · **Status:** done on branch `ubuntu-https` (stacked on `windows-https`, PR #29); all 14 phases built. Next: owner sends the pentest request for quote; GRA sandbox; training videos; dry run
 **Updated:** 2026-10-12 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–14, licensing, branding and the pentest pack merged (PRs #1–#28)
 
-## Windows server: Caddy + HTTPS — done on branch `windows-https`
+## Ubuntu server: Caddy + HTTPS — done on branch `ubuntu-https`
+- **Script:** `installer/ubuntu/install.sh` (10 steps).
+  - Caddy from its apt repository; nginx and certbot retired.
+  - `/etc/caddy/Caddyfile` is generated: sites are `--domain` (Let's Encrypt) or `<ip>, <hostname>` with `tls internal` plus an http block serving `/ca.crt`; CI uses localhost with `default_bind 127.0.0.1`.
+  - `php_fastcgi` goes to the unix socket; the `caddy` user is in `www-data`.
+  - Root certificate copied to `/usr/local/share/ca-certificates/seslabs-<host>.crt` and `<dir>/seslabs-certificate.crt`.
+  - `seslabs-reverb` runs on 127.0.0.1:8080.
+  - `ufw` allows SSH (port from `sshd -T`), 80 and 443.
+  - Every run sets `APP_URL=https://…`, `SESSION_SECURE_COOKIE` and the `REVERB_*` client and publish values, and creates the Reverb keys once.
+  - The script requires systemd.
+- **CI** (`packaging.yml` ubuntu-script): installs over an nginx site and checks nginx is retired; https login; `.env` gives 404; the `/pos/` deep link; Reverb on loopback; an update run.
+- **Docs:** manual 5.0, 5.4, 5.6–5.9, 3, 4.9, 9.2–9.3, 12, 18.4; launch checklist 2; CHANGELOG 0.29.0; DECISIONS.
+- **Not changed:** Docker (nginx in the container; HTTPS from the host's proxy).
+
+## Windows server: Caddy + HTTPS — branch `windows-https` (PR #29)
 - **Installer:** `installer/windows/install.ps1`.
   - New step 4/10, Caddy: `-CaddyVersion` (2.10.0, SHA-512 verified), `-Domain`, `-Email`, `-Workers` (4). It writes `C:\SESLabs\Caddyfile` and `php-worker.cmd`.
   - Tasks: `<Brand> Web` (Caddy), `<Brand> PHP 1..N`, Scheduler, Live (Reverb on 127.0.0.1:8080).
@@ -14,7 +28,7 @@
 - **Server:** `config/broadcasting.php` `reverb.options` reads `REVERB_PUBLISH_*` (falling back to `REVERB_*`); the new `reverb.client` is what the till bootstrap and the storefront hand out. Test in `ShopifyAndLiveTest`.
 - **CI** (`packaging.yml` windows-installer): checks over https://localhost; `.env` gives 404; the `/pos/` deep link; 8010 closed and 8080 loopback only; an update run.
 - **Docs:** manual 4.0/4.6/4.8/4.9 (new: trusting the server), 1, 2, 6, 7, 9, 13, 18.4; launch checklist 2; the pentest scope; CHANGELOG 0.28.0; DECISIONS.
-- **Not changed:** the Ubuntu script (nginx; HTTPS only with a domain; Reverb on 8080) and Docker.
+- Ubuntu followed in the next branch (above).
 
 ## Penetration test pack — merged (PR #28)
 - **Owner answers:** test machine at the SyncLytics office; grey box; Ghana-based and international firms; certified testers.

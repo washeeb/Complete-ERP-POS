@@ -5,7 +5,7 @@ Go live only when every line is ticked. Most are checked automatically on **Syst
 | # | Check | How |
 |---|---|---|
 | 1 | Server installed with the installer/script (or by hand), `APP_ENV=production`, `APP_DEBUG=false` | Health: *Live site settings* |
-| 2 | HTTPS for every server (the Windows installer always sets it up; Ubuntu with a domain); `SESSION_SECURE_COOKIE=true`; on a shop network every device trusts the server's certificate | Health: *HTTPS*; guide 4.9 |
+| 2 | HTTPS for every server (the Windows installer and the Ubuntu script always set it up); `SESSION_SECURE_COOKIE=true`; on a shop network every device trusts the server's certificate | Health: *HTTPS*; guide 4.9 |
 | 3 | Scheduler and relay running | Health: *Scheduler*, *Relay* |
 | 4 | Backup passphrase set **and written down away from the server** | Health: *Backup passphrase*; owner confirms |
 | 5 | At least one backup destination outside the server; last night's backup OK | Health: *Backups* |

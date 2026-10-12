@@ -66,7 +66,7 @@ Use this after a disaster, or to practise on a spare PC.
 SES Labs sends you a new release ZIP. Update outside trading hours.
 
 1. **Take a backup** (run the backup task now) and check it.
-2. Stop the server: Windows — Task Scheduler → *End* both SES Labs tasks; Ubuntu — `sudo systemctl stop nginx`.
+2. Stop the server: Windows — Task Scheduler → *End* both SES Labs tasks; Ubuntu — `sudo systemctl stop caddy`.
 3. Extract the new ZIP **over** the existing folder (`C:\SESLabs` or `/var/www/seslabs`). Your `.env` and `storage` are kept.
 4. In the `server` folder:
 
@@ -78,7 +78,7 @@ SES Labs sends you a new release ZIP. Update outside trading hours.
 
    (Ubuntu: then `sudo chown -R www-data:www-data storage bootstrap/cache`.)
    If you install from source code, also rebuild the till: in `pos`, `npm install` and `npm run build:server`.
-5. Start the server again (Windows — *Run* both tasks; Ubuntu — `sudo systemctl start nginx` and `sudo systemctl restart php8.4-fpm`).
+5. Start the server again (Windows — *Run* both tasks; Ubuntu — `sudo systemctl start caddy` and `sudo systemctl restart php8.4-fpm`).
 6. **Tills** download the new version by themselves. It takes effect when the till app has been **closed completely and opened again** (do this at the end of the day; sometimes it needs two restarts).
 
 **Why `migrate --seed`:** it adds new tables and new permissions safely; it never removes your data or changes your own settings.

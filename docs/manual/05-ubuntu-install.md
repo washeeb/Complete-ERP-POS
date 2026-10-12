@@ -8,15 +8,21 @@ This chapter assumes **Ubuntu Server 24.04 LTS**, freshly installed, on a cloud 
 
 **A. The install script** — does everything in 5.2–5.9 on a plain Ubuntu server:
 
-1. Do 5.1 (get the server, connect to it). Copy the release ZIP and `install.sh` (both from SES Labs) to the server, e.g. with WinSCP.
-2. Run (with your own domain and e-mail for the HTTPS certificate; leave both out for a server used only inside your network):
+1. Do 5.1 (get the server, connect to it). Copy the release ZIP and `install.sh` (both from SyncLytics) to the server, e.g. with WinSCP.
+2. Run it. Add your own domain and e-mail if the server has an internet name (setup D); leave both out for a server used only inside your network:
    ```
    sudo bash install.sh --zip ~/ses-labs-<customer>-<build>.zip --domain erp.yourcompany.com --email you@yourcompany.com
    ```
    For a branch server add `--role branch --node-id B01`.
 3. Write down the **backup passphrase** it shows, then answer its questions to create your company and the owner.
 
-Running it again with a newer ZIP updates the software and keeps your data, `.env` and keys.
+The server is then reached over **https** only:
+- **With a domain:** a free Let's Encrypt certificate is fetched and renewed automatically.
+- **Without one:** the server uses its own certificate for its network address and name. Each till, tablet and PC trusts it once, as in **4.9**, from `http://<server-address>/ca.crt`.
+
+The firewall is switched on with only SSH, 80 and 443 open.
+
+Running it again with a newer ZIP updates the software and keeps your data, `.env` and keys. An older installation that used nginx is moved to the new web server (Caddy) automatically.
 
 **B. Docker** (if your host prefers containers):
 
@@ -87,20 +93,26 @@ sudo -u postgres psql -c "CREATE DATABASE erp OWNER erp ENCODING 'UTF8';"
 
 **Check:** the commands answer `CREATE ROLE` and `CREATE DATABASE`.
 
-## 5.4 Install PHP 8.4, Nginx, Composer and Node.js
+## 5.4 Install PHP 8.4, Caddy, Composer and Node.js
 
 ```
 sudo add-apt-repository -y ppa:ondrej/php
+sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
+curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt | sudo tee /etc/apt/sources.list.d/caddy-stable.list
 sudo apt update
-sudo apt install -y nginx unzip git php8.4-fpm php8.4-cli php8.4-pgsql php8.4-intl php8.4-bcmath php8.4-mbstring php8.4-xml php8.4-curl php8.4-zip php8.4-gd
+sudo apt install -y caddy unzip git php8.4-fpm php8.4-cli php8.4-pgsql php8.4-intl php8.4-bcmath php8.4-mbstring php8.4-xml php8.4-curl php8.4-zip php8.4-gd
 curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt install -y nodejs
 ```
 
-**Why:** PHP runs the software; **PHP-FPM** lets several requests run at the same time; **Nginx** is the web server that receives the tills' and browsers' requests; Composer and Node.js are used during installation.
+**Why:**
+- **PHP** runs the software, and **PHP-FPM** lets several requests run at the same time.
+- **Caddy** is the web server that receives the tills' and browsers' requests. It gets and renews https certificates by itself. It comes from its makers' own signed package source.
+- **Composer** and **Node.js** are used during installation.
 
-**Check:** `php --version` shows 8.4, `composer --version` shows 2.x, `node --version` shows v22 or later, and `php -m` lists `pdo_pgsql`, `intl`, `bcmath` and `sodium`.
+**Check:** `php --version` shows 8.4, `caddy version` shows v2, `composer --version` shows 2.x, `node --version` shows v22 or later, and `php -m` lists `pdo_pgsql`, `intl`, `bcmath` and `sodium`.
 
 ## 5.5 Put the software in place
 
@@ -130,12 +142,13 @@ In the editor, change these lines (move with the arrow keys; save with **Ctrl+O*
 APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://erp.yourshop.com
+SESSION_SECURE_COOKIE=true
 DB_PASSWORD=<db-password>
 ERP_NODE_ROLE=hq
 ERP_NODE_ID=HQ
 ```
 
-- For a server reached by IP on your network without HTTPS, use `APP_URL=http://<server-ip-address>`.
+- For a server reached by its address on your network, use `APP_URL=https://<server-ip-address>`. It is still https: the server makes its own certificate (5.7).
 - For a **branch server**: `ERP_NODE_ROLE=branch` and its id (e.g. `B01`), see Chapter 10.
 
 Then:
@@ -161,86 +174,126 @@ If you received the source code instead of a release, also build the till app:
 cd /var/www/seslabs/pos && npm install && npm run build:server && cd ../server
 ```
 
-## 5.7 Configure Nginx
+## 5.7 Configure the web server (Caddy)
 
-Create the site file:
-
-```
-sudo nano /etc/nginx/sites-available/seslabs
-```
-
-Paste this, replacing `erp.yourshop.com` with your domain (or the server's IP address):
+First let Caddy reach PHP:
 
 ```
-server {
-    listen 80;
-    server_name erp.yourshop.com;
-    root /var/www/seslabs/server/public;
-    index index.php index.html;
-    client_max_body_size 25M;
+sudo usermod -aG www-data caddy
+```
 
-    # The till app: its own files, and index.html for anything else under /pos/
-    location /pos/ {
-        try_files $uri /pos/index.html;
-    }
-    location = /pos/sw.js { add_header Cache-Control "no-cache"; }
-    location = /pos/index.html { add_header Cache-Control "no-cache"; }
+**Why:** PHP-FPM listens on a socket that only the `www-data` group may use.
 
-    # Live updates (only used if you set up Reverb, section 5.9)
-    location /app/ {
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "Upgrade";
-        proxy_set_header Host $host;
-        proxy_pass http://127.0.0.1:8080;
-    }
+Replace Caddy's settings file:
 
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-    location ~ \.php$ {
-        include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/run/php/php8.4-fpm.sock;
-        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
-    }
-    location ~ /\.(?!well-known) { deny all; }
+```
+sudo nano /etc/caddy/Caddyfile
+```
+
+Delete what is in it and paste the text below. This example is for a server on your network with address `192.168.1.20` and name `shopserver`; change both everywhere.
+
+**For a server with a domain (setup D):**
+- write the domain instead of `192.168.1.20, shopserver`;
+- remove the whole `http://…` block and the `tls internal` line;
+- add `email you@yourshop.com` under `admin off`.
+
+```
+{
+	admin off
+	skip_install_trust
+	pki {
+		ca local {
+			name "SES Labs on shopserver"
+			root_cn "SES Labs shopserver Root"
+			intermediate_cn "SES Labs shopserver Intermediate"
+		}
+	}
+}
+
+http://192.168.1.20, http://shopserver {
+	handle /ca.crt {
+		root * /var/lib/caddy/.local/share/caddy/pki/authorities/local
+		rewrite * /root.crt
+		header Content-Type application/x-x509-ca-cert
+		file_server
+	}
+	handle {
+		redir https://{host}{uri} permanent
+	}
+}
+
+192.168.1.20, shopserver {
+	tls internal
+	root * /var/www/seslabs/server/public
+	encode zstd gzip
+	request_body {
+		max_size 25MB
+	}
+	header -Server
+	@hidden {
+		path_regexp /\.
+		not path /.well-known/*
+	}
+	handle @hidden {
+		respond 404
+	}
+	@live path /app/* /apps/*
+	handle @live {
+		reverse_proxy 127.0.0.1:8080
+	}
+	handle /pos/* {
+		header /pos/sw.js Cache-Control no-cache
+		try_files {path} /pos/index.html
+		file_server
+	}
+	handle {
+		php_fastcgi unix//run/php/php8.4-fpm.sock {
+			read_timeout 300s
+		}
+		file_server
+	}
 }
 ```
 
-Switch it on:
+Check and start it:
 
 ```
-sudo ln -s /etc/nginx/sites-available/seslabs /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t && sudo systemctl reload nginx
+sudo -u caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+sudo systemctl restart php8.4-fpm caddy
 ```
 
-**Why:** Nginx hands out the till app's files directly and passes everything else to PHP. `no-cache` on the till's start files makes tills pick up updates promptly. The last rule hides private files such as `.env`.
+**Why:**
+- *Plain http* only hands out the server's own certificate (so devices can trust it, 4.9) and sends everything else to https.
+- *Hidden files* such as `.env` are never served.
+- *Live updates* use the same https address.
+- *The till app* falls back to its own start page, so it works offline.
+- *Everything else* goes to PHP.
+- With a domain, Caddy fetches a Let's Encrypt certificate and renews it by itself.
+- `admin off` closes Caddy's local control port. After a change to this file, use `systemctl restart caddy` (a *reload* needs that port).
 
-**Check:** `nginx -t` says *syntax is ok*, and `http://erp.yourshop.com/admin` (or `http://<ip>/admin`) shows the sign-in page.
+**Server on your network: trust the certificate on the server itself, and keep a copy for devices:**
 
-## 5.8 Firewall and HTTPS
+```
+sudo cp /var/lib/caddy/.local/share/caddy/pki/authorities/local/root.crt /usr/local/share/ca-certificates/seslabs.crt
+sudo update-ca-certificates
+```
+
+**Check:** `validate` ends with *Valid configuration*. `curl https://192.168.1.20/up` (or your domain) answers without a certificate error. On another device that trusts the server (4.9), `https://192.168.1.20/admin` shows the sign-in page.
+
+## 5.8 Firewall
 
 ```
 sudo ufw allow OpenSSH
-sudo ufw allow "Nginx Full"
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
 sudo ufw enable
 ```
 
-**Why:** the firewall blocks everything except remote administration (SSH) and the web (ports 80 and 443).
+**Why:** the firewall blocks everything except remote administration (SSH) and the web server's two ports. The database, PHP and live updates are reachable from the server itself only. If SSH on your server uses another port than 22, allow that port instead of `OpenSSH` **before** `ufw enable`, or you lock yourself out.
 
-For a server with a domain name (setup D, and any server reached over the internet), get a free certificate:
-
-```
-sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d erp.yourshop.com
-```
-
-Answer the questions (your e-mail, accept the terms, choose to **redirect** HTTP to HTTPS). Certbot renews the certificate automatically.
-
-**Why:** HTTPS encrypts everything between tills and the server (PINs, sales, customer details). Browsers also only allow tills to install as apps and work offline from HTTPS addresses (or from `localhost`).
-
-**Check:** `https://erp.yourshop.com/admin` shows the padlock in the browser.
+**Why HTTPS always:**
+- HTTPS encrypts everything between tills and the server: PINs, sales and customer details.
+- Browsers only let tills enrol, install as apps and work offline from https addresses (or from `localhost`).
 
 **Warning:** Never run a server that is reachable from the internet without HTTPS.
 
@@ -254,25 +307,28 @@ echo "* * * * * www-data cd /var/www/seslabs/server && php artisan schedule:run 
 
 **Why:** every minute it sends changes to online stores, syncs branch servers, posts to the accounts, sends reminders and, once a day, checks the licence.
 
-**Live updates (optional)** — prices and stock reach tills within seconds instead of up to 60 seconds:
+**Live updates:** prices and stock reach tills within seconds, instead of within 60 seconds.
 
-1. In `.env` set:
+1. In `.env` set (three random values of your own, letters and digits, at least 20 characters each; your address or domain as `REVERB_HOST`):
 
    ```
    REVERB_APP_ID=<random-1>
    REVERB_APP_KEY=<random-2>
    REVERB_APP_SECRET=<random-3>
-   REVERB_HOST=erp.yourshop.com
+   REVERB_HOST=192.168.1.20
    REVERB_PORT=443
    REVERB_SCHEME=https
+   REVERB_PUBLISH_HOST=127.0.0.1
+   REVERB_PUBLISH_PORT=8080
+   REVERB_PUBLISH_SCHEME=http
    ```
 
-   (Without HTTPS: `REVERB_PORT=80` and `REVERB_SCHEME=http`.)
+   **Why:** tills connect through the https address. The server itself sends to the live-updates service directly on the same machine.
 
 2. Create the service:
 
    ```
-   sudo nano /etc/systemd/system/seslabs-live.service
+   sudo nano /etc/systemd/system/seslabs-reverb.service
    ```
 
    ```
@@ -296,10 +352,10 @@ echo "* * * * * www-data cd /var/www/seslabs/server && php artisan schedule:run 
    ```
    cd /var/www/seslabs/server && php artisan optimize
    sudo systemctl daemon-reload
-   sudo systemctl enable --now seslabs-live
+   sudo systemctl enable --now seslabs-reverb
    ```
 
-**Check:** `systemctl status seslabs-live` shows *active (running)*.
+**Check:** `systemctl status seslabs-reverb` shows *active (running)*.
 
 ## 5.10 Next steps
 

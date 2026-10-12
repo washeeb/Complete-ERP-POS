@@ -52,7 +52,7 @@ All software below is free. Download only from the official addresses listed.
 | Git | any recent | Server (to download and update the software), optional | `https://git-scm.com/` |
 | Google Chrome or Microsoft Edge | current | Every till, handheld, kitchen screen, and your own PC for the back office | `https://www.google.com/chrome/` |
 | Authenticator app | any (Google Authenticator, Microsoft Authenticator, Authy…) | Phones of managers | Phone app store |
-| Nginx, Certbot | from Ubuntu | Linux servers only | installed by commands in Chapter 5 |
+| Caddy (web server, https certificates) | from caddyserver.com | All servers | installed by the installer or the script (Chapters 4 and 5) |
 | Ollama (optional) | current | Server, only for the local AI assistant | `https://ollama.com/download` — see Chapter 15 (needs 16 GB RAM or more) |
 
 **Why Node.js on the server?** It is used once during installation (and after each update) to build the till app. It does not run while you trade.
