@@ -14,6 +14,7 @@
     "manual": "node scripts/manual.mjs",
     "manual:screens": "node scripts/manual-screens.mjs",
     "training": "node scripts/training.mjs",
+    "pentest": "node scripts/training.mjs pentest ^0[12]-",
     "brand": "node scripts/brand.mjs"
   },
   "dependencies": {

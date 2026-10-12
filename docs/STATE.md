@@ -1,9 +1,30 @@
 # State (resume file)
 
-**Phase:** Branding (after Phase 14) · **Status:** done on branch `branding` (PR to `main`); all 14 phases built — next: a real pilot
-**Updated:** 2026-10-31 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–14 and licensing merged (PRs #1–#26)
+**Phase:** Penetration test pack (after Branding) · **Status:** done on branch `pentest-prep` (PR to `main`); all 14 phases built. Next: owner sends the request for quote; GRA sandbox; training videos; dry run
+**Updated:** 2026-10-12 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–14, licensing and branding merged (PRs #1–#27)
 
-## Product name and branding — done on branch `branding` (PR to `main`)
+## Penetration test pack — done on branch `pentest-prep`
+- **Owner answers:** test machine at the SyncLytics office; grey box; Ghana-based and international firms; certified testers.
+- **Docs:** `docs/pentest/`
+  - `README` (the owner's steps);
+  - `01-scope-and-rules` and `02-request-for-quote` (sent to firms; PDFs in `pdf/` via `npm run pentest`);
+  - `03-test-environment` (building the isolated machine);
+  - `04-findings-handling` (severity deadlines; Critical and High block the pilot; contract clauses).
+- **Server:** `app/Domain/Launch/PenTestEnvironment` and `erp:pentest-setup --license=<key|file> [--out=]`.
+  - Refuses if any company exists; one transaction.
+  - Creates two companies (grocery, restaurant, pharmacy and services modules; HQ plus Branch A), one sign-in per role in `PenTestEnvironment::PEOPLE` with PINs for till roles, and demo data.
+  - Registers a pending till device and two API clients (wide, and `products:read` only).
+  - Writes secrets to `storage/app/private/pentest-accounts.txt` (0600).
+- **Tests:** `PenTestEnvironmentTest` (refusals, a bad key leaves it empty, the file contents).
+- **Also:**
+  - launch checklist line 21;
+  - manual 17.9 and 18.5;
+  - `security-review.md` follow-up;
+  - `training.mjs` takes a folder and pattern;
+  - CHANGELOG 0.27.0; DECISIONS.
+- **Known item the firm will likely report:** the Windows installer serves the app with `php artisan serve` over plain HTTP on 8010 (and Reverb on 8080). Worth replacing with a production web server and HTTPS before the test (owner to decide).
+
+## Product name and branding — merged (PR #27)
 - **Owner answers:** product name **SES Labs** (no company name anywhere visible); licence-controlled white-label.
 - **Product brand:** `branding/product/{mark,logo,logo-dark}.svg` + `brand.json` (traced from `original/`) → `npm run brand` (pos) writes `server/public/brand/*`, `server/public/favicon.ico`, `installer/windows/app.ico`, `pos/public` icons, `pos/src-tauri/icons` + `tauri.conf.json` name; `config/brand.php` (`BRAND_NAME`, `BRAND_VENDOR`, `BRAND_WEBSITE`); publisher/licensor = SyncLytics (`BRAND_VENDOR`, `brand.json` `company`: licence messages, installer and till Publisher/copyright, guide cover); product name SES Labs everywhere else (code, installers `server-setup.iss`/`-Brand`/`SLUG`, Docker, desktop till, guides → `SES-Labs-Installation-Guide.pdf`); webhook headers `X-Webhook-*`.
 - **Client brand:** migration `2026_10_31_100001` (`brand_assets`; `tenants.brand_color`, `brand_receipt_logo`); `app/Domain/Branding/Branding`; `BrandAssetController` (`/brand/{slug}/{kind}`); `Filament/Support/PanelBrand`; page Company → Branding (`BrandingPage`); setup wizard "Your brand" step; prints, PDF exports, online shop; till bootstrap `brand`, `pos/src/brand.ts` (cache, accent, dithered ESC/POS logo), Receipt/Sell; practice copies; replication `brand_asset`.

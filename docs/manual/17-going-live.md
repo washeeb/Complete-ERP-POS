@@ -144,3 +144,13 @@ Decide in advance **who** may decide to go back (normally the owner), and keep t
 5. **Find the cause** with support (the problem reports and the pilot reports help), fix it, practise again in the practice company, and plan a new date.
 
 **Check before the go-live day:** the people involved know this plan; the old system still opens; the go-live backup was copied off the server (System → Backups shows its copies).
+
+## 17.9 The independent security test
+
+Before the first customer's server is reachable from the internet, SyncLytics has an outside security firm try to break into a test copy of SES Labs: a *penetration test*. The full pack is in `docs/pentest/`, with the request for quote, the rules for the testers, how to build the test machine and how findings are handled.
+
+**Why:** your sales, stock, payroll and accounts are in SES Labs. An independent firm finds what the people who built the software are used to not seeing. A bank, an insurer or a large customer may also ask for the firm's report.
+
+**For the technician building the test machine:** use a spare PC or a virtual machine on a network of its own, never a server with real data. After installing, run `php artisan erp:pentest-setup` as described in `docs/pentest/03-test-environment.md`. It fills the empty installation with made-up companies and one sign-in per role, and writes the sign-ins to a private file instead of the screen. It refuses to run where a company already exists.
+
+**For the owner:** the pilot does not start while a *Critical* or *High* finding is open. Line 21 of the launch checklist is ticked when the firm's retest letter confirms they are fixed.

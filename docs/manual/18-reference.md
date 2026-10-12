@@ -74,6 +74,7 @@ After changing `.env`, run `php artisan optimize`.
 | `php artisan erp:health` | All health checks (System → Health); fails when something needs fixing |
 | `php artisan erp:evat-batch --now` | Send the GRA E-VAT till sales waiting (daily mode) |
 | `php artisan erp:load-test` | Speed test of sales and reports on a test system (leaves no data) |
+| `php artisan erp:pentest-setup --license=<file>` | Penetration test machine only: fill a **new, empty** installation with made-up companies and test sign-ins (Chapter 17.9) |
 | `php artisan erp:reports` | Send scheduled reports that are due (runs every 15 minutes by itself) |
 | `php artisan erp:pilot-report --show` / `--now` | Print / e-mail the pilot report now (sent every evening by itself during a pilot — Chapter 17.6) |
 | `php artisan erp:insights` | Refresh forecasts and alerts now (runs daily at 04:30 by itself) |

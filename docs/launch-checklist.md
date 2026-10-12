@@ -24,3 +24,4 @@ Go live only when every line is ticked. Most are checked automatically on **Syst
 | 18 | Rollback plan known (guide 17.8); go-live backup taken today and copied off the server | System → Go-live |
 | 19 | Figures match the old system; "Opening balances (to clear)" is zero | System → Go-live → Check the figures |
 | 20 | Support e-mail set; problem reports and the pilot report arrive | System → Go-live → Plan; Show today's report |
+| 21 | Independent penetration test done; no open Critical or High findings; the firm's retest letter filed (once per release line, before the first internet-facing customer) | `docs/pentest/` |
