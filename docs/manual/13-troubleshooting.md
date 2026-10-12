@@ -74,6 +74,16 @@ The same checks run with `php artisan erp:health` (useful for monitoring tools: 
 | `php artisan erp:gl-check` | The accounts agree with sales, stock, customers and suppliers (Finance) |
 | `php artisan license:status` | Licence state, limits and last check-in |
 
-## Getting help from SES Labs
+## Getting help from SyncLytics
 
-Send: what you were doing, the exact message (a screenshot helps), the time it happened, and the last lines of `server/storage/logs/laravel.log`. **Never** send your `.env` file, passwords, PINs or recovery codes.
+| | |
+|---|---|
+| **Hotline (support)** | 024 563 6889 |
+| **Office** | 055 668 6975 · 050 693 8589 |
+| **E-mail** | info@synclyticsenterprisesystems.com |
+| **Website** | synclyticsenterprisesystems.com |
+| **Address** | Puff Cl, Race Course St, Tabora, Accra (GhanaPost GPS GC-027-0884) |
+
+The quickest way is **Report a problem** in the back office (top right) or on the till: it attaches the technical details for you.
+
+Otherwise send: what you were doing, the exact message (a screenshot helps), the time it happened, and the last lines of `server/storage/logs/laravel.log`. **Never** send your `.env` file, passwords, PINs or recovery codes.

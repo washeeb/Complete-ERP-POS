@@ -2,6 +2,7 @@
 
 namespace App\Domain\Licensing;
 
+use App\Domain\Branding\Branding;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -78,7 +79,7 @@ final class LicenseManager
     {
         $max = $this->status()['limits'][$limit] ?? null;
         if ($max !== null && $current >= (int) $max) {
-            throw new LicenseException("Your licence allows {$max} {$what}. Contact ".config('brand.vendor').' to add more.', 'license_limit');
+            throw new LicenseException("Your licence allows {$max} {$what}. Contact ".Branding::vendorContact().' to add more.', 'license_limit');
         }
     }
 
@@ -109,7 +110,7 @@ final class LicenseManager
         }
         if (! $row) {
             return $base + ['state' => 'unlicensed', 'read_only' => true,
-                'message' => 'This installation is not activated. Enter the licence key from '.config('brand.vendor').' (Settings → Licence).'];
+                'message' => 'This installation is not activated. Enter the licence key from '.Branding::vendorContact().' (Settings → Licence).'];
         }
         try {
             $p = LicenseKey::verify($row->license_key);
@@ -131,21 +132,21 @@ final class LicenseManager
         } elseif ($now->gte($expires)) {
             $warnings[] = 'The licence expired on '.$expires->format('j M Y').'. Everything keeps working until '.$expires->copy()->addDays($grace)->format('j M Y').'; renew before then.';
         } elseif ($now->gte($expires->copy()->subDays((int) config('license.warn_days', 30)))) {
-            $warnings[] = 'The licence expires on '.$expires->format('j M Y').'. Contact '.config('brand.vendor').' to renew.';
+            $warnings[] = 'The licence expires on '.$expires->format('j M Y').'. Contact '.Branding::vendorContact().' to renew.';
         }
         if ($row->revoked_at || $row->checkin_status === 'revoked') {
             $readOnly[] = 'This licence was withdrawn by '.config('brand.vendor').($row->checkin_message ? ": {$row->checkin_message}" : '.');
         }
         $manifest = ReleaseManifest::check();
         if (! $manifest['ok']) {
-            $readOnly[] = 'This copy of the software has been modified, so it is read-only. Reinstall the release from '.config('brand.vendor').'.';
+            $readOnly[] = 'This copy of the software has been modified, so it is read-only. Reinstall the release from '.Branding::vendorContact().'.';
             $status['problems'] = $manifest['problems'];
         }
 
         if (config('erp.node.role') !== 'branch') {
             $installation = DB::table('system_meta')->where('key', 'installation_id')->value('value');
             if (($p['installation_id'] ?? null) !== $installation) {
-                $readOnly[] = 'This licence was issued for a different installation. Ask '.config('brand.vendor').' for a key for this one (Settings → Licence shows its code).';
+                $readOnly[] = 'This licence was issued for a different installation. Ask '.Branding::vendorContact().' for a key for this one (Settings → Licence shows its code).';
             }
             $fp = MachineFingerprint::get();
             if (! empty($p['fingerprint']) && $p['fingerprint'] !== 'unknown' && $fp !== 'unknown' && $p['fingerprint'] !== $fp) {
@@ -155,7 +156,7 @@ final class LicenseManager
                     DB::table('system_meta')->updateOrInsert(['key' => 'moved_detected_at'], ['value' => $since, 'updated_at' => $now]);
                 }
                 $until = Carbon::parse($since)->addDays($grace);
-                $msg = 'The software is now running on a different server. Ask '.config('brand.vendor').' to re-activate it (Settings → Licence)';
+                $msg = 'The software is now running on a different server. Ask '.Branding::vendorContact().' to re-activate it (Settings → Licence)';
                 $now->gte($until) ? $readOnly[] = "{$msg}." : $warnings[] = "{$msg} before ".$until->format('j M Y').'.';
             }
             if (! empty($p['server_url']) && ! empty($p['checkin_days'])) {

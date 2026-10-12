@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.29.0] — 2026-10-12 · Ubuntu server: Caddy and HTTPS always
+### Changed
+- **The Ubuntu script (`installer/ubuntu/install.sh`) now always serves over HTTPS with Caddy** instead of nginx, which served plain http unless a domain was given. Caddy is installed from its official signed apt source; certbot is no longer used.
+  - With `--domain`: a Let's Encrypt certificate, fetched and renewed automatically.
+  - Without a domain: the server's own certificate authority for its IP address and host name. Devices trust it once via `http://<server>/ca.crt` (guide 4.9); the server trusts it too (`update-ca-certificates`).
+  - Same rules as on Windows: only one handler per request; `.env` and other hidden files give 404; the till app's deep links fall back to its index; live updates are proxied at `/app`; the admin API is off; the `Server` header is removed.
+- **Live updates** (Reverb) now listen on 127.0.0.1 only, where before they were reachable from the network on 8080. They are switched on by default, with keys created once and `REVERB_PUBLISH_*` set to the local service. They now also run in the test installation.
+- **Firewall:** the script switches on `ufw` with only SSH (on its configured port), 80 and 443, and removes an old 8080 rule.
+- **Updates:** re-running the script retires the old nginx site, and stops nginx if it served nothing else. It stops with a clear message if another program holds port 80 or 443. It moves `APP_URL` to https and sets `SESSION_SECURE_COOKIE=true`.
+- **CI** installs over an nginx-based installation and checks:
+  - nginx is retired;
+  - the sign-in page answers over https;
+  - `.env` gives 404;
+  - the till deep link works;
+  - Reverb is running and on loopback only;
+  - an update run comes back up.
+- **Installation guide:**
+  - 5.0;
+  - 5.4 (Caddy instead of nginx);
+  - 5.6 (`APP_URL` is always https);
+  - 5.7 (Caddy by hand), 5.8 (firewall) and 5.9 (live updates on loopback), rewritten;
+  - 3, 4.9, 9.2–9.3, 12 and 18.4.
+  - The browser-flag workaround is only for a server set up by hand without https.
+- **Not changed:** the Docker image, which runs behind the host's own HTTPS proxy.
+### Added
+- **The publisher's contact details** (owner, 2026-10-12):
+  - Hotline 024 563 6889; info@synclyticsenterprisesystems.com; synclyticsenterprisesystems.com.
+  - The Licence page shows them next to the installation code. Licence messages that say whom to contact now read "SyncLytics (hotline …, e-mail …)" (`Branding::vendorContact()`).
+  - "Powered by SES Labs" links to the website.
+  - Problem reports and pilot reports go to SyncLytics support when the go-live plan names no address.
+  - New `BRAND_SUPPORT_PHONE` and `BRAND_SUPPORT_EMAIL` settings. A reseller that sets `BRAND_VENDOR` gets none of SyncLytics' contacts by default.
+- **Installation guide:**
+  - "Who to contact" in About, with the address and office numbers;
+  - 6 (licence) and 13 (getting help) show the contacts;
+  - where the guide meant the company, it now says SyncLytics instead of SES Labs (chapters 1, 6, 7, 8, 9);
+  - 18 lists the new settings.
+- **Pentest documents:** the request for quote and the scope carry the company contacts.
+### Fixed
+- **A brand-new installation looped between the licence page and the setup wizard** ("redirected too many times", seen on a test PC). Before activation everyone was sent to the licence page, and before setup to the wizard, including from the licence page. The licence page is now left alone by the wizard redirect: activate first (guide chapter 6), then set up (chapter 7). Covered by `FirstSignInTest`.
+
 ## [0.28.0] — 2026-10-12 · Windows server: production web server and HTTPS
 ### Changed
 - **The Windows installer no longer uses PHP's built-in development server over plain http on port 8010.** It installs:

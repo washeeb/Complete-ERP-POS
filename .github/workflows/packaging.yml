@@ -51,13 +51,24 @@ jobs:
         run: |
           (cd pos && npm ci && POS_OUT_DIR=$GITHUB_WORKSPACE/server/public/pos npm run build:server)
           (cd server && npm ci && npm run build)
-      - name: Install with the script
-        run: sudo bash installer/ubuntu/install.sh --source "$GITHUB_WORKSPACE" --ci
+      - name: Install with the script (over an earlier nginx-based installation, as an update would find it)
+        run: |
+          sudo apt-get install -y -q nginx
+          echo 'server { listen 80; root /var/www/html; }' | sudo tee /etc/nginx/sites-available/seslabs >/dev/null
+          sudo rm -f /etc/nginx/sites-enabled/default && sudo ln -sf /etc/nginx/sites-available/seslabs /etc/nginx/sites-enabled/seslabs
+          sudo systemctl restart nginx
+          sudo bash installer/ubuntu/install.sh --source "$GITHUB_WORKSPACE" --ci
+          ! systemctl is-active --quiet nginx   # retired: it served only our site
       - name: The server answers and runs again as an update
         run: |
-          curl -fsS http://localhost/admin/login | grep -q 'Sign in'
+          # Over https with the server's own certificate (the script made this machine trust it).
+          curl -fsS https://localhost/admin/login | grep -q 'Sign in'
+          test "$(curl -s -o /dev/null -w '%{http_code}' https://localhost/.env)" = 404
+          curl -fsS https://localhost/pos/some/deep/link | grep -q '<div id="root">'
+          ! ss -ltnH 'sport = :8080' | grep -v '127.0.0.1:8080' | grep -q .   # live updates listen on this machine only
+          systemctl is-active --quiet seslabs-reverb
           sudo bash installer/ubuntu/install.sh --source "$GITHUB_WORKSPACE" --ci
-          curl -fsS http://localhost/up
+          curl -fsS https://localhost/up
           cd /var/www/seslabs/server && sudo -u www-data php artisan erp:backup && sudo -u www-data php artisan erp:backup --verify
 
   windows-installer:
@@ -94,7 +105,7 @@ jobs:
         run: |
           choco install innosetup -y --no-progress
           Compress-Archive -Path server -DestinationPath release.zip -Force
-          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DReleaseZip=$env:GITHUB_WORKSPACE\release.zip" /DAppVersion=0.28.0 installer\windows\server-setup.iss
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DReleaseZip=$env:GITHUB_WORKSPACE\release.zip" /DAppVersion=0.29.0 installer\windows\server-setup.iss
       - uses: actions/upload-artifact@v4
         with:
           name: seslabs-server-setup

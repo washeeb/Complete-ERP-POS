@@ -2,6 +2,7 @@
 
 namespace App\Domain\Licensing;
 
+use App\Domain\Branding\Branding;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
@@ -54,7 +55,7 @@ final class LicenseService
         }
         $p = LicenseKey::verify($key);
         if (($p['installation_id'] ?? null) !== DB::table('system_meta')->where('key', 'installation_id')->value('value')) {
-            throw new LicenseException('This key was issued for a different installation. Send '.config('brand.vendor').' the installation code shown on this page.', 'license_invalid');
+            throw new LicenseException('This key was issued for a different installation. Send '.Branding::vendorContact().' the installation code shown on this page.', 'license_invalid');
         }
 
         return LicenseManager::bypass(fn () => DB::transaction(function () use ($actor, $key, $p) {

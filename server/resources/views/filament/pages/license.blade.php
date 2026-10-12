@@ -30,6 +30,13 @@
     @if ($this->canManage())
         <x-filament::section heading="Installation code">
             <p>To activate or renew, send this code to {{ config('brand.vendor') }}. You will receive a licence key; enter it with “Enter licence key”.</p>
+            @if (config('brand.support_phone') || config('brand.support_email') || config('brand.website'))
+                <p class="lic-muted">
+                    @if ($ph = config('brand.support_phone'))Hotline {{ $ph }}@endif
+                    @if ($em = config('brand.support_email')) · <a href="mailto:{{ $em }}?subject={{ rawurlencode(config('brand.name').' licence') }}" style="text-decoration:underline">{{ $em }}</a>@endif
+                    @if ($web = config('brand.website')) · <a href="{{ $web }}" target="_blank" rel="noopener" style="text-decoration:underline">{{ preg_replace('#^https?://#', '', $web) }}</a>@endif
+                </p>
+            @endif
             <textarea readonly rows="3" class="lic-code" onclick="this.select()">{{ $this->installationCode() }}</textarea>
         </x-filament::section>
     @elseif ($s['read_only'])

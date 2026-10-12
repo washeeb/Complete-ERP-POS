@@ -487,6 +487,18 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Ubuntu server: Caddy + HTTPS always (2026-10-12)
+- **Owner:** "do the same for the Ubuntu installer".
+- **Caddy replaces nginx and certbot on Ubuntu too.**
+  - One web server and one Caddyfile shape on both platforms, so one guide and one set of CI checks.
+  - It gives a local certificate authority for servers without a domain, with short-lived certificates renewed automatically (nginx would have needed our own openssl CA plus a renewal timer), and Let's Encrypt with renewal built in.
+  - Installed from Caddy's signed apt repository, not a downloaded binary.
+- **PHP stays PHP-FPM over its unix socket.** The `caddy` user joins `www-data` for socket access.
+- **Admin API off.** Changes are applied with `systemctl restart caddy`. The packaged `reload` needs the admin endpoint, and leaving that on localhost would let any local account reconfigure the web server.
+- **The script switches on `ufw`** (SSH on the port `sshd -T` reports, plus 80 and 443). Before, the script opened nothing, but Reverb listened on 0.0.0.0:8080; it is now loopback-only.
+- **Updates retire nginx** only when it served nothing but our site. Otherwise the script stops rather than take ports another site uses.
+- **The Docker image keeps nginx inside the container** and expects the host's HTTPS proxy in front; it is unchanged.
+
 ## Windows server: Caddy + PHP FastCGI + HTTPS (2026-10-12)
 - **Owner:** yes to replacing `php artisan serve` over http before the penetration test, so the firm is not paid to report something we already know.
 - **Caddy over IIS or nginx for Windows.**
@@ -527,6 +539,7 @@ Design:
 - **Severity drives the pilot:** Critical and High findings block it until they are retested, with deadlines of 72 hours and 14 days. Medium needs a dated plan. Every fix starts with a test that performs the attack, as in the rest of the codebase.
 
 ## Product name and branding (2026-10-31)
+- **Company names (owner, 2026-10-12):** inside the product (licence messages, installer and till Publisher and copyright, guide cover) the publisher stays **SyncLytics** (`BRAND_VENDOR`). Contracts, proposals and invoices use the legal name **SyncLytics Enterprise Systems**, never "SyncLytics Ltd".
 - **Product and publisher are separate (2026-10-09 owner clarification):** the owner wanted a product name that is not the company name, not to hide the company. Industry practice (Microsoft Teams / Microsoft Corporation, QuickBooks / Intuit) is the product name on the product and the company as publisher and licensor. So **SES Labs** is on every screen, receipt, icon and "Powered by"; **SyncLytics** is the publisher: licence messages ("Contact SyncLytics to renew"), Windows "Publisher" and copyright for the desktop till and the server installer, and "Published by" on the guide cover. It is one setting (`BRAND_VENDOR`, `brand.json` `company`), so a white-label reseller can replace it. The company's own Synclytics logos are not product artwork and stay out of the repo.
 - **Owner answers:** the product must not carry the company name. After a first proposal (Ervanta, from the owner's shortlist) the owner chose **SES Labs**, tagline **"Engineering Solutions. Empowering Businesses."** (2026-10-31). A trademark and domain check is the owner's. Branding: **licence-controlled white-label** — client brand first with "Powered by SES Labs", removable by the licence feature `white_label`. Folder, service and package names use the space-free `SESLabs` / `seslabs` / `ses-labs`.
 - **The name is one setting** (`config/brand.php`, `BRAND_NAME`/`BRAND_VENDOR`/`BRAND_WEBSITE`) and one artwork folder (`branding/product`) driving every generated asset (`npm run brand`), so a later rename is cheap. Installers take the name as a parameter (`/DBrand`, `-Brand`, `SLUG`). Protocol and data identifiers are deliberately unbranded or kept: webhook headers became neutral `X-Webhook-*`; the till's IndexedDB name stays `synclytics-till` (renaming strands offline queues), `.synbak`/`SYNBAK1` and `SYN1-`/`SYNREQ-` are formats; old till export files are still accepted; backups are found by their `.synbak` extension, not a name prefix, and pruned newest-first by the date stamp in the name (an alphabetical sort would have deleted the newest backup right after a rename).

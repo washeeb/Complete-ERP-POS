@@ -133,7 +133,7 @@ cd C:\SESLabs\server
    composer install --no-dev --optimize-autoloader
    ```
 
-   **Why:** the release contains only SES Labs's own code; this downloads the open-source libraries it builds on, at the exact versions it was tested with. `--no-dev` leaves out testing tools.
+   **Why:** the release contains only SES Labs' own code; this downloads the open-source libraries it builds on, at the exact versions it was tested with. `--no-dev` leaves out testing tools.
 
 2. **Create the settings file** from the example:
 
@@ -395,9 +395,9 @@ New-NetFirewallRule -DisplayName "SES Labs server" -Direction Inbound -Protocol 
 
 **Tip:** to restart the server, open **Task Scheduler**, click *Task Scheduler Library*, right-click *SES Labs Web* (or a *PHP*, *Scheduler* or *Live* task), and choose **End**, then **Run**.
 
-## 4.9 Let tills and other PCs trust this server (setup B)
+## 4.9 Let tills and other PCs trust this server (servers without an internet name)
 
-On the shop network the server uses **its own certificate**. A certificate is what proves to a browser that it is really talking to your server and that nobody can read along. Each till, tablet, handheld, kitchen screen and office PC must be told **once** to trust it. Without this, browsers show a warning, and the till refuses to enrol: it only uses its security functions on a trusted address.
+On the shop network (and on an Ubuntu server reached by its address, Chapter 5) the server uses **its own certificate**. A certificate is what proves to a browser that it is really talking to your server and that nobody can read along. Each till, tablet, handheld, kitchen screen and office PC must be told **once** to trust it. Without this, browsers show a warning, and the till refuses to enrol: it only uses its security functions on a trusted address.
 
 **On a Windows PC (also for the SES Labs Till desktop app):** open PowerShell **as administrator** and type, with your server's address:
 
