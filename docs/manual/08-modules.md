@@ -6,7 +6,29 @@ Modules add the features of a type of business. They are **already part of the s
 2. it is **switched on for each branch** that needs it;
 3. its **set-up checklist** below is done.
 
-A branch can run several modules (for example Grocery and Restaurant for a supermarket with a food court).
+A branch runs **one industry module** (Pharmacy, Grocery, Restaurant, …), plus any company-wide features and add-ons such as Sales & Distribution. A supermarket with a pharmacy counter is set up as two branches at the same address, so each keeps its own stock, staff and figures.
+
+## 8.0 Industries
+
+When a company runs more than one kind of business, each kind is an **industry**: for example *Pharmacy* with the branches Pharmacy Osu and Pharmacy Tema, and *Grocery* with Grocery Spintex.
+
+**Why:** each industry has its own staff, products and figures. Separating them keeps a pharmacist's screens free of grocery items, and gives the owners each industry's results on its own as well as the whole company's.
+
+- **An industry appears by itself** when its module is switched on for a branch (8.1). The branch then belongs to it. *Company → Industries* lists the industries, and new ones can be added there.
+- **Head office or a central warehouse** can belong to no industry (*company-level*). Only people with company-wide access see it.
+- **The industry switcher** at the top of the back office (*All industries*, *Pharmacy*, *Grocery*, …) is shown to people who can see more than one industry.
+  - With an industry chosen, every screen shows only that industry: branches, stock, prices, purchasing, sales, reports, and its own dashboard. The pharmacy dashboard shows prescriptions and expiring batches.
+  - With *All industries*, the dashboard shows each industry's sales side by side.
+- **Each industry has its own catalogue.**
+  - When you create a product or price list, choose its industry; the industry chosen at the top is filled in for you.
+  - That industry's tills sell only its products.
+  - Products created before industries are *shared* (sold everywhere) until you give them an industry (Catalog → Products → edit → Industry).
+- **Staff:**
+  - give a person a role **at their branch** (People & access → Users → Grant access → Applies to: *Branch*). A pharmacist at Pharmacy Osu then sees that pharmacy only;
+  - an **industry manager** gets the role with *Applies to: Industry*, and sees every branch of that industry, and nothing of the others.
+
+**Check:** choose *Pharmacy* at the top. *Stock → Stock on hand* shows only the pharmacy branches, and *Catalog → Products* shows only pharmacy (and shared) products. Choose *All industries* to go back.
+
 
 ## 8.1 Switching a module on or off
 

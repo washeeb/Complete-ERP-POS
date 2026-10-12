@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.31.0] — 2026-10-12 · Industries (part A)
+### Added
+- **Industries** (owner decisions 2026-10-12): a level between the company and its branches.
+  - Each branch belongs to one industry (Pharmacy, Grocery, …), and an industry has any number of branches.
+  - Head office or a central warehouse may be company-level.
+  - Switching an industry module on for a branch makes it a branch of that industry; the industry is created on first use, with a migration backfill for existing branches. A second industry module on the same branch is refused.
+  - Sales & Distribution is an add-on that sits alongside any industry.
+  - *Company → Industries* lists them (code, module, separate legal entity for later); branches have an Industry field.
+- **Industry access scope:** a role granted at *Industry* covers all that industry's branches, for industry managers. Branch grants still limit a pharmacist to their own pharmacy.
+- **Industry switcher** at the top of the back office (*All industries* / each industry), for people who see more than one. Every branch-filtered screen narrows to the chosen industry (`Erp::branchIds`), and products and price lists filter on it too.
+- **Separate catalogues:**
+  - products and price lists have an industry (default: the one chosen at the top), and existing ones are *shared* until moved;
+  - a branch's till receives only its industry's products and lists (plus shared ones), with the catalogue cache key per industry.
+- **Dashboards:**
+  - *All industries* shows each industry's sales today and this month (*Industries*);
+  - a chosen industry shows its own highlights: branches, stock value, prescriptions today and batches expiring in 90 days (Pharmacy), or batches expiring in 7 days (Grocery).
+- **Docs:** installation guide 8.0 (industries) and 7 (Step 4b).
+### Changed
+- A branch runs one industry module (the wizard test's "Food Court" no longer combines Restaurant with Grocery).
+
 ## [0.30.0] — 2026-10-12 · Cash control: vaults, Teller → Cashier → Income Controller
 ### Added
 - **Cash control with vaults** (setting *Tills and cash → Cash control with vaults*, off by default; owner decisions 2026-10-12).

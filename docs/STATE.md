@@ -1,9 +1,34 @@
 # State (resume file)
 
-**Phase:** Cash control (vaults; Teller → Cashier → Income Controller) · **Status:** done on branch `cash-chain` (PR to `main`). Next: industries (A: industry level, switcher, catalogues, dashboards; B: stock requests and cross-industry transfers; C: books per installation)
-**Updated:** 2026-10-12 · Repo: https://github.com/washeeb/Complete-ERP-POS (**public**: owner advised to make it private) · Phases 1–14, licensing, branding, pentest pack, Windows/Ubuntu HTTPS, first-run fixes, signing key, grant fix merged (PRs #1–#33)
+**Phase:** Industries part A · **Status:** done on branch `industries` (PR to `main`). Next: B (stock requests between sister branches; cross-industry transfers at cost with both sides approving, product mapping), C (books per installation: profit centres or separate legal entities)
+**Updated:** 2026-10-12 · Repo: https://github.com/washeeb/Complete-ERP-POS (**public**: owner advised to make it private) · Merged through PR #34 (cash control)
 
-## Cash control — done on branch `cash-chain`
+## Industries part A — done on branch `industries`
+- **Database:** migration `2026_11_02_100001`:
+  - `industries` (code, name, module_key, legal_entity_id for part C, sort, is_active);
+  - `branches.industry_id` (null = company-level), `products.industry_id` and `price_lists.industry_id` (null = shared);
+  - backfill: one industry per enabled industry module, assigned to its branches.
+- **Rules:**
+  - `IndustryService` (save, assign, ensureFor). `ModuleService::setStatus` calls `ensureFor` on enable: one industry per branch; the industry is auto-created on first use.
+  - `ModuleManifest::definesIndustry()` and `addon`: Distribution is an add-on.
+  - `OrgService::updateBranch` takes `industry_id`.
+- **Access:**
+  - `ScopeType::Industry`: `Authorizer::scopePath` includes `industry:X`; `branchIds` expands industry grants.
+  - `AccessService::resolveScope`; the grant form; `RoleAssignment::scopeLabel`.
+- **Switcher:**
+  - `App\Support\IndustryContext` (session `erp.industry`, options limited to what the person reaches);
+  - `Livewire\IndustrySwitcher` on the GLOBAL_SEARCH_BEFORE hook;
+  - `Erp::branchIds` intersects with the chosen industry.
+- **Catalogue:**
+  - ProductResource and PriceListResource: an Industry field (default = chosen industry), a column, and a filter on the chosen industry plus shared;
+  - CatalogService saves `industry_id`;
+  - PosController `catalog()` and `lists()` filter by the branch's industry (plus shared); `catalogVersion(industry)`.
+- **Screens:** IndustryResource (Company → Industries); BranchResource Industry field and column; dashboard widgets IndustryOverview (all industries) and IndustryHighlights (chosen industry: pharmacy, grocery).
+- **Sync:** `industry` in the `org` group.
+- **Tests:** `IndustriesTest` (5). SetupAndModulesTest is updated: Food Court is restaurant only, and the module-scope test uses grocery.
+- **Docs:** manual 8.0 (Industries), 7 (Step 4b); CHANGELOG 0.31.0; DECISIONS.
+
+## Cash control — merged (PR #34)
 - **Owner answers (2026-10-12):** industries (one industry per branch; head office may be company-level; books chosen per installation; fully separate catalogues; cross-industry transfers at cost with approval from both sides; industries come after the cash chain). Cash: vault = cash tray per till per shift; blind counts at every step; the Cashier does not sell; differences go to over/short or are charged to staff; the Income Controller records deposits.
 - **Database:** migration `2026_11_01_100001`:
   - tables `shift_templates`, `vaults`, `vault_sessions`, `cash_handovers`, `cash_variances`, `cash_movements` (append-only trigger);
