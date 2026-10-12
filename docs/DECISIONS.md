@@ -487,6 +487,28 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Windows server: Caddy + PHP FastCGI + HTTPS (2026-10-12)
+- **Owner:** yes to replacing `php artisan serve` over http before the penetration test, so the firm is not paid to report something we already know.
+- **Caddy over IIS or nginx for Windows.**
+  - It is one checksum-verified binary with no Windows features to enable.
+  - It provides automatic HTTPS: Let's Encrypt for an internet name, and its own local certificate authority on a shop network.
+  - nginx's Windows build is not meant for production; IIS needs features installed and its own certificate handling.
+- **PHP runs as php-cgi FastCGI workers:**
+  - 4 by default, `-Workers`;
+  - each on 127.0.0.1:900x, load-balanced least-connections;
+  - each in a cmd loop with `PHP_FCGI_MAX_REQUESTS=0`, because Windows php-cgi cannot manage its own children and otherwise exits after 500 requests.
+- **HTTPS on the shop network is required, not optional.** Browsers only give the till its signing key, offline PIN check, service worker and install on a secure origin. Until now each device needed a Chrome flag; now each device trusts the server's certificate authority once.
+  - Hardening: names on the certificate authority say which server it belongs to, and its key folder is readable by Administrators and SYSTEM only.
+  - Uninstall removes it from the trusted list.
+  - The certificate covers the IP address and the computer name at install time; a new address means re-running the installer and re-trusting.
+- **Minimal attack surface:**
+  - Only 80 and 443 are open. Port 80 redirects, and serves only `/ca.crt` on a shop network.
+  - Caddy's admin API is off; the `Server` header is removed.
+  - Hidden paths give 404.
+  - Reverb and PHP listen on loopback.
+- **Live updates go through the same origin** (`/app` proxied to Reverb), so no extra port is open. The server publishes to Reverb on loopback over http (`REVERB_PUBLISH_*`), so PHP never has to trust the local certificate authority. The bootstrap hands out only the public client address.
+- **Updates migrate in place:** re-running the installer moves an http install to https and retires the old task and firewall rule. Devices then need the one-time trust (4.9).
+
 ## Penetration test pack (2026-10-12)
 - **Owner answers:**
   - environment: a test machine at the SyncLytics office (not hosted);

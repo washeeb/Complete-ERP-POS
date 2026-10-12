@@ -72,7 +72,8 @@ You do not need to remember these. Come back to this page whenever a word is unc
 | **Live updates** (Reverb) | An optional service that pushes price and stock changes to tills and screens instantly. Without it, tills check every 60 seconds. |
 | **IP address** | The number of a computer on the network, such as `192.168.1.10`. Tills use it to find the server. |
 | **LAN** | Your shop's local network (cables or Wi-Fi through your router). |
-| **Port** | A numbered "door" on a computer. This guide uses port `8010` for the server on Windows and the standard web ports 80/443 on Linux. |
+| **Port** | A numbered "door" on a computer. The server uses the standard web ports: 443 for https, and 80 only to send visitors on to https (and, on the shop network, to hand out the server's certificate). |
+| **Certificate** | The proof a web server shows a browser that it is really that server, which also encrypts everything sent between them (the padlock in the address bar). |
 | **HTTPS / SSL certificate** | Encrypted web connection (the padlock in the browser). Needed when tills reach the server over the internet, and for some browser features. |
 | **Domain** | A web address you own, such as `erp.yourshop.com`. Needed for a cloud server. |
 | **Firewall** | Protection that blocks unwanted network connections. You open only the ports you need. |

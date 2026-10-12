@@ -183,7 +183,7 @@ class StorefrontController extends Controller
         if (config('broadcasting.default') !== 'reverb' || ! config('broadcasting.connections.reverb.key')) {
             return null;
         }
-        $o = config('broadcasting.connections.reverb.options');
+        $o = config('broadcasting.connections.reverb.client');
 
         return ['key' => config('broadcasting.connections.reverb.key'), 'host' => $o['host'], 'port' => (int) $o['port'], 'scheme' => $o['scheme']];
     }

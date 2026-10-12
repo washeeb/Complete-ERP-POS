@@ -108,6 +108,13 @@ it('lets a signed-in till listen to its own company only', function () {
         'broadcasting.connections.reverb.app_id' => '1']);
     require base_path('routes/channels.php'); // channel rules were registered on the test's null broadcaster at boot
 
+    // The till is told the public https address; the server's own publishing target (same PC) is never handed out.
+    config(['broadcasting.connections.reverb.client' => ['host' => 'shop.test', 'port' => 443, 'scheme' => 'https'],
+        'broadcasting.connections.reverb.options.host' => '127.0.0.1', 'broadcasting.connections.reverb.options.port' => 8080]);
+    $this->withToken($token)->getJson('/api/v1/pos/bootstrap')->assertOk()
+        ->assertJsonPath('realtime.host', 'shop.test')->assertJsonPath('realtime.port', 443)->assertJsonPath('realtime.scheme', 'https');
+    app('auth')->forgetGuards();
+
     $this->withToken($token)->postJson('/api/v1/pos/broadcasting/auth', ['socket_id' => '123.456', 'channel_name' => "private-tenant.{$this->tenant->id}.catalog"])
         ->assertOk()->assertJsonStructure(['auth']);
     app('auth')->forgetGuards();

@@ -78,14 +78,23 @@ jobs:
       - name: The server answers
         shell: pwsh
         run: |
-          if (-not ((Invoke-WebRequest http://127.0.0.1:8010/admin/login -UseBasicParsing).Content -match 'Sign in')) { throw 'login page missing' }
+          # Over https with the server's own certificate (the installer made this PC trust it); no plain-http port is left.
+          if (-not ((Invoke-WebRequest https://localhost/admin/login -UseBasicParsing).Content -match 'Sign in')) { throw 'login page missing' }
+          if ((Invoke-WebRequest https://localhost/.env -UseBasicParsing -SkipHttpErrorCheck).StatusCode -ne 404) { throw '.env is reachable' }
+          if (-not ((Invoke-WebRequest https://localhost/pos/some/deep/link -UseBasicParsing).Content -match '<div id="root">')) { throw 'till app fallback missing' }
+          if (Get-NetTCPConnection -LocalPort 8010 -State Listen -ErrorAction SilentlyContinue) { throw 'the old http port 8010 is still open' }
+          if (Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue | Where-Object LocalAddress -ne '127.0.0.1') { throw 'live updates listen beyond this PC' }
+          # Run the installer again, as an update does: it must stop what is running, replace it and come back up.
+          powershell -NoProfile -ExecutionPolicy Bypass -File installer\windows\install.ps1 -Release "$env:GITHUB_WORKSPACE" -Setup A -Ci
+          if ($LASTEXITCODE -ne 0) { throw 'update run failed' }
+          if (-not ((Invoke-WebRequest https://localhost/admin/login -UseBasicParsing).Content -match 'Sign in')) { throw 'login page missing after the update run' }
           Set-Location C:\SESLabs\server; C:\php\php.exe artisan erp:backup; C:\php\php.exe artisan erp:backup --verify
       - name: Build setup.exe
         shell: pwsh
         run: |
           choco install innosetup -y --no-progress
           Compress-Archive -Path server -DestinationPath release.zip -Force
-          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DReleaseZip=$env:GITHUB_WORKSPACE\release.zip" /DAppVersion=0.27.0 installer\windows\server-setup.iss
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DReleaseZip=$env:GITHUB_WORKSPACE\release.zip" /DAppVersion=0.28.0 installer\windows\server-setup.iss
       - uses: actions/upload-artifact@v4
         with:
           name: seslabs-server-setup

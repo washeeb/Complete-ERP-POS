@@ -29,25 +29,29 @@ Click **Create**. The code is shown **once**: write it down or keep the page ope
 
 | Setup | Address to open on the device |
 |---|---|
-| A (on the server PC itself) | `http://localhost:8010/pos/` |
-| B (Windows server on the shop network) | `http://<server-address>:8010/pos/` (e.g. `http://192.168.1.10:8010/pos/`) |
+| A (on the server PC itself) | `https://localhost/pos/` |
+| B (Windows server on the shop network) | `https://<server-address>/pos/` (e.g. `https://192.168.1.10/pos/`). Trust the server first (4.9). |
 | B/C (Ubuntu server on the network, no domain) | `http://<server-address>/pos/` |
 | D (cloud, with HTTPS) | `https://<your-domain>/pos/` |
 | E (branch server) | the **branch server's** address, as in B |
 
-## 9.3 Trust the server's network address (setups B, C and E without HTTPS)
+## 9.3 Trust the server's address
 
-Browsers allow a web app to use its **security functions** (the till's own signing key, the offline PIN check), to **work offline** and to **install as an app** only when it comes from a secure address: `https://…` or `localhost`. A till on the shop network that opens `http://192.168.1.10:8010/pos/` must be told that this address is trusted. **This is required** — without it the till cannot even enrol. Do it **once on each till, tablet, handheld and kitchen screen** (not needed for setups A and D):
+Browsers allow a web app to use its **security functions** (the till's own signing key, the offline PIN check), to **work offline** and to **install as an app** only when it comes from a secure address: `https://…` or `localhost`. **This is required**: without it the till cannot even enrol.
+
+- **Windows server (setups A, B and E):** the server is reached over `https` with its own certificate. Each device trusts it once, as in **4.9**. Nothing else is needed.
+- **Setup D and servers with an internet name:** nothing to do. The certificate is a public one.
+- **Ubuntu server on the shop network without a domain (setup C):** that server is still reached over plain `http://`, so each till, tablet, handheld and kitchen screen must be told once that the address is trusted:
 
 1. In Chrome, open `chrome://flags/#unsafely-treat-insecure-origin-as-secure` (in Edge: `edge://flags/#unsafely-treat-insecure-origin-as-secure`).
-2. In the box, type the server address **without** `/pos/`, e.g. `http://192.168.1.10:8010`.
+2. In the box, type the server address **without** `/pos/`, e.g. `http://192.168.1.10`.
 3. Set the option to **Enabled** and click **Relaunch**.
 
 **Why:** the till proves it is your device by signing with a key it creates and keeps itself, and checks PINs offline; browsers only offer these functions to trusted addresses.
 
 **Check:** the till app shows *Set up this device* and enrolling with the code works.
 
-**Note:** This is safe on your own shop network. Never use plain `http://` over the internet — use HTTPS (Chapter 5). The Phase 13 installer will set up HTTPS on the shop network so this step disappears.
+**Note:** This is safe on your own shop network. Never use plain `http://` over the internet; use HTTPS (Chapter 5).
 
 ## 9.4 Till PC (Windows)
 
@@ -95,7 +99,7 @@ Every till, handheld and kitchen screen has a **Theme** switch at the bottom lef
 For a Windows till PC with a receipt printer, a cash drawer or a weighing scale, install **SES Labs Till** (`SES Labs Till_<version>_x64-setup.exe`, from SES Labs) instead of using the browser:
 
 1. Install the receipt printer's Windows driver (or note the IP address of a network receipt printer).
-2. Run the SES Labs Till setup. On first start it asks for the **server address** (e.g. `http://192.168.1.10:8010`).
+2. Trust the server on this PC (4.9). Then run the SES Labs Till setup. On first start it asks for the **server address** (e.g. `https://192.168.1.10`).
 3. **Receipt printer:** choose it from the list (or type `tcp://<printer-ip>:9100` for a network printer); tick **Open the cash drawer** if the drawer is plugged into the printer; **Print a test receipt**.
 4. **Scale:** choose its COM port and speed (usually 9600), then **Read the scale** with something on it.
 5. **Save and open the till.** Enrol and sign in as with any till (9.1).

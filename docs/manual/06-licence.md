@@ -13,7 +13,7 @@ Parts that are not licensed are hidden from the menus.
 
 ## 6.2 Activate
 
-1. Open the back office at `http://<server-address>:8010/admin` (Windows) or `https://<your-domain>/admin` (Ubuntu) and sign in as the **owner** (Chapter 7, steps 1–2 explain the first sign-in and two-factor set-up).
+1. Open the back office at `https://<server-address>/admin` (Windows) or `https://<your-domain>/admin` (Ubuntu) and sign in as the **owner** (Chapter 7, steps 1–2 explain the first sign-in and two-factor set-up).
 2. You are taken to **System → Licence**. It shows the **installation code**, which starts with `SYNREQ-`.
 3. Send that code to SES Labs (copy and paste it into an e-mail or WhatsApp message). Tell them which modules and how many branches, devices and users you need.
 4. You receive a **licence key** starting with `SYN1-`. On the Licence page click **Enter licence key**, paste it and confirm.

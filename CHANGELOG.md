@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.28.0] — 2026-10-12 · Windows server: production web server and HTTPS
+### Changed
+- **The Windows installer no longer uses PHP's built-in development server over plain http on port 8010.** It installs:
+  - the **Caddy** web server (version pinned, download checked against Caddy's published SHA-512 checksum);
+  - four **PHP FastCGI workers**, which restart if they stop;
+  - **HTTPS only**, by setup:
+    - this PC only: `https://localhost`;
+    - shop network: `https://<address>` and `https://<computer name>`, with the server's own certificate authority. Devices trust it once from `http://<server>/ca.crt`; the key is readable by administrators only;
+    - internet name: a free Let's Encrypt certificate, fetched and renewed automatically (new optional wizard page and `-Domain` / `-Email`).
+- **Only ports 80 and 443 are open to the network.**
+  - Port 80 only redirects, and hands out the certificate on a shop network.
+  - The PHP workers (9001–9004) and live updates (8080) listen on 127.0.0.1 only. Live updates are reached through `/app` on 443.
+  - The Caddy admin API is off.
+  - `.env` and other hidden files answer 404.
+- **Live updates work out of the box.**
+  - The installer creates the Reverb app keys.
+  - The server publishes to Reverb on the same PC (new `REVERB_PUBLISH_HOST/PORT/SCHEME`).
+  - Tills and shop pages are told the public https address (`broadcasting.connections.reverb.client`).
+- **Running the installer again (an update)** stops the old tasks and processes, removes the old `SES Labs Web` task and the 8010/8080 firewall rule, and moves `APP_URL` to https with `SESSION_SECURE_COOKIE=true`.
+- **Uninstalling** removes every task, the firewall rule and the server's certificate authority from the trusted list.
+- **CI** checks the installed server:
+  - it answers over https;
+  - `.env` gives 404;
+  - deep links into the till app work;
+  - 8010 is closed and 8080 is local only;
+  - a second (update) run comes back up.
+- **Installation guide:**
+  - 4.0 and 4.6;
+  - 4.8 rewritten (Caddy by hand);
+  - new 4.9 (trusting the server on PCs and Android);
+  - 1, 2, 6, 7, 9.2–9.4, 13 and 18.4.
+- **Other:** the browser-flag workaround (9.3) is now needed only for an Ubuntu server without a domain. The pentest scope describes the new layout.
+
 ## [0.27.0] — 2026-10-12 · Penetration test pack
 ### Added
 - **`docs/pentest/`**: everything needed to have an outside firm test SES Labs before the first internet-facing pilot (owner decisions: test machine at the SyncLytics office, grey box, Ghana-based and international firms, certified testers).
