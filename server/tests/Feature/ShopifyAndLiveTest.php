@@ -99,7 +99,7 @@ it('lets a signed-in till listen to its own company only', function () {
     $till = Till::where('branch_id', $this->branches['HQ']->id)->first();
     [$device, $code] = app(DeviceService::class)->register(actorFor($this->owner), ['branch_id' => $till->branch_id, 'till_id' => $till->id, 'name' => 'T', 'kind' => 'pos']);
     $deviceToken = $this->postJson('/api/v1/devices/enroll', ['code' => $code, 'public_key' => str_repeat('k', 64)])->json('token');
-    $cashier = staff($this->owner, 'esi', 2, 'cashier', ScopeType::Till, $till->id);
+    $cashier = staff($this->owner, 'esi', 2, 'teller', ScopeType::Till, $till->id);
     app(AccessService::class)->setPin(actorFor($this->owner), $cashier, '482613');
     app('auth')->forgetGuards();
     $token = $this->withToken($deviceToken)->postJson('/api/v1/pos/login', ['username' => 'esi', 'pin' => '482613'])->json('token');

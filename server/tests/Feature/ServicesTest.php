@@ -53,7 +53,7 @@ beforeEach(function () {
     $this->till = Till::where('branch_id', $this->hq->id)->first();
     [$this->device] = app(DeviceService::class)->register($this->o, ['branch_id' => $this->hq->id, 'till_id' => $this->till->id, 'name' => 'T1', 'kind' => 'pos']);
     $this->device->forceFill(['status' => 'active'])->save();
-    $this->cashier = staff($this->owner, 'efua', 2, 'cashier', ScopeType::Till, $this->till->id);
+    $this->cashier = staff($this->owner, 'efua', 2, 'teller', ScopeType::Till, $this->till->id);
     $this->stylist = staff($this->owner, 'abla', 2, 'service_staff', ScopeType::Branch, $this->hq->id);
     $this->shift = app(ShiftService::class)->open($this->device, $this->cashier, 0);
     $this->seq = 0;

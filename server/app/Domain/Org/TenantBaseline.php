@@ -9,6 +9,7 @@ use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
 use App\Domain\Support\Outbox;
 use App\Models\PriceList;
+use App\Models\ShiftTemplate;
 use App\Models\TaxGroup;
 use App\Models\TaxRate;
 use App\Models\Tenant;
@@ -76,6 +77,14 @@ final class TenantBaseline
                 (new PriceList(['code' => 'WHOLESALE', 'name' => 'Wholesale', 'currency_code' => $tenant->currency_code,
                     'prices_include_tax' => true, 'is_default' => false, 'pos_selectable' => true]))->forceFill($base())->save();
                 $publish(PriceList::withoutGlobalScopes()->where('tenant_id', $tenant->id)->where('code', 'WHOLESALE')->first());
+            }
+
+            // The two default shifts (cash control): each till gets a vault per shift when cash control is switched on.
+            foreach ([['Morning', '07:00', '14:00', 1], ['Afternoon', '14:00', '21:00', 2]] as [$name, $from, $to, $sort]) {
+                if (! ShiftTemplate::withoutGlobalScopes()->where('tenant_id', $tenant->id)->where('name', $name)->exists()) {
+                    (new ShiftTemplate(['name' => $name, 'starts_at' => $from, 'ends_at' => $to, 'sort' => $sort, 'is_active' => true]))->forceFill($base())->save();
+                    $publish(ShiftTemplate::withoutGlobalScopes()->where('tenant_id', $tenant->id)->where('name', $name)->first());
+                }
             }
 
             // Finance is kept at head office only.

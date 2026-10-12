@@ -135,7 +135,7 @@ beforeEach(function () {
     $this->bread = makeProduct($this->owner, 'BREAD', 'Bread', retail: '25.00', tax: 'EXEMPT');
     app(InventoryService::class)->adjust(actorFor($this->owner), $this->whA, $this->milo, $this->milo->units->firstWhere('is_base', true), '10', 'opening', '');
     app(InventoryService::class)->adjust(actorFor($this->owner), $this->whA, $this->bread, $this->bread->units->first(), '1', 'opening', '');
-    $this->cashier = staff($this->owner, 'kofi', 2, 'cashier', ScopeType::Branch, $this->branches['BA']->id);
+    $this->cashier = staff($this->owner, 'kofi', 2, 'teller', ScopeType::Branch, $this->branches['BA']->id);
     app(AccessService::class)->setPin(actorFor($this->owner), $this->cashier, '482613');
     $this->it = staff($this->owner, 'itadmin', 4, 'it_admin');
 
@@ -204,7 +204,7 @@ it('gives a new branch server everything it needs in one full sync', function ()
             ->and(Product::where('sku', 'MILO')->first()->prices)->toHaveCount(2)
             ->and(User::where('username', 'kofi')->first()->pin_hash)->not->toBeNull()   // can sign in on a branch till
             ->and(User::where('username', 'kofi')->first()->getAttributes()['app_authentication_secret'])->toBeNull() // node-local secret never travels
-            ->and(Role::where('key', 'cashier')->first()->permissionKeys())->toContain('pos.access')
+            ->and(Role::where('key', 'teller')->first()->permissionKeys())->toContain('pos.access')
             ->and((string) StockLevel::where('warehouse_id', $this->whA->id)->where('product_id', $this->milo->id)->value('on_hand'))->toBe('10.000')
             ->and(app(StockLedger::class)->check())->toBe([])
             ->and(app(AuditVerifier::class)->verify(Nodes::$tenantId)['ok'])->toBeTrue();

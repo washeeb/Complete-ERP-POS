@@ -75,6 +75,14 @@ export type VanDay = {
 }
 export type VisitOutcome = 'sold' | 'order' | 'no_order' | 'closed'
 
+/** A note or coin to count at close (key keeps a 2-cedi note apart from the 2-cedi coin). */
+export type Denomination = { key: string; label: string; value: number }
+
+/** A vault (cash tray with its own float) the cashier issued to this teller for one shift. */
+export type VaultIssue = { id: string; vault: string; float_minor: number; status: 'issued' | 'open'; issued_by: string; business_date: string }
+
+export type CashInfo = { vaults: boolean; sessions: VaultIssue[]; denominations: Denomination[] }
+
 export type Bootstrap = {
   company: { name: string; currency: string; exponent: number; timezone: string; legal_name: string | null; tin: string | null; vat_no: string | null; practice?: boolean }
   branch: { id: string; code: string; name: string; address: string | null; phone: string | null }
@@ -88,6 +96,8 @@ export type Bootstrap = {
   send_receipt?: ('sms' | 'whatsapp' | 'email')[] // channels the business has switched on for digital receipts
   license?: { state: string; read_only: boolean; message: string | null; ref: string }
   shift: Shift | null
+  /** Cash control: vaults issued to this teller at this till, and the notes and coins to count (missing on servers before 0.30). */
+  cash?: CashInfo
   last_device_seq: number
   catalog_version: string
   realtime?: Realtime | null

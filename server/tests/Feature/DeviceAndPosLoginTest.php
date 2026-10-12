@@ -16,7 +16,7 @@ beforeEach(function () {
     [$this->device, $this->code] = $this->devices->register(actorFor($this->owner), [
         'branch_id' => $this->branches['BA']->id, 'till_id' => $this->till->id, 'name' => 'Till 1 PC', 'kind' => 'pos',
     ]);
-    $this->cashier = staff($this->owner, 'esi', 2, 'cashier', ScopeType::Till, $this->till->id);
+    $this->cashier = staff($this->owner, 'esi', 2, 'teller', ScopeType::Till, $this->till->id);
     app(AccessService::class)->setPin(actorFor($this->owner), $this->cashier, '4826');
 });
 
@@ -57,7 +57,7 @@ it('signs a cashier in by PIN on an enrolled till and identifies them', function
 
 it('refuses a person with no till access at that branch', function () {
     $deviceToken = enroll($this);
-    $hqCashier = staff($this->owner, 'hqc', 2, 'cashier', ScopeType::Branch, $this->branches['HQ']->id);
+    $hqCashier = staff($this->owner, 'hqc', 2, 'teller', ScopeType::Branch, $this->branches['HQ']->id);
     app(AccessService::class)->setPin(actorFor($this->owner), $hqCashier, '7391');
 
     $this->withToken($deviceToken)->postJson('/api/v1/pos/login', ['username' => 'hqc', 'pin' => '7391'])

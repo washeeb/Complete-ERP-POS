@@ -122,11 +122,12 @@ Printable guides, in `docs/training/pdf/` of the release (rebuild them with `npm
 
 | File | For | What it covers |
 |---|---|---|
-| `cashier-quick-card.pdf` | Cashiers | One sheet to keep at the till: selling, payments, returns, offline, end of shift |
+| `teller-quick-card.pdf` | Tellers (people at a till) | One sheet to keep at the till: selling, payments, returns, offline, end of shift (with or without vaults) |
 | `supervisor-guide.pdf` | Supervisors | Approvals, the review queue, lock-outs, end of day |
 | `storekeeper-guide.pdf` | Storekeepers | Receiving, transfers, counts, adjustments |
 | `accountant-guide.pdf` | Accountants | Opening balances, weekly checks, month-end |
 | `manager-owner-guide.pdf` | Owners and managers | Access, daily checks, going live |
+| `cashier-and-income-controller-guide.pdf` | Cashiers and income controllers | Vaults: issuing floats, receiving trays, handing over, blind counts, differences, bank deposits |
 | `video-scripts.pdf` | Whoever records training videos | Nine short videos, what to show and what to say |
 
 Each guide ends with exercises to do in the practice company.

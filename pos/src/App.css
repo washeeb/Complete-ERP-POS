@@ -183,3 +183,14 @@ fieldset.choices button.active, .segmented button.active { background: var(--pri
 /* Company brand (Company → Branding): a thin accent in the brand colour; the till's own colours keep their contrast. */
 .app { border-top: 4px solid var(--brand, transparent); }
 .topbar .brand-icon { width: 28px; height: 28px; border-radius: 6px; vertical-align: middle; margin-right: 6px; object-fit: contain; }
+
+/* Cash control: the vault the teller opens on, and the count by notes and coins at close. */
+.vaults { border: 1px solid var(--line, #d1d5db); border-radius: 10px; padding: 8px 12px; margin: 0 0 12px; }
+.vaults legend { font-weight: 600; padding: 0 4px; }
+.vault-choice, .check { display: flex; gap: 10px; align-items: flex-start; margin: 6px 0; font-weight: normal; }
+.vault-choice input, .check input { width: auto; margin-top: 3px; }
+.denoms { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-bottom: 8px; }
+.denoms label { font-size: .85rem; }
+.denoms input { text-align: right; }
+.denoms-total { font-size: 1.1rem; margin: 4px 0 12px; }
+.small { font-size: .85rem; }

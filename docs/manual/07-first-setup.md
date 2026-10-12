@@ -91,6 +91,7 @@ For each staff member:
 | Stop sales when the system shows no stock | Off by default (tills can sell items the system thinks are out of stock, and you count them later). |
 | Message at the bottom of receipts | Your returns policy or a thank-you line. |
 | Returns accepted within (days, with receipt) | How long after a sale a return with the receipt is accepted. |
+| Cash control with vaults | Off: whoever closes a till counts the drawer. On: tellers, a Cashier and an Income Controller check the cash at every step (Step 14). |
 
 Module settings (Grocery, Pharmacy, Restaurant, Fashion, Services) are explained in Chapter 8.
 
@@ -148,7 +149,42 @@ Module settings (Grocery, Pharmacy, Restaurant, Fashion, Services) are explained
 
 Register and enrol the tills, handhelds and kitchen screens: **Chapter 9**.
 
-## Step 14 — Test before going live
+## Step 14 — Cash control: vaults, Cashier and Income Controller (optional)
+
+A shop with several tellers can check its cash at every step, as banks do.
+- **Teller:** sells at a till and counts the tray at the end of the shift.
+- **Cashier:** gives each teller a cash tray with a float (a **vault**), receives it back and counts it again.
+- **Income Controller** (accounts): receives the day from the Cashier, counts it again, decides any difference and records the bank deposit.
+
+Nobody sees the figure they are checking against before they have counted: these are **blind counts**.
+
+**Why:** a difference is found at the step where it happened and is tied to the person responsible. Cash never moves without a second person checking it.
+
+1. **Switch it on:** **System → Settings → Tills and cash → Cash control with vaults**.
+2. **Shifts:** **Cash → Shifts and vaults** lists the shifts, *Morning* (07:00–14:00) and *Afternoon* (14:00–21:00). Change the times, or **Add a shift** (e.g. *Evening*). Each till gets one vault per shift, e.g. *T01 · Morning*.
+3. **Standard floats:** on the same page, **Edit** each vault and enter the float the Cashier usually puts in it. It is suggested every day, and the Cashier can change it.
+4. **People** (**People & access → Users**, Step 5):
+   - give each till person the **Teller** role, at their till or branch;
+   - give one or more people the **Cashier** role, at their branch;
+   - give the **Income Controller** role (security level 4) to someone in accounts, usually company-wide.
+
+   The Cashier and the Income Controller do not sell, so they must not also have the Teller role.
+5. **Every day:**
+   1. The Cashier opens **Cash → Cash desk** and clicks **Issue float** on each vault, choosing the teller.
+   2. The teller signs in at that till, ticks *I have counted the float* and opens the shift.
+   3. At the end of the shift the teller counts the tray note by note and closes the till, then hands the tray to the Cashier.
+   4. The Cashier clicks **Receive and count** and counts again. If the two counts differ, they are asked to count once more; the second count stands.
+   5. At the end of the day the Cashier clicks **Hand over to the income controller**.
+   6. The Income Controller opens **Cash → Income control**:
+      - **Receive and count** the bundle;
+      - **Decide** each difference: *cash over/short*, or *charged to the staff member*, recovered from pay through HR & payroll;
+      - **Record deposit** with the bank slip number.
+
+**Check:** on a test day, issue a float, sell, close, receive, hand over and receive again. *Income control* then shows the day's reconciliation (system, teller, cashier, income controller), and *Finance → Trial balance* shows *Cash on hand – tills* and *Cash with cashiers* back at zero.
+
+The full guides for each person are in the training material (Chapter 17.7).
+
+## Step 15 — Test before going live
 
 Do a full test day with made-up sales:
 

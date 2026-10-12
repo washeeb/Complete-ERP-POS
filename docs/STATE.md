@@ -1,7 +1,29 @@
 # State (resume file)
 
-**Phase:** Ubuntu HTTPS (after Windows HTTPS) · **Status:** done on branch `ubuntu-https` (stacked on `windows-https`, PR #29); all 14 phases built. Next: owner sends the pentest request for quote; GRA sandbox; training videos; dry run
-**Updated:** 2026-10-12 · Repo: https://github.com/washeeb/Complete-ERP-POS (private) · Phases 1–14, licensing, branding and the pentest pack merged (PRs #1–#28)
+**Phase:** Cash control (vaults; Teller → Cashier → Income Controller) · **Status:** done on branch `cash-chain` (PR to `main`). Next: industries (A: industry level, switcher, catalogues, dashboards; B: stock requests and cross-industry transfers; C: books per installation)
+**Updated:** 2026-10-12 · Repo: https://github.com/washeeb/Complete-ERP-POS (**public**: owner advised to make it private) · Phases 1–14, licensing, branding, pentest pack, Windows/Ubuntu HTTPS, first-run fixes, signing key, grant fix merged (PRs #1–#33)
+
+## Cash control — done on branch `cash-chain`
+- **Owner answers (2026-10-12):** industries (one industry per branch; head office may be company-level; books chosen per installation; fully separate catalogues; cross-industry transfers at cost with approval from both sides; industries come after the cash chain). Cash: vault = cash tray per till per shift; blind counts at every step; the Cashier does not sell; differences go to over/short or are charged to staff; the Income Controller records deposits.
+- **Database:** migration `2026_11_01_100001`:
+  - tables `shift_templates`, `vaults`, `vault_sessions`, `cash_handovers`, `cash_variances`, `cash_movements` (append-only trigger);
+  - `shifts.vault_session_id` and `counted_denoms`;
+  - the `cashier` role renamed `teller`;
+  - Morning/Afternoon backfilled; accounts `cash_cashier` (1115) and `cash_differences` (1125).
+- **Server:**
+  - `app/Domain/Pos/CashControl` (issue/cancel, attachShift, tellerCounted, receiveVault with one blind recount, handOver, receiveHandover, decide, deposit, ensureVaults, DENOMINATIONS);
+  - ShiftService open/close and PosSyncService replay carry `vault_session_id` and `denoms`; PosController bootstrap `cash`;
+  - AutoPoster kind `cash`; `shifts` excludes vault shifts;
+  - BankingService::transfer takes a permission; EmployeeLoan kind `shortage`; TenantBaseline seeds the shifts;
+  - Settings `cash.vaults`; Replication groups `org` (+shift_template, vault) and new `cash`; DocumentNumbers `CH`.
+- **Screens:** Filament pages CashDesk, IncomeControl and CashSetup (nav group *Cash*); `Filament/Support/CashCountForm`.
+- **Till:** OpenShift (vault choice and float confirmation) and CloseShift (denomination grid; blind result on a vault); `till.ts`, `api.ts`, `types.ts` (CashInfo), `db.ts` LocalShift `vault`.
+- **Roles and permissions:** RoleCatalog teller/cashier/income_controller; Core 0.15.0 adds `cash.view`, `cash.setup`, `cash.vault.issue`, `cash.vault.receive`, `cash.handover`, `cash.control`, `cash.variance.approve`, `cash.deposit`.
+- **Tests:**
+  - `CashControlTest` (4): the full chain with books, the staff charge, cancel and simple mode, the screens;
+  - tests now use the `teller` role key;
+  - e2e `cash-vault.spec.ts` (with axe).
+- **Docs:** manual 7 (Step 14), 17.7, 18.2; training 01 (Teller quick card) and new 07; user-manual cashier; pentest environment; CHANGELOG 0.30.0; DECISIONS.
 
 ## Ubuntu server: Caddy + HTTPS — done on branch `ubuntu-https`
 - **Script:** `installer/ubuntu/install.sh` (10 steps).

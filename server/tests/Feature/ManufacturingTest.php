@@ -173,5 +173,5 @@ it('shows the manufacturing screens', function () {
     $this->flushSession();
     $this->actingAs(withMfa($this->inspector))->get(BomResource::getUrl())->assertOk();
     $this->flushSession();
-    $this->actingAs(withMfa(staff($this->owner, 'ama', 2, 'cashier')))->get(WorkOrderResource::getUrl())->assertForbidden();
+    $this->actingAs(withMfa(staff($this->owner, 'ama', 2, 'teller')))->get(WorkOrderResource::getUrl())->assertForbidden();
 });

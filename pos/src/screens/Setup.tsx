@@ -137,44 +137,94 @@ export function Login({ onDone, deviceName }: { onDone: () => void; deviceName?:
 export function OpenShift({ boot, online, onDone }: { boot: Bootstrap; online: boolean; onDone: () => void }) {
   const [float, setFloat] = useState('')
   const [error, setError] = useState('')
+  const vaults = boot.cash?.vaults === true
+  const issued = (boot.cash?.sessions ?? []).filter((v) => v.status === 'issued')
+  const [vaultId, setVaultId] = useState<string>(issued[0]?.id ?? '')
+  const [checked, setChecked] = useState(false)
+  const money = (m: number) => formatMoney(m, boot.company.currency, boot.company.exponent)
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     try {
-      await openShift(parseMoney(float || '0', boot.company.exponent), online)
+      if (vaults) {
+        const v = issued.find((x) => x.id === vaultId)
+        if (!v) throw new Error('Choose your vault.')
+        await openShift(v.float_minor, online, v.id)
+      } else {
+        await openShift(parseMoney(float || '0', boot.company.exponent), online)
+      }
       onDone()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not open the shift.')
     }
   }
 
+  if (vaults && issued.length === 0) {
+    return (
+      <div className="card narrow">
+        <h1>Open shift</h1>
+        <p>No vault has been issued to you on {boot.till?.name ?? 'this till'} yet.</p>
+        <p className="muted">Ask the cashier to issue your vault (Cash desk). It holds your float; only you can open the till on it.</p>
+        <button className="primary big" onClick={() => window.location.reload()}>Check again</button>
+      </div>
+    )
+  }
+
   return (
     <form className="card narrow" onSubmit={submit}>
       <h1>Open shift</h1>
-      <p className="muted">{boot.branch.name} · {boot.till?.name}. Count the cash in the drawer before you start.</p>
-      <label>
-        Opening float ({boot.company.currency})
-        <input autoFocus className="big mono" inputMode="decimal" value={float} onChange={(e) => setFloat(e.target.value)} placeholder="0.00" />
-      </label>
+      <p className="muted">{boot.branch.name} · {boot.till?.name}. Count the cash before you start.</p>
+      {vaults ? (
+        <>
+          <fieldset className="vaults">
+            <legend>Your vault</legend>
+            {issued.map((v) => (
+              <label key={v.id} className="vault-choice">
+                <input type="radio" name="vault" value={v.id} checked={vaultId === v.id} onChange={() => setVaultId(v.id)} />
+                <span><strong>{v.vault}</strong> · float {money(v.float_minor)} · issued by {v.issued_by}</span>
+              </label>
+            ))}
+          </fieldset>
+          <label className="check">
+            <input type="checkbox" checked={checked} onChange={(e) => setChecked(e.target.checked)} required />
+            I have counted the float in the tray: {money(issued.find((x) => x.id === vaultId)?.float_minor ?? 0)}
+          </label>
+          <p className="muted small">If the float is not right, do not open the till: give the tray back to the cashier.</p>
+        </>
+      ) : (
+        <label>
+          Opening float ({boot.company.currency})
+          <input autoFocus className="big mono" inputMode="decimal" value={float} onChange={(e) => setFloat(e.target.value)} placeholder="0.00" />
+        </label>
+      )}
       {error && <p className="error" role="alert">{error}</p>}
       <button className="primary big">Open shift</button>
     </form>
   )
 }
 
-/** Blind close: the cashier counts first; expected cash is shown only after submitting. */
+/**
+ * Blind close: the person on the till counts first; expected cash is shown only after submitting, and not at all on a
+ * vault (the cashier counts the tray next, against this count). Counted note by note when the currency has a list.
+ */
 export function CloseShift({ boot, online, onClosed, onCancel }: { boot: Bootstrap; online: boolean; onClosed: () => void; onCancel: () => void }) {
   const [counted, setCounted] = useState('')
+  const [counts, setCounts] = useState<Record<string, string>>({})
   const [note, setNote] = useState('')
   const [error, setError] = useState('')
-  const [result, setResult] = useState<null | { expected: number; counted: number; diff: number; provisional: boolean }>(null)
+  const [result, setResult] = useState<null | { expected: number | null; counted: number; diff: number | null; provisional: boolean }>(null)
   const money = (m: number) => formatMoney(m, boot.company.currency, boot.company.exponent)
+  const denominations = boot.cash?.denominations ?? []
+  const byNotes = denominations.length > 0
+  const total = denominations.reduce((sum, d) => sum + (parseInt(counts[d.key] || '0', 10) || 0) * d.value, 0)
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     try {
-      const { shift, provisional } = await closeShift(parseMoney(counted, boot.company.exponent), note, online)
-      setResult({ expected: shift.expected_cash_minor ?? 0, counted: shift.counted_cash_minor ?? 0, diff: shift.over_short_minor ?? 0, provisional })
+      const denoms = byNotes ? Object.fromEntries(denominations.map((d) => [d.key, parseInt(counts[d.key] || '0', 10) || 0]).filter(([, n]) => (n as number) > 0)) : null
+      const amount = byNotes ? total : parseMoney(counted, boot.company.exponent)
+      const { shift, provisional } = await closeShift(amount, note, online, denoms)
+      setResult({ expected: shift.expected_cash_minor, counted: shift.counted_cash_minor ?? amount, diff: shift.over_short_minor, provisional })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not close the shift.')
     }
@@ -185,12 +235,19 @@ export function CloseShift({ boot, online, onClosed, onCancel }: { boot: Bootstr
       <div className="card narrow">
         <h1>Shift closed</h1>
         {result.provisional && <p className="banner warn">Worked out on this till while offline; the server confirms it when the till reconnects.</p>}
-        <dl className="totals">
-          <dt>Counted</dt><dd>{money(result.counted)}</dd>
-          <dt>Expected</dt><dd>{money(result.expected)}</dd>
-          <dt>{result.diff < 0 ? 'Short' : result.diff > 0 ? 'Over' : 'Balanced'}</dt>
-          <dd className={result.diff < 0 ? 'error' : ''}>{money(Math.abs(result.diff))}</dd>
-        </dl>
+        {result.expected === null ? (
+          <>
+            <dl className="totals"><dt>You counted</dt><dd>{money(result.counted)}</dd></dl>
+            <p>Close the tray and hand it to the cashier. They count it again before it is checked against the till.</p>
+          </>
+        ) : (
+          <dl className="totals">
+            <dt>Counted</dt><dd>{money(result.counted)}</dd>
+            <dt>Expected</dt><dd>{money(result.expected)}</dd>
+            <dt>{(result.diff ?? 0) < 0 ? 'Short' : (result.diff ?? 0) > 0 ? 'Over' : 'Balanced'}</dt>
+            <dd className={(result.diff ?? 0) < 0 ? 'error' : ''}>{money(Math.abs(result.diff ?? 0))}</dd>
+          </dl>
+        )}
         <button className="primary big" onClick={onClosed}>Done</button>
       </div>
     )
@@ -199,11 +256,26 @@ export function CloseShift({ boot, online, onClosed, onCancel }: { boot: Bootstr
   return (
     <form className="card narrow" onSubmit={submit}>
       <h1>Close shift</h1>
-      <p className="muted">Count all the cash in the drawer, including the float.</p>
-      <label>
-        Cash counted ({boot.company.currency})
-        <input autoFocus className="big mono" inputMode="decimal" value={counted} onChange={(e) => setCounted(e.target.value)} required />
-      </label>
+      <p className="muted">Count all the cash in the {boot.cash?.vaults ? 'tray' : 'drawer'}, including the float.</p>
+      {byNotes ? (
+        <>
+          <div className="denoms">
+            {denominations.map((d, i) => (
+              <label key={d.key}>
+                {d.label}
+                <input autoFocus={i === 0} className="mono" inputMode="numeric" pattern="[0-9]*" value={counts[d.key] ?? ''} placeholder="0"
+                  onChange={(e) => setCounts({ ...counts, [d.key]: e.target.value.replace(/[^0-9]/g, '') })} aria-label={`Number of ${d.label}s`} />
+              </label>
+            ))}
+          </div>
+          <p className="denoms-total">Total counted <strong className="mono">{money(total)}</strong></p>
+        </>
+      ) : (
+        <label>
+          Cash counted ({boot.company.currency})
+          <input autoFocus className="big mono" inputMode="decimal" value={counted} onChange={(e) => setCounted(e.target.value)} required />
+        </label>
+      )}
       <label>
         Note (optional)
         <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={255} />

@@ -29,7 +29,7 @@ beforeEach(function () {
     $this->bread = makeProduct($this->owner, 'BREAD', 'Bread', retail: '25.00', tax: 'EXEMPT');
     app(InventoryService::class)->adjust(actorFor($this->owner), $this->wh, $this->milo, $this->milo->units->first(), '10', 'opening', '');
     app(InventoryService::class)->adjust(actorFor($this->owner), $this->wh, $this->bread, $this->bread->units->first(), '1', 'opening', '');
-    $this->cashier = staff($this->owner, 'esi', 2, 'cashier', ScopeType::Till, $this->till->id);
+    $this->cashier = staff($this->owner, 'esi', 2, 'teller', ScopeType::Till, $this->till->id);
     app(AccessService::class)->setPin(actorFor($this->owner), $this->cashier, '482613');
     $this->t = fakeTill($this, $this->till, 'esi', '482613');
 });

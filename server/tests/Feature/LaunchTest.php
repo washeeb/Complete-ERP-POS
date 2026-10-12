@@ -138,7 +138,7 @@ it('plans the go-live, runs a parallel run against the old system, goes live wit
     $steps = collect($this->golive->steps($plan))->keyBy('key');
     expect($steps['opening_balances']['optional'])->toBeTrue()->and($steps->has('parallel'))->toBeTrue(); // fresh start: no balances to bring over
 
-    $cashier = staff($this->owner, 'efua', 2, 'cashier', ScopeType::Branch, $this->hq->id);
+    $cashier = staff($this->owner, 'efua', 2, 'teller', ScopeType::Branch, $this->hq->id);
     expect(fn () => $this->golive->savePlan(actorFor($cashier), ['cutover_mode' => 'big_bang']))->toThrow(AccessDenied::class);
 
     // Three days of the parallel run: today's sales here are worked out from the till.
@@ -146,7 +146,7 @@ it('plans the go-live, runs a parallel run against the old system, goes live wit
     $till = Till::where('branch_id', $this->hq->id)->first();
     [$device] = app(DeviceService::class)->register($this->o, ['branch_id' => $this->hq->id, 'till_id' => $till->id, 'name' => 'T1', 'kind' => 'pos']);
     $device->forceFill(['status' => 'active'])->save();
-    $seller = staff($this->owner, 'kojo', 2, 'cashier', ScopeType::Till, $till->id);
+    $seller = staff($this->owner, 'kojo', 2, 'teller', ScopeType::Till, $till->id);
     $shift = app(ShiftService::class)->open($device, $seller, 0);
     $unit = $milo->units->first();
     $list = PriceList::where('code', 'RETAIL')->first();
@@ -194,7 +194,7 @@ it('plans the go-live, runs a parallel run against the old system, goes live wit
 it('makes a practice company that copies the shop, signs staff in with their own password, and never sends anything out', function () {
     $milo = makeProduct($this->owner, 'MILO', 'Milo 400g', retail: '58.00');
     app(InventoryService::class)->adjust($this->o, $this->wh, $milo, $milo->units->first(), '30', 'opening', '', null, '40.00');
-    $cashier = staff($this->owner, 'efua', 2, 'cashier', ScopeType::Branch, $this->hq->id);
+    $cashier = staff($this->owner, 'efua', 2, 'teller', ScopeType::Branch, $this->hq->id);
     app(AccessService::class)->setPin($this->o, $cashier, '4826');
     $realProducts = Product::count();
 
@@ -255,7 +255,7 @@ it('takes problem reports from the back office and the till and e-mails them to 
     // From a till: device + cashier signed in by PIN.
     $till = Till::where('branch_id', $this->hq->id)->first();
     [$device, $code] = app(DeviceService::class)->register($this->o, ['branch_id' => $this->hq->id, 'till_id' => $till->id, 'name' => 'Till 1', 'kind' => 'pos']);
-    $cashier = staff($this->owner, 'esi', 2, 'cashier', ScopeType::Till, $till->id);
+    $cashier = staff($this->owner, 'esi', 2, 'teller', ScopeType::Till, $till->id);
     app(AccessService::class)->setPin($this->o, $cashier, '4826');
     $deviceToken = $this->postJson('/api/v1/devices/enroll', ['device_id' => $device->id, 'code' => $code, 'public_key' => str_repeat('k', 64)])->assertCreated()->json('token');
     $login = $this->withToken($deviceToken)->postJson('/api/v1/pos/login', ['username' => 'esi', 'pin' => '4826'])->assertOk()->json();
@@ -281,7 +281,7 @@ it('shows the go-live page, problem reports and the import sources to the right 
         ->set('message', 'The dashboard shows yesterday twice.')->set('page', '/admin')->call('send')->assertHasNoErrors();
     expect(SupportReport::where('source', 'back_office')->value('page'))->toBe('/admin');
     $this->flushSession();
-    $cashier = staff($this->owner, 'efua', 2, 'cashier', ScopeType::Branch, $this->hq->id);
+    $cashier = staff($this->owner, 'efua', 2, 'teller', ScopeType::Branch, $this->hq->id);
     $this->actingAs(withMfa($cashier));
     $this->get(GoLive::getUrl())->assertForbidden();
     $this->get(SupportReportResource::getUrl())->assertForbidden();

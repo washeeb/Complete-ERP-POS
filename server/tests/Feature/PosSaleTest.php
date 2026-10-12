@@ -48,7 +48,7 @@ beforeEach(function () {
         ['branch_id' => $this->branches['HQ']->id, 'till_id' => $this->till->id, 'name' => 'Till PC', 'kind' => 'pos']);
     $this->device = $device;
     $deviceToken = $this->postJson('/api/v1/devices/enroll', ['code' => $code, 'public_key' => str_repeat('k', 64)])->assertCreated()->json('token');
-    $this->cashier = staff($this->owner, 'esi', 2, 'cashier', ScopeType::Till, $this->till->id);
+    $this->cashier = staff($this->owner, 'esi', 2, 'teller', ScopeType::Till, $this->till->id);
     app(AccessService::class)->setPin(actorFor($this->owner), $this->cashier, '4826');
     $this->token = $this->withToken($deviceToken)->postJson('/api/v1/pos/login', ['username' => 'esi', 'pin' => '4826'])->assertOk()->json('token');
     app('auth')->forgetGuards();

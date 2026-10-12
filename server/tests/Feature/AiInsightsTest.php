@@ -70,7 +70,7 @@ beforeEach(function () {
     $this->till = Till::where('branch_id', $this->hq->id)->first();
     [$this->device] = app(DeviceService::class)->register($this->o, ['branch_id' => $this->hq->id, 'till_id' => $this->till->id, 'name' => 'T1', 'kind' => 'pos']);
     $this->device->forceFill(['status' => 'active'])->save();
-    $this->cashier = staff($this->owner, 'efua', 2, 'cashier', ScopeType::Till, $this->till->id);
+    $this->cashier = staff($this->owner, 'efua', 2, 'teller', ScopeType::Till, $this->till->id);
     $this->shift = app(ShiftService::class)->open($this->device, $this->cashier, 0);
     $this->seq = 0;
     $this->clones = 0;
@@ -191,7 +191,7 @@ it('scores cashiers against each other and raises loss-prevention, margin and st
     $today = CarbonImmutable::now()->startOfDay();
     $cashiers = [];
     foreach (['kofi', 'abena', 'yaw', 'kwesi'] as $i => $name) {
-        $cashiers[$name] = staff($this->owner, $name, 2, 'cashier', ScopeType::Till, $this->till->id);
+        $cashiers[$name] = staff($this->owner, $name, 2, 'teller', ScopeType::Till, $this->till->id);
         for ($n = 0; $n < 25; $n++) {
             cloneSale($this, $sale, $today->subDays($n % 20 + 1)->addHours(8 + $i), ['cashier_id' => $cashiers[$name]->id, 'cashier_name' => $cashiers[$name]->name]);
         }

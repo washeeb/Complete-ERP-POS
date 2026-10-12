@@ -23,7 +23,7 @@ beforeEach(function () {
     $this->branches = setUpBranches($this->owner);
     $this->hq = $this->branches['HQ'];
     $this->till = Till::where('branch_id', $this->hq->id)->first();
-    $this->cashier = staff($this->owner, 'esi', 2, 'cashier', ScopeType::Till, $this->till->id);
+    $this->cashier = staff($this->owner, 'esi', 2, 'teller', ScopeType::Till, $this->till->id);
     app(AccessService::class)->setPin(actorFor($this->owner), $this->cashier, '482613');
     $this->hrm = staff($this->owner, 'abena', 4, 'hr_manager');
     $this->officer = staff($this->owner, 'yaa', 3, 'payroll_officer');

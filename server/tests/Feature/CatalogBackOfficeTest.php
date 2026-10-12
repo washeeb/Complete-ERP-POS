@@ -105,7 +105,7 @@ it('records an accountant check on a tax group and clears it when the rates chan
 });
 
 it('keeps catalog and sales screens away from cashiers', function () {
-    $cashier = staff($this->owner, 'cash', 2, 'cashier', ScopeType::Branch, $this->branches['HQ']->id);
+    $cashier = staff($this->owner, 'cash', 2, 'teller', ScopeType::Branch, $this->branches['HQ']->id);
     $this->actingAs($cashier);
     $this->get(ProductResource::getUrl())->assertForbidden();
     $this->get(SaleResource::getUrl())->assertForbidden();

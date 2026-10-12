@@ -17,7 +17,7 @@ A person's **security level** is the highest level of role they can ever be give
 
 ## 18.2 Roles provided
 
-Owner · General Manager · Finance Manager · Accountant · Auditor · HR Manager · Payroll Officer · Purchasing Officer · Purchase Approver · Warehouse Manager · Storekeeper · Picker / Packer · Branch Manager · Supervisor · Cashier · Sales Rep · Van Sales Rep · Customer Service · Marketing · E-commerce Manager · Delivery Rider · Production Manager · Machine Operator · Quality Inspector · Pharmacist · Pharmacy Technician · Waiter / Bartender · Kitchen Staff · Repair Technician · Tailor · Stylist / Therapist · IT Admin.
+Owner · General Manager · Finance Manager · Accountant · Auditor · HR Manager · Payroll Officer · Purchasing Officer · Purchase Approver · Warehouse Manager · Storekeeper · Picker / Packer · Branch Manager · Supervisor · Teller (sells at a till; called Cashier before version 0.30) · Cashier (issues floats, receives the tellers' cash) · Income Controller (accounts: receives the day, decides differences, banks the cash) · Sales Rep · Van Sales Rep · Customer Service · Marketing · E-commerce Manager · Delivery Rider · Production Manager · Machine Operator · Quality Inspector · Pharmacist · Pharmacy Technician · Waiter / Bartender · Kitchen Staff · Repair Technician · Tailor · Stylist / Therapist · IT Admin.
 
 You can change what a role allows under **People & access → Roles** (you can only add permissions you hold yourself).
 

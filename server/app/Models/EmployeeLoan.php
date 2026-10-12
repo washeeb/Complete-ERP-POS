@@ -14,7 +14,7 @@ class EmployeeLoan extends Model
 {
     use BelongsToTenant, HasOriginNode, HasUuids;
 
-    public const KINDS = ['advance' => 'Salary advance', 'loan' => 'Staff loan'];
+    public const KINDS = ['advance' => 'Salary advance', 'loan' => 'Staff loan', 'shortage' => 'Cash shortage (recovered from pay)'];
 
     protected $guarded = [];
 

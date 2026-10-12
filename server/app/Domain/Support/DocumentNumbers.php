@@ -19,7 +19,7 @@ final class DocumentNumbers
         'prescription' => 'RX', 'dining_order' => 'ORD', 'reservation' => 'RES', 'repair_job' => 'JOB', 'alteration' => 'ALT',
         'appointment' => 'APT', 'service_pass' => 'PASS', 'membership' => 'MEM',
         'stock_adjustment' => 'ADJ', 'van_settlement' => 'VS',
-        'work_order' => 'WO', 'qc_inspection' => 'QC', 'support_report' => 'SUP'];
+        'work_order' => 'WO', 'qc_inspection' => 'QC', 'support_report' => 'SUP', 'cash_handover' => 'CH'];
 
     public function next(string $tenantId, string $docType): string
     {

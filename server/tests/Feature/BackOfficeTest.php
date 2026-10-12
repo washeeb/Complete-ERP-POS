@@ -75,7 +75,7 @@ it('shows each back-office screen to the owner', function () {
 
 it('hides admin screens from a cashier', function () {
     $b = setUpBranches($this->owner);
-    $cashier = staff($this->owner, 'cash', 2, 'cashier', ScopeType::Branch, $b['HQ']->id);
+    $cashier = staff($this->owner, 'cash', 2, 'teller', ScopeType::Branch, $b['HQ']->id);
     $this->actingAs($cashier);
 
     foreach ([BranchResource::getUrl(), UserResource::getUrl(), RoleResource::getUrl(), ManageModules::getUrl(), ManageSettings::getUrl()] as $url) {

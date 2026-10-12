@@ -42,7 +42,8 @@ final class Replication
     public const GROUPS = [
         'org' => ['label' => 'Company, branches, tills, modules, settings', 'direction' => 'down',
             'tables' => ['tenant' => 'tenants', 'legal_entity' => 'legal_entities', 'branch' => 'branches', 'warehouse' => 'warehouses',
-                'till' => 'tills', 'branch_module' => 'branch_modules', 'setting' => 'settings', 'license' => 'licenses', 'message_template' => 'message_templates', 'brand_asset' => 'brand_assets']],
+                'till' => 'tills', 'branch_module' => 'branch_modules', 'setting' => 'settings', 'license' => 'licenses', 'message_template' => 'message_templates', 'brand_asset' => 'brand_assets',
+                'shift_template' => 'shift_templates', 'vault' => 'vaults']],
         'people' => ['label' => 'Users, roles and access', 'direction' => 'down',
             'tables' => ['user' => 'users', 'role' => 'roles', 'role_assignment' => 'role_assignments']],
         'catalog' => ['label' => 'Products, units, barcodes, categories, brands', 'direction' => 'down',
@@ -57,6 +58,8 @@ final class Replication
             'tables' => ['device' => 'devices', 'shift' => 'shifts', 'sale' => 'sales', 'prescription' => 'prescriptions', 'dining_order' => 'dining_orders',
                 'repair_job' => 'repair_jobs', 'alteration' => 'alterations', 'consignment_sale' => 'consignment_sales',
                 'appointment' => 'appointments', 'commission' => 'commissions', 'visit' => 'visits']],
+        'cash' => ['label' => 'Till vaults, cash handovers and cash differences', 'direction' => 'both',
+            'tables' => ['vault_session' => 'vault_sessions', 'cash_handover' => 'cash_handovers', 'cash_variance' => 'cash_variances', 'cash_movement' => 'cash_movements']],
         'reviews' => ['label' => 'Items needing review', 'direction' => 'up', 'tables' => ['review_item' => 'review_items']],
         'attendance' => ['label' => 'Clock-in and clock-out', 'direction' => 'up', 'tables' => ['attendance_batch' => null]],
         'purchasing' => ['label' => 'Suppliers, purchase orders and goods received', 'direction' => 'both',

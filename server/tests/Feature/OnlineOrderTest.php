@@ -105,7 +105,7 @@ it('refuses lines it cannot match to a product', function () {
 
 it('limits order handling to people who may manage orders at that branch', function () {
     $o = $this->orders->ingest($this->shop->fresh(), order('1007', '1'))['order'];
-    $cashier = staff($this->owner, 'c1', 2, 'cashier', ScopeType::Branch, $this->branches['BA']->id);
+    $cashier = staff($this->owner, 'c1', 2, 'teller', ScopeType::Branch, $this->branches['BA']->id);
 
     $this->orders->cancel(actorFor($cashier), $o->fresh(), 'x');
 })->throws(AccessDenied::class);

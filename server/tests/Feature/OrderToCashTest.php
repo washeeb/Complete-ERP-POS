@@ -136,7 +136,7 @@ describe('on the till', function () {
         $this->till = Till::where('branch_id', $this->branches['HQ']->id)->first();
         [$this->device] = app(DeviceService::class)->register(actorFor($this->owner), ['branch_id' => $this->till->branch_id, 'till_id' => $this->till->id, 'name' => 'T1', 'kind' => 'pos']);
         $this->device->forceFill(['status' => 'active'])->save();
-        $this->cashier = staff($this->owner, 'efua', 2, 'cashier', ScopeType::Till, $this->till->id);
+        $this->cashier = staff($this->owner, 'efua', 2, 'teller', ScopeType::Till, $this->till->id);
         $this->supervisor = staff($this->owner, 'kojo', 3, 'supervisor', ScopeType::Branch, $this->branches['HQ']->id);
         app(AccessService::class)->setPin(actorFor($this->owner), $this->supervisor, '771204');
         $this->shift = app(ShiftService::class)->open($this->device, $this->cashier, 0);

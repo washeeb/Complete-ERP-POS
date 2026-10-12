@@ -72,10 +72,11 @@ final class BankingService
     }
 
     /** Money moved between the company's own accounts (e.g. till cash banked, petty cash topped up, MoMo swept to the bank). */
+    /** $permission: banking.manage, or cash.deposit when the income controller banks a cash handover (CashControl). */
     public function transfer(Actor $actor, Account $from, Account $to, Branch $fromBranch, Branch $toBranch, int $amountMinor, string $date,
-        ?string $reference = null, ?string $note = null): MoneyTransfer
+        ?string $reference = null, ?string $note = null, string $permission = 'banking.manage'): MoneyTransfer
     {
-        $this->require($actor);
+        $this->require($actor, $permission, $permission === 'banking.manage' ? null : $fromBranch); // a cash deposit is the branch's
         if ($from->id === $to->id) {
             throw new DomainException('Choose two different accounts.');
         }
@@ -294,9 +295,9 @@ final class BankingService
             'statement' => $last?->balance_minor, 'difference' => $last ? $last->balance_minor - $expected : null];
     }
 
-    private function require(Actor $actor): void
+    private function require(Actor $actor, string $permission = 'banking.manage', ?Branch $branch = null): void
     {
-        if (! $actor->user || ! $this->authz->allows($actor->user, 'banking.manage')) {
+        if (! $actor->user || ! $this->authz->allows($actor->user, $permission, $branch)) {
             throw new AccessDenied;
         }
     }
