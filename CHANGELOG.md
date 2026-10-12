@@ -37,6 +37,8 @@
   - where the guide meant the company, it now says SyncLytics instead of SES Labs (chapters 1, 6, 7, 8, 9);
   - 18 lists the new settings.
 - **Pentest documents:** the request for quote and the scope carry the company contacts.
+### Fixed
+- **A brand-new installation looped between the licence page and the setup wizard** ("redirected too many times", seen on a test PC). Before activation everyone was sent to the licence page, and before setup to the wizard, including from the licence page. The licence page is now left alone by the wizard redirect: activate first (guide chapter 6), then set up (chapter 7). Covered by `FirstSignInTest`.
 
 ## [0.28.0] — 2026-10-12 · Windows server: production web server and HTTPS
 ### Changed
