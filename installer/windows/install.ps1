@@ -131,6 +131,22 @@ $global = @('admin off', 'skip_install_trust', "storage file_system `"$data`"",
   # The web server's own log (it runs without a window): kept small, read by support and by the check below.
   "log {`n`t`toutput file `"$(($Dir -replace '\\', '/'))/caddy/caddy.log`" {`n`t`t`troll_size 10MiB`n`t`t`troll_keep 5`n`t`t}`n`t}")
 if ($Setup -eq 'A' -or $Ci) { $global += 'default_bind 127.0.0.1' }
+# Ports 80 and 443 must be free for the web server (other web servers, IIS or Windows' own http.sys services use them).
+function PortOwners($port) {
+  Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue | ForEach-Object {
+    $n = (Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue).Name
+    if ($n -ne 'caddy') { if ($_.OwningProcess -eq 4) { 'a Windows service (http.sys, e.g. IIS)' } else { "$n (process $($_.OwningProcess))" } }
+  } | Select-Object -Unique
+}
+$busy443 = PortOwners 443
+if ($busy443) { Die "Port 443 (https) is already used by: $($busy443 -join ', '). Stop that program or service, then run this again." }
+# Port 80 is only needed to send visitors on to https and, on a shop network, to hand out the certificate. This PC
+# alone needs neither; if another program holds port 80, the server runs on https only and the certificate file is
+# copied to devices instead (Chapter 4.9).
+$busy80 = PortOwners 80
+$use80 = -not ($Setup -eq 'A' -or $Ci -or $busy80)
+if (-not $use80) { $global += 'auto_https disable_redirects' }
+if ($busy80 -and $Setup -eq 'B') { Write-Warning "Port 80 is used by $($busy80 -join ', '): the server runs on https only, and devices get its certificate as a file (Chapter 4.9)." }
 if ($Domain -and $Email) { $global += "email $Email" }
 $tls = if ($Domain) { '' } else { "`ttls internal" }
 $fpm = (1..$Workers | ForEach-Object { "127.0.0.1:$(9000 + $_)" }) -join ' '
@@ -147,7 +163,7 @@ $caddyfile = @"
 `t}
 }
 "@
-if (-not $Domain -and $Setup -eq 'B' -and -not $Ci) {
+if (-not $Domain -and $use80) {
   # Plain http only hands out this server's certificate (so tills and tablets can trust it) and sends everything else to https.
   $caddyfile += @"
 
@@ -318,7 +334,8 @@ if (-not $Domain) {
 Remove-NetFirewallRule -DisplayName "$Brand server" -ErrorAction SilentlyContinue
 if (($Setup -eq 'B' -or $Domain) -and -not $Ci) {
   $profiles = if ($Domain) { 'Any' } else { @('Private', 'Domain') }
-  New-NetFirewallRule -DisplayName "$Brand server" -Direction Inbound -Protocol TCP -LocalPort 80, 443 -Action Allow -Profile $profiles | Out-Null
+  $ports = if ($use80) { @(80, 443) } else { @(443) }
+  New-NetFirewallRule -DisplayName "$Brand server" -Direction Inbound -Protocol TCP -LocalPort $ports -Action Allow -Profile $profiles | Out-Null
 }
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -345,7 +362,10 @@ if (-not $ok) {
 }
 Write-Host "`nDone. Back office: $((Select-String -Path .env -Pattern '^APP_URL=(.*)$').Matches[0].Groups[1].Value)/admin" -ForegroundColor Green
 Write-Host "Passwords made for this installation are in $secrets (administrators only)."
-if (-not $Domain -and $Setup -eq 'B') { Write-Host "Tills, tablets and other PCs: open http://$($sites[0])/ca.crt once and trust it (installation guide, Chapter 4.9)." -ForegroundColor Yellow }
+if (-not $Domain -and $Setup -eq 'B') {
+  $how = if ($use80) { "open http://$($sites[0])/ca.crt once and trust it" } else { "copy $Dir\$Slug-certificate.crt to each device once and trust it" }
+  Write-Host "Tills, tablets and other PCs: $how (installation guide, Chapter 4.9)." -ForegroundColor Yellow
+}
 if (-not ($passphrase -match 'already set')) { Write-Host ($passphrase -join "`n") -ForegroundColor Yellow }
 if ($newInstall -and $Role -eq 'hq' -and -not $Ci -and -not $SkipCompany) {
   Say 'Last step: create your company and the owner account'
