@@ -127,7 +127,9 @@ elseif ($Setup -eq 'A' -or $Ci) { $sites = @('localhost') }
 else { $sites = @(@($lanIp, $hostName) | Where-Object { $_ }) }
 $siteUrl = "https://$($sites[0])"
 $pub = "$Dir\server\public" -replace '\\', '/'; $data = "$Dir\caddy\data" -replace '\\', '/'
-$global = @('admin off', 'skip_install_trust', "storage file_system `"$data`"")
+$global = @('admin off', 'skip_install_trust', "storage file_system `"$data`"",
+  # The web server's own log (it runs without a window): kept small, read by support and by the check below.
+  "log {`n`t`toutput file `"$(($Dir -replace '\\', '/'))/caddy/caddy.log`" {`n`t`t`troll_size 10MiB`n`t`t`troll_keep 5`n`t`t}`n`t}")
 if ($Setup -eq 'A' -or $Ci) { $global += 'default_bind 127.0.0.1' }
 if ($Domain -and $Email) { $global += "email $Email" }
 $tls = if ($Domain) { '' } else { "`ttls internal" }
@@ -333,7 +335,14 @@ foreach ($i in 1..30) {
   } catch { Start-Sleep 2 }
 }
 [Net.ServicePointManager]::ServerCertificateValidationCallback = $null
-if (-not $ok) { Die "The server does not answer on $check : see $Dir\server\storage\logs\laravel.log, and run `"$caddy`" run --config `"$Dir\Caddyfile`" in a window." }
+if (-not $ok) {
+  # What a technician needs to see first: which tasks run, what listens, and the last lines of both logs.
+  Write-Host "`nTasks:"; Get-ScheduledTask -TaskName "$Brand *" | ForEach-Object { $i = $_ | Get-ScheduledTaskInfo; Write-Host "  $($_.TaskName): $($_.State), last result $($i.LastTaskResult)" }
+  Write-Host 'Listening:'; Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -in (@(80, 443, 8080) + (1..$Workers | ForEach-Object { 9000 + $_ })) } |
+    ForEach-Object { Write-Host "  $($_.LocalAddress):$($_.LocalPort) (process $($_.OwningProcess) $((Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue).Name))" }
+  foreach ($log in "$Dir\caddy\caddy.log", "$Dir\server\storage\logs\laravel.log") { if (Test-Path $log) { Write-Host "Last lines of ${log}:"; Get-Content $log -Tail 15 | ForEach-Object { Write-Host "  $_" } } }
+  Die "The server does not answer on $check (details above). Logs: $Dir\caddy\caddy.log and $Dir\server\storage\logs\laravel.log."
+}
 Write-Host "`nDone. Back office: $((Select-String -Path .env -Pattern '^APP_URL=(.*)$').Matches[0].Groups[1].Value)/admin" -ForegroundColor Green
 Write-Host "Passwords made for this installation are in $secrets (administrators only)."
 if (-not $Domain -and $Setup -eq 'B') { Write-Host "Tills, tablets and other PCs: open http://$($sites[0])/ca.crt once and trust it (installation guide, Chapter 4.9)." -ForegroundColor Yellow }
