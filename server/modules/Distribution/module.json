@@ -3,6 +3,7 @@
   "name": "Sales & Distribution",
   "version": "0.1.0",
   "kind": "industry",
+  "addon": true,
   "stage": "available",
   "phase": 10,
   "description": "Vans as warehouses with their own till (fully offline on the rep’s phone), van loading and end-of-day settlement, routes and GPS visits, orders for delivery, credit within limits, rep targets and commission, returnable containers (empties).",

@@ -487,6 +487,31 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Industries, part A (2026-10-12)
+- **Owner answers:**
+  - one industry per branch; an industry has many branches; head office or a central warehouse may be company-level;
+  - fully separate catalogues;
+  - books chosen per installation (part C);
+  - cross-industry transfers at cost, with both sides approving (part B).
+- **Structure:**
+  - `industries` sits between the tenant and its branches (`branches.industry_id`, nullable = company-level).
+  - It is created implicitly when an industry module is first switched on for a branch (`IndustryService::ensureFor`), so the setup wizard and existing flows need no new step.
+  - "Industry module" means `kind: industry` and not `addon` (Distribution is an add-on).
+- **Access:** the new scope `industry` sits between legal entity and branch in the scope path, so industry managers are ordinary grants. `branchIds()` expands an industry grant to its branches.
+- **The switcher narrows, never widens:**
+  - the session choice intersects with what the person may see, inside `Erp::branchIds` (the one function about 40 screens already use);
+  - options are only industries the person reaches;
+  - an invalid stored choice falls back to all.
+- **Catalogue separation by an `industry_id` on products and price lists**, null = shared:
+  - existing data stays sold everywhere until moved, so there is no forced data migration;
+  - tills receive their branch industry's items plus shared ones;
+  - customers and suppliers stay company-wide (a customer can shop in both industries).
+- **Only purchased and installed modules show** (owner, 2026-10-12):
+  - "purchased" = in the licence (`LicenseManager::allowsModule`); `ModuleService::licensed()` feeds the wizard, the Modules screen and the industry module picker;
+  - "installed" = enabled at a branch; `Industry::inUse()` (licensed and installed) feeds the switcher and dashboards, `Industry::licensed()` the branch, product, price-list and access pickers;
+  - `ModuleService::enabledAnywhere` also requires the licence, so every module screen gated on it disappears after a downgrade, with no data deleted;
+  - a licence without a module list (development, before activation) covers every module.
+
 ## Cash control: vaults and the Teller → Cashier → Income Controller chain (2026-10-12)
 - **Owner answers:**
   - a vault is a cash tray with its own float, one per till per shift (shifts configurable, default Morning/Afternoon);

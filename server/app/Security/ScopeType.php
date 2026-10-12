@@ -6,6 +6,7 @@ enum ScopeType: string
 {
     case Tenant = 'tenant';
     case LegalEntity = 'legal_entity';
+    case Industry = 'industry'; // all branches of one industry (e.g. every pharmacy)
     case Branch = 'branch';
     case Warehouse = 'warehouse';
     case Till = 'till';
@@ -15,6 +16,7 @@ enum ScopeType: string
         return match ($this) {
             self::Tenant => 'Whole company',
             self::LegalEntity => 'Legal entity',
+            self::Industry => 'Industry (all its branches)',
             self::Branch => 'Branch',
             self::Warehouse => 'Warehouse',
             self::Till => 'Till',

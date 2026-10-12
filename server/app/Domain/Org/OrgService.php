@@ -9,6 +9,7 @@ use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
 use App\Models\Branch;
+use App\Models\Industry;
 use App\Models\LegalEntity;
 use App\Models\PriceList;
 use App\Models\Tenant;
@@ -134,7 +135,14 @@ final class OrgService
         $this->require($actor, 'setup.company.manage', $branch);
         $branch->fill(array_intersect_key($data, array_flip(['name', 'address', 'phone', 'timezone', 'is_active', 'legal_entity_id'])));
 
-        return $this->recorder->save($actor, $branch, 'branch.updated', $reason, $branch->id);
+        return $this->recorder->transaction(function () use ($actor, $branch, $data, $reason) {
+            $this->recorder->save($actor, $branch, 'branch.updated', $reason, $branch->id);
+            if (array_key_exists('industry_id', $data) && ($data['industry_id'] ?: null) !== $branch->industry_id) {
+                app(IndustryService::class)->assign($actor, $branch, ($id = $data['industry_id'] ?: null) ? Industry::findOrFail($id) : null);
+            }
+
+            return $branch;
+        });
     }
 
     public function saveWarehouse(Actor $actor, Warehouse $warehouse, array $data): Warehouse

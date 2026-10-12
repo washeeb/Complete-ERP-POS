@@ -8,6 +8,7 @@ use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
 use App\Models\Branch;
+use App\Models\Industry;
 use App\Models\LegalEntity;
 use App\Models\Permission;
 use App\Models\Role;
@@ -298,6 +299,7 @@ final class AccessService
         $model = match ($type) {
             ScopeType::Tenant => Tenant::find($actor->tenantId),
             ScopeType::LegalEntity => LegalEntity::withoutGlobalScopes()->where('tenant_id', $actor->tenantId)->find($id),
+            ScopeType::Industry => Industry::withoutGlobalScopes()->where('tenant_id', $actor->tenantId)->find($id),
             ScopeType::Branch => Branch::withoutGlobalScopes()->where('tenant_id', $actor->tenantId)->find($id),
             ScopeType::Warehouse => Warehouse::withoutGlobalScopes()->where('tenant_id', $actor->tenantId)->find($id),
             ScopeType::Till => Till::withoutGlobalScopes()->where('tenant_id', $actor->tenantId)->find($id),

@@ -13,7 +13,7 @@ class PriceList extends Model
 {
     use BelongsToTenant, HasOriginNode, HasUuids;
 
-    protected $fillable = ['code', 'name', 'currency_code', 'prices_include_tax', 'is_default', 'pos_selectable', 'branch_id', 'is_active'];
+    protected $fillable = ['code', 'name', 'currency_code', 'prices_include_tax', 'is_default', 'pos_selectable', 'branch_id', 'is_active', 'industry_id'];
 
     protected function casts(): array
     {
@@ -28,5 +28,10 @@ class PriceList extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function industry(): BelongsTo
+    {
+        return $this->belongsTo(Industry::class);
     }
 }

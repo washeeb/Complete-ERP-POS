@@ -62,6 +62,10 @@ The wizard opens by itself the first time.
 
 **Note:** a small line *“Powered by SES Labs”* stays at the bottom of the back office, receipts and documents. A **white-label licence** removes it (ask SyncLytics).
 
+## Step 4b — Industries (if you run more than one kind of business)
+
+Each branch runs one industry (Pharmacy, Grocery, …), switched on per branch in the wizard or under Company → Modules. Head office can stay company-level. See **Chapter 8.0** for the industry switcher, separate catalogues and industry managers.
+
 ## Step 5 — People and access
 
 For each staff member:

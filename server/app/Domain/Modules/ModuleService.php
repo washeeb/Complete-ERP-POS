@@ -5,12 +5,14 @@ namespace App\Domain\Modules;
 use App\Domain\Branding\Branding;
 use App\Domain\Licensing\LicenseException;
 use App\Domain\Licensing\LicenseManager;
+use App\Domain\Org\IndustryService;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
 use App\Models\Branch;
 use App\Models\BranchModule;
+use App\Modules\ModuleManifest;
 use App\Modules\ModuleRegistry;
 use App\Security\Authorizer;
 
@@ -73,6 +75,10 @@ final class ModuleService
             }
         }
 
+        if ($status === self::ENABLED) {
+            app(IndustryService::class)->ensureFor($actor, $branch, $moduleKey); // one industry per branch
+        }
+
         $row = BranchModule::withoutGlobalScopes()->firstOrNew(['branch_id' => $branch->id, 'module_key' => $moduleKey]);
         $row->tenant_id = $branch->tenant_id;
         $row->status = $status;
@@ -97,9 +103,26 @@ final class ModuleService
             ->where('status', self::ENABLED)->exists();
     }
 
-    /** Is the module on at any branch of the current company (to show its fields and screens in the back office)? */
+    /**
+     * Is the module on at any branch of the current company and still in the licence (to show its fields and
+     * screens in the back office)? A module left switched on after a licence downgrade stays hidden.
+     */
     public static function enabledAnywhere(string $moduleKey): bool
     {
-        return BranchModule::where('module_key', $moduleKey)->where('status', self::ENABLED)->exists();
+        return app(LicenseManager::class)->allowsModule($moduleKey)
+            && BranchModule::where('module_key', $moduleKey)->where('status', self::ENABLED)->exists();
+    }
+
+    /**
+     * Modules a customer may choose (wizard, Modules screen, industry pickers): only the ones their licence covers.
+     * A licence without a module list (development, unlicensed trial) covers them all.
+     *
+     * @return array<string, ModuleManifest>
+     */
+    public static function licensed(): array
+    {
+        $licence = app(LicenseManager::class);
+
+        return array_filter(app(ModuleRegistry::class)->selectable(), fn ($m) => $licence->allowsModule($m->key));
     }
 }

@@ -41,7 +41,7 @@ final class Replication
     /** Sync groups, the tables each owns, and which way they flow by default (from the HQ's view). */
     public const GROUPS = [
         'org' => ['label' => 'Company, branches, tills, modules, settings', 'direction' => 'down',
-            'tables' => ['tenant' => 'tenants', 'legal_entity' => 'legal_entities', 'branch' => 'branches', 'warehouse' => 'warehouses',
+            'tables' => ['tenant' => 'tenants', 'legal_entity' => 'legal_entities', 'industry' => 'industries', 'branch' => 'branches', 'warehouse' => 'warehouses',
                 'till' => 'tills', 'branch_module' => 'branch_modules', 'setting' => 'settings', 'license' => 'licenses', 'message_template' => 'message_templates', 'brand_asset' => 'brand_assets',
                 'shift_template' => 'shift_templates', 'vault' => 'vaults']],
         'people' => ['label' => 'Users, roles and access', 'direction' => 'down',

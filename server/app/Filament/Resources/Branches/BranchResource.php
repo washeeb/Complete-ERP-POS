@@ -9,6 +9,7 @@ use App\Filament\Resources\Branches\RelationManagers\TillsRelationManager;
 use App\Filament\Resources\Branches\RelationManagers\WarehousesRelationManager;
 use App\Filament\Support\Erp;
 use App\Models\Branch;
+use App\Models\Industry;
 use App\Models\LegalEntity;
 use App\Modules\ModuleRegistry;
 use BackedEnum;
@@ -75,6 +76,9 @@ class BranchResource extends Resource
                     ->disabledOn('edit'),
                 TextInput::make('name')->required()->maxLength(120),
                 Select::make('legal_entity_id')->label('Legal entity')->options(fn () => LegalEntity::pluck('name', 'id')),
+                Select::make('industry_id')->label('Industry')->options(fn () => Industry::licensed()->orderBy('sort')->pluck('name', 'id'))
+                    ->placeholder('Company-level (head office, central warehouse)')->visibleOn('edit')
+                    ->helperText('One industry per branch: switching its industry module on (Company → Modules) sets it too.'),
                 TextInput::make('phone')->tel()->maxLength(30),
                 TextInput::make('address')->maxLength(255)->columnSpanFull(),
                 TextInput::make('tills')->label('Tills to create')->numeric()->minValue(0)->maxValue(50)->default(1)
@@ -93,6 +97,7 @@ class BranchResource extends Resource
                 TextColumn::make('code')->sortable()->searchable(),
                 TextColumn::make('name')->sortable()->searchable(),
                 IconColumn::make('is_hq')->label('HQ')->boolean(),
+                TextColumn::make('industry.name')->label('Industry')->placeholder('Company-level'),
                 TextColumn::make('tills_count')->counts('tills')->label('Tills'),
                 TextColumn::make('modules_list')->label('Modules')
                     ->state(fn (Branch $r) => $r->modules->where('status', '!=', 'disabled')

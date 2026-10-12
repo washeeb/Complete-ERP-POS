@@ -13,11 +13,16 @@ class Branch extends Model
 {
     use BelongsToTenant, HasOriginNode, HasUuids;
 
-    protected $fillable = ['legal_entity_id', 'code', 'name', 'is_hq', 'address', 'phone', 'timezone', 'is_active'];
+    protected $fillable = ['legal_entity_id', 'industry_id', 'code', 'name', 'is_hq', 'address', 'phone', 'timezone', 'is_active'];
 
     protected function casts(): array
     {
         return ['is_hq' => 'boolean', 'is_active' => 'boolean'];
+    }
+
+    public function industry(): BelongsTo
+    {
+        return $this->belongsTo(Industry::class);
     }
 
     public function legalEntity(): BelongsTo
