@@ -7,6 +7,7 @@ use App\Filament\Resources\Industries\Pages\ListIndustries;
 use App\Filament\Support\Erp;
 use App\Models\Industry;
 use App\Models\LegalEntity;
+use App\Domain\Modules\ModuleService;
 use App\Modules\ModuleRegistry;
 use BackedEnum;
 use Filament\Actions\CreateAction;
@@ -56,7 +57,7 @@ class IndustryResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        $modules = fn () => collect(app(ModuleRegistry::class)->all())->filter(fn ($m) => $m->definesIndustry() && $m->isAvailable())
+        $modules = fn () => collect(ModuleService::licensed())->filter(fn ($m) => $m->definesIndustry() && $m->isAvailable())
             ->mapWithKeys(fn ($m) => [$m->key => $m->name])->all();
 
         return $schema->components([

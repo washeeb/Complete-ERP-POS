@@ -44,7 +44,10 @@ When a company runs more than one kind of business, each kind is an **industry**
 |---|---|
 | **Available** | Released: can be switched on now. |
 | **Planned · Phase N** | Not built yet. You may **reserve** it for a branch; it switches on by itself when that phase is released. Nothing is shown as working before it exists. |
-| **Not licensed** | Your licence does not include it. Ask SyncLytics. |
+
+**Only modules you have bought are shown.** The set-up wizard, this screen and the industry choices list only the modules in your licence, and the industry switcher and dashboards list only industries switched on at a branch.
+
+**Why:** staff never see, or try to set up, a business type the company has not bought. To add one, ask SyncLytics for a new licence key (Chapter 6); the module then appears here, ready to switch on. If a licence renewal drops a module, its screens are hidden but its records are kept, and they come back if it is added again.
 
 **Note:** switching a module **off** hides it and stops new work. It **never deletes** data; switching it on again brings everything back.
 

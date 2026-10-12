@@ -16,9 +16,13 @@
 - **Dashboards:**
   - *All industries* shows each industry's sales today and this month (*Industries*);
   - a chosen industry shows its own highlights: branches, stock value, prescriptions today and batches expiring in 90 days (Pharmacy), or batches expiring in 7 days (Grocery).
-- **Docs:** installation guide 8.0 (industries) and 7 (Step 4b).
+- **Only purchased and installed industries show:**
+  - the set-up wizard, *System → Modules* and the industry pickers list only the modules in the licence;
+  - the industry switcher and dashboards list only licensed industries that are switched on at a branch;
+  - a module dropped from the licence keeps its records but its screens and fields are hidden.
+- **Docs:** installation guide 8.0 (industries), 8.1 (licensed modules) and 7 (Step 4b).
 ### Changed
-- A branch runs one industry module (the wizard test's "Food Court" no longer combines Restaurant with Grocery).
+- A branch runs one industry module (the wizard test's "Food Court" no longer combines Restaurant with Grocery). The penetration-test copy now has one branch per industry (Branch A grocery, Restaurant, Pharmacy, Services), with head office company-level.
 
 ## [0.30.0] — 2026-10-12 · Cash control: vaults, Teller → Cashier → Income Controller
 ### Added

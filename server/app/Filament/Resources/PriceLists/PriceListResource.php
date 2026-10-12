@@ -45,7 +45,7 @@ class PriceListResource extends SimpleCatalogResource
                 ->helperText('Retail shelf prices normally include tax. Cannot change once the list has prices.'),
             Toggle::make('is_default')->label('Default list (used when the till starts a sale)'),
             Toggle::make('pos_selectable')->label('Cashier can switch to it at the till')->default(true),
-            Select::make('industry_id')->label('Industry')->options(fn () => Industry::where('is_active', true)->orderBy('sort')->pluck('name', 'id'))
+            Select::make('industry_id')->label('Industry')->options(fn () => Industry::licensed()->orderBy('sort')->pluck('name', 'id'))
                 ->default(fn () => IndustryContext::selected())->placeholder('All industries (shared)')->visible(fn () => Industry::exists()),
             Select::make('branch_id')->label('Only at branch')->placeholder('All branches')
                 ->options(fn () => Branch::orderBy('code')->get()->mapWithKeys(fn ($b) => [$b->id => "{$b->code} · {$b->name}"])),

@@ -102,9 +102,26 @@ final class ModuleService
             ->where('status', self::ENABLED)->exists();
     }
 
-    /** Is the module on at any branch of the current company (to show its fields and screens in the back office)? */
+    /**
+     * Is the module on at any branch of the current company and still in the licence (to show its fields and
+     * screens in the back office)? A module left switched on after a licence downgrade stays hidden.
+     */
     public static function enabledAnywhere(string $moduleKey): bool
     {
-        return BranchModule::where('module_key', $moduleKey)->where('status', self::ENABLED)->exists();
+        return app(LicenseManager::class)->allowsModule($moduleKey)
+            && BranchModule::where('module_key', $moduleKey)->where('status', self::ENABLED)->exists();
+    }
+
+    /**
+     * Modules a customer may choose (wizard, Modules screen, industry pickers): only the ones their licence covers.
+     * A licence without a module list (development, unlicensed trial) covers them all.
+     *
+     * @return array<string, \App\Modules\ModuleManifest>
+     */
+    public static function licensed(): array
+    {
+        $licence = app(LicenseManager::class);
+
+        return array_filter(app(ModuleRegistry::class)->selectable(), fn ($m) => $licence->allowsModule($m->key));
     }
 }

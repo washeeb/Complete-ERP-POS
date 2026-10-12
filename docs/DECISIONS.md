@@ -506,6 +506,11 @@ Design:
   - existing data stays sold everywhere until moved, so there is no forced data migration;
   - tills receive their branch industry's items plus shared ones;
   - customers and suppliers stay company-wide (a customer can shop in both industries).
+- **Only purchased and installed modules show** (owner, 2026-10-12):
+  - "purchased" = in the licence (`LicenseManager::allowsModule`); `ModuleService::licensed()` feeds the wizard, the Modules screen and the industry module picker;
+  - "installed" = enabled at a branch; `Industry::inUse()` (licensed and installed) feeds the switcher and dashboards, `Industry::licensed()` the branch, product, price-list and access pickers;
+  - `ModuleService::enabledAnywhere` also requires the licence, so every module screen gated on it disappears after a downgrade, with no data deleted;
+  - a licence without a module list (development, before activation) covers every module.
 
 ## Cash control: vaults and the Teller → Cashier → Income Controller chain (2026-10-12)
 - **Owner answers:**

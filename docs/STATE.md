@@ -25,6 +25,7 @@
   - PosController `catalog()` and `lists()` filter by the branch's industry (plus shared); `catalogVersion(industry)`.
 - **Screens:** IndustryResource (Company → Industries); BranchResource Industry field and column; dashboard widgets IndustryOverview (all industries) and IndustryHighlights (chosen industry: pharmacy, grocery).
 - **Sync:** `industry` in the `org` group.
+- **Licensed modules only:** `ModuleService::licensed()` (wizard, Modules screen, industry module picker); `Industry::licensed()` / `inUse()` (pickers / switcher and dashboards); `enabledAnywhere` requires the licence. The pentest copy has one branch per industry.
 - **Tests:** `IndustriesTest` (5). SetupAndModulesTest is updated: Food Court is restaurant only, and the module-scope test uses grocery.
 - **Docs:** manual 8.0 (Industries), 7 (Step 4b); CHANGELOG 0.31.0; DECISIONS.
 

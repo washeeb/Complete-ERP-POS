@@ -29,7 +29,7 @@ class IndustryOverview extends StatsOverviewWidget
         $today = CarbonImmutable::now($user->tenant?->timezone ?: 'UTC')->startOfDay();
         $allowed = Erp::branchIds('sales.view');
         $stats = [];
-        foreach (Industry::where('is_active', true)->orderBy('sort')->withCount('branches')->get() as $industry) {
+        foreach (Industry::inUse()->orderBy('sort')->withCount('branches')->get() as $industry) {
             $branches = DB::table('branches')->where('industry_id', $industry->id)->pluck('id')->all();
             if ($allowed !== null) {
                 $branches = array_values(array_intersect($branches, $allowed));
@@ -45,6 +45,6 @@ class IndustryOverview extends StatsOverviewWidget
 
     public static function canView(): bool
     {
-        return IndustryContext::selected() === null && Erp::canAnywhere('sales.view') && Industry::where('is_active', true)->exists();
+        return IndustryContext::selected() === null && Erp::canAnywhere('sales.view') && Industry::inUse()->exists();
     }
 }

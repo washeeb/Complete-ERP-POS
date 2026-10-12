@@ -76,7 +76,7 @@ class BranchResource extends Resource
                     ->disabledOn('edit'),
                 TextInput::make('name')->required()->maxLength(120),
                 Select::make('legal_entity_id')->label('Legal entity')->options(fn () => LegalEntity::pluck('name', 'id')),
-                Select::make('industry_id')->label('Industry')->options(fn () => Industry::where('is_active', true)->orderBy('sort')->pluck('name', 'id'))
+                Select::make('industry_id')->label('Industry')->options(fn () => Industry::licensed()->orderBy('sort')->pluck('name', 'id'))
                     ->placeholder('Company-level (head office, central warehouse)')->visibleOn('edit')
                     ->helperText('One industry per branch: switching its industry module on (Company → Modules) sets it too.'),
                 TextInput::make('phone')->tel()->maxLength(30),

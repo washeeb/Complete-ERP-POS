@@ -117,3 +117,21 @@ it('moves a branch between company-level and an industry through the branch scre
     app(OrgService::class)->updateBranch(actorFor($this->owner), $hq->fresh(), ['name' => $hq->name, 'industry_id' => null]);
     expect($hq->fresh()->industry_id)->toBeNull();
 });
+
+it('shows only industry modules the licence covers, and only installed industries in the switcher', function () {
+    $restaurant = app(IndustryService::class)->save(actorFor($this->owner), new Industry, ['code' => 'REST', 'name' => 'Restaurants', 'module_key' => 'restaurant']);
+    expect(IndustryContext::options($this->owner)->keys()->all())->not->toContain($restaurant->id); // licensed, not installed
+
+    activateTestLicense(['modules' => ['pharmacy']]); // grocery not purchased (or dropped on a downgrade)
+    \App\Domain\Licensing\LicenseManager::forget();
+
+    expect(array_keys(ModuleService::licensed()))->toBe(['pharmacy'])
+        ->and(ModuleService::enabledAnywhere('grocery'))->toBeFalse()
+        ->and(ModuleService::enabledAnywhere('pharmacy'))->toBeTrue()
+        ->and(Industry::licensed()->pluck('id')->all())->toBe([$this->pharmacy->id])
+        ->and(IndustryContext::options($this->owner)->keys()->all())->toBe([$this->pharmacy->id]);
+
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
+    $this->actingAs(withMfa($this->owner), 'web');
+    Livewire::test(\App\Filament\Pages\ManageModules::class)->assertSee('Pharmacy')->assertDontSee('Fashion')->assertDontSee('Restaurant');
+});

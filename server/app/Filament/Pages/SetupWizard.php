@@ -6,7 +6,7 @@ use App\Domain\Branding\Branding;
 use App\Domain\Org\OrgService;
 use App\Filament\Support\Erp;
 use App\Models\Tenant;
-use App\Modules\ModuleRegistry;
+use App\Domain\Modules\ModuleService;
 use BackedEnum;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\ColorPicker;
@@ -65,22 +65,25 @@ class SetupWizard extends Page
 
             return;
         }
-        // Prefilled with the demo layout agreed in Phase 0; every value is editable.
+        // Prefilled with the demo layout agreed in Phase 0, keeping only modules the licence covers; every value is editable.
+        $licensed = array_keys(ModuleService::licensed());
+        $branch = fn (string $code, string $name, bool $hq, string $module) => ['code' => $code, 'name' => $name, 'is_hq' => $hq, 'tills' => 2,
+            'modules' => array_values(array_intersect([$module], $licensed))];
         $this->form->fill([
             'deployment_mode' => 'cloud',
             'company' => ['name' => $tenant->name, 'country_code' => 'GH', 'currency_code' => 'GHS', 'timezone' => 'Africa/Accra', 'locale' => 'en'],
             'branches' => [
-                ['code' => 'HQ', 'name' => 'Head Office & Warehouse', 'is_hq' => true, 'tills' => 2, 'modules' => ['retail_wholesale']],
-                ['code' => 'A', 'name' => 'Branch A — Grocery', 'is_hq' => false, 'tills' => 2, 'modules' => ['grocery']],
-                ['code' => 'B', 'name' => 'Branch B — Restaurant', 'is_hq' => false, 'tills' => 2, 'modules' => ['restaurant']],
-                ['code' => 'C', 'name' => 'Branch C — Pharmacy', 'is_hq' => false, 'tills' => 2, 'modules' => ['pharmacy']],
+                $branch('HQ', 'Head Office & Warehouse', true, 'retail_wholesale'),
+                $branch('A', 'Branch A — Grocery', false, 'grocery'),
+                $branch('B', 'Branch B — Restaurant', false, 'restaurant'),
+                $branch('C', 'Branch C — Pharmacy', false, 'pharmacy'),
             ],
         ]);
     }
 
     public function form(Schema $schema): Schema
     {
-        $modules = collect(app(ModuleRegistry::class)->selectable());
+        $modules = collect(ModuleService::licensed()); // only modules the licence covers
 
         return $schema->statePath('data')->components([
             Wizard::make([

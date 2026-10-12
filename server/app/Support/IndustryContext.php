@@ -54,7 +54,7 @@ final class IndustryContext
      */
     public static function options(User $user): Collection
     {
-        $all = Industry::where('is_active', true)->orderBy('sort')->orderBy('name')->pluck('name', 'id');
+        $all = Industry::inUse()->orderBy('sort')->orderBy('name')->pluck('name', 'id'); // purchased and installed only
         if ($all->isEmpty()) {
             return $all;
         }

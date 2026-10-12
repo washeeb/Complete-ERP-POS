@@ -6,7 +6,6 @@ use App\Domain\Modules\ModuleService;
 use App\Domain\Support\Recorder;
 use App\Filament\Support\Erp;
 use App\Models\Branch;
-use App\Modules\ModuleRegistry;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
@@ -50,11 +49,10 @@ class ManageModules extends Page
 
     public function form(Schema $schema): Schema
     {
-        $registry = app(ModuleRegistry::class);
         $sections = [];
         foreach (['industry' => 'Industry modules', 'department' => 'Optional department modules'] as $kind => $label) {
             $fields = [];
-            foreach ($registry->selectable() as $m) {
+            foreach (ModuleService::licensed() as $m) { // only modules the licence covers
                 if ($m->kind !== $kind) {
                     continue;
                 }
@@ -117,7 +115,7 @@ class ManageModules extends Page
         }
         $current = app(ModuleService::class)->statuses(Branch::findOrFail($branchId));
         $out = [];
-        foreach (app(ModuleRegistry::class)->selectable() as $m) {
+        foreach (ModuleService::licensed() as $m) {
             $out[$m->key] = $current[$m->key] ?? 'disabled';
         }
 
