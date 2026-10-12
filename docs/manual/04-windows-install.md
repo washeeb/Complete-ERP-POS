@@ -410,6 +410,12 @@ Import-Certificate -FilePath $env:TEMP\seslabs.crt -CertStoreLocation Cert:\Loca
 1. In Chrome, open `http://<server-address>/ca.crt`. It downloads a file.
 2. Open **Settings → Security (and privacy) → More security settings → Encryption & credentials → Install a certificate → CA certificate**, confirm with **Install anyway**, and choose the downloaded file. The wording differs a little between makes.
 
+**If the installer said port 80 is in use:**
+- Another program on the server, such as IIS, already uses port 80, so `http://…/ca.crt` is not available. The server still works normally over https.
+- Copy the file `C:\SESLabs\SESLabs-certificate.crt` from the server to each device with a USB stick or a shared folder.
+- On Windows, import it with `Import-Certificate -FilePath <the file> -CertStoreLocation Cert:\LocalMachine\Root` (PowerShell as administrator).
+- On Android, choose the copied file in the *Install a certificate* step.
+
 **Check:** open `https://<server-address>/pos/`. It opens with a padlock and no warning.
 
 **Why this is safe:** the certificate is made by your own server, for your own server. Its secret key never leaves the server and is readable by administrators only.
