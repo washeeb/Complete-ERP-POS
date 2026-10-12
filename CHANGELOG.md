@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.29.3] — 2026-10-12 · Granting roles on a licence without HR
+### Fixed
+- **"You can't grant Cashier here: you don't hold all of its permissions"** for the owner, on any installation licensed without HR & payroll (found on a test PC).
+  - Cause: Cashier, like most built-in roles, includes HR's "request leave", which the licence switches off for everyone. The check that the granter holds each of the role's permissions therefore always failed.
+  - Fix: that check now looks at the permissions the granter holds through their own roles (`Authorizer::holds`), whatever the licence switches off. What anyone can actually use is still decided by the licence.
+  - The escalation rule is unchanged: someone without HR rights (e.g. IT Admin) still cannot hand out an HR role.
+
 ## [0.29.2] — 2026-10-12 · SyncLytics' licence signing key
 ### Added
 - **SyncLytics' production signing key** (`syn-2026-1`):

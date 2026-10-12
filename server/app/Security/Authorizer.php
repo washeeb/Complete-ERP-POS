@@ -31,6 +31,18 @@ final class Authorizer
         return $this->grants($user, $permission)->contains(fn ($g) => in_array($g['scope'], $path, true));
     }
 
+    /**
+     * Held through the user's own roles on this target, whatever the licence currently switches off. Only for deciding
+     * who may hand a role to someone else: granting Cashier must not fail because the licence leaves out HR (Cashier
+     * includes "request leave"). What anyone can actually use is still decided by allows(), which honours the licence.
+     */
+    public function holds(User $user, string $permission, ?Model $target = null): bool
+    {
+        $path = $target ? $this->scopePath($target) : [ScopeType::Tenant->value.':'.$user->tenant_id];
+
+        return $this->grants($user, $permission, honourLicence: false)->contains(fn ($g) => in_array($g['scope'], $path, true));
+    }
+
     /** Allowed somewhere (used for navigation visibility, never for a write). */
     public function allowsAnywhere(User $user, string $permission): bool
     {
@@ -94,12 +106,12 @@ final class Authorizer
     private array $permissions = [];
 
     /** @return Collection<int, array{scope: string, limits: array}> */
-    private function grants(User $user, string $permission): Collection
+    private function grants(User $user, string $permission, bool $honourLicence = true): Collection
     {
         if (! $user->is_active) {
             return collect();
         }
-        if (! $this->licensed($permission)) {
+        if ($honourLicence && ! $this->licensed($permission)) {
             return collect(); // the licence does not include this part of the system
         }
         $all = $this->memo[$user->id] ??= $this->loadGrants($user);
