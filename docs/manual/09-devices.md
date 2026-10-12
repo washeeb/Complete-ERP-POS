@@ -96,7 +96,7 @@ Every till, handheld and kitchen screen has a **Theme** switch at the bottom lef
 
 ### The desktop till app (silent printing, cash drawer, scale)
 
-For a Windows till PC with a receipt printer, a cash drawer or a weighing scale, install **SES Labs Till** (`SES Labs Till_<version>_x64-setup.exe`, from SES Labs) instead of using the browser:
+For a Windows till PC with a receipt printer, a cash drawer or a weighing scale, install **SES Labs Till** (`SES Labs Till_<version>_x64-setup.exe`, from SyncLytics) instead of using the browser:
 
 1. Install the receipt printer's Windows driver (or note the IP address of a network receipt printer).
 2. Trust the server on this PC (4.9). Then run the SES Labs Till setup. On first start it asks for the **server address** (e.g. `https://192.168.1.10`).

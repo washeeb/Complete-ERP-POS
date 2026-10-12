@@ -60,7 +60,7 @@ The wizard opens by itself the first time.
 
 **Why:** customers trust a receipt or invoice that carries the shop's own logo, and staff recognise their own system. The images are checked and made smaller when you upload them, and they reach branch servers and backups like the rest of your data.
 
-**Note:** a small line *“Powered by SES Labs”* stays at the bottom of the back office, receipts and documents. A **white-label licence** removes it (ask SES Labs).
+**Note:** a small line *“Powered by SES Labs”* stays at the bottom of the back office, receipts and documents. A **white-label licence** removes it (ask SyncLytics).
 
 ## Step 5 — People and access
 
@@ -157,4 +157,4 @@ Do a full test day with made-up sales:
 3. Check *Sales → Review queue*, *Stock → Stock on hand* and, if licensed, *Finance → Reports → Trial balance*.
 4. Take a backup and **restore it on another PC** (Chapter 12).
 
-**Check:** when all four work, remove the test data the easy way — make a fresh installation for go-live, or ask SES Labs for help — and enter your real opening figures.
+**Check:** when all four work, remove the test data the easy way — make a fresh installation for go-live, or ask SyncLytics for help — and enter your real opening figures.

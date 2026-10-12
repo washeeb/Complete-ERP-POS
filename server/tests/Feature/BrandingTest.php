@@ -35,7 +35,8 @@ function brandPng(string $path, int $w, int $h, array $rgb = [200, 30, 40]): str
 }
 
 it('shows the product brand before sign-in, with a small "Powered by" line', function () {
-    expect(config('brand.name'))->toBe('SES Labs')->and(config('brand.vendor'))->toBe('SyncLytics');
+    expect(config('brand.name'))->toBe('SES Labs')->and(config('brand.vendor'))->toBe('SyncLytics')
+        ->and(Branding::vendorContact())->toBe('SyncLytics (hotline 024 563 6889, info@synclyticsenterprisesystems.com)');
     $this->get('/admin/login')->assertOk()->assertSee('/brand/logo.svg', false)->assertSee('/brand/logo-dark.svg', false)->assertSee('Powered by SES Labs')->assertDontSee('Synclytics');
     expect(file_exists(public_path('brand/logo.svg')))->toBeTrue()->and(file_exists(public_path('brand/icon-512.png')))->toBeTrue();
 });

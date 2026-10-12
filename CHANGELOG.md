@@ -24,6 +24,19 @@
   - 3, 4.9, 9.2–9.3, 12 and 18.4.
   - The browser-flag workaround is only for a server set up by hand without https.
 - **Not changed:** the Docker image, which runs behind the host's own HTTPS proxy.
+### Added
+- **The publisher's contact details** (owner, 2026-10-12):
+  - Hotline 024 563 6889; info@synclyticsenterprisesystems.com; synclyticsenterprisesystems.com.
+  - The Licence page shows them next to the installation code. Licence messages that say whom to contact now read "SyncLytics (hotline …, e-mail …)" (`Branding::vendorContact()`).
+  - "Powered by SES Labs" links to the website.
+  - Problem reports and pilot reports go to SyncLytics support when the go-live plan names no address.
+  - New `BRAND_SUPPORT_PHONE` and `BRAND_SUPPORT_EMAIL` settings. A reseller that sets `BRAND_VENDOR` gets none of SyncLytics' contacts by default.
+- **Installation guide:**
+  - "Who to contact" in About, with the address and office numbers;
+  - 6 (licence) and 13 (getting help) show the contacts;
+  - where the guide meant the company, it now says SyncLytics instead of SES Labs (chapters 1, 6, 7, 8, 9);
+  - 18 lists the new settings.
+- **Pentest documents:** the request for quote and the scope carry the company contacts.
 
 ## [0.28.0] — 2026-10-12 · Windows server: production web server and HTTPS
 ### Changed

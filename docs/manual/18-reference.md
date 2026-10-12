@@ -38,7 +38,8 @@ You can change what a role allows under **People & access → Roles** (you can o
 | `BACKUP_PASSPHRASE`, `BACKUP_PG_BIN`, `BACKUP_TIME`, `BACKUP_KEEP_LOCAL` | Backups (Chapter 12.2). **Keep a written copy of the passphrase away from the server.** |
 | `GRA_EVAT_URL`, `GRA_EVAT_KEY`, `GRA_EVAT_TIN`, `GRA_EVAT_TIMEOUT` | GRA E-VAT access from GRA (Chapter 11.5) |
 | `BRAND_NAME`, `BRAND_VENDOR`, `BRAND_WEBSITE` | The product's name, the company that publishes and licenses it (SyncLytics unless a reseller supplies it), and its website (normally left as delivered) |
-| `ERP_SUPPORT_EMAIL` | Where problem reports and the evening pilot report go when the go-live plan names no address (Chapter 17.6) |
+| `ERP_SUPPORT_EMAIL` | Where problem reports and the evening pilot report go when the go-live plan names no address (Chapter 17.6); empty = SyncLytics support (info@synclyticsenterprisesystems.com) |
+| `BRAND_SUPPORT_PHONE`, `BRAND_SUPPORT_EMAIL` | The publisher's hotline and e-mail on the Licence page and in licence messages; empty = SyncLytics' own (normally left as delivered) |
 | `SESSION_SECURE_COOKIE` | `true` once the site uses HTTPS (the Ubuntu script sets it) |
 | `ANTHROPIC_API_KEY` | Only if you choose Claude (cloud AI) in Chapter 15. Leave empty for no cloud AI. |
 | `BROADCAST_CONNECTION`, `QUEUE_CONNECTION`, `CACHE_STORE`, `SESSION_DRIVER` | Leave as provided |

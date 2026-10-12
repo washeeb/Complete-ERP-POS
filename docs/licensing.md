@@ -1,6 +1,6 @@
 # Licensing and anti-piracy
 
-Every installation needs a **licence key from SES Labs**. Keys are signed with SES Labs' private key (Ed25519) and checked by the software **offline**. Head office also **checks in** with the SES Labs licence server every day.
+Every installation needs a **licence key from SyncLytics**. Keys are signed with SyncLytics' private key (Ed25519) and checked by the software **offline**. Head office also **checks in** with the SES Labs licence server every day.
 
 ## What the customer sees
 

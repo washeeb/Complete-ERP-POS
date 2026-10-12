@@ -51,6 +51,17 @@ final class Branding
         return is_array($features) && in_array('white_label', $features, true);
     }
 
+    /** "SyncLytics (hotline 024 563 6889, info@…)": the publisher and how to reach it, for messages that say whom to contact. */
+    public static function vendorContact(): string
+    {
+        $ways = array_values(array_filter([
+            ($p = config('brand.support_phone')) ? "hotline {$p}" : null,
+            config('brand.support_email'),
+        ]));
+
+        return config('brand.vendor').($ways ? ' ('.implode(', ', $ways).')' : '');
+    }
+
     public static function poweredBy(): ?string
     {
         return self::whiteLabel() ? null : 'Powered by '.config('brand.name');

@@ -2,6 +2,18 @@
 
 This guide takes you from an empty computer to a working shop, restaurant, pharmacy or chain of branches running **SES Labs**. It is written for someone who is **not** an IT professional. Every step says **what** to do, and where it helps, **why** it is needed.
 
+## Who to contact
+
+SES Labs is made, licensed and supported by **SyncLytics**:
+
+| | |
+|---|---|
+| **Hotline (support)** | 024 563 6889 |
+| **Office** | 055 668 6975 · 050 693 8589 |
+| **E-mail** | info@synclyticsenterprisesystems.com |
+| **Website** | synclyticsenterprisesystems.com |
+| **Address** | Puff Cl, Race Course St, Tabora, Accra (GhanaPost GPS GC-027-0884) |
+
 ## How to read it
 
 1. Read **Chapter 1 (Words used in this guide)** once. It explains terms such as *server*, *till*, *branch*, *module* and *licence*.

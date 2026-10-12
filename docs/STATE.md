@@ -16,6 +16,7 @@
 - **CI** (`packaging.yml` ubuntu-script): installs over an nginx site and checks nginx is retired; https login; `.env` gives 404; the `/pos/` deep link; Reverb on loopback; an update run.
 - **Docs:** manual 5.0, 5.4, 5.6–5.9, 3, 4.9, 9.2–9.3, 12, 18.4; launch checklist 2; CHANGELOG 0.29.0; DECISIONS.
 - **Not changed:** Docker (nginx in the container; HTTPS from the host's proxy).
+- **Company contacts (same branch):** `config/brand.php` `website`, `support_phone`, `support_email` (SyncLytics defaults unless `BRAND_VENDOR`); `erp.support_email` defaults to info@synclyticsenterprisesystems.com; `Branding::vendorContact()` used in licence/module messages; Licence page contact line; manual About/6/13/18. Client pack (git-ignored `client-pack/`, generator in the session scratchpad) carries address, phones, hotline, e-mail, website; registration no. and TIN still blank.
 
 ## Windows server: Caddy + HTTPS — branch `windows-https` (PR #29)
 - **Installer:** `installer/windows/install.ps1`.

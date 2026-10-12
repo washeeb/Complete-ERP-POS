@@ -2,6 +2,7 @@
 
 namespace App\Domain\Modules;
 
+use App\Domain\Branding\Branding;
 use App\Domain\Licensing\LicenseException;
 use App\Domain\Licensing\LicenseManager;
 use App\Domain\Support\AccessDenied;
@@ -42,7 +43,7 @@ final class ModuleService
         }
         $module = $this->registry->get($moduleKey);
         if ($status === 'enabled' && $module->kind !== 'core' && ! app(LicenseManager::class)->allowsModule($moduleKey)) {
-            throw new LicenseException("The {$module->name} module is not in your licence. Contact ".config('brand.vendor').' to add it.', 'license_module');
+            throw new LicenseException("The {$module->name} module is not in your licence. Contact ".Branding::vendorContact().' to add it.', 'license_module');
         }
         if (! in_array($status, [self::ENABLED, self::DISABLED, self::RESERVED], true)) {
             throw new DomainException('Unknown module status.');

@@ -133,7 +133,7 @@ cd C:\SESLabs\server
    composer install --no-dev --optimize-autoloader
    ```
 
-   **Why:** the release contains only SES Labs's own code; this downloads the open-source libraries it builds on, at the exact versions it was tested with. `--no-dev` leaves out testing tools.
+   **Why:** the release contains only SES Labs' own code; this downloads the open-source libraries it builds on, at the exact versions it was tested with. `--no-dev` leaves out testing tools.
 
 2. **Create the settings file** from the example:
 

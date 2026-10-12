@@ -17,5 +17,6 @@ return [
     'version' => '0.29.0',
 
     // Where "Report a problem" and the daily pilot report go when the go-live plan names no support address.
-    'support_email' => env('ERP_SUPPORT_EMAIL'),
+    // Where problem reports and the pilot report go when the go-live plan names no address: the publisher's support by default.
+    'support_email' => env('ERP_SUPPORT_EMAIL') ?: (env('BRAND_VENDOR') ? null : 'info@synclyticsenterprisesystems.com'),
 ];
