@@ -19,6 +19,7 @@ use App\Models\SalesOrder;
 use App\Models\SalesRoute;
 use App\Models\StockAdjustment;
 use App\Models\StockCount;
+use App\Models\StockRequest;
 use App\Models\StockTransfer;
 use App\Models\Supplier;
 use App\Models\TaxGroup;
@@ -64,8 +65,8 @@ final class Replication
         'attendance' => ['label' => 'Clock-in and clock-out', 'direction' => 'up', 'tables' => ['attendance_batch' => null]],
         'purchasing' => ['label' => 'Suppliers, purchase orders and goods received', 'direction' => 'both',
             'tables' => ['supplier' => 'suppliers', 'purchase_order' => 'purchase_orders', 'goods_receipt' => 'goods_receipts']],
-        'warehouse' => ['label' => 'Bins, transfers, counts and reorder levels', 'direction' => 'both',
-            'tables' => ['bin' => 'bins', 'stock_transfer' => 'stock_transfers', 'stock_count' => 'stock_counts', 'reorder_rule' => 'reorder_rules',
+        'warehouse' => ['label' => 'Bins, transfers, stock requests, counts and reorder levels', 'direction' => 'both',
+            'tables' => ['bin' => 'bins', 'stock_transfer' => 'stock_transfers', 'stock_request' => 'stock_requests', 'stock_count' => 'stock_counts', 'reorder_rule' => 'reorder_rules',
                 'stock_adjustment' => 'stock_adjustments', 'van_settlement' => 'van_settlements']],
         'customers' => ['label' => 'Customers and what they owe', 'direction' => 'both',
             'tables' => ['customer' => 'customers', 'customer_ledger_batch' => null, 'loyalty_batch' => null, 'stored_value' => 'stored_values', 'stored_value_batch' => null, 'patient_profile' => 'patient_profiles',
@@ -92,6 +93,7 @@ final class Replication
         PurchaseOrder::class => ['lines', 'purchase_order_lines'],
         GoodsReceipt::class => ['lines', 'goods_receipt_lines'],
         StockTransfer::class => ['lines', 'stock_transfer_lines'],
+        StockRequest::class => ['lines', 'stock_request_lines'],
         StockCount::class => ['lines', 'stock_count_lines'],
         StockAdjustment::class => ['lines', 'stock_adjustment_lines'],
         VanSettlement::class => ['lines', 'van_settlement_lines'],

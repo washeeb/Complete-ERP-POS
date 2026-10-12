@@ -1,9 +1,23 @@
 # State (resume file)
 
-**Phase:** Industries part A · **Status:** done on branch `industries` (PR to `main`). Next: B (stock requests between sister branches; cross-industry transfers at cost with both sides approving, product mapping), C (books per installation: profit centres or separate legal entities)
-**Updated:** 2026-10-12 · Repo: https://github.com/washeeb/Complete-ERP-POS (**public**: owner advised to make it private) · Merged through PR #34 (cash control)
+**Phase:** Industries part B · **Status:** done on branch `stock-requests` (PR to `main`). Next: C (books per installation: profit centres or separate legal entities with due-to/due-from)
+**Updated:** 2026-10-13 · Repo: https://github.com/washeeb/Complete-ERP-POS (**public**: owner advised to make it private) · Merged through PR #35 (industries part A)
 
-## Industries part A — done on branch `industries`
+## Industries part B — done on branch `stock-requests`
+- **Database:** migration `2026_11_03_100001`: `stock_requests` + `stock_request_lines` (number `SRQ`); `stock_transfers.stock_request_id`; `stock_transfer_lines.to_product_id`.
+- **Rules:** `App\Domain\Inventory\StockRequestService` (request, approve, reject, cancel, supply).
+  - Requests between industries need two approvals: the asking side (not the requester), then the supplier. `StockRequest::waitingFor()` returns requester, supplier, supply or null.
+  - `supply` creates and dispatches the transfer; `TransferService::receive` closes the request.
+- **TransferService:**
+  - refuses transfers between industries without a request, and products from another industry's catalogue (`assertCatalogue`);
+  - mapped lines land as `to_product_id`, base unit for base unit, at cost, with batches recreated.
+- **Access:** `stock.request`, `stock.request.approve` (Core 0.16.0, RoleCatalog).
+- **Sync:** `stock_request` in the `warehouse` group, with its lines in `CHILDREN`.
+- **Screens:** `StockRequestResource` (list, create, view with Approve / Send / Reject / Cancel; the badge counts what waits on you).
+- **Tests:** `StockRequestTest` (4).
+- **Docs:** manual 8.0; storekeeper and manager guides; CHANGELOG 0.32.0; DECISIONS.
+
+## Industries part A — merged (PR #35)
 - **Database:** migration `2026_11_02_100001`:
   - `industries` (code, name, module_key, legal_entity_id for part C, sort, is_active);
   - `branches.industry_id` (null = company-level), `products.industry_id` and `price_lists.industry_id` (null = shared);

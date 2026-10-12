@@ -487,6 +487,16 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Industries, part B: stock requests (2026-10-13)
+- **A request is the only way across industries.** `TransferService::saveDraft` refuses branches of two different industries unless an approved `StockRequest` is passed. It also refuses any line whose product belongs to a third industry on either side, so separate catalogues hold even through head office. Company-level branches trade freely.
+- **Both sides approve, in order:** the asking side first (a holder of `stock.request.approve` at the asking warehouse, not the requester: maker-checker), then the supplier. Rejection is open to the supplier at any stage, and to the asking side's approver at its own stage.
+- **Requests use the asker's catalogue**; the supplier maps each line to its own product when sending.
+  - Transfer lines carry `to_product_id`. Receipt posts the mapped product, one base unit for one base unit (the item is the same; only the catalogue entry differs), at the sender's average cost.
+  - Batches are recreated on the receiving product with the same number and expiry (`StockBatches::ensure`).
+  - Serial-numbered items are not mapped. Within an industry they go by a normal transfer that names the serials.
+- **At cost only for now.** Separate books (due-to/due-from between industries) come with part C.
+- **Sending = creating and dispatching the transfer** in one step, so a request never sits as a forgotten draft; receiving the transfer closes the request.
+
 ## Industries, part A (2026-10-12)
 - **Owner answers:**
   - one industry per branch; an industry has many branches; head office or a central warehouse may be company-level;

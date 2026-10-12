@@ -9,6 +9,10 @@ You decide who may do what, approve what is above your staff's limits, and read 
 - The **IT Admin** sets up devices and users but sees no sales or money unless you also give them a business role.
 - Owners and managers must use **two-step sign-in** (an authenticator app or a passkey).
 
+## Stock requests between industries
+
+When one of your branches asks a branch of another industry for stock (or the other way round), **Stock → Stock requests** shows it as *Awaiting approval*. Open it and click **Approve** or **Reject**. You cannot approve a request you made yourself. The goods move at cost once both sides approve.
+
 ## Daily (ten minutes)
 
 1. **Dashboard**: sales today against last week, stock alerts, anything waiting for your approval.
