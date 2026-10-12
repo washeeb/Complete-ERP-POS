@@ -19,6 +19,7 @@ use App\Domain\Support\Actor;
 use App\Filament\Pages\LicensePage;
 use App\Models\Customer;
 use App\Models\License;
+use App\Models\Role;
 use App\Models\Till;
 use App\Security\Authorizer;
 use App\Security\ScopeType;
@@ -252,4 +253,24 @@ it('builds a stamped, signed release whose manifest matches the delivered files'
         @unlink($keyFile);
         File::deleteDirectory($out);
     }
+});
+
+it('lets the owner grant roles on a licence without HR, without granting what the granter does not hold', function () {
+    // Found on a test PC: Cashier includes HR's "request leave"; with HR not licensed, nobody could grant Cashier.
+    relicense(['users' => 10, 'features' => ['finance']]);
+    $till = Till::where('branch_id', $this->branches['BA']->id)->first();
+    $access = app(AccessService::class);
+    $cashier = staff($this->owner, 'kojo', 2);
+    $access->grant(actorFor($this->owner), $cashier, Role::where('key', 'cashier')->first(), ScopeType::Till, $till->id);
+    app(Authorizer::class)->forget();
+
+    // The grant stands, the licence still decides use: the cashier sells, but HR stays switched off.
+    expect(app(Authorizer::class)->allows($cashier->fresh(), 'pos.access', $till))->toBeTrue()
+        ->and(app(Authorizer::class)->allows($cashier->fresh(), 'leave.request', $till))->toBeFalse();
+
+    // Someone who may grant roles but holds no HR rights (IT Admin) still cannot hand out an HR role.
+    $itAdmin = staff($this->owner, 'esi', 4, 'it_admin');
+    app(Authorizer::class)->forget();
+    expect(fn () => $access->grant(actorFor($itAdmin), staff($this->owner, 'yaw', 4), Role::where('key', 'hr_manager')->first(), ScopeType::Tenant, $this->tenant->id))
+        ->toThrow(AccessDenied::class, 'hold all of its permissions');
 });

@@ -207,9 +207,10 @@ final class AccessService
         }
 
         $scope = $this->resolveScope($actor, $scopeType, $scopeId);
-        // The granter must hold every permission of the role over that scope.
+        // The granter must hold every permission of the role over that scope, through their own roles. Parts the licence
+        // leaves out still count (Cashier includes HR's "request leave"): the licence limits use, not who may grant.
         foreach ($role->permissionKeys() as $key) {
-            if (! $this->actorAllows($actor, $key, $scope)) {
+            if (! $this->actorHolds($actor, $key, $scope)) {
                 throw new AccessDenied("You can't grant {$role->name} here: you don't hold all of its permissions in that scope.");
             }
         }
@@ -281,15 +282,15 @@ final class AccessService
         return $actor->user === null || $this->authz->allows($actor->user, $permission);
     }
 
-    private function actorAllows(Actor $actor, string $permission, Model $scope): bool
+    private function actorHolds(Actor $actor, string $permission, Model $scope): bool
     {
         if ($actor->user === null) {
             return true; // installer bootstrap only (no human can be the actor yet)
         }
 
         return $scope instanceof Tenant
-            ? $this->authz->allows($actor->user, $permission)
-            : $this->authz->allows($actor->user, $permission, $scope);
+            ? $this->authz->holds($actor->user, $permission)
+            : $this->authz->holds($actor->user, $permission, $scope);
     }
 
     private function resolveScope(Actor $actor, ScopeType $type, ?string $id): Model

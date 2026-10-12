@@ -487,6 +487,11 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Granting roles vs the licence (2026-10-12)
+- **The grant rule:** "the granter must hold every permission of the role" is checked against the granter's roles, ignoring licence switches (`Authorizer::holds`).
+- **Use is separate:** what anyone can actually use stays licence-filtered (`allows`). A role granted while HR is unlicensed gives HR rights only once HR is licensed.
+- **Why:** built-in roles carry cross-cutting permissions (e.g. "request leave" in nearly every role). Without this, granting most roles was impossible on any licence without HR.
+
 ## Licence signing key (2026-10-12)
 - **Owner:** "create the real key now" (rather than a test-only route) when the first test PC needed a licence.
 - **Key and storage:**
