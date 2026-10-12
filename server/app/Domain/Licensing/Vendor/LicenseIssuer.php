@@ -24,7 +24,7 @@ final class LicenseIssuer
             'v' => 1, 'kid' => $keys['kid'], 'license_id' => (string) Str::uuid7(), 'customer' => $o['customer'],
             'installation_id' => $req['installation_id'], 'fingerprint' => $req['fingerprint'],
             'issued_at' => now()->toIso8601String(), 'expires_at' => Carbon::parse($o['expires_at'])->endOfDay()->toIso8601String(),
-            'grace_days' => (int) ($o['grace_days'] ?? 14), 'checkin_days' => $o['checkin_days'] ?? 30, 'server_url' => $o['server_url'] ?? null,
+            'grace_days' => (int) ($o['grace_days'] ?? 14), 'checkin_days' => array_key_exists('checkin_days', $o) ? $o['checkin_days'] : 30, 'server_url' => $o['server_url'] ?? null,
             'limits' => ['branches' => $o['branches'] ?? null, 'devices' => $o['devices'] ?? null, 'users' => $o['users'] ?? null],
             'features' => $o['features'] ?? null, 'modules' => $o['modules'] ?? null,
         ] + (! empty($o['dev']) ? ['dev' => true] : []);

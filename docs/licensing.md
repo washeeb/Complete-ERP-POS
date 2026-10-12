@@ -33,6 +33,12 @@ php artisan license:keygen --kid=syn-2026-1 --out=/secure/offline/ses-labs-licen
 1. Add the printed public-key line to `config/license.php` → `public_keys`, then commit it.
 2. Keep the private key file offline and backed up. Anyone holding it can issue licences.
 
+**Done on 2026-10-12:**
+- Key id `syn-2026-1`; its public half is in `config/license.php`.
+- The private half is on the SyncLytics development PC in the git-ignored `.local-secrets/license-signing-syn-2026-1.json`.
+- **A copy must be kept offline**, for example on a USB stick in a safe. Losing it means no new or renewed licences until a new key is added and shipped in an update.
+- `license:issue --checkin=0` issues a key that never needs the licence server. It is now honoured; before, it fell back to 30 days.
+
 Issue a key for an installation code:
 
 ```bash

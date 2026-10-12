@@ -1,5 +1,5 @@
 ; The business server's Windows installer (setup.exe). Build with Inno Setup 6:
-;   iscc /DReleaseZip=C:\path\ses-labs-<customer>-<build>.zip /DAppVersion=0.29.1 installer\windows\server-setup.iss
+;   iscc /DReleaseZip=C:\path\ses-labs-<customer>-<build>.zip /DAppVersion=0.29.2 installer\windows\server-setup.iss
 ; The product name comes from /DBrand (default SES Labs) and /DSlug (no spaces: folder and service); the icon is app.ico (npm run brand).
 ; The installer copies the release and install.ps1, asks a few questions, then runs install.ps1 in a visible window
 ; (it downloads PostgreSQL, PHP and Composer from their official sites, so the PC needs internet during installation).
