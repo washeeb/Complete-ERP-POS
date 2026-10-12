@@ -150,7 +150,7 @@ final class CopilotTools
                 ->selectRaw(($group === 'day' ? "{$day}::text" : "date_trunc('{$group}', {$day})::date::text").' AS k, SUM(s.net_minor) AS net, COUNT(*) FILTER (WHERE s.kind = \'sale\') AS n')->get()],
             'branch' => ['Branch', $q->join('branches as b', 'b.id', '=', 's.branch_id')->groupBy('b.code', 'b.name')->orderByRaw('SUM(s.net_minor) DESC')
                 ->selectRaw("b.code || ' ' || b.name AS k, SUM(s.net_minor) AS net, COUNT(*) FILTER (WHERE s.kind = 'sale') AS n")->get()],
-            'cashier' => ['Cashier', $q->groupBy('s.cashier_name')->orderByRaw('SUM(s.net_minor) DESC')
+            'cashier' => ['Teller', $q->groupBy('s.cashier_name')->orderByRaw('SUM(s.net_minor) DESC')
                 ->selectRaw("s.cashier_name AS k, SUM(s.net_minor) AS net, COUNT(*) FILTER (WHERE s.kind = 'sale') AS n")->get()],
             'payment_method' => ['Payment method', $q->join('sale_payments as p', 'p.sale_id', '=', 's.id')->groupBy('p.method')->orderByRaw('SUM(p.amount_minor) DESC')
                 ->selectRaw('p.method AS k, SUM(p.amount_minor) AS net, COUNT(DISTINCT s.id) AS n')->get()],

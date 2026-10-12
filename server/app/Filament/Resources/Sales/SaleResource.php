@@ -85,7 +85,7 @@ class SaleResource extends Resource
             Section::make()->columns(4)->schema([
                 TextEntry::make('receipt_no')->label('Receipt'),
                 TextEntry::make('occurred_at')->label('Sold at')->dateTime(),
-                TextEntry::make('cashier_name')->label('Cashier'),
+                TextEntry::make('cashier_name')->label('Teller'),
                 TextEntry::make('where')->label('Where')->state(fn (Sale $r) => "{$r->branch->code} · till {$r->till->code}"),
                 TextEntry::make('net_minor')->label('Before tax')->formatStateUsing(fn ($state, Sale $r) => self::money($state, $r)),
                 TextEntry::make('tax_minor')->label('Tax')->formatStateUsing(fn ($state, Sale $r) => self::money($state, $r)),
@@ -132,7 +132,7 @@ class SaleResource extends Resource
                     ->description(fn (Sale $r) => $r->kind === 'return' ? 'Return' : null),
                 TextColumn::make('occurred_at')->label('Sold at')->dateTime()->sortable(),
                 TextColumn::make('branch.code')->label('Branch'),
-                TextColumn::make('cashier_name')->label('Cashier')->searchable(),
+                TextColumn::make('cashier_name')->label('Teller')->searchable(),
                 TextColumn::make('total_minor')->label('Total')->sortable()->alignEnd()
                     ->formatStateUsing(fn ($state, Sale $r) => self::money($state, $r)),
                 TextColumn::make('paid_by')->label('Paid by')

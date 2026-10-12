@@ -48,31 +48,36 @@ async function currentGrant(): Promise<OfflineGrant> {
 
 const isNetwork = (e: unknown) => e instanceof ApiError && e.code === 'network'
 
-export async function openShift(floatMinor: number, online: boolean): Promise<void> {
+/** Open the till. With cash control, on the vault the cashier issued to this teller (its float is the vault's). */
+export async function openShift(floatMinor: number, online: boolean, vaultSessionId: string | null = null): Promise<void> {
   const id = uuidv7()
   const openedAt = new Date().toISOString()
   let queued = await queueMode(online)
   if (!queued) {
     try {
-      await api.openShift(floatMinor, id)
+      await api.openShift(floatMinor, id, vaultSessionId)
     } catch (e) {
       if (!isNetwork(e)) throw e
       queued = true
     }
   }
   if (queued) {
-    await enqueue({ id, type: 'shift_open', grant: await currentGrant(), payload: { id, opening_float_minor: floatMinor, opened_at: openedAt } })
+    await enqueue({ id, type: 'shift_open', grant: await currentGrant(),
+      payload: { id, opening_float_minor: floatMinor, opened_at: openedAt, vault_session_id: vaultSessionId } })
   }
-  await db.kv.put({ id: 'shift', shiftId: id, openedAt, floatMinor, cashMinor: 0, queued })
+  await db.kv.put({ id: 'shift', shiftId: id, openedAt, floatMinor, cashMinor: 0, queued, vault: vaultSessionId !== null })
 }
 
-/** Blind close. Offline, the expected cash is worked out on the till and confirmed by the server at sync. */
-export async function closeShift(countedMinor: number, note: string, online: boolean): Promise<{ shift: Shift; provisional: boolean }> {
+/**
+ * Blind close. Offline, the expected cash is worked out on the till and confirmed by the server at sync. On a vault the
+ * result stays blind (the cashier counts next): expected and over/short come back empty.
+ */
+export async function closeShift(countedMinor: number, note: string, online: boolean, denoms: Record<string, number> | null = null): Promise<{ shift: Shift; provisional: boolean }> {
   const local = await getLocalShift()
   let queued = await queueMode(online)
   if (!queued) {
     try {
-      const r = await api.closeShift(countedMinor, note)
+      const r = await api.closeShift(countedMinor, note, denoms)
       await db.kv.delete('shift')
       return { shift: r.shift, provisional: false }
     } catch (e) {
@@ -83,13 +88,14 @@ export async function closeShift(countedMinor: number, note: string, online: boo
   if (!local) throw new Error('This till does not know which shift is open. Reconnect to the server to close it.')
   const closedAt = new Date().toISOString()
   await enqueue({ id: uuidv7(), type: 'shift_close', grant: await currentGrant(),
-    payload: { shift_id: local.shiftId, counted_cash_minor: countedMinor, note: note || null, closed_at: closedAt } })
+    payload: { shift_id: local.shiftId, counted_cash_minor: countedMinor, note: note || null, closed_at: closedAt, denoms } })
   await db.kv.delete('shift')
   const expected = local.floatMinor + local.cashMinor
+  const blind = local.vault === true
   return {
     provisional: true,
     shift: { id: local.shiftId, status: 'closed', opened_at: local.openedAt, opened_by: '', opening_float_minor: local.floatMinor,
-      expected_cash_minor: expected, counted_cash_minor: countedMinor, over_short_minor: countedMinor - expected },
+      expected_cash_minor: blind ? null : expected, counted_cash_minor: countedMinor, over_short_minor: blind ? null : countedMinor - expected },
   }
 }
 
