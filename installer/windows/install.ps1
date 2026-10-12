@@ -203,8 +203,12 @@ $tls
 }
 "@
 Set-Content "$Dir\Caddyfile" $caddyfile
-$null = & $caddy validate --config "$Dir\Caddyfile" --adapter caddyfile 2>&1
-if ($LASTEXITCODE -ne 0) { & $caddy validate --config "$Dir\Caddyfile" --adapter caddyfile; Die 'The web server settings are not valid (see above).' }
+# Caddy logs to stderr; Windows PowerShell 5.1 would treat that as an error, so its output is collected as text.
+$prev = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+$validation = & $caddy validate --config "$Dir\Caddyfile" --adapter caddyfile 2>&1 | Out-String
+$valid = $LASTEXITCODE -eq 0
+$ErrorActionPreference = $prev
+if (-not $valid) { Write-Host $validation; Die 'The web server settings are not valid (see above).' }
 # PHP workers: php-cgi serves one request at a time and must not stop after 500 requests; the loop restarts it if it ever exits.
 Set-Content "$Dir\php-worker.cmd" @"
 @echo off
