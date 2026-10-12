@@ -3,10 +3,10 @@
 namespace App\Filament\Pages;
 
 use App\Domain\Branding\Branding;
+use App\Domain\Modules\ModuleService;
 use App\Domain\Org\OrgService;
 use App\Filament\Support\Erp;
 use App\Models\Tenant;
-use App\Domain\Modules\ModuleService;
 use BackedEnum;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\ColorPicker;

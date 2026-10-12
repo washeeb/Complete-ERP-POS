@@ -2,12 +2,16 @@
 
 use App\Domain\Access\AccessService;
 use App\Domain\Devices\DeviceService;
+use App\Domain\Licensing\LicenseManager;
 use App\Domain\Modules\ModuleService;
 use App\Domain\Org\IndustryService;
 use App\Domain\Org\OrgService;
 use App\Domain\Support\DomainException;
+use App\Filament\Pages\ManageModules;
 use App\Filament\Resources\Products\Pages\ListProducts;
 use App\Filament\Support\Erp;
+use App\Filament\Widgets\IndustryHighlights;
+use App\Filament\Widgets\IndustryOverview;
 use App\Livewire\IndustrySwitcher;
 use App\Models\Branch;
 use App\Models\Industry;
@@ -79,13 +83,13 @@ it('switches the whole back office to one industry: branches, catalogue and dash
     $this->actingAs(withMfa($this->owner), 'web');
     expect(IndustryContext::options($this->owner)->count())->toBe(2)->and(Erp::branchIds('sales.view'))->toBeNull();
     $this->get('/admin')->assertOk();
-    Livewire::test(App\Filament\Widgets\IndustryOverview::class)->assertSee('Pharmacy')->assertSee('Grocery');
+    Livewire::test(IndustryOverview::class)->assertSee('Pharmacy')->assertSee('Grocery');
 
     Livewire::test(IndustrySwitcher::class)->set('industry', $this->pharmacy->id)->assertRedirect();
     expect(IndustryContext::selected())->toBe($this->pharmacy->id)
         ->and(Erp::branchIds('sales.view'))->toEqualCanonicalizing([$this->b['P1']->id, $this->b['P2']->id]);
     Livewire::test(ListProducts::class)->assertCanSeeTableRecords([$drug, $water])->assertCanNotSeeTableRecords([$rice]);
-    Livewire::test(App\Filament\Widgets\IndustryHighlights::class)->assertSee('Prescriptions today')->assertSee('Batches expiring in 90 days');
+    Livewire::test(IndustryHighlights::class)->assertSee('Prescriptions today')->assertSee('Batches expiring in 90 days');
 
     // Back to the whole company.
     Livewire::test(IndustrySwitcher::class)->set('industry', '');
@@ -123,7 +127,7 @@ it('shows only industry modules the licence covers, and only installed industrie
     expect(IndustryContext::options($this->owner)->keys()->all())->not->toContain($restaurant->id); // licensed, not installed
 
     activateTestLicense(['modules' => ['pharmacy']]); // grocery not purchased (or dropped on a downgrade)
-    \App\Domain\Licensing\LicenseManager::forget();
+    LicenseManager::forget();
 
     expect(array_keys(ModuleService::licensed()))->toBe(['pharmacy'])
         ->and(ModuleService::enabledAnywhere('grocery'))->toBeFalse()
@@ -133,5 +137,5 @@ it('shows only industry modules the licence covers, and only installed industrie
 
     Filament::setCurrentPanel(Filament::getPanel('admin'));
     $this->actingAs(withMfa($this->owner), 'web');
-    Livewire::test(\App\Filament\Pages\ManageModules::class)->assertSee('Pharmacy')->assertDontSee('Fashion')->assertDontSee('Restaurant');
+    Livewire::test(ManageModules::class)->assertSee('Pharmacy')->assertDontSee('Fashion')->assertDontSee('Restaurant');
 });

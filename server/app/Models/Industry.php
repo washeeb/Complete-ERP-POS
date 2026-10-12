@@ -2,10 +2,9 @@
 
 namespace App\Models;
 
+use App\Domain\Licensing\LicenseManager;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasOriginNode;
-use App\Domain\Licensing\LicenseManager;
-use App\Models\BranchModule;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;

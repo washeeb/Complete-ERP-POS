@@ -12,6 +12,7 @@ use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
 use App\Models\Branch;
 use App\Models\BranchModule;
+use App\Modules\ModuleManifest;
 use App\Modules\ModuleRegistry;
 use App\Security\Authorizer;
 
@@ -116,7 +117,7 @@ final class ModuleService
      * Modules a customer may choose (wizard, Modules screen, industry pickers): only the ones their licence covers.
      * A licence without a module list (development, unlicensed trial) covers them all.
      *
-     * @return array<string, \App\Modules\ModuleManifest>
+     * @return array<string, ModuleManifest>
      */
     public static function licensed(): array
     {

@@ -2,12 +2,12 @@
 
 namespace App\Filament\Resources\Industries;
 
+use App\Domain\Modules\ModuleService;
 use App\Domain\Org\IndustryService;
 use App\Filament\Resources\Industries\Pages\ListIndustries;
 use App\Filament\Support\Erp;
 use App\Models\Industry;
 use App\Models\LegalEntity;
-use App\Domain\Modules\ModuleService;
 use App\Modules\ModuleRegistry;
 use BackedEnum;
 use Filament\Actions\CreateAction;
