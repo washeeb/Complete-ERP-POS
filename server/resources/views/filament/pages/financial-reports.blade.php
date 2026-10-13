@@ -25,6 +25,12 @@
                     @foreach ($this->branches() as $id => $label)<option value="{{ $id }}">{{ $label }}</option>@endforeach
                 </x-filament::input.select></x-filament::input.wrapper>
             </label>@endif
+            @if (! in_array($report, ['vat', 'industries'], true) && $this->industries())<label>Industry
+                <x-filament::input.wrapper><x-filament::input.select wire:model.live="industry">
+                    <option value="">All industries</option>
+                    @foreach ($this->industries() as $id => $label)<option value="{{ $id }}">{{ $label }}</option>@endforeach
+                </x-filament::input.select></x-filament::input.wrapper>
+            </label>@endif
         @endif
     </div>
 
@@ -69,7 +75,11 @@
             @endforeach
             <tr class="fin-total"><td>Liabilities + equity</td><td class="num">{{ \App\Filament\Support\FinanceUi::money($d['total_liabilities'] + $d['total_equity']) }}</td></tr>
         </table>
-        <p class="fin-note">{{ $d['balanced'] ? 'Assets equal liabilities plus equity.' : 'Out of balance — run the ledger check.' }}</p>
+        @if ($industry)
+            <p class="fin-note">One industry's assets and liabilities: cash banked, money owed and stock in transit between industries sit partly at company level, so a single industry's sheet does not balance on its own. Choose All industries for the company's balance sheet.</p>
+        @else
+            <p class="fin-note">{{ $d['balanced'] ? 'Assets equal liabilities plus equity.' : 'Out of balance — run the ledger check.' }}</p>
+        @endif
     @elseif ($report === 'ledger')
         @if ($d)
             <table class="fin-table wide">
@@ -88,6 +98,32 @@
             </table>
         @else
             <p>Choose an account.</p>
+        @endif
+    @elseif ($report === 'industries')
+        @if (count($d['columns']) < 2)
+            <p class="fin-note">There are no industries yet. They appear when an industry module is switched on for a branch.</p>
+        @else
+        <table class="fin-table wide">
+            <thead><tr><th>Account</th>@foreach ($d['columns'] as $name)<th class="num">{{ $name }}</th>@endforeach<th class="num">Total</th></tr></thead>
+            <tbody>
+            @foreach (['income' => 'Income', 'cost_of_sales' => 'Cost of sales', 'expenses' => 'Expenses'] as $kind => $label)
+                <tr class="fin-head"><th colspan="{{ count($d['columns']) + 2 }}">{{ $label }}</th></tr>
+                @foreach ($d['rows'] as $r)
+                    @continue($r['kind'] !== $kind)
+                    <tr><td>{{ $r['account']->label() }}</td>
+                        @foreach ($d['columns'] as $id => $name)<td class="num">{{ $this->money($r['amounts'][$id]) }}</td>@endforeach
+                        <td class="num">{{ $this->money($r['total']) }}</td></tr>
+                @endforeach
+                <tr class="fin-sub"><td>Total {{ mb_strtolower($label) }}</td>
+                    @foreach ($d['columns'] + ['total' => ''] as $id => $name)<td class="num">{{ \App\Filament\Support\FinanceUi::money($d['totals'][$id][$kind]) }}</td>@endforeach</tr>
+            @endforeach
+            <tr class="fin-total"><td>Net profit</td>
+                @foreach ($d['columns'] + ['total' => ''] as $id => $name)<td class="num">{{ \App\Filament\Support\FinanceUi::money($d['totals'][$id]['net_profit']) }}</td>@endforeach</tr>
+            </tbody>
+        </table>
+        <p class="fin-note">Each industry is a profit centre: its column holds what its branches posted. The Company column holds head office and shared costs
+            @if (app(\App\Domain\Finance\HeadOfficeShare::class)->enabled(\App\Filament\Support\Erp::user()->tenant_id)) until they are shared out by sales (Share head office costs, above, for the month of the To date)@else (sharing them by sales can be switched on under System → Settings → Finance)@endif.
+            Stock moved between industries is at cost, so it makes no profit for either.</p>
         @endif
     @elseif ($report === 'budget')
         <p class="fin-note">Months: {{ $d['label'] }}. Income and costs both shown as positive amounts.</p>

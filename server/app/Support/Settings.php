@@ -137,6 +137,11 @@ final class Settings
             'label' => 'Financial year ends in month (1–12)',
             'help' => '12 = January to December (owner decision). Set this before the first posting: months already created keep their dates.',
         ],
+        'finance.share_head_office_costs' => [
+            'type' => 'bool', 'default' => false, 'group' => 'Finance',
+            'label' => 'Share head office costs between industries by sales',
+            'help' => 'Off (default): each industry\'s profit and loss shows only its own costs, and head office costs stay in the Company column. On: at month end the accountant can share the month\'s head office costs between the industries in proportion to their sales (Finance → Reports → Profit by industry), with one journal that can be reversed.',
+        ],
         'payables.match_tolerance_pct' => [
             'type' => 'int', 'default' => 2, 'min' => 0, 'max' => 100, 'group' => 'Finance',
             'label' => 'Supplier bill price difference allowed (%)',

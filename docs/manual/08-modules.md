@@ -42,6 +42,25 @@ When a company runs more than one kind of business, each kind is an **industry**
 
 **Who:** storekeepers, supervisors, pharmacists and managers can ask (*Ask another branch for stock*). Branch, warehouse and general managers can approve (*Approve stock requests between industries*). Sending needs the transfer permission at the supplying branch.
 
+### Accounts by industry
+
+The company keeps **one set of books** (one TIN, one VAT return), and each industry is a **profit centre**: everything a branch posts is labelled with its industry.
+
+- **Finance → Reports → Profit by industry** shows each industry's income, costs and profit side by side. A *Company* column holds head office and shared costs.
+- The **Industry** filter on the other reports (trial balance, profit and loss, balance sheet, account ledger, budget) shows one industry, or *Company* for head office lines. It starts on the industry chosen at the top of the screen.
+- **Stock moved between industries** leaves one industry's stock and joins the other's at cost, so neither makes a profit on it.
+
+**Why:** the owners see what each line of business earns, without the cost and paperwork of separate companies.
+
+**Sharing head office costs (optional).** By default head office costs (rent, admin salaries, the accountant) stay in the *Company* column.
+1. To share them, switch on **System → Settings → Finance → Share head office costs between industries by sales**.
+2. At month end open **Profit by industry** with the *To* date in that month, and click **Share head office costs**. The window shows each industry's share of that month's sales.
+3. Click **Post the journal**.
+
+One journal moves each cost from *Company* to the industries in proportion to their sales, to the pesewa; the company's total profit does not change. A month can be shared only once. To redo it, reverse that journal (*Finance → Journals*) and share again.
+
+**Note:** an industry's balance sheet on its own does not balance, because bank accounts, money owed and stock in transit sit partly at company level. Use *All industries* for the company's balance sheet.
+
 
 ## 8.1 Switching a module on or off
 

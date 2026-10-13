@@ -16,7 +16,7 @@ class JournalEntry extends Model
 
     public const UPDATED_AT = null;
 
-    public const KINDS = ['auto' => 'Automatic', 'manual' => 'Journal', 'opening' => 'Opening balances', 'reversal' => 'Reversal'];
+    public const KINDS = ['auto' => 'Automatic', 'manual' => 'Journal', 'opening' => 'Opening balances', 'reversal' => 'Reversal', 'allocation' => 'Head office costs shared'];
 
     protected $guarded = [];
 

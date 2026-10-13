@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.33.0] — 2026-10-13 · Industries (part C): accounts by industry
+### Added
+- **Industries as profit centres** (owner decision: one set of books first; separate books per industry later):
+  - every journal line carries its branch's industry when posted (`journal_lines.industry_id`). Existing lines are tagged by a migration. Head office and shared costs stay company-level.
+  - **Finance → Reports → Profit by industry:** income, cost of sales, expenses and net profit per industry, plus a *Company* column.
+  - an **Industry** filter (or *Company*) on the trial balance, profit and loss, balance sheet, account ledger and budget vs actual. It starts on the industry chosen at the top.
+- **Sharing head office costs between industries by sales:** off by default (owner); *System → Settings → Finance*.
+  - When on, *Share head office costs* on Profit by industry posts one journal for the month, splitting each company-level cost account by the industries' sales, to the pesewa.
+  - Each month is shared once; reversing the journal allows it again.
+- Stock moved between industries at cost shows in each industry's stock value, through the existing transfer postings.
+### Changed
+- Reversals keep the original lines' industry.
+- **Docs:** installation guide 8.0 (Accounts by industry); accountant guide.
+
 ## [0.32.0] — 2026-10-13 · Industries (part B): stock requests
 ### Added
 - **Stock requests** (*Stock → Stock requests*, numbers `SRQ-`): a branch asks another for stock in its own catalogue's items.

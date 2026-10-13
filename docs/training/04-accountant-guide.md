@@ -18,6 +18,8 @@ Sales, purchases, stock and payroll post to the accounts **automatically**. Your
 
 ## Month-end
 
+**Industries:** check **Finance → Reports → Profit by industry**. If head office costs are shared (System → Settings → Finance), set the *To* date in the month, click **Share head office costs**, check the shares and post. Do this after all of the month's costs are in, before closing the month. To redo it, reverse that journal and share again.
+
 1. Every till shift closed; nothing in the review queue.
 2. **Finance → Month-end**: the checks show unposted items, whether the sub-ledgers tie to the control accounts, and anything left in suspense.
 3. Journals for accruals and prepayments (Finance → Journals). Every journal needs a description.
