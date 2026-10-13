@@ -10,8 +10,10 @@ use App\Models\Branch;
 use App\Models\BranchModule;
 use App\Models\Industry;
 use App\Models\LegalEntity;
+use App\Models\Tenant;
 use App\Modules\ModuleRegistry;
 use App\Security\Authorizer;
+use App\Support\Settings;
 
 /**
  * Industries (owner decisions 2026-10-12): one industry per branch, any number of branches per industry; head office
@@ -51,7 +53,11 @@ final class IndustryService
 
         return $this->recorder->transaction(function () use ($actor, $industry) {
             $moved = $industry->exists && $industry->isDirty('legal_entity_id');
-            $this->recorder->save($actor, $industry, $industry->exists ? 'industry.updated' : 'industry.created');
+            $isNew = ! $industry->exists;
+            $this->recorder->save($actor, $industry, $isNew ? 'industry.created' : 'industry.updated');
+            if ($isNew && ! $industry->legal_entity_id) {
+                $this->ensureCompany($actor, $industry);
+            }
             if ($moved) {
                 foreach ($industry->branches()->get() as $branch) {
                     $this->syncEntity($actor, $branch, $industry);
@@ -60,6 +66,49 @@ final class IndustryService
 
             return $industry;
         });
+    }
+
+    /**
+     * Separate books (the default, setting finance.separate_books): each industry gets a company of its own, named after
+     * it, for the owner to complete with its registered name and TIN. The head office company is created first if the
+     * group has none.
+     */
+    public function ensureCompany(Actor $actor, Industry $industry): void
+    {
+        if ($industry->legal_entity_id || ! app(Settings::class)->get('finance.separate_books', $industry->tenant_id)) {
+            return;
+        }
+        $tenant = Tenant::find($industry->tenant_id);
+        if (! LegalEntity::withoutGlobalScopes()->where('tenant_id', $industry->tenant_id)->exists()) {
+            $head = new LegalEntity(['name' => $tenant->name, 'currency_code' => $tenant->currency_code ?? 'GHS', 'is_primary' => true, 'is_active' => true]);
+            $head->tenant_id = $industry->tenant_id;
+            $this->recorder->save($actor, $head, 'legal_entity.created');
+        }
+        $entity = new LegalEntity(['name' => mb_substr("{$tenant->name} – {$industry->name}", 0, 150), 'currency_code' => $tenant->currency_code ?? 'GHS',
+            'is_primary' => false, 'is_active' => true]);
+        $entity->tenant_id = $industry->tenant_id;
+        $this->recorder->save($actor, $entity, 'legal_entity.created');
+        $industry->legal_entity_id = $entity->id;
+        $this->recorder->save($actor, $industry, 'industry.books_set');
+        foreach ($industry->branches()->get() as $branch) {
+            $this->syncEntity($actor, $branch, $industry);
+        }
+    }
+
+    /** Switching the setting: each industry gets its company, or all industries come back to the head office company's books. */
+    public function applyBooksChoice(Actor $actor, bool $separate): void
+    {
+        foreach (Industry::withoutGlobalScopes()->where('tenant_id', $actor->tenantId)->get() as $industry) {
+            if ($separate) {
+                $this->ensureCompany($actor, $industry);
+            } elseif ($industry->legal_entity_id) {
+                $industry->legal_entity_id = null;
+                $this->recorder->save($actor, $industry, 'industry.books_set');
+                foreach ($industry->branches()->get() as $branch) {
+                    $this->syncEntity($actor, $branch, $industry);
+                }
+            }
+        }
     }
 
     /**
@@ -116,6 +165,7 @@ final class IndustryService
                 'module_key' => $moduleKey, 'sort' => Industry::withoutGlobalScopes()->where('tenant_id', $branch->tenant_id)->count() + 1, 'is_active' => true]);
             $industry->tenant_id = $branch->tenant_id;
             $this->recorder->save($actor, $industry, 'industry.created');
+            $this->ensureCompany($actor, $industry);
         }
         $branch->industry_id = $industry->id;
         $this->recorder->save($actor, $branch, 'branch.industry_set', branchId: $branch->id);

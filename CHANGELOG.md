@@ -5,7 +5,11 @@
 - **Legal entities** (*Company → Legal entities*): the group's registered companies, with name, registration number, TIN, VAT number and address.
   - Exactly one is the head office company.
   - An entity cannot be switched off while in use.
-- **Separate books, chosen per installation:** give an industry its company under *Company → Industries → Books*.
+- **Separate books per industry is the default** (owner, 2026-10-13; setting *Separate books for each industry*, on).
+  - Each industry gets its own company when first switched on, named after it, plus a head office company if there is none. The owner fills in each one's TIN.
+  - Switching the setting off returns all industries to the head office company's books; switching it on gives each its company again.
+  - Installations already running keep one set of books (migration), because switching mid-year would split their figures.
+- **Per industry:** the company can be changed under *Company → Industries → Books*. Two industries may share one company.
   - Its branches post into that company's books (`journal_lines.legal_entity_id`, backfilled).
   - Their receipts and invoices carry its name and TIN.
   - Their E-VAT submissions go under its TIN.

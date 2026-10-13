@@ -488,7 +488,11 @@ Design:
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
 ## Separate books per company (2026-10-13)
-- **The choice per installation is the industry's legal entity.** With none, the industry is a profit centre in one set of books. With one, its branches move to that company: `branches.legal_entity_id` follows the industry, so receipts, E-VAT and books all change together. No separate setting can disagree with it.
+- **Default = separate books per industry** (owner, 2026-10-13: "make separate books per industry the default option"). Setting `finance.separate_books` is on by default.
+  - `IndustryService::ensureCompany` creates the industry's legal entity on first use, named "{company} – {industry}", plus a primary entity if none exists.
+  - `Settings::set` calls `applyBooksChoice` when the setting is switched.
+  - Running installations got the setting stored as off (a migration, not a seeder), so nobody's books split mid-year without a decision. A single-industry client may prefer *off* to avoid an empty head office company; the first-setup guide says so.
+- **The choice per industry is its legal entity.** With none, the industry is a profit centre in one set of books. With one, its branches move to that company: `branches.legal_entity_id` follows the industry, so receipts, E-VAT and books all change together. No separate setting can disagree with it.
 - **A journal line's company = its branch's legal entity, else the primary**, stamped at posting like the industry.
   - Lines from before any entity existed count as the primary's (report filters and the backfill).
   - A manual line without a branch may name its company.

@@ -10,10 +10,11 @@
   - account `1250 intercompany` (control) via `ChartTemplate::ensure`.
 - **Ledger:** `GeneralLedger::post` stamps each line's entity (`entityOf`) and adds pairwise intercompany lines (`balanceEntities`). `JournalService` lets a line without a branch name its `legal_entity_id`, and reversals keep the entity.
 - **Org:** `OrgService::saveLegalEntity` (exactly one primary; no switching off while in use); `LegalEntityResource` (Company → Legal entities). `IndustryService` keeps the branches' `legal_entity_id` in line with the industry's (`syncEntity`); the industry form calls it *Books (legal entity)*. `LegalEntity::primary()`.
+- **Default:** setting `finance.separate_books` (on). `IndustryService::ensureCompany` runs on industry creation and `applyBooksChoice` when the setting changes; migration `2026_11_05_100002` keeps existing tenants off.
 - **Stock:** AutoPoster credits the sender's in-transit on `transfer_in`.
 - **Reports:** an `$entity` parameter on TB, P&L, BS, ledger, profit by industry and VAT (`entityBranches`). The page has a *Books* filter, shown when there is more than one active entity; the VAT return defaults to the primary. `GlCheck` checks per-entity balance and intercompany agreement.
 - **E-VAT:** the `X-Taxpayer-TIN` header is the selling company's TIN.
-- **Tests:** `SeparateBooksTest` (4).
+- **Tests:** `SeparateBooksTest` (5).
 - **Docs:** manual 8.0 *Separate books*; accountant guide; CHANGELOG 0.34.0; DECISIONS.
 
 ## Industries part C — merged (PR #37)

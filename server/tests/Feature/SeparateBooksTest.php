@@ -18,6 +18,7 @@ use App\Models\LegalEntity;
 use App\Models\StockTransfer;
 use App\Models\Warehouse;
 use App\Security\ScopeType;
+use App\Support\Settings;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
@@ -110,11 +111,13 @@ it('moves stock between companies at cost through what they owe each other, leav
     app(TransferService::class)->receive(actorFor($this->owner), StockTransfer::findOrFail($r->fresh()->stock_transfer_id));
     app(AutoPoster::class)->run($this->tenant->id);
 
-    // 10 × 2.50 leaves the pharmacy company's stock and joins the group's; the group owes the pharmacy 25.00.
-    expect(DB::table('journal_lines')->join('accounts', 'accounts.id', '=', 'journal_lines.account_id')->where('accounts.system_key', 'stock_in_transit')->sum('amount_minor'))->toEqual(0)
+    // 10 × 2.50 leaves the pharmacy company's stock and joins the grocery company's (its own books, the default); the grocery owes the pharmacy 25.00.
+    $groceryCo = Industry::where('module_key', 'grocery')->value('legal_entity_id');
+    expect($groceryCo)->not->toBeNull()->not->toBe($this->group->id)
+        ->and(DB::table('journal_lines')->join('accounts', 'accounts.id', '=', 'journal_lines.account_id')->where('accounts.system_key', 'stock_in_transit')->sum('amount_minor'))->toEqual(0)
         ->and(entityBalance($this->pharmaCo->id, 'intercompany'))->toBe(2500)
-        ->and(entityBalance($this->group->id, 'intercompany'))->toBe(-2500)
-        ->and(entityBalance($this->group->id, 'inventory'))->toBe(2500)
+        ->and(entityBalance($groceryCo, 'intercompany'))->toBe(-2500)
+        ->and(entityBalance($groceryCo, 'inventory'))->toBe(2500)
         ->and(app(GlCheck::class)->run($this->tenant->id)['problems'])->toBe([]);
 });
 
@@ -124,4 +127,19 @@ it('offers the books of each company and its own VAT return on the reports scree
     Livewire::test(ReportsPage::class, ['report' => 'tb'])->assertSee('Whole group (consolidated)')->assertSee('Demo Pharmacy Ltd (TIN C0000000001)');
     Livewire::test(ReportsPage::class, ['report' => 'vat', 'books' => $this->pharmaCo->id])->assertSee('files its own VAT return')->assertSee('Demo Pharmacy Ltd');
     $this->get(LegalEntityResource::getUrl('index'))->assertOk()->assertSee('C0000000001');
+});
+
+it('gives every industry its own books by default, and brings them back to one set when switched off', function () {
+    $grocery = Industry::where('module_key', 'grocery')->first();
+    expect(LegalEntity::where('is_primary', true)->count())->toBe(1)
+        ->and(LegalEntity::find($grocery->legal_entity_id)->name)->toBe('Demo Ltd – Grocery / Supermarket')
+        ->and($this->b['G1']->fresh()->legal_entity_id)->toBe($grocery->legal_entity_id)
+        ->and($this->b['HQ']->fresh()->legal_entity_id)->toBeIn([null, $this->group->id]);
+
+    app(Settings::class)->set(actorFor($this->owner), 'finance.separate_books', false);
+    expect(Industry::whereNotNull('legal_entity_id')->count())->toBe(0)
+        ->and($this->b['P1']->fresh()->legal_entity_id)->toBe($this->group->id);
+    app(Settings::class)->set(actorFor($this->owner), 'finance.separate_books', true);
+    expect(Industry::whereNull('legal_entity_id')->count())->toBe(0)
+        ->and($this->b['P1']->fresh()->legal_entity_id)->not->toBe($this->group->id);
 });

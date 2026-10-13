@@ -44,7 +44,16 @@ When a company runs more than one kind of business, each kind is an **industry**
 
 ### Accounts by industry
 
-The company keeps **one set of books** (one TIN, one VAT return), and each industry is a **profit centre**: everything a branch posts is labelled with its industry.
+**Two ways, chosen per installation** under **System → Settings → Finance → Separate books for each industry**:
+
+| Setting | What it means | Suits |
+|---|---|---|
+| **On (the default)** | Each industry is its own company with its own books, TIN and VAT return. See *Separate books* below. | Groups whose industries are registered separately, or will be. |
+| **Off** | **One set of books** (one TIN, one VAT return); each industry is a profit centre. | A single registered company running several kinds of shop. |
+
+**Change it only at the start of a financial year**, because switching moves the branches' future postings to other books. Companies already running when this option arrived were left on *Off*.
+
+With either choice, everything a branch posts is labelled with its industry:
 
 - **Finance → Reports → Profit by industry** shows each industry's income, costs and profit side by side. A *Company* column holds head office and shared costs.
 - The **Industry** filter on the other reports (trial balance, profit and loss, balance sheet, account ledger, budget) shows one industry, or *Company* for head office lines. It starts on the industry chosen at the top of the screen.
@@ -61,18 +70,16 @@ One journal moves each cost from *Company* to the industries in proportion to th
 
 **Note:** an industry's balance sheet on its own does not balance, because bank accounts, money owed and stock in transit sit partly at company level. Use *All industries* for the company's balance sheet.
 
-### Separate books (an industry registered as its own company)
+### Separate books (the default)
 
-Choose this per installation, only when an industry is a **separate company at the Registrar-General**, with its own TIN and VAT return. Otherwise keep one set of books (above).
+When an industry is first switched on, the system creates its company under **Company → Legal entities**, named after it (for example *Demo Ltd – Pharmacy*), and a **head office company** if there is none.
 
-1. **Company → Legal entities → New legal entity:** the registered name, registration number, TIN, VAT number and address.
-   - The first one is the **head office company**. Head office lines, and branches without a company of their own, are booked there.
-   - Only one company can be head office at a time; ticking *Head office company* on another moves it.
-2. **Company → Industries →** edit the industry → **Books (legal entity):** choose its company.
-   - Its branches now post into that company's books.
-   - Their receipts and invoices print that company's name and TIN.
+1. **Company → Legal entities:** open each company and enter its **registered name, registration number, TIN, VAT number and address**.
+   - Its branches' receipts and invoices print that name and TIN.
    - Their sales go to GRA E-VAT under that TIN.
-3. Do this **at the start of a financial year**. Balances from before (stock, money owed) stay in the old books; ask your accountant to move them with a journal on the first day.
+2. **Head office company:** head office lines, and branches without an industry, are booked there. Only one company can be head office at a time; ticking *Head office company* on another moves it.
+3. **Two industries under one registered company:** choose the same company for both under **Company → Industries → Books**. To give an industry no company of its own, choose the head office company.
+4. Changing an industry's company is a **start-of-year** step. Balances from before (stock, money owed) stay in the old books; ask your accountant to move them with a journal on the first day.
 
 **What changes:**
 - **Every entry balances inside each company.** When one company pays for another, for example head office paying the pharmacy's electricity, the system records what the pharmacy now owes head office on **Due from / to group companies**, in both sets of books. Stock sent between the companies at cost is recorded the same way.
