@@ -80,7 +80,7 @@ class ModifierGroupResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->defaultSort('name')
+        return $table->defaultSort('name')->modifyQueryUsing(fn ($query) => $query->with('options'))
             ->columns([
                 TextColumn::make('name')->searchable(),
                 TextColumn::make('rule')->label('Choose')->state(fn (ModifierGroup $r) => $r->min_choices === $r->max_choices ? (string) $r->min_choices : "{$r->min_choices}–{$r->max_choices}"),

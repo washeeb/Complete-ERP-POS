@@ -30,6 +30,7 @@ php artisan migrate --force --no-interaction
 php artisan db:seed --force --no-interaction
 php artisan storage:link --no-interaction >/dev/null 2>&1 || true
 php artisan optimize --no-interaction
+php artisan filament:optimize --no-interaction
 chown -R www-data:www-data storage bootstrap/cache
 
 # supervisord and its programs (php-fpm keeps the environment: clear_env = no) inherit everything exported here.

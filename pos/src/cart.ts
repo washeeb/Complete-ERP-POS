@@ -116,16 +116,33 @@ export function qtyAllowed(unit: Unit, qtyMilli: number): boolean {
   return qtyMilli > 0 && qtyMilli % 10 ** (3 - unit.decimals) === 0
 }
 
-/** Barcode → product + unit (exact match). */
+// Indexes built once per catalogue (the till replaces the array when the catalogue changes), so a scan or a keystroke
+// does not walk every product: with tens of thousands of items the till stays instant.
+const barcodeIndex = new WeakMap<Product[], Map<string, { product: Product; unit: Unit }>>()
+const searchKeys = new WeakMap<Product[], string[]>()
+
+/** Barcode → product + unit (exact match; the first product listed wins, as before). */
 export function findByBarcode(products: Product[], code: string): { product: Product; unit: Unit } | null {
-  const c = code.trim()
-  for (const product of products) for (const unit of product.units) if (unit.barcodes.includes(c)) return { product, unit }
-  return null
+  let index = barcodeIndex.get(products)
+  if (!index) {
+    index = new Map()
+    for (const product of products) for (const unit of product.units) for (const b of unit.barcodes) if (!index.has(b)) index.set(b, { product, unit })
+    barcodeIndex.set(products, index)
+  }
+  return index.get(code.trim()) ?? null
 }
 
-/** Name/SKU search, words in any order, case-insensitive. */
+/** Name/SKU search, words in any order, case-insensitive; stops at the first `limit` matches. */
 export function search(products: Product[], q: string, limit = 30): Product[] {
   const words = q.toLowerCase().split(/\s+/).filter(Boolean)
   if (!words.length) return []
-  return products.filter((p) => words.every((w) => p.name.toLowerCase().includes(w) || p.sku.toLowerCase().includes(w))).slice(0, limit)
+  let keys = searchKeys.get(products)
+  if (!keys) {
+    keys = products.map((p) => `${p.name}
+${p.sku}`.toLowerCase())
+    searchKeys.set(products, keys)
+  }
+  const out: Product[] = []
+  for (let i = 0; i < products.length && out.length < limit; i++) if (words.every((w) => keys[i].includes(w))) out.push(products[i])
+  return out
 }

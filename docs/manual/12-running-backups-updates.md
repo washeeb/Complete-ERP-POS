@@ -74,12 +74,19 @@ SES Labs sends you a new release ZIP. Update outside trading hours.
    composer install --no-dev --optimize-autoloader
    php artisan migrate --seed --force
    php artisan optimize
+   php artisan filament:optimize
    ```
+
+   **Why the last two:** they prepare the settings, routes, screens and icons once, so pages do not rebuild them on every request.
 
    (Ubuntu: then `sudo chown -R www-data:www-data storage bootstrap/cache`.)
    If you install from source code, also rebuild the till: in `pos`, `npm install` and `npm run build:server`.
 5. Start the server again (Windows — *Run* both tasks; Ubuntu — `sudo systemctl start caddy` and `sudo systemctl restart php8.4-fpm`).
 6. **Tills** download the new version by themselves. It takes effect when the till app has been **closed completely and opened again** (do this at the end of the day; sometimes it needs two restarts).
+
+**Once, when updating to 0.34.2 or later from an older version:** run the installer again instead of steps 3–4 (it keeps your data, keys and settings). It switches on PHP's code cache (OPcache) and other speed settings, which older Windows installations did not have, and pages then open several times faster. The first update to 0.34.2 also adds database indexes; on a large database this takes a few minutes, so let it finish.
+
+**Optional on older installations:** in `server\.env` set `LOG_LEVEL=warning` (the log no longer records every detail) and `CACHE_STORE=file` (one less database round-trip for each till request), then run `php artisan optimize` again. New installations have both already.
 
 **Why `migrate --seed`:** it adds new tables and new permissions safely; it never removes your data or changes your own settings.
 

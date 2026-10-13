@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.34.2] — 2026-10-13 · Speed and clean-up
+### Changed
+- **PHP code cache on Windows:** the installer now switches on OPcache, which was off, so PHP no longer recompiled the application on every request. It also sets a larger file-location cache. Ubuntu and Docker get the same tuning.
+- **Screens cached at install and update:** `php artisan filament:optimize` runs after `optimize` in the Windows, Ubuntu and Docker installs (Blade components and icons).
+- **Browser caching:** versioned files (till code, back-office styles, scripts and fonts) are kept by browsers for a year. Docker's nginx now compresses responses, as Caddy already did.
+- **New installations:** `LOG_LEVEL=warning` and `CACHE_STORE=file`, saving a database round-trip on each rate-limited till request.
+- **Database:** every foreign-key column now has an index (317 had none, 61 of them `tenant_id`, which nearly every query filters on). Composite indexes added for the newest-first sales, stock movement and invoice lists, plus a trigram index for customer-name search. A test (`DatabaseIndexesTest`) stops new tables from missing one.
+- **Fewer queries:** price saves load units and price lists together; payroll loads departments with employees; the modifier list and the journal view no longer query once per row.
+- **Till:** barcode scans and product search use an index built once per catalogue, instead of walking every product on each scan or keystroke. The search stops at the first page of results. The pay-on-bill effect now runs only when needed, not after every render.
+### Checked
+- `composer audit` and `npm audit`: no known vulnerabilities. Type check, till tests and build clean. `php artisan optimize` and `filament:optimize` succeed on this code.
+
 ## [0.34.1] — 2026-10-13 · Industry menus, refused saves, system SKUs
 ### Fixed
 - **Module menus follow the industry chosen at the top.** With an industry chosen, only its own menus show (Pharmacy, Restaurant, Electronics, …). With *All industries*, every installed industry's menus show. Pharmacy screens were shown on permission alone; they now need the module, like the others (`ModuleService::enabledAnywhere` follows `IndustryContext`).

@@ -437,7 +437,7 @@ final class CatalogService
 
     private function syncPrices(Actor $actor, Product $product, array $rows): array
     {
-        $units = $product->units()->get()->keyBy('uom_id');
+        $units = $product->units()->with('uom')->get()->keyBy('uom_id');
         $wanted = [];
         foreach ($rows as $r) {
             $list = PriceList::find($r['price_list_id'] ?? null) ?? throw new DomainException('Choose a price list for each price.');
@@ -462,7 +462,7 @@ final class CatalogService
             $wanted[$key] = compact('list', 'pu', 'minQty', 'amount', 'starts', 'ends');
         }
 
-        $existing = $product->prices()->get();
+        $existing = $product->prices()->with('priceList')->get();
         $changes = [];
         $keep = [];
         foreach ($wanted as $key => $w) {

@@ -88,6 +88,12 @@ $iniText = $iniText -replace '(?m)^;?extension_dir = "ext"', 'extension_dir = "e
   -replace '(?m)^upload_max_filesize = .*', 'upload_max_filesize = 20M' -replace '(?m)^post_max_size = .*', 'post_max_size = 25M' `
   -replace '(?m)^;?date\.timezone =.*', 'date.timezone = Africa/Accra' -replace '(?m)^;?upload_tmp_dir =.*', "upload_tmp_dir = `"$Dir\tmp`"" `
   -replace '(?m)^;?sys_temp_dir =.*', "sys_temp_dir = `"$Dir\tmp`""
+# Speed: PHP keeps the compiled application in memory (OPcache) instead of recompiling it on every request, and
+# remembers file locations. Checked for changed files once a minute, so an update shows within a minute.
+$iniText = $iniText -replace '(?m)^;zend_extension=opcache\s*$', 'zend_extension=opcache'
+if ($iniText -notmatch '(?m)^; SyncLytics speed settings') {
+  $iniText += "`r`n; SyncLytics speed settings`r`nopcache.enable=1`r`nopcache.memory_consumption=256`r`nopcache.interned_strings_buffer=16`r`nopcache.max_accelerated_files=20000`r`nopcache.validate_timestamps=1`r`nopcache.revalidate_freq=60`r`nrealpath_cache_size=4096K`r`nrealpath_cache_ttl=600`r`n"
+}
 Set-Content $ini $iniText
 $php = "$PhpDir\php.exe"
 if (-not (& $php -m | Select-String -Pattern '^pdo_pgsql$')) { Die 'PHP cannot load pdo_pgsql — check php.ini.' }
@@ -190,6 +196,10 @@ $tls
 `t`tmax_size 25MB
 `t}
 `theader -Server
+`t# Files whose names or links change with each release (the till's code, the screens' styles and scripts) are kept by
+`t# the browser for a year instead of being asked for again on every page.
+`t@versioned path /pos/assets/* /build/* /css/* /js/* /fonts/* /vendor/*
+`theader @versioned Cache-Control `"public, max-age=31536000, immutable`"
 `t# One handle runs per request (Caddy puts handle before respond/reverse_proxy, so each case is its own handle).
 `t# Hidden files (.env and the like) never leave the server.
 `t@hidden {
@@ -272,7 +282,7 @@ if ($newInstall) {
   Add-Content $secrets "erp database password: $dbPw"
   $envText = Get-Content .env.example -Raw
   $set = @{ APP_ENV = 'production'; APP_DEBUG = 'false'; DB_HOST = '127.0.0.1'; DB_PORT = "$PgPort"; DB_PASSWORD = $dbPw;
-    ERP_NODE_ROLE = $Role; ERP_NODE_ID = $NodeId; BACKUP_PG_BIN = $pgBin }
+    ERP_NODE_ROLE = $Role; ERP_NODE_ID = $NodeId; BACKUP_PG_BIN = $pgBin; LOG_LEVEL = 'warning'; CACHE_STORE = 'file' }
   foreach ($k in $set.Keys) { $envText = $envText -replace "(?m)^$k=.*$", "$k=$($set[$k])" }
   Set-Content .env $envText -NoNewline
 }
@@ -302,6 +312,7 @@ Run $php @('artisan', 'migrate', '--force', '--no-interaction')
 Run $php @('artisan', 'db:seed', '--force', '--no-interaction')
 if (-not (Test-Path 'public\pos\index.html')) { Write-Warning 'The release has no till app (public\pos). Build it as in Chapter 4.7, or ask for a release built with the till.' }
 Run $php @('artisan', 'optimize', '--no-interaction')
+Run $php @('artisan', 'filament:optimize', '--no-interaction') # caches the screens' building blocks and icons
 
 # ---------------------------------------------------------------------------------------------------------------
 Say '9/10 Start automatically with Windows (web server, PHP workers, scheduler, live updates)'

@@ -4,6 +4,7 @@
 - Layout: `server/` Laravel 13 + Filament 5 (API, back office, sync hub) · `pos/` React+TS+Vite PWA (till) · `docs/`.
 - Invariants: UUIDv7 ids; money = integer minor units + currency; stock = append-only movement ledger;
   posted docs immutable (reverse, never edit); every mutation = domain service + one transaction + audit row + outbox event.
+- Index every foreign-key column (PostgreSQL does not; `DatabaseIndexesTest` fails otherwise).
 - IT Admin role gets **no** implicit business permissions. Deny by default; missing scope ≠ global scope.
 - Feature flags stay **off** until the feature is built and tested. No orphan permissions/env keys.
 - Seeders only add missing rows; one-time backfills are migrations.
