@@ -17,7 +17,7 @@ export function BookingsPanel({ tables, money, onSeated, onClose }: {
   tables: DiningTable[]; money: Money; onSeated: (o: DiningOrder) => void; onClose: () => void
 }) {
   const [list, setList] = useState<Reservation[]>([])
-  const [day, setDay] = useState(new Date().toLocaleDateString('en-CA'))
+  const [day, setDay] = useState(() => new Date().toLocaleDateString('en-CA'))
   const [error, setError] = useState('')
   const [editing, setEditing] = useState<Reservation | 'new' | null>(null)
   const [paying, setPaying] = useState<{ r: Reservation; refund: boolean } | null>(null)

@@ -59,7 +59,7 @@ final class PayrollService
                 ->where(fn ($q) => $q->where('basic_salary_minor', '>', 0) // and commission-only staff who earned commission this month
                     ->orWhereExists(fn ($c) => $c->from('commissions')->whereColumn('commissions.employee_id', 'employees.id')
                         ->whereBetween('commissions.occurred_at', [$start->copy()->subDay(), $end->copy()->addDays(2)])))
-                ->orderBy('number')->get();
+                ->with('department')->orderBy('number')->get();
             foreach ($employees as $e) {
                 // Days outside employment this month, and approved unpaid leave, are not paid.
                 $outside = $e->hire_date->gt($start) ? HrService::workingDays($start->toDateString(), $e->hire_date->copy()->subDay()->toDateString()) : 0;

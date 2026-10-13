@@ -487,6 +487,20 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Applying the speed suggestions (2026-10-13)
+- **"Background workers":** the app has no Laravel queue jobs (store pushes, messages and webhooks run in the `erp:relay` loop; posting and reports on the scheduler), so no worker was missing. The real lag was posting every 5 minutes; it is now every minute. Laravel's queue stays unused.
+- **Slow pages are measured where they happen:** a terminable middleware (a singleton, so `terminate()` sees `handle()`'s numbers) counts queries with one `DB::listen` per process and writes after the answer is sent. Paths only (route URI, or the Livewire screen name), never query strings, so no searches or personal data are logged. Threshold `ERP_SLOW_REQUEST_MS`.
+- **The OPcache check runs only from the web server:** the CLI has OPcache off on purpose, so `erp:health` skips it.
+- **Updates = re-running the installer**, which already did everything except the backup; that is now its first step on an existing installation. No separate update script to maintain.
+- **Remaining till lint warnings are deliberate:** data-loading effects (`set-state-in-effect`) and date reads in an event handler or on render.
+
+## Speed and clean-up (2026-10-13)
+- **Where the time went:** on a warm page, the database work per back-office page is small (6–15 queries, measured with a probe). The cost was PHP setup (no OPcache on Windows, no Filament component cache) and, as data grows, sequential scans: PostgreSQL does not index foreign keys, and `tenant_id`, used by every global scope, was unindexed on 61 tables.
+- **Indexes are found, not listed:** the migration creates an index for every single-column foreign key that no index starts with. `DatabaseIndexesTest` fails on any future one, so new migrations must add `->index()` (or a composite starting with the column).
+- **OPcache `validate_timestamps=1, revalidate_freq=60`** rather than 0. Updates are done by hand (Chapter 12.4) without always restarting PHP, so a cache that never checks files would serve old code after an update. One check a minute costs almost nothing.
+- **Lazy-loading probe:** a full test run with `preventLazyLoading` logging found only 7 places (fixed). No blanket `Model::shouldBeStrict()`, because single-record lazy loads in actions are harmless and strict mode would break them.
+- **Not changed:** per-request memoisation of the industry and module checks (1–2 queries a page, not worth the stale-state risk in tests); response caching of back-office pages (per-user permissions make it unsafe).
+
 ## Industry menus, refused saves, system SKUs (2026-10-13)
 - **One switch for module screens:** `ModuleService::enabledAnywhere` narrows to the chosen industry's branches. Every module screen and field already asks it, so the menus, product form sections and reports follow the industry switcher together. Pharmacy screens now ask it too.
 - **`Halt` stops quietly everywhere:** a `Livewire\on('exception')` hook swallows Filament's `Halt` after `Erp::run` has shown *Not saved*. That covers custom-page methods, which Filament does not wrap, without touching each page.

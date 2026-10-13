@@ -63,7 +63,17 @@ Use this after a disaster, or to practise on a spare PC.
 
 ## 12.4 Updating the software
 
-SES Labs sends you a new release ZIP. Update outside trading hours.
+SES Labs sends you a new release. Update outside trading hours.
+
+**The simple way (recommended):**
+- **Windows:** run the new `SESLabs-server-setup-<version>.exe` on the server and choose the same folder.
+- **Ubuntu:** `sudo bash install.sh --zip <new release>.zip` with the same options as the first time.
+
+Either one **takes a backup first** with the version still installed. If that backup fails, it stops and changes nothing. Then it replaces the software, keeps your `.env`, uploads, backups and keys, updates the database, prepares the caches, applies the speed settings and restarts the services. Tills update by themselves (step 6 below).
+
+**Why the backup first:** if anything goes wrong during the update, that backup puts the business back exactly as it was.
+
+**By hand** (only if SyncLytics support asks you to):
 
 1. **Take a backup** (run the backup task now) and check it.
 2. Stop the server: Windows — Task Scheduler → *End* both SES Labs tasks; Ubuntu — `sudo systemctl stop caddy`.
@@ -74,12 +84,19 @@ SES Labs sends you a new release ZIP. Update outside trading hours.
    composer install --no-dev --optimize-autoloader
    php artisan migrate --seed --force
    php artisan optimize
+   php artisan filament:optimize
    ```
+
+   **Why the last two:** they prepare the settings, routes, screens and icons once, so pages do not rebuild them on every request.
 
    (Ubuntu: then `sudo chown -R www-data:www-data storage bootstrap/cache`.)
    If you install from source code, also rebuild the till: in `pos`, `npm install` and `npm run build:server`.
 5. Start the server again (Windows — *Run* both tasks; Ubuntu — `sudo systemctl start caddy` and `sudo systemctl restart php8.4-fpm`).
 6. **Tills** download the new version by themselves. It takes effect when the till app has been **closed completely and opened again** (do this at the end of the day; sometimes it needs two restarts).
+
+**Updating to 0.34.2 or later from an older version:** use the simple way above. It switches on PHP's code cache (OPcache) and other speed settings, which older Windows installations did not have, and pages then open several times faster. *System → Health* shows *PHP code cache: On* afterwards. The first update to 0.34.2 also adds database indexes; on a large database this takes a few minutes, so let it finish.
+
+**Optional on older installations:** in `server\.env` set `LOG_LEVEL=warning` (the log no longer records every detail) and `CACHE_STORE=file` (one less database round-trip for each till request), then run `php artisan optimize` again. New installations have both already.
 
 **Why `migrate --seed`:** it adds new tables and new permissions safely; it never removes your data or changes your own settings.
 

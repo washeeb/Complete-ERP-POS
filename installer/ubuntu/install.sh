@@ -21,7 +21,8 @@ while [ $# -gt 0 ]; do
     --role) ROLE="$2"; shift 2 ;;
     --node-id) NODE_ID="$2"; shift 2 ;;
     --dir) DIR="$2"; shift 2 ;;
-    --ci) CI_MODE=1; shift ;;                # automated test: localhost only, no firewall, no interactive company creation
+    --ci) CI_MODE=1; shift ;;
+    --skip-backup) SKIP_BACKUP=1; shift ;;   # updates only: do not take the backup first (not recommended)                # automated test: localhost only, no firewall, no interactive company creation
     -h|--help) sed -n '2,10p' "$0"; exit 0 ;;
     *) echo "Unknown option $1"; exit 1 ;;
   esac
@@ -75,6 +76,12 @@ if [ -n "$ZIP" ]; then
   SRC="$(dirname "$(find /tmp/${SLUG}-release -maxdepth 3 -name artisan -path '*server/artisan' | head -1)")/.."
 fi
 [ -f "$SRC/server/artisan" ] || die "no server/artisan in the release"
+# An update: back up the business first, with the version still installed, so a failed update can be undone.
+if [ -f "$DIR/server/.env" ] && [ -f "$DIR/server/artisan" ] && [ "${SKIP_BACKUP:-0}" != 1 ]; then
+  say "   Backing up before the update (why: so the update can be undone)"
+  (cd "$DIR/server" && sudo -u www-data php artisan erp:backup --no-interaction) \
+    || die "the backup before the update failed, so nothing was changed. Fix it (System → Backups), or run again with --skip-backup after taking a backup yourself"
+fi
 # Code is replaced; .env, storage (uploads, backups, logs) are kept on updates.
 rsync -a --delete --exclude '.env' --exclude 'storage/' --exclude 'vendor/' "$SRC/server/" "$DIR/server/" 2>/dev/null \
   || { apt-get install -y -q rsync && rsync -a --delete --exclude '.env' --exclude 'storage/' --exclude 'vendor/' "$SRC/server/" "$DIR/server/"; }
@@ -95,7 +102,7 @@ if [ ! -f "$ENV_FILE" ]; then
   cp .env.example .env
   sed -i -e "s|^APP_ENV=.*|APP_ENV=production|" -e "s|^APP_DEBUG=.*|APP_DEBUG=false|" \
     -e "s|^DB_PASSWORD=.*|DB_PASSWORD=${DB_PASS}|" -e "s|^DB_PORT=.*|DB_PORT=${PG_PORT}|" -e "s|^ERP_NODE_ROLE=.*|ERP_NODE_ROLE=${ROLE}|" -e "s|^ERP_NODE_ID=.*|ERP_NODE_ID=${NODE_ID}|" \
-    -e "s|^BACKUP_PG_BIN=.*|BACKUP_PG_BIN=/usr/lib/postgresql/${PG_MAJOR}/bin|" .env
+    -e "s|^BACKUP_PG_BIN=.*|BACKUP_PG_BIN=/usr/lib/postgresql/${PG_MAJOR}/bin|"     -e "s|^LOG_LEVEL=.*|LOG_LEVEL=warning|" -e "s|^CACHE_STORE=.*|CACHE_STORE=file|" .env
   chmod 640 .env
   NEW_INSTALL=1
 else
@@ -129,6 +136,7 @@ if [ ! -f public/pos/index.html ] && [ -f "$SRC/pos/package.json" ]; then
 fi
 php artisan storage:link --no-interaction >/dev/null 2>&1 || true
 php artisan optimize --no-interaction
+php artisan filament:optimize --no-interaction # caches the screens' building blocks and icons
 chown -R www-data:www-data "$DIR/server/storage" "$DIR/server/bootstrap/cache"
 chgrp www-data .env
 
@@ -144,6 +152,17 @@ if ss -ltnpH '( sport = :80 or sport = :443 )' | grep -v caddy | grep -q .; then
 fi
 sed -i -e 's/^upload_max_filesize.*/upload_max_filesize = 20M/' -e 's/^post_max_size.*/post_max_size = 25M/' -e 's/^memory_limit.*/memory_limit = 512M/' \
   -e 's|^;\?date.timezone.*|date.timezone = Africa/Accra|' "/etc/php/${PHP_V}/fpm/php.ini"
+# Speed: keep the compiled application in memory (OPcache), checked for changes once a minute, and remember file locations.
+cat > "/etc/php/${PHP_V}/fpm/conf.d/99-synclytics-speed.ini" <<'INI'
+opcache.enable=1
+opcache.memory_consumption=256
+opcache.interned_strings_buffer=16
+opcache.max_accelerated_files=20000
+opcache.validate_timestamps=1
+opcache.revalidate_freq=60
+realpath_cache_size=4096K
+realpath_cache_ttl=600
+INI
 usermod -aG www-data caddy # to reach PHP-FPM's socket (owned by www-data)
 GLOBAL="	admin off
 	skip_install_trust"
@@ -193,6 +212,10 @@ ${TLS}
 		max_size 25MB
 	}
 	header -Server
+	# Files whose names or links change with each release (the till's code, the screens' styles and scripts) are kept by
+	# the browser for a year instead of being asked for again on every page.
+	@versioned path /pos/assets/* /build/* /css/* /js/* /fonts/* /vendor/*
+	header @versioned Cache-Control "public, max-age=31536000, immutable"
 	# One handle runs per request. Hidden files (.env and the like) never leave the server.
 	@hidden {
 		path_regexp /\\.

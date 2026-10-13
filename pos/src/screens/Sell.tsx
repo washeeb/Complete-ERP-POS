@@ -15,7 +15,8 @@ import { AlterationsScreen, StylePicker } from './Fashion'
 import { styleOf } from '../fashion'
 import { AppointmentsScreen, PassesScreen, StaffPrompt } from './Services'
 import { isService } from '../services'
-import { EmptiesDialog, recordVisit, RouteScreen } from './Van'
+import { EmptiesDialog, RouteScreen } from './Van'
+import { recordVisit } from '../visits'
 import { achieved, withDeposits } from '../distribution'
 import { submitRoadEvent } from '../till'
 import { v7 as uuidv7 } from 'uuid'
@@ -269,12 +270,13 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
     if (c) pickCustomer(c)
     setPayNow(true)
   }
+  // Open payment once the bill's lines are in place (after the render that set them), not on every render.
   useEffect(() => {
     if (payNow) {
       setPayNow(false)
       startPay()
     }
-  })
+  }, [payNow]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function onScanOrSearch(e: React.FormEvent) {
     e.preventDefault()

@@ -27,6 +27,7 @@ Find the symptom, then try the fixes in order.
 | *This is managed at head office* | You are on a branch server; change master data at head office (Chapter 10). |
 | Everything is read-only, with a red banner | Licence expired, withdrawn or not checked in for 44 days (Chapter 6.4). Renew; nothing is lost. |
 | Passkey button does nothing | Passkeys need HTTPS or `localhost`. Use the authenticator app. |
+| Pages are slow | Open **System → Health**. *PHP code cache* must say *On* (if not, update with the simple way, Chapter 12.4). *Slow pages* lists what was slow, how often and how many database reads it made: send it to SyncLytics support. Run `php artisan erp:load-test --force` outside trading hours for a full speed check (it leaves nothing behind). |
 
 ## Tills
 
@@ -58,7 +59,7 @@ Find the symptom, then try the fixes in order.
 
 ## Health checks
 
-**System → Health** shows the state of the server at a glance: database, scheduler, live updates, last backup and its check, disk space, live-site settings, HTTPS, e-mail, licence, and anything stuck (messages, webhooks, GRA E-VAT, sync). Each line says what to do.
+**System → Health** shows the state of the server at a glance: database, scheduler, live updates, last backup and its check, disk space, live-site settings, HTTPS, e-mail, licence, PHP's code cache, slow pages, and anything stuck (messages, webhooks, GRA E-VAT, sync). Each line says what to do. Below the checks, **Slow pages** lists every page and till call that took over a second in the last 7 days, worst first.
 
 ![System → Health](img/health.png)
 
@@ -73,6 +74,7 @@ The same checks run with `php artisan erp:health` (useful for monitoring tools: 
 | `php artisan erp:stock-check` | Stock levels match the stock ledger |
 | `php artisan erp:gl-check` | The accounts agree with sales, stock, customers and suppliers (Finance) |
 | `php artisan license:status` | Licence state, limits and last check-in |
+| `php artisan erp:load-test --force` | Speed: posts test sales and times the heavy reports, searches and the till catalogue on your real data, then undoes everything. Lines over a second are marked *SLOW* |
 
 ## Getting help from SyncLytics
 

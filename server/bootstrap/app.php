@@ -7,6 +7,7 @@ use App\Http\Middleware\EnforceLicense;
 use App\Http\Middleware\EnsureApiClient;
 use App\Http\Middleware\EnsureDeviceToken;
 use App\Http\Middleware\EnsureMfaForLevel;
+use App\Http\Middleware\RecordSlowRequests;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -24,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->prepend(AssignRequestId::class);
         $middleware->append(SecurityHeaders::class); // browser protections on every answer
+        $middleware->prepend(RecordSlowRequests::class); // slow pages, for System → Health
         $middleware->redirectGuestsTo('/admin/login'); // printable documents live outside the panel
         $middleware->alias([
             'device.token' => EnsureDeviceToken::class,
