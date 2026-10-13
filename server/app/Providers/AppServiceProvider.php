@@ -10,6 +10,7 @@ use App\Modules\ModuleRegistry;
 use App\Security\Authorizer;
 use App\Support\Settings;
 use App\Support\TenantContext;
+use Filament\Support\Exceptions\Halt;
 use Filament\Tables\Table;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -31,6 +32,14 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Erp::run shows "Not saved" with the reason and then stops with Filament's Halt. Actions and record pages catch
+        // it; a custom screen's own method (Save modules, …) would turn it into an error page, so it stops there too.
+        \Livewire\on('exception', function ($component, \Throwable $e, callable $stopPropagation) {
+            if ($e instanceof Halt) {
+                $stopPropagation();
+            }
+        });
+
         if (! in_array(config('erp.node.role'), ['hq', 'branch', 'standalone'], true)) {
             throw new \RuntimeException('ERP_NODE_ROLE must be hq, branch or standalone.');
         }

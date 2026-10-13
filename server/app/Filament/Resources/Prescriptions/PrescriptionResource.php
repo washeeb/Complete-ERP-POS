@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Prescriptions;
 
+use App\Domain\Modules\ModuleService;
 use App\Filament\Resources\Prescriptions\Pages\ListPrescriptions;
 use App\Filament\Resources\Prescriptions\Pages\ViewPrescription;
 use App\Filament\Resources\Sales\SaleResource;
@@ -37,7 +38,7 @@ class PrescriptionResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return Erp::canAnywhere('pharmacy.dispense') || Erp::canAnywhere('pharmacy.manage');
+        return (Erp::canAnywhere('pharmacy.dispense') || Erp::canAnywhere('pharmacy.manage')) && ModuleService::enabledAnywhere('pharmacy');
     }
 
     public static function canCreate(): bool

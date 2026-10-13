@@ -57,7 +57,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([Dashboard::class])
-            ->navigationGroups(['Insights', 'Reports', 'Sales', 'Cash', 'Online', 'Purchasing', 'Finance', 'HR & payroll', 'Stock', 'Restaurant', 'Pharmacy', 'Electronics', 'Fashion', 'Catalog', 'Pricing & tax', 'Company', 'People & access', 'Messages', 'System'])
+            ->navigationGroups(['Insights', 'Reports', 'Sales', 'Cash', 'Online', 'Purchasing', 'Finance', 'HR & payroll', 'Stock', 'Grocery', 'Restaurant', 'Pharmacy', 'Electronics', 'Fashion', 'Catalog', 'Pricing & tax', 'Company', 'People & access', 'Messages', 'System'])
             ->widgets([AccountWidget::class, BusinessStats::class, IndustryOverview::class, IndustryHighlights::class])
             ->middleware([
                 EncryptCookies::class,

@@ -27,6 +27,7 @@ use App\Support\Money;
 use App\Support\Qty;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Products with their selling units, barcodes and prices, saved together in one transaction.
@@ -108,6 +109,21 @@ final class CatalogService
         $rows[] = $new;
 
         return $rows;
+    }
+
+    /** The next free SKU: the industry's code (or SKU for shared products) and a six-digit running number, e.g. PHARMA-000123. */
+    public function nextSku(string $tenantId, ?string $industryId): string
+    {
+        $prefix = ($industryId ? preg_replace('/[^A-Z0-9]/', '', strtoupper((string) DB::table('industries')->where('id', $industryId)->value('code'))) : '') ?: 'SKU';
+        $prefix = substr($prefix, 0, 10);
+        DB::table('document_sequences')->insertOrIgnore(['tenant_id' => $tenantId, 'node' => 'catalog', 'doc_type' => $prefix, 'last_value' => 0]);
+        do {
+            $n = DB::selectOne("UPDATE document_sequences SET last_value = last_value + 1 WHERE tenant_id = ? AND node = 'catalog' AND doc_type = ? RETURNING last_value",
+                [$tenantId, $prefix])->last_value;
+            $sku = sprintf('%s-%06d', $prefix, $n);
+        } while (Product::withoutGlobalScopes()->where('tenant_id', $tenantId)->where('sku', $sku)->exists()); // skip codes typed in before
+
+        return $sku;
     }
 
     public function saveProduct(Actor $actor, Product $product, array $data, ?string $reason = null): Product
@@ -196,7 +212,9 @@ final class CatalogService
             throw new DomainException('Scale code (PLU): up to 5 digits, not used by another product.');
         }
         $startsBatches = $product->track_batches && (! $product->exists || $product->isDirty('track_batches'));
-        $product->sku = strtoupper(trim((string) $product->sku));
+        // SKUs are given by the system (owner, 2026-10-13): the industry's code and a running number, never typed and never
+        // changed, so two products can never share one. Fashion variants and tests may still pass their own.
+        $product->sku = $product->exists ? $product->getOriginal('sku') : (strtoupper(trim((string) ($data['sku'] ?? ''))) ?: $this->nextSku($actor->tenantId, $product->industry_id));
         if (! preg_match('/^[A-Z0-9][A-Z0-9._-]{0,39}$/', $product->sku)) {
             throw new DomainException('SKU: letters, digits, dot, dash or underscore (max 40).');
         }

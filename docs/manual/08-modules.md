@@ -27,6 +27,8 @@ When a company runs more than one kind of business, each kind is an **industry**
   - give a person a role **at their branch** (People & access → Users → Grant access → Applies to: *Branch*). A pharmacist at Pharmacy Osu then sees that pharmacy only;
   - an **industry manager** gets the role with *Applies to: Industry*, and sees every branch of that industry, and nothing of the others.
 
+**Menus follow the choice.** With an industry chosen, only its own module menus show (for example *Pharmacy* but not *Restaurant*). With *All industries*, every installed industry's menus show. Grocery's menu has **Markdowns** (near-expiry stickers and expired write-offs at the grocery stores) and **Scale items** (the weighed products to load into the scales).
+
 **Check:** choose *Pharmacy* at the top. *Stock → Stock on hand* shows only the pharmacy branches, and *Catalog → Products* shows only pharmacy (and shared) products. Choose *All industries* to go back.
 
 ### Stock between branches and industries
@@ -135,6 +137,8 @@ When an industry is first switched on, the system creates its company under **Co
 2. **Weighed items:** give each its **scale code (PLU)** and sell it in **KG** (3 decimals). Set the label scale to print EAN-13 labels: `21` · item code (5 digits) · weight in grams (5 digits) · check digit.
 3. **System → Settings → Grocery:** check the scale label prefixes, and the markdown rules (default 30 % off at 7 days left, 50 % at 3 days).
 4. Electronic shelf labels (optional): enter their gateway address in System → Settings → Grocery.
+5. **Grocery → Scale items** lists every weighed product with its scale code, unit and retail price. **Export** it to load the scales, and again after price changes.
+6. **Grocery → Markdowns** (daily): apply the suggested markdowns, print the stickers, and write off what has expired.
 
 **Why:** the till reads the weight and item from the scale label, and sells the batch expiring first, so old stock does not go to waste.
 
@@ -157,7 +161,7 @@ When an industry is first switched on, the system creates its company under **Co
 2. **Restaurant → Floor plan:** each table with its number, area, seats and position.
 3. **Restaurant → Modifiers:** groups of choices (e.g. *Spice: Mild / Hot*). A choice can be charged as a product.
 4. On each **dish** (Catalog → Products → **Restaurant**): the station, the choices offered, and the **recipe** (ingredients per portion). Switch **Track stock** off for the dish itself; the ingredients are stocked products.
-5. **System → Settings → Restaurant:** service charge rate and its product (create a product with SKU `SERVICE`, *Track stock* off), tips on/off, booking reminders and the SMS gateway address (only with your own SMS provider's details).
+5. **System → Settings → Restaurant:** service charge rate and its product (create a *Service charge* product with *Track stock* off, and copy the SKU the system gives it into this setting), tips on/off, booking reminders and the SMS gateway address (only with your own SMS provider's details).
 6. Give staff the **Waiter / Bartender** or **Kitchen Staff** role.
 7. Set up the **kitchen screens** (Chapter 9).
 
@@ -180,7 +184,7 @@ When an industry is first switched on, the system creates its company under **Co
 
 1. **Fashion → Styles → New style:** code, name, tax, season, collection, sizes, colours and price. Then **Create sizes and colours** to make one product per size and colour, each with SKU and barcode.
 2. **Consignment** (goods owned by a supplier): on the product, choose the consignor and their share.
-3. **Alterations:** create a product with SKU `ALTERATION` and *Track stock* off (System → Settings → Fashion holds the SKU).
+3. **Alterations:** create an *Alteration* product with *Track stock* off, and copy the SKU the system gives it into System → Settings → Fashion.
 4. Give tailors the **Tailor** role.
 
 **Check:** pick any variant of a style at the till: the size × colour grid opens with the stock at that till.

@@ -2,7 +2,7 @@
 
 ## Products — *Catalog → Products*
 
-- **SKU** (your product code), name, category, brand, **tax group** and **base unit** — the unit stock
+- Name, category, brand, **tax group** and **base unit**. The **SKU** (product code) is given by the system when you save, so it is never duplicated, — the unit stock
   is counted in (usually PC). The base unit cannot change once stock has moved.
 - **Barcodes for the base unit:** scan or type, then Enter. A barcode belongs to one product only.
 - **Other units:** e.g. *CTN, base units in one = 24*. Give each unit its own barcodes. Untick *Sold*

@@ -1,13 +1,18 @@
 <?php
 
 use App\Domain\Access\AccessService;
+use App\Domain\Catalog\CatalogService;
 use App\Domain\Devices\DeviceService;
 use App\Domain\Licensing\LicenseManager;
 use App\Domain\Modules\ModuleService;
 use App\Domain\Org\IndustryService;
 use App\Domain\Org\OrgService;
 use App\Domain\Support\DomainException;
+use App\Filament\Pages\GroceryMarkdowns;
 use App\Filament\Pages\ManageModules;
+use App\Filament\Pages\ScaleItems;
+use App\Filament\Resources\Prescriptions\PrescriptionResource;
+use App\Filament\Resources\Products\Pages\CreateProduct;
 use App\Filament\Resources\Products\Pages\ListProducts;
 use App\Filament\Support\Erp;
 use App\Filament\Widgets\IndustryHighlights;
@@ -15,8 +20,11 @@ use App\Filament\Widgets\IndustryOverview;
 use App\Livewire\IndustrySwitcher;
 use App\Models\Branch;
 use App\Models\Industry;
+use App\Models\Product;
 use App\Models\Role;
+use App\Models\TaxGroup;
 use App\Models\Till;
+use App\Models\Uom;
 use App\Security\Authorizer;
 use App\Security\ScopeType;
 use App\Support\IndustryContext;
@@ -138,4 +146,61 @@ it('shows only industry modules the licence covers, and only installed industrie
     Filament::setCurrentPanel(Filament::getPanel('admin'));
     $this->actingAs(withMfa($this->owner), 'web');
     Livewire::test(ManageModules::class)->assertSee('Pharmacy')->assertDontSee('Fashion')->assertDontSee('Restaurant');
+});
+
+it('shows only the chosen industry\'s module screens, and refuses a second industry on a branch with a message', function () {
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
+    $this->actingAs(withMfa($this->owner), 'web');
+    expect(PrescriptionResource::canViewAny())->toBeTrue(); // all industries: pharmacy is installed
+
+    IndustryContext::set($this->grocery->id);
+    expect(PrescriptionResource::canViewAny())->toBeFalse()
+        ->and(ModuleService::enabledAnywhere('pharmacy'))->toBeFalse()
+        ->and(ModuleService::enabledAnywhere('grocery'))->toBeTrue();
+    $this->get('/admin')->assertOk()->assertDontSee('Prescriptions');
+
+    IndustryContext::set($this->pharmacy->id);
+    expect(PrescriptionResource::canViewAny())->toBeTrue();
+    IndustryContext::set(null);
+
+    // Switching grocery on at a pharmacy branch: "Not saved" with the reason, no error page.
+    Livewire::test(ManageModules::class)
+        ->set('data.branch_id', $this->b['P1']->id)->set('data.modules.grocery', 'enabled')
+        ->call('save')->assertNotified('Not saved')->assertOk();
+    expect(app(ModuleService::class)->isEnabled($this->b['P1'], 'grocery'))->toBeFalse();
+});
+
+it('gives every new product its SKU from its industry, and never changes it', function () {
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
+    $this->actingAs(withMfa($this->owner), 'web');
+    IndustryContext::set($this->pharmacy->id);
+    $pc = Uom::where('code', 'PC')->value('id');
+    $std = TaxGroup::where('code', 'STD')->value('id');
+    foreach (['Amoxicillin 500mg', 'Ibuprofen 200mg'] as $name) {
+        Livewire::test(CreateProduct::class)
+            ->fillForm(['name' => $name, 'base_uom_id' => $pc, 'tax_group_id' => $std, 'industry_id' => $this->pharmacy->id])->call('create')->assertHasNoFormErrors();
+    }
+    $code = $this->pharmacy->code;
+    $amox = Product::where('name', 'Amoxicillin 500mg')->first();
+    expect($amox->sku)->toBe("{$code}-000001")
+        ->and(Product::where('name', 'Ibuprofen 200mg')->value('sku'))->toBe("{$code}-000002");
+
+    app(CatalogService::class)->saveProduct(actorFor($this->owner), $amox, ['sku' => 'CHANGED', 'name' => 'Amoxicillin 500mg caps']);
+    expect($amox->fresh()->sku)->toBe("{$code}-000001")->and($amox->fresh()->name)->toBe('Amoxicillin 500mg caps');
+});
+
+it('gives grocery its own menu: markdowns at grocery stores and the scale items', function () {
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
+    $this->actingAs(withMfa($this->owner), 'web');
+    $mince = makeProduct($this->owner, 'MINCE', 'Minced beef', retail: '85.00');
+    $mince->forceFill(['plu' => '123', 'industry_id' => $this->grocery->id])->saveQuietly();
+
+    IndustryContext::set($this->grocery->id);
+    expect(GroceryMarkdowns::canAccess())->toBeTrue()->and(ScaleItems::canAccess())->toBeTrue();
+    $this->get('/admin')->assertOk()->assertSee('Markdowns')->assertSee('Scale items');
+    $this->get(ScaleItems::getUrl())->assertOk()->assertSee('00123')->assertSee('Minced beef')->assertSee('85.00');
+    $this->get(GroceryMarkdowns::getUrl())->assertOk()->assertSee('Grocery Spintex')->assertDontSee('Pharmacy Osu')->assertDontSee('All batches on hand');
+
+    IndustryContext::set($this->pharmacy->id);
+    expect(GroceryMarkdowns::canAccess())->toBeFalse()->and(ScaleItems::canAccess())->toBeFalse();
 });

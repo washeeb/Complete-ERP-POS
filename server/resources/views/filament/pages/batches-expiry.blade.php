@@ -54,6 +54,7 @@
         </table>
     </x-filament::section>
 
+    @unless ($markdownsOnly)
     <x-filament::section heading="All batches on hand" collapsible collapsed>
         <table class="be">
             <thead><tr><th>Product</th><th>Batch</th><th>Expires</th><th class="num">On hand</th></tr></thead>
@@ -62,6 +63,7 @@
             @endforeach
         </table>
     </x-filament::section>
+    @endunless
     <style>
         .be-filters { display: flex; gap: 12px; } .be-filters label { display: grid; gap: 4px; font-size: .875rem; }
         .be-scroll { overflow-x: auto; } .be { width: 100%; border-collapse: collapse; font-size: .875rem; }

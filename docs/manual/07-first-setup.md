@@ -121,7 +121,7 @@ Module settings (Grocery, Pharmacy, Restaurant, Fashion, Services) are explained
 1. **Catalog → Categories** and **Brands**: create the groups you want for reports.
 2. **Catalog → Units of measure**: check the units (PC, CTN, KG with 3 decimals…).
 3. **Catalog → Products → New product** for each item:
-   - **SKU** (your product code), **name**, category, brand, **tax group**, **base unit** (the unit stock is counted in, usually PC).
+   - **Name**, category, brand, **tax group**, **base unit** (the unit stock is counted in, usually PC). The **SKU** (product code) is given by the system when you save, for example `PHARMA-000123` (the industry's code and a number), so no two products can share one. It never changes.
    - **Barcodes** — scan them into the field.
    - **Other units** — e.g. a carton of 24 with its own barcode.
    - **Prices** — one row per list and unit. Add rows with *From qty* for bulk prices or with dates for promotions.
@@ -129,7 +129,7 @@ Module settings (Grocery, Pharmacy, Restaurant, Fashion, Services) are explained
 
 **Why:** products are never deleted (old receipts refer to them). Untick *For sale* instead.
 
-**Tip:** with many products, use **Import products (CSV)** instead of typing them one by one: download the template, fill it in Excel (SKU, name, category, barcodes, a price column per list) and import it. Chapter 14.2 explains how.
+**Tip:** with many products, use **Import products (CSV)** instead of typing them one by one: download the template, fill it in Excel (name, category, barcodes, a price column per list; leave SKU empty for new products) and import it. Chapter 14.2 explains how.
 
 ## Step 10 — Opening stock
 

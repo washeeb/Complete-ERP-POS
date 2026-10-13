@@ -487,6 +487,13 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Industry menus, refused saves, system SKUs (2026-10-13)
+- **One switch for module screens:** `ModuleService::enabledAnywhere` narrows to the chosen industry's branches. Every module screen and field already asks it, so the menus, product form sections and reports follow the industry switcher together. Pharmacy screens now ask it too.
+- **`Halt` stops quietly everywhere:** a `Livewire\on('exception')` hook swallows Filament's `Halt` after `Erp::run` has shown *Not saved*. That covers custom-page methods, which Filament does not wrap, without touching each page.
+- **SKUs are generated** (owner: "All SKUs should be auto generated to avoid duplicated"). The format is industry code + six digits, from `document_sequences` (node `catalog`), skipping codes already taken; products are HQ master data, so one sequence is enough.
+  - An SKU never changes after creation.
+  - Exceptions: imports keep codes from a previous system (their prices and stock rows match on them), fashion variants keep their style-size-colour SKUs, and tests may pass fixed SKUs to the service.
+
 ## Separate books per company (2026-10-13)
 - **Default = separate books per industry** (owner, 2026-10-13: "make separate books per industry the default option"). Setting `finance.separate_books` is on by default.
   - `IndustryService::ensureCompany` creates the industry's legal entity on first use, named "{company} – {industry}", plus a primary entity if none exists.

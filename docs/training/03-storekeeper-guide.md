@@ -18,6 +18,8 @@ You receive goods, move stock between stores and count it. Everything is in the 
 
 **When a branch asks you:** the number on *Stock requests* shows requests waiting. Open one, click **Send**, and enter what you can spare (0 for none), or **Reject** it with a reason. For a request from another industry, choose your own product for each item.
 
+**Grocery stores, every morning:** **Grocery → Markdowns**: apply the suggested markdowns, print and stick the stickers, and write off expired packs.
+
 ## Counting
 
 1. **Stock → Stock counts → New** for the store (all products, or one category). Print the **count sheet**.

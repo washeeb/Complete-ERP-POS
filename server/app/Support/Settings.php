@@ -196,7 +196,7 @@ final class Settings
         'restaurant.service_charge_sku' => [
             'type' => 'string', 'default' => 'SERVICE', 'max' => 40, 'group' => 'Restaurant',
             'label' => 'Service-charge product (SKU)',
-            'help' => 'Create a product with this SKU that does not track stock; its tax group sets the tax on the service charge.',
+            'help' => 'Create a "Service charge" product that does not track stock, then copy the SKU the system gave it here. Its tax group sets the tax on the service charge.',
         ],
         'restaurant.tips_enabled' => [
             'type' => 'bool', 'default' => true, 'group' => 'Restaurant',
@@ -231,7 +231,7 @@ final class Settings
         'fashion.alteration_sku' => [
             'type' => 'string', 'default' => 'ALTERATION', 'max' => 40, 'group' => 'Fashion',
             'label' => 'Alteration product (SKU)',
-            'help' => 'Alterations are paid at the till as this product at the agreed charge. Create it with stock tracking off; its tax group taxes the charge.',
+            'help' => 'Alterations are paid at the till as this product at the agreed charge. Create an "Alteration" product with stock tracking off, then copy the SKU the system gave it here; its tax group taxes the charge.',
         ],
         'stock.adjustment_approval_minor' => [
             'type' => 'int', 'default' => 50000, 'min' => 0, 'max' => 1000000000, 'group' => 'Stock',

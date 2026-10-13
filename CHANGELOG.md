@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.34.1] — 2026-10-13 · Industry menus, refused saves, system SKUs
+### Fixed
+- **Module menus follow the industry chosen at the top.** With an industry chosen, only its own menus show (Pharmacy, Restaurant, Electronics, …). With *All industries*, every installed industry's menus show. Pharmacy screens were shown on permission alone; they now need the module, like the others (`ModuleService::enabledAnywhere` follows `IndustryContext`).
+- **A refused save on a custom screen** (for example switching a second industry module on for a branch under System → Modules) showed an error page. It now shows only *Not saved* with the reason, on every screen (Livewire exception hook for Filament's `Halt`).
+### Added
+- **Grocery menu** (shown where Grocery runs, and with Grocery or All industries chosen):
+  - **Markdowns:** near-expiry markdowns, stickers and expired write-offs for the grocery stores' warehouses only;
+  - **Scale items:** weighed products with scale code, SKU, unit and retail price, exportable to load the scales.
+### Changed
+- **SKUs are given by the system:** the industry's code and a six-digit number (`PHARMA-000123`, or `SKU-000001` for shared products). They are never typed and never change, so they cannot be duplicated.
+  - The product import leaves SKU empty for new products, and keeps codes brought from a previous system so their prices and opening stock still match.
+  - The service-charge and alteration settings now say to copy the SKU the system gave the product.
+
 ## [0.34.0] — 2026-10-13 · Separate books per company
 ### Added
 - **Legal entities** (*Company → Legal entities*): the group's registered companies, with name, registration number, TIN, VAT number and address.

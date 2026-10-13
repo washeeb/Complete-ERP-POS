@@ -30,7 +30,7 @@ Every list in the back office (products, customers, invoices, stock on hand, sal
 
 | Import | What a row does | Matched by |
 |---|---|---|
-| **Products (create and update)** | Creates a product, or updates an existing one. Prices per list in columns `price_RETAIL`, `price_WHOLESALE`… | SKU |
+| **Products (create and update)** | Creates a product (leave SKU empty: the system gives it one), or updates an existing one by its SKU. Prices per list in columns `price_RETAIL`, `price_WHOLESALE`… | SKU |
 | **Prices (price list update)** | Sets one price (list, unit, from-quantity, optional dates for a promotion) | SKU + list + unit + quantity + dates |
 | **Customers** | Creates or updates a customer, optionally with credit limit and terms | Code, else phone number |
 | **Suppliers** | Creates or updates a supplier | Code |

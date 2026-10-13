@@ -54,6 +54,7 @@ For each file: **System → Import data**, choose the kind of import and **Comin
 
 **Good to know:**
 
+- **Codes from the old system are kept** as the products' SKUs, so the products, prices and stock files match; products added later in SyncLytics get system SKUs.
 - **No SKU in the old system?** One is made from the name (*Malta Guinness 330ml* → `MALTA-GUINNESS-330ML`), the same way in the products, prices and stock files, so they match.
 - **QuickBooks sub-items** (*Drinks:Malta 330ml*): the last part becomes the product name and the first its category.
 - **Suppliers without a code** get one made from the name; customers are matched by code, phone number or exact name.

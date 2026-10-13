@@ -1,7 +1,7 @@
 # State (resume file)
 
 **Phase:** Separate books per company · **Status:** done on branch `separate-books` (PR to `main`). Industries complete: A (structure), B (stock requests), C (profit centres), D (separate books)
-**Updated:** 2026-10-13 · Repo: https://github.com/washeeb/Complete-ERP-POS (**public**: owner advised to make it private) · Merged through PR #37 (accounts by industry)
+**Updated:** 2026-10-13 (0.34.1 fixes on branch `industry-fixes`: menus follow the industry, refused saves, system SKUs) · Repo: https://github.com/washeeb/Complete-ERP-POS (**public**: owner advised to make it private) · Merged through PR #37 (accounts by industry)
 
 ## Separate books — done on branch `separate-books`
 - **Database:** migration `2026_11_05_100001`:

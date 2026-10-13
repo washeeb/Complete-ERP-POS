@@ -50,7 +50,7 @@ final class ProductsImporter extends Importer
     public function columns(): array
     {
         $cols = [
-            ['name' => 'sku', 'required' => true, 'help' => 'Your product code: letters, digits, dot, dash or underscore (max 40).', 'example' => 'RICE-5KG'],
+            ['name' => 'sku', 'required' => false, 'help' => 'Leave empty for a new product: the system gives it an SKU. To change a product, use its SKU (download the products first). Codes from your previous system are kept so their stock and prices can follow.', 'example' => ''],
             ['name' => 'name', 'required' => 'new', 'help' => 'Product name as shown on receipts.', 'example' => 'Perfumed rice 5 kg'],
             ['name' => 'description', 'required' => false, 'help' => 'Longer description (online shop).', 'example' => ''],
             ['name' => 'category', 'required' => false, 'help' => 'Category name.', 'example' => 'Groceries'],
@@ -83,10 +83,12 @@ final class ProductsImporter extends Importer
 
     public function apply(Actor $actor, array $row, array $options, ?Model $context): string
     {
-        $sku = strtoupper(self::need($row, 'sku', 'the SKU'));
-        $product = Product::where('sku', $sku)->first();
+        $sku = self::has($row, 'sku') ? strtoupper(trim((string) $row['sku'])) : '';
+        $product = $sku !== '' ? Product::where('sku', $sku)->first() : null;
         $isNew = ! $product;
-        $data = $isNew ? ['sku' => $sku] : [];
+        // Empty: the system gives the new product its SKU. A code brought from the previous system is kept, so that its
+        // prices and opening stock (imported next, by that code) find it; codes stay unique either way.
+        $data = $isNew && $sku !== '' ? ['sku' => $sku] : [];
         if ($isNew) {
             $data['name'] = self::need($row, 'name', 'the name (new product)');
         } elseif (self::has($row, 'name')) {
