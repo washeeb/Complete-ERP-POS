@@ -37,6 +37,9 @@ class BatchesExpiry extends Page
     #[Url]
     public string $warehouse = '';
 
+    /** Grocery → Markdowns shows the same page without the full batch list. */
+    public bool $markdownsOnly = false;
+
     /** @var array<string, string> batch id → percent typed */
     public array $percent = [];
 

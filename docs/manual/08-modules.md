@@ -27,7 +27,7 @@ When a company runs more than one kind of business, each kind is an **industry**
   - give a person a role **at their branch** (People & access → Users → Grant access → Applies to: *Branch*). A pharmacist at Pharmacy Osu then sees that pharmacy only;
   - an **industry manager** gets the role with *Applies to: Industry*, and sees every branch of that industry, and nothing of the others.
 
-**Menus follow the choice.** With an industry chosen, only its own module menus show (for example *Pharmacy* but not *Restaurant*). With *All industries*, every installed industry's menus show. Grocery has no menu of its own: its tools are under *Stock* (*Batches and expiry* for markdowns) and at the till (scale labels, markdown stickers).
+**Menus follow the choice.** With an industry chosen, only its own module menus show (for example *Pharmacy* but not *Restaurant*). With *All industries*, every installed industry's menus show. Grocery's menu has **Markdowns** (near-expiry stickers and expired write-offs at the grocery stores) and **Scale items** (the weighed products to load into the scales).
 
 **Check:** choose *Pharmacy* at the top. *Stock → Stock on hand* shows only the pharmacy branches, and *Catalog → Products* shows only pharmacy (and shared) products. Choose *All industries* to go back.
 
@@ -137,6 +137,8 @@ When an industry is first switched on, the system creates its company under **Co
 2. **Weighed items:** give each its **scale code (PLU)** and sell it in **KG** (3 decimals). Set the label scale to print EAN-13 labels: `21` · item code (5 digits) · weight in grams (5 digits) · check digit.
 3. **System → Settings → Grocery:** check the scale label prefixes, and the markdown rules (default 30 % off at 7 days left, 50 % at 3 days).
 4. Electronic shelf labels (optional): enter their gateway address in System → Settings → Grocery.
+5. **Grocery → Scale items** lists every weighed product with its scale code, unit and retail price. **Export** it to load the scales, and again after price changes.
+6. **Grocery → Markdowns** (daily): apply the suggested markdowns, print the stickers, and write off what has expired.
 
 **Why:** the till reads the weight and item from the scale label, and sells the batch expiring first, so old stock does not go to waste.
 

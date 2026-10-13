@@ -8,7 +8,9 @@ use App\Domain\Modules\ModuleService;
 use App\Domain\Org\IndustryService;
 use App\Domain\Org\OrgService;
 use App\Domain\Support\DomainException;
+use App\Filament\Pages\GroceryMarkdowns;
 use App\Filament\Pages\ManageModules;
+use App\Filament\Pages\ScaleItems;
 use App\Filament\Resources\Prescriptions\PrescriptionResource;
 use App\Filament\Resources\Products\Pages\CreateProduct;
 use App\Filament\Resources\Products\Pages\ListProducts;
@@ -185,4 +187,20 @@ it('gives every new product its SKU from its industry, and never changes it', fu
 
     app(CatalogService::class)->saveProduct(actorFor($this->owner), $amox, ['sku' => 'CHANGED', 'name' => 'Amoxicillin 500mg caps']);
     expect($amox->fresh()->sku)->toBe("{$code}-000001")->and($amox->fresh()->name)->toBe('Amoxicillin 500mg caps');
+});
+
+it('gives grocery its own menu: markdowns at grocery stores and the scale items', function () {
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
+    $this->actingAs(withMfa($this->owner), 'web');
+    $mince = makeProduct($this->owner, 'MINCE', 'Minced beef', retail: '85.00');
+    $mince->forceFill(['plu' => '123', 'industry_id' => $this->grocery->id])->saveQuietly();
+
+    IndustryContext::set($this->grocery->id);
+    expect(GroceryMarkdowns::canAccess())->toBeTrue()->and(ScaleItems::canAccess())->toBeTrue();
+    $this->get('/admin')->assertOk()->assertSee('Markdowns')->assertSee('Scale items');
+    $this->get(ScaleItems::getUrl())->assertOk()->assertSee('00123')->assertSee('Minced beef')->assertSee('85.00');
+    $this->get(GroceryMarkdowns::getUrl())->assertOk()->assertSee('Grocery Spintex')->assertDontSee('Pharmacy Osu')->assertDontSee('All batches on hand');
+
+    IndustryContext::set($this->pharmacy->id);
+    expect(GroceryMarkdowns::canAccess())->toBeFalse()->and(ScaleItems::canAccess())->toBeFalse();
 });
