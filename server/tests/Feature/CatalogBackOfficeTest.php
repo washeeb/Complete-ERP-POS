@@ -52,7 +52,7 @@ it('creates a product with a carton unit, barcodes and prices from the screen', 
 
     Livewire::test(CreateProduct::class)
         ->fillForm([
-            'sku' => 'peak-160', 'name' => 'Peak milk 160g', 'base_uom_id' => $pc, 'tax_group_id' => TaxGroup::where('code', 'STD')->value('id'),
+            'name' => 'Peak milk 160g', 'base_uom_id' => $pc, 'tax_group_id' => TaxGroup::where('code', 'STD')->value('id'),
             'base_barcodes' => ['8712100000001'],
             'units' => [['uom_id' => $ctn, 'factor' => '48', 'is_sellable' => true, 'is_purchasable' => true, 'barcodes' => ['8712100000048']]],
             'prices' => [
@@ -63,8 +63,9 @@ it('creates a product with a carton unit, barcodes and prices from the screen', 
         ->call('create')
         ->assertHasNoFormErrors();
 
-    $p = Product::where('sku', 'PEAK-160')->with('units', 'barcodes', 'prices')->first();
+    $p = Product::where('name', 'Peak milk 160g')->with('units', 'barcodes', 'prices')->first();
     expect($p)->not->toBeNull()
+        ->and($p->sku)->toMatch('/^[A-Z0-9]+-\d{6}$/') // given by the system
         ->and($p->units)->toHaveCount(2)
         ->and($p->barcodes->pluck('code')->sort()->values()->all())->toBe(['8712100000001', '8712100000048'])
         ->and($p->prices->pluck('amount_minor')->sort()->values()->all())->toBe([1050, 48000]);

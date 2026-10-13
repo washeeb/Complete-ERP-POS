@@ -15,6 +15,7 @@ use App\Models\BranchModule;
 use App\Modules\ModuleManifest;
 use App\Modules\ModuleRegistry;
 use App\Security\Authorizer;
+use App\Support\IndustryContext;
 
 /**
  * Per-branch module state. Disabling hides a module and blocks new writes; it never deletes data.
@@ -104,13 +105,17 @@ final class ModuleService
     }
 
     /**
-     * Is the module on at any branch of the current company and still in the licence (to show its fields and
-     * screens in the back office)? A module left switched on after a licence downgrade stays hidden.
+     * Is the module on at any branch of the current company (of the industry chosen at the top, when one is) and still
+     * in the licence? Decides which module screens and fields the back office shows. A module left switched on after a
+     * licence downgrade stays hidden.
      */
     public static function enabledAnywhere(string $moduleKey): bool
     {
+        $branches = IndustryContext::branchIds(); // the industry chosen at the top: only its modules' screens show
+
         return app(LicenseManager::class)->allowsModule($moduleKey)
-            && BranchModule::where('module_key', $moduleKey)->where('status', self::ENABLED)->exists();
+            && BranchModule::where('module_key', $moduleKey)->where('status', self::ENABLED)
+                ->when($branches !== null, fn ($q) => $q->whereIn('branch_id', $branches))->exists();
     }
 
     /**

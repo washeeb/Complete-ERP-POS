@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\DrugInteractions;
 
+use App\Domain\Modules\ModuleService;
 use App\Domain\Pharmacy\PharmacyService;
 use App\Filament\Resources\DrugInteractions\Pages\ListDrugInteractions;
 use App\Filament\Support\Erp;
@@ -36,7 +37,7 @@ class DrugInteractionResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return Erp::canAnywhere('pharmacy.manage') || Erp::canAnywhere('pharmacy.dispense');
+        return (Erp::canAnywhere('pharmacy.manage') || Erp::canAnywhere('pharmacy.dispense')) && ModuleService::enabledAnywhere('pharmacy');
     }
 
     public static function canCreate(): bool

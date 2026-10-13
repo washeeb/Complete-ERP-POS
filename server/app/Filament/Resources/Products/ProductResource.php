@@ -87,7 +87,8 @@ class ProductResource extends Resource
 
         return $schema->columns(1)->components([
             Section::make('Product')->columns(3)->schema([
-                TextInput::make('sku')->label('SKU')->required()->maxLength(40)->regex('/^[A-Za-z0-9][A-Za-z0-9._-]*$/'),
+                TextInput::make('sku')->label('SKU')->disabled()->dehydrated(false)->placeholder('Given automatically when saved')
+                    ->helperText('Set by the system so no two products share one; it never changes.'),
                 TextInput::make('name')->required()->maxLength(160)->columnSpan(2),
                 Select::make('industry_id')->label('Industry')->options(fn () => Industry::licensed()->orderBy('sort')->pluck('name', 'id'))
                     ->default(fn () => IndustryContext::selected())->placeholder('All industries (shared)')
