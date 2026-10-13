@@ -20,7 +20,7 @@ export function Kitchen() {
   const [stations, setStations] = useState<Floor['stations']>([])
   const [tickets, setTickets] = useState<KitchenTicket[]>([])
   const [error, setError] = useState('')
-  const [now, setNow] = useState(Date.now())
+  const [now, setNow] = useState(() => Date.now())
   const [toPrint, setToPrint] = useState<KitchenTicket[]>([])
   const [waste, setWaste] = useState<WasteProduct[] | null>(null)
   const printed = useRef(new Set<string>(JSON.parse(read(PRINTED_KEY) ?? '[]') as string[]))

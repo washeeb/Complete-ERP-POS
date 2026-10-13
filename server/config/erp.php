@@ -16,6 +16,9 @@ return [
     // Shown in problem reports and the pilot report; raised with each release (CHANGELOG).
     'version' => '0.34.2',
 
+    // Requests slower than this are noted for System → Health (milliseconds).
+    'slow_request_ms' => (int) env('ERP_SLOW_REQUEST_MS', 1000),
+
     // Where "Report a problem" and the daily pilot report go when the go-live plan names no support address.
     // Where problem reports and the pilot report go when the go-live plan names no address: the publisher's support by default.
     'support_email' => env('ERP_SUPPORT_EMAIL') ?: (env('BRAND_VENDOR') ? null : 'info@synclyticsenterprisesystems.com'),

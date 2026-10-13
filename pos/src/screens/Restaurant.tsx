@@ -7,7 +7,7 @@ import { describeChoices, groupsFor, heldCourses, kitchenNote, minutesSince, mod
 import { BookingsPanel, DeliveryDialog, WasteDialog } from './RestaurantExtras'
 import type { DiningItem, DiningOrder, DiningTable, Floor as FloorData, Product, Restaurant } from '../types'
 
-export const COURSES = ['Now', 'Starter', 'Main', 'Dessert'] as const
+const COURSES = ['Now', 'Starter', 'Main', 'Dessert'] as const
 const STATUS: Record<DiningItem['status'], string> = { held: 'Waiting', fired: 'In kitchen', ready: 'Ready', served: 'Served', void: 'Voided' }
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e))
 
@@ -98,7 +98,7 @@ export function FloorView({ products, money, onOpenBill, onClose }: {
   const [floor, setFloor] = useState<FloorData | null>(null)
   const [error, setError] = useState('')
   const [opening, setOpening] = useState<{ table?: DiningTable; tab?: boolean } | null>(null)
-  const [now, setNow] = useState(Date.now())
+  const [now, setNow] = useState(() => Date.now())
   const load = useCallback(() => {
     dining.floor().then((f) => { setFloor(f); setError(''); setNow(Date.now()) }).catch((e) => setError(errorText(e)))
   }, [])
@@ -210,7 +210,7 @@ export function BillView({ initial, products, restaurant, onPay, onBack }: {
   const [moving, setMoving] = useState<DiningTable[] | null>(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  const [now, setNow] = useState(Date.now())
+  const [now, setNow] = useState(() => Date.now())
   const results = useMemo(() => search(products.filter((p) => !p.drug), query, 12), [products, query])
   const reload = useCallback(() => {
     dining.order(order.id).then((r) => { setOrder(r.order); setNow(Date.now()) }).catch(() => undefined)

@@ -13,6 +13,16 @@
 
 **Why:** the database works best on an **SSD** (not a spinning hard disk). Memory lets the database keep frequently used data in RAM, which keeps the tills fast.
 
+**Sizing by business size** (head office or shop server; the SSD matters more than the processor):
+
+| Business | Example | Memory | Processor | Disk |
+|---|---|---|---|---|
+| Small | 1 shop, up to 3 tills, under 5,000 products, under 500 receipts a day | 8 GB | 4 cores | 256 GB SSD |
+| Medium | 2–5 branches, up to 15 tills, under 20,000 products | 16 GB | 4–6 cores | 512 GB SSD |
+| Large | 6+ branches or 30+ tills, or several industries with separate books | 32 GB | 8 cores | 1 TB NVMe SSD |
+
+Branch servers (Setup E) need the *Small* size. If **System → Health → Slow pages** keeps filling up, add memory first.
+
 Also needed for an on-site server:
 - A **UPS** (battery backup) so a power cut does not switch the server off mid-write. At least 15 minutes, with enough time to shut down safely.
 - The **correct date and time**, set automatically from the internet. Wrong clocks cause sync refusals.

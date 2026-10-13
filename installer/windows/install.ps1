@@ -24,7 +24,8 @@ param(
   [string]$PgData = "$Dir\pgdata",
   [int]$PgPort = 5432,
   [switch]$Ci,                                                 # automated test: no company creation, no firewall
-  [switch]$SkipCompany
+  [switch]$SkipCompany,
+  [switch]$SkipBackup                                          # updates only: do not take the backup first (not recommended)
 )
 $ErrorActionPreference = 'Stop'
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
@@ -259,6 +260,12 @@ if ($Release -like '*.zip') {
   $src = $artisan.Directory.Parent.FullName
 }
 if (-not (Test-Path "$src\server\artisan")) { Die "No server\artisan under $src." }
+# An update: back up the business first, with the version still installed, so a failed update can be undone.
+if ((Test-Path "$Dir\server\.env") -and (Test-Path "$Dir\server\artisan") -and -not $SkipBackup) {
+  Say '   Backing up before the update (why: so the update can be undone)'
+  Push-Location "$Dir\server"; & $php artisan erp:backup --no-interaction; $ok = $LASTEXITCODE -eq 0; Pop-Location
+  if (-not $ok) { Die 'The backup before the update failed, so nothing was changed. Fix it (System -> Backups), or run the update again with -SkipBackup after taking a backup yourself.' }
+}
 # Code is replaced; .env and storage (uploads, backups, logs) are kept on updates.
 robocopy "$src\server" "$Dir\server" /MIR /XD "$src\server\storage" "$src\server\vendor" /XF .env /NFL /NDL /NJH /NJS /NP | Out-Null
 if ($LASTEXITCODE -ge 8) { Die 'Copying the software failed.' }

@@ -3,14 +3,17 @@
 namespace App\Console\Commands;
 
 use App\Domain\Analytics\DemandForecaster;
+use App\Domain\Finance\FinancialReports;
 use App\Domain\Pos\SaleService;
 use App\Domain\Pos\ShiftService;
 use App\Domain\Pricing\PromotionEngine;
 use App\Domain\Pricing\PromotionService;
 use App\Domain\Reports\ReportEngine;
+use App\Models\Customer;
 use App\Models\Device;
 use App\Models\Price;
 use App\Models\PriceList;
+use App\Models\Product;
 use App\Models\Till;
 use App\Models\User;
 use App\Security\Authorizer;
@@ -85,10 +88,20 @@ class LoadTestCommand extends Command
                 $times[] = (hrtime(true) - $t) / 1e6;
             }
             $owner = User::where('is_active', true)->get()->first(fn ($u) => $authz->branchIds($u, 'sales.view') === null) ?? $cashier;
+            $fin = app(FinancialReports::class);
             foreach ([
                 'Report: sales by product this month' => fn () => app(ReportEngine::class)->run($owner, 'sales_lines', ['dimensions' => ['product'], 'measures' => ['qty', 'net']]),
                 'Report: receipts by hour' => fn () => app(ReportEngine::class)->run($owner, 'receipts', ['dimensions' => ['hour'], 'measures' => ['count', 'total'], 'period' => 'today']),
                 'Forecast for the till\'s warehouse' => fn () => app(DemandForecaster::class)->forWarehouse($till->warehouse_id),
+                // Finance (the heaviest reads on a big ledger), searches and the till's catalogue download.
+                'Trial balance, year to date' => fn () => $fin->trialBalance($till->tenant_id, $fin->yearStart($till->tenant_id, today()->toDateString()), today()->toDateString()),
+                'Profit and loss, this month' => fn () => $fin->profitAndLoss($till->tenant_id, today()->startOfMonth()->toDateString(), today()->toDateString()),
+                'Balance sheet, today' => fn () => $fin->balanceSheet($till->tenant_id, today()->toDateString()),
+                'VAT return, this month' => fn () => $fin->vatReturn($till->tenant_id, today()->startOfMonth()->toDateString(), today()->toDateString()),
+                'Product search (back office)' => fn () => Product::where('name', 'ilike', '%a%')->orderBy('name')->limit(30)->get(),
+                'Customer search (back office)' => fn () => Customer::where('name', 'ilike', '%a%')->orderBy('name')->limit(30)->get(),
+                'Till catalogue (every product, units, barcodes, prices)' => fn () => Product::where('is_active', true)
+                    ->with(['taxGroup.rates', 'units.uom', 'units.barcodes', 'prices'])->limit(20000)->get(),
             ] as $what => $read) {
                 $t = hrtime(true);
                 $read();
@@ -109,9 +122,14 @@ class LoadTestCommand extends Command
             ['Sales posted', "{$n} × {$per} lines"],
             ['Throughput', number_format($n / max($total, 0.001), 1).' sales/second (one till, one connection)'],
             ['Posting time p50 / p95 / max', sprintf('%.0f / %.0f / %.0f ms', $pct(0.5), $pct(0.95), end($times))],
-            ...array_map(fn ($k, $v) => [$k, sprintf('%.0f ms', $v)], array_keys($reads), $reads),
+            ...array_map(fn ($k, $v) => [$k, sprintf('%.0f ms', $v).($v >= 1000 ? '  <- SLOW' : '')], array_keys($reads), $reads),
+            ['Data size', sprintf('%s sales, %s products, %s customers, %s stock movements, %s ledger lines', ...array_map(fn ($t) => number_format(DB::table($t)->count()),
+                ['sales', 'products', 'customers', 'stock_movements', 'journal_lines']))],
             ['Data left behind', 'none (rolled back)'],
         ]);
+        if (array_filter($reads, fn ($v) => $v >= 1000)) {
+            $this->warn('Reads marked SLOW took over a second: send this table to SyncLytics support.');
+        }
 
         return self::SUCCESS;
     }

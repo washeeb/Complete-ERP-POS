@@ -1,19 +1,11 @@
 import { useState } from 'react'
-import { v7 as uuidv7 } from 'uuid'
-import { currentPosition, rememberVisit, stopsToday, visitedToday } from '../distribution'
-import { submitRoadEvent } from '../till'
+import { stopsToday, visitedToday } from '../distribution'
+import { recordVisit } from '../visits'
 import { prettyQty, toMilli } from '../money'
 import type { Product, TillCustomer, VanDay, VisitOutcome } from '../types'
 
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e))
 const OUTCOME: Record<VisitOutcome, string> = { sold: 'Sold', order: 'Order taken', no_order: 'No order', closed: 'Closed' }
-
-/** Record a visit (with the phone's position when allowed); queued if the server cannot be reached. */
-export async function recordVisit(online: boolean, customerId: string, routeId: string | null, outcome: VisitOutcome, extra: { note?: string | null; sale_id?: string | null; customer_order_id?: string | null } = {}) {
-  const pos = await currentPosition()
-  await submitRoadEvent(online, 'visit', { id: uuidv7(), customer_id: customerId, route_id: routeId, outcome, occurred_at: new Date().toISOString(), ...pos, ...extra })
-  return rememberVisit(customerId, outcome)
-}
 
 /**
  * Today's route on the rep's phone: the customers to visit, in order, and what happened at each. From here the rep

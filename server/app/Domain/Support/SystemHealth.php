@@ -74,6 +74,15 @@ final class SystemHealth
             $add($what, $n ? 'warning' : 'ok', (string) $n);
         }
 
+        // Speed: PHP's code cache (checked from the web server, where it matters), and pages slower than they should be.
+        if (PHP_SAPI !== 'cli') {
+            $opcache = function_exists('opcache_get_status') ? @opcache_get_status(false) : false;
+            $add('PHP code cache (OPcache)', $opcache && ($opcache['opcache_enabled'] ?? false) ? 'ok' : 'warning',
+                $opcache && ($opcache['opcache_enabled'] ?? false) ? 'On' : 'Off: pages are several times slower. Run the installer again (Chapter 12.4) to switch it on.');
+        }
+        $slow = DB::table('slow_requests')->where('created_at', '>=', now()->subDay())->count();
+        $add('Slow pages (last 24 hours)', $slow > 50 ? 'warning' : 'ok', $slow ? "{$slow} took over ".number_format((int) config('erp.slow_request_ms', 1000) / 1000, 1).' s; see below' : 'None');
+
         return $out;
     }
 

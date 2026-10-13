@@ -1,7 +1,7 @@
 # State (resume file)
 
 **Phase:** Separate books per company · **Status:** done on branch `separate-books` (PR to `main`). Industries complete: A (structure), B (stock requests), C (profit centres), D (separate books)
-**Updated:** 2026-10-13 (0.34.1 merged in PR #39; 0.34.2 speed and clean-up on branch `perf-cleanup`: OPcache and Filament caches in the installers, an index on every foreign key enforced by `DatabaseIndexesTest`, N+1 fixes, till barcode/search indexes) · Repo: https://github.com/washeeb/Complete-ERP-POS (**public**: owner advised to make it private) · Merged through PR #37 (accounts by industry)
+**Updated:** 2026-10-13 (0.34.1 merged in PR #39; 0.34.2 speed and clean-up on branch `perf-cleanup`: OPcache and Filament caches in the installers, an index on every foreign key enforced by `DatabaseIndexesTest`, N+1 fixes, till barcode/search indexes; then the suggestions: `RecordSlowRequests` + `slow_requests` + Health page section, OPcache and slow-page health checks, pre-update backups in both installers, `erp:load-test` finance/search/catalogue reads, gl-post every minute, till lint tidy-up, sizing table) · Repo: https://github.com/washeeb/Complete-ERP-POS (**public**: owner advised to make it private) · Merged through PR #37 (accounts by industry)
 
 ## Separate books — done on branch `separate-books`
 - **Database:** migration `2026_11_05_100001`:

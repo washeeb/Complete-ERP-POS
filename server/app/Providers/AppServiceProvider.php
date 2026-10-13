@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Domain\Sync\Transport\HttpSyncTransport;
 use App\Domain\Sync\Transport\SyncTransport;
 use App\Filament\Support\TableExport;
+use App\Http\Middleware\RecordSlowRequests;
 use App\Models\User;
 use App\Modules\ModuleRegistry;
 use App\Security\Authorizer;
@@ -22,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton(RecordSlowRequests::class); // terminate() reads what handle() measured
         $this->app->singleton(ModuleRegistry::class, fn () => new ModuleRegistry(config('erp.modules_path')));
         // Request-scoped: memoised grants and settings never leak between requests or queue jobs.
         $this->app->scoped(TenantContext::class);

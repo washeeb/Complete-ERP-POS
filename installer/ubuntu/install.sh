@@ -21,7 +21,8 @@ while [ $# -gt 0 ]; do
     --role) ROLE="$2"; shift 2 ;;
     --node-id) NODE_ID="$2"; shift 2 ;;
     --dir) DIR="$2"; shift 2 ;;
-    --ci) CI_MODE=1; shift ;;                # automated test: localhost only, no firewall, no interactive company creation
+    --ci) CI_MODE=1; shift ;;
+    --skip-backup) SKIP_BACKUP=1; shift ;;   # updates only: do not take the backup first (not recommended)                # automated test: localhost only, no firewall, no interactive company creation
     -h|--help) sed -n '2,10p' "$0"; exit 0 ;;
     *) echo "Unknown option $1"; exit 1 ;;
   esac
@@ -75,6 +76,12 @@ if [ -n "$ZIP" ]; then
   SRC="$(dirname "$(find /tmp/${SLUG}-release -maxdepth 3 -name artisan -path '*server/artisan' | head -1)")/.."
 fi
 [ -f "$SRC/server/artisan" ] || die "no server/artisan in the release"
+# An update: back up the business first, with the version still installed, so a failed update can be undone.
+if [ -f "$DIR/server/.env" ] && [ -f "$DIR/server/artisan" ] && [ "${SKIP_BACKUP:-0}" != 1 ]; then
+  say "   Backing up before the update (why: so the update can be undone)"
+  (cd "$DIR/server" && sudo -u www-data php artisan erp:backup --no-interaction) \
+    || die "the backup before the update failed, so nothing was changed. Fix it (System → Backups), or run again with --skip-backup after taking a backup yourself"
+fi
 # Code is replaced; .env, storage (uploads, backups, logs) are kept on updates.
 rsync -a --delete --exclude '.env' --exclude 'storage/' --exclude 'vendor/' "$SRC/server/" "$DIR/server/" 2>/dev/null \
   || { apt-get install -y -q rsync && rsync -a --delete --exclude '.env' --exclude 'storage/' --exclude 'vendor/' "$SRC/server/" "$DIR/server/"; }

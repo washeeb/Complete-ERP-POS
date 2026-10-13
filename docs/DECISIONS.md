@@ -487,6 +487,13 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Applying the speed suggestions (2026-10-13)
+- **"Background workers":** the app has no Laravel queue jobs (store pushes, messages and webhooks run in the `erp:relay` loop; posting and reports on the scheduler), so no worker was missing. The real lag was posting every 5 minutes; it is now every minute. Laravel's queue stays unused.
+- **Slow pages are measured where they happen:** a terminable middleware (a singleton, so `terminate()` sees `handle()`'s numbers) counts queries with one `DB::listen` per process and writes after the answer is sent. Paths only (route URI, or the Livewire screen name), never query strings, so no searches or personal data are logged. Threshold `ERP_SLOW_REQUEST_MS`.
+- **The OPcache check runs only from the web server:** the CLI has OPcache off on purpose, so `erp:health` skips it.
+- **Updates = re-running the installer**, which already did everything except the backup; that is now its first step on an existing installation. No separate update script to maintain.
+- **Remaining till lint warnings are deliberate:** data-loading effects (`set-state-in-effect`) and date reads in an event handler or on render.
+
 ## Speed and clean-up (2026-10-13)
 - **Where the time went:** on a warm page, the database work per back-office page is small (6–15 queries, measured with a probe). The cost was PHP setup (no OPcache on Windows, no Filament component cache) and, as data grows, sequential scans: PostgreSQL does not index foreign keys, and `tenant_id`, used by every global scope, was unindexed on 61 tables.
 - **Indexes are found, not listed:** the migration creates an index for every single-column foreign key that no index starts with. `DatabaseIndexesTest` fails on any future one, so new migrations must add `->index()` (or a composite starting with the column).
