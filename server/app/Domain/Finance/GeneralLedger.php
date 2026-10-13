@@ -26,12 +26,16 @@ final class GeneralLedger
     /** @var array<string, array<string, Account>> */
     private array $accounts = [];
 
+    /** @var array<string, ?string> branch id => industry id */
+    private array $industries = [];
+
     public function __construct(private readonly Recorder $recorder, private readonly DocumentNumbers $numbers, private readonly Settings $settings) {}
 
     /**
      * Post an entry.
      *
-     * @param  list<array{account: Account|string, amount: int, branch_id?: ?string, party_type?: ?string, party_id?: ?string, memo?: ?string}>  $lines  + debit, − credit
+     * @param  list<array{account: Account|string, amount: int, branch_id?: ?string, industry_id?: ?string, party_type?: ?string, party_id?: ?string, memo?: ?string}>  $lines  + debit, − credit;
+     *                                                                                                                                                                          industry_id defaults to the branch's industry (profit centre)
      * @param  list<array{0: string, 1: string}>  $sources  [source type, source id] rows this entry posts (exactly once)
      * @param  bool  $late  allow a closed month: post on the first day of the next open month instead (automatic posting)
      * @return JournalEntry|null null when every line is zero (the sources are still marked as posted)
@@ -46,8 +50,9 @@ final class GeneralLedger
             if ($account->is_header) {
                 throw new DomainException("{$account->label()} is a heading; post to one of the accounts under it.");
             }
-            $key = implode('|', [$account->id, $l['branch_id'] ?? '', $l['party_type'] ?? '', $l['party_id'] ?? '', $l['memo'] ?? '']);
-            $merged[$key] ??= ['account_id' => $account->id, 'branch_id' => $l['branch_id'] ?? null, 'party_type' => $l['party_type'] ?? null,
+            $industry = array_key_exists('industry_id', $l) ? $l['industry_id'] : $this->industryOf($l['branch_id'] ?? null);
+            $key = implode('|', [$account->id, $l['branch_id'] ?? '', $industry ?? '', $l['party_type'] ?? '', $l['party_id'] ?? '', $l['memo'] ?? '']);
+            $merged[$key] ??= ['account_id' => $account->id, 'branch_id' => $l['branch_id'] ?? null, 'industry_id' => $industry, 'party_type' => $l['party_type'] ?? null,
                 'party_id' => $l['party_id'] ?? null, 'memo' => isset($l['memo']) ? mb_substr($l['memo'], 0, 255) : null, 'amount_minor' => 0];
             $merged[$key]['amount_minor'] += (int) $l['amount'];
         }
@@ -85,6 +90,19 @@ final class GeneralLedger
         });
     }
 
+    /** The industry a branch belongs to now (null: company-level), stamped on the lines it posts. */
+    private function industryOf(?string $branchId): ?string
+    {
+        if (! $branchId) {
+            return null;
+        }
+        if (! array_key_exists($branchId, $this->industries)) {
+            $this->industries[$branchId] = DB::table('branches')->where('id', $branchId)->value('industry_id');
+        }
+
+        return $this->industries[$branchId];
+    }
+
     /** The account automatic posting uses for a purpose; tax accounts fall back to the general tax account. */
     public function account(string $tenantId, string $key): Account
     {
@@ -100,6 +118,7 @@ final class GeneralLedger
 
     public function forget(): void
     {
+        $this->industries = [];
         $this->accounts = [];
     }
 

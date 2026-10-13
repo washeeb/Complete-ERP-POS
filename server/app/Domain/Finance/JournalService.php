@@ -52,7 +52,7 @@ final class JournalService
     public function reverse(Actor $actor, JournalEntry $entry, string $date, string $reason): JournalEntry
     {
         $this->require($actor);
-        if (! in_array($entry->kind, ['manual', 'opening'], true)) {
+        if (! in_array($entry->kind, ['manual', 'opening', HeadOfficeShare::KIND], true)) {
             throw new DomainException('Automatic entries are corrected by reversing the document they came from (credit note, goods-received reversal, return).');
         }
         if (JournalEntry::where('reverses_id', $entry->id)->exists()) {
@@ -61,7 +61,7 @@ final class JournalService
         if (trim($reason) === '') {
             throw new DomainException('Give a reason.');
         }
-        $lines = $entry->lines->map(fn ($l) => ['account' => Account::findOrFail($l->account_id), 'amount' => -$l->amount_minor, 'branch_id' => $l->branch_id,
+        $lines = $entry->lines->map(fn ($l) => ['account' => Account::findOrFail($l->account_id), 'amount' => -$l->amount_minor, 'branch_id' => $l->branch_id, 'industry_id' => $l->industry_id,
             'party_type' => $l->party_type, 'party_id' => $l->party_id, 'memo' => $l->memo])->all();
 
         return $this->gl->post($actor, $this->day($date), 'reversal', $this->memo("Reversal of {$entry->number}: {$reason}"), $lines, reversesId: $entry->id);

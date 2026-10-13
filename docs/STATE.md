@@ -1,9 +1,17 @@
 # State (resume file)
 
-**Phase:** Industries part B · **Status:** done on branch `stock-requests` (PR to `main`). Next: C (books per installation: profit centres or separate legal entities with due-to/due-from)
-**Updated:** 2026-10-13 · Repo: https://github.com/washeeb/Complete-ERP-POS (**public**: owner advised to make it private) · Merged through PR #35 (industries part A)
+**Phase:** Industries part C · **Status:** done on branch `industry-books` (PR to `main`). Industries A–C complete. Open: separate books per industry (own legal entity, TIN, VAT return, due-to/due-from), when a client needs it
+**Updated:** 2026-10-13 · Repo: https://github.com/washeeb/Complete-ERP-POS (**public**: owner advised to make it private) · Merged through PR #36 (stock requests)
 
-## Industries part B — done on branch `stock-requests`
+## Industries part C — done on branch `industry-books`
+- **Database:** migration `2026_11_04_100001`: `journal_lines.industry_id`, backfilled from branches with the append-only trigger lifted for that one statement.
+- **Ledger:** `GeneralLedger::post` stamps each line with its branch's industry (or an explicit `industry_id`). `JournalService::reverse` keeps the industry and can reverse `allocation` journals.
+- **Reports:** `FinancialReports` methods take `?string $industry` (an id, or `FinancialReports::COMPANY`) and add `profitByIndustry()`. The page has a *Profit by industry* report and an Industry filter (defaulting to `IndustryContext`); the balance-sheet note covers one industry.
+- **Sharing:** `App\Domain\Finance\HeadOfficeShare` (proposal, post), setting `finance.share_head_office_costs` (off), and the page action *Share head office costs* (`finance.journal`).
+- **Tests:** `IndustryBooksTest` (3).
+- **Docs:** manual 8.0 (Accounts by industry); accountant guide; CHANGELOG 0.33.0; DECISIONS.
+
+## Industries part B — merged (PR #36)
 - **Database:** migration `2026_11_03_100001`: `stock_requests` + `stock_request_lines` (number `SRQ`); `stock_transfers.stock_request_id`; `stock_transfer_lines.to_product_id`.
 - **Rules:** `App\Domain\Inventory\StockRequestService` (request, approve, reject, cancel, supply).
   - Requests between industries need two approvals: the asking side (not the requester), then the supplier. `StockRequest::waitingFor()` returns requester, supplier, supply or null.

@@ -487,6 +487,20 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Industries, part C: accounts by industry (2026-10-13)
+- **Owner answers:**
+  - profit centres first (one set of books, one TIN), separate books per industry later as their own phase;
+  - head office costs unshared by default, with sharing by sales as an option;
+  - stock moved between industries shows in each industry's books at cost.
+- **Industry is stamped on the journal line** (`industry_id`, from the branch at posting time) instead of joined through the branch.
+  - Posted history never moves when a branch changes industry, and an allocation line can carry an industry without a branch.
+  - The one-time backfill lifts the append-only trigger for a single UPDATE that only adds the tag; no amount, account or date changes.
+- **Sharing basis = the month's income per industry** in the ledger (not till receipts), so invoices and online sales count too.
+  - Largest-remainder rounding makes the shares sum exactly.
+  - It is a separate journal kind, `allocation`, tagged `ho_share:YYYY-MM`, so it is excluded from its own basis and posted once a month. It is reversible like a manual journal.
+- **Balance sheet by industry is indicative only.** Cash, receivables, payables and in-transit balances are often company-level, so the page says it does not balance on its own.
+- **Separate legal entities** (own TIN, VAT return, due-to/due-from) remain open; `industries.legal_entity_id` is already in place for them.
+
 ## Industries, part B: stock requests (2026-10-13)
 - **A request is the only way across industries.** `TransferService::saveDraft` refuses branches of two different industries unless an approved `StockRequest` is passed. It also refuses any line whose product belongs to a third industry on either side, so separate catalogues hold even through head office. Company-level branches trade freely.
 - **Both sides approve, in order:** the asking side first (a holder of `stock.request.approve` at the asking warehouse, not the requester: maker-checker), then the supplier. Rejection is open to the supplier at any stage, and to the asking side's approver at its own stage.
