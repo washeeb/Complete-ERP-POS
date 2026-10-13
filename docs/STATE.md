@@ -1,9 +1,23 @@
 # State (resume file)
 
-**Phase:** Industries part C · **Status:** done on branch `industry-books` (PR to `main`). Industries A–C complete. Open: separate books per industry (own legal entity, TIN, VAT return, due-to/due-from), when a client needs it
-**Updated:** 2026-10-13 · Repo: https://github.com/washeeb/Complete-ERP-POS (**public**: owner advised to make it private) · Merged through PR #36 (stock requests)
+**Phase:** Separate books per company · **Status:** done on branch `separate-books` (PR to `main`). Industries complete: A (structure), B (stock requests), C (profit centres), D (separate books)
+**Updated:** 2026-10-13 · Repo: https://github.com/washeeb/Complete-ERP-POS (**public**: owner advised to make it private) · Merged through PR #37 (accounts by industry)
 
-## Industries part C — done on branch `industry-books`
+## Separate books — done on branch `separate-books`
+- **Database:** migration `2026_11_05_100001`:
+  - `legal_entities.is_primary`, `address` and `is_active` (the earliest entity becomes primary);
+  - `journal_lines.legal_entity_id`, backfilled from the branch, else the primary;
+  - account `1250 intercompany` (control) via `ChartTemplate::ensure`.
+- **Ledger:** `GeneralLedger::post` stamps each line's entity (`entityOf`) and adds pairwise intercompany lines (`balanceEntities`). `JournalService` lets a line without a branch name its `legal_entity_id`, and reversals keep the entity.
+- **Org:** `OrgService::saveLegalEntity` (exactly one primary; no switching off while in use); `LegalEntityResource` (Company → Legal entities). `IndustryService` keeps the branches' `legal_entity_id` in line with the industry's (`syncEntity`); the industry form calls it *Books (legal entity)*. `LegalEntity::primary()`.
+- **Default:** setting `finance.separate_books` (on). `IndustryService::ensureCompany` runs on industry creation and `applyBooksChoice` when the setting changes; migration `2026_11_05_100002` keeps existing tenants off.
+- **Stock:** AutoPoster credits the sender's in-transit on `transfer_in`.
+- **Reports:** an `$entity` parameter on TB, P&L, BS, ledger, profit by industry and VAT (`entityBranches`). The page has a *Books* filter, shown when there is more than one active entity; the VAT return defaults to the primary. `GlCheck` checks per-entity balance and intercompany agreement.
+- **E-VAT:** the `X-Taxpayer-TIN` header is the selling company's TIN.
+- **Tests:** `SeparateBooksTest` (5).
+- **Docs:** manual 8.0 *Separate books*; accountant guide; CHANGELOG 0.34.0; DECISIONS.
+
+## Industries part C — merged (PR #37)
 - **Database:** migration `2026_11_04_100001`: `journal_lines.industry_id`, backfilled from branches with the append-only trigger lifted for that one statement.
 - **Ledger:** `GeneralLedger::post` stamps each line with its branch's industry (or an explicit `industry_id`). `JournalService::reverse` keeps the industry and can reverse `allocation` journals.
 - **Reports:** `FinancialReports` methods take `?string $industry` (an id, or `FinancialReports::COMPANY`) and add `profitByIndustry()`. The page has a *Profit by industry* report and an Industry filter (defaulting to `IndustryContext`); the balance-sheet note covers one industry.

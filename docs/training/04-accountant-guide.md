@@ -18,6 +18,8 @@ Sales, purchases, stock and payroll post to the accounts **automatically**. Your
 
 ## Month-end
 
+**Separate companies (if set up):** run each company's trial balance and VAT return under *Books*, and the **Ledger check**, which proves both sides agree on what they owe each other. Settle large balances between them by bank, with a journal that has both companies' bank lines.
+
 **Industries:** check **Finance → Reports → Profit by industry**. If head office costs are shared (System → Settings → Finance), set the *To* date in the month, click **Share head office costs**, check the shares and post. Do this after all of the month's costs are in, before closing the month. To redo it, reverse that journal and share again.
 
 1. Every till shift closed; nothing in the review queue.

@@ -11,6 +11,7 @@ use App\Filament\Support\ExportsPage;
 use App\Filament\Support\FinanceUi;
 use App\Models\Account;
 use App\Models\Industry;
+use App\Models\LegalEntity;
 use App\Support\IndustryContext;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -59,6 +60,10 @@ class FinancialReports extends Page
     #[Url]
     public ?string $industry = null;
 
+    /** Separate books: one legal entity's own books, or null for the whole group (consolidated). */
+    #[Url]
+    public ?string $books = null;
+
     public static function canAccess(): bool
     {
         return Erp::canAnywhere('finance.view') && config('erp.node.role') !== 'branch';
@@ -82,16 +87,17 @@ class FinancialReports extends Page
         $r = app(Reports::class);
         $branch = $this->branch ?: null;
         $industry = $this->industry ?: null;
+        $books = $this->books ?: null;
 
         return match ($this->report) {
-            'pl' => $r->profitAndLoss($tenant, $this->from, $this->to, $branch, $industry),
-            'industries' => $r->profitByIndustry($tenant, $this->from, $this->to),
-            'bs' => $r->balanceSheet($tenant, $this->to, $branch, $industry),
-            'ledger' => $this->account && ($a = Account::find($this->account)) ? $r->ledger($tenant, $a, $this->from, $this->to, $branch, $industry) + ['account' => $a] : [],
+            'pl' => $r->profitAndLoss($tenant, $this->from, $this->to, $branch, $industry, $books),
+            'industries' => $r->profitByIndustry($tenant, $this->from, $this->to, $books),
+            'bs' => $r->balanceSheet($tenant, $this->to, $branch, $industry, $books),
+            'ledger' => $this->account && ($a = Account::find($this->account)) ? $r->ledger($tenant, $a, $this->from, $this->to, $branch, $industry, $books) + ['account' => $a] : [],
             'check' => app(GlCheck::class)->run($tenant),
-            'vat' => $r->vatReturn($tenant, $this->from, $this->to),
+            'vat' => $r->vatReturn($tenant, $this->from, $this->to, $books ?? ($this->separateBooks() ? LegalEntity::primary()?->id : null)),
             'budget' => $this->budget($r, $tenant, $branch, $industry),
-            default => $r->trialBalance($tenant, $this->from, $this->to, $branch, $industry),
+            default => $r->trialBalance($tenant, $this->from, $this->to, $branch, $industry, $books),
         };
     }
 
@@ -114,6 +120,19 @@ class FinancialReports extends Page
     public function branches(): array
     {
         return FinanceUi::branches();
+    }
+
+    /** More than one legal entity in use: each keeps its own books and files its own VAT return. */
+    public function separateBooks(): bool
+    {
+        return LegalEntity::where('is_active', true)->count() > 1;
+    }
+
+    /** @return array<string, string> */
+    public function entities(): array
+    {
+        return LegalEntity::where('is_active', true)->orderByDesc('is_primary')->orderBy('name')->get()
+            ->mapWithKeys(fn ($e) => [$e->id => $e->name.($e->tin ? " (TIN {$e->tin})" : '')])->all();
     }
 
     /** @return array<string, string> */

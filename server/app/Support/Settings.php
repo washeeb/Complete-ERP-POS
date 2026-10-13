@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Domain\Fiscal\FiscalService;
+use App\Domain\Org\IndustryService;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
@@ -136,6 +137,11 @@ final class Settings
             'type' => 'int', 'default' => 12, 'min' => 1, 'max' => 12, 'group' => 'Finance',
             'label' => 'Financial year ends in month (1–12)',
             'help' => '12 = January to December (owner decision). Set this before the first posting: months already created keep their dates.',
+        ],
+        'finance.separate_books' => [
+            'type' => 'bool', 'default' => true, 'group' => 'Finance',
+            'label' => 'Separate books for each industry',
+            'help' => 'On (default): each industry is its own company with its own books, created for you under Company → Legal entities (fill in its registered name and TIN). What the companies owe each other is recorded automatically. Off: one set of books for the whole company, with each industry as a profit centre. Change it only at the start of a financial year.',
         ],
         'finance.share_head_office_costs' => [
             'type' => 'bool', 'default' => false, 'group' => 'Finance',
@@ -317,5 +323,8 @@ final class Settings
         $setting->value = $value;
         $this->recorder->save($actor, $setting, 'setting.changed', $reason);
         unset($this->cache[$actor->tenantId]);
+        if ($key === 'finance.separate_books') {
+            app(IndustryService::class)->applyBooksChoice($actor, (bool) $value); // give each industry its company, or bring them back to one set of books
+        }
     }
 }

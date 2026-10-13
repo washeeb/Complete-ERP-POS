@@ -34,6 +34,7 @@ final class ChartTemplate
         ['1220', 'Staff advances and loans', 'asset', '1200', false, null, 'staff_loans'],
         ['1230', 'Other receivables', 'asset', '1200', false, null, null],
         ['1240', 'Due from delivery apps', 'asset', '1200', false, null, 'aggregator_receivable'],
+        ['1250', 'Due from / to group companies', 'asset', '1200', false, 'intercompany', 'intercompany'], // posted automatically between legal entities
         ['1300', 'Inventory', 'asset', '1000', true, null, null],
         ['1310', 'Stock – goods for resale', 'asset', '1300', false, 'inventory', 'inventory'],
         ['1320', 'Stock in transit between branches', 'asset', '1300', false, null, 'stock_in_transit'],

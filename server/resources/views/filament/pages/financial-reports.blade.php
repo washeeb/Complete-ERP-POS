@@ -25,6 +25,12 @@
                     @foreach ($this->branches() as $id => $label)<option value="{{ $id }}">{{ $label }}</option>@endforeach
                 </x-filament::input.select></x-filament::input.wrapper>
             </label>@endif
+            @if ($report !== 'budget' && $this->separateBooks())<label>Books
+                <x-filament::input.wrapper><x-filament::input.select wire:model.live="books">
+                    <option value="">{{ $report === 'vat' ? 'Head office company' : 'Whole group (consolidated)' }}</option>
+                    @foreach ($this->entities() as $id => $label)<option value="{{ $id }}">{{ $label }}</option>@endforeach
+                </x-filament::input.select></x-filament::input.wrapper>
+            </label>@endif
             @if (! in_array($report, ['vat', 'industries'], true) && $this->industries())<label>Industry
                 <x-filament::input.wrapper><x-filament::input.select wire:model.live="industry">
                     <option value="">All industries</option>
@@ -139,6 +145,7 @@
             </tbody>
         </table>
     @elseif ($report === 'vat')
+        @if ($this->separateBooks())<p class="fin-note">Each company files its own VAT return under its own TIN. Showing: <strong>{{ $this->entities()[$books ?: \App\Models\LegalEntity::primary()?->id] ?? '' }}</strong>. Choose another under Books.</p>@endif
         <table class="fin-table">
             <tr><td>Sales (before tax)</td><td class="num">{{ \App\Filament\Support\FinanceUi::money($d['sales_total']) }}</td></tr>
             <tr><td>— of which taxed</td><td class="num">{{ \App\Filament\Support\FinanceUi::money($d['sales_taxed']) }}</td></tr>

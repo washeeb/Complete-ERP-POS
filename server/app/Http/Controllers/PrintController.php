@@ -47,7 +47,7 @@ class PrintController extends Controller
     {
         $tenant = Tenant::find(auth()->user()->tenant_id);
         $branch = $branchId ? Branch::find($branchId) : Branch::where('is_hq', true)->first();
-        $entity = $branch?->legal_entity_id ? LegalEntity::find($branch->legal_entity_id) : LegalEntity::first();
+        $entity = $branch?->legal_entity_id ? LegalEntity::find($branch->legal_entity_id) : LegalEntity::primary();
 
         return ['name' => $entity->name ?? $tenant->name, 'tin' => $entity->tin ?? null, 'vat_no' => $entity->vat_no ?? null,
             'address' => $branch?->address, 'phone' => $branch?->phone, 'branch' => $branch?->name];

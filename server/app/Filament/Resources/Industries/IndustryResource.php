@@ -64,8 +64,9 @@ class IndustryResource extends Resource
             TextInput::make('code')->required()->maxLength(10)->regex('/^[A-Za-z0-9]{1,10}$/')->helperText('Short, e.g. PHARM'),
             TextInput::make('name')->required()->maxLength(120),
             Select::make('module_key')->label('Industry module its branches run')->required()->options($modules),
-            Select::make('legal_entity_id')->label('Legal entity (separate books)')->options(fn () => LegalEntity::pluck('name', 'id'))
-                ->placeholder('The company')->helperText('Only when this industry is registered as its own business.'),
+            Select::make('legal_entity_id')->label('Books (legal entity)')->options(fn () => LegalEntity::where('is_active', true)->where('is_primary', false)->pluck('name', 'id'))
+                ->placeholder('The head office company (one set of books)')
+                ->helperText('Only when this industry is registered as its own company (Company → Legal entities). Its branches then keep separate books and print that company\'s name and TIN. Change it at the start of a financial year.'),
             TextInput::make('sort')->label('Order')->numeric()->integer()->default(0),
             Toggle::make('is_active')->label('In use')->default(true),
         ]);

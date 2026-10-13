@@ -44,7 +44,16 @@ When a company runs more than one kind of business, each kind is an **industry**
 
 ### Accounts by industry
 
-The company keeps **one set of books** (one TIN, one VAT return), and each industry is a **profit centre**: everything a branch posts is labelled with its industry.
+**Two ways, chosen per installation** under **System → Settings → Finance → Separate books for each industry**:
+
+| Setting | What it means | Suits |
+|---|---|---|
+| **On (the default)** | Each industry is its own company with its own books, TIN and VAT return. See *Separate books* below. | Groups whose industries are registered separately, or will be. |
+| **Off** | **One set of books** (one TIN, one VAT return); each industry is a profit centre. | A single registered company running several kinds of shop. |
+
+**Change it only at the start of a financial year**, because switching moves the branches' future postings to other books. Companies already running when this option arrived were left on *Off*.
+
+With either choice, everything a branch posts is labelled with its industry:
 
 - **Finance → Reports → Profit by industry** shows each industry's income, costs and profit side by side. A *Company* column holds head office and shared costs.
 - The **Industry** filter on the other reports (trial balance, profit and loss, balance sheet, account ledger, budget) shows one industry, or *Company* for head office lines. It starts on the industry chosen at the top of the screen.
@@ -60,6 +69,26 @@ The company keeps **one set of books** (one TIN, one VAT return), and each indus
 One journal moves each cost from *Company* to the industries in proportion to their sales, to the pesewa; the company's total profit does not change. A month can be shared only once. To redo it, reverse that journal (*Finance → Journals*) and share again.
 
 **Note:** an industry's balance sheet on its own does not balance, because bank accounts, money owed and stock in transit sit partly at company level. Use *All industries* for the company's balance sheet.
+
+### Separate books (the default)
+
+When an industry is first switched on, the system creates its company under **Company → Legal entities**, named after it (for example *Demo Ltd – Pharmacy*), and a **head office company** if there is none.
+
+1. **Company → Legal entities:** open each company and enter its **registered name, registration number, TIN, VAT number and address**.
+   - Its branches' receipts and invoices print that name and TIN.
+   - Their sales go to GRA E-VAT under that TIN.
+2. **Head office company:** head office lines, and branches without an industry, are booked there. Only one company can be head office at a time; ticking *Head office company* on another moves it.
+3. **Two industries under one registered company:** choose the same company for both under **Company → Industries → Books**. To give an industry no company of its own, choose the head office company.
+4. Changing an industry's company is a **start-of-year** step. Balances from before (stock, money owed) stay in the old books; ask your accountant to move them with a journal on the first day.
+
+**What changes:**
+- **Every entry balances inside each company.** When one company pays for another, for example head office paying the pharmacy's electricity, the system records what the pharmacy now owes head office on **Due from / to group companies**, in both sets of books. Stock sent between the companies at cost is recorded the same way.
+- **Finance → Reports → Books:** choose a company for its own trial balance, profit and loss, balance sheet and ledger. *Whole group (consolidated)* adds them together, and what they owe each other cancels out.
+- **VAT return:** each company files its own. Choose it under *Books*.
+- **Settling up:** when one company pays the other, enter a journal with each company's bank line (*Company* on lines without a branch). The amount owed clears by itself.
+- **Ledger check** (*Finance → Reports → Ledger check*) also proves that each entry balances in every company's books, and that both sides agree on what they owe each other.
+
+**Why:** a separately registered company must keep its own books and file its own returns. Recording what they owe each other automatically means no entry is ever missed or one-sided.
 
 
 ## 8.1 Switching a module on or off

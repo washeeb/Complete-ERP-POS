@@ -35,6 +35,18 @@ final class GlCheck
             WHERE e.tenant_id = ? GROUP BY e.number HAVING SUM(l.amount_minor) <> 0', [$tenantId]) as $r) {
             $problems[] = "{$r->number} does not balance ({$r->s}).";
         }
+        // Separate books: each entry balances inside every legal entity it touches, and what one company shows as owed by
+        // another, the other shows as owed to it.
+        foreach (DB::select('SELECT e.number, le.name, SUM(l.amount_minor) AS s FROM journal_entries e JOIN journal_lines l ON l.journal_entry_id = e.id
+            JOIN legal_entities le ON le.id = l.legal_entity_id WHERE e.tenant_id = ? GROUP BY e.number, le.name HAVING SUM(l.amount_minor) <> 0', [$tenantId]) as $r) {
+            $problems[] = "{$r->number} does not balance in the books of {$r->name} ({$r->s}).";
+        }
+        foreach (DB::select("SELECT a.name AS a_name, b.name AS b_name, SUM(l.amount_minor) AS s FROM journal_lines l
+            JOIN accounts acc ON acc.id = l.account_id AND acc.system_key = 'intercompany'
+            JOIN legal_entities a ON a.id = LEAST(l.legal_entity_id, l.party_id) JOIN legal_entities b ON b.id = GREATEST(l.legal_entity_id, l.party_id)
+            WHERE l.tenant_id = ? AND l.party_type = 'legal_entity' GROUP BY a.name, b.name HAVING SUM(l.amount_minor) <> 0", [$tenantId]) as $r) {
+            $problems[] = "What {$r->a_name} and {$r->b_name} owe each other does not agree in their books ({$r->s}).";
+        }
         foreach (DB::select('SELECT a.code, a.name, COUNT(*) AS n FROM journal_lines l JOIN accounts a ON a.id = l.account_id
             WHERE l.tenant_id = ? AND a.is_header GROUP BY a.code, a.name', [$tenantId]) as $r) {
             $problems[] = "{$r->n} line(s) posted to the heading {$r->code} {$r->name}.";
