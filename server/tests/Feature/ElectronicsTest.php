@@ -43,7 +43,10 @@ use Illuminate\Support\Str;
 
 beforeEach(function () {
     [$this->tenant, $this->owner] = installCompany();
-    $this->branches = setUpBranches($this->owner);
+    $this->branches = setUpBranches($this->owner, [ // two electronics shops: phones move between sister branches only
+        ['code' => 'HQ', 'name' => 'Head Office', 'is_hq' => true, 'tills' => 1, 'modules' => ['retail_wholesale']],
+        ['code' => 'BA', 'name' => 'Branch A', 'is_hq' => false, 'tills' => 2, 'modules' => ['electronics']],
+    ]);
     $this->hq = $this->branches['HQ'];
     $this->wh = Warehouse::where('branch_id', $this->hq->id)->first();
     enableModule($this->owner, $this->hq, 'electronics');

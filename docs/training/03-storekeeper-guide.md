@@ -14,6 +14,10 @@ You receive goods, move stock between stores and count it. Everything is in the 
 
 **Stock → Transfers → New**: from which store, to which store, the items. The sending store **dispatches**, the receiving store **receives** what really arrived. Differences show on the transfer.
 
+**Asking another branch:** **Stock → Stock requests → Ask for stock**: your warehouse, the branch to ask, and the items as your branch sells them. When the other branch sends it, a transfer appears for you to **receive**. Asking a branch of another industry (for example a pharmacy asking the grocery) also needs your manager's approval and theirs; the request shows who it is waiting for.
+
+**When a branch asks you:** the number on *Stock requests* shows requests waiting. Open one, click **Send**, and enter what you can spare (0 for none), or **Reject** it with a reason. For a request from another industry, choose your own product for each item.
+
 ## Counting
 
 1. **Stock → Stock counts → New** for the store (all products, or one category). Print the **count sheet**.

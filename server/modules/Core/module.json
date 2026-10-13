@@ -1,7 +1,7 @@
 {
   "key": "core",
   "name": "Core",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "kind": "core",
   "stage": "available",
   "description": "Company, branches, warehouses, tills, users, roles, devices, audit, modules, settings, catalog, prices and tax, stock ledger and the POS. Always installed.",
@@ -35,6 +35,8 @@
     {"key": "stock.receive", "label": "Receive goods (GRN) and put them away into bins", "min_level": 2},
     {"key": "stock.receive.approve", "label": "Approve deliveries above the over-delivery tolerance and reverse goods received", "min_level": 3},
     {"key": "stock.transfer", "label": "Create, dispatch and receive stock transfers", "min_level": 2},
+    {"key": "stock.request", "label": "Ask another branch for stock", "min_level": 2},
+    {"key": "stock.request.approve", "label": "Approve stock requests between industries", "min_level": 3},
     {"key": "stock.count", "label": "Start stock counts and enter counted quantities", "min_level": 2},
     {"key": "stock.count.approve", "label": "Approve and post stock counts (not your own)", "min_level": 3},
     {"key": "warehouse.manage", "label": "Set up bins and reorder levels", "min_level": 3},

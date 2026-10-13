@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.32.0] — 2026-10-13 · Industries (part B): stock requests
+### Added
+- **Stock requests** (*Stock → Stock requests*, numbers `SRQ-`): a branch asks another for stock in its own catalogue's items.
+  - Between sister branches of one industry (or head office), the supplier **sends** it (any line can be 0) or **rejects** it with a reason. Sending creates and dispatches the transfer; receiving it closes the request.
+  - **Between two industries**, both sides approve first: a manager of the asking branch other than the requester, then a manager of the supplier. The supplier picks its own matching product for each item. The goods move at the sender's average cost, one base unit for one base unit, as the receiving catalogue's product, with batches of the same number and expiry.
+  - The menu badge counts requests waiting on you, to send or to approve.
+- **Permissions:** *Ask another branch for stock* (`stock.request`: storekeeper, supervisor, pharmacist, production, warehouse, branch and general managers) and *Approve stock requests between industries* (`stock.request.approve`: warehouse, branch and general managers). Core 0.16.0.
+### Changed
+- Transfers keep the industries apart. A direct transfer between branches of two industries is refused (use a request), and a branch cannot send or stock another industry's products.
+- Stock requests replicate with transfers (*warehouse* group).
+- **Docs:** installation guide 8.0; storekeeper and manager guides.
+
 ## [0.31.0] — 2026-10-12 · Industries (part A)
 ### Added
 - **Industries** (owner decisions 2026-10-12): a level between the company and its branches.
