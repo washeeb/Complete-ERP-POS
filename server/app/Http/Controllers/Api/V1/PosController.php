@@ -67,7 +67,7 @@ class PosController extends Controller
         $till = $device->till_id ? Till::with('warehouse')->find($device->till_id) : null;
         $branch = Branch::with('legalEntity')->find($device->branch_id);
         $tenant = Tenant::find($device->tenant_id);
-        $entity = $branch->legalEntity ?? LegalEntity::first();
+        $entity = $branch->legalEntity ?? LegalEntity::primary();
 
         return response()->json([
             'company' => ['name' => $tenant->name, 'currency' => $tenant->currency_code, 'exponent' => Money::exponent($tenant->currency_code), 'practice' => (bool) $tenant->is_practice,

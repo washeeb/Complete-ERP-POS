@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\DB;
  * Trial balance, profit and loss, balance sheet and account ledger, straight from the journal lines.
  * Income and expense accounts start each financial year at zero; earlier years' profit is shown in retained
  * earnings (no closing entries are needed). A branch filter shows that branch's lines only (cost centre); an industry filter
- * shows that industry's lines (profit centre), or company-level ones with COMPANY.
+ * shows that industry's lines (profit centre), or company-level ones with COMPANY; an entity filter shows one legal entity's own
+ * books (separate books), and without it the whole group, where what the companies owe each other cancels out.
  */
 final class FinancialReports
 {
@@ -29,7 +30,7 @@ final class FinancialReports
     /**
      * @return array{rows: list<array{account: Account, opening: int, debit: int, credit: int, closing: int}>, totals: array{opening: int, debit: int, credit: int, closing: int}}
      */
-    public function trialBalance(string $tenantId, string $from, string $to, ?string $branchId = null, ?string $industry = null): array
+    public function trialBalance(string $tenantId, string $from, string $to, ?string $branchId = null, ?string $industry = null, ?string $entity = null): array
     {
         $ys = $this->yearStart($tenantId, $from);
         $sums = collect(DB::select(<<<'SQL'
@@ -41,8 +42,10 @@ final class FinancialReports
             FROM journal_lines l
             WHERE l.tenant_id = ? AND l.entry_date <= ? AND (?::uuid IS NULL OR l.branch_id = ?::uuid)
               AND (?::text IS NULL OR (CASE WHEN ?::text = 'company' THEN l.industry_id IS NULL ELSE l.industry_id::text = ?::text END))
+              AND (?::uuid IS NULL OR l.legal_entity_id = ?::uuid OR (l.legal_entity_id IS NULL AND ?::boolean))
             GROUP BY l.account_id
-        SQL, [$ys, $ys, $from, $from, $to, $from, $to, $tenantId, $to, $branchId, $branchId, $industry, $industry, $industry]))->keyBy('account_id');
+        SQL, [$ys, $ys, $from, $from, $to, $from, $to, $tenantId, $to, $branchId, $branchId, $industry, $industry, $industry,
+            $entity, $entity, $this->isPrimary($tenantId, $entity)]))->keyBy('account_id');
 
         $accounts = Account::withoutGlobalScopes()->where('tenant_id', $tenantId)->where('is_header', false)->orderBy('code')->get();
         $priorProfit = 0;
@@ -77,9 +80,9 @@ final class FinancialReports
      *
      * @return array{sections: list<array{name: string, kind: string, rows: list<array{account: Account, amount: int}>, total: int}>, income: int, cost_of_sales: int, gross_profit: int, expenses: int, net_profit: int}
      */
-    public function profitAndLoss(string $tenantId, string $from, string $to, ?string $branchId = null, ?string $industry = null): array
+    public function profitAndLoss(string $tenantId, string $from, string $to, ?string $branchId = null, ?string $industry = null, ?string $entity = null): array
     {
-        $sums = $this->sums($tenantId, $from, $to, $branchId, $industry);
+        $sums = $this->sums($tenantId, $from, $to, $branchId, $industry, $entity);
         $accounts = Account::withoutGlobalScopes()->where('tenant_id', $tenantId)->get()->keyBy('id');
         $cogsTop = $this->top($accounts, $accounts->firstWhere('system_key', 'cogs'))?->id;
         $sections = [];
@@ -109,9 +112,9 @@ final class FinancialReports
      *
      * @return array{assets: list<array>, liabilities: list<array>, equity: list<array>, total_assets: int, total_liabilities: int, total_equity: int, profit_this_year: int, balanced: bool}
      */
-    public function balanceSheet(string $tenantId, string $asAt, ?string $branchId = null, ?string $industry = null): array
+    public function balanceSheet(string $tenantId, string $asAt, ?string $branchId = null, ?string $industry = null, ?string $entity = null): array
     {
-        $tb = $this->trialBalance($tenantId, $this->yearStart($tenantId, $asAt), $asAt, $branchId, $industry);
+        $tb = $this->trialBalance($tenantId, $this->yearStart($tenantId, $asAt), $asAt, $branchId, $industry, $entity);
         $out = ['asset' => [], 'liability' => [], 'equity' => []];
         $profit = 0;
         foreach ($tb['rows'] as $r) {
@@ -139,14 +142,14 @@ final class FinancialReports
      *
      * @return array{opening: int, lines: list<object>, closing: int}
      */
-    public function ledger(string $tenantId, Account $account, string $from, string $to, ?string $branchId = null, ?string $industry = null): array
+    public function ledger(string $tenantId, Account $account, string $from, string $to, ?string $branchId = null, ?string $industry = null, ?string $entity = null): array
     {
         $since = $account->isBalanceSheet() ? null : $this->yearStart($tenantId, $from);
         $opening = (int) $this->scoped(DB::table('journal_lines')->where('account_id', $account->id)->where('entry_date', '<', $from)
-            ->when($since, fn ($q) => $q->where('entry_date', '>=', $since)), $branchId, $industry)->sum('amount_minor');
+            ->when($since, fn ($q) => $q->where('entry_date', '>=', $since)), $branchId, $industry, '', $entity, $tenantId)->sum('amount_minor');
         $lines = $this->scoped(DB::table('journal_lines as l')->join('journal_entries as e', 'e.id', '=', 'l.journal_entry_id')
             ->leftJoin('branches as b', 'b.id', '=', 'l.branch_id')
-            ->where('l.account_id', $account->id)->whereBetween('l.entry_date', [$from, $to]), $branchId, $industry, 'l.')
+            ->where('l.account_id', $account->id)->whereBetween('l.entry_date', [$from, $to]), $branchId, $industry, 'l.', $entity, $tenantId)
             ->orderBy('l.entry_date')->orderBy('e.number')->orderBy('l.line_no')
             ->get(['l.entry_date', 'e.number', 'e.memo', 'e.id as entry_id', 'l.memo as line_memo', 'l.amount_minor', 'l.party_type', 'l.party_id', 'b.code as branch'])->all();
         $running = $opening;
@@ -194,10 +197,12 @@ final class FinancialReports
      *
      * @return array{sales_total: int, sales_untaxed: int, sales_taxed: int, taxes: list<array{code: string, name: string, output: int, input: int, due: int}>}
      */
-    public function vatReturn(string $tenantId, string $from, string $to): array
+    public function vatReturn(string $tenantId, string $from, string $to, ?string $entity = null): array
     {
         $tz = preg_replace('/[^A-Za-z_\/+-]/', '', (string) DB::table('tenants')->where('id', $tenantId)->value('timezone') ?: 'UTC');
-        $sums = $this->sums($tenantId, $from, $to, null);
+        $sums = $this->sums($tenantId, $from, $to, null, null, $entity);
+        // Separate books: each company files its own return, for the sales of its own branches.
+        $branches = $entity === null ? null : '{'.implode(',', $this->entityBranches($tenantId, $entity)).'}';
         $accounts = Account::withoutGlobalScopes()->where('tenant_id', $tenantId)->get();
         $salesTotal = -array_sum(array_map(fn ($a) => $sums[$a->id] ?? 0, $accounts->filter(fn ($a) => in_array($a->system_key, ['sales_pos', 'sales_invoice', 'sales_online'], true))->all()));
         $untaxed = (int) DB::selectOne(<<<SQL
@@ -205,15 +210,18 @@ final class FinancialReports
                 SELECT l.net_minor AS net FROM sale_lines l JOIN sales s ON s.id = l.sale_id
                 WHERE s.tenant_id = ? AND s.status = 'posted' AND jsonb_array_length(COALESCE(l.tax_breakdown, '[]'::jsonb)) = 0
                   AND ((s.occurred_at AT TIME ZONE 'UTC') AT TIME ZONE '{$tz}')::date BETWEEN ? AND ?
+                  AND (?::uuid[] IS NULL OR s.branch_id = ANY(?::uuid[]))
                 UNION ALL
                 SELECT l.net_minor FROM invoice_lines l JOIN invoices i ON i.id = l.invoice_id
                 WHERE i.tenant_id = ? AND jsonb_array_length(COALESCE(l.tax_breakdown, '[]'::jsonb)) = 0 AND i.issued_on BETWEEN ? AND ?
+                  AND (?::uuid[] IS NULL OR i.branch_id = ANY(?::uuid[]))
                 UNION ALL
-                SELECT -l.net_minor FROM invoice_lines l JOIN credit_notes c ON c.invoice_id = l.invoice_id
+                SELECT -l.net_minor FROM invoice_lines l JOIN credit_notes c ON c.invoice_id = l.invoice_id JOIN invoices ci ON ci.id = c.invoice_id
                 WHERE c.tenant_id = ? AND jsonb_array_length(COALESCE(l.tax_breakdown, '[]'::jsonb)) = 0
                   AND ((c.created_at AT TIME ZONE 'UTC') AT TIME ZONE '{$tz}')::date BETWEEN ? AND ?
+                  AND (?::uuid[] IS NULL OR ci.branch_id = ANY(?::uuid[]))
             ) x
-        SQL, [$tenantId, $from, $to, $tenantId, $from, $to, $tenantId, $from, $to])->v;
+        SQL, [$tenantId, $from, $to, $branches, $branches, $tenantId, $from, $to, $branches, $branches, $tenantId, $from, $to, $branches, $branches])->v;
         $taxes = [];
         foreach (DB::table('tax_rates')->where('tenant_id', $tenantId)->orderBy('sort')->get(['code', 'name']) as $t) {
             $out = $accounts->firstWhere('system_key', "output_tax:{$t->code}");
@@ -233,11 +241,11 @@ final class FinancialReports
      * @return array{columns: array<string, string>, rows: list<array{account: Account, kind: string, amounts: array<string, int>, total: int}>,
      *               totals: array<string, array{income: int, cost_of_sales: int, expenses: int, net_profit: int}>}
      */
-    public function profitByIndustry(string $tenantId, string $from, string $to): array
+    public function profitByIndustry(string $tenantId, string $from, string $to, ?string $entity = null): array
     {
         $industries = DB::table('industries')->where('tenant_id', $tenantId)->orderBy('sort')->orderBy('name')->pluck('name', 'id')->all();
         $columns = $industries + [self::COMPANY => 'Company (head office and shared)'];
-        $sums = DB::table('journal_lines')->where('tenant_id', $tenantId)->whereBetween('entry_date', [$from, $to])
+        $sums = $this->scoped(DB::table('journal_lines')->where('tenant_id', $tenantId)->whereBetween('entry_date', [$from, $to]), null, null, '', $entity, $tenantId)
             ->groupBy('account_id', 'industry_id')->selectRaw('account_id, industry_id, SUM(amount_minor) AS s')->get();
         $accounts = Account::withoutGlobalScopes()->where('tenant_id', $tenantId)->get()->keyBy('id');
         $cogsTop = $this->top($accounts, $accounts->firstWhere('system_key', 'cogs'))?->id;
@@ -266,18 +274,33 @@ final class FinancialReports
     }
 
     /** @return array<string, int> */
-    private function sums(string $tenantId, string $from, string $to, ?string $branchId, ?string $industry = null): array
+    private function sums(string $tenantId, string $from, string $to, ?string $branchId, ?string $industry = null, ?string $entity = null): array
     {
-        return $this->scoped(DB::table('journal_lines')->where('tenant_id', $tenantId)->whereBetween('entry_date', [$from, $to]), $branchId, $industry)
+        return $this->scoped(DB::table('journal_lines')->where('tenant_id', $tenantId)->whereBetween('entry_date', [$from, $to]), $branchId, $industry, '', $entity, $tenantId)
             ->groupBy('account_id')->selectRaw('account_id, SUM(amount_minor) AS s')->pluck('s', 'account_id')->map(fn ($v) => (int) $v)->all();
     }
 
-    /** Branch (cost centre) and industry (profit centre) filters on journal lines. */
-    private function scoped($q, ?string $branchId, ?string $industry, string $alias = '')
+    /** Branch (cost centre), industry (profit centre) and legal entity (books) filters on journal lines. */
+    private function scoped($q, ?string $branchId, ?string $industry, string $alias = '', ?string $entity = null, ?string $tenantId = null)
     {
         return $q->when($branchId, fn ($q) => $q->where("{$alias}branch_id", $branchId))
             ->when($industry === self::COMPANY, fn ($q) => $q->whereNull("{$alias}industry_id"))
-            ->when($industry && $industry !== self::COMPANY, fn ($q) => $q->where("{$alias}industry_id", $industry));
+            ->when($industry && $industry !== self::COMPANY, fn ($q) => $q->where("{$alias}industry_id", $industry))
+            ->when($entity, fn ($q) => $q->where(fn ($q) => $q->where("{$alias}legal_entity_id", $entity)
+                ->when($tenantId && $this->isPrimary($tenantId, $entity), fn ($q) => $q->orWhereNull("{$alias}legal_entity_id"))));
+    }
+
+    /** Lines from before any legal entity existed belong to the primary (head office) company. */
+    private function isPrimary(string $tenantId, ?string $entity): bool
+    {
+        return $entity !== null && DB::table('legal_entities')->where('tenant_id', $tenantId)->orderByDesc('is_primary')->orderBy('created_at')->value('id') === $entity;
+    }
+
+    /** @return list<string> the branches whose sales a legal entity reports: its own, plus those without one for the primary */
+    public function entityBranches(string $tenantId, string $entity): array
+    {
+        return DB::table('branches')->where('tenant_id', $tenantId)->where(fn ($q) => $q->where('legal_entity_id', $entity)
+            ->when($this->isPrimary($tenantId, $entity), fn ($q) => $q->orWhereNull('legal_entity_id')))->pluck('id')->all();
     }
 
     private function top($accounts, ?Account $a): ?Account

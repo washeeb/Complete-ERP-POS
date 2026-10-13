@@ -487,6 +487,16 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Separate books per company (2026-10-13)
+- **The choice per installation is the industry's legal entity.** With none, the industry is a profit centre in one set of books. With one, its branches move to that company: `branches.legal_entity_id` follows the industry, so receipts, E-VAT and books all change together. No separate setting can disagree with it.
+- **A journal line's company = its branch's legal entity, else the primary**, stamped at posting like the industry.
+  - Lines from before any entity existed count as the primary's (report filters and the backfill).
+  - A manual line without a branch may name its company.
+- **Intercompany is automatic and pairwise.** `GeneralLedger::post` nets each entity's lines. Unbalanced entities are paired debtor-to-creditor on one control account (`intercompany`, 1250), with `party_type = legal_entity`, so the account cannot be posted by hand. Each pair's two sides cancel in the consolidated view, and `GlCheck` proves both per-entry-per-entity balance and pair agreement.
+- **Transfer receipts credit the sender's in-transit** (AutoPoster), which turns a cross-company transfer into intercompany automatically and fixes in-transit drifting between industries.
+- **Fiscal periods, numbering and the chart of accounts stay shared** across the group (one database, one accountant). E-VAT sends the selling company's TIN; the GRA API key must be authorised for each TIN, and separate keys per company are left until a client needs them.
+- **Changing an industry's company mid-year** is allowed but documented as a start-of-year step; opening balances move by journal.
+
 ## Industries, part C: accounts by industry (2026-10-13)
 - **Owner answers:**
   - profit centres first (one set of books, one TIN), separate books per industry later as their own phase;

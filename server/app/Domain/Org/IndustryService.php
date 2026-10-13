@@ -9,6 +9,7 @@ use App\Domain\Support\Recorder;
 use App\Models\Branch;
 use App\Models\BranchModule;
 use App\Models\Industry;
+use App\Models\LegalEntity;
 use App\Modules\ModuleRegistry;
 use App\Security\Authorizer;
 
@@ -39,12 +40,39 @@ final class IndustryService
         if ($industry->exists && $industry->module_key !== $module && $industry->branches()->exists()) {
             throw new DomainException('This industry has branches: its module cannot change. Create a new industry instead.');
         }
+        $entity = array_key_exists('legal_entity_id', $data) ? ($data['legal_entity_id'] ?: null) : $industry->legal_entity_id;
+        if ($entity && ! LegalEntity::whereKey($entity)->exists()) {
+            throw new DomainException('Choose one of the company\'s legal entities.');
+        }
         $industry->fill(['code' => $code, 'name' => mb_substr($name, 0, 120), 'module_key' => $module,
-            'legal_entity_id' => $data['legal_entity_id'] ?? $industry->legal_entity_id, 'sort' => (int) ($data['sort'] ?? $industry->sort ?? 0),
+            'legal_entity_id' => $entity, 'sort' => (int) ($data['sort'] ?? $industry->sort ?? 0),
             'is_active' => (bool) ($data['is_active'] ?? true)]);
         $industry->tenant_id ??= $actor->tenantId;
 
-        return $this->recorder->save($actor, $industry, $industry->exists ? 'industry.updated' : 'industry.created');
+        return $this->recorder->transaction(function () use ($actor, $industry) {
+            $moved = $industry->exists && $industry->isDirty('legal_entity_id');
+            $this->recorder->save($actor, $industry, $industry->exists ? 'industry.updated' : 'industry.created');
+            if ($moved) {
+                foreach ($industry->branches()->get() as $branch) {
+                    $this->syncEntity($actor, $branch, $industry);
+                }
+            }
+
+            return $industry;
+        });
+    }
+
+    /**
+     * Separate books: a branch of an industry registered as its own company posts into that company's books (and its
+     * receipts carry that company's name and TIN); otherwise it uses the primary company.
+     */
+    private function syncEntity(Actor $actor, Branch $branch, ?Industry $industry): void
+    {
+        $entity = $industry?->legal_entity_id ?? LegalEntity::primary()?->id;
+        if ($branch->legal_entity_id !== $entity) {
+            $branch->legal_entity_id = $entity;
+            $this->recorder->save($actor, $branch, 'branch.legal_entity_set', branchId: $branch->id);
+        }
     }
 
     /** Put a branch in an industry (or make it company-level with null). Its industry module, if any, must match. */
@@ -59,8 +87,10 @@ final class IndustryService
             throw new DomainException("{$branch->name} runs ".$this->modules->get($running[0])->name.': a company-level branch runs no industry module. Switch it off first.');
         }
         $branch->industry_id = $industry?->id;
+        $this->recorder->save($actor, $branch, 'branch.industry_set', branchId: $branch->id);
+        $this->syncEntity($actor, $branch, $industry);
 
-        return $this->recorder->save($actor, $branch, 'branch.industry_set', branchId: $branch->id);
+        return $branch;
     }
 
     /**
@@ -89,6 +119,9 @@ final class IndustryService
         }
         $branch->industry_id = $industry->id;
         $this->recorder->save($actor, $branch, 'branch.industry_set', branchId: $branch->id);
+        if ($industry->legal_entity_id) {
+            $this->syncEntity($actor, $branch, $industry);
+        }
     }
 
     /** @return list<string> industry modules (not add-ons) switched on for the branch */

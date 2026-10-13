@@ -254,10 +254,15 @@ final class AutoPoster
 
     private function stock(Actor $actor, int $batch): int
     {
-        $rows = $this->rows('stock', $actor->tenantId, $batch, ['s.id', 's.branch_id', 's.type', 's.product_id', 'ROUND(s.qty_entered * COALESCE(s.unit_cost_minor, 0))::bigint AS value']);
+        $rows = $this->rows('stock', $actor->tenantId, $batch, ['s.id', 's.branch_id', 's.type', 's.product_id', 's.source_type', 's.source_id',
+            'ROUND(s.qty_entered * COALESCE(s.unit_cost_minor, 0))::bigint AS value']);
         if (! $rows) {
             return 0;
         }
+        // Goods arriving clear the sender's "in transit" (so a transfer between industries or companies leaves nothing
+        // stranded on either side; between companies the ledger books what one now owes the other).
+        $senders = DB::table('stock_transfers')->whereIn('id', collect($rows)->where('type', 'transfer_in')->where('source_type', 'stock_transfer')->pluck('source_id')->unique()->all())
+            ->pluck('from_branch_id', 'id');
         $codes = DB::table('branches')->pluck('code', 'id');
         // Containers sold with a held deposit are still ours: they move to "with customers" instead of cost of sales.
         $containers = $this->depositsAsLiability($actor->tenantId)
@@ -271,7 +276,8 @@ final class AutoPoster
                     $counter = 'containers_out';
                 }
                 $lines[] = ['account' => 'inventory', 'amount' => (int) $m->value, 'branch_id' => $m->branch_id];
-                $lines[] = ['account' => $counter, 'amount' => -(int) $m->value, 'branch_id' => $m->branch_id];
+                $lines[] = ['account' => $counter, 'amount' => -(int) $m->value,
+                    'branch_id' => $m->type === 'transfer_in' && $m->source_type === 'stock_transfer' ? ($senders[$m->source_id] ?? $m->branch_id) : $m->branch_id];
             }
             $this->gl->post($actor, $first->d, 'auto', "Stock at cost {$codes[$first->branch_id]} {$first->d}", $lines,
                 $group->map(fn ($m) => ['stock_movement', $m->id])->all(), 'stock', late: true);

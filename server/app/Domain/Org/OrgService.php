@@ -69,6 +69,7 @@ final class OrgService
             $entity = null;
             if (! empty($data['legal_entity']['name'])) {
                 $entity = new LegalEntity(array_intersect_key($data['legal_entity'], array_flip(['name', 'registration_no', 'tin', 'vat_no'])));
+                $entity->is_primary = ! LegalEntity::exists(); // the head office company
                 $entity->tenant_id = $tenant->id;
                 $entity->currency_code = $tenant->currency_code;
                 $this->recorder->save($actor, $entity, 'legal_entity.created');
@@ -175,6 +176,50 @@ final class OrgService
     {
         PriceList::withoutGlobalScopes()->where('tenant_id', $tenant->id)->whereDoesntHave('prices')
             ->update(['currency_code' => $tenant->currency_code]);
+    }
+
+    /**
+     * A registered company of the group (Company → Legal entities). Separate books: an industry registered as its own
+     * company is given its legal entity (Company → Industries) and its branches post into that entity's books. Exactly
+     * one entity is the primary (head office) company.
+     *
+     * @param  array{name?: string, registration_no?: ?string, tin?: ?string, vat_no?: ?string, address?: ?string, is_primary?: bool, is_active?: bool}  $data
+     */
+    public function saveLegalEntity(Actor $actor, LegalEntity $entity, array $data): LegalEntity
+    {
+        $this->require($actor, 'setup.company.manage');
+        $name = trim((string) ($data['name'] ?? $entity->name ?? ''));
+        if ($name === '') {
+            throw new DomainException('Enter the registered name.');
+        }
+        $tin = strtoupper(preg_replace('/\s+/', '', (string) ($data['tin'] ?? $entity->tin ?? '')));
+        if ($tin !== '' && ! preg_match('/^[A-Z0-9]{8,15}$/', $tin)) {
+            throw new DomainException('The TIN is 8 to 15 letters and digits (for example C0012345678).');
+        }
+        $first = ! LegalEntity::when($entity->exists, fn ($q) => $q->whereKeyNot($entity->getKey()))->exists();
+        $primary = $first || (bool) ($data['is_primary'] ?? $entity->is_primary);
+        $active = (bool) ($data['is_active'] ?? $entity->is_active ?? true);
+        if ($entity->exists && $entity->is_primary && ! $primary) {
+            throw new DomainException('Make another legal entity the head office company instead; there is always one.');
+        }
+        if (! $active && ($primary || Industry::where('legal_entity_id', $entity->id)->exists() || Branch::where('legal_entity_id', $entity->id)->where('is_active', true)->exists())) {
+            throw new DomainException('This legal entity is in use (head office, an industry or a branch). Move them first.');
+        }
+        $entity->fill(['name' => mb_substr($name, 0, 150), 'registration_no' => ($data['registration_no'] ?? $entity->registration_no) ?: null, 'tin' => $tin ?: null,
+            'vat_no' => ($data['vat_no'] ?? $entity->vat_no) ?: null, 'address' => ($data['address'] ?? $entity->address) ?: null,
+            'is_primary' => $primary, 'is_active' => $active]);
+        $entity->tenant_id ??= $actor->tenantId;
+
+        return $this->recorder->transaction(function () use ($actor, $entity, $primary) {
+            if ($primary) {
+                foreach (LegalEntity::where('is_primary', true)->when($entity->exists, fn ($q) => $q->whereKeyNot($entity->getKey()))->get() as $old) {
+                    $old->is_primary = false;
+                    $this->recorder->save($actor, $old, 'legal_entity.updated');
+                }
+            }
+
+            return $this->recorder->save($actor, $entity, $entity->exists ? 'legal_entity.updated' : 'legal_entity.created');
+        });
     }
 
     private function require(Actor $actor, string $permission, ?Branch $branch = null): void

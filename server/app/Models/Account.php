@@ -16,7 +16,7 @@ class Account extends Model
     public const TYPES = ['asset' => 'Asset', 'liability' => 'Liability', 'equity' => 'Equity', 'income' => 'Income', 'expense' => 'Expense'];
 
     public const CONTROLS = ['receivables' => 'Customer accounts (receivables)', 'payables' => 'Supplier accounts (payables)',
-        'inventory' => 'Stock', 'stored_value' => 'Gift cards and store credit', 'loyalty' => 'Loyalty points'];
+        'inventory' => 'Stock', 'stored_value' => 'Gift cards and store credit', 'loyalty' => 'Loyalty points', 'intercompany' => 'Due between group companies (automatic)'];
 
     protected $guarded = [];
 

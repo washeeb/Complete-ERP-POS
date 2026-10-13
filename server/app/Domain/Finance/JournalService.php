@@ -61,7 +61,7 @@ final class JournalService
         if (trim($reason) === '') {
             throw new DomainException('Give a reason.');
         }
-        $lines = $entry->lines->map(fn ($l) => ['account' => Account::findOrFail($l->account_id), 'amount' => -$l->amount_minor, 'branch_id' => $l->branch_id, 'industry_id' => $l->industry_id,
+        $lines = $entry->lines->map(fn ($l) => ['account' => Account::findOrFail($l->account_id), 'amount' => -$l->amount_minor, 'branch_id' => $l->branch_id, 'industry_id' => $l->industry_id, 'legal_entity_id' => $l->legal_entity_id,
             'party_type' => $l->party_type, 'party_id' => $l->party_id, 'memo' => $l->memo])->all();
 
         return $this->gl->post($actor, $this->day($date), 'reversal', $this->memo("Reversal of {$entry->number}: {$reason}"), $lines, reversesId: $entry->id);
@@ -113,7 +113,9 @@ final class JournalService
             if ($account->control) {
                 throw new DomainException("{$account->label()} is kept by its own ledger (".Account::CONTROLS[$account->control].'); use that screen instead.');
             }
-            $out[] = ['account' => $account, 'amount' => $dr - $cr, 'branch_id' => $l['branch_id'] ?? null, 'memo' => $l['memo'] ?? null];
+            // Separate books: a line without a branch may name its company; a branch posts into its own company's books.
+            $out[] = ['account' => $account, 'amount' => $dr - $cr, 'branch_id' => $l['branch_id'] ?? null, 'memo' => $l['memo'] ?? null]
+                + (empty($l['branch_id']) && ! empty($l['legal_entity_id']) ? ['legal_entity_id' => $l['legal_entity_id']] : []);
         }
         if ($mustBalance) {
             if (count($out) < 2) {

@@ -62,7 +62,7 @@ final class GraEvatAdapter implements FiscalAdapter
             throw new DomainException('GRA E-VAT is not set up on this server (.env: GRA_EVAT_URL and GRA_EVAT_KEY).');
         }
         try {
-            $res = Http::withHeaders(['Authorization' => "Bearer {$key}", 'X-Taxpayer-TIN' => (string) config('fiscal.gra.tin')])->acceptJson()
+            $res = Http::withHeaders(['Authorization' => "Bearer {$key}", 'X-Taxpayer-TIN' => (string) ($body['supplier']['tin'] ?? null ?: config('fiscal.gra.tin'))])->acceptJson() // the selling company's TIN (separate books)
                 ->timeout((int) config('fiscal.gra.timeout', 8))->post($base.$path, $body);
         } catch (Throwable $e) {
             throw new DomainException('GRA E-VAT not reachable: '.Str::limit($e->getMessage(), 150), 'fiscal_unreachable');

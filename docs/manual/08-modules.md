@@ -61,6 +61,28 @@ One journal moves each cost from *Company* to the industries in proportion to th
 
 **Note:** an industry's balance sheet on its own does not balance, because bank accounts, money owed and stock in transit sit partly at company level. Use *All industries* for the company's balance sheet.
 
+### Separate books (an industry registered as its own company)
+
+Choose this per installation, only when an industry is a **separate company at the Registrar-General**, with its own TIN and VAT return. Otherwise keep one set of books (above).
+
+1. **Company → Legal entities → New legal entity:** the registered name, registration number, TIN, VAT number and address.
+   - The first one is the **head office company**. Head office lines, and branches without a company of their own, are booked there.
+   - Only one company can be head office at a time; ticking *Head office company* on another moves it.
+2. **Company → Industries →** edit the industry → **Books (legal entity):** choose its company.
+   - Its branches now post into that company's books.
+   - Their receipts and invoices print that company's name and TIN.
+   - Their sales go to GRA E-VAT under that TIN.
+3. Do this **at the start of a financial year**. Balances from before (stock, money owed) stay in the old books; ask your accountant to move them with a journal on the first day.
+
+**What changes:**
+- **Every entry balances inside each company.** When one company pays for another, for example head office paying the pharmacy's electricity, the system records what the pharmacy now owes head office on **Due from / to group companies**, in both sets of books. Stock sent between the companies at cost is recorded the same way.
+- **Finance → Reports → Books:** choose a company for its own trial balance, profit and loss, balance sheet and ledger. *Whole group (consolidated)* adds them together, and what they owe each other cancels out.
+- **VAT return:** each company files its own. Choose it under *Books*.
+- **Settling up:** when one company pays the other, enter a journal with each company's bank line (*Company* on lines without a branch). The amount owed clears by itself.
+- **Ledger check** (*Finance → Reports → Ledger check*) also proves that each entry balances in every company's books, and that both sides agree on what they owe each other.
+
+**Why:** a separately registered company must keep its own books and file its own returns. Recording what they owe each other automatically means no entry is ever missed or one-sided.
+
 
 ## 8.1 Switching a module on or off
 

@@ -29,13 +29,16 @@ final class GeneralLedger
     /** @var array<string, ?string> branch id => industry id */
     private array $industries = [];
 
+    /** @var array<string, ?string> branch id (or "tenant:<id>" for the primary) => legal entity id */
+    private array $entities = [];
+
     public function __construct(private readonly Recorder $recorder, private readonly DocumentNumbers $numbers, private readonly Settings $settings) {}
 
     /**
      * Post an entry.
      *
      * @param  list<array{account: Account|string, amount: int, branch_id?: ?string, industry_id?: ?string, party_type?: ?string, party_id?: ?string, memo?: ?string}>  $lines  + debit, − credit;
-     *                                                                                                                                                                          industry_id defaults to the branch's industry (profit centre)
+     *                                                                                                                                                                          industry_id defaults to the branch's industry (profit centre), legal_entity_id to the branch's legal entity (books)
      * @param  list<array{0: string, 1: string}>  $sources  [source type, source id] rows this entry posts (exactly once)
      * @param  bool  $late  allow a closed month: post on the first day of the next open month instead (automatic posting)
      * @return JournalEntry|null null when every line is zero (the sources are still marked as posted)
@@ -51,12 +54,14 @@ final class GeneralLedger
                 throw new DomainException("{$account->label()} is a heading; post to one of the accounts under it.");
             }
             $industry = array_key_exists('industry_id', $l) ? $l['industry_id'] : $this->industryOf($l['branch_id'] ?? null);
-            $key = implode('|', [$account->id, $l['branch_id'] ?? '', $industry ?? '', $l['party_type'] ?? '', $l['party_id'] ?? '', $l['memo'] ?? '']);
-            $merged[$key] ??= ['account_id' => $account->id, 'branch_id' => $l['branch_id'] ?? null, 'industry_id' => $industry, 'party_type' => $l['party_type'] ?? null,
+            $entity = ($l['legal_entity_id'] ?? null) ?: $this->entityOf($tenantId, $l['branch_id'] ?? null);
+            $key = implode('|', [$account->id, $l['branch_id'] ?? '', $industry ?? '', $entity ?? '', $l['party_type'] ?? '', $l['party_id'] ?? '', $l['memo'] ?? '']);
+            $merged[$key] ??= ['account_id' => $account->id, 'branch_id' => $l['branch_id'] ?? null, 'industry_id' => $industry, 'legal_entity_id' => $entity,
+                'party_type' => $l['party_type'] ?? null,
                 'party_id' => $l['party_id'] ?? null, 'memo' => isset($l['memo']) ? mb_substr($l['memo'], 0, 255) : null, 'amount_minor' => 0];
             $merged[$key]['amount_minor'] += (int) $l['amount'];
         }
-        $merged = array_values(array_filter($merged, fn ($l) => $l['amount_minor'] !== 0));
+        $merged = $this->balanceEntities($tenantId, array_values(array_filter($merged, fn ($l) => $l['amount_minor'] !== 0)));
         $sum = array_sum(array_column($merged, 'amount_minor'));
         if ($sum !== 0) {
             throw new LogicException("Journal \"{$memo}\" does not balance ({$sum}).");
@@ -90,6 +95,61 @@ final class GeneralLedger
         });
     }
 
+    /**
+     * Separate books: an entry touching several legal entities must balance inside each of them. Whatever one entity's
+     * lines leave unbalanced is owed to or by the others, posted on "Due from / to group companies" with the other
+     * entity as the party, pairing debtors with creditors.
+     *
+     * @param  list<array<string, mixed>>  $lines
+     * @return list<array<string, mixed>>
+     */
+    private function balanceEntities(string $tenantId, array $lines): array
+    {
+        $nets = [];
+        foreach ($lines as $l) {
+            $nets[$l['legal_entity_id'] ?? ''] = ($nets[$l['legal_entity_id'] ?? ''] ?? 0) + $l['amount_minor'];
+        }
+        $nets = array_filter($nets, fn ($n) => $n !== 0);
+        if (count($nets) < 2 || isset($nets[''])) {
+            return $lines; // one set of books (or a company without legal entities)
+        }
+        $account = $this->account($tenantId, 'intercompany');
+        $debtors = array_filter($nets, fn ($n) => $n > 0); // more debit than credit: owes a credit
+        $creditors = array_map(fn ($n) => -$n, array_filter($nets, fn ($n) => $n < 0));
+        foreach ($debtors as $d => $dn) {
+            foreach ($creditors as $c => $cn) {
+                if ($dn === 0) {
+                    break;
+                }
+                if ($cn === 0) {
+                    continue;
+                }
+                $x = min($dn, $cn);
+                $line = fn (string $entity, int $amount, string $party) => ['account_id' => $account->id, 'branch_id' => null, 'industry_id' => null,
+                    'legal_entity_id' => $entity, 'party_type' => 'legal_entity', 'party_id' => $party, 'memo' => null, 'amount_minor' => $amount];
+                $lines[] = $line($d, -$x, $c); // d owes c, or c no longer owes d
+                $lines[] = $line($c, $x, $d);
+                $dn -= $x;
+                $creditors[$c] -= $x;
+            }
+        }
+
+        return $lines;
+    }
+
+    /** The legal entity whose books a branch posts into: its own, else the primary (head office) one. */
+    private function entityOf(string $tenantId, ?string $branchId): ?string
+    {
+        $key = $branchId ?? "tenant:{$tenantId}";
+        if (! array_key_exists($key, $this->entities)) {
+            $own = $branchId ? DB::table('branches')->where('id', $branchId)->value('legal_entity_id') : null;
+            $this->entities[$key] = $own ?? DB::table('legal_entities')->where('tenant_id', $tenantId)->where('is_active', true)
+                ->orderByDesc('is_primary')->orderBy('created_at')->value('id');
+        }
+
+        return $this->entities[$key];
+    }
+
     /** The industry a branch belongs to now (null: company-level), stamped on the lines it posts. */
     private function industryOf(?string $branchId): ?string
     {
@@ -119,6 +179,7 @@ final class GeneralLedger
     public function forget(): void
     {
         $this->industries = [];
+        $this->entities = [];
         $this->accounts = [];
     }
 
