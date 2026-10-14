@@ -82,13 +82,13 @@ jobs:
           curl -fsSk --resolve demo.localhost:443:127.0.0.1 https://demo.localhost/admin/login | grep -q 'Sign in'
           curl -fsS https://localhost/up   # the first copy still answers
           systemctl is-active --quiet seslabs-demo-reverb
-          grep -q '^REVERB_PUBLISH_PORT=8081$' /var/www/seslabs-demo/server/.env
-          grep -q '^DB_DATABASE=erp_demo$' /var/www/seslabs-demo/server/.env
+          sudo grep -q '^REVERB_PUBLISH_PORT=8081$' /var/www/seslabs-demo/server/.env
+          sudo grep -q '^DB_DATABASE=erp_demo$' /var/www/seslabs-demo/server/.env
           ! sudo -u www-data cat /var/www/seslabs-demo/server/.env 2>/dev/null                    # one copy cannot read another's secrets
           ! sudo -u www-data ls /var/www/seslabs-demo/server/storage/app/private 2>/dev/null       # ... or its backups and uploads
           # An update of the second copy: backup first, same port, the first copy untouched.
           sudo bash installer/ubuntu/install.sh --source "$GITHUB_WORKSPACE" --ci --instance demo --domain demo.localhost
-          grep -q '^REVERB_PUBLISH_PORT=8081$' /var/www/seslabs-demo/server/.env
+          sudo grep -q '^REVERB_PUBLISH_PORT=8081$' /var/www/seslabs-demo/server/.env
           curl -fsS https://localhost/up
           cd /var/www/seslabs-demo/server && sudo -u seslabs-demo php artisan erp:backup
 
