@@ -1,13 +1,19 @@
 name: Packaging
 
 # Builds and smoke-tests every way of installing (Phase 13): the Docker image, the Ubuntu install script, the Windows
-# installer and the desktop till app. Runs when their files change, on release tags, and on demand.
+# installer and the desktop till app. Runs when their files change, on release tags, and on demand (Actions → Packaging →
+# Run workflow, for installers of any version). Database changes are already tested by CI, so they do not start these
+# long jobs (the Windows ones count double against the paid minutes).
 on:
   pull_request:
-    paths: ['installer/**', 'pos/src-tauri/**', '.github/workflows/packaging.yml', 'server/composer.lock', 'server/database/migrations/**']
+    paths: ['installer/**', 'pos/src-tauri/**', '.github/workflows/packaging.yml', 'server/composer.lock']
   push:
     tags: ['v*']
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
