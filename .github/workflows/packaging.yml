@@ -1,13 +1,19 @@
 name: Packaging
 
 # Builds and smoke-tests every way of installing (Phase 13): the Docker image, the Ubuntu install script, the Windows
-# installer and the desktop till app. Runs when their files change, on release tags, and on demand.
+# installer and the desktop till app. Runs when their files change, on release tags, and on demand (Actions → Packaging →
+# Run workflow, for installers of any version). Database changes are already tested by CI, so they do not start these
+# long jobs (the Windows ones count double against the paid minutes).
 on:
   pull_request:
-    paths: ['installer/**', 'pos/src-tauri/**', '.github/workflows/packaging.yml', 'server/composer.lock', 'server/database/migrations/**']
+    paths: ['installer/**', 'pos/src-tauri/**', '.github/workflows/packaging.yml', 'server/composer.lock']
   push:
     tags: ['v*']
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -70,6 +76,21 @@ jobs:
           sudo bash installer/ubuntu/install.sh --source "$GITHUB_WORKSPACE" --ci
           curl -fsS https://localhost/up
           cd /var/www/seslabs/server && sudo -u www-data php artisan erp:backup && sudo -u www-data php artisan erp:backup --verify
+      - name: A second client on the same server (shared-server copy), kept apart from the first
+        run: |
+          sudo bash installer/ubuntu/install.sh --source "$GITHUB_WORKSPACE" --ci --instance demo --domain demo.localhost
+          curl -fsSk --resolve demo.localhost:443:127.0.0.1 https://demo.localhost/admin/login | grep -q 'Sign in'
+          curl -fsS https://localhost/up   # the first copy still answers
+          systemctl is-active --quiet seslabs-demo-reverb
+          sudo grep -q '^REVERB_PUBLISH_PORT=8081$' /var/www/seslabs-demo/server/.env
+          sudo grep -q '^DB_DATABASE=erp_demo$' /var/www/seslabs-demo/server/.env
+          ! sudo -u www-data cat /var/www/seslabs-demo/server/.env 2>/dev/null                    # one copy cannot read another's secrets
+          ! sudo -u www-data ls /var/www/seslabs-demo/server/storage/app/private 2>/dev/null       # ... or its backups and uploads
+          # An update of the second copy: backup first, same port, the first copy untouched.
+          sudo bash installer/ubuntu/install.sh --source "$GITHUB_WORKSPACE" --ci --instance demo --domain demo.localhost
+          sudo grep -q '^REVERB_PUBLISH_PORT=8081$' /var/www/seslabs-demo/server/.env
+          curl -fsS https://localhost/up
+          cd /var/www/seslabs-demo/server && sudo -u seslabs-demo php artisan erp:backup
 
   windows-installer:
     runs-on: windows-latest
@@ -105,7 +126,7 @@ jobs:
         run: |
           choco install innosetup -y --no-progress
           Compress-Archive -Path server -DestinationPath release.zip -Force
-          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DReleaseZip=$env:GITHUB_WORKSPACE\release.zip" /DAppVersion=0.34.2 installer\windows\server-setup.iss
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DReleaseZip=$env:GITHUB_WORKSPACE\release.zip" /DAppVersion=0.34.3 installer\windows\server-setup.iss
       - uses: actions/upload-artifact@v4
         with:
           name: seslabs-server-setup

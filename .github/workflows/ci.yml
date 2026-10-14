@@ -1,8 +1,15 @@
 name: CI
 
+# Pull requests are checked once (not once for the push and again for the pull request), and main after each merge.
+# A newer push to the same branch cancels the older run. GitHub Actions minutes are paid on a private repository.
 on:
   push:
+    branches: [main]
   pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read

@@ -487,6 +487,13 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Shared server option (2026-10-14)
+- **Separate copies, not several companies in one copy.** The app can hold several companies, but one copy shares one licence (limits are per installation), one backup and restore, one update and one database. One client's restore or fault would then reach the others. Each copy has its own `installation_id`, so licences stay separate even on one machine.
+- **Isolation by Unix user:** each copy runs PHP, cron and Reverb as its own system user, with `.env` readable only by that group and private storage closed to others. Code stays world-readable because it is not secret. Caddy reaches each pool through a socket owned by `caddy`, and is not added to the copies' groups, so it cannot read their `.env`.
+- **The standard copy is unchanged** (www-data, PHP's default pool, port 8080, database `erp`), so existing servers update as before; only the Caddyfile is split into an importing main file and a site file.
+- **Domain required** for a shared copy: each client needs its own name for its certificate and for its tills.
+- **Sizing:** about 3 small clients per 12 GB server, with `pm = ondemand` so idle clients cost little memory; the slow-pages list tells when a client should move out.
+
 ## Applying the speed suggestions (2026-10-13)
 - **"Background workers":** the app has no Laravel queue jobs (store pushes, messages and webhooks run in the `erp:relay` loop; posting and reports on the scheduler), so no worker was missing. The real lag was posting every 5 minutes; it is now every minute. Laravel's queue stays unused.
 - **Slow pages are measured where they happen:** a terminable middleware (a singleton, so `terminate()` sees `handle()`'s numbers) counts queries with one `DB::listen` per process and writes after the answer is sent. Paths only (route URI, or the Livewire screen name), never query strings, so no searches or personal data are logged. Threshold `ERP_SLOW_REQUEST_MS`.

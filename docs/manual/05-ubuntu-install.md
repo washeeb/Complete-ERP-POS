@@ -24,6 +24,31 @@ The firewall is switched on with only SSH, 80 and 443 open.
 
 Running it again with a newer ZIP updates the software and keeps your data, `.env` and keys. An older installation that used nginx is moved to the new web server (Caddy) automatically.
 
+**A shared server for small clients (SyncLytics staff).** The standard is **one server per client**. For small businesses that are just starting, several clients can share one server, each as its **own separate copy** of the system on its own internet name:
+
+```
+sudo bash install.sh --zip <release>.zip --instance kofi-pharmacy --domain kofi.synclytics.example --email you@example.com
+```
+
+- `--instance` is a short name for the client: lowercase letters, digits and dashes.
+- Each copy gets its own:
+  - folder (`/var/www/seslabs-kofi-pharmacy`) and database (`erp_kofi_pharmacy`);
+  - system user, so one copy cannot read another's files, backups or passwords;
+  - PHP workers, which stop when idle so a quiet client uses little memory;
+  - live-updates port, backups, licence (its own installation code) and update timing.
+- Give each copy its own **DNS A record** pointing to the same server (5.1), and its own `--domain`.
+- **Update one client:** run the same command with the new ZIP and the same `--instance`. It backs that copy up first and leaves the others alone.
+- **How many:** a server with 12 GB of memory (for example Contabo Cloud VPS 6) holds about **3 small clients** (one or two shops each). Move a client to a server of its own when it grows, or when *System → Health → Slow pages* starts filling up: back it up, install it on the new server, restore the backup there (Chapter 12.5), and point its internet name to the new server.
+- **Remove a client's copy** (after a final backup and when the contract has ended):
+  ```
+  sudo systemctl disable --now seslabs-<name>-reverb
+  sudo rm /etc/cron.d/seslabs-<name> /etc/caddy/sites/seslabs-<name>.caddy /etc/php/8.4/fpm/pool.d/seslabs-<name>.conf
+  sudo systemctl restart php8.4-fpm caddy
+  ```
+  Then delete its folder and database (`sudo -u postgres dropdb erp_<name>`) only once you are sure the backup is safe elsewhere.
+
+**Why separate copies, not one copy holding several companies:** one copy shares one licence, one backup and one update for everyone in it. Restoring one client's backup would roll back the others, and a fault in one would reach them all.
+
 **B. Docker** (if your host prefers containers):
 
 1. Install Docker (`curl -fsSL https://get.docker.com | sudo sh`).
@@ -41,7 +66,7 @@ The rest of this chapter is the manual way.
 
 ### Cloud server (setup D)
 
-1. Rent a VPS from any provider (for example a provider with a data centre in or near West Africa or Europe). Choose **Ubuntu 24.04**, at least 2 vCPU, 4 GB RAM, 80 GB SSD. Note the server's **public IP address** and the password or key you are given.
+1. Rent a VPS from any provider (for example a provider with a data centre in or near West Africa or Europe; with Contabo, the *Cloud VPS 6* with 100 GB NVMe storage in the *European Union* region, with Auto Backup). Choose **Ubuntu 24.04**, at least 2 vCPU, 4 GB RAM, 80 GB SSD; see the sizing table in Chapter 3. Note the server's **public IP address** and the password or key you are given.
 2. Buy or use a **domain name** and create a **DNS A record** such as `erp.yourshop.com` pointing to that IP address (in your domain provider's control panel). It can take up to an hour to work.
    **Why:** tills, browsers and the HTTPS certificate need a name, not just a number.
 
@@ -184,7 +209,7 @@ sudo usermod -aG www-data caddy
 
 **Why:** PHP-FPM listens on a socket that only the `www-data` group may use.
 
-Replace Caddy's settings file:
+Replace Caddy's settings file (the install script instead writes a short main file that imports one file per copy from `/etc/caddy/sites/`; the manual way keeps everything in one file):
 
 ```
 sudo nano /etc/caddy/Caddyfile
