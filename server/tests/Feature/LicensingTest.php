@@ -237,7 +237,7 @@ it('builds a stamped, signed release whose manifest matches the delivered files'
     config(['license.public_keys' => ['syn-test' => base64_encode(sodium_crypto_sign_publickey($pair))]]);
     $out = sys_get_temp_dir().DIRECTORY_SEPARATOR.'synrel'.bin2hex(random_bytes(4));
     try {
-        $this->artisan('release:build', ['--customer' => 'Kofi Stores', '--key' => $keyFile, '--out' => $out])->assertSuccessful();
+        $this->artisan('release:build', ['--customer' => 'Kofi Stores', '--key' => $keyFile, '--out' => $out, '--without-assets' => true])->assertSuccessful();
         $build = DB::table('vendor_builds')->sole();
         $root = "{$out}/{$build->id}/server";
         $manifest = json_decode(file_get_contents("{$root}/".ReleaseManifest::PATH), true);
