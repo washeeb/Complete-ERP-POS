@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.34.3] — 2026-10-14 · Shared server option
+### Added
+- **Several small clients on one Ubuntu server** (owner: one server per client is the standard; sharing is an option for small businesses starting out).
+  - `install.sh --instance <name> --domain <name's address>` installs a separate copy with its own folder, database and role, system user, PHP-FPM pool (on demand), live-updates port (8081 and up), cron, Reverb service, backups, licence and update timing.
+  - Caddy now uses a main file importing `/etc/caddy/sites/*.caddy`, one site file per copy. The standard installation behaves as before.
+  - Private storage (backups, uploads, sessions, logs) is closed to other users of the server.
+  - CI installs a second copy beside the first, then checks both answer, the second cannot be read by the first, and an update keeps its port.
+- **Docs:** Chapter 5.0 (shared server: install, update, sizing, moving a client out, removal); Contabo example in 5.1.
+
 ## [0.34.2] — 2026-10-13 · Speed and clean-up
 ### Changed
 - **PHP code cache on Windows:** the installer now switches on OPcache, which was off, so PHP no longer recompiled the application on every request. It also sets a larger file-location cache. Ubuntu and Docker get the same tuning.

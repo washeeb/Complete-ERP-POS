@@ -14,7 +14,7 @@ return [
     'modules_path' => base_path('modules'),
 
     // Shown in problem reports and the pilot report; raised with each release (CHANGELOG).
-    'version' => '0.34.2',
+    'version' => '0.34.3',
 
     // Requests slower than this are noted for System → Health (milliseconds).
     'slow_request_ms' => (int) env('ERP_SLOW_REQUEST_MS', 1000),
