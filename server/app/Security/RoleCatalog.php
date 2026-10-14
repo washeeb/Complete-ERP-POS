@@ -2,6 +2,9 @@
 
 namespace App\Security;
 
+use App\Domain\Licensing\LicenseManager;
+use App\Domain\Modules\ModuleService;
+
 /**
  * Seeded role templates (spec §9.2). Permissions listed here are attached only when the
  * permission itself is first created, so removing one from a role in the admin stays removed.
@@ -9,6 +12,33 @@ namespace App\Security;
  */
 final class RoleCatalog
 {
+    /** Roles that only make sense with an industry module (shown only where it is switched on). */
+    public const MODULE_ROLES = ['pharmacist' => 'pharmacy', 'pharmacy_technician' => 'pharmacy', 'waiter' => 'restaurant', 'kitchen_staff' => 'restaurant',
+        'technician' => 'electronics', 'tailor' => 'fashion', 'service_staff' => 'services', 'sales_rep' => 'distribution', 'van_sales_rep' => 'distribution',
+        'production_manager' => 'manufacturing', 'machine_operator' => 'manufacturing', 'qc_inspector' => 'manufacturing', 'delivery_rider' => 'logistics'];
+
+    /** Roles that only make sense with a licensed feature. */
+    public const FEATURE_ROLES = ['hr_manager' => 'hr', 'payroll_officer' => 'hr'];
+
+    /** @return list<string> role keys to leave out of pick lists here (industry not switched on, feature not licensed) */
+    public static function hiddenKeys(): array
+    {
+        $licence = app(LicenseManager::class);
+        $hidden = [];
+        foreach (self::MODULE_ROLES as $role => $module) {
+            if (! ModuleService::enabledAnywhere($module)) {
+                $hidden[] = $role;
+            }
+        }
+        foreach (self::FEATURE_ROLES as $role => $feature) {
+            if (! $licence->allowsFeature($feature)) {
+                $hidden[] = $role;
+            }
+        }
+
+        return $hidden;
+    }
+
     public const ROLES = [
         'owner' => ['Owner', 6, false, ['*']],
         'general_manager' => ['General Manager', 5, false, ['setup.company.manage', 'audit.view', 'pos.access', 'catalog.view', 'catalog.manage', 'pricing.manage', 'stock.view', 'stock.adjust', 'stock.adjust.approve', 'sales.view', 'sync.review', 'orders.view', 'orders.manage', 'channels.manage', 'suppliers.manage', 'purchasing.view', 'purchasing.manage', 'purchasing.approve', 'stock.receive', 'stock.receive.approve', 'stock.transfer', 'stock.count', 'stock.count.approve', 'warehouse.manage', 'customers.view', 'customers.manage', 'customers.credit.manage', 'customers.credit.override', 'sales.orders.view', 'sales.orders.manage', 'sales.deliver', 'receivables.view', 'receivables.collect', 'receivables.credit_note', 'promotions.manage', 'pos.discount', 'pos.return.no_receipt', 'giftcards.manage', 'finance.view', 'finance.reopen', 'payables.view', 'payables.approve', 'payables.pay', 'expenses.claim', 'expenses.approve', 'budgets.manage', 'hr.view', 'leave.approve', 'payroll.approve', 'leave.request', 'grocery.markdowns', 'pharmacy.manage', 'pharmacy.patients', 'restaurant.serve', 'restaurant.void', 'restaurant.manage', 'restaurant.waste', 'electronics.repairs', 'electronics.trade_in', 'fashion.alterations', 'fashion.consignment', 'services.appointments', 'services.passes', 'services.memberships', 'services.commissions', 'services.licence_keys', 'distribution.routes', 'distribution.settle', 'manufacturing.setup', 'manufacturing.produce', 'manufacturing.qc', 'insights.view', 'insights.loss_prevention', 'ai.copilot', 'ai.usage.view', 'reports.build', 'reports.schedule', 'messaging.view', 'messaging.templates', 'api.manage', 'golive.manage', 'cash.view', 'cash.setup', 'cash.vault.issue', 'cash.vault.receive', 'cash.handover', 'cash.control', 'cash.variance.approve', 'cash.deposit', 'stock.request', 'stock.request.approve']],

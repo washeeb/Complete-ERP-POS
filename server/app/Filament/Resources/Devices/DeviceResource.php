@@ -72,7 +72,7 @@ class DeviceResource extends Resource
             Select::make('till_id')->label('Till (for POS devices)')
                 ->options(fn (Get $get) => Till::where('branch_id', $get('branch_id'))->orderBy('code')->pluck('name', 'id')),
             TextInput::make('name')->required()->maxLength(80)->helperText('e.g. "Front counter PC" or "Handheld 2"'),
-            Select::make('kind')->required()->options(Device::KINDS)->default('pos'),
+            Select::make('kind')->required()->options(fn (Get $get) => Device::kindsFor($get('branch_id')))->default('pos'),
         ]);
     }
 

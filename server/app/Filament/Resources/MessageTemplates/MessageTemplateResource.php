@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\MessageTemplates;
 
 use App\Domain\Messaging\Templates;
+use App\Domain\Modules\ModuleService;
 use App\Filament\Resources\MessageTemplates\Pages\ListMessageTemplates;
 use App\Filament\Support\Erp;
 use App\Models\Message;
@@ -20,6 +21,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
@@ -56,6 +58,14 @@ class MessageTemplateResource extends Resource
     public static function canDelete(Model $record): bool
     {
         return false;
+    }
+
+    /** Table-booking messages only with Restaurant, appointment messages only with Services. */
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->when(! ModuleService::enabledAnywhere('restaurant'), fn ($q) => $q->where('key', 'not like', 'reservation%'))
+            ->when(! ModuleService::enabledAnywhere('services'), fn ($q) => $q->where('key', 'not like', 'appointment%'));
     }
 
     public static function form(Schema $schema): Schema
