@@ -189,8 +189,14 @@ fieldset.choices button.active, .segmented button.active { background: var(--pri
 .vaults legend { font-weight: 600; padding: 0 4px; }
 .vault-choice, .check { display: flex; gap: 10px; align-items: flex-start; margin: 6px 0; font-weight: normal; }
 .vault-choice input, .check input { width: auto; margin-top: 3px; }
-.denoms { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-bottom: 8px; }
-.denoms label { font-size: .85rem; }
-.denoms input { text-align: right; }
-.denoms-total { font-size: 1.1rem; margin: 4px 0 12px; }
+/* Cash count by notes and coins: two groups side by side (one under the other on a narrow screen), one line per
+   denomination: name, how many, what they come to. Inputs never grow past their column. */
+.narrow.count { max-width: 760px; }
+.denoms { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px 28px; }
+.denom-group { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 6px; align-content: start; }
+.denom-group legend { padding: 0; margin-bottom: 4px; font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.denom-row { display: grid; grid-template-columns: minmax(0, 1fr) 5.5rem 6.5rem; align-items: center; gap: 10px; font-weight: 500; }
+.denom-row input { width: 100%; min-width: 0; padding: 8px 10px; text-align: right; }
+.denom-amount { text-align: right; font-size: .85rem; color: var(--muted); white-space: nowrap; }
+.denoms-total { display: flex; justify-content: space-between; align-items: baseline; margin: 4px 0 8px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 1.1rem; }
 .small { font-size: .85rem; }

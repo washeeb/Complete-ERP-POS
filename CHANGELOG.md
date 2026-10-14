@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Fixed
+- **Cash count by notes and coins laid out properly**, on the till's *Close shift* and in the back office's cash desk and income control. The boxes no longer overflow their columns. Notes and coins sit in their own groups (side by side on a PC, one under the other on a phone), each line shows what it comes to, and the running total sits underneath. Still blind: the expected figure is never shown.
 - **Ubuntu installer no longer stops silently at step 9** on Ubuntu 24.04 (the SSH port lookup failed when SSH is started on demand). Any unexpected stop now names the line. Found on the first client installation.
 - **The signed release manifest now reaches servers** (`bootstrap/release-manifest.json`). It was in `storage/`, which installers keep on updates, so the tamper check and the client build stamp were silently off. `release:build` also includes the server's built assets (the online shop's live updates).
 ### Added

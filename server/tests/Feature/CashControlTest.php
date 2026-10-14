@@ -13,6 +13,7 @@ use App\Domain\Support\DomainException;
 use App\Filament\Pages\CashDesk;
 use App\Filament\Pages\CashSetup;
 use App\Filament\Pages\IncomeControl;
+use App\Filament\Support\CashCountForm;
 use App\Models\Account;
 use App\Models\CashHandover;
 use App\Models\CashMovement;
@@ -199,6 +200,9 @@ it('shows the cash desk to the cashier and income control to the income controll
     $this->flushSession();
     app('auth')->forgetGuards();
     $this->actingAs(withMfa($this->cashier->fresh()), 'web');
+    // The blind count: notes and coins in their own groups, then the counter's own running total.
+    $form = CashCountForm::schema('GHS');
+    expect($form[0]->getLabel())->toBe('Notes')->and($form[1]->getLabel())->toBe('Coins')->and($form)->toHaveCount(3);
     Livewire\Livewire::test(CashDesk::class)
         ->callAction(TestAction::make('receive')->arguments(['session' => $session->id]), ['denoms' => ['n100' => 1, 'n50' => 1]])
         ->assertNotified('Vault received');

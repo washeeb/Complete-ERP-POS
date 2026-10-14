@@ -254,21 +254,32 @@ export function CloseShift({ boot, online, onClosed, onCancel }: { boot: Bootstr
   }
 
   return (
-    <form className="card narrow" onSubmit={submit}>
+    <form className={`card narrow${byNotes ? ' count' : ''}`} onSubmit={submit}>
       <h1>Close shift</h1>
       <p className="muted">Count all the cash in the {boot.cash?.vaults ? 'tray' : 'drawer'}, including the float.</p>
       {byNotes ? (
         <>
+          {/* Notes and coins side by side (stacked on a narrow screen): one line each, with what that line comes to. */}
           <div className="denoms">
-            {denominations.map((d, i) => (
-              <label key={d.key}>
-                {d.label}
-                <input autoFocus={i === 0} className="mono" inputMode="numeric" pattern="[0-9]*" value={counts[d.key] ?? ''} placeholder="0"
-                  onChange={(e) => setCounts({ ...counts, [d.key]: e.target.value.replace(/[^0-9]/g, '') })} aria-label={`Number of ${d.label}s`} />
-              </label>
-            ))}
+            {([['Notes', denominations.filter((d) => d.key.startsWith('n'))], ['Coins', denominations.filter((d) => !d.key.startsWith('n'))]] as const)
+              .filter(([, list]) => list.length > 0).map(([title, list]) => (
+                <fieldset key={title} className="denom-group">
+                  <legend>{title}</legend>
+                  {list.map((d) => {
+                    const n = parseInt(counts[d.key] || '0', 10) || 0
+                    return (
+                      <label key={d.key} className="denom-row">
+                        <span>{d.label.replace(/ (note|coin)$/, '')}</span>
+                        <input autoFocus={d.key === denominations[0]?.key} className="mono" inputMode="numeric" pattern="[0-9]*" value={counts[d.key] ?? ''} placeholder="0"
+                          onChange={(e) => setCounts({ ...counts, [d.key]: e.target.value.replace(/[^0-9]/g, '') })} aria-label={`Number of ${d.label}s`} />
+                        <span className="denom-amount mono" aria-hidden="true">{n > 0 ? money(n * d.value) : ''}</span>
+                      </label>
+                    )
+                  })}
+                </fieldset>
+              ))}
           </div>
-          <p className="denoms-total">Total counted <strong className="mono">{money(total)}</strong></p>
+          <p className="denoms-total"><span>Total counted</span> <strong className="mono">{money(total)}</strong></p>
         </>
       ) : (
         <label>
