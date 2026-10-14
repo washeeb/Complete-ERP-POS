@@ -487,6 +487,11 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Only what the business runs is offered (2026-10-14)
+- **Same rule as the menus:** `ModuleService::enabledAnywhere`, which follows the industry chosen at the top, decides industry roles (`RoleCatalog::MODULE_ROLES`), settings sections, message templates and device kinds (`Device::kindsFor`, checked again in `DeviceService`). HR roles follow the licence (`FEATURE_ROLES`).
+- **Hidden, never deleted:** a role already held stays visible; hidden settings keep their values (the save skips fields that were not shown); templates stay stored and come back with the module.
+- **The kiosk kind is withdrawn** until self-checkout is built (feature flags stay off until built). The key remains in `Device::KINDS` for labels only.
+
 ## Shared server option (2026-10-14)
 - **Separate copies, not several companies in one copy.** The app can hold several companies, but one copy shares one licence (limits are per installation), one backup and restore, one update and one database. One client's restore or fault would then reach the others. Each copy has its own `installation_id`, so licences stay separate even on one machine.
 - **Isolation by Unix user:** each copy runs PHP, cron and Reverb as its own system user, with `.env` readable only by that group and private storage closed to others. Code stays world-readable because it is not secret. Caddy reaches each pool through a socket owned by `caddy`, and is not added to the copies' groups, so it cannot read their `.env`.

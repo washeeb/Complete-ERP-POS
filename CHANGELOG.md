@@ -3,6 +3,11 @@
 ## [Unreleased]
 ### Fixed
 - **Cash count by notes and coins laid out properly**, on the till's *Close shift* and in the back office's cash desk and income control. The boxes no longer overflow their columns. Notes and coins sit in their own groups (side by side on a PC, one under the other on a phone), each line shows what it comes to, and the running total sits underneath. Still blind: the expected figure is never shown.
+- **Only what the business runs is offered** (owner: "for pharmacy, kitchen things should not show"):
+  - device types: a kitchen display only at a branch with the Restaurant module; the self-checkout kiosk (not built) never;
+  - roles: industry roles (pharmacist, waiter, kitchen staff, technician, tailor, stylist, sales reps, production roles, rider) only where the industry runs, and HR roles only with HR licensed. A role someone already holds stays listed;
+  - settings: industry sections (Restaurant, Pharmacy, Grocery, Fashion, Services, Distribution) only where the industry runs. Saving no longer touches the hidden sections' values;
+  - message templates: table bookings only with Restaurant, appointments only with Services.
 - **Ubuntu installer no longer stops silently at step 9** on Ubuntu 24.04 (the SSH port lookup failed when SSH is started on demand). Any unexpected stop now names the line. Found on the first client installation.
 - **The signed release manifest now reaches servers** (`bootstrap/release-manifest.json`). It was in `storage/`, which installers keep on updates, so the tamper check and the client build stamp were silently off. `release:build` also includes the server's built assets (the online shop's live updates).
 ### Added

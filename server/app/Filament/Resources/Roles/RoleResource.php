@@ -8,6 +8,8 @@ use App\Filament\Resources\Roles\Pages\ListRoles;
 use App\Filament\Support\Erp;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\RoleAssignment;
+use App\Security\RoleCatalog;
 use App\Security\SecurityLevel;
 use BackedEnum;
 use Filament\Actions\EditAction;
@@ -22,6 +24,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
@@ -53,6 +56,15 @@ class RoleResource extends Resource
     public static function canDelete(Model $record): bool
     {
         return false;
+    }
+
+    /** Roles of industries not switched on here are left out, unless someone already holds them. */
+    public static function getEloquentQuery(): Builder
+    {
+        $hidden = RoleCatalog::hiddenKeys();
+
+        return parent::getEloquentQuery()->when($hidden, fn ($q) => $q->where(fn ($q) => $q->whereNotIn('key', $hidden)
+            ->orWhereIn('id', RoleAssignment::query()->select('role_id'))));
     }
 
     public static function form(Schema $schema): Schema

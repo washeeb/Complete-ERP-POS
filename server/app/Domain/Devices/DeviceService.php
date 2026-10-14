@@ -35,8 +35,8 @@ final class DeviceService
         $branch = Branch::findOrFail($data['branch_id']);
         $this->require($actor, $branch);
         app(LicenseManager::class)->assertWithin('devices', Device::where('status', '<>', 'revoked')->count(), 'tills and devices');
-        if (! array_key_exists($data['kind'] ?? '', Device::KINDS)) {
-            throw new DomainException('Choose the kind of device.');
+        if (! array_key_exists($data['kind'] ?? '', Device::kindsFor($branch->id))) {
+            throw new DomainException(($data['kind'] ?? '') === 'kds' ? 'A kitchen display needs the Restaurant module on this branch.' : 'Choose the kind of device.');
         }
         if (! empty($data['till_id'])) {
             $till = Till::findOrFail($data['till_id']);

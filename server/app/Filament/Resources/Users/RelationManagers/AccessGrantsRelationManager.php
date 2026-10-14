@@ -11,6 +11,7 @@ use App\Models\Role;
 use App\Models\RoleAssignment;
 use App\Models\Till;
 use App\Models\Warehouse;
+use App\Security\RoleCatalog;
 use App\Security\ScopeType;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
@@ -67,7 +68,7 @@ class AccessGrantsRelationManager extends RelationManager
                     ->visible(fn () => Erp::can('admin.roles.manage'))
                     ->schema([
                         Select::make('role_id')->label('Role')->required()
-                            ->options(fn () => Role::orderBy('security_level')->orderBy('name')->get()
+                            ->options(fn () => Role::whereNotIn('key', RoleCatalog::hiddenKeys())->orderBy('security_level')->orderBy('name')->get()
                                 ->mapWithKeys(fn (Role $r) => [$r->id => "{$r->name} (L{$r->security_level})"])),
                         Select::make('scope_type')->label('Applies to')->required()->live()
                             ->options(collect(ScopeType::cases())->mapWithKeys(fn ($s) => [$s->value => $s->label()])),
