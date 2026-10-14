@@ -10,7 +10,8 @@ namespace App\Domain\Licensing;
  */
 final class ReleaseManifest
 {
-    public const PATH = 'storage/app/release/manifest.json';
+    // Outside storage/: every installer keeps a server's storage on updates, so a manifest there never reached the server.
+    public const PATH = 'bootstrap/release-manifest.json';
 
     /** Files guarded in every release (relative to the application root). */
     public const PROTECTED = [

@@ -8,6 +8,7 @@ use App\Domain\Licensing\Vendor\VendorKeys;
 use App\Domain\Licensing\Watermark;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
 use PharData;
@@ -28,7 +29,8 @@ use ZipArchive;
 class ReleaseBuildCommand extends Command
 {
     protected $signature = 'release:build {--customer= : who this copy is for} {--license= : their licence id, if known}
-        {--key= : path to the private key file} {--out= : output folder (default ../dist)} {--with-pos : also build the till app}';
+        {--key= : path to the private key file} {--out= : output folder (default ../dist)} {--with-pos : also build the till app}
+        {--without-assets : skip building the server\'s own assets (tests only; the online shop needs them)}';
 
     protected $description = 'Vendor only: build a stamped, signed release for one customer';
 
@@ -92,6 +94,17 @@ class ReleaseBuildCommand extends Command
 
                 return self::FAILURE;
             }
+        }
+
+        // 5. The server's own built assets (the online shop's live updates), which git does not hold.
+        if (! $this->option('without-assets')) {
+            $b = Process::path(base_path())->timeout(600)->run(['npm', 'run', 'build']);
+            if (! $b->successful() || ! is_dir(public_path('build'))) {
+                $this->error('Building the server assets failed (run npm ci in server/ first): '.$b->errorOutput());
+
+                return self::FAILURE;
+            }
+            File::copyDirectory(public_path('build'), $root.DIRECTORY_SEPARATOR.'public'.DIRECTORY_SEPARATOR.'build');
         }
 
         $zip = $out.DIRECTORY_SEPARATOR.Str::slug((string) config('brand.name')).'-'.Str::slug($customer).'-'.$build.'.zip';

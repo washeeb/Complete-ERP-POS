@@ -33,6 +33,8 @@ done
 
 say() { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
 die() { printf '\n\033[1;31mStopped: %s\033[0m\n' "$*"; exit 1; }
+# Any unexpected failure says where it happened, instead of ending silently.
+trap 'printf "\n\033[1;31mStopped: an unexpected error on line %s of install.sh (running it again is safe).\033[0m\n" "$LINENO"' ERR
 set_env() { # replace KEY=... in .env, or add it
   if grep -q "^$1=" .env; then sed -i "s|^$1=.*|$1=$2|" .env; else printf '\n%s=%s\n' "$1" "$2" >> .env; fi
 }
@@ -337,7 +339,9 @@ if [ -z "$DOMAIN" ]; then
 fi
 if [ "$CI_MODE" = 0 ] && command -v ufw >/dev/null; then
   # Only remote administration (SSH, on whatever port it uses) and the web server's two ports.
-  SSH_PORT="$(sshd -T 2>/dev/null | awk '/^port /{print $2; exit}')"
+  # sshd -T fails on Ubuntu 24.04 when SSH is socket-started (no /run/sshd yet): fall back to the socket's port, then 22.
+  SSH_PORT="$( { sshd -T 2>/dev/null || true; } | awk '/^port /{print $2; exit}')"
+  [ -n "$SSH_PORT" ] || SSH_PORT="$( { systemctl show ssh.socket -p Listen 2>/dev/null || true; } | grep -oE '[0-9]+ \(Stream\)' | head -1 | cut -d' ' -f1 || true)"
   ufw allow "${SSH_PORT:-22}/tcp" >/dev/null
   ufw allow 80/tcp >/dev/null && ufw allow 443/tcp >/dev/null
   ufw delete allow 8080/tcp >/dev/null 2>&1 || true

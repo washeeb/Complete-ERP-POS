@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+### Fixed
+- **Ubuntu installer no longer stops silently at step 9** on Ubuntu 24.04 (the SSH port lookup failed when SSH is started on demand). Any unexpected stop now names the line. Found on the first client installation.
+- **The signed release manifest now reaches servers** (`bootstrap/release-manifest.json`). It was in `storage/`, which installers keep on updates, so the tamper check and the client build stamp were silently off. `release:build` also includes the server's built assets (the online shop's live updates).
+### Added
+- **Case study:** installation guide Chapter 19, a real cloud installation (Contabo, Namecheap, Windows `scp`/`ssh`, install script, licence, checks) with the problems met on the way; training checklist *Cloud installation* for SyncLytics staff.
+
 ## [0.34.3] — 2026-10-14 · Shared server option
 ### Added
 - **Several small clients on one Ubuntu server** (owner: one server per client is the standard; sharing is an option for small businesses starting out).
