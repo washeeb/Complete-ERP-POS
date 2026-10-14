@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Fixed
+- **Cash count by notes and coins laid out properly**, on the till's *Close shift* and in the back office's cash desk and income control. The boxes no longer overflow their columns. Notes and coins sit in their own groups (side by side on a PC, one under the other on a phone), each line shows what it comes to, and the running total sits underneath. Still blind: the expected figure is never shown.
 - **Only what the business runs is offered** (owner: "for pharmacy, kitchen things should not show"):
   - device types: a kitchen display only at a branch with the Restaurant module; the self-checkout kiosk (not built) never;
   - roles: industry roles (pharmacist, waiter, kitchen staff, technician, tailor, stylist, sales reps, production roles, rider) only where the industry runs, and HR roles only with HR licensed. A role someone already holds stays listed;
