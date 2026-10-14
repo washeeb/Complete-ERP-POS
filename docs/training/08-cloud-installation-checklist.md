@@ -37,6 +37,8 @@ For installing a client's server on a rented cloud server. Tick each line. The f
 
 - [ ] `https://<name>/admin` opens with a padlock; owner signs in.
 - [ ] Installation code (`SYNREQ-…`) sent to SyncLytics; licence key issued for what was bought; activated.
+- [ ] Set-up wizard, last page: the demo branches replaced by the client's real shops (one head office; one industry module each; tills within the licence).
+- [ ] One registered company? *System → Settings → Finance → Separate books for each industry* switched **off** before the first posting.
 - [ ] System → Health all OK, including *PHP code cache: On*.
 - [ ] Second backup destination outside the provider added.
 - [ ] `ufw status`: only 22, 80, 443.
@@ -47,6 +49,7 @@ For installing a client's server on a rented cloud server. Tick each line. The f
 
 | What you see | Do this |
 |---|---|
+| The script ends at step 9 with no message (releases before 14 October 2026) | Finish by hand: the four commands in the installation guide, Chapter 19.6. Newer releases do not stop there. |
 | *Connection closed* after the password | Try again; paste with a right-click. Still failing: sign in through Contabo's VNC console to check the password, or reset it in the panel. |
 | The name does not answer | Check the A record and that the nameservers are the registrar's own; wait 5–30 minutes. |
 | The script stops with **Stopped:** | Copy the message and the lines above it (never passwords) to the SyncLytics developer. Running the script again is safe. |

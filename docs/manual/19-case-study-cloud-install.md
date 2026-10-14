@@ -79,16 +79,41 @@ Done when both files show **100%**.
    ```
    sudo bash /root/install.sh --zip /root/ses-labs-<client>-<build>.zip --domain erp.clientdomain.com --email info@synclyticsenterprisesystems.com
    ```
-   It shows steps **1/10 to 10/10** (about 15 minutes; downloading the packages takes longest) and ends with *Done: the server answers at https://erp.clientdomain.com/admin*.
+   It shows steps **1/10 to 10/10** and ends with *Done: the server answers at https://erp.clientdomain.com/admin*. Here the packages, libraries and database took about 5 minutes on a new Cloud VPS 6.
 5. **Write down the backup passphrase** it shows, and keep it with the SyncLytics key backup. Backups cannot be restored without it.
 6. Answer its questions to create the **company and the owner account** (Chapter 7).
+
+**What happened here:** the script ended at step **9/10** without a message, so the firewall, the final check, the passphrase display and the company questions did not run. The cause was the SSH port lookup, which fails on Ubuntu 24.04 when SSH is started on demand. Fixed on 14 October 2026: the script now carries on, and any unexpected stop names the line. Everything before step 9 had worked, so the remaining steps were done by hand:
+
+```
+ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 443/tcp && ufw --force enable && ufw status
+curl -fsS https://erp.clientdomain.com/up > /dev/null && echo "Site OK"
+grep '^BACKUP_PASSPHRASE=' /var/www/seslabs/server/.env
+cd /var/www/seslabs/server && php artisan erp:install && chown -R www-data:www-data storage bootstrap/cache
+```
+
+The site answered over HTTPS straight away, with a Let's Encrypt certificate valid for three months and renewed automatically.
 
 ## 19.7 Licence and first sign-in
 
 1. Open `https://erp.clientdomain.com/admin` and sign in as the owner. The padlock shows a valid certificate.
-2. **Licence** page: copy the **installation code** (`SYNREQ-…`) and send it to SyncLytics.
-3. SyncLytics issues the key for exactly what the client bought (here: 2 shops, Pharmacy and one retail module, 10 users, valid for the paid year). Paste it on the Licence page → **Activate**.
-4. Continue with the set-up wizard (Chapter 7): company details and TIN under *Company → Legal entities*, branches, users.
+2. **Licence** page: copy the **installation code** (`SYNREQ-…`) and send it to SyncLytics. The code names the release build, which confirms the signed release is installed.
+3. SyncLytics issues the key for exactly what the client bought. Here that was:
+   - 2 shops, 4 tills and devices, 10 users;
+   - Pharmacy, Grocery (to start the retail shop) and Retail & Wholesale (for when it is released);
+   - accounts, and HR and payroll (added free for this client);
+   - valid to the end of the set-up period. The full-year key follows when the first year's subscription is paid at go-live.
+
+   Paste it on the Licence page → **Activate**. A key re-issued with more features simply replaces the earlier one.
+4. **Set up your company** wizard, *Branches & modules* page. It opens with a **demo layout**: head office plus Grocery, Restaurant and Pharmacy branches, 2 tills each. Change it to the client's real shops **before** clicking *Finish setup*, or the licence limits refuse it. Here:
+   - delete the demo branches the client does not have;
+   - the pharmacy, code `PH`, **head office on**, module **Pharmacy** only, 2 tills;
+   - the retail shop, code `RT`, module **Grocery / Supermarket** only, 2 tills;
+   - leave *Retail & Wholesale* unticked (not released yet).
+5. **Books:** a client that is **one registered company** running both shops switches off *System → Settings → Finance → Separate books for each industry* straight away, before anything is posted.
+6. Company details and TIN under *Company → Legal entities*; users and roles (Chapter 7).
+
+**Lesson:** read the wizard's last page line by line. Its demo branches look finished but are only an example.
 
 ## 19.8 After installing (the same day)
 
