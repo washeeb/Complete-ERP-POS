@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Domain\Modules\ModuleService;
 use App\Domain\Support\Recorder;
 use App\Filament\Support\Erp;
 use App\Support\Settings;
@@ -62,8 +63,12 @@ class ManageSettings extends Page
             };
         }
 
+        // An industry's settings show only where that industry runs (and follow the industry chosen at the top).
+        $industryGroups = ['Restaurant' => 'restaurant', 'Pharmacy' => 'pharmacy', 'Grocery' => 'grocery', 'Fashion' => 'fashion', 'Services' => 'services', 'Distribution' => 'distribution'];
+
         return $schema->statePath('data')->components([
-            ...collect($groups)->map(fn ($fields, $group) => Section::make($group)->schema($fields))->values()->all(),
+            ...collect($groups)->map(fn ($fields, $group) => Section::make($group)->schema($fields)
+                ->visible(fn () => ! isset($industryGroups[$group]) || ModuleService::enabledAnywhere($industryGroups[$group])))->values()->all(),
             TextInput::make('reason')->label('Reason for change')->maxLength(255),
         ]);
     }
@@ -82,6 +87,9 @@ class ManageSettings extends Page
         $settings = app(Settings::class);
         Erp::run(fn ($actor) => app(Recorder::class)->transaction(function () use ($actor, $data, $settings) {
             foreach (array_keys(Settings::DEFINITIONS) as $key) {
+                if (! array_key_exists(self::field($key), $data)) {
+                    continue; // a hidden section (industry not switched on here) keeps its value
+                }
                 if ($data[self::field($key)] != $settings->get($key, $actor->tenantId)) {
                     $settings->set($actor, $key, $data[self::field($key)], $data['reason'] ?? null);
                 }

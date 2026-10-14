@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domain\Modules\ModuleService;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasOriginNode;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -14,6 +15,22 @@ class Device extends Model
     use BelongsToTenant, HasApiTokens, HasOriginNode, HasUuids;
 
     public const KINDS = ['pos' => 'POS till', 'handheld' => 'Handheld scanner', 'kiosk' => 'Self-checkout kiosk', 'kds' => 'Kitchen display'];
+
+    /**
+     * The kinds that can be registered at a branch: a kitchen display only where the Restaurant module runs; the
+     * self-checkout kiosk not at all until it is built.
+     *
+     * @return array<string, string>
+     */
+    public static function kindsFor(?string $branchId): array
+    {
+        $kinds = ['pos' => self::KINDS['pos'], 'handheld' => self::KINDS['handheld']];
+        if ($branchId && app(ModuleService::class)->isEnabled($branchId, 'restaurant')) {
+            $kinds['kds'] = self::KINDS['kds'];
+        }
+
+        return $kinds;
+    }
 
     protected $fillable = ['branch_id', 'till_id', 'name', 'kind'];
 

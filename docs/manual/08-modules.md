@@ -27,6 +27,8 @@ When a company runs more than one kind of business, each kind is an **industry**
   - give a person a role **at their branch** (People & access → Users → Grant access → Applies to: *Branch*). A pharmacist at Pharmacy Osu then sees that pharmacy only;
   - an **industry manager** gets the role with *Applies to: Industry*, and sees every branch of that industry, and nothing of the others.
 
+**Only what the business runs is offered.** Roles (such as *Waiter* or *Tailor*), settings sections, message templates and device types that belong to an industry appear only where that industry is switched on. A pharmacy, for example, is never offered a kitchen display.
+
 **Menus follow the choice.** With an industry chosen, only its own module menus show (for example *Pharmacy* but not *Restaurant*). With *All industries*, every installed industry's menus show. Grocery's menu has **Markdowns** (near-expiry stickers and expired write-offs at the grocery stores) and **Scale items** (the weighed products to load into the scales).
 
 **Check:** choose *Pharmacy* at the top. *Stock → Stock on hand* shows only the pharmacy branches, and *Catalog → Products* shows only pharmacy (and shared) products. Choose *All industries* to go back.

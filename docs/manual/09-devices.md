@@ -19,7 +19,7 @@ Every till, handheld and kitchen screen is set up the same way:
 | Branch | Where the device is used |
 | Till (for POS devices) | The till it sells on (e.g. *Till 1*). Each selling device needs a till. |
 | Name | Something you will recognise: *Front counter PC*, *Waiter tablet 2*, *Handheld 1* |
-| Kind | **POS till** (tills and waiter tablets), **Handheld scanner** (warehouse), **Kitchen display** (kitchen or bar screen). *Self-checkout kiosk* is planned. |
+| Kind | **POS till** (tills and waiter tablets) or **Handheld scanner** (warehouse). **Kitchen display** (kitchen or bar screen) is offered only at a branch running the Restaurant module. |
 
 ![Registering a device](img/device-new.png)
 
