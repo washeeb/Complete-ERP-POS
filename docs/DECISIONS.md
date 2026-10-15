@@ -487,6 +487,9 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Only plain values in the cache (2026-10-15)
+- Laravel 13's `cache.serializable_classes = false` turns cached objects into `__PHP_Incomplete_Class` on file, database and Redis stores. Store scalars and arrays only (heartbeats are Unix timestamps). Tests that touch the cache use the file store, since the array store never serializes.
+
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
