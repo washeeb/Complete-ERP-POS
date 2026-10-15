@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Fixed
+- **System → Health no longer fails with a server error.** The scheduler stored its last-run time in the cache as a date object, which Laravel 13 will not read back from a server's file or database cache. It is now a plain timestamp; an old value is ignored until the next run a minute later. Found on the first client server.
 - **Faster back office over long or unsteady lines:** the Ubuntu installer opens 443/udp, so browsers can use HTTP/3 (fewer round trips, copes with lost packets). Found at the first client, whose shop reaches the server in Europe in 150–230 ms.
 - **Importing a long product list no longer fails with "Error while loading page".** Checking or importing a few thousand rows takes minutes, and the server stopped every request after 30 seconds. Found at the first client.
 - **Barcodes keep their leading zeros through Excel.** The template and current data download as Excel (CSV still offered), with codes as text; CSV downloads write such codes as `="0123…"` so Excel keeps them. On import, zeros Excel dropped are put back when the check digit proves them (EAN-8 and UPC-A), whole numbers Excel wrote as `6001067000123.0` or in full scientific form are turned back into digits, and a barcode Excel shortened (`6.00107E+12`) is refused with how to fix it.

@@ -4,6 +4,7 @@ namespace App\Domain\Support;
 
 use App\Domain\Licensing\LicenseManager;
 use App\Models\BackupRun;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -30,9 +31,9 @@ final class SystemHealth
 
             return $out;
         }
-        $beat = Cache::get('erp:heartbeat:scheduler');
+        $beat = self::lastBeat('scheduler');
         $add('Scheduler', $beat && now()->diffInMinutes($beat) < 5 ? 'ok' : 'fail', $beat ? 'Last ran '.now()->diffForHumans($beat, true).' ago' : 'Not running: start the scheduler (Chapter 4/5) — nothing is posted, synced, sent or backed up without it.');
-        $relay = Cache::get('erp:heartbeat:relay');
+        $relay = self::lastBeat('relay');
         $add('Relay (live updates, messages, webhooks)', $relay && now()->diffInMinutes($relay) < 3 ? 'ok' : 'warning', $relay ? 'Last ran '.now()->diffForHumans($relay, true).' ago' : 'Not seen yet: it starts with the scheduler.');
 
         $last = BackupRun::latest('started_at')->first();
@@ -86,8 +87,17 @@ final class SystemHealth
         return $out;
     }
 
+    /** Stored as a plain timestamp: Laravel refuses to rebuild objects from a file or database cache (serializable_classes). */
     public static function beat(string $what): void
     {
-        Cache::put("erp:heartbeat:{$what}", now(), now()->addDay());
+        Cache::put("erp:heartbeat:{$what}", now()->getTimestamp(), now()->addDay());
+    }
+
+    /** When it last ran, or null (never, or an older value the cache cannot read back: the next beat replaces it). */
+    public static function lastBeat(string $what): ?Carbon
+    {
+        $at = Cache::get("erp:heartbeat:{$what}");
+
+        return is_int($at) ? Carbon::createFromTimestamp($at, config('app.timezone')) : null;
     }
 }
