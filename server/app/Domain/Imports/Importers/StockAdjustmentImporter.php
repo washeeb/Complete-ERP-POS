@@ -79,6 +79,12 @@ final class StockAdjustmentImporter extends Importer
         return ['warehouse_id' => null, 'reason_code' => 'correction'];
     }
 
+    /** The rows build one document together (prepare/finish): the whole file stays in one transaction. */
+    public function inBatches(): bool
+    {
+        return false;
+    }
+
     public function prepare(Actor $actor, array $options, ?Model $context): ?Model
     {
         if ($context) {

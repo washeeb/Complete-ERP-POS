@@ -493,6 +493,11 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## Imports in batches (2026-10-15)
+- **Why:** `AuditLog::record` locks the tenant's chain head (`lockForUpdate`) until commit, so one transaction around a whole import serialised every other write in the company (sales from tills, settings, the audit line every export writes) for the import's length. Requests then waited past Caddy's 300 s; PHP's `max_execution_time` does not count time spent waiting, so nothing stopped them.
+- **Now:** `ImportService::BATCH` (50) rows per transaction (a few seconds of lock). Check: each batch undone. Import, all or nothing: a full check pass first, then the import pass; rows that fail only in the second pass (data changed in between) are reported, not imported. With *skip rows with errors* a single pass.
+- **One transaction stays** for importers whose rows build one document (`inBatches() = false`: opening balances, stock adjustments).
+
 ## Stock left on the till (2026-10-15)
 - **Setting `pos.show_stock`, off by default**, sent in the till's bootstrap. Off now also hides the search list's "in stock" figure, so the choice is the shop's.
 - **Worked out on the till** (`stock.ts`): the catalog's `on_hand` for the till's warehouse, less the cart and queued (unsent or refused) sales, in base units through each unit's factor. Sent sales are already in the server's figure, which the till re-reads on every `stock.changed` event; offline it counts only this till's sales. No new API or polling.
