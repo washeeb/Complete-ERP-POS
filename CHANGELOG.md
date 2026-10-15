@@ -4,6 +4,7 @@
 ### Fixed
 - **Importing a long product list no longer fails with "Error while loading page".** Checking or importing a few thousand rows takes minutes, and the server stopped every request after 30 seconds. Found at the first client.
 - **Barcodes keep their leading zeros through Excel.** The template and current data download as Excel (CSV still offered), with codes as text; CSV downloads write such codes as `="0123…"` so Excel keeps them. On import, zeros Excel dropped are put back when the check digit proves them (EAN-8 and UPC-A), whole numbers Excel wrote as `6001067000123.0` or in full scientific form are turned back into digits, and a barcode Excel shortened (`6.00107E+12`) is refused with how to fix it.
+- **Desktop till: a wrong server address can always be corrected.** The app now checks that the server answers before saving it, and starts on its set-up page, which opens the server when it answers. A server that has answered before still opens when it cannot be reached (selling offline); one that never answered (a mistyped address, an IP address instead of the name) brings the set-up page back with an explanation. Before, a wrong address opened a blank window with no way back, and reinstalling did not help because uninstalling keeps the settings. Found at the first client's shop.
 - **Cash count by notes and coins laid out properly**, on the till's *Close shift* and in the back office's cash desk and income control. The boxes no longer overflow their columns. Notes and coins sit in their own groups (side by side on a PC, one under the other on a phone), each line shows what it comes to, and the running total sits underneath. Still blind: the expected figure is never shown.
 - **Only what the business runs is offered** (owner: "for pharmacy, kitchen things should not show"):
   - device types: a kitchen display only at a branch with the Restaurant module; the self-checkout kiosk (not built) never;
@@ -13,6 +14,8 @@
 - **Ubuntu installer no longer stops silently at step 9** on Ubuntu 24.04 (the SSH port lookup failed when SSH is started on demand). Any unexpected stop now names the line. Found on the first client installation.
 - **The signed release manifest now reaches servers** (`bootstrap/release-manifest.json`). It was in `storage/`, which installers keep on updates, so the tamper check and the client build stamp were silently off. `release:build` also includes the server's built assets (the online shop's live updates).
 ### Added
+- **Guide for setting up a new build PC** (`docs/training/09-new-build-pc.md`, internal): what to back up, the tools (including Rust and `npx tauri build` for the desktop till installer), restoring the signing key and client pack, releases and licences, and what to do when a PC is lost.
+- Manual 9.7: the desktop till's server address is the server's name, never its IP; how to clear the till's settings and start again. Troubleshooting entry for *Could not reach*.
 - **Case study:** installation guide Chapter 19, a real cloud installation (Contabo, Namecheap, Windows `scp`/`ssh`, install script, licence, checks) with the problems met on the way; training checklist *Cloud installation* for SyncLytics staff.
 
 ## [0.34.3] — 2026-10-14 · Shared server option
