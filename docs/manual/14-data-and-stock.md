@@ -71,7 +71,7 @@ The migration imports are explained in Chapter 17.2. **Coming from** (QuickBooks
 - **Yes/no columns** accept yes, no, y, n, true, false, 1, 0.
 - **Numbers** may have thousands separators (`1,250.50`). **Dates**: `2026-10-31` or `31/10/2026`.
 - **Barcodes and serial numbers**: several in one cell, separated by `|`. In CSV downloads a code starting with 0 appears as `="0123…"`, which is how Excel is told to keep the zeros; leave it like that.
-- **Large files** (thousands of products) take a few minutes to check and import. Wait for the result; do not click again.
+- **Large files** (thousands of products) take a few minutes to check and import. Wait for the result; do not click again. The tills and the rest of the back office keep working meanwhile: the file goes in 50 rows at a time. *All or nothing* still holds: the whole file is checked first and imported only if no row has an error. (Opening balances and stock adjustments go in as one piece, since their rows make one document.)
 - Each row is checked with **your permissions**: changing prices needs the pricing permission, credit limits need the credit permission.
 - Every import is listed under **Import history** on the same page and recorded in the audit log under your name.
 

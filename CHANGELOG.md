@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Fixed
+- **A long import no longer holds up the whole system.** A file was imported in one transaction, holding the audit log for minutes, so exports, sales from the tills and every other change waited behind it (downloads "took forever" and the back office felt slow). Rows now go in batches of 50; all or nothing is kept by checking the whole file first. Opening balances and stock adjustments, whose rows make one document, stay in one piece. Found at the first client.
 - **System → Health no longer fails with a server error.** The scheduler stored its last-run time in the cache as a date object, which Laravel 13 will not read back from a server's file or database cache. It is now a plain timestamp; an old value is ignored until the next run a minute later. Found on the first client server.
 - **Faster back office over long or unsteady lines:** the Ubuntu installer opens 443/udp, so browsers can use HTTP/3 (fewer round trips, copes with lost packets). Found at the first client, whose shop reaches the server in Europe in 150–230 ms.
 - **Importing a long product list no longer fails with "Error while loading page".** Checking or importing a few thousand rows takes minutes, and the server stopped every request after 30 seconds. Found at the first client.

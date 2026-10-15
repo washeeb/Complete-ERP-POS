@@ -94,6 +94,12 @@ final class OpeningBalancesImporter extends Importer
         return 'added';
     }
 
+    /** The rows build one document together (prepare/finish): the whole file stays in one transaction. */
+    public function inBatches(): bool
+    {
+        return false;
+    }
+
     public function finish(Actor $actor, array $options, ?Model $context): void
     {
         if ($this->lines === []) {

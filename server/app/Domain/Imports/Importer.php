@@ -37,6 +37,16 @@ abstract class Importer
         return null;
     }
 
+    /**
+     * Rows may be imported in batches, each its own short transaction, so a long file never holds up the rest of the
+     * system (every change waits for the audit log in turn). False for imports whose rows build one document together
+     * (prepare/finish), which keep the whole file in one transaction.
+     */
+    public function inBatches(): bool
+    {
+        return true;
+    }
+
     /** Before the rows: e.g. create the adjustment the rows go into. Runs inside the import's transaction. */
     public function prepare(Actor $actor, array $options, ?Model $context): ?Model
     {
