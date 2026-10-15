@@ -487,6 +487,9 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## HTTP/3 on Ubuntu servers (2026-10-15)
+- **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
+
 ## Imports: time limit and barcodes through Excel (2026-10-15)
 - **Imports run up to 30 minutes per request** (`set_time_limit(1800)`, as the go-live and backup pages). Measured about 40 ms a row; PHP-FPM's 30 s stopped lists over roughly 700 rows. Caddy's 300 s read timeout still caps one request (some 7,000 rows); a queued import is the next step if larger files are needed.
 - **Excel is the default download** for templates and current data: `XlsxWriter` writes digit strings of 12+ digits, and any with a leading zero, as text.

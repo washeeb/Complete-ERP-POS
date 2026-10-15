@@ -20,7 +20,7 @@ The server is then reached over **https** only:
 - **With a domain:** a free Let's Encrypt certificate is fetched and renewed automatically.
 - **Without one:** the server uses its own certificate for its network address and name. Each till, tablet and PC trusts it once, as in **4.9**, from `http://<server-address>/ca.crt`.
 
-The firewall is switched on with only SSH, 80 and 443 open.
+The firewall is switched on with only SSH, 80 and 443 open (443 also for HTTP/3).
 
 Running it again with a newer ZIP updates the software and keeps your data, `.env` and keys. An older installation that used nginx is moved to the new web server (Caddy) automatically.
 
@@ -311,10 +311,11 @@ sudo update-ca-certificates
 sudo ufw allow OpenSSH
 sudo ufw allow 80/tcp
 sudo ufw allow 443/tcp
+sudo ufw allow 443/udp
 sudo ufw enable
 ```
 
-**Why:** the firewall blocks everything except remote administration (SSH) and the web server's two ports. The database, PHP and live updates are reachable from the server itself only. If SSH on your server uses another port than 22, allow that port instead of `OpenSSH` **before** `ufw enable`, or you lock yourself out.
+**Why:** the firewall blocks everything except remote administration (SSH) and the web server's ports. `443/udp` is HTTP/3, which browsers use when they can: it needs fewer round trips and copes better with a slow or unsteady internet line, which matters for a server far from the shop. The database, PHP and live updates are reachable from the server itself only. If SSH on your server uses another port than 22, allow that port instead of `OpenSSH` **before** `ufw enable`, or you lock yourself out.
 
 **Why HTTPS always:**
 - HTTPS encrypts everything between tills and the server: PINs, sales and customer details.

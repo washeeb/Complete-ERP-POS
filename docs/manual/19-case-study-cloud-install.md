@@ -121,10 +121,22 @@ The site answered over HTTPS straight away, with a Let's Encrypt certificate val
 |---|---|---|
 | Server health | System → Health | Scheduler OK, backups OK, *PHP code cache: On*, HTTPS OK |
 | A backup outside Contabo | System → Backups → add a second destination (Chapter 12.2) | Contabo's own backup is with the same provider; a second place protects against losing both |
-| Firewall | Contabo panel and the server (`ufw status`) | Only SSH (22), 80 and 443 open |
+| Firewall | Contabo panel and the server (`ufw status`) | Only SSH (22), 80 and 443 open; 443 for both TCP and UDP (HTTP/3) |
 | Remote login | Your PC | Move from the password to an SSH key, and restrict port 22 to your office if possible |
 | Tills | Each till device | Pair it (Chapter 9); it keeps selling if the internet drops. In the desktop till the server address is `https://erp.clientdomain.com`. Here the server's IP address was typed first, so the till could not connect; the settings were cleared (9.7) and the name entered. Newer till versions check the address before saving. |
 | Speed | Outside trading hours: `php artisan erp:load-test --force` in `/var/www/seslabs/server` | No line marked *SLOW* |
+
+### Speed from the shop
+
+The back office felt slow at the shop. Measured: the server answered itself in 0.05 s, so the server was fine; the shop's line reached Google in about 50 ms with nothing lost, but the server in Europe in 150–230 ms with an occasional lost packet. Every click in the back office makes that trip. Two things help: **HTTP/3** (`sudo ufw allow 443/udp`; the installer now does it), and a **cable instead of Wi-Fi** at the till PC. Selling is not affected: the till keeps its products and sales on the PC and sends them in the background.
+
+To measure it yourself, on the shop PC in PowerShell:
+
+```powershell
+1..3 | % { curl.exe -o NUL -s -w "first reply %{time_starttransfer}s  total %{time_total}s`n" https://erp.clientdomain.com/up }; ping -n 20 erp.clientdomain.com
+```
+
+Under 1 s per reply and no *Request timed out* is good.
 
 ## 19.9 Time and cost (this installation)
 
