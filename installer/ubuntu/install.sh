@@ -343,7 +343,7 @@ if [ "$CI_MODE" = 0 ] && command -v ufw >/dev/null; then
   SSH_PORT="$( { sshd -T 2>/dev/null || true; } | awk '/^port /{print $2; exit}')"
   [ -n "$SSH_PORT" ] || SSH_PORT="$( { systemctl show ssh.socket -p Listen 2>/dev/null || true; } | grep -oE '[0-9]+ \(Stream\)' | head -1 | cut -d' ' -f1 || true)"
   ufw allow "${SSH_PORT:-22}/tcp" >/dev/null
-  ufw allow 80/tcp >/dev/null && ufw allow 443/tcp >/dev/null
+  ufw allow 80/tcp >/dev/null && ufw allow 443/tcp >/dev/null && ufw allow 443/udp >/dev/null # 443/udp: HTTP/3, fewer round trips over long or lossy lines
   ufw delete allow 8080/tcp >/dev/null 2>&1 || true
   ufw --force enable >/dev/null
 fi

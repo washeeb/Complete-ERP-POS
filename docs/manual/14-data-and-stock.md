@@ -48,10 +48,12 @@ The migration imports are explained in Chapter 17.2. **Coming from** (QuickBooks
 
 1. **Choose what you are importing.** The page explains what a row does and lists every column (**Columns in this file**), with an example.
 2. **Get the file ready:**
-   - **Download template (CSV)** — the headings and one example row; or
-   - **Download current data to edit (CSV)** — your existing products, prices, customers or suppliers in exactly the import layout. Change what you need in Excel and import it back;
+   - **Download template (Excel)** — the headings and one example row (also as **CSV**); or
+   - **Download current data to edit (Excel)** — your existing products, prices, customers or suppliers in exactly the import layout (also as **CSV**). Change what you need in Excel and import it back;
    - **Column guide (PDF)** — what to put in each column, to print.
-3. Fill it in Excel or Google Sheets and **save it as CSV** (Excel: *File → Save As → CSV UTF-8 (Comma delimited)*).
+3. Fill it in Excel or Google Sheets and save it, as Excel (.xlsx) or as CSV (Excel: *File → Save As → CSV UTF-8 (Comma delimited)*).
+
+   **Barcodes:** before typing or pasting barcodes in Excel, select the barcode column and choose *Format Cells → Text*. **Why:** otherwise Excel treats a barcode as a number. It drops the zeros in front (`0012345678905` becomes `12345678905`) and shortens long ones (`6.00107E+12`), so the scanner would no longer find the product. The Excel downloads already have codes as text. On import, zeros Excel dropped are put back when the barcode's check digit proves them, and a shortened barcode is refused with a message.
 4. **Choose the file**, then **Check file (nothing is saved)**. Every row goes through exactly the same checks as the screens — then everything is undone. You see each row's result and a list of errors.
 
    ![The result of checking a file](img/import-check.png)
@@ -67,7 +69,8 @@ The migration imports are explained in Chapter 17.2. **Coming from** (QuickBooks
 - **Headings** are matched loosely: `Unit cost`, `unit_cost` and `UNIT COST*` are the same column. Columns the import does not know are listed and ignored.
 - **Yes/no columns** accept yes, no, y, n, true, false, 1, 0.
 - **Numbers** may have thousands separators (`1,250.50`). **Dates**: `2026-10-31` or `31/10/2026`.
-- **Barcodes and serial numbers**: several in one cell, separated by `|`.
+- **Barcodes and serial numbers**: several in one cell, separated by `|`. In CSV downloads a code starting with 0 appears as `="0123…"`, which is how Excel is told to keep the zeros; leave it like that.
+- **Large files** (thousands of products) take a few minutes to check and import. Wait for the result; do not click again.
 - Each row is checked with **your permissions**: changing prices needs the pricing permission, credit limits need the credit permission.
 - Every import is listed under **Import history** on the same page and recorded in the audit log under your name.
 

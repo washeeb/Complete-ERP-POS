@@ -171,6 +171,9 @@ final class Exporter
             return $v ? 'Yes' : 'No';
         }
         $s = (string) $v;
+        if (preg_match('/^0\d+$/', $s) || preg_match('/^\d{12,}$/', $s)) {
+            return '="'.$s.'"'; // Excel keeps it as text: leading zeros stay, long barcodes are not shortened to 6.00107E+12
+        }
         if ($s !== '' && in_array($s[0], ['=', '+', '-', '@', "\t", "\r"], true) && ! is_numeric($s)) {
             return "'".$s;
         }

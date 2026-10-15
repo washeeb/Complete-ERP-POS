@@ -74,7 +74,7 @@ final class XlsxWriter
             if ($v === null || $v === '') {
                 continue;
             }
-            if (! $bold && (is_int($v) || is_float($v) || (is_string($v) && preg_match('/^-?\d{1,15}(\.\d+)?$/', $v) && ! preg_match('/^0\d/', $v)))) {
+            if (! $bold && (is_int($v) || is_float($v) || (is_string($v) && preg_match('/^-?\d{1,11}(\.\d+)?$/', $v) && ! preg_match('/^0\d/', $v)))) {
                 $out .= '<c r="'.$ref.'"'.$style.'><v>'.$v.'</v></c>'; // leading zeros (phone numbers, codes) stay text
             } else {
                 $out .= '<c r="'.$ref.'"'.$style.' t="inlineStr"><is><t xml:space="preserve">'.self::esc(is_bool($v) ? ($v ? 'Yes' : 'No') : (string) $v).'</t></is></c>';
