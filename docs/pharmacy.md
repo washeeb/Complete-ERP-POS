@@ -7,6 +7,7 @@ Switch the module on per branch: **Company → Modules → Pharmacy**. The licen
 - **Schedule:** Over the counter, Prescription only (POM) or Controlled drug. Leave empty for anything that is not a medicine.
 - **Generic name, strength, form, FDA registration number.**
 - **Active ingredients:** used for allergy and interaction warnings. Type each one and press Enter.
+- **Units:** switching Pharmacy on adds the units medicines are sold in: Tablet (`TAB`), Strip (`STRIP`), Pack (`PK`), Ampoule (`AMP`), Vial (`VIAL`), Tube (`TUBE`), Bottle (`BTL`), Pessary (`PESS`), Suppository (`SUPP`) and Container (`CONT`). Count stock in the smallest unit you sell (e.g. Tablet) and add the bigger ones as packs of it (a Strip of 10, a Pack of 100), each with its own barcode and price. Rename or add units under Catalog → Units of measure.
 - Every medicine must have **Batches and expiry dates** switched on. It is received with its batch and expiry, sold earliest expiry first, and expired stock cannot be sold.
 
 ## Patients (Sales → Customers → Patient details)

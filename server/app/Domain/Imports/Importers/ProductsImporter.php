@@ -11,7 +11,6 @@ use App\Models\Category;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\TaxGroup;
-use App\Models\Uom;
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Model;
 
@@ -56,7 +55,7 @@ final class ProductsImporter extends Importer
             ['name' => 'category', 'required' => false, 'help' => 'Category name.', 'example' => 'Groceries'],
             ['name' => 'brand', 'required' => false, 'help' => 'Brand name.', 'example' => 'Royal Aroma'],
             ['name' => 'tax_group', 'required' => false, 'help' => 'Tax group code (Pricing & tax → Tax groups). New products: STD if empty.', 'example' => 'STD'],
-            ['name' => 'base_unit', 'required' => false, 'help' => 'Unit stock is counted in (code, e.g. PC, KG). New products: PC if empty. Cannot change once stock has moved.', 'example' => 'PC'],
+            ['name' => 'base_unit', 'required' => false, 'help' => 'Unit stock is counted in: its code or name (PC, KG, TAB or Tablet). New products: PC if empty. Cannot change once stock has moved.', 'example' => 'PC'],
             ['name' => 'track_stock', 'required' => false, 'help' => 'yes / no. New products: yes if empty.', 'example' => 'yes'],
             ['name' => 'track_batches', 'required' => false, 'help' => 'yes / no — batches and expiry dates.', 'example' => 'no'],
             ['name' => 'for_sale', 'required' => false, 'help' => 'yes / no — no takes it off the tills and shop.', 'example' => 'yes'],
@@ -107,8 +106,8 @@ final class ProductsImporter extends Importer
             $data['tax_group_id'] = TaxGroup::where('code', $code)->value('id') ?? throw new DomainException("Unknown tax group {$code}.");
         }
         if (self::has($row, 'base_unit') || $isNew) {
-            $code = strtoupper(self::has($row, 'base_unit') ? $row['base_unit'] : 'PC');
-            $data['base_uom_id'] = Uom::where('code', $code)->value('id') ?? throw new DomainException("Unknown unit {$code} (Catalog → Units of measure).");
+            $code = self::has($row, 'base_unit') ? $row['base_unit'] : 'PC';
+            $data['base_uom_id'] = self::unitId($code) ?? throw new DomainException("Unknown unit {$code} (Catalog → Units of measure).");
         }
         $data['track_stock'] = self::has($row, 'track_stock') ? self::bool($row['track_stock'], 'track_stock') : ($isNew ? true : $product->track_stock);
         foreach (['track_batches' => 'track_batches', 'for_sale' => 'is_active'] as $col => $field) {

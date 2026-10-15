@@ -493,6 +493,10 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## Industry units (2026-10-15)
+- **`IndustryUnits::UNITS` per module**, added by `ModuleService::setStatus` when the module is enabled and once by migration `2026_11_07_100001` for tenants already running it. Starter data like `TenantBaseline`, but added to a non-empty list: only codes and names the tenant does not have, so renamed or deleted-and-recreated units are respected. Written through `Recorder` as the system actor (audit + outbox, reaches branch servers).
+- **Imports match units by code or name** (`Importer::unitId`): code, name, singular of a plural, then a name starting with what was typed (3+ letters, `Cont.` → Container).
+
 ## Imports: time limit and barcodes through Excel (2026-10-15)
 - **Imports run up to 30 minutes per request** (`set_time_limit(1800)`, as the go-live and backup pages). Measured about 40 ms a row; PHP-FPM's 30 s stopped lists over roughly 700 rows. Caddy's 300 s read timeout still caps one request (some 7,000 rows); a queued import is the next step if larger files are needed.
 - **Excel is the default download** for templates and current data: `XlsxWriter` writes digit strings of 12+ digits, and any with a leading zero, as text.
