@@ -37,6 +37,12 @@ abstract class Importer
         return null;
     }
 
+    /** The rows belong to one industry (its catalogue): the import page asks which before checking or importing. */
+    public function industryScoped(): bool
+    {
+        return false;
+    }
+
     /**
      * Rows may be imported in batches, each its own short transaction, so a long file never holds up the rest of the
      * system (every change waits for the audit log in turn). False for imports whose rows build one document together

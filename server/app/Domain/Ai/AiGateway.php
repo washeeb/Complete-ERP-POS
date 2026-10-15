@@ -4,6 +4,7 @@ namespace App\Domain\Ai;
 
 use App\Domain\Ai\Providers\ClaudeProvider;
 use App\Domain\Ai\Providers\OllamaProvider;
+use App\Domain\Ai\Providers\OpenAiCompatibleProvider;
 use App\Domain\Support\Actor;
 use App\Models\AiRequest;
 use App\Support\Settings;
@@ -60,6 +61,9 @@ final class AiGateway
         if ($mode === 'ollama' || ($personal && $this->settings->get('ai.personal_data_local', $tenantId))) {
             return $local();
         }
+        if ($mode === 'cloud') {
+            return $this->cloud($tenantId, $purpose);
+        }
         $key = (string) config('ai.anthropic_key');
         if ($key === '') {
             throw new AiUnavailable('Claude is selected but no API key is set on the server (.env: ANTHROPIC_API_KEY).');
@@ -73,6 +77,28 @@ final class AiGateway
         }
 
         return new ClaudeProvider($key, (string) $this->settings->get('ai.claude_model', $tenantId));
+    }
+
+    /** "Another cloud model": an OpenAI-compatible service with the key from .env (AI_CLOUD_API_KEY). */
+    private function cloud(string $tenantId, string $purpose): AiProvider
+    {
+        $service = (string) $this->settings->get('ai.cloud_service', $tenantId);
+        $preset = config("ai.cloud_services.{$service}", []);
+        $url = $service === 'custom' ? trim((string) $this->settings->get('ai.cloud_url', $tenantId)) : ($preset['url'] ?? '');
+        if ($url === '') {
+            throw new AiUnavailable('Another cloud model is selected but its service address is empty (System → Settings → AI).');
+        }
+        $key = (string) config('ai.cloud_key');
+        if ($key === '') {
+            throw new AiUnavailable('Another cloud model is selected but no API key is set on the server (.env: AI_CLOUD_API_KEY).');
+        }
+        $model = trim((string) $this->settings->get($purpose === 'vision' ? 'ai.cloud_vision_model' : 'ai.cloud_model', $tenantId))
+            ?: (string) ($preset[$purpose === 'vision' ? 'vision' : 'model'] ?? '');
+        if ($model === '') {
+            throw new AiUnavailable('Name the model to use for this service (System → Settings → AI).');
+        }
+
+        return new OpenAiCompatibleProvider($service, $url, $key, $model);
     }
 
     /** Millionths of a US dollar spent on cloud AI this calendar month. */

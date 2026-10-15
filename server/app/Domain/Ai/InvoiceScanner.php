@@ -42,8 +42,8 @@ final class InvoiceScanner
             throw new DomainException('Upload a photo (JPG, PNG, WebP) or PDF of the invoice, at most 10 MB.');
         }
         $provider = $this->gateway->provider($actor->tenantId, 'vision');
-        if ($mime === 'application/pdf' && ! $provider->isCloud() && $provider->name() !== 'fake') {
-            throw new DomainException('The local model reads photos, not PDFs: take a photo or screenshot of the invoice (JPG or PNG).');
+        if ($mime === 'application/pdf' && ! in_array($provider->name(), ['claude', 'fake'], true)) {
+            throw new DomainException('This AI model reads photos, not PDFs: take a photo or screenshot of the invoice (JPG or PNG).');
         }
         $doc = AiDocument::create(['tenant_id' => $actor->tenantId, 'kind' => 'supplier_invoice', 'file_path' => $path, 'file_name' => mb_substr($fileName, 0, 255),
             'status' => 'failed', 'created_by_name' => $actor->name]);

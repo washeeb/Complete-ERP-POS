@@ -181,6 +181,7 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
           <p>{boot.receipt_footer}</p>
           {boot.license?.ref && <p className="receipt-ref">Ref {boot.license.ref}</p>}
           {boot.brand?.powered_by && <p className="receipt-ref">{boot.brand.powered_by}</p>}
+          {(boot.brand?.credit ?? []).map((line) => <p key={line} className="receipt-ref">{line}</p>)}
         </footer>
       </div>
       {sale.status === 'queued' && (sale.kitchen?.length ?? 0) > 0 && (

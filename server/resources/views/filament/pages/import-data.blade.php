@@ -10,6 +10,13 @@
             <label>Coming from <x-filament::input.wrapper><x-filament::input.select wire:model.live="source">
                 @foreach ($this->sources() as $k => $label)<option value="{{ $k }}">{{ $label }}</option>@endforeach
             </x-filament::input.select></x-filament::input.wrapper></label>
+            @if ($this->asksIndustry())
+                <label>For which industry? <x-filament::input.wrapper :valid="! $errors->has('industry')"><x-filament::input.select wire:model.live="industry" aria-label="For which industry">
+                    <option value="">Choose…</option>
+                    @foreach ($this->industries() as $id => $label)<option value="{{ $id }}">{{ $label }}</option>@endforeach
+                </x-filament::input.select></x-filament::input.wrapper>
+                @error('industry')<span class="im-err">{{ $message }}</span>@enderror</label>
+            @endif
             @if (array_key_exists('as_of', $i->optionDefaults()))
                 <label>Balances as of (go-live date) <x-filament::input.wrapper><x-filament::input type="date" wire:model="asOf" /></x-filament::input.wrapper></label>
             @endif

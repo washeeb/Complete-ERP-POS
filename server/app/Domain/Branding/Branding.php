@@ -67,13 +67,30 @@ final class Branding
         return self::whiteLabel() ? null : 'Powered by '.config('brand.name');
     }
 
+    /**
+     * Who made the software and how to reach them, under "Powered by" on receipts: short lines that fit a 58 mm roll.
+     * None with a white-label licence.
+     *
+     * @return list<string>
+     */
+    public static function receiptCredit(): array
+    {
+        if (self::whiteLabel()) {
+            return [];
+        }
+        $phone = config('brand.support_phone');
+        $web = ($w = config('brand.website')) ? preg_replace('#^https?://(www\.)?#', '', rtrim($w, '/')) : null;
+
+        return array_values(array_filter(['Software by '.config('brand.vendor').($phone ? ": {$phone}" : ''), $web]));
+    }
+
     // --- a client company ----------------------------------------------------------------------------------------------
 
     /**
      * Everything a screen, receipt or document needs to show the company's brand.
      *
      * @return array{company: string, color: string, on_color: string, custom_color: bool, logo_url: ?string, logo_dark_url: ?string, icon_url: string,
-     *               has_logo: bool, receipt_logo: bool, powered_by: ?string, monogram: string}
+     *               has_logo: bool, receipt_logo: bool, powered_by: ?string, credit: list<string>, monogram: string}
      */
     public static function forTenant(?Tenant $tenant): array
     {
@@ -81,7 +98,7 @@ final class Branding
         if (! $tenant) {
             return ['company' => $product['name'], 'color' => $product['color'], 'on_color' => self::onColor($product['color']), 'custom_color' => false,
                 'logo_url' => $product['logo'], 'logo_dark_url' => $product['logo_dark'], 'icon_url' => $product['favicon'], 'has_logo' => false,
-                'receipt_logo' => false, 'powered_by' => null, 'monogram' => self::monogram($product['name'], $product['color'])];
+                'receipt_logo' => false, 'powered_by' => null, 'credit' => [], 'monogram' => self::monogram($product['name'], $product['color'])];
         }
         $assets = BrandAsset::withoutGlobalScopes()->where('tenant_id', $tenant->id)->where('bytes', '>', 0)->get(['kind', 'mime', 'sha256'])->keyBy('kind');
         $color = $tenant->brand_color ?: $product['color'];
@@ -90,7 +107,7 @@ final class Branding
 
         return ['company' => $tenant->name, 'color' => $color, 'on_color' => self::onColor($color), 'custom_color' => (bool) $tenant->brand_color,
             'logo_url' => $logo, 'logo_dark_url' => $url('logo_dark') ?? $logo, 'icon_url' => $url('icon') ?? url("/brand/{$tenant->slug}/monogram.svg?v=".substr(md5($tenant->name.$color), 0, 8)),
-            'has_logo' => $logo !== null, 'receipt_logo' => $logo !== null && (bool) $tenant->brand_receipt_logo, 'powered_by' => self::poweredBy(),
+            'has_logo' => $logo !== null, 'receipt_logo' => $logo !== null && (bool) $tenant->brand_receipt_logo, 'powered_by' => self::poweredBy(), 'credit' => self::receiptCredit(),
             'monogram' => self::monogram($tenant->name, $color)];
     }
 

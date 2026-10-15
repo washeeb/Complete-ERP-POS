@@ -493,6 +493,16 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## SKUs without the "SKU" prefix (2026-10-15)
+- **Shared products: plain numbers from `CatalogService::SHARED_SKU_FROM` + 1 (100001)**, series `SHARED` in `document_sequences`. Six digits without a leading zero, so Excel keeps them intact. Industry products keep `<CODE>-000123`.
+- **System SKUs follow a move** (`CatalogService::systemSku`): moving to another industry re-numbers a system-given SKU in the new series. This relaxes "the SKU never changes" for system codes only; receipts keep the SKU they printed (sale lines store it), stock and prices are by product id. Typed codes from an old system never change.
+- **Backfill as a migration** (`2026_11_08_100001`): `SKU-000123` → `100123` when shared and free, else the next number of the product's series; the old `SKU` sequence becomes `SHARED`. Through `Recorder` (audit + outbox) so branch servers follow.
+
+## Import industry, other AI services, receipt credit (2026-10-15)
+- **Industry imports ask, never guess:** `Importer::industryScoped()` (products). The page shows *For which industry?* (defaulting to the industry chosen at the top, else empty) and refuses Check/Import without it; the domain refuses new products without a choice once licensed industries exist (calls from code pass `industry`). An `industry` column (name, code, module key or a name prefix; "shared") overrides per row and is the only way an import moves an existing product. `CatalogService::moveToIndustry` + a products bulk action repair earlier imports; SKUs never change.
+- **Other AI services through one OpenAI-compatible provider** (`OpenAiCompatibleProvider`, presets in `config/ai.php`): Gemini (OpenAI endpoint), Groq, OpenRouter, Mistral, OpenAI, or a custom `/v1` address. Key in `.env` like Claude's. Cost logged as 0 (free plans, unknown prices), so the budget gate stays Claude's; masking follows `isCloud()`. PDFs are read by Claude only.
+- **Receipt credit** (`Branding::receiptCredit`): two short lines (fit 58 mm) from `config('brand.*')`, so a reseller's own vendor and phone show instead; empty with white label.
+
 ## Back-office clarity styles (2026-10-15)
 - **A static stylesheet** (`public/css/seslabs/admin.css`, linked by a HEAD_END render hook with a file-time version) instead of a compiled Filament theme: no build step on servers, and it rides on Filament's own classes (`fi-active`) and colour variables (`--primary-*`), so the brand colour follows Company → Branding.
 - **Covers** the active sidebar item, its group heading, active tabs and every native file input (`::file-selector-button`).

@@ -287,7 +287,7 @@ it('writes and reads Excel files, and imports with the person’s own column nam
     expect($read['headings'])->toBe(['item_code', 'name', 'price_ghs'])->and($read['rows'][0]['values'])->toBe(['item_code' => 'SUGAR-1', 'name' => 'Sugar 1 kg & more <b>', 'price_ghs' => '22.00'])
         ->and($read['rows'][1]['values']['item_code'])->toBe('0244')->and($read['rows'][0]['line'])->toBe(2);
 
-    $import = app(ImportService::class)->run($this->o, 'products', $path, 'products.xlsx', ['create_missing' => true], null, true, ['sku' => 'item_code', 'price_retail' => 'price_ghs']);
+    $import = app(ImportService::class)->run($this->o, 'products', $path, 'products.xlsx', ['create_missing' => true, 'industry' => 'shared'], null, true, ['sku' => 'item_code', 'price_retail' => 'price_ghs']);
     expect($import->errors)->toBe([])->and($import->status)->toBe('imported')->and(Product::where('sku', 'SUGAR-1')->value('name'))->toBe('Sugar 1 kg & more <b>');
     @unlink($path);
 });

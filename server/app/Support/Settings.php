@@ -69,9 +69,32 @@ final class Settings
             'help' => 'In daily mode, the till sales are sent after this time each day (and anything left over is sent the next day).',
         ],
         'ai.provider' => [
-            'type' => 'choice', 'default' => 'off', 'group' => 'AI', 'options' => ['off' => 'Off — built-in insights only', 'ollama' => 'Local model (Ollama on your server)', 'claude' => 'Claude (cloud, within the monthly budget)'],
+            'type' => 'choice', 'default' => 'off', 'group' => 'AI', 'options' => ['off' => 'Off — built-in insights only', 'ollama' => 'Local model (Ollama on your server, free)', 'claude' => 'Claude (cloud, within the monthly budget)',
+                'cloud' => 'Another cloud model (Google Gemini, Groq, OpenRouter, Mistral, OpenAI; several have free plans)'],
             'label' => 'AI assistant',
-            'help' => 'Forecasts, alerts and insights always work without AI. The copilot, invoice scanning and product descriptions need a model: a local one (Ollama, nothing leaves your servers) or Claude in the cloud.',
+            'help' => 'Forecasts, alerts and insights always work without AI. The copilot, invoice scanning and product descriptions need a model: a local one (Ollama, nothing leaves your servers), Claude, or another cloud service chosen below.',
+        ],
+        'ai.cloud_service' => [
+            'type' => 'choice', 'default' => 'gemini', 'group' => 'AI',
+            'options' => ['gemini' => 'Google Gemini (free plan)', 'groq' => 'Groq (free plan)', 'openrouter' => 'OpenRouter (free models)', 'mistral' => 'Mistral (free plan)',
+                'openai' => 'OpenAI', 'custom' => 'Other OpenAI-compatible service (address below)'],
+            'label' => 'Other cloud model: service',
+            'help' => 'Used when the AI assistant is "Another cloud model". Its API key goes in the server settings (.env: AI_CLOUD_API_KEY), never on screen. Free plans limit how many questions a day; the cloud budget below applies to Claude only.',
+        ],
+        'ai.cloud_model' => [
+            'type' => 'string', 'default' => '', 'max' => 120, 'group' => 'AI',
+            'label' => 'Other cloud model: model name',
+            'help' => 'Leave empty for the service\'s usual model. Services rename their models from time to time: copy the exact name from the service\'s model list. For the copilot it must support tools (function calling).',
+        ],
+        'ai.cloud_vision_model' => [
+            'type' => 'string', 'default' => '', 'max' => 120, 'group' => 'AI',
+            'label' => 'Other cloud model: model for reading invoices (images)',
+            'help' => 'Leave empty for the service\'s usual one, or the same as above when that model reads images.',
+        ],
+        'ai.cloud_url' => [
+            'type' => 'string', 'default' => '', 'max' => 200, 'group' => 'AI',
+            'label' => 'Other cloud model: service address',
+            'help' => 'Only for "Other OpenAI-compatible service": the address ending in /v1 (the part before /chat/completions).',
         ],
         'ai.ollama_url' => [
             'type' => 'string', 'default' => 'http://127.0.0.1:11434', 'max' => 200, 'group' => 'AI',

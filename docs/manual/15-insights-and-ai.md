@@ -98,6 +98,23 @@ Only with the owner's decision, because data then leaves your servers:
 3. **System → Settings → AI:** choose *Claude*, and set **Cloud AI budget per month (USD)**. With a budget of 0 Claude is never used; when the month's budget is spent it stops until the 1st.
 4. Keep **Keep personal data on your server** on (recommended): questions about customers or staff are then answered by the local model only (or shown without AI wording if there is none). In every case names, phone numbers and e-mail addresses are replaced by placeholders such as *[Customer 1]* before anything is sent, and put back when the answer arrives.
 
+### If you choose another cloud model (some are free)
+
+Instead of Claude you can use another cloud service. Google Gemini, Groq, OpenRouter (its *free* models) and Mistral have free plans that limit how many questions a minute or a day; OpenAI is paid. Data leaves your servers just as with Claude, so the owner decides.
+
+1. **Get an API key** from the service, signed in with the business's own account:
+   - Google Gemini: aistudio.google.com → **Get API key**;
+   - Groq: console.groq.com → **API Keys**;
+   - OpenRouter: openrouter.ai → **Keys** (choose models ending in *:free*);
+   - Mistral: console.mistral.ai → **API Keys**.
+2. Put it in the server's `.env` as `AI_CLOUD_API_KEY=...`, then run `php artisan optimize`. *Why `.env`:* keys are never stored in the database or shown on screen.
+3. **System → Settings → AI:** choose **Another cloud model**, then the **service**. Leave the model names empty to use the service's usual model, or copy an exact name from the service's model list (services rename their models from time to time). For **Other OpenAI-compatible service**, also give its address ending in `/v1`.
+4. Keep **Keep personal data on your server** on, as for Claude. Names, phones and e-mails are masked before anything is sent.
+
+**Check:** ask a question in **Insights → Ask your business**; **Insights → AI usage log** shows the service and model that answered.
+
+**Note:** the monthly cloud budget applies to Claude only. Free plans cost nothing; with a paid service (e.g. OpenAI) set a spending limit in that service's own account. Invoice scanning with these services reads photos (JPG, PNG), not PDFs.
+
 ## 15.3 Using the AI features safely
 
 - **The AI never changes anything.** It reads reports; it cannot post, approve, order or pay. An invoice scan only fills in a form: you check each line against the paper and press **Create**, and the bill then follows the normal approval rules.

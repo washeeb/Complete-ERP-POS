@@ -83,7 +83,7 @@ class PosController extends Controller
             'show_stock' => (bool) $settings->get('pos.show_stock', $device->tenant_id),
             // The company's brand (Company → Branding): logo for the screen and the printed receipt, colour, and the product line.
             'brand' => (fn ($b) => ['color' => $b['color'], 'on_color' => $b['on_color'], 'logo_url' => $b['logo_url'], 'logo_dark_url' => $b['logo_dark_url'],
-                'icon_url' => $b['icon_url'], 'receipt_logo' => $b['receipt_logo'], 'powered_by' => $b['powered_by'], 'product' => config('brand.name')])(Branding::forTenant($tenant)),
+                'icon_url' => $b['icon_url'], 'receipt_logo' => $b['receipt_logo'], 'powered_by' => $b['powered_by'], 'credit' => $b['credit'], 'product' => config('brand.name')])(Branding::forTenant($tenant)),
             'send_receipt' => array_values(array_filter(['sms', 'whatsapp', 'email'], fn ($ch) => (bool) Templates::find($device->tenant_id, 'receipt', $ch)?->is_active)),
             'license' => (fn ($s) => ['state' => $s['state'], 'read_only' => $s['read_only'], 'message' => $s['message'], 'ref' => Watermark::reference()])(app(LicenseManager::class)->status()),
             'shift' => $this->shiftJson($shifts->current($device), $shifts),
