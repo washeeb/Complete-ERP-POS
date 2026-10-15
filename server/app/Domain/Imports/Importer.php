@@ -4,6 +4,7 @@ namespace App\Domain\Imports;
 
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
+use App\Models\Uom;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
@@ -166,5 +167,18 @@ abstract class Importer
         }
 
         return (10 - $sum % 10) % 10 === (int) substr($code, -1);
+    }
+
+    /** A unit by its code (TAB) or its name (Tablet), ignoring case, a plural s and a full stop (Strips, Cont.). */
+    public static function unitId(string $value): ?string
+    {
+        $v = trim($value);
+        $plain = rtrim(mb_strtolower($v), '.');
+
+        return Uom::where('code', strtoupper($v))->value('id')
+            ?? Uom::where('code', strtoupper($plain))->value('id')
+            ?? Uom::whereRaw('lower(name) in (?, ?)', [$plain, preg_replace('/s$/', '', $plain)])->value('id')
+            ?? Uom::whereRaw('lower(code) = ?', [preg_replace('/s$/', '', $plain)])->value('id')
+            ?? (mb_strlen($plain) >= 3 ? Uom::whereRaw('lower(name) like ?', [$plain.'%'])->orderBy('name')->value('id') : null); // Cont. → Container
     }
 }

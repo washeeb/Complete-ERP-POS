@@ -9,7 +9,6 @@ use App\Domain\Support\DomainException;
 use App\Models\Price;
 use App\Models\PriceList;
 use App\Models\Product;
-use App\Models\Uom;
 use App\Support\Money;
 use App\Support\Qty;
 use Illuminate\Database\Eloquent\Model;
@@ -71,7 +70,7 @@ final class PricesImporter extends Importer
         if ((float) $amount < 0) {
             throw new DomainException('A price cannot be negative.');
         }
-        $uomId = self::has($row, 'unit') ? (Uom::where('code', strtoupper($row['unit']))->value('id') ?? throw new DomainException("Unknown unit {$row['unit']}.")) : $product->base_uom_id;
+        $uomId = self::has($row, 'unit') ? (self::unitId($row['unit']) ?? throw new DomainException("Unknown unit {$row['unit']}.")) : $product->base_uom_id;
         if (! $product->units()->where('uom_id', $uomId)->exists()) {
             throw new DomainException("{$product->sku} is not sold in {$row['unit']}. Add the unit to the product first.");
         }
