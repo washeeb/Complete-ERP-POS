@@ -3,6 +3,7 @@
 namespace App\Domain\Modules;
 
 use App\Domain\Branding\Branding;
+use App\Domain\Catalog\IndustryUnits;
 use App\Domain\Licensing\LicenseException;
 use App\Domain\Licensing\LicenseManager;
 use App\Domain\Org\IndustryService;
@@ -78,6 +79,7 @@ final class ModuleService
 
         if ($status === self::ENABLED) {
             app(IndustryService::class)->ensureFor($actor, $branch, $moduleKey); // one industry per branch
+            app(IndustryUnits::class)->ensure($branch->tenant_id, $moduleKey); // e.g. tablet, strip, vial for Pharmacy
         }
 
         $row = BranchModule::withoutGlobalScopes()->firstOrNew(['branch_id' => $branch->id, 'module_key' => $moduleKey]);

@@ -497,6 +497,10 @@ Design:
 - **Setting `pos.show_stock`, off by default**, sent in the till's bootstrap. Off now also hides the search list's "in stock" figure, so the choice is the shop's.
 - **Worked out on the till** (`stock.ts`): the catalog's `on_hand` for the till's warehouse, less the cart and queued (unsent or refused) sales, in base units through each unit's factor. Sent sales are already in the server's figure, which the till re-reads on every `stock.changed` event; offline it counts only this till's sales. No new API or polling.
 
+## Industry units (2026-10-15)
+- **`IndustryUnits::UNITS` per module**, added by `ModuleService::setStatus` when the module is enabled and once by migration `2026_11_07_100001` for tenants already running it. Starter data like `TenantBaseline`, but added to a non-empty list: only codes and names the tenant does not have, so renamed or deleted-and-recreated units are respected. Written through `Recorder` as the system actor (audit + outbox, reaches branch servers).
+- **Imports match units by code or name** (`Importer::unitId`): code, name, singular of a plural, then a name starting with what was typed (3+ letters, `Cont.` → Container).
+
 ## Imports: time limit and barcodes through Excel (2026-10-15)
 - **Imports run up to 30 minutes per request** (`set_time_limit(1800)`, as the go-live and backup pages). Measured about 40 ms a row; PHP-FPM's 30 s stopped lists over roughly 700 rows. Caddy's 300 s read timeout still caps one request (some 7,000 rows); a queued import is the next step if larger files are needed.
 - **Excel is the default download** for templates and current data: `XlsxWriter` writes digit strings of 12+ digits, and any with a leading zero, as text.
