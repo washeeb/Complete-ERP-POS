@@ -99,16 +99,36 @@ Every till, handheld and kitchen screen has a **Theme** switch at the bottom lef
 For a Windows till PC with a receipt printer, a cash drawer or a weighing scale, install **SES Labs Till** (`SES Labs Till_<version>_x64-setup.exe`, from SyncLytics) instead of using the browser:
 
 1. Install the receipt printer's Windows driver (or note the IP address of a network receipt printer).
-2. Trust the server on this PC (4.9). Then run the SES Labs Till setup. On first start it asks for the **server address** (e.g. `https://192.168.1.10`).
+2. Trust the server on this PC (4.9). Then run the SES Labs Till setup. On first start it asks for the **server address**: exactly what you type in a browser to open the back office, without `/admin`. For a cloud server that is its name, e.g. `https://erp.clientdomain.com`, **never its IP address** (the security certificate is for the name, so the IP is refused). For a server in the shop it is the address used in 4.9, e.g. `https://192.168.1.10`.
 3. **Receipt printer:** choose it from the list (or type `tcp://<printer-ip>:9100` for a network printer); tick **Open the cash drawer** if the drawer is plugged into the printer; **Print a test receipt**.
 4. **Scale:** choose its COM port and speed (usually 9600), then **Read the scale** with something on it.
-5. **Save and open the till.** Enrol and sign in as with any till (9.1).
+5. **Save and open the till.** The app first checks that the server answers. If it does not, it says so and stays on this page: correct the address and save again. (**Use this address anyway** keeps an address that cannot be reached yet, for example when the server is not switched on.) Then enrol and sign in as with any till (9.1).
 
 Receipts then print straight away without a print window, the drawer opens after cash sales, and items sold by weight show a **Weigh** button. **Printer and scale set-up** on the receipt screen opens these settings again.
 
 **Why:** the app sends the receipt to the printer in the printer's own language (ESC/POS), which is faster and more reliable than a browser print window, and can talk to the drawer and scale, which a browser cannot.
 
 **Note:** the app only opens your SES Labs server — no other website — so the printer and drawer cannot be reached from anywhere else.
+
+**When the till starts:** it opens the server straight away if it answers. If the server has worked on this PC before but cannot be reached now (internet down), the till still opens and sells offline. If the saved address has **never** worked, the set-up page comes back with a message, so a wrong address can always be corrected.
+
+#### Starting the desktop till again from scratch
+
+Uninstalling the app keeps its settings (the server address, printer and scale), so a reinstall comes back with the same settings. To clear them:
+
+1. Close SES Labs Till (also from the system tray, if it shows there).
+2. Open **PowerShell** (Start → type *PowerShell*) and run these two lines:
+
+   ```powershell
+   Remove-Item "$env:APPDATA\app.seslabs.till" -Recurse -Force -ErrorAction SilentlyContinue
+   Remove-Item "$env:LOCALAPPDATA\app.seslabs.till" -Recurse -Force -ErrorAction SilentlyContinue
+   ```
+
+3. Open SES Labs Till again (or reinstall it). It starts at the set-up page with empty fields.
+
+**Why:** the first folder holds the till's settings; the second holds what the till app saved for working offline. Clearing both makes the PC behave like a new till. Then delete the old entry under **System → Devices** in the back office and enrol the till again (9.1).
+
+**Note:** sales not yet sent to the server are in the second folder. Clear it only when the till shows nothing waiting to send, or when the till never worked.
 
 ## 9.8 Barcode scanner
 

@@ -42,4 +42,6 @@ Tests: `cd server && php artisan test` · `cd pos && npm test`.
 — every setup (single PC, shop network, central, cloud, branch servers), requirements, modules, devices, backups,
 updates and troubleshooting. Source chapters: `docs/manual/*.md`; rebuild with `cd pos && npm run manual`.
 
+**New build PC** (old one lost or damaged): [docs/training/09-new-build-pc.md](docs/training/09-new-build-pc.md). Desktop till installer: `cd pos && npx tauri build`.
+
 The server also hands out the till app at `/pos/` once it is built into it: `cd pos && npm run build:server`.

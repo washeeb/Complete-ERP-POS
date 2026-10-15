@@ -40,7 +40,7 @@
     <div class="row"><button type="button" class="secondary" id="weigh">Read the scale</button><span class="msg" id="weighmsg" role="status"></span></div>
   </section>
 
-  <div class="row"><button type="button" id="save">Save and open the till</button><span class="msg" id="msg" role="status"></span></div>
+  <div class="row"><button type="button" id="save">Save and open the till</button><button type="button" class="secondary" id="anyway" hidden>Use this address anyway</button><span class="msg" id="msg" role="status"></span></div>
 </main>
 <script>
   const T = window.__TAURI__.core;
@@ -49,8 +49,25 @@
   const params = new URLSearchParams(location.search);
   if (params.has('blocked')) say('msg', 'That address is not your business server, so the till did not open it.', true);
 
+  // Does the server answer? (Its /up page; a wrong address, a wrong name for the certificate or no network all fail.)
+  async function reachable(server) {
+    let base;
+    try { base = new URL(server.trim()).origin; } catch { return false; }
+    const stop = new AbortController();
+    const timer = setTimeout(() => stop.abort(), 8000);
+    try { await fetch(base + '/up', { mode: 'no-cors', cache: 'no-store', signal: stop.signal }); return true; } catch { return false; } finally { clearTimeout(timer); }
+  }
+  const unreachable = (server) => `Could not reach ${server}. Check the address: it is the server's https:// name, for example https://erp.yourshop.com (not its IP address when it has a name). Then click Save again.`;
+
   async function load() {
     const cfg = await T.invoke('get_config');
+    // Start-up: open the saved server if it answers; if it answered before, open it anyway (the till sells offline).
+    if (cfg.server && !params.has('setup') && !params.has('blocked')) {
+      say('msg', 'Connecting to ' + cfg.server + ' …');
+      if (await reachable(cfg.server)) return T.invoke('set_server', { server: cfg.server, verified: true });
+      if (cfg.verified) return T.invoke('set_server', { server: cfg.server, verified: false });
+      say('msg', unreachable(cfg.server), true);
+    }
     $('server').value = cfg.server || '';
     for (const p of await T.invoke('list_printers')) $('printer').append(new Option(p, p));
     for (const p of await T.invoke('list_scale_ports')) $('scale').append(new Option(p, p));
@@ -76,7 +93,16 @@
     try { await saveHardware(); say('weighmsg', (await T.invoke('read_scale')) + ' kg'); } catch (e) { say('weighmsg', String(e), true); }
   };
   $('save').onclick = async () => {
-    try { await saveHardware(); await T.invoke('set_server', { server: $('server').value }); } catch (e) { say('msg', String(e), true); }
+    try {
+      await saveHardware();
+      say('msg', 'Checking the server …');
+      if (await reachable($('server').value)) return await T.invoke('set_server', { server: $('server').value, verified: true });
+      say('msg', unreachable($('server').value.trim()), true);
+      $('anyway').hidden = false; // e.g. setting up before the server is switched on
+    } catch (e) { say('msg', String(e), true); }
+  };
+  $('anyway').onclick = async () => {
+    try { await saveHardware(); await T.invoke('set_server', { server: $('server').value, verified: false }); } catch (e) { say('msg', String(e), true); }
   };
   load().catch((e) => say('msg', String(e), true));
 </script>
