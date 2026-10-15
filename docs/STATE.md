@@ -1,7 +1,7 @@
 # State (resume file)
 
 **Phase:** Separate books per company · **Status:** done on branch `separate-books` (PR to `main`). Industries complete: A (structure), B (stock requests), C (profit centres), D (separate books)
-**Updated:** 2026-10-14 · Merged through PR #40 (0.34.2 speed). 0.34.3 on branch `shared-server`: `install.sh --instance` for several clients on one Ubuntu server (own folder, DB, user, FPM pool, Reverb port, Caddy site file); CI covers it. Standard remains one server per client (Contabo Cloud VPS 6, NVMe, EU, Auto Backup) · Repo private
+**Updated:** 2026-10-15 · Desktop till checks the server address before saving and starts on its set-up page (branch `till-setup-recovery`); build-PC recovery guide `docs/training/09-new-build-pc.md`; Rust is now installed locally and `npx tauri build` works on this PC · Merged through PR #40 (0.34.2 speed). 0.34.3 on branch `shared-server`: `install.sh --instance` for several clients on one Ubuntu server (own folder, DB, user, FPM pool, Reverb port, Caddy site file); CI covers it. Standard remains one server per client (Contabo Cloud VPS 6, NVMe, EU, Auto Backup) · Repo private
 
 ## Separate books — done on branch `separate-books`
 - **Database:** migration `2026_11_05_100001`:
@@ -158,7 +158,7 @@
 - **Back office:** System → Backups, Health; Finance → GRA E-VAT.
 - **Installers:** `installer/windows/{install.ps1, synclytics.iss}`, `installer/ubuntu/install.sh`, `installer/docker/*` (+ `.dockerignore`); CI workflow `packaging.yml` builds and smoke-tests all of them and the desktop till; main CI installs PostgreSQL 17 client tools.
 - **Desktop till:** `pos/src-tauri` (Tauri 2: printer RAW/9100, drawer, serial scale, set-up page, navigation lock); `pos/src/{escpos.ts, hardware.ts}`; Receipt silent print + set-up; Sell "Weigh".
-- **Tests:** HardeningTest (6, real pg_dump backup); `escpos.test.ts`; e2e `a11y-desktop.spec.ts` (axe WCAG 2.2 AA + desktop print); cargo test (scale parsing) in CI. Totals: 348 Pest, 57 Vitest, 17 Playwright. Rust, Docker and Inno Setup are not installed locally: the desktop till, Docker image and installers are verified only in CI (packaging.yml).
+- **Tests:** HardeningTest (6, real pg_dump backup); `escpos.test.ts`; e2e `a11y-desktop.spec.ts` (axe WCAG 2.2 AA + desktop print); cargo test (scale parsing) in CI. Totals: 348 Pest, 57 Vitest, 17 Playwright. Rust is installed locally (rustup; `npx tauri build` in `pos`). Docker and Inno Setup are not: the Docker image and server installers are verified only in CI (packaging.yml).
 - **Docs:** security-review.md, performance.md, launch-checklist.md, evat.md; manual 4.0, 5.0, 9.7, 11.5, 12.2–12.3, 13, 17; CHANGELOG 0.24.0; DECISIONS 13.
 
 ## Phase 12 — done (merged, PR #24)

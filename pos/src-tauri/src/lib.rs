@@ -17,8 +17,12 @@ use serde::{Deserialize, Serialize};
 use tauri::{Manager, State, WebviewUrl};
 
 #[derive(Default, Serialize, Deserialize, Clone)]
+#[serde(default)]
 struct Config {
     server: Option<String>,
+    /// The server answered at least once from this till. Only then does the till open it without a check passing (to
+    /// sell offline); a server that never answered (a mistyped address) sends the till back to the set-up page.
+    verified: bool,
     printer: Option<String>,
     drawer: bool,
     scale_port: Option<String>,
@@ -54,12 +58,17 @@ fn get_config(state: State<AppState>) -> Result<Config, String> {
     Ok(state.config.lock().map_err(|e| e.to_string())?.clone())
 }
 
-/// Remember the server and open its till.
+/// Remember the server and open its till. `verified`: the set-up page reached the server just now.
 #[tauri::command]
-fn set_server(app: tauri::AppHandle, state: State<AppState>, server: String) -> Result<(), String> {
+fn set_server(app: tauri::AppHandle, state: State<AppState>, server: String, verified: bool) -> Result<(), String> {
     let u = origin(&server)?;
     let base = format!("{}://{}", u.scheme(), u.host_str().unwrap_or("localhost")) + &u.port().map(|p| format!(":{p}")).unwrap_or_default();
-    state.config.lock().map_err(|e| e.to_string())?.server = Some(base.clone());
+    {
+        let mut cfg = state.config.lock().map_err(|e| e.to_string())?;
+        let same = cfg.server.as_deref() == Some(base.as_str());
+        cfg.verified = verified || (same && cfg.verified);
+        cfg.server = Some(base.clone());
+    }
     state.save()?;
     let window = app.get_webview_window("main").ok_or("no window")?;
     window.navigate(url::Url::parse(&format!("{base}/pos/")).map_err(|e| e.to_string())?).map_err(|e| e.to_string())
@@ -137,10 +146,9 @@ pub fn run() {
         .setup(|app| {
             let path = app.path().app_config_dir()?.join("till.json");
             let config: Config = fs::read(&path).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default();
-            let start = match &config.server {
-                Some(server) => WebviewUrl::External(url::Url::parse(&format!("{server}/pos/"))?),
-                None => WebviewUrl::App("index.html".into()),
-            };
+            // Always start on the local set-up page: it opens the saved server when that answers (or, once it has
+            // answered before, when the till must work offline), and otherwise shows what is wrong so it can be fixed.
+            let start = WebviewUrl::App("index.html".into());
             app.manage(AppState { path, config: Mutex::new(config) });
 
             // The window may only show the local set-up page or the chosen server.

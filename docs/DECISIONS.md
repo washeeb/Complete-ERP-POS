@@ -487,6 +487,12 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Desktop till start-up and build PC recovery (2026-10-15)
+- **Start on the local set-up page, not the server.** The page checks `<server>/up` (no-cors, 8 s) and opens the till when it answers. `till.json` gains `verified` (the server answered at least once); a verified server opens even when unreachable, so offline selling is unchanged. A never-verified one stays on the set-up page. *Use this address anyway* saves without the check, for a server not yet switched on.
+- **Uninstall keeps settings** (Tauri's default; `%APPDATA%\app.seslabs.till` and `%LOCALAPPDATA%\app.seslabs.till`). Kept on purpose: the WebView folder holds unsent offline sales. The manual says how to clear both.
+- **`Cargo.lock` committed** so local and CI builds of the till use the same Rust libraries.
+- **Client pack stays out of git** (client names, prices, payment details). Its generator moved from a temporary folder to `client-pack/generator/`, backed up with `.local-secrets/` (two copies). The build-PC guide lists what cannot be downloaded again.
+
 ## Only what the business runs is offered (2026-10-14)
 - **Same rule as the menus:** `ModuleService::enabledAnywhere`, which follows the industry chosen at the top, decides industry roles (`RoleCatalog::MODULE_ROLES`), settings sections, message templates and device kinds (`Device::kindsFor`, checked again in `DeviceService`). HR roles follow the licence (`FEATURE_ROLES`).
 - **Hidden, never deleted:** a role already held stays visible; hidden settings keep their values (the save skips fields that were not shown); templates stay stored and come back with the module.

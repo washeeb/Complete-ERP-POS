@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Fixed
+- **Desktop till: a wrong server address can always be corrected.** The app now checks that the server answers before saving it, and starts on its set-up page, which opens the server when it answers. A server that has answered before still opens when it cannot be reached (selling offline); one that never answered (a mistyped address, an IP address instead of the name) brings the set-up page back with an explanation. Before, a wrong address opened a blank window with no way back, and reinstalling did not help because uninstalling keeps the settings. Found at the first client's shop.
 - **Cash count by notes and coins laid out properly**, on the till's *Close shift* and in the back office's cash desk and income control. The boxes no longer overflow their columns. Notes and coins sit in their own groups (side by side on a PC, one under the other on a phone), each line shows what it comes to, and the running total sits underneath. Still blind: the expected figure is never shown.
 - **Only what the business runs is offered** (owner: "for pharmacy, kitchen things should not show"):
   - device types: a kitchen display only at a branch with the Restaurant module; the self-checkout kiosk (not built) never;
@@ -11,6 +12,8 @@
 - **Ubuntu installer no longer stops silently at step 9** on Ubuntu 24.04 (the SSH port lookup failed when SSH is started on demand). Any unexpected stop now names the line. Found on the first client installation.
 - **The signed release manifest now reaches servers** (`bootstrap/release-manifest.json`). It was in `storage/`, which installers keep on updates, so the tamper check and the client build stamp were silently off. `release:build` also includes the server's built assets (the online shop's live updates).
 ### Added
+- **Guide for setting up a new build PC** (`docs/training/09-new-build-pc.md`, internal): what to back up, the tools (including Rust and `npx tauri build` for the desktop till installer), restoring the signing key and client pack, releases and licences, and what to do when a PC is lost.
+- Manual 9.7: the desktop till's server address is the server's name, never its IP; how to clear the till's settings and start again. Troubleshooting entry for *Could not reach*.
 - **Case study:** installation guide Chapter 19, a real cloud installation (Contabo, Namecheap, Windows `scp`/`ssh`, install script, licence, checks) with the problems met on the way; training checklist *Cloud installation* for SyncLytics staff.
 
 ## [0.34.3] — 2026-10-14 · Shared server option
