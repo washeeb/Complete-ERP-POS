@@ -93,15 +93,15 @@ it('checks a product file without saving, then creates and updates products with
         ['SUGAR-1', 'Sugar 1 kg', 'Groceries', 'STD', '6001234567893', '22.00', 'yes'],
         ['BAD SKU!', 'Broken', '', '', '', '', ''],
     ]);
-    $check = $this->imports->run($this->o, 'products', $file, 'products.csv', [], null, false);
+    $check = $this->imports->run($this->o, 'products', $file, 'products.csv', ['industry' => 'shared'], null, false);
     expect($check->status)->toBe('checked')->and($check->rows_error)->toBe(1)->and($check->errors[0]['row'])->toBe(4)
         ->and(Product::where('sku', 'SUGAR-1')->exists())->toBeFalse()->and(Product::where('sku', 'RICE-5')->value('name'))->toBe('Rice 5 kg');
 
     // All or nothing: one bad row stops the whole file.
-    expect($this->imports->run($this->o, 'products', $file, 'products.csv', [], null, true)->status)->toBe('failed')
+    expect($this->imports->run($this->o, 'products', $file, 'products.csv', ['industry' => 'shared'], null, true)->status)->toBe('failed')
         ->and(Product::where('sku', 'SUGAR-1')->exists())->toBeFalse();
 
-    $done = $this->imports->run($this->o, 'products', $file, 'products.csv', ['skip_errors' => true, 'create_missing' => true], null, true);
+    $done = $this->imports->run($this->o, 'products', $file, 'products.csv', ['skip_errors' => true, 'create_missing' => true, 'industry' => 'shared'], null, true);
     $rice = Product::where('sku', 'RICE-5')->first();
     $sugar = Product::where('sku', 'SUGAR-1')->first();
     expect($done->status)->toBe('imported')->and($done->summary['created'])->toBe(1)->and($done->summary['updated'])->toBe(1)

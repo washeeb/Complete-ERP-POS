@@ -8,6 +8,7 @@ use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Industry;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\TaxGroup;
@@ -21,6 +22,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 final class ProductsImporter extends Importer
 {
+    private ?bool $hasIndustries = null;
+
     public function __construct(private readonly CatalogService $catalog) {}
 
     public function key(): string
@@ -39,6 +42,11 @@ final class ProductsImporter extends Importer
             .'Category and brand are matched by name (and created if "Create missing categories and brands" is on). Barcodes: several separated by |. '
             .'Prices: a column per price list, named price_ followed by the list code (e.g. price_RETAIL); they set the price of one base unit. '
             .'Changing prices needs the pricing permission.';
+    }
+
+    public function industryScoped(): bool
+    {
+        return true;
     }
 
     public function permission(): string
@@ -60,6 +68,7 @@ final class ProductsImporter extends Importer
             ['name' => 'track_batches', 'required' => false, 'help' => 'yes / no — batches and expiry dates.', 'example' => 'no'],
             ['name' => 'for_sale', 'required' => false, 'help' => 'yes / no — no takes it off the tills and shop.', 'example' => 'yes'],
             ['name' => 'plu', 'required' => false, 'help' => 'Scale code for weighed items (up to 5 digits).', 'example' => ''],
+            ['name' => 'industry', 'required' => false, 'help' => 'Leave empty: new products go to the industry chosen on the import page. Or an industry name or code (e.g. Pharmacy), or "shared" for every industry. Existing products move only when this column is filled.', 'example' => ''],
             ['name' => 'barcodes', 'required' => false, 'help' => 'Barcodes of one base unit, separated by |. Replaces the current base-unit barcodes. In Excel, format this column as Text first, or Excel drops leading zeros and shortens long numbers.', 'example' => '6001067000123'],
         ];
         foreach (PriceList::where('is_active', true)->orderByDesc('is_default')->orderBy('code')->get() as $list) {
@@ -92,6 +101,14 @@ final class ProductsImporter extends Importer
             $data['name'] = self::need($row, 'name', 'the name (new product)');
         } elseif (self::has($row, 'name')) {
             $data['name'] = $row['name'];
+        }
+        if (self::has($row, 'industry')) {
+            $data['industry_id'] = self::industryId($row['industry']);
+        } elseif ($isNew) {
+            // Not given (e.g. a company without industries, or a call from code): shared, unless industries exist.
+            $this->hasIndustries ??= Industry::licensed()->exists();
+            $chosen = (string) ($options['industry'] ?? ($this->hasIndustries ? '' : 'shared'));
+            $data['industry_id'] = $chosen === 'shared' ? null : ($chosen !== '' ? $chosen : throw new DomainException('Choose which industry these products are for (on the import page).'));
         }
         if (self::has($row, 'description')) {
             $data['description'] = $row['description'];
@@ -153,10 +170,14 @@ final class ProductsImporter extends Importer
     public function exportRows(Actor $actor, array $options, ?Model $context): iterable
     {
         $lists = PriceList::where('is_active', true)->orderByDesc('is_default')->orderBy('code')->get();
-        foreach (Product::with(['category', 'brand', 'taxGroup', 'baseUom', 'units.barcodes', 'prices'])->orderBy('sku')->lazy(500) as $p) {
+        $chosen = (string) ($options['industry'] ?? '');
+        $products = Product::with(['category', 'brand', 'taxGroup', 'baseUom', 'units.barcodes', 'prices', 'industry'])
+            ->when($chosen === 'shared', fn ($q) => $q->whereNull('industry_id'))
+            ->when($chosen !== '' && $chosen !== 'shared', fn ($q) => $q->where('industry_id', $chosen));
+        foreach ($products->orderBy('sku')->lazy(500) as $p) {
             $base = $p->units->firstWhere('is_base', true);
             $row = [$p->sku, $p->name, $p->description, $p->category?->name, $p->brand?->name, $p->taxGroup?->code, $p->baseUom?->code,
-                $p->track_stock ? 'yes' : 'no', $p->track_batches ? 'yes' : 'no', $p->is_active ? 'yes' : 'no', $p->plu, $base?->barcodes->pluck('code')->implode('|')];
+                $p->track_stock ? 'yes' : 'no', $p->track_batches ? 'yes' : 'no', $p->is_active ? 'yes' : 'no', $p->plu, $p->industry?->name ?? 'shared', $base?->barcodes->pluck('code')->implode('|')];
             foreach ($lists as $list) {
                 $price = $p->prices->first(fn ($x) => $x->price_list_id === $list->id && $x->product_uom_id === $base?->id && (float) $x->min_qty <= 1 && ! $x->starts_at && ! $x->ends_at);
                 $row[] = $price ? Money::format($price->amount_minor, $list->currency_code) : '';
@@ -178,5 +199,18 @@ final class ProductsImporter extends Importer
         }
 
         return $this->catalog->saveSimple($actor, new $class, ['name' => $name] + ($class === Category::class ? [] : []))->getKey();
+    }
+
+    /** An industry by name or code; "shared" (or "all") for products every industry sells. */
+    private static function industryId(string $value): ?string
+    {
+        $v = mb_strtolower(trim($value));
+        if (in_array($v, ['shared', 'all', 'all industries'], true)) {
+            return null;
+        }
+
+        return Industry::licensed()->where(fn ($q) => $q->whereRaw('lower(name) = ?', [$v])->orWhereRaw('lower(code) = ?', [$v])->orWhere('module_key', $v))->value('id')
+            ?? (mb_strlen($v) >= 3 ? Industry::licensed()->whereRaw('lower(name) like ?', [$v.'%'])->orderBy('sort')->value('id') : null)
+            ?? throw new DomainException("Unknown industry \"{$value}\". Use its name (Company → Industries) or \"shared\".");
     }
 }

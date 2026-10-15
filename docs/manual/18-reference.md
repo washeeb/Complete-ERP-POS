@@ -42,6 +42,7 @@ You can change what a role allows under **People & access → Roles** (you can o
 | `BRAND_SUPPORT_PHONE`, `BRAND_SUPPORT_EMAIL` | The publisher's hotline and e-mail on the Licence page and in licence messages; empty = SyncLytics' own (normally left as delivered) |
 | `SESSION_SECURE_COOKIE` | `true` once the site uses HTTPS (the Ubuntu script sets it) |
 | `ANTHROPIC_API_KEY` | Only if you choose Claude (cloud AI) in Chapter 15. Leave empty for no cloud AI. |
+| `AI_CLOUD_API_KEY` | Only if you choose *Another cloud model* (Google Gemini, Groq, OpenRouter, Mistral, OpenAI …) in Chapter 15. |
 | `BROADCAST_CONNECTION`, `QUEUE_CONNECTION`, `CACHE_STORE`, `SESSION_DRIVER` | Leave as provided |
 
 After changing `.env`, run `php artisan optimize`.

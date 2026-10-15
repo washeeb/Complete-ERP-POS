@@ -70,7 +70,7 @@ function migrate($t, string $type, string $source, array $rows, bool $commit = t
     $headings = array_map(fn ($h) => CsvFile::key($h), $rows[0]);
     $mapping = ImportSources::suggest($source, $type, $headings, ImportService::importer($type)->headings());
 
-    return $t->imports->run($t->o, $type, $path, 'old.csv', ['source' => $source, 'as_of' => now()->toDateString()] + $options, null, $commit, $mapping);
+    return $t->imports->run($t->o, $type, $path, 'old.csv', ['source' => $source, 'as_of' => now()->toDateString(), 'industry' => 'shared'] + $options, null, $commit, $mapping);
 }
 
 it('migrates books from QuickBooks: chart, items with stock, customers, vendors, balances — and the figures tie', function () {

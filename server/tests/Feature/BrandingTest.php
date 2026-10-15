@@ -129,12 +129,13 @@ it('brands the back office, the till, printed documents and PDFs — and white-l
     app('auth')->forgetGuards();
     $this->withToken($login['token'])->getJson('/api/v1/pos/bootstrap')->assertOk()
         ->assertJsonPath('brand.color', '#7C3AED')->assertJsonPath('brand.receipt_logo', true)->assertJsonPath('brand.logo_url', $logoUrl)
-        ->assertJsonPath('brand.powered_by', 'Powered by SES Labs')->assertJsonPath('brand.product', 'SES Labs');
+        ->assertJsonPath('brand.powered_by', 'Powered by SES Labs')->assertJsonPath('brand.product', 'SES Labs')
+        ->assertJsonPath('brand.credit', ['Software by SyncLytics: 024 563 6889', 'synclyticsenterprisesystems.com']);
 
     // A white-label licence names the feature: "Powered by" goes everywhere.
     activateTestLicense(['features' => ['finance', 'hr', 'white_label']]);
     LicenseManager::forget();
-    expect(Branding::whiteLabel())->toBeTrue()->and(Branding::poweredBy())->toBeNull();
+    expect(Branding::whiteLabel())->toBeTrue()->and(Branding::poweredBy())->toBeNull()->and(Branding::receiptCredit())->toBe([]);
     $this->withoutToken();
     app('auth')->forgetGuards();
     $this->actingAs(withMfa($this->owner), 'web');

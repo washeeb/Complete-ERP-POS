@@ -112,5 +112,6 @@ export function receiptEscPos(sale: PostedSale, boot: Bootstrap, logo: Raster | 
   p.feed().qr(sale.receipt_no).feed().line(boot.receipt_footer)
   if (boot.license?.ref) p.line(`Ref ${boot.license.ref}`)
   if (boot.brand?.powered_by) p.line(boot.brand.powered_by)
+  for (const line of boot.brand?.credit ?? []) p.line(line) // the software maker's contact
   return p.cut()
 }

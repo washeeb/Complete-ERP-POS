@@ -23,6 +23,7 @@ use App\Support\IndustryContext;
 use App\Support\Money;
 use App\Support\Qty;
 use BackedEnum;
+use Filament\Actions\BulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Repeater;
@@ -31,6 +32,7 @@ use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -42,6 +44,7 @@ use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use UnitEnum;
 
 class ProductResource extends Resource
@@ -269,7 +272,20 @@ class ProductResource extends Resource
                 TernaryFilter::make('is_active')->label('For sale'),
             ])
             ->defaultSort('name')
-            ->recordActions([EditAction::make()]);
+            ->recordActions([EditAction::make()])
+            ->toolbarActions([
+                // Products in the wrong industry's catalogue (e.g. imported before the import asked): move the ticked ones.
+                BulkAction::make('moveIndustry')->label('Move to industry')->icon(Heroicon::OutlinedArrowsRightLeft)
+                    ->visible(fn () => Industry::licensed()->exists() && Erp::can('catalog.manage'))
+                    ->schema([Select::make('industry')->label('Move the ticked products to')->required()
+                        ->options(fn () => Industry::licensed()->orderBy('sort')->pluck('name', 'id')->all() + ['shared' => 'Shared by all industries'])])
+                    ->action(function (Collection $records, array $data) {
+                        @set_time_limit(1800);
+                        $n = Erp::run(fn ($actor) => app(CatalogService::class)->moveToIndustry($actor, $records, $data['industry'] === 'shared' ? null : $data['industry']));
+                        Notification::make()->success()->title("{$n} product(s) moved")->send();
+                    })
+                    ->deselectRecordsAfterCompletion(),
+            ]);
     }
 
     public static function getPages(): array

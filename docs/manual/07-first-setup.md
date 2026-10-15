@@ -122,7 +122,7 @@ Module settings (Grocery, Pharmacy, Restaurant, Fashion, Services) are explained
 1. **Catalog → Categories** and **Brands**: create the groups you want for reports.
 2. **Catalog → Units of measure**: check the units (PC, CTN, KG with 3 decimals…).
 3. **Catalog → Products → New product** for each item:
-   - **Name**, category, brand, **tax group**, **base unit** (the unit stock is counted in, usually PC). The **SKU** (product code) is given by the system when you save, for example `PHARMA-000123` (the industry's code and a number), so no two products can share one. It never changes.
+   - **Name**, category, brand, **tax group**, **base unit** (the unit stock is counted in, usually PC). The **SKU** (product code) is given by the system when you save, so no two products can share one: an industry's products get its code and a number (`PHARMA-000123`), products shared by every industry a plain number (`100123`). It does not change, except when the product is moved to another industry (it then takes that industry's series).
    - **Barcodes** — scan them into the field.
    - **Other units** — e.g. a carton of 24 with its own barcode.
    - **Prices** — one row per list and unit. Add rows with *From qty* for bulk prices or with dates for promotions.

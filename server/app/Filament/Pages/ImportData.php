@@ -13,10 +13,12 @@ use App\Filament\Support\ExportsPage;
 use App\Models\Category;
 use App\Models\DataImport;
 use App\Models\GoLivePlan;
+use App\Models\Industry;
 use App\Models\StockAdjustment;
 use App\Models\StockCount;
 use App\Models\Warehouse;
 use App\Support\Exports\Exporter;
+use App\Support\IndustryContext;
 use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -69,6 +71,10 @@ class ImportData extends Page
     /** The go-live date opening balances are "as of". */
     public string $asOf = '';
 
+    /** Which industry the rows are for (industry imports such as products): an industry id, "shared", or not chosen yet. */
+    #[Url]
+    public string $industry = '';
+
     public bool $skipErrors = false;
 
     public bool $createMissing = true;
@@ -101,6 +107,19 @@ class ImportData extends Page
             $this->source = 'excel';
         }
         $this->asOf = $this->asOf ?: (GoLivePlan::first()?->go_live_on?->toDateString() ?? now()->toDateString());
+        $this->industry = $this->industry ?: (string) IndustryContext::selected(); // the industry chosen at the top, if any
+    }
+
+    /** @return array<string, string> the industries an industry import can go to, and "shared" */
+    public function industries(): array
+    {
+        return Industry::licensed()->orderBy('sort')->pluck('name', 'id')->all() + ['shared' => 'Shared by all industries'];
+    }
+
+    /** The import belongs to one industry and the company has industries: the page asks which. */
+    public function asksIndustry(): bool
+    {
+        return $this->importer()->industryScoped() && Industry::licensed()->exists();
     }
 
     public function sources(): array
@@ -176,7 +195,8 @@ class ImportData extends Page
     public function options(): array
     {
         return ['skip_errors' => $this->skipErrors, 'create_missing' => $this->createMissing, 'warehouse_id' => $this->warehouseId ?: null,
-            'reason_code' => $this->reasonCode, 'category_id' => $this->categoryId ?: null, 'source' => $this->source, 'as_of' => $this->asOf ?: now()->toDateString()];
+            'reason_code' => $this->reasonCode, 'category_id' => $this->categoryId ?: null, 'source' => $this->source, 'as_of' => $this->asOf ?: now()->toDateString(),
+            'industry' => $this->asksIndustry() ? $this->industry : 'shared'];
     }
 
     /** Headings and one example row. */
@@ -270,6 +290,11 @@ class ImportData extends Page
     private function runImport(bool $commit): void
     {
         $this->validate(['file' => ['required', 'file', 'max:10240', 'mimes:csv,txt,xlsx']], ['file.required' => 'Choose the file first.', 'file.mimes' => 'The file must be CSV or Excel (.xlsx).']);
+        if ($this->asksIndustry() && ! isset($this->industries()[$this->industry])) {
+            $this->addError('industry', 'Choose which industry these are for.');
+
+            return;
+        }
         @set_time_limit(1800); // a few thousand products take minutes, beyond PHP's usual 30 seconds per request
         $stored = $this->file->store('imports', 'local');
         $path = Storage::disk('local')->path($stored);

@@ -26,6 +26,7 @@ KG = 3), *Pricing & tax → Price lists / Tax groups / Tax rates*.
   - Enter in any unit (e.g. 2 CTN = 48 PC).
 - *Stock → Stock ledger* lists every movement — openings, adjustments, sales — with who, when and why.
   Nothing is overwritten: a mistake is fixed with a correcting adjustment.
+- **Move to industry** (Catalog → Products, tick products): moves them to another industry's catalogue, or makes them shared. Stock and prices stay; system-given SKUs take the new industry's series, SKUs from an old system stay.
 - Setting: *System → Settings → Stop sales when the system shows no stock* (off by default).
 - Setting: *System → Settings → Show stock left on the till while selling* (off by default). The till shows, per item, the stock it last received less this sale and sales not yet sent; *None left* in red when the sale takes more than the system shows. Online, the figure refreshes after every sale; offline it counts this till's own sales only.
 

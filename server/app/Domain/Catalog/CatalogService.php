@@ -12,6 +12,7 @@ use App\Domain\Support\Recorder;
 use App\Models\Barcode;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Industry;
 use App\Models\ModifierGroup;
 use App\Models\Price;
 use App\Models\PriceList;
@@ -111,19 +112,60 @@ final class CatalogService
         return $rows;
     }
 
-    /** The next free SKU: the industry's code (or SKU for shared products) and a six-digit running number, e.g. PHARMA-000123. */
+    /** Shared products (no industry) are numbered from here: six digits, no prefix, no leading zero for Excel to drop. */
+    public const SHARED_SKU_FROM = 100000;
+
+    /**
+     * The next free SKU: an industry's products get its code and a six-digit running number (PHARMA-000123); shared
+     * products a plain number (100123).
+     */
     public function nextSku(string $tenantId, ?string $industryId): string
     {
-        $prefix = ($industryId ? preg_replace('/[^A-Z0-9]/', '', strtoupper((string) DB::table('industries')->where('id', $industryId)->value('code'))) : '') ?: 'SKU';
-        $prefix = substr($prefix, 0, 10);
-        DB::table('document_sequences')->insertOrIgnore(['tenant_id' => $tenantId, 'node' => 'catalog', 'doc_type' => $prefix, 'last_value' => 0]);
+        $prefix = substr($industryId ? (string) preg_replace('/[^A-Z0-9]/', '', strtoupper((string) DB::table('industries')->where('id', $industryId)->value('code'))) : '', 0, 10);
+        $series = $prefix !== '' ? $prefix : 'SHARED';
+        DB::table('document_sequences')->insertOrIgnore(['tenant_id' => $tenantId, 'node' => 'catalog', 'doc_type' => $series, 'last_value' => 0]);
         do {
             $n = DB::selectOne("UPDATE document_sequences SET last_value = last_value + 1 WHERE tenant_id = ? AND node = 'catalog' AND doc_type = ? RETURNING last_value",
-                [$tenantId, $prefix])->last_value;
-            $sku = sprintf('%s-%06d', $prefix, $n);
+                [$tenantId, $series])->last_value;
+            $sku = $prefix !== '' ? sprintf('%s-%06d', $prefix, $n) : (string) (self::SHARED_SKU_FROM + $n);
         } while (Product::withoutGlobalScopes()->where('tenant_id', $tenantId)->where('sku', $sku)->exists()); // skip codes typed in before
 
         return $sku;
+    }
+
+    /** The SKU was given by the system (any industry's series, a shared number, or the old SKU-000123), not typed in. */
+    public static function systemSku(string $sku): bool
+    {
+        return (bool) preg_match('/^([A-Z0-9]{1,10}-\d{6}|1\d{5})$/', $sku);
+    }
+
+    /**
+     * Move products to an industry's catalogue (null = shared by every industry). Stock and prices stay; a SKU the system
+     * gave takes the new industry's series (PHARMA-000124), while SKUs typed in from an old system stay as they are.
+     *
+     * @param  iterable<Product>  $products
+     * @return int how many moved
+     */
+    public function moveToIndustry(Actor $actor, iterable $products, ?string $industryId): int
+    {
+        $this->require($actor, 'catalog.manage');
+        if ($industryId !== null && ! Industry::licensed()->whereKey($industryId)->exists()) {
+            throw new DomainException('Choose an industry.');
+        }
+        $moved = 0;
+        foreach ($products as $product) {
+            if ($product->industry_id === $industryId) {
+                continue;
+            }
+            $product->industry_id = $industryId;
+            if (self::systemSku($product->sku)) {
+                $product->sku = $this->nextSku($actor->tenantId, $industryId); // a system-given SKU follows the industry's series
+            }
+            $this->recorder->save($actor, $product, 'product.updated', 'Moved to another industry');
+            $moved++;
+        }
+
+        return $moved;
     }
 
     public function saveProduct(Actor $actor, Product $product, array $data, ?string $reason = null): Product

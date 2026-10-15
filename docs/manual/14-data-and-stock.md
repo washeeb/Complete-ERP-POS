@@ -47,6 +47,11 @@ The migration imports are explained in Chapter 17.2. **Coming from** (QuickBooks
 ### Step by step
 
 1. **Choose what you are importing.** The page explains what a row does and lists every column (**Columns in this file**), with an example.
+   For **products**, a company with several industries also chooses **For which industry?** (for example *Pharmacy*, or *Shared by all industries*). New products go into that industry's catalogue, and **Download current data** gives that industry's products only. Check and Import stay refused until you choose. An `industry` column in the file can name a different industry for single rows.
+
+   **Why:** each industry's tills and screens show only its own products. A product list imported to the wrong industry would show at the wrong shops.
+
+   **Products already in the wrong industry:** Catalog → Products, tick them (the tick at the top selects the page; *Select all* selects every product in the list), then **Move to industry**. Stock and prices stay; SKUs given by the system take the new industry's series (e.g. `100123` becomes `PHARMA-000124`), while SKUs from your old system stay as they are.
 2. **Get the file ready:**
    - **Download template (Excel)** — the headings and one example row (also as **CSV**); or
    - **Download current data to edit (Excel)** — your existing products, prices, customers or suppliers in exactly the import layout (also as **CSV**). Change what you need in Excel and import it back;

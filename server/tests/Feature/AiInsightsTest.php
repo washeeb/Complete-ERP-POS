@@ -7,6 +7,7 @@ use App\Domain\Ai\Copilot;
 use App\Domain\Ai\InvoiceScanner;
 use App\Domain\Ai\ProductWriter;
 use App\Domain\Ai\Providers\OllamaProvider;
+use App\Domain\Ai\Providers\OpenAiCompatibleProvider;
 use App\Domain\Analytics\CashFlowForecaster;
 use App\Domain\Analytics\CustomerInsights;
 use App\Domain\Analytics\DemandForecaster;
@@ -355,4 +356,50 @@ it('shows the insight and AI screens to managers only', function () {
     foreach ([Insights::getUrl(), CopilotPage::getUrl(), AiAlertResource::getUrl(), AiRequestResource::getUrl()] as $url) {
         $this->get($url)->assertForbidden();
     }
+});
+
+it('uses another cloud model (Gemini, Groq, OpenRouter …) in the OpenAI format, with the key from the server settings', function () {
+    $gw = app(AiGateway::class);
+    $settings = app(Settings::class);
+    $settings->set($this->o, 'ai.provider', 'cloud');
+    config(['ai.cloud_key' => '']);
+    expect(fn () => $gw->provider($this->tenant->id))->toThrow(AiUnavailable::class, 'AI_CLOUD_API_KEY');
+    config(['ai.cloud_key' => 'test-key']);
+
+    // Google Gemini by default, its usual model; no monthly budget needed (free plans).
+    $p = $gw->provider($this->tenant->id);
+    expect($p)->toBeInstanceOf(OpenAiCompatibleProvider::class)->and($p->name())->toBe('gemini')->and($p->model())->toBe('gemini-2.5-flash')->and($p->isCloud())->toBeTrue()
+        ->and($gw->provider($this->tenant->id, personal: true))->toBeInstanceOf(OllamaProvider::class); // personal data still stays local
+
+    Http::fake(['generativelanguage.googleapis.com/*' => Http::response(['choices' => [['message' => ['role' => 'assistant', 'content' => null,
+        'tool_calls' => [['id' => 'call_1', 'type' => 'function', 'function' => ['name' => 'cash_position', 'arguments' => '{"branch":"HQ"}']]]]]],
+        'usage' => ['prompt_tokens' => 40, 'completion_tokens' => 6]])]);
+    $r = $p->chat('sys', [['role' => 'user', 'content' => 'cash?'],
+        ['role' => 'assistant', 'content' => '', 'tool_calls' => [['id' => 'c0', 'name' => 'sales_summary', 'arguments' => []]]],
+        ['role' => 'tool', 'tool_call_id' => 'c0', 'name' => 'sales_summary', 'content' => '{}']],
+        [['name' => 'cash_position', 'description' => 'x', 'parameters' => ['type' => 'object', 'properties' => (object) []]]]);
+    expect($r->toolCalls[0])->toBe(['id' => 'call_1', 'name' => 'cash_position', 'arguments' => ['branch' => 'HQ']])->and($r->tokensIn)->toBe(40)->and($p->costMicroUsd(40, 6))->toBe(0);
+    Http::assertSent(fn ($req) => $req->url() === 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions'
+        && $req->hasHeader('Authorization', 'Bearer test-key') && $req['model'] === 'gemini-2.5-flash'
+        && $req['tools'][0]['function']['name'] === 'cash_position' && $req['messages'][2]['tool_calls'][0]['function']['arguments'] === '{}'
+        && $req['messages'][3]['tool_call_id'] === 'c0' && $req['messages'][3]['content'] === '{}' && $req['messages'][1]['content'] === 'cash?');
+
+    // An invoice photo goes with the question as an image part; JSON answers are asked for in the OpenAI way.
+    $p->chat('sys', [['role' => 'user', 'content' => 'Read this']], images: [['mime' => 'image/png', 'data' => 'AAA']], json: true);
+    Http::assertSent(fn ($req) => ($req['messages'][1]['content'][1]['image_url']['url'] ?? null) === 'data:image/png;base64,AAA'
+        && $req['messages'][1]['content'][0]['text'] === 'Read this' && $req['response_format'] === ['type' => 'json_object']);
+
+    // Another service and a named model; the free-plan limit and a refused key are explained.
+    $settings->set($this->o, 'ai.cloud_service', 'groq');
+    $settings->set($this->o, 'ai.cloud_model', 'llama-3.1-8b-instant');
+    $p = $gw->provider($this->tenant->id);
+    expect($p->name())->toBe('groq')->and($p->model())->toBe('llama-3.1-8b-instant');
+    Http::fake(['api.groq.com/*' => Http::response(['error' => ['message' => 'rate limit']], 429)]);
+    expect(fn () => $p->chat('sys', [['role' => 'user', 'content' => 'hi']]))->toThrow(AiUnavailable::class, 'limit is reached');
+
+    // Any other OpenAI-compatible service needs its address.
+    $settings->set($this->o, 'ai.cloud_service', 'custom');
+    expect(fn () => $gw->provider($this->tenant->id))->toThrow(AiUnavailable::class, 'service address');
+    $settings->set($this->o, 'ai.cloud_url', 'https://llm.example.com/v1');
+    expect($gw->provider($this->tenant->id)->name())->toBe('custom');
 });

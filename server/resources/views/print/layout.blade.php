@@ -41,7 +41,7 @@
         <div class="right">@yield('heading')</div>
     </header>
     @yield('content')
-    <p class="wm">Ref {{ \App\Domain\Licensing\Watermark::reference() }}@if ($brand['powered_by']) · {{ $brand['powered_by'] }}@endif</p>
+    <p class="wm">Ref {{ \App\Domain\Licensing\Watermark::reference() }}@if ($brand['powered_by']) · {{ $brand['powered_by'] }}@endif @foreach ($brand['credit'] ?? [] as $line) · {{ $line }}@endforeach</p>
 </div>
 </body>
 </html>
