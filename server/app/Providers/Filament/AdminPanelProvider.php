@@ -87,6 +87,8 @@ class AdminPanelProvider extends PanelProvider
             // Industries: show one industry (its branches, catalogue, stock, sales, reports) or all.
             ->renderHook(PanelsRenderHook::GLOBAL_SEARCH_BEFORE, fn () => Blade::render('@livewire(\'industry-switcher\')'))
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => new HtmlString(Watermark::meta()))
+            // Where am I (current menu item, group and tab stand out) and file pickers that look like buttons.
+            ->renderHook(PanelsRenderHook::HEAD_END, fn () => new HtmlString('<link rel="stylesheet" href="'.asset('css/seslabs/admin.css').'?v='.@filemtime(public_path('css/seslabs/admin.css')).'">'))
             ->authMiddleware([
                 Authenticate::class,
                 EnforceLicense::class,

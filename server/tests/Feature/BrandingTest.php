@@ -149,3 +149,10 @@ it('keeps the branding page to people who manage the company', function () {
     $this->actingAs(withMfa($cashier));
     $this->get(BrandingPage::getUrl())->assertForbidden();
 });
+
+it('loads the clarity styles on every back-office page: current menu item and tab, file pickers as buttons', function () {
+    $this->actingAs(withMfa($this->owner), 'web');
+    $this->get('/admin/import-data?type=products')->assertOk()->assertSee('css/seslabs/admin.css', false);
+    $css = file_get_contents(public_path('css/seslabs/admin.css'));
+    expect($css)->toContain('.fi-sidebar-item.fi-active')->toContain('.fi-tabs-item.fi-active')->toContain('::file-selector-button');
+});

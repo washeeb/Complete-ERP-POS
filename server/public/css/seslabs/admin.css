@@ -1,0 +1,49 @@
+/*
+ * Back-office clarity (loaded on every page after Filament's own styles).
+ * - Where am I: the current menu item, its menu group and the current tab stand out in the brand colour,
+ *   in light and dark mode (Filament's default is a 5 % tint, near invisible in dark mode).
+ * - File pickers look and behave like buttons (browsers' plain "Choose File" text reads as a label).
+ */
+
+/* Current menu item: brand tint, a bar on the left, bold label and coloured icon. */
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn {
+    background-color: color-mix(in oklab, var(--primary-500) 14%, transparent);
+    box-shadow: inset 3px 0 0 var(--primary-500);
+}
+.dark .fi-sidebar-item.fi-active > .fi-sidebar-item-btn {
+    background-color: color-mix(in oklab, var(--primary-400) 22%, transparent);
+    box-shadow: inset 3px 0 0 var(--primary-400);
+}
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-sidebar-item-label { color: var(--primary-700); font-weight: 600; }
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-sidebar-item-icon { color: var(--primary-600); }
+.dark .fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-sidebar-item-label { color: var(--primary-200); }
+.dark .fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-sidebar-item-icon { color: var(--primary-300); }
+
+/* The menu group that holds the current page: its heading in the brand colour too. */
+.fi-sidebar-group:has(.fi-sidebar-item.fi-active) .fi-sidebar-group-label { color: var(--primary-600); font-weight: 700; }
+.dark .fi-sidebar-group:has(.fi-sidebar-item.fi-active) .fi-sidebar-group-label { color: var(--primary-300); }
+
+/* Current tab (record tabs, list filters as tabs, settings tabs): underlined and bold. */
+.fi-tabs-item.fi-active { box-shadow: inset 0 -2px 0 var(--primary-500); }
+.dark .fi-tabs-item.fi-active { box-shadow: inset 0 -2px 0 var(--primary-400); }
+.fi-tabs-item.fi-active .fi-tabs-item-label { font-weight: 600; }
+
+/* File pickers: a real button, a hand cursor, and a focus ring for the keyboard. */
+input[type='file'] { max-width: 100%; font-size: 0.875rem; cursor: pointer; color: var(--gray-600); }
+.dark input[type='file'] { color: var(--gray-400); }
+input[type='file']::file-selector-button {
+    margin-right: 0.75rem;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid var(--gray-300);
+    border-radius: 0.5rem;
+    background-color: #fff;
+    color: var(--gray-950);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+}
+input[type='file']:hover::file-selector-button { background-color: var(--gray-50); border-color: var(--primary-500); }
+.dark input[type='file']::file-selector-button { border-color: rgb(255 255 255 / 0.2); background-color: rgb(255 255 255 / 0.05); color: #fff; }
+.dark input[type='file']:hover::file-selector-button { background-color: rgb(255 255 255 / 0.1); border-color: var(--primary-400); }
+input[type='file']:focus-visible { outline: 2px solid var(--primary-500); outline-offset: 2px; border-radius: 0.5rem; }
