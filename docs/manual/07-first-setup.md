@@ -95,6 +95,7 @@ For each staff member:
 | Wrong POS PINs before the PIN is locked / POS PIN lockout (minutes) | Stops PIN guessing at the till. |
 | Offline till sign-in lasts (hours) | How long a cashier can sign in on a till without the server (default 72). Shorter is safer, longer helps during long outages. |
 | Stop sales when the system shows no stock | Off by default (tills can sell items the system thinks are out of stock, and you count them later). |
+| Show stock left on the till while selling | Off by default. On: each item in the sale, and in the till's search list, shows how many are left at that till's store (e.g. *14 TAB left*), counting what is already in the sale. Useful where cashiers should tell customers what is available. Tills pick it up at their next sign-in. |
 | Message at the bottom of receipts | Your returns policy or a thank-you line. |
 | Returns accepted within (days, with receipt) | How long after a sale a return with the receipt is accepted. |
 | Cash control with vaults | Off: whoever closes a till counts the drawer. On: tellers, a Cashier and an Income Controller check the cash at every step (Step 14). |

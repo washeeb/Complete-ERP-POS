@@ -493,6 +493,10 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## Stock left on the till (2026-10-15)
+- **Setting `pos.show_stock`, off by default**, sent in the till's bootstrap. Off now also hides the search list's "in stock" figure, so the choice is the shop's.
+- **Worked out on the till** (`stock.ts`): the catalog's `on_hand` for the till's warehouse, less the cart and queued (unsent or refused) sales, in base units through each unit's factor. Sent sales are already in the server's figure, which the till re-reads on every `stock.changed` event; offline it counts only this till's sales. No new API or polling.
+
 ## Imports: time limit and barcodes through Excel (2026-10-15)
 - **Imports run up to 30 minutes per request** (`set_time_limit(1800)`, as the go-live and backup pages). Measured about 40 ms a row; PHP-FPM's 30 s stopped lists over roughly 700 rows. Caddy's 300 s read timeout still caps one request (some 7,000 rows); a queued import is the next step if larger files are needed.
 - **Excel is the default download** for templates and current data: `XlsxWriter` writes digit strings of 12+ digits, and any with a leading zero, as text.
