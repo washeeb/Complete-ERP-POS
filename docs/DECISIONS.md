@@ -493,6 +493,10 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## Back-office clarity styles (2026-10-15)
+- **A static stylesheet** (`public/css/seslabs/admin.css`, linked by a HEAD_END render hook with a file-time version) instead of a compiled Filament theme: no build step on servers, and it rides on Filament's own classes (`fi-active`) and colour variables (`--primary-*`), so the brand colour follows Company → Branding.
+- **Covers** the active sidebar item, its group heading, active tabs and every native file input (`::file-selector-button`).
+
 ## Imports in batches (2026-10-15)
 - **Why:** `AuditLog::record` locks the tenant's chain head (`lockForUpdate`) until commit, so one transaction around a whole import serialised every other write in the company (sales from tills, settings, the audit line every export writes) for the import's length. Requests then waited past Caddy's 300 s; PHP's `max_execution_time` does not count time spent waiting, so nothing stopped them.
 - **Now:** `ImportService::BATCH` (50) rows per transaction (a few seconds of lock). Check: each batch undone. Import, all or nothing: a full check pass first, then the import pass; rows that fail only in the second pass (data changed in between) are reported, not imported. With *skip rows with errors* a single pass.
