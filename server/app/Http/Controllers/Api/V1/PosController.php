@@ -80,6 +80,7 @@ class PosController extends Controller
                 'id' => $l->id, 'code' => $l->code, 'name' => $l->name, 'prices_include_tax' => $l->prices_include_tax, 'is_default' => $l->is_default,
             ])->values(),
             'receipt_footer' => $settings->get('receipt.footer', $device->tenant_id),
+            'show_stock' => (bool) $settings->get('pos.show_stock', $device->tenant_id),
             // The company's brand (Company → Branding): logo for the screen and the printed receipt, colour, and the product line.
             'brand' => (fn ($b) => ['color' => $b['color'], 'on_color' => $b['on_color'], 'logo_url' => $b['logo_url'], 'logo_dark_url' => $b['logo_dark_url'],
                 'icon_url' => $b['icon_url'], 'receipt_logo' => $b['receipt_logo'], 'powered_by' => $b['powered_by'], 'product' => config('brand.name')])(Branding::forTenant($tenant)),

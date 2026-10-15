@@ -25,6 +25,8 @@ Keep this card at the till. Practise first in the **practice company** (a purple
 
 A **red line** has no price on that list: it cannot be sold on it.
 
+Where the shop has switched it on, each item shows **how many are left** (e.g. *14 TAB left*). **None left** in red: the system shows no more in stock; tell a supervisor.
+
 ## Taking payment
 
 - **Cash** — tap the amount handed over (or type it). The change shows and prints.

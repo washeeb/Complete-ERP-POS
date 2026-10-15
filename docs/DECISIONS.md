@@ -493,6 +493,10 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## Stock left on the till (2026-10-15)
+- **Setting `pos.show_stock`, off by default**, sent in the till's bootstrap. Off now also hides the search list's "in stock" figure, so the choice is the shop's.
+- **Worked out on the till** (`stock.ts`): the catalog's `on_hand` for the till's warehouse, less the cart and queued (unsent or refused) sales, in base units through each unit's factor. Sent sales are already in the server's figure, which the till re-reads on every `stock.changed` event; offline it counts only this till's sales. No new API or polling.
+
 ## Industry units (2026-10-15)
 - **`IndustryUnits::UNITS` per module**, added by `ModuleService::setStatus` when the module is enabled and once by migration `2026_11_07_100001` for tenants already running it. Starter data like `TenantBaseline`, but added to a non-empty list: only codes and names the tenant does not have, so renamed or deleted-and-recreated units are respected. Written through `Recorder` as the system actor (audit + outbox, reaches branch servers).
 - **Imports match units by code or name** (`Importer::unitId`): code, name, singular of a plural, then a name starting with what was typed (3+ letters, `Cont.` → Container).

@@ -21,6 +21,7 @@ import { achieved, withDeposits } from '../distribution'
 import { submitRoadEvent } from '../till'
 import { v7 as uuidv7 } from 'uuid'
 import { formatMoney, prettyQty, toMilli } from '../money'
+import { leftMilli, queuedLines, takenMilli, type QueuedLine } from '../stock'
 import type { Appointment, Services, ServicePass, StaffMember } from '../types'
 import type { Alteration, Bootstrap, DiningItem, DiningOrder, Fashion, Grocery, Pharmacy, Restaurant, RepairJob, Style, TradeInItem, Payment, PostedSale, Product, PromotionRow, TillCustomer, Unit } from '../types'
 import { parseMoney } from '../money'
@@ -125,6 +126,22 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   const cart = useMemo(() => priceCart(withDeposits(lines, products), list, new Date(), { promotions, branchId: boot.branch.id, utcOffsetMinutes: utcOffset, coupon, saleDiscountBp: saleBp,
     serviceBp: restaurant?.service_charge?.bp ?? 0 }), [lines, products, list, promotions, utcOffset, coupon, saleBp, boot.branch.id, restaurant])
   const results = useMemo(() => search(products, query), [products, query])
+  // Stock left (setting "Show stock left on the till"): the stock last received, less this sale and unsent sales.
+  const productMap = useMemo(() => new Map(products.map((p) => [p.id, p])), [products])
+  const [queuedSales, setQueuedSales] = useState<{ lines?: QueuedLine[] }[]>([])
+  useEffect(() => {
+    if (!boot.show_stock) return
+    void db.queue.where('status').anyOf('pending', 'review').toArray()
+      .then((items) => setQueuedSales(items.filter((i) => i.type === 'sale').map((i) => i.payload as { lines?: QueuedLine[] })))
+  }, [boot.show_stock, queue.pending, queue.review])
+  const inCart = useMemo(() => takenMilli(productMap, lines.map((l) => ({ productId: l.product.id, unitId: l.unit.id, qtyMilli: l.qtyMilli }))), [productMap, lines])
+  const inQueue = useMemo(() => takenMilli(productMap, queuedLines(queuedSales)), [productMap, queuedSales])
+  const stockLeft = (p: Product) => {
+    const n = boot.show_stock ? leftMilli(p, inCart, inQueue) : null
+    if (n === null) return null
+    const unit = p.units.find((u) => u.is_base)?.uom_code ?? ''
+    return n > 0 ? { text: `${prettyQty(n)} ${unit} left`, out: false } : { text: n === 0 ? 'None left' : `None left (${prettyQty(n)} ${unit})`, out: true }
+  }
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -504,7 +521,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
           {results.map((p) => (
             <li key={p.id}>
               <button type="button" onClick={() => add(p)}>
-                <span>{p.name}<br /><span className="muted small">{p.sku}{p.on_hand !== null ? ` · ${prettyQty(toMilli(p.on_hand))} in stock` : ''}</span></span>
+                <span>{p.name}<br /><span className="muted small">{p.sku}{stockLeft(p) && <> · <span className={stockLeft(p)!.out ? 'stock-out' : ''}>{stockLeft(p)!.text}</span></>}</span></span>
               </button>
               {p.units.filter((u) => !u.is_base).map((u) => (
                 <button key={u.id} type="button" className="unit" onClick={() => add(p, u)}>+ {u.uom_code}</button>
@@ -522,6 +539,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
               {cart.lines.map((l) => (
                 <tr key={l.key} className={l.price ? '' : 'unpriced'}>
                   <td>{l.service ? `Service charge (${(restaurant?.service_charge?.bp ?? 0) / 100} %)` : l.product.name}
+                    {!l.service && stockLeft(l.product) && <div className={`small ${stockLeft(l.product)!.out ? 'stock-out' : 'muted'}`}>{stockLeft(l.product)!.text}</div>}
                     {l.note && <div className="small muted">{l.note}</div>}
                     {l.serials && <div className="small muted mono">S/N {l.serials.join(', ')}</div>}
                     {l.markdown && <div className="small promo">Marked-down sticker</div>}

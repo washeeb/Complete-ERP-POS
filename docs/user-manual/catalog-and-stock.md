@@ -27,6 +27,7 @@ KG = 3), *Pricing & tax → Price lists / Tax groups / Tax rates*.
 - *Stock → Stock ledger* lists every movement — openings, adjustments, sales — with who, when and why.
   Nothing is overwritten: a mistake is fixed with a correcting adjustment.
 - Setting: *System → Settings → Stop sales when the system shows no stock* (off by default).
+- Setting: *System → Settings → Show stock left on the till while selling* (off by default). The till shows, per item, the stock it last received less this sale and sales not yet sent; *None left* in red when the sale takes more than the system shows. Online, the figure refreshes after every sale; offline it counts this till's own sales only.
 
 ## Sales — *Sales → Till sales / Till shifts*
 

@@ -43,6 +43,11 @@ final class Settings
             'label' => 'Stop sales when the system shows no stock',
             'help' => 'Off (recommended while stock counts are being set up): the till sells anyway and the shortfall shows as negative stock to investigate. On: the till refuses the sale.',
         ],
+        'pos.show_stock' => [
+            'type' => 'bool', 'default' => false, 'group' => 'Tills and cash',
+            'label' => 'Show stock left on the till while selling',
+            'help' => 'On: each item in the sale and in the search list shows how many are left at that till\'s store, counting what is already in the sale and sales not yet sent. Off: no stock figures on the till. Tills pick up the change when they next sign in.',
+        ],
         'cash.vaults' => [
             'type' => 'bool', 'default' => false, 'group' => 'Tills and cash',
             'label' => 'Cash control with vaults (Teller → Cashier → Income Controller)',
