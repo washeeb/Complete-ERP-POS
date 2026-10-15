@@ -1,7 +1,7 @@
 # State (resume file)
 
 **Phase:** Separate books per company · **Status:** done on branch `separate-books` (PR to `main`). Industries complete: A (structure), B (stock requests), C (profit centres), D (separate books)
-**Updated:** 2026-10-14 · Merged through PR #40 (0.34.2 speed). 0.34.3 on branch `shared-server`: `install.sh --instance` for several clients on one Ubuntu server (own folder, DB, user, FPM pool, Reverb port, Caddy site file); CI covers it. Standard remains one server per client (Contabo Cloud VPS 6, NVMe, EU, Auto Backup) · Repo private
+**Updated:** 2026-10-15 · Imports: 30-minute limit and barcodes kept through Excel (branch `import-barcodes`) · Merged through PR #40 (0.34.2 speed). 0.34.3 on branch `shared-server`: `install.sh --instance` for several clients on one Ubuntu server (own folder, DB, user, FPM pool, Reverb port, Caddy site file); CI covers it. Standard remains one server per client (Contabo Cloud VPS 6, NVMe, EU, Auto Backup) · Repo private
 
 ## Separate books — done on branch `separate-books`
 - **Database:** migration `2026_11_05_100001`:

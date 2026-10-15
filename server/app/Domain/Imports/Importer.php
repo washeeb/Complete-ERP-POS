@@ -129,4 +129,42 @@ abstract class Importer
     {
         return array_values(array_filter(array_map('trim', preg_split('/[|;,]/', $value)), fn ($x) => $x !== ''));
     }
+
+    /**
+     * A barcode as typed, repaired where Excel changed it: a number Excel shortened (6.00107E+12) is refused, since the
+     * digits are lost; a whole number written as 6001067000123.0 or 6.001067000123E+12 in full is turned back into
+     * digits; and leading zeros Excel dropped are put back when the code's check digit shows it is a standard
+     * EAN-8 / UPC-A code (7 or 11 digits left → 8 or 12).
+     */
+    public static function barcode(string $value): string
+    {
+        $v = trim(CsvFile::unformula(trim($value)), " '\t");
+        if (preg_match('/^(\d+)(?:[.,]0+)?$/', $v, $m)) {
+            $v = $m[1];
+        } elseif (preg_match('/^(\d)[.,](\d+)E\+?(\d+)$/i', $v, $m)) {
+            if (strlen($m[2]) < (int) $m[3]) {
+                throw new DomainException("The barcode {$v} was shortened by Excel, so its digits are lost. Format the column as Text in Excel and type the barcode again (or download the file as Excel instead of CSV).");
+            }
+            $v = $m[1].substr($m[2], 0, (int) $m[3]);
+        }
+        if (ctype_digit($v) && in_array(strlen($v), [7, 11], true) && self::gtinValid('0'.$v)) {
+            $v = '0'.$v;
+        }
+
+        return $v;
+    }
+
+    /** The GS1 check digit (EAN-8, UPC-A, EAN-13, GTIN-14) is right. */
+    public static function gtinValid(string $code): bool
+    {
+        if (! ctype_digit($code) || ! in_array(strlen($code), [8, 12, 13, 14], true)) {
+            return false;
+        }
+        $sum = 0;
+        foreach (str_split(strrev(substr($code, 0, -1))) as $i => $d) {
+            $sum += (int) $d * ($i % 2 === 0 ? 3 : 1);
+        }
+
+        return (10 - $sum % 10) % 10 === (int) substr($code, -1);
+    }
 }

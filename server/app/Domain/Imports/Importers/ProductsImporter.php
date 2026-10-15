@@ -61,7 +61,7 @@ final class ProductsImporter extends Importer
             ['name' => 'track_batches', 'required' => false, 'help' => 'yes / no — batches and expiry dates.', 'example' => 'no'],
             ['name' => 'for_sale', 'required' => false, 'help' => 'yes / no — no takes it off the tills and shop.', 'example' => 'yes'],
             ['name' => 'plu', 'required' => false, 'help' => 'Scale code for weighed items (up to 5 digits).', 'example' => ''],
-            ['name' => 'barcodes', 'required' => false, 'help' => 'Barcodes of one base unit, separated by |. Replaces the current base-unit barcodes.', 'example' => '6001067000123'],
+            ['name' => 'barcodes', 'required' => false, 'help' => 'Barcodes of one base unit, separated by |. Replaces the current base-unit barcodes. In Excel, format this column as Text first, or Excel drops leading zeros and shortens long numbers.', 'example' => '6001067000123'],
         ];
         foreach (PriceList::where('is_active', true)->orderByDesc('is_default')->orderBy('code')->get() as $list) {
             $cols[] = ['name' => 'price_'.strtolower($list->code), 'required' => false,
@@ -120,11 +120,11 @@ final class ProductsImporter extends Importer
             $data['is_active'] ??= true;
         }
         if (self::has($row, 'plu')) {
-            $data['plu'] = $row['plu'];
+            $data['plu'] = self::barcode($row['plu']);
         }
         $current = $product ? CatalogService::inputOf($product) : ['units' => [], 'base_barcodes' => [], 'prices' => []];
         if (self::has($row, 'barcodes')) {
-            $data['base_barcodes'] = self::list($row['barcodes']);
+            $data['base_barcodes'] = array_map([self::class, 'barcode'], self::list($row['barcodes']));
             $data['units'] = $current['units'];
         } elseif ($isNew) {
             $data['base_barcodes'] = [];

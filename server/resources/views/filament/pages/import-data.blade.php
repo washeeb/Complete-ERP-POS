@@ -41,12 +41,14 @@
         <p class="im-desc">{{ $i->description() }}</p>
     </x-filament::section>
 
-    <x-filament::section heading="2. Get the file ready" description="Start from the template, or from your current data, and fill it in Excel or Google Sheets. Upload it as Excel (.xlsx) or CSV.">
+    <x-filament::section heading="2. Get the file ready" description="Start from the template, or from your current data, and fill it in Excel or Google Sheets. Upload it as Excel (.xlsx) or CSV. Use the Excel download when the file has barcodes or codes that start with 0: Excel keeps them as they are.">
         <div class="im-buttons">
-            <x-filament::button color="gray" icon="heroicon-o-document-arrow-down" wire:click="downloadTemplate">Download template (CSV)</x-filament::button>
+            <x-filament::button color="gray" icon="heroicon-o-document-arrow-down" wire:click="downloadTemplate('xlsx')">Download template (Excel)</x-filament::button>
+            <x-filament::button color="gray" icon="heroicon-o-document-arrow-down" wire:click="downloadTemplate('csv')">Template (CSV)</x-filament::button>
             <x-filament::button color="gray" icon="heroicon-o-book-open" wire:click="downloadGuide">Column guide (PDF)</x-filament::button>
             @if (in_array($type, ['products', 'prices', 'customers', 'suppliers', 'accounts'], true))
-                <x-filament::button color="gray" icon="heroicon-o-table-cells" wire:click="downloadCurrent('csv')">Download current data to edit (CSV)</x-filament::button>
+                <x-filament::button color="gray" icon="heroicon-o-table-cells" wire:click="downloadCurrent('xlsx')">Download current data to edit (Excel)</x-filament::button>
+                <x-filament::button color="gray" icon="heroicon-o-table-cells" wire:click="downloadCurrent('csv')">Current data (CSV)</x-filament::button>
             @elseif ($ctx === 'stock_adjustment')
                 <x-filament::button color="gray" icon="heroicon-o-table-cells" wire:click="downloadCurrent('csv')">Stock sheet — current stock standing (CSV)</x-filament::button>
                 <x-filament::button color="gray" icon="heroicon-o-printer" wire:click="downloadCurrent('pdf')">Stock sheet (PDF)</x-filament::button>

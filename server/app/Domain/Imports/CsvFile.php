@@ -49,7 +49,7 @@ final class CsvFile
             $values = [];
             foreach ($headings as $i => $h) {
                 if ($h !== '') {
-                    $values[$h] = trim((string) ($cells[$i] ?? ''));
+                    $values[$h] = self::unformula(trim((string) ($cells[$i] ?? '')));
                 }
             }
             $rows[] = ['line' => $line, 'values' => $values];
@@ -69,5 +69,11 @@ final class CsvFile
         $h = preg_replace('/[^a-z0-9]+/', '_', str_replace(['*', '(', ')'], ' ', $h));
 
         return trim($h, '_');
+    }
+
+    /** ="0123" (a CSV cell Excel keeps as text, leading zeros and all) → 0123. */
+    public static function unformula(string $v): string
+    {
+        return preg_match('/^="(.*)"$/s', $v, $m) ? str_replace('""', '"', $m[1]) : $v;
     }
 }

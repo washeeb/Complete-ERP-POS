@@ -487,6 +487,12 @@ Design:
 - **MRP** is a suggestion screen (no auto-ordering), per warehouse, using low-level codes; buy suggestions are exported rather than turned into purchase orders (purchase orders need a supplier choice).
 - **Deferred:** serial-numbered components/outputs, standard costing, finite scheduling, subcontracting, shop-floor tablet screen, PO creation from MRP.
 
+## Imports: time limit and barcodes through Excel (2026-10-15)
+- **Imports run up to 30 minutes per request** (`set_time_limit(1800)`, as the go-live and backup pages). Measured about 40 ms a row; PHP-FPM's 30 s stopped lists over roughly 700 rows. Caddy's 300 s read timeout still caps one request (some 7,000 rows); a queued import is the next step if larger files are needed.
+- **Excel is the default download** for templates and current data: `XlsxWriter` writes digit strings of 12+ digits, and any with a leading zero, as text.
+- **CSV cells** `0…` and 12+ digit numbers are written `="…"` (Excel keeps them as text); `CsvFile::unformula` reads them back everywhere.
+- **Restoring zeros only with proof:** a 7- or 11-digit code becomes EAN-8 / UPC-A only when the padded code's GS1 check digit is right. A 12-digit code stays as it is (a valid UPC-A, which is also how scanners send it). Shortened scientific numbers are refused, never guessed.
+
 ## Only what the business runs is offered (2026-10-14)
 - **Same rule as the menus:** `ModuleService::enabledAnywhere`, which follows the industry chosen at the top, decides industry roles (`RoleCatalog::MODULE_ROLES`), settings sections, message templates and device kinds (`Device::kindsFor`, checked again in `DeviceService`). HR roles follow the licence (`FEATURE_ROLES`).
 - **Hidden, never deleted:** a role already held stays visible; hidden settings keep their values (the save skips fields that were not shown); templates stay stored and come back with the module.

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 ### Fixed
+- **Importing a long product list no longer fails with "Error while loading page".** Checking or importing a few thousand rows takes minutes, and the server stopped every request after 30 seconds. Found at the first client.
+- **Barcodes keep their leading zeros through Excel.** The template and current data download as Excel (CSV still offered), with codes as text; CSV downloads write such codes as `="0123…"` so Excel keeps them. On import, zeros Excel dropped are put back when the check digit proves them (EAN-8 and UPC-A), whole numbers Excel wrote as `6001067000123.0` or in full scientific form are turned back into digits, and a barcode Excel shortened (`6.00107E+12`) is refused with how to fix it.
 - **Cash count by notes and coins laid out properly**, on the till's *Close shift* and in the back office's cash desk and income control. The boxes no longer overflow their columns. Notes and coins sit in their own groups (side by side on a PC, one under the other on a phone), each line shows what it comes to, and the running total sits underneath. Still blind: the expected figure is never shown.
 - **Only what the business runs is offered** (owner: "for pharmacy, kitchen things should not show"):
   - device types: a kitchen display only at a branch with the Restaurant module; the self-checkout kiosk (not built) never;

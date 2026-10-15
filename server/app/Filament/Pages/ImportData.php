@@ -180,12 +180,12 @@ class ImportData extends Page
     }
 
     /** Headings and one example row. */
-    public function downloadTemplate()
+    public function downloadTemplate(string $format = 'csv')
     {
         $i = $this->importer();
+        $sheet = [['title' => $i->label(), 'headings' => $i->headings(), 'rows' => [array_column($i->columns(), 'example')]]];
 
-        return Erp::run(fn ($actor) => app(Exporter::class)->csv($actor, "{$i->label()} template", [['title' => $i->label(), 'headings' => $i->headings(),
-            'rows' => [array_column($i->columns(), 'example')]]]));
+        return Erp::run(fn ($actor) => app(Exporter::class)->{$format === 'xlsx' ? 'xlsx' : 'csv'}($actor, "{$i->label()} template", $sheet));
     }
 
     /** What each column means, as a PDF to print. */
@@ -216,7 +216,11 @@ class ImportData extends Page
         };
         $sheet = [['title' => $name, 'headings' => $i->headings(), 'rows' => $rows]];
 
-        return Erp::run(fn ($actor) => $format === 'pdf' ? app(Exporter::class)->pdf($actor, $name, $sheet) : app(Exporter::class)->csv($actor, $name, $sheet));
+        return Erp::run(fn ($actor) => match ($format) {
+            'pdf' => app(Exporter::class)->pdf($actor, $name, $sheet),
+            'xlsx' => app(Exporter::class)->xlsx($actor, $name, $sheet),
+            default => app(Exporter::class)->csv($actor, $name, $sheet),
+        });
     }
 
     /** A file was chosen: read its headings and first rows, and suggest which of its columns are which. */
@@ -266,6 +270,7 @@ class ImportData extends Page
     private function runImport(bool $commit): void
     {
         $this->validate(['file' => ['required', 'file', 'max:10240', 'mimes:csv,txt,xlsx']], ['file.required' => 'Choose the file first.', 'file.mimes' => 'The file must be CSV or Excel (.xlsx).']);
+        @set_time_limit(1800); // a few thousand products take minutes, beyond PHP's usual 30 seconds per request
         $stored = $this->file->store('imports', 'local');
         $path = Storage::disk('local')->path($stored);
         try {

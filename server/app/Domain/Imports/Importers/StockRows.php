@@ -2,6 +2,7 @@
 
 namespace App\Domain\Imports\Importers;
 
+use App\Domain\Imports\Importer;
 use App\Domain\Support\DomainException;
 use App\Models\Barcode;
 use App\Models\Product;
@@ -20,7 +21,7 @@ final class StockRows
         if ($sku !== '' && ($p = Product::where('sku', $sku)->first())) {
             return [$p, null];
         }
-        $code = trim((string) ($row['barcode'] ?? ''));
+        $code = Importer::barcode((string) ($row['barcode'] ?? ''));
         if ($code !== '' && ($b = Barcode::where('code', $code)->first())) {
             return [Product::findOrFail($b->product_id), ProductUom::with('uom')->find($b->product_uom_id)];
         }
