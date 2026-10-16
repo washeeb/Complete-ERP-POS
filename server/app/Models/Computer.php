@@ -28,8 +28,7 @@ class Computer extends Model
     /** @return array<string, string> computer_key => label, for the audit log (one query per page) */
     public static function labels(): array
     {
-        static $labels = null;
-
-        return $labels ??= self::query()->get(['name', 'computer_key'])->mapWithKeys(fn (self $c) => [$c->computer_key => $c->label()])->all();
+        // Once per request (a long-running worker must not keep yesterday's names).
+        return once(fn () => self::query()->get(['name', 'computer_key'])->mapWithKeys(fn (self $c) => [$c->computer_key => $c->label()])->all());
     }
 }
