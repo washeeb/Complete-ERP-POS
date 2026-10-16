@@ -23,6 +23,8 @@ You look after the tills and the cashiers during the day. You sign in at a till 
 
 1. Each cashier closes their shift and counts the cash. You see over/short in **Sales → Till shifts**.
 2. Any difference above the limit: talk to the cashier, add a note, tell the manager.
+
+**A shift that stays open** (the till was reinstalled or replaced, or someone left without closing): a manager opens **Sales → Till shifts**, the shift → **Close shift**, enters the cash actually there and why. **A count typed wrongly** (e.g. 4000 for 40): **Correct the count** with the right amount and why. The shift keeps its original count; the corrected figure shows with a ✎ (hover for the original, who and why), and the books are put right automatically. Both need the manager's cash set-up permission and are in the audit log.
 3. **During the parallel run** (if your shop has one): the manager enters the old system's day totals in **System → Go-live**; help find any sale rung up in only one system.
 
 ## Practise first

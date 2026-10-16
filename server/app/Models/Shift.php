@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Shift extends Model
 {
@@ -33,6 +34,12 @@ class Shift extends Model
     public function sales(): HasMany
     {
         return $this->hasMany(Sale::class);
+    }
+
+    /** The latest count correction, if a manager corrected the count after the close. */
+    public function latestCorrection(): HasOne
+    {
+        return $this->hasOne(ShiftCountCorrection::class)->latest('corrected_at'); // newest first; eager loading keeps the first per shift
     }
 
     public function isOpen(): bool
