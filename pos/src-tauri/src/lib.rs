@@ -93,6 +93,28 @@ fn set_hardware(state: State<AppState>, printer: Option<String>, drawer: bool, s
     state.save()
 }
 
+/// Which computer this till is: its name, network card (MAC) and address on the shop network. Sent with the till's
+/// requests so the audit log and the device list can tell tills apart. What the computer says about itself, not proof.
+#[tauri::command]
+fn client_info(app: tauri::AppHandle) -> serde_json::Value {
+    machine(&app.package_info().version.to_string())
+}
+
+fn machine(version: &str) -> serde_json::Value {
+    let computer = std::env::var("COMPUTERNAME").or_else(|_| std::env::var("HOSTNAME")).unwrap_or_default();
+    let mac = mac_address::get_mac_address().ok().flatten().map(|m| m.to_string()).unwrap_or_default();
+    let local_ip = local_ip_address::local_ip().map(|ip| ip.to_string()).unwrap_or_default();
+    serde_json::json!({ "computer": computer, "mac": mac, "local_ip": local_ip, "app": format!("SES Labs Till {version}") })
+}
+
+/// Open the business server's back office in this window (it then also knows which computer this is).
+#[tauri::command]
+fn open_back_office(app: tauri::AppHandle, state: State<AppState>) -> Result<(), String> {
+    let server = state.config.lock().map_err(|e| e.to_string())?.server.clone().ok_or("Set the server address first.")?;
+    let window = app.get_webview_window("main").ok_or("no window")?;
+    window.navigate(url::Url::parse(&format!("{server}/admin")).map_err(|e| e.to_string())?).map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 fn list_printers() -> Vec<String> {
     printer::list()
@@ -153,7 +175,15 @@ pub fn run() {
 
             // The window may only show the local set-up page or the chosen server.
             let handle = app.handle().clone();
+            // Every page gets a cookie saying which computer this is, so the back office opened here records it too
+            // (the till also sends it in a header). The server reads it as what the computer reports, not as proof.
+            let info = machine(&app.package_info().version.to_string()).to_string();
+            let cookie = format!(
+                "try{{if(location.protocol==='https:'||location.protocol==='http:'){{document.cookie='ses_client='+encodeURIComponent({})+';path=/;max-age=31536000;SameSite=Lax'+(location.protocol==='https:'?';Secure':'')}}}}catch(e){{}}",
+                serde_json::to_string(&info).unwrap_or_else(|_| "\"\"".into())
+            );
             tauri::WebviewWindowBuilder::new(app, "main", start)
+                .initialization_script(&cookie)
                 .title(app.package_info().name.clone()) // the product name (tauri.conf.json productName)
                 .inner_size(1366.0, 800.0)
                 .min_inner_size(1024.0, 640.0)
@@ -169,7 +199,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            get_config, set_server, open_setup, set_hardware, list_printers, print_raw, open_drawer, list_scale_ports, read_scale
+            get_config, set_server, open_setup, open_back_office, set_hardware, client_info, list_printers, print_raw, open_drawer, list_scale_ports, read_scale
         ])
         .run(tauri::generate_context!())
         .expect("error while running the till");

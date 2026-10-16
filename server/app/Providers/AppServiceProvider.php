@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Domain\Support\Actor;
+use App\Domain\Support\AuditLog;
 use App\Domain\Sync\Transport\HttpSyncTransport;
 use App\Domain\Sync\Transport\SyncTransport;
 use App\Filament\Support\TableExport;
@@ -13,8 +15,13 @@ use App\Support\Settings;
 use App\Support\TenantContext;
 use Filament\Support\Exceptions\Halt;
 use Filament\Tables\Table;
+use Illuminate\Auth\Events\Failed;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -34,6 +41,17 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Back-office sign-ins and sign-outs, with the computer, in the audit log (tills record theirs as pos.login).
+        $signIn = function (string $action, $user) {
+            if (! $user instanceof User || ! $user->tenant_id || app()->runningInConsole() && ! app()->runningUnitTests()) {
+                return;
+            }
+            DB::transaction(fn () => app(AuditLog::class)->record(Actor::user($user, 'web'), $action, $user));
+        };
+        Event::listen(Login::class, fn (Login $e) => $e->guard === 'web' ? $signIn('auth.signed_in', $e->user) : null);
+        Event::listen(Logout::class, fn (Logout $e) => $e->guard === 'web' ? $signIn('auth.signed_out', $e->user) : null);
+        Event::listen(Failed::class, fn (Failed $e) => $e->guard === 'web' ? $signIn('auth.sign_in_failed', $e->user) : null);
+
         // Erp::run shows "Not saved" with the reason and then stops with Filament's Halt. Actions and record pages catch
         // it; a custom screen's own method (Save modules, …) would turn it into an error page, so it stops there too.
         \Livewire\on('exception', function ($component, \Throwable $e, callable $stopPropagation) {

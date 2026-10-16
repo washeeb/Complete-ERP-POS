@@ -67,6 +67,9 @@ test('shows what is left as items go into the sale, in the base unit', async ({ 
   await expect(cart.getByText('None left (-1 BTL)')).toBeVisible()
   await scan.fill('Para')
   await expect(page.getByRole('button', { name: /Paracetamol 500mg/ }).getByText('14 TAB left')).toBeVisible()
+  // The price of each unit shows in the list, so the teller can check it without adding the item.
+  await expect(page.locator('.results li').first().locator('button').first()).toContainText('GH₵ 0.50')
+  await expect(page.getByRole('button', { name: /\+ STRIP/ })).toContainText('GH₵ 4.50')
   await page.screenshot({ path: 'test-results/stock-left.png' })
 })
 
@@ -77,4 +80,5 @@ test('shows no stock figures when the setting is off', async ({ page }) => {
   await expect(page.getByText(/left$/)).toHaveCount(0)
   await scan.fill('Para')
   await expect(page.getByText(/in stock|left/)).toHaveCount(0)
+  await expect(page.locator('.results li').first().locator('button').first()).toContainText('GH₵ 0.50') // prices show either way
 })

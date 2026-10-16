@@ -23,7 +23,7 @@ final class Actor
 
     public static function user(User $user, string $source = 'web', ?string $deviceId = null): self
     {
-        $request = app()->runningInConsole() ? null : request();
+        $request = app()->runningInConsole() && ! app()->runningUnitTests() ? null : request();
 
         return new self(
             id: $user->id,

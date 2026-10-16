@@ -33,7 +33,7 @@ class EditUser extends EditRecord
             Action::make('setPin')->label('Set POS PIN')->icon(Heroicon::OutlinedKey)
                 ->modalDescription('4–8 digits. Tell the person privately; they sign in on a till with their username and this PIN. Setting a PIN also clears a PIN lockout.')
                 ->schema([
-                    TextInput::make('pin')->label('New PIN')->password()->revealable()->required()->regex('/^\d{4,8}$/'),
+                    TextInput::make('pin')->label('New PIN')->password()->revealable()->autocomplete('new-password')->required()->regex('/^\d{4,8}$/'),
                 ])
                 ->action(fn (array $data) => Erp::run(fn ($actor) => app(AccessService::class)
                     ->setPin($actor, $this->record, $data['pin']), 'PIN set')),

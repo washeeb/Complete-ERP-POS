@@ -10,6 +10,7 @@ use App\Filament\Widgets\IndustryHighlights;
 use App\Filament\Widgets\IndustryOverview;
 use App\Http\Middleware\EnforceLicense;
 use App\Http\Middleware\RedirectToSetupWizard;
+use App\Http\Middleware\TrackComputer;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -89,6 +90,7 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => new HtmlString(Watermark::meta()))
             // Where am I (current menu item, group and tab stand out) and file pickers that look like buttons.
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => new HtmlString('<link rel="stylesheet" href="'.asset('css/seslabs/admin.css').'?v='.@filemtime(public_path('css/seslabs/admin.css')).'">'))
+            ->middleware([TrackComputer::class], isPersistent: true) // which computer: System → Computers, the audit log
             ->authMiddleware([
                 Authenticate::class,
                 EnforceLicense::class,

@@ -54,7 +54,7 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
 .find input { width: 100%; }
 .results { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 6px; }
 .results li { display: flex; gap: 6px; }
-.results li > button:first-child { flex: 1; text-align: left; }
+.results li > button:first-child { flex: 1; text-align: left; display: flex; align-items: center; }
 .results .unit { white-space: nowrap; }
 .cart { display: flex; flex-direction: column; }
 .cart table { width: 100%; border-collapse: collapse; }
@@ -116,7 +116,8 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
 .handheld section { display: grid; gap: 10px; }
 .handheld label { display: grid; gap: 4px; }
 .promo { color: var(--ok-text, #14532d); }
-.stock-out { color: var(--danger); font-weight: 600; } /* none left of an item in the sale (Show stock left) */
+.stock-out { color: var(--danger); font-weight: 600; }
+.result-price { margin-left: auto; padding-left: 12px; font-weight: 600; white-space: nowrap; } /* price in the search list */ /* none left of an item in the sale (Show stock left) */
 
 /* Clock in / out on the sign-in screen */
 .clock-row { margin-top: 8px; } .clock-row button { flex: 1; }

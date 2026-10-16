@@ -5,6 +5,8 @@ namespace App\Filament\Resources\AuditEvents;
 use App\Filament\Resources\AuditEvents\Pages\ListAuditEvents;
 use App\Filament\Support\Erp;
 use App\Models\AuditEvent;
+use App\Models\Computer;
+use App\Support\ClientInfo;
 use BackedEnum;
 use Filament\Actions\ViewAction;
 use Filament\Infolists\Components\KeyValueEntry;
@@ -77,7 +79,15 @@ class AuditEventResource extends Resource
                 TextEntry::make('origin_node')->label('Node'),
                 TextEntry::make('subject_type')->label('Record'),
                 TextEntry::make('subject_id')->label('Record id')->copyable(),
-                TextEntry::make('ip')->placeholder('—'),
+                TextEntry::make('ip')->label('IP address')->placeholder('—')->url(fn (AuditEvent $r) => ClientInfo::lookupUrl($r->ip), shouldOpenInNewTab: true)
+                    ->helperText(fn (AuditEvent $r) => ClientInfo::lookupUrl($r->ip) ? 'Click to see roughly where this address is (opens ipinfo.io).' : null),
+                TextEntry::make('client.computer_key')->label('Computer (System → Computers)')->placeholder('—')
+                    ->formatStateUsing(fn (?string $state) => $state ? (Computer::labels()[$state] ?? 'Not listed') : null),
+                TextEntry::make('client.computer')->label('Computer name')->placeholder('— (browser: not available)'),
+                TextEntry::make('client.mac')->label('MAC address')->placeholder('— (browser: not available)')->fontFamily('mono'),
+                TextEntry::make('client.local_ip')->label('Address on the shop network')->placeholder('—'),
+                TextEntry::make('client.browser')->label('Browser and system')->placeholder('—'),
+                TextEntry::make('client.app')->label('App')->placeholder('—'),
                 TextEntry::make('reason')->placeholder('—')->columnSpanFull(),
                 KeyValueEntry::make('changes_flat')->label('Changes (before → after)')->columnSpanFull()
                     ->state(fn (AuditEvent $r) => collect($r->changes)->map(fn ($pair) => is_array($pair) && count($pair) === 2
@@ -98,10 +108,21 @@ class AuditEventResource extends Resource
                 TextColumn::make('action')->badge()->searchable(),
                 TextColumn::make('subject_type')->label('Record'),
                 TextColumn::make('source'),
+                TextColumn::make('client')->label('Computer')->placeholder('—')->wrap()->toggleable()
+                    ->state(fn (AuditEvent $r) => ClientInfo::summary($r->client)),
+                TextColumn::make('ip')->label('IP address')->placeholder('—')->searchable()->toggleable(),
                 TextColumn::make('reason')->limit(40)->toggleable(),
             ])
             ->filters([
                 SelectFilter::make('source')->options(['web' => 'Back office', 'pos' => 'POS', 'api' => 'API', 'cli' => 'Command line', 'system' => 'System', 'sync' => 'Sync']),
+                SelectFilter::make('computer')->label('Computer')->options(fn () => Computer::labels())
+                    ->query(fn (Builder $q, array $data) => filled($data['value'] ?? null) ? $q->whereRaw("client->>'computer_key' = ?", [$data['value']]) : $q),
+                SelectFilter::make('signins')->label('Sign-ins')->options(['auth' => 'Back-office sign-ins and sign-outs', 'pos' => 'Till sign-ins'])
+                    ->query(fn (Builder $q, array $data) => match ($data['value'] ?? null) {
+                        'auth' => $q->where('action', 'like', 'auth.%'),
+                        'pos' => $q->whereIn('action', ['pos.login', 'pos.login_failed', 'pos.pin_locked']),
+                        default => $q,
+                    }),
             ])
             ->defaultSort('seq', 'desc')
             ->recordActions([ViewAction::make()]);

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Domain\Modules\ModuleService;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasOriginNode;
+use App\Support\ClientInfo;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -42,6 +43,7 @@ class Device extends Model
             'enrollment_expires_at' => 'datetime',
             'enrolled_at' => 'datetime',
             'last_seen_at' => 'datetime',
+            'last_client' => 'array',
             'revoked_at' => 'datetime',
         ];
     }
@@ -59,5 +61,11 @@ class Device extends Model
     public function isActive(): bool
     {
         return $this->status === 'active';
+    }
+
+    /** Mark the device as seen now, from this request's computer and address. */
+    public function seen(): void
+    {
+        $this->forceFill(['last_seen_at' => now(), 'last_ip' => request()->ip(), 'last_client' => ClientInfo::current()])->saveQuietly();
     }
 }

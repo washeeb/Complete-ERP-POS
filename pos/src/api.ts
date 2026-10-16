@@ -1,3 +1,4 @@
+import { clientHeader } from './clientInfo'
 import { db, getDevice, getSession } from './db'
 import type { OfflineGrant } from './db'
 import type { Bootstrap, PostedSale, Product, PromotionRow, Returnable, Shift, TillCustomer, WmsBin, WmsBootstrap, WmsCount, WmsOrder, WmsTransfer, WmsUnit, Grocery, Pharmacy, Restaurant, DiningOrder, Floor, KitchenTicket, Reservation, RepairJob, SerialInfo, Fashion, Alteration, Services, Appointment, ServicePass, StaffMember, VanDay } from './types'
@@ -21,6 +22,8 @@ async function call<T>(path: string, init: RequestInit & { auth?: 'device' | 'se
   const auth = init.auth ?? 'session'
   if (auth === 'device') headers.Authorization = `Bearer ${(await getDevice())?.token ?? ''}`
   if (auth === 'session') headers.Authorization = `Bearer ${(await getSession())?.token ?? ''}`
+  const client = await clientHeader() // the desktop till's computer name and network card, for the audit log
+  if (client) headers['X-SES-Client'] = client
 
   let res: Response
   try {

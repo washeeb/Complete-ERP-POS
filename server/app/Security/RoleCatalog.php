@@ -13,7 +13,9 @@ use App\Domain\Modules\ModuleService;
 final class RoleCatalog
 {
     /** Roles that only make sense with an industry module (shown only where it is switched on). */
-    public const MODULE_ROLES = ['pharmacist' => 'pharmacy', 'pharmacy_technician' => 'pharmacy', 'waiter' => 'restaurant', 'kitchen_staff' => 'restaurant',
+    public const MODULE_ROLES = ['pharmacist' => 'pharmacy', 'pharmacy_technician' => 'pharmacy', 'superintendent_pharmacist' => 'pharmacy',
+        'medicine_counter_assistant' => 'pharmacy', 'doctor' => 'pharmacy', 'physician_assistant' => 'pharmacy', 'nurse' => 'pharmacy', 'midwife' => 'pharmacy',
+        'lab_technician' => 'pharmacy', 'waiter' => 'restaurant', 'kitchen_staff' => 'restaurant',
         'technician' => 'electronics', 'tailor' => 'fashion', 'service_staff' => 'services', 'sales_rep' => 'distribution', 'van_sales_rep' => 'distribution',
         'production_manager' => 'manufacturing', 'machine_operator' => 'manufacturing', 'qc_inspector' => 'manufacturing', 'delivery_rider' => 'logistics'];
 
@@ -56,6 +58,17 @@ final class RoleCatalog
         'supervisor' => ['Supervisor', 3, false, ['pos.access', 'catalog.view', 'stock.view', 'sales.view', 'orders.view', 'orders.manage', 'purchasing.view', 'stock.receive', 'stock.transfer', 'stock.count', 'customers.view', 'customers.manage', 'customers.credit.override', 'sales.orders.view', 'receivables.collect', 'pos.discount', 'pos.return.no_receipt', 'expenses.claim', 'attendance.manage', 'leave.request', 'grocery.markdowns', 'restaurant.serve', 'restaurant.void', 'restaurant.waste', 'electronics.repairs', 'electronics.trade_in', 'fashion.alterations', 'services.appointments', 'services.passes', 'distribution.settle', 'manufacturing.produce', 'stock.request']],
         'pharmacist' => ['Pharmacist', 4, false, ['pos.access', 'catalog.view', 'stock.view', 'sales.view', 'customers.view', 'customers.manage', 'stock.receive', 'stock.count', 'expenses.claim', 'leave.request', 'pharmacy.dispense', 'pharmacy.patients', 'pharmacy.manage', 'stock.request']],
         'pharmacy_technician' => ['Pharmacy Technician', 2, false, ['pos.access', 'catalog.view', 'stock.view', 'customers.view', 'stock.receive', 'stock.count', 'leave.request', 'pharmacy.patients']],
+        // Pharmacy and clinic staff (owner request 2026-10-16). Only pharmacists approve prescription-only and controlled
+        // medicines (pharmacy.dispense); prescribers and nurses see patients' records but do not dispense.
+        'superintendent_pharmacist' => ['Superintendent Pharmacist', 4, false, ['pos.access', 'catalog.view', 'catalog.manage', 'stock.view', 'stock.adjust', 'stock.receive',
+            'stock.receive.approve', 'stock.count', 'stock.count.approve', 'stock.request', 'stock.request.approve', 'purchasing.view', 'purchasing.manage', 'sales.view',
+            'customers.view', 'customers.manage', 'pharmacy.dispense', 'pharmacy.patients', 'pharmacy.manage', 'insights.view', 'expenses.claim', 'leave.request']],
+        'medicine_counter_assistant' => ['Medicine Counter Assistant (MCA)', 2, false, ['pos.access', 'catalog.view', 'stock.view', 'customers.view', 'pharmacy.patients', 'leave.request']],
+        'doctor' => ['Doctor / Medical Officer', 3, false, ['customers.view', 'customers.manage', 'pharmacy.patients', 'leave.request']],
+        'physician_assistant' => ['Physician Assistant', 3, false, ['customers.view', 'customers.manage', 'pharmacy.patients', 'leave.request']],
+        'nurse' => ['Nurse', 2, false, ['pos.access', 'customers.view', 'pharmacy.patients', 'leave.request']],
+        'midwife' => ['Midwife', 2, false, ['pos.access', 'customers.view', 'pharmacy.patients', 'leave.request']],
+        'lab_technician' => ['Laboratory Technician', 2, false, ['pos.access', 'catalog.view', 'customers.view', 'pharmacy.patients', 'leave.request']],
         'waiter' => ['Waiter / Bartender', 2, false, ['pos.access', 'customers.view', 'leave.request', 'restaurant.serve', 'restaurant.waste']],
         'kitchen_staff' => ['Kitchen Staff', 1, false, ['leave.request', 'restaurant.waste']],
         'technician' => ['Repair Technician', 2, false, ['pos.access', 'catalog.view', 'stock.view', 'customers.view', 'leave.request', 'electronics.repairs']],

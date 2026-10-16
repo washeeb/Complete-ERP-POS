@@ -18,6 +18,6 @@ class AuditEvent extends Model
 
     protected function casts(): array
     {
-        return ['changes' => 'array', 'occurred_at' => 'datetime', 'received_at' => 'datetime', 'seq' => 'integer'];
+        return ['changes' => 'array', 'client' => 'array', 'occurred_at' => 'datetime', 'received_at' => 'datetime', 'seq' => 'integer'];
     }
 }

@@ -104,6 +104,8 @@ For a Windows till PC with a receipt printer, a cash drawer or a weighing scale,
 4. **Scale:** choose its COM port and speed (usually 9600), then **Read the scale** with something on it.
 5. **Save and open the till.** The app first checks that the server answers. If it does not, it says so and stays on this page: correct the address and save again. (**Use this address anyway** keeps an address that cannot be reached yet, for example when the server is not switched on.) Then enrol and sign in as with any till (9.1).
 
+The app also tells the server **which computer it is** (its name, network card and address on the shop network), so the audit log and **System → Devices** (*Last used from*) show which till did what (12.1). **Open the back office** on its set-up page opens the back office in the app, so changes made there are recorded with the computer's details too.
+
 Receipts then print straight away without a print window, the drawer opens after cash sales, and items sold by weight show a **Weigh** button. **Printer and scale set-up** on the receipt screen opens these settings again.
 
 **Why:** the app sends the receipt to the printer in the printer's own language (ESC/POS), which is faster and more reliable than a browser print window, and can talk to the drawer and scale, which a browser cannot.

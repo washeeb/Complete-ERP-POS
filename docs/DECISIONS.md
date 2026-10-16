@@ -493,6 +493,18 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## Named computers (2026-10-16)
+- **A lasting browser ID instead of MAC/hostname** (impossible from a browser): `TrackComputer` (persistent panel middleware) sets an encrypted, HttpOnly `ses_computer` cookie (5 years) and keeps `computers` (per tenant, at most one write per computer per 5 minutes, telemetry like `devices.last_seen_at`). Naming is audited (`computer.named`). The key goes into `audit_events.client`, so "which computer" survives renaming.
+- **Desktop app in the back office:** a Tauri initialization script sets an unencrypted `ses_client` cookie with name/MAC/LAN address (excluded from cookie encryption), since Livewire requests cannot carry the till's header.
+- **Location is a link, not a lookup:** the system never sends addresses to a third party; the administrator opens ipinfo.io for one address when needed.
+- **Migration order matters:** the `client` column (`2026_11_06_100003`) runs before migrations that write audit rows (`2026_11_07_100001` pharmacy units), or an update straight to this release would stop.
+
+## Which computer did what; pharmacy roles (2026-10-16)
+- **Trust only a proxy on this machine** (`trustProxies(at: 127.0.0.1, ::1)`): Caddy forwards the visitor's address; a request straight from elsewhere cannot fake it.
+- **`audit_events.client` (jsonb, not hashed, like `ip`)** from `ClientInfo`: browser and system from the User-Agent; computer name, MAC and LAN address only from the desktop till's `X-SES-Client` header (Tauri `client_info`). Validated and shown as "what the computer reports", not proof. Browsers cannot reveal MAC or hostname, so none is attempted.
+- **Back-office sign-ins** (Laravel `Login`, `Logout`, `Failed` on the web guard) are audit rows `auth.*`; tills already had `pos.login`. Devices keep `last_ip` and `last_client`.
+- **Clinic roles are not dispensers:** only pharmacist roles hold `pharmacy.dispense` (Ghana: dispensing of POM by a pharmacist). Doctors, PAs, nurses, midwives and lab technicians get `pharmacy.patients`.
+
 ## SKUs without the "SKU" prefix (2026-10-15)
 - **Shared products: plain numbers from `CatalogService::SHARED_SKU_FROM` + 1 (100001)**, series `SHARED` in `document_sequences`. Six digits without a leading zero, so Excel keeps them intact. Industry products keep `<CODE>-000123`.
 - **System SKUs follow a move** (`CatalogService::systemSku`): moving to another industry re-numbers a system-given SKU in the new series. This relaxes "the SKU never changes" for system codes only; receipts keep the SKU they printed (sale lines store it), stock and prices are by product id. Typed codes from an old system never change.
