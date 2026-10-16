@@ -121,6 +121,12 @@ test('the desktop till prints the receipt silently on the receipt printer and op
   expect(at).toBeGreaterThan(0)
   expect(at).toBeLessThan(text.indexOf('Demo Ltd'))
   expect(bytes.readUInt16LE(at + 6)).toBeGreaterThan(20) // its height in dots
+
+  // Show print preview: the print window, not the printer.
+  await page.evaluate(() => { const w = window as unknown as { __previews: number; print: () => void }; w.__previews = 0; w.print = () => { w.__previews++ } })
+  await page.getByRole('button', { name: 'Show print preview' }).click()
+  expect(await page.evaluate(() => (window as unknown as { __previews: number }).__previews)).toBe(1)
+  expect(await page.evaluate(() => (window as unknown as { __calls: { cmd: string }[] }).__calls.filter((c) => c.cmd === 'print_raw').length)).toBe(1)
 })
 
 test('a practice till says PRACTICE, and a cashier can report a problem with the screen and the recent errors', async ({ page }) => {

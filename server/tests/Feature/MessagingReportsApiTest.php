@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Access\AccessService;
 use App\Domain\Api\ApiClients;
 use App\Domain\Api\OpenApi;
 use App\Domain\Api\WebhookDispatcher;
@@ -32,8 +33,12 @@ use App\Filament\Pages\ReportBuilder;
 use App\Filament\Resources\ApiClients\ApiClientResource;
 use App\Filament\Resources\Messages\MessageResource;
 use App\Filament\Resources\MessageTemplates\MessageTemplateResource;
+use App\Filament\Resources\Sales\Pages\ListSales;
+use App\Filament\Resources\Sales\SaleResource;
 use App\Filament\Resources\SavedReports\SavedReportResource;
+use App\Filament\Resources\Users\Pages\EditUser;
 use App\Mail\PlainMessage;
+use App\Models\AuditEvent;
 use App\Models\Customer;
 use App\Models\Message;
 use App\Models\MessageProvider;
@@ -46,9 +51,11 @@ use App\Models\Warehouse;
 use App\Models\WebhookDelivery;
 use App\Security\ScopeType;
 use App\Support\Exports\XlsxWriter;
+use App\Support\People;
 use App\Support\Qty;
 use App\Support\Settings;
 use Carbon\CarbonImmutable;
+use Filament\Facades\Filament;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
@@ -309,4 +316,38 @@ it('shows the messaging, report, API and export screens to the right people', fu
     foreach ([MessagingSetup::getUrl(), ApiClientResource::getUrl(), ReportBuilder::getUrl(), AccountingExportPage::getUrl()] as $url) {
         $this->get($url)->assertForbidden();
     }
+});
+
+it('reprints a till receipt as a marked COPY, audited, with a print preview and straight-to-print', function () {
+    $sale = p12Sale($this);
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
+    $this->actingAs(withMfa($this->owner), 'web');
+    $this->get(route('print.receipt', $sale))->assertOk()->assertSee('COPY')->assertSee('Not the original receipt')->assertSee($sale->receipt_no)
+        ->assertSee('Milo 400g')->assertSee('TOTAL')->assertDontSee('window.print(), 300', false);
+    $this->get(route('print.receipt', ['sale' => $sale, 'print' => 1]))->assertOk()->assertSee('window.print(), 300', false);
+    expect(AuditEvent::where('action', 'sale.receipt_reprinted')->where('subject_id', $sale->id)->count())->toBe(2);
+    $this->get(SaleResource::getUrl('view', ['record' => $sale]))->assertOk()->assertSee('Print preview (copy)')->assertSee('Print copy');
+
+    // Someone without sales.view gets nothing.
+    $teller = staff($this->owner, 'kofi', 2, 'teller', ScopeType::Till, $this->till->id);
+    app('auth')->forgetGuards();
+    $this->actingAs($teller, 'web')->get(route('print.receipt', $sale))->assertForbidden();
+});
+
+it('keeps the name used at the time on records and prints, hints today\'s name, and lists every rename', function () {
+    $sale = p12Sale($this);
+    $then = $sale->cashier_name;
+    app(AccessService::class)->updateUser($this->o, $this->cashier, ['name' => 'Alberta Agyepong', 'username' => 'alberta'], 'Account handed over');
+    expect(People::renamedTo($this->cashier->id, $then))->toBe('Alberta Agyepong')
+        ->and(People::renamedTo($this->cashier->id, 'Alberta Agyepong'))->toBeNull()
+        ->and(People::history($this->cashier->id))->toHaveCount(1)
+        ->and(People::history($this->cashier->id)[0]['name'])->toBe([$then, 'Alberta Agyepong'])
+        ->and(People::history($this->cashier->id)[0]['username'])->toBe(['efua', 'alberta']);
+
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
+    $this->actingAs(withMfa($this->owner), 'web');
+    Livewire::test(ListSales::class)->assertSee($then)->assertDontSee('(as ')->assertSee('Account now named Alberta Agyepong');
+    $this->get(route('print.receipt', $sale))->assertSee($then)->assertDontSee('Alberta Agyepong');
+    Livewire::test(EditUser::class, ['record' => $this->cashier->id])
+        ->assertActionVisible('nameHistory');
 });

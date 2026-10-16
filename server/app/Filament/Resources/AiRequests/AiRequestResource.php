@@ -64,7 +64,7 @@ class AiRequestResource extends Resource
     {
         return $schema->columns(4)->components([
             TextEntry::make('created_at')->label('When')->dateTime('j M Y H:i:s'),
-            TextEntry::make('user_name')->label('Who'),
+            TextEntry::make('user_name')->asPerson('user_id')->label('Who'),
             TextEntry::make('feature')->formatStateUsing(fn ($state) => AiGateway::FEATURES[$state] ?? $state),
             TextEntry::make('model')->formatStateUsing(fn ($state, AiRequest $r) => "{$r->provider} · {$state}"),
             TextEntry::make('tokens_in')->label('Tokens in / out')->formatStateUsing(fn ($state, AiRequest $r) => "{$r->tokens_in} / {$r->tokens_out}"),
@@ -82,7 +82,7 @@ class AiRequestResource extends Resource
         return $table->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('created_at')->label('When')->dateTime('j M H:i')->sortable(),
-                TextColumn::make('user_name')->label('Who')->searchable(),
+                TextColumn::make('user_name')->asPerson('user_id')->label('Who')->searchable(),
                 TextColumn::make('feature')->formatStateUsing(fn ($state) => AiGateway::FEATURES[$state] ?? $state),
                 TextColumn::make('provider')->formatStateUsing(fn ($state, AiRequest $r) => "{$state} · {$r->model}"),
                 TextColumn::make('prompt')->label('Question')->limit(60)->searchable(),

@@ -90,7 +90,7 @@ class VanSettlementResource extends Resource
                     ->belowContent(fn (VanSettlement $r) => $r->cash_counted_minor === null ? null : 'Over / short: '.FinanceUi::money($r->cash_counted_minor - (int) $r->cash_expected_minor)),
                 TextEntry::make('stock_variance_minor')->label('Stock difference (value)')->formatStateUsing(fn ($state, VanSettlement $r) => $r->status === 'posted' ? $m($state) : '—'),
                 TextEntry::make('started_by_name')->label('Started by'),
-                TextEntry::make('submitted_by_name')->label('Submitted by')->placeholder('—'),
+                TextEntry::make('submitted_by_name')->asPerson('submitted_by')->label('Submitted by')->placeholder('—'),
                 TextEntry::make('posted_by_name')->label('Settled by')->placeholder('—'),
                 TextEntry::make('note')->placeholder('—')->columnSpanFull(),
             ]),

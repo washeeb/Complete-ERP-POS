@@ -42,6 +42,7 @@ Route::prefix('shop/{slug}')->where(['slug' => '[a-z0-9-]+'])->group(function ()
 // A4 documents (print or save as PDF from the browser). Signed-in back-office users only; permission-checked per document.
 Route::prefix('print')->middleware(['auth', 'license:output'])->name('print.')->group(function () {
     Route::get('invoice/{invoice}', [PrintController::class, 'invoice'])->name('invoice')->whereUuid('invoice');
+    Route::get('receipt/{sale}', [PrintController::class, 'receipt'])->name('receipt')->whereUuid('sale'); // a till sale's receipt, marked COPY
     Route::get('order/{order}', [PrintController::class, 'order'])->name('order')->whereUuid('order');
     Route::get('statement/{customer}', [PrintController::class, 'statement'])->name('statement')->whereUuid('customer');
     Route::get('payment/{payment}', [PrintController::class, 'payment'])->name('payment')->whereUuid('payment');

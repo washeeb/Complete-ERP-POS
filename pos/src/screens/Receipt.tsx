@@ -73,20 +73,28 @@ export function SendReceipt({ sale, channels }: { sale: PostedSale; channels: ('
   )
 }
 
-/** Desktop till with a receipt printer: print silently (and open the drawer after cash); otherwise the print window. */
+/**
+ * Print receipt: straight to the receipt printer in the desktop till (and open the drawer after cash). A browser cannot
+ * print without its print window, so there it opens (unless Chrome runs with --kiosk-printing, manual 9.7).
+ * Show print preview: always the print window, to look at the receipt first.
+ */
 function PrintButton({ sale, boot }: { sale: PostedSale; boot: Bootstrap }) {
   const [note, setNote] = useState<string | null>(null)
   const print = async () => {
     setNote(null)
     try {
-      if (!(await printReceipt(sale, boot))) window.print()
+      if (!(await printReceipt(sale, boot))) {
+        if (isDesktop()) setNote('No receipt printer is chosen on this till: Printer and scale set-up.')
+        window.print()
+      }
     } catch (e) {
       setNote(`Printer: ${String(e)} — use the print window instead.`)
       window.print()
     }
   }
   return <>
-    <button type="button" onClick={() => void print()}>Print receipt</button>
+    <button type="button" className="primary" onClick={() => void print()}>Print receipt</button>
+    <button type="button" onClick={() => window.print()}>Show print preview</button>
     {note && <span className="small" role="alert">{note}</span>}
   </>
 }

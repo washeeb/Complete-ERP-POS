@@ -201,7 +201,7 @@ class SupplierBillResource extends Resource
                 TextEntry::make('tax_minor')->label('Tax')->formatStateUsing($m),
                 TextEntry::make('total_minor')->label('Total')->weight('bold')->formatStateUsing($m),
                 TextEntry::make('variance_minor')->label('Difference from order prices')->formatStateUsing($m)->color(fn ($state) => $state ? 'warning' : null),
-                TextEntry::make('created_by_name')->label('Entered by'),
+                TextEntry::make('created_by_name')->asPerson('created_by')->label('Entered by'),
                 TextEntry::make('approved_by_name')->label('Approved / rejected by')->placeholder('—'),
                 TextEntry::make('variance_reason')->label('Reason')->placeholder('—')->columnSpanFull(),
                 TextEntry::make('note')->placeholder('—')->columnSpanFull(),

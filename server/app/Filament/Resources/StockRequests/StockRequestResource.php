@@ -118,7 +118,7 @@ class StockRequestResource extends Resource
                 TextEntry::make('status')->badge()->formatStateUsing(fn ($state) => StockRequest::STATUSES[$state] ?? $state),
                 TextEntry::make('toWarehouse.name')->label('For'),
                 TextEntry::make('fromWarehouse.name')->label('Asked of'),
-                TextEntry::make('requested_by_name')->label('Asked by')->belowContent(fn (StockRequest $record) => $record->created_at?->format('j M Y H:i')),
+                TextEntry::make('requested_by_name')->asPerson('requested_by')->label('Asked by')->belowContent(fn (StockRequest $record) => $record->created_at?->format('j M Y H:i')),
                 TextEntry::make('cross_industry')->label('Between industries')->formatStateUsing(fn ($state) => $state ? 'Yes: both sides approve, moved at cost' : 'No'),
                 TextEntry::make('requester_approved_by_name')->label('Approved (asking side)')->placeholder('—')
                     ->visible(fn (StockRequest $record) => $record->cross_industry),
@@ -206,7 +206,7 @@ class StockRequestResource extends Resource
                 })->color(fn ($state) => match ($state) {
                     'requested', 'approved' => 'warning', 'supplied' => 'info', 'received' => 'success', 'rejected' => 'danger', default => 'gray'
                 }),
-                TextColumn::make('requested_by_name')->label('Asked by'),
+                TextColumn::make('requested_by_name')->asPerson('requested_by')->label('Asked by'),
                 TextColumn::make('created_at')->label('Asked')->since()->sortable(),
             ])
             ->filters([SelectFilter::make('status')->options(StockRequest::STATUSES)])

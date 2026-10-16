@@ -72,7 +72,7 @@ class StockMovementResource extends Resource
                 TextColumn::make('qty_base')->label('Base qty')->formatStateUsing($qty)
                     ->color(fn ($state) => Qty::toMilli((string) $state) < 0 ? 'danger' : 'success'),
                 TextColumn::make('reason')->wrap()->limit(60),
-                TextColumn::make('actor_name')->label('By'),
+                TextColumn::make('actor_name')->asPerson('actor_id')->label('By'),
             ])
             ->filters([
                 SelectFilter::make('type')->options(['opening' => 'Opening', 'adjustment' => 'Adjustment', 'sale' => 'Sale']),

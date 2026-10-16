@@ -36,7 +36,9 @@ Lines shown in red have no price on the chosen list and cannot be sold on it.
   approval code from the slip.
 - Mix methods as needed (e.g. part MoMo, rest cash). The sale completes when the amount due is zero.
 
-After payment the receipt appears: **Print receipt** (80 mm printer or A4), then **New sale**.
+After payment the receipt appears: **Print receipt** prints it straight away in the desktop till app with a receipt printer chosen (a browser always shows its print window first); **Show print preview** opens the print window to look at it before printing. Then **New sale**.
+
+**A copy for a customer later:** in the back office, Sales → Till sales → the sale → **Print preview (copy)** or **Print copy**. The copy says *COPY, not the original receipt*, with who reprinted it and when, and every reprint is in the audit log.
 
 ## When the server is down
 

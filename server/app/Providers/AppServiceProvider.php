@@ -11,9 +11,12 @@ use App\Http\Middleware\RecordSlowRequests;
 use App\Models\User;
 use App\Modules\ModuleRegistry;
 use App\Security\Authorizer;
+use App\Support\People;
 use App\Support\Settings;
 use App\Support\TenantContext;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Support\Exceptions\Halt;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
@@ -41,6 +44,18 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Who did it: the name at the time, as recorded (also on prints). If the account has been renamed since, an icon
+        // and a hint give today's name; People & access → Users → Name history lists every rename.
+        foreach ([TextColumn::class, TextEntry::class] as $component) {
+            $component::macro('asPerson', function (string $idColumn) {
+                /** @var TextColumn|TextEntry $this */
+                $renamed = fn ($state, $record) => People::renamedTo($record?->{$idColumn}, $state);
+
+                return $this->icon(fn ($state, $record) => $renamed($state, $record) ? 'heroicon-m-arrows-right-left' : null)->iconPosition('after')
+                    ->tooltip(fn ($state, $record) => ($now = $renamed($state, $record)) ? "Account now named {$now}" : null);
+            });
+        }
+
         // Back-office sign-ins and sign-outs, with the computer, in the audit log (tills record theirs as pos.login).
         $signIn = function (string $action, $user) {
             if (! $user instanceof User || ! $user->tenant_id || app()->runningInConsole() && ! app()->runningUnitTests()) {

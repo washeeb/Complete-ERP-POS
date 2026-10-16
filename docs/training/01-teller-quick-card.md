@@ -35,7 +35,7 @@ Where the shop has switched it on, each item shows **how many are left** (e.g. *
 - **Card** — run the card on the terminal first, then enter the approval code from the slip.
 - **Mixed** — e.g. part MoMo, rest cash. The sale completes when nothing is left to pay.
 
-Then **Print receipt** (or **Send receipt** by SMS/WhatsApp/e-mail), then **New sale**.
+Then **Print receipt** (prints straight away on the desktop till's receipt printer), or **Show print preview** to look at it first, or **Send receipt** by SMS/WhatsApp/e-mail. Then **New sale**.
 
 ## Returns and mistakes
 

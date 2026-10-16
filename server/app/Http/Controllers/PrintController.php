@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Domain\Customers\CustomerLedger;
 use App\Domain\Pharmacy\PharmacyReports;
+use App\Domain\Support\Actor;
+use App\Domain\Support\AuditLog;
 use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\CustomerOrder;
@@ -14,6 +16,7 @@ use App\Models\LegalEntity;
 use App\Models\Markdown;
 use App\Models\PayrollRun;
 use App\Models\Payslip;
+use App\Models\Sale;
 use App\Models\Tenant;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
@@ -60,6 +63,20 @@ class PrintController extends Controller
         return view('print.invoice', ['doc' => $invoice->load('lines'), 'company' => $this->company($invoice->branch_id),
             'customer' => Customer::find($invoice->customer_id),
             'open' => (int) (collect(app(CustomerLedger::class)->openItems($invoice->customer_id))->firstWhere('doc_id', $invoice->id)?->open_minor ?? 0)]);
+    }
+
+    /**
+     * A copy of a till receipt (80 mm, or A4 from the print window), clearly marked COPY with who reprinted it and when;
+     * every reprint is in the audit log. ?print=1 opens the print window straight away.
+     */
+    public function receipt(Request $request, Sale $sale): View
+    {
+        $this->allow($request, ['sales.view'], $sale->branch_id, $sale->tenant_id);
+        $user = $request->user();
+        DB::transaction(fn () => app(AuditLog::class)->record(Actor::user($user), 'sale.receipt_reprinted', $sale, [], null, $sale->branch_id));
+
+        return view('print.receipt', ['sale' => $sale->load('lines', 'payments', 'till'), 'company' => $this->company($sale->branch_id),
+            'footer' => (string) app(Settings::class)->get('receipt.footer', $sale->tenant_id), 'by' => $user->name, 'autoPrint' => $request->boolean('print')]);
     }
 
     public function order(Request $request, CustomerOrder $order): View
