@@ -493,6 +493,11 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## Closing and correcting shifts from the back office (2026-10-16)
+- **A shift belongs to the device that opened it**; a till re-enrolled after a reinstall is a new device and cannot close the old one, so `ShiftService::closeFromOffice` closes it like a till would (expected, count, over/short; posted by AutoPoster as usual). Vault shifts are refused: the cash chain decides those.
+- **Counts are corrected, never edited:** `shift_count_corrections` keeps before/after, reason and person; each posts the difference once (`gl_postings` source `shift_correction`) between `cash_till` and `cash_over_short`. Lists show the latest corrected figure with the original on hover.
+- **Permission `cash.setup`** at the shift's branch (Branch Manager and above), not the teller's own.
+
 ## Names then and now; receipt copies (2026-10-16)
 - **Snapshots stay; renames are a hint and a history, not longer names** (owner: an account renamed five times must not make every record long). `asPerson()` (TextColumn/TextEntry) on the 31 person columns that keep the account id adds an icon and a tooltip with today's name (`People::renamedTo`); prints show the snapshot only. `People::history` reads the `user.updated` audit rows (name, username) for the user's **Name history**.
 - **Receipt copies are marked and audited:** a duplicate receipt is a classic refund-fraud tool, so the copy says COPY with the reprinting person and time, and `sale.receipt_reprinted` is logged on each view.

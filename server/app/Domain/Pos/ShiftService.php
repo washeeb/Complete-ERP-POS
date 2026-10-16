@@ -2,6 +2,7 @@
 
 namespace App\Domain\Pos;
 
+use App\Domain\Finance\GeneralLedger;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
@@ -9,6 +10,7 @@ use App\Domain\Support\Recorder;
 use App\Models\Device;
 use App\Models\SalePayment;
 use App\Models\Shift;
+use App\Models\ShiftCountCorrection;
 use App\Models\Till;
 use App\Models\User;
 use App\Models\VaultSession;
@@ -116,6 +118,78 @@ final class ShiftService
 
             return $shift;
         });
+    }
+
+    /**
+     * Close a shift from the back office: for a shift no till can close any more (the till was reinstalled or replaced,
+     * or the person left without closing). A manager enters the cash actually there and why. Same result as a till
+     * close: expected cash, the count, over/short (posted to the books as usual).
+     */
+    public function closeFromOffice(Actor $actor, Shift $shift, int $countedMinor, string $reason): Shift
+    {
+        $this->requireManager($actor, $shift);
+        if (! $shift->isOpen()) {
+            throw new DomainException('This shift is already closed.');
+        }
+        if ($shift->vault_session_id) {
+            throw new DomainException('This shift is on a cash-control vault: close it at Cash → Shifts and vaults.');
+        }
+        if ($countedMinor < 0 || trim($reason) === '') {
+            throw new DomainException('Give the cash counted (0 or more) and the reason.');
+        }
+        $expected = $this->expectedCash($shift);
+        $shift->forceFill([
+            'closed_by' => $actor->id, 'closed_by_name' => $actor->name, 'closed_at' => now(), 'status' => 'closed',
+            'expected_cash_minor' => $expected, 'counted_cash_minor' => $countedMinor, 'over_short_minor' => $countedMinor - $expected,
+            'close_note' => mb_substr('Closed in the back office: '.trim($reason), 0, 255),
+        ]);
+
+        return $this->recorder->transaction(fn () => $this->recorder->save($actor, $shift, 'shift.closed_in_office', $reason, $shift->branch_id));
+    }
+
+    /**
+     * Correct a closed shift's count (a typing mistake, cash found later). The shift keeps its original count; the
+     * correction records the right amount, who and why, and posts the difference between cash and cash over/short.
+     */
+    public function correctCount(Actor $actor, Shift $shift, int $countedMinor, string $reason): ShiftCountCorrection
+    {
+        $this->requireManager($actor, $shift);
+        if ($shift->isOpen()) {
+            throw new DomainException('Close the shift first.');
+        }
+        if ($shift->vault_session_id) {
+            throw new DomainException('This shift is on a cash-control vault: its count is decided at Cash → Shifts and vaults.');
+        }
+        if ($countedMinor < 0 || trim($reason) === '') {
+            throw new DomainException('Give the right count (0 or more) and the reason.');
+        }
+        $before = $shift->latestCorrection?->counted_after_minor ?? (int) $shift->counted_cash_minor;
+        if ($countedMinor === $before) {
+            throw new DomainException('That is the count already recorded.');
+        }
+        $expected = (int) $shift->expected_cash_minor;
+        $row = new ShiftCountCorrection;
+        $row->forceFill(['tenant_id' => $shift->tenant_id, 'shift_id' => $shift->id, 'branch_id' => $shift->branch_id, 'counted_before_minor' => $before,
+            'counted_after_minor' => $countedMinor, 'over_short_after_minor' => $countedMinor - $expected, 'reason' => mb_substr(trim($reason), 0, 255),
+            'corrected_by' => $actor->id, 'corrected_by_name' => $actor->name, 'corrected_at' => now()]);
+        $delta = $countedMinor - $before;
+
+        return $this->recorder->transaction(function () use ($actor, $row, $shift, $delta, $reason) {
+            $this->recorder->save($actor, $row, 'shift.count_corrected', $reason, $shift->branch_id);
+            app(GeneralLedger::class)->post($actor, now()->toDateString(), 'auto', 'Shift count corrected: '.mb_substr(trim($reason), 0, 120), [
+                ['account' => 'cash_till', 'amount' => $delta, 'branch_id' => $shift->branch_id],
+                ['account' => 'cash_over_short', 'amount' => -$delta, 'branch_id' => $shift->branch_id],
+            ], [['shift_correction', $row->id]], 'shift_corrections');
+
+            return $row;
+        });
+    }
+
+    private function requireManager(Actor $actor, Shift $shift): void
+    {
+        if (! $actor->user || ! $this->authz->allows($actor->user, 'cash.setup', $shift->branch)) {
+            throw new AccessDenied('Closing or correcting a shift needs a manager (cash set-up permission at this branch).');
+        }
     }
 
     public function expectedCash(Shift $shift): int
