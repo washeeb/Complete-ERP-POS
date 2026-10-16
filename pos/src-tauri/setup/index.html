@@ -40,7 +40,7 @@
     <div class="row"><button type="button" class="secondary" id="weigh">Read the scale</button><span class="msg" id="weighmsg" role="status"></span></div>
   </section>
 
-  <div class="row"><button type="button" id="save">Save and open the till</button><button type="button" class="secondary" id="anyway" hidden>Use this address anyway</button><span class="msg" id="msg" role="status"></span></div>
+  <div class="row"><button type="button" id="save">Save and open the till</button><button type="button" class="secondary" id="anyway" hidden>Use this address anyway</button><button type="button" class="secondary" id="office">Open the back office</button><span class="msg" id="msg" role="status"></span></div>
 </main>
 <script>
   const T = window.__TAURI__.core;
@@ -100,6 +100,9 @@
       say('msg', unreachable($('server').value.trim()), true);
       $('anyway').hidden = false; // e.g. setting up before the server is switched on
     } catch (e) { say('msg', String(e), true); }
+  };
+  $('office').onclick = async () => {
+    try { await T.invoke('open_back_office') } catch (e) { say('msg', String(e), true); }
   };
   $('anyway').onclick = async () => {
     try { await saveHardware(); await T.invoke('set_server', { server: $('server').value, verified: false }); } catch (e) { say('msg', String(e), true); }

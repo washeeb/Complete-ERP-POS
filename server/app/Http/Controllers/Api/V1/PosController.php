@@ -341,7 +341,7 @@ class PosController extends Controller
             // Refuse the whole batch without judging it: the till keeps its queue and sends it once the licence is renewed.
             return response()->json(['error' => 'license_read_only', 'detail' => $license['message']], 423);
         }
-        $device->forceFill(['last_seen_at' => now()])->saveQuietly();
+        $device->seen();
 
         return response()->json(['results' => $sync->apply($device, $data['events'])]);
     }

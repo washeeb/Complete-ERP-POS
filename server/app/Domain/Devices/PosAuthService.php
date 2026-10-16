@@ -94,7 +94,7 @@ final class PosAuthService
             $user->pin_failed_attempts = 0;
             $user->last_login_at = now();
             $this->recorder->save(Actor::user($user, 'pos', $device->id), $user, 'pos.login', branchId: $device->branch_id);
-            $device->forceFill(['last_seen_at' => now()])->saveQuietly();
+            $device->seen();
             $token = $user->createToken(($handheld ? 'handheld' : 'pos').":{$device->id}", [$handheld ? 'handheld' : 'pos', "device:{$device->id}"], now()->addHours(self::TOKEN_HOURS));
 
             return [

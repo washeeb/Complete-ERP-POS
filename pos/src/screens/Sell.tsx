@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { cachedImage } from '../brand'
 import { isDesktop, readScale } from '../hardware'
 import { api, ApiError } from '../api'
-import { addMarkdown, addToCart, addWeighed, findByBarcode, priceCart, qtyAllowed, search, setManual, setQty, type CartLine } from '../cart'
+import { addMarkdown, addToCart, addWeighed, findByBarcode, priceCart, qtyAllowed, resolvePrice, search, setManual, setQty, type CartLine } from '../cart'
 import { findMarkdown, parseScaleLabel, productForPlu } from '../scale'
 import { db, nextSeq, type CacheRecord } from '../db'
 import { exportQueueFile, offlineSignIn, retryRefused } from '../offline'
@@ -123,6 +123,8 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   }
   const list = boot.price_lists.find((l) => l.id === listId) ?? defaultList
   const money = (m: number) => formatMoney(m, boot.company.currency, boot.company.exponent)
+  // The price of one unit on the price list in use, to check a price without adding the item.
+  const priceOf = (p: Product, u: Unit) => resolvePrice(p, u.id, list.id, 1000, new Date())
   const cart = useMemo(() => priceCart(withDeposits(lines, products), list, new Date(), { promotions, branchId: boot.branch.id, utcOffsetMinutes: utcOffset, coupon, saleDiscountBp: saleBp,
     serviceBp: restaurant?.service_charge?.bp ?? 0 }), [lines, products, list, promotions, utcOffset, coupon, saleBp, boot.branch.id, restaurant])
   const results = useMemo(() => search(products, query), [products, query])
@@ -522,10 +524,13 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
             <li key={p.id}>
               <button type="button" onClick={() => add(p)}>
                 <span>{p.name}<br /><span className="muted small">{p.sku}{stockLeft(p) && <> · <span className={stockLeft(p)!.out ? 'stock-out' : ''}>{stockLeft(p)!.text}</span></>}</span></span>
+                {(() => { const base = p.units.find((u) => u.is_base); const pr = base && priceOf(p, base)
+                  return <span className="result-price mono">{pr ? money(pr.amount_minor) : 'no price'}{base && p.units.length > 1 ? <span className="muted small"> /{base.uom_code}</span> : null}</span> })()}
               </button>
-              {p.units.filter((u) => !u.is_base).map((u) => (
-                <button key={u.id} type="button" className="unit" onClick={() => add(p, u)}>+ {u.uom_code}</button>
-              ))}
+              {p.units.filter((u) => !u.is_base).map((u) => {
+                const pr = priceOf(p, u)
+                return <button key={u.id} type="button" className="unit" onClick={() => add(p, u)}>+ {u.uom_code}{pr ? <span className="small mono"> {money(pr.amount_minor)}</span> : null}</button>
+              })}
             </li>
           ))}
         </ul>

@@ -3,6 +3,7 @@
 namespace App\Domain\Support;
 
 use App\Models\AuditEvent;
+use App\Support\ClientInfo;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -80,7 +81,9 @@ final class AuditLog
         $row['hash'] = self::hash($head->last_hash, $row);
 
         $event = new AuditEvent;
-        $event->forceFill($row + ['ip' => $actor->ip, 'request_id' => $actor->requestId, 'received_at' => $now]);
+        // Where it came from (not hashed, like the IP): the computer, when a person made the change here.
+        $client = in_array($actor->source, ['web', 'pos', 'api'], true) ? ClientInfo::current() : null;
+        $event->forceFill($row + ['ip' => $actor->ip, 'client' => $client, 'request_id' => $actor->requestId, 'received_at' => $now]);
         $event->save();
 
         DB::table('audit_chain_heads')->where('tenant_id', $actor->tenantId)

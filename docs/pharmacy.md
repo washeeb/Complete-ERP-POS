@@ -61,5 +61,12 @@ Over-the-counter medicines need none of this. Neither does a branch where the Ph
 |---|---|
 | **Pharmacist** | Dispense and approve prescription medicines (`pharmacy.dispense`); patient details; interaction table, register and NHIS claims (`pharmacy.manage`); till; receiving and counts |
 | **Pharmacy Technician** | Till; patient details; receiving and counts. A pharmacist approves their prescription sales |
+| **Superintendent Pharmacist** (L4) | Everything a pharmacist can, plus the pharmacy's catalogue, purchasing, stock adjustments, approving receipts, counts and stock requests, and insights |
+| **Medicine Counter Assistant (MCA)** (L2) | Till; patient details. Over-the-counter medicines; a pharmacist approves prescription sales |
+| **Doctor / Medical Officer**, **Physician Assistant** (L3) | Patient records (allergies, history, NHIS); add and update patients. They do not dispense |
+| **Nurse**, **Midwife** (L2) | Till; patient records. They do not dispense |
+| **Laboratory Technician** (L2) | Till (tests and test kits); patient records |
+
+L2 to L4 are security levels (staff, supervisor, manager): a role never applies to someone below its level. Only pharmacists (`pharmacy.dispense`) approve prescription-only and controlled medicines. These roles are offered only where the Pharmacy module runs.
 
 The General Manager also has `pharmacy.manage` and `pharmacy.patients`. A Branch Manager has `pharmacy.patients`.

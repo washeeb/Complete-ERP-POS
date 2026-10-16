@@ -1,6 +1,6 @@
 [package]
 name = "erp-till"
-version = "0.24.1"
+version = "0.25.0"
 description = "The till app for Windows with silent receipt printing, cash drawer and scale"
 authors = ["SES Labs"]
 edition = "2021"
@@ -20,6 +20,8 @@ serde_json = "1"
 base64 = "0.22"
 serialport = { version = "4", default-features = false }
 url = "2"
+mac_address = "1"
+local-ip-address = "0.6"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58", features = ["Win32_Foundation", "Win32_Graphics_Printing", "Win32_Graphics_Gdi"] }

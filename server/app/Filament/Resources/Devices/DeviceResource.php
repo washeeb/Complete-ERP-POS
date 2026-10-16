@@ -9,6 +9,7 @@ use App\Filament\Support\Erp;
 use App\Models\Branch;
 use App\Models\Device;
 use App\Models\Till;
+use App\Support\ClientInfo;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
@@ -89,6 +90,9 @@ class DeviceResource extends Resource
                 }),
                 TextColumn::make('enrollment_expires_at')->label('Code expires')->since()->placeholder('—'),
                 TextColumn::make('last_seen_at')->label('Last seen')->since()->placeholder('never'),
+                TextColumn::make('last_client')->label('Last used from')->placeholder('—')->wrap()
+                    ->state(fn (Device $r) => ClientInfo::summary($r->last_client, $r->last_ip))
+                    ->description(fn (Device $r) => $r->last_client['mac'] ?? null),
             ])
             ->defaultSort('created_at', 'desc')
             ->recordActions([

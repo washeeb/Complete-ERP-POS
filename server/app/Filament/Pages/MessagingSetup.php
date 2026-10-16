@@ -67,7 +67,7 @@ class MessagingSetup extends Page
                 continue;
             }
             foreach ($list as $key => $label) {
-                $fields[] = TextInput::make("credentials.{$provider}.{$key}")->label($label)->password($key !== 'url')->revealable($key !== 'url')
+                $fields[] = TextInput::make("credentials.{$provider}.{$key}")->label($label)->password($key !== 'url')->revealable($key !== 'url')->autocomplete($key !== 'url' ? 'new-password' : null)
                     ->placeholder($saved?->provider === $provider && ! empty(($saved->credentials ?? [])[$key]) ? 'Saved — leave empty to keep' : null)
                     ->visible(fn (Get $get) => $get('provider') === $provider);
             }
@@ -93,7 +93,7 @@ class MessagingSetup extends Page
             Section::make('WhatsApp Business')->description('Needs a WhatsApp Business account on Meta\'s Cloud API, with message templates approved by Meta (their names go in Messaging templates). Meta charges per conversation. Off until you have the account.')
                 ->columns(2)->schema([
                     TextInput::make('credentials.phone_number_id')->label('Phone number ID')->placeholder($saved ? 'Saved — leave empty to keep' : null),
-                    TextInput::make('credentials.access_token')->label('Access token (permanent system-user token)')->password()->revealable()->placeholder($saved ? 'Saved — leave empty to keep' : null),
+                    TextInput::make('credentials.access_token')->label('Access token (permanent system-user token)')->password()->revealable()->autocomplete('new-password')->placeholder($saved ? 'Saved — leave empty to keep' : null),
                     Toggle::make('is_active')->label('Send WhatsApp messages (preferred over SMS when a template is on)')->inline(false),
                     Text::make(fn () => $saved?->tested_at ? 'Last test: '.$saved->tested_at->format('j M H:i').' — '.$saved->test_result : '')->columnSpanFull(),
                 ]),

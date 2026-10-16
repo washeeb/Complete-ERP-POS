@@ -74,12 +74,12 @@ class SalesChannelResource extends Resource
         foreach (array_keys(ConnectorRegistry::availableOptions()) as $type) {
             $connector = app(ConnectorRegistry::class)->for($type);
             foreach ($connector->credentialFields() as $field => $label) {
-                $secretFields[] = TextInput::make("secrets.{$type}.{$field}")->label($label)->password()->revealable()->maxLength(500)
+                $secretFields[] = TextInput::make("secrets.{$type}.{$field}")->label($label)->password()->revealable()->autocomplete('new-password')->maxLength(500)
                     ->visible(fn (Get $get) => $get('type') === $type)
                     ->helperText(fn (?SalesChannel $record) => ! empty($record?->credentials[$field]) ? 'Saved. Leave blank to keep it.' : null);
             }
             if (in_array('order_webhooks', $connector->capabilities(), true)) {
-                $secretFields[] = TextInput::make("secrets.{$type}.webhook_secret")->label('Webhook secret')->password()->revealable()->maxLength(500)
+                $secretFields[] = TextInput::make("secrets.{$type}.webhook_secret")->label('Webhook secret')->password()->revealable()->autocomplete('new-password')->maxLength(500)
                     ->visible(fn (Get $get) => $get('type') === $type)
                     ->helperText(fn (?SalesChannel $record) => ($record?->webhook_secret ? 'Saved. Leave blank to keep it. ' : '')
                         .'The same secret you enter in the store’s webhook settings; incoming orders with a different signature are refused.');

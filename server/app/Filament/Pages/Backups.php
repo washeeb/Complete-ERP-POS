@@ -66,7 +66,7 @@ class Backups extends Page
         ];
         foreach (Destinations::FIELDS as $type => $list) {
             foreach ($list as $key => [$label, $secret]) {
-                $field = $key === 'private_key' ? Textarea::make("config.{$type}.{$key}")->rows(3) : TextInput::make("config.{$type}.{$key}")->password($secret)->revealable($secret);
+                $field = $key === 'private_key' ? Textarea::make("config.{$type}.{$key}")->rows(3) : TextInput::make("config.{$type}.{$key}")->password($secret)->revealable($secret)->autocomplete($secret ? 'new-password' : null);
                 $fields[] = $field->label($label)->visible(fn (Get $get) => $get('type') === $type);
             }
         }

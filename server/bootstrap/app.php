@@ -23,6 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Caddy runs on the same machine: trust its X-Forwarded-For so the audit log has the visitor's address, not 127.0.0.1.
+        $middleware->trustProxies(at: ['127.0.0.1', '::1']);
+        $middleware->encryptCookies(except: ['ses_client']); // set by the desktop till app's own page script, not by Laravel
         $middleware->prepend(AssignRequestId::class);
         $middleware->append(SecurityHeaders::class); // browser protections on every answer
         $middleware->prepend(RecordSlowRequests::class); // slow pages, for System → Health

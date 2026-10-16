@@ -70,13 +70,13 @@ class UserResource extends Resource
         return $schema->components([
             Grid::make(2)->schema([
                 TextInput::make('name')->label('Full name')->required()->maxLength(120),
-                TextInput::make('username')->required()->maxLength(60)->regex('/^[a-z0-9._-]+$/i')
+                TextInput::make('username')->autocomplete('off')->required()->maxLength(60)->regex('/^[a-z0-9._-]+$/i')
                     ->helperText('Used to sign in on a till'),
-                TextInput::make('email')->email()->required()->maxLength(255),
+                TextInput::make('email')->email()->autocomplete('off')->required()->maxLength(255),
                 Select::make('security_level')->label('Security level (ceiling)')->required()->default(2)
                     ->options(fn () => SecurityLevel::options(min(Erp::user()->security_level, 6)))
                     ->helperText('Roles above this level never apply to the person, even if granted.'),
-                TextInput::make('password')->password()->revealable()
+                TextInput::make('password')->password()->revealable()->autocomplete('new-password')
                     ->label(fn (string $operation) => $operation === 'create' ? 'Password' : 'New password (leave blank to keep)')
                     ->required(fn (string $operation) => $operation === 'create')
                     ->rule(Password::min(12))->dehydrated(fn ($state) => filled($state)),
