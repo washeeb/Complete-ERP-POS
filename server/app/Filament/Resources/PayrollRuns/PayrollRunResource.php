@@ -141,7 +141,7 @@ class PayrollRunResource extends Resource
                 TextEntry::make('paye')->label('PAYE')->state($t('paye_minor')),
                 TextEntry::make('ssnit')->label('SSNIT (employee + employer)')->state(fn (PayrollRun $r) => FinanceUi::money((int) (($r->totals['ssnit_employee_minor'] ?? 0) + ($r->totals['ssnit_employer_minor'] ?? 0)))),
                 TextEntry::make('net')->label('Net pay')->weight('bold')->state($t('net_minor')),
-                TextEntry::make('prepared_by_name')->label('Prepared by'),
+                TextEntry::make('prepared_by_name')->asPerson('prepared_by')->label('Prepared by'),
                 TextEntry::make('approved_by_name')->label('Approved by')->placeholder('—'),
                 TextEntry::make('paid_by_name')->label('Paid')->placeholder('—')->formatStateUsing(fn ($state, PayrollRun $r) => $state ? "{$state}, {$r->paid_on?->format('j M Y')}" : null),
                 TextEntry::make('profile')->label('Tax and SSNIT rules')->state(fn (PayrollRun $r) => $r->profile->name)

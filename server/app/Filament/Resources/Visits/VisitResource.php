@@ -64,7 +64,7 @@ class VisitResource extends Resource
         return $table->defaultSort('occurred_at', 'desc')
             ->columns([
                 TextColumn::make('occurred_at')->label('When')->dateTime('D j M, H:i')->sortable(),
-                TextColumn::make('user_name')->label('Rep')->searchable(),
+                TextColumn::make('user_name')->asPerson('user_id')->label('Rep')->searchable(),
                 TextColumn::make('customer_id')->label('Customer')->formatStateUsing(fn ($state) => Customer::whereKey($state)->value('name')),
                 TextColumn::make('route_id')->label('Route')->formatStateUsing(fn ($state) => SalesRoute::whereKey($state)->value('code'))->placeholder('—'),
                 TextColumn::make('outcome')->badge()->formatStateUsing(fn ($state) => Visit::OUTCOMES[$state] ?? $state)

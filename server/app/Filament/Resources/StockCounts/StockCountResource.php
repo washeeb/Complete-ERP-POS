@@ -96,7 +96,7 @@ class StockCountResource extends Resource
                 TextEntry::make('warehouse.name')->label('Warehouse')->belowContent(fn (StockCount $record) => $record->bin ? "Bin {$record->bin->code}" : 'Whole warehouse'),
                 TextEntry::make('blind')->label('Type')->formatStateUsing(fn ($state) => $state ? 'Blind' : 'Expected figures shown'),
                 TextEntry::make('started_by_name')->label('Started by')->belowContent(fn (StockCount $record) => $record->started_at->format('j M Y H:i')),
-                TextEntry::make('submitted_by_name')->label('Submitted by')->placeholder('—'),
+                TextEntry::make('submitted_by_name')->asPerson('submitted_by')->label('Submitted by')->placeholder('—'),
                 TextEntry::make('posted_by_name')->label('Posted by')->placeholder('—'),
                 TextEntry::make('variance_value_minor')->label('Difference value')->placeholder('—')
                     ->formatStateUsing(fn ($state, StockCount $record) => Money::display((int) $state, Tenant::find($record->tenant_id)->currency_code)),

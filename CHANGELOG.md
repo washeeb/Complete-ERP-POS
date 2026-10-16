@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Fixed
+- **Renamed accounts are clear on records.** Shifts, till sales, the audit log, orders, receipts, prescriptions, stock documents and more show the person's name now and, if it was different, the name at the time: *Alberta Agyepong (as Janet Doe)*. History itself is not rewritten.
 - **The new-user form no longer fills in your own sign-in.** The browser's saved username and password appeared in it; it and every other password, PIN and key field now tell browsers they are new details. Found at the first client.
 - **The audit log now has the visitor's real address on servers behind the web server** (Caddy). It recorded 127.0.0.1 for everything.
 - **SKUs no longer start with "SKU".** Products shared by every industry get a plain number from 100001 (no leading zero for Excel to drop); an industry's products keep its code (`PHARMA-000123`). Existing `SKU-000123` codes are renamed once when the update is installed (shared: `100123`; in an industry: its series), audited and synced. A product moved to another industry takes that industry's series if its SKU was given by the system; SKUs typed in from an old system never change.
@@ -22,6 +23,8 @@
 - **Ubuntu installer no longer stops silently at step 9** on Ubuntu 24.04 (the SSH port lookup failed when SSH is started on demand). Any unexpected stop now names the line. Found on the first client installation.
 - **The signed release manifest now reaches servers** (`bootstrap/release-manifest.json`). It was in `storage/`, which installers keep on updates, so the tamper check and the client build stamp were silently off. `release:build` also includes the server's built assets (the online shop's live updates).
 ### Added
+- **Reprint a till receipt from the back office:** Sales → Till sales → a sale → **Print preview (copy)** or **Print copy** (opens the print window straight away). An 80 mm receipt marked *COPY, not the original receipt* with who reprinted it and when; every reprint is audited (`sale.receipt_reprinted`).
+- **Till: Print receipt and Show print preview.** Print receipt prints straight to the desktop till's receipt printer (and says so when none is chosen); Show print preview always opens the print window first.
 - **System → Computers:** every computer (browser) that used the back office gets a lasting ID and is listed with who used it last, when and from which address; name it ("Front desk PC") and the audit log shows that name. Audit log filter by computer; click an address to see roughly where it is (ipinfo.io, opened by you, nothing sent automatically). The desktop till's set-up page can **Open the back office** in the app, which then also records the computer's name and MAC address.
 - **Prices in the till's search list:** each item shows its price on the price list in use (and each pack size's on its button), beside the stock left, so a teller can check a price without adding the item.
 - **Which computer did what:** the audit log records the browser and system for every change and, from the desktop till app (0.25.0), the computer's name, MAC address and address on the shop network. **Sign-ins** (back office: in, out and failed; tills) are in the audit log with a filter; **System → Devices** shows where each till was last used from. Browsers never reveal a computer's name or MAC address, so these come from the desktop till only.

@@ -63,7 +63,7 @@ class ShiftResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('where')->label('Till')->state(fn (Shift $r) => "{$r->branch->code} · {$r->till->code}"),
-                TextColumn::make('opened_by_name')->label('Opened by'),
+                TextColumn::make('opened_by_name')->asPerson('opened_by')->label('Opened by'),
                 TextColumn::make('opened_at')->label('Opened')->dateTime()->sortable(),
                 TextColumn::make('closed_at')->label('Closed')->dateTime()->placeholder('still open'),
                 TextColumn::make('sales_count')->label('Sales'),

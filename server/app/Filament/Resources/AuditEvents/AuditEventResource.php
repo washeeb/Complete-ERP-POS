@@ -74,7 +74,7 @@ class AuditEventResource extends Resource
                 TextEntry::make('seq')->label('#'),
                 TextEntry::make('occurred_at')->dateTime(),
                 TextEntry::make('action'),
-                TextEntry::make('actor_name')->label('By'),
+                TextEntry::make('actor_name')->asPerson('actor_id')->label('By'),
                 TextEntry::make('source'),
                 TextEntry::make('origin_node')->label('Node'),
                 TextEntry::make('subject_type')->label('Record'),
@@ -104,7 +104,7 @@ class AuditEventResource extends Resource
             ->columns([
                 TextColumn::make('seq')->label('#')->sortable(),
                 TextColumn::make('occurred_at')->label('When')->dateTime()->sortable(),
-                TextColumn::make('actor_name')->label('By')->searchable(),
+                TextColumn::make('actor_name')->asPerson('actor_id')->label('By')->searchable(),
                 TextColumn::make('action')->badge()->searchable(),
                 TextColumn::make('subject_type')->label('Record'),
                 TextColumn::make('source'),

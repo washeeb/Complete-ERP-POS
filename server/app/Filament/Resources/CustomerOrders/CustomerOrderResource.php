@@ -143,7 +143,7 @@ class CustomerOrderResource extends Resource
                 TextEntry::make('total_minor')->label('Total')->weight('bold')->formatStateUsing(fn ($state, CustomerOrder $record) => self::money($state, $record)),
                 TextEntry::make('customer_ref')->label('Customer ref.')->placeholder('—'),
                 TextEntry::make('valid_until')->label('Quote valid until')->date()->placeholder('—'),
-                TextEntry::make('created_by_name')->label('Entered by'),
+                TextEntry::make('created_by_name')->asPerson('created_by')->label('Entered by'),
                 TextEntry::make('released_by_name')->label('Credit hold released by')->placeholder('—'),
                 TextEntry::make('hold_reason')->label('On hold because')->color('danger')->visible(fn (CustomerOrder $record) => $record->status === 'on_hold')->columnSpanFull(),
                 TextEntry::make('close_reason')->label('Closed because')->visible(fn (CustomerOrder $record) => (bool) $record->close_reason)->columnSpanFull(),

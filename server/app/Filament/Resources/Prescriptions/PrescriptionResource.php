@@ -95,7 +95,7 @@ class PrescriptionResource extends Resource
                 TextEntry::make('facility')->placeholder('—'),
                 TextEntry::make('reference')->label('Prescription ref.')->placeholder('—'),
                 TextEntry::make('issued_on')->label('Written on')->date(),
-                TextEntry::make('pharmacist_name')->label('Pharmacist')
+                TextEntry::make('pharmacist_name')->asPerson('pharmacist_id')->label('Pharmacist')
                     ->belowContent(fn (Prescription $r) => $r->approved_offline ? 'Approved on the till while offline' : null),
             ]),
             Section::make('Medicines')->schema([
@@ -117,7 +117,7 @@ class PrescriptionResource extends Resource
                 TextColumn::make('created_at')->label('Dispensed')->dateTime()->sortable(),
                 TextColumn::make('customer.name')->label('Patient')->searchable(),
                 TextColumn::make('prescriber_name')->label('Prescriber')->searchable(),
-                TextColumn::make('pharmacist_name')->label('Pharmacist'),
+                TextColumn::make('pharmacist_name')->asPerson('pharmacist_id')->label('Pharmacist'),
                 TextColumn::make('warning_count')->label('Warnings')->state(fn (Prescription $r) => count($r->warnings ?? []) ?: null)->placeholder('—'),
                 IconColumn::make('approved_offline')->label('Offline')->boolean(),
             ])

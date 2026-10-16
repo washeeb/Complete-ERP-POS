@@ -11,9 +11,12 @@ use App\Http\Middleware\RecordSlowRequests;
 use App\Models\User;
 use App\Modules\ModuleRegistry;
 use App\Security\Authorizer;
+use App\Support\People;
 use App\Support\Settings;
 use App\Support\TenantContext;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Support\Exceptions\Halt;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
@@ -41,6 +44,14 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Who did it: the name then, and today's name when the account was renamed since ("Alberta Agyepong (as Janet Doe)").
+        foreach ([TextColumn::class, TextEntry::class] as $component) {
+            $component::macro('asPerson', function (string $idColumn) {
+                /** @var TextColumn|TextEntry $this */
+                return $this->formatStateUsing(fn ($state, $record) => People::label($record?->{$idColumn}, $state));
+            });
+        }
+
         // Back-office sign-ins and sign-outs, with the computer, in the audit log (tills record theirs as pos.login).
         $signIn = function (string $action, $user) {
             if (! $user instanceof User || ! $user->tenant_id || app()->runningInConsole() && ! app()->runningUnitTests()) {

@@ -493,6 +493,11 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## Names then and now; receipt copies (2026-10-16)
+- **Snapshots stay, current names are added at display time** (`People::label`, `asPerson()` macro on `TextColumn`/`TextEntry`) for the 31 person columns whose record keeps the account id. Columns with only a name stay as recorded. Printed receipt copies keep the name printed at the time.
+- **Receipt copies are marked and audited:** a duplicate receipt is a classic refund-fraud tool, so the copy says COPY with the reprinting person and time, and `sale.receipt_reprinted` is logged on each view.
+- **Till: direct print is the default button**; a browser cannot print without its dialog, so direct printing needs the desktop app (or Chrome `--kiosk-printing`).
+
 ## Named computers (2026-10-16)
 - **A lasting browser ID instead of MAC/hostname** (impossible from a browser): `TrackComputer` (persistent panel middleware) sets an encrypted, HttpOnly `ses_computer` cookie (5 years) and keeps `computers` (per tenant, at most one write per computer per 5 minutes, telemetry like `devices.last_seen_at`). Naming is audited (`computer.named`). The key goes into `audit_events.client`, so "which computer" survives renaming.
 - **Desktop app in the back office:** a Tauri initialization script sets an unencrypted `ses_client` cookie with name/MAC/LAN address (excluded from cookie encryption), since Livewire requests cannot carry the till's header.

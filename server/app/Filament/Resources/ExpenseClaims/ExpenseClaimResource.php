@@ -110,7 +110,7 @@ class ExpenseClaimResource extends Resource
             ->columns([
                 TextColumn::make('number')->searchable(),
                 TextColumn::make('spent_on')->label('Date')->date()->sortable(),
-                TextColumn::make('claimant_name')->label('By')->searchable(),
+                TextColumn::make('claimant_name')->asPerson('claimant_id')->label('By')->searchable(),
                 TextColumn::make('branch.code')->label('Branch'),
                 TextColumn::make('description')->wrap()->description(fn (ExpenseClaim $r) => $r->account?->name),
                 TextColumn::make('amount_minor')->label('Amount')->alignEnd()->formatStateUsing(fn ($state) => FinanceUi::money((int) $state)),
@@ -130,7 +130,7 @@ class ExpenseClaimResource extends Resource
             Section::make()->columns(4)->schema([
                 TextEntry::make('number'),
                 TextEntry::make('status')->badge()->formatStateUsing(fn ($state) => ExpenseClaim::STATUSES[$state] ?? $state),
-                TextEntry::make('claimant_name')->label('Claimed by'),
+                TextEntry::make('claimant_name')->asPerson('claimant_id')->label('Claimed by'),
                 TextEntry::make('branch.name')->label('Branch'),
                 TextEntry::make('spent_on')->label('Date spent')->date(),
                 TextEntry::make('account.name')->label('What for'),
@@ -139,7 +139,7 @@ class ExpenseClaimResource extends Resource
                 TextEntry::make('description')->columnSpanFull(),
                 TextEntry::make('receipt')->label('Receipt')->state(fn (ExpenseClaim $r) => $r->receipt_path ? 'Open the receipt' : 'No receipt attached')
                     ->url(fn (ExpenseClaim $r) => $r->receipt_path ? route('expense.receipt', $r) : null, shouldOpenInNewTab: true)->color(fn (ExpenseClaim $r) => $r->receipt_path ? 'primary' : 'danger'),
-                TextEntry::make('approved_by_name')->label('Approved / rejected by')->placeholder('—'),
+                TextEntry::make('approved_by_name')->asPerson('approved_by')->label('Approved / rejected by')->placeholder('—'),
                 TextEntry::make('rejection_reason')->label('Rejected because')->placeholder('—'),
                 TextEntry::make('paid_by_name')->label('Paid by')->placeholder('—')
                     ->formatStateUsing(fn ($state, ExpenseClaim $r) => $state ? "{$state}, ".$r->paid_on?->format('j M Y').' from '.Account::find($r->paid_from_account_id)?->name : null),

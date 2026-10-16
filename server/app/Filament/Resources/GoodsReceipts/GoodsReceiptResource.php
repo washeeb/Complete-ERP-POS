@@ -100,8 +100,8 @@ class GoodsReceiptResource extends Resource
                 TextEntry::make('supplier.name')->label('Supplier'),
                 TextEntry::make('warehouse.name')->label('Warehouse'),
                 TextEntry::make('supplier_ref')->label('Supplier ref.')->placeholder('—'),
-                TextEntry::make('received_by_name')->label('Received by')->belowContent(fn (GoodsReceipt $record) => $record->received_at->format('j M Y H:i')),
-                TextEntry::make('approved_by_name')->label('Over-delivery accepted by')->placeholder('—'),
+                TextEntry::make('received_by_name')->asPerson('received_by')->label('Received by')->belowContent(fn (GoodsReceipt $record) => $record->received_at->format('j M Y H:i')),
+                TextEntry::make('approved_by_name')->asPerson('approved_by')->label('Over-delivery accepted by')->placeholder('—'),
                 TextEntry::make('net_minor')->label('Value before tax')->weight('bold')->formatStateUsing(fn ($state, GoodsReceipt $record) => self::money($state, $record)),
                 TextEntry::make('reversal_reason')->label('Reversed / refused because')->visible(fn (GoodsReceipt $record) => $record->status === 'reversed')
                     ->belowContent(fn (GoodsReceipt $record) => $record->reversed_by_name)->columnSpan(3),

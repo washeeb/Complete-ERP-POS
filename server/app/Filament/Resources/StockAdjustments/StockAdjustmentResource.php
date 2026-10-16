@@ -125,7 +125,7 @@ class StockAdjustmentResource extends Resource
                 TextEntry::make('reason_code')->label('Reason')->formatStateUsing(fn ($state) => InventoryService::ADJUSTMENT_REASONS[$state] ?? $state),
                 TextEntry::make('reference')->placeholder('—'),
                 TextEntry::make('created_by_name')->label('Prepared by'),
-                TextEntry::make('submitted_by_name')->label('Submitted by')->placeholder('—'),
+                TextEntry::make('submitted_by_name')->asPerson('submitted_by')->label('Submitted by')->placeholder('—'),
                 TextEntry::make('posted_by_name')->label('Approved and posted by')->placeholder('—')->belowContent(fn (StockAdjustment $r) => $r->posted_at?->format('j M Y H:i')),
                 TextEntry::make('note')->placeholder('—')->columnSpanFull(),
             ]),

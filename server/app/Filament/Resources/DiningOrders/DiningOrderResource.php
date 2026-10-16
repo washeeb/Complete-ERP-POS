@@ -74,7 +74,7 @@ class DiningOrderResource extends Resource
             Section::make()->columns(4)->schema([
                 TextEntry::make('number'),
                 TextEntry::make('label')->label('Where')->state(fn (DiningOrder $r) => $r->label()),
-                TextEntry::make('waiter_name')->label('Waiter'),
+                TextEntry::make('waiter_name')->asPerson('waiter_id')->label('Waiter'),
                 TextEntry::make('status')->badge(),
                 TextEntry::make('opened_at')->label('Opened')->dateTime(),
                 TextEntry::make('closed_at')->label('Closed')->dateTime()->placeholder('—'),
@@ -97,7 +97,7 @@ class DiningOrderResource extends Resource
                 TextColumn::make('number')->searchable(),
                 TextColumn::make('opened_at')->label('Opened')->dateTime()->sortable(),
                 TextColumn::make('where')->label('Where')->state(fn (DiningOrder $r) => $r->label()),
-                TextColumn::make('waiter_name')->label('Waiter')->searchable(),
+                TextColumn::make('waiter_name')->asPerson('waiter_id')->label('Waiter')->searchable(),
                 TextColumn::make('status')->badge()->color(fn ($state) => ['open' => 'warning', 'closed' => 'success'][$state] ?? 'gray'),
                 TextColumn::make('voids')->label('Voided items')->state(fn (DiningOrder $r) => $r->items->where('status', 'void')->count() ?: null)->placeholder('—'),
             ])

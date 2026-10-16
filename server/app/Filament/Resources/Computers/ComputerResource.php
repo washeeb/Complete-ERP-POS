@@ -50,7 +50,7 @@ class ComputerResource extends Resource
                 TextColumn::make('name')->label('Computer')->state(fn (Computer $r) => $r->label())->weight('bold')
                     ->description(fn (Computer $r) => trim(($r->last_client['computer'] ?? '').' '.($r->last_client['mac'] ?? '')) ?: null)
                     ->searchable(['name']),
-                TextColumn::make('last_user_name')->label('Last used by')->placeholder('—'),
+                TextColumn::make('last_user_name')->asPerson('last_user_id')->label('Last used by')->placeholder('—'),
                 TextColumn::make('last_seen_at')->label('Last used')->since()->sortable(),
                 TextColumn::make('last_ip')->label('From address')->placeholder('—')
                     ->url(fn (Computer $r) => ClientInfo::lookupUrl($r->last_ip), shouldOpenInNewTab: true)
