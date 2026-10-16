@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 ### Fixed
-- **Renamed accounts are clear on records.** Shifts, till sales, the audit log, orders, receipts, prescriptions, stock documents and more show the person's name now and, if it was different, the name at the time: *Alberta Agyepong (as Janet Doe)*. History itself is not rewritten.
+- **Renamed accounts are traceable without cluttering records.** Records and prints keep the name used at the time. Where the account has been renamed since (shifts, till sales, the audit log, orders, prescriptions, stock documents and more), a small icon shows and hovering gives today's name. **People & access → Users → the person → Name history** lists every change of name and username, with when and who.
 - **The new-user form no longer fills in your own sign-in.** The browser's saved username and password appeared in it; it and every other password, PIN and key field now tell browsers they are new details. Found at the first client.
 - **The audit log now has the visitor's real address on servers behind the web server** (Caddy). It recorded 127.0.0.1 for everything.
 - **SKUs no longer start with "SKU".** Products shared by every industry get a plain number from 100001 (no leading zero for Excel to drop); an industry's products keep its code (`PHARMA-000123`). Existing `SKU-000123` codes are renamed once when the update is installed (shared: `100123`; in an industry: its series), audited and synced. A product moved to another industry takes that industry's series if its SKU was given by the system; SKUs typed in from an old system never change.

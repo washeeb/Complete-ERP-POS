@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Access\AccessService;
 use App\Domain\Api\ApiClients;
 use App\Domain\Api\OpenApi;
 use App\Domain\Api\WebhookDispatcher;
@@ -35,6 +36,7 @@ use App\Filament\Resources\MessageTemplates\MessageTemplateResource;
 use App\Filament\Resources\Sales\Pages\ListSales;
 use App\Filament\Resources\Sales\SaleResource;
 use App\Filament\Resources\SavedReports\SavedReportResource;
+use App\Filament\Resources\Users\Pages\EditUser;
 use App\Mail\PlainMessage;
 use App\Models\AuditEvent;
 use App\Models\Customer;
@@ -332,13 +334,20 @@ it('reprints a till receipt as a marked COPY, audited, with a print preview and 
     $this->actingAs($teller, 'web')->get(route('print.receipt', $sale))->assertForbidden();
 });
 
-it('shows a renamed account by its name now, with the name it had at the time', function () {
+it('keeps the name used at the time on records and prints, hints today\'s name, and lists every rename', function () {
     $sale = p12Sale($this);
-    $this->cashier->forceFill(['name' => 'Alberta Agyepong'])->save();
-    expect(People::label($this->cashier->id, $sale->cashier_name))->toBe("Alberta Agyepong (as {$sale->cashier_name})")
-        ->and(People::label($this->cashier->id, 'Alberta Agyepong'))->toBe('Alberta Agyepong')
-        ->and(People::label(null, 'Old name'))->toBe('Old name');
+    $then = $sale->cashier_name;
+    app(AccessService::class)->updateUser($this->o, $this->cashier, ['name' => 'Alberta Agyepong', 'username' => 'alberta'], 'Account handed over');
+    expect(People::renamedTo($this->cashier->id, $then))->toBe('Alberta Agyepong')
+        ->and(People::renamedTo($this->cashier->id, 'Alberta Agyepong'))->toBeNull()
+        ->and(People::history($this->cashier->id))->toHaveCount(1)
+        ->and(People::history($this->cashier->id)[0]['name'])->toBe([$then, 'Alberta Agyepong'])
+        ->and(People::history($this->cashier->id)[0]['username'])->toBe(['efua', 'alberta']);
+
     Filament::setCurrentPanel(Filament::getPanel('admin'));
     $this->actingAs(withMfa($this->owner), 'web');
-    Livewire::test(ListSales::class)->assertSee('Alberta Agyepong (as '.$sale->cashier_name.')');
+    Livewire::test(ListSales::class)->assertSee($then)->assertDontSee('(as ')->assertSee('Account now named Alberta Agyepong');
+    $this->get(route('print.receipt', $sale))->assertSee($then)->assertDontSee('Alberta Agyepong');
+    Livewire::test(EditUser::class, ['record' => $this->cashier->id])
+        ->assertActionVisible('nameHistory');
 });

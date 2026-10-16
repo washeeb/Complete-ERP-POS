@@ -494,7 +494,7 @@ Design:
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
 ## Names then and now; receipt copies (2026-10-16)
-- **Snapshots stay, current names are added at display time** (`People::label`, `asPerson()` macro on `TextColumn`/`TextEntry`) for the 31 person columns whose record keeps the account id. Columns with only a name stay as recorded. Printed receipt copies keep the name printed at the time.
+- **Snapshots stay; renames are a hint and a history, not longer names** (owner: an account renamed five times must not make every record long). `asPerson()` (TextColumn/TextEntry) on the 31 person columns that keep the account id adds an icon and a tooltip with today's name (`People::renamedTo`); prints show the snapshot only. `People::history` reads the `user.updated` audit rows (name, username) for the user's **Name history**.
 - **Receipt copies are marked and audited:** a duplicate receipt is a classic refund-fraud tool, so the copy says COPY with the reprinting person and time, and `sale.receipt_reprinted` is logged on each view.
 - **Till: direct print is the default button**; a browser cannot print without its dialog, so direct printing needs the desktop app (or Chrome `--kiosk-printing`).
 

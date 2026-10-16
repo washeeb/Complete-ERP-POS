@@ -5,6 +5,8 @@ namespace App\Filament\Resources\Users\Pages;
 use App\Domain\Access\AccessService;
 use App\Filament\Resources\Users\UserResource;
 use App\Filament\Support\Erp;
+use App\Filament\Support\MiniTable;
+use App\Support\People;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Pages\EditRecord;
@@ -30,6 +32,12 @@ class EditUser extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            // Every rename of the account (name or username), so a re-used account is visible.
+            Action::make('nameHistory')->label('Name history')->icon(Heroicon::OutlinedClock)->color('gray')
+                ->modalHeading(fn () => 'Name history: '.$this->record->name)->modalSubmitAction(false)->modalCancelActionLabel('Close')
+                ->modalContent(fn () => MiniTable::html(['When', 'Changed by', 'Name', 'Username'], array_map(fn ($h) => [$h['at'], $h['by'],
+                    $h['name'] ? "{$h['name'][0]} → {$h['name'][1]}" : '—', $h['username'] ? "{$h['username'][0]} → {$h['username'][1]}" : '—'],
+                    People::history($this->record->id)), [], 'This account has never been renamed.')),
             Action::make('setPin')->label('Set POS PIN')->icon(Heroicon::OutlinedKey)
                 ->modalDescription('4–8 digits. Tell the person privately; they sign in on a till with their username and this PIN. Setting a PIN also clears a PIN lockout.')
                 ->schema([
