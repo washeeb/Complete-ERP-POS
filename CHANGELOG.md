@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Fixed
+- **Update products: Download current data was empty.** The update page does not ask for an industry and fell back to shared products only; it now gives every product, or those of the industry chosen at the top. Found at the first client.
 - **Opening stock takes several batches of one medicine.** Only the first batch of a product went in; each further batch row was refused as stock history. Now each batch has its own opening balance (with its expiry); the same batch twice, or a product already sold, received or adjusted, is still refused. Found while preparing the first client's go-live.
 - **Ubuntu installer: updates no longer stop when Launchpad is unreachable.** Re-adding the PHP package source asks Launchpad's website; an update now skips it when the source is already there, and a first install tries three times. Found when updating the first client.
 - **Product imports can no longer create duplicates.** One import used to create and update: a row without an SKU always made a new product, so importing a file again to update it created second copies. Now **Products — create new** refuses rows whose SKU or name already exists, and **Products — update existing** changes products by SKU and never creates. `php artisan erp:merge-duplicate-products` (show, then `--apply`) cleans up earlier duplicates: it keeps the first copies, moves barcodes onto them, removes unused copies and switches off used ones, all audited. Found at the first client.

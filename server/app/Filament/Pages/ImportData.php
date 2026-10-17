@@ -199,7 +199,10 @@ class ImportData extends Page
     {
         return ['skip_errors' => $this->skipErrors, 'create_missing' => $this->createMissing, 'allow_same_name' => $this->allowSameName, 'warehouse_id' => $this->warehouseId ?: null,
             'reason_code' => $this->reasonCode, 'category_id' => $this->categoryId ?: null, 'source' => $this->source, 'as_of' => $this->asOf ?: now()->toDateString(),
-            'industry' => $this->asksIndustry() ? $this->industry : 'shared'];
+            // Which industry: as chosen on the page (new products); for an import that does not ask (updates), the industry
+            // chosen at the top of the back office, or every product; "shared" only when the company has no industries.
+            'industry' => $this->asksIndustry() ? $this->industry
+                : ($this->importer()->industryScoped() ? 'shared' : (string) IndustryContext::selected())];
     }
 
     /** Headings and one example row. */
