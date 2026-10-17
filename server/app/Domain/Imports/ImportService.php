@@ -11,6 +11,7 @@ use App\Domain\Imports\Importers\OpeningBalancesImporter;
 use App\Domain\Imports\Importers\OpeningStockImporter;
 use App\Domain\Imports\Importers\PricesImporter;
 use App\Domain\Imports\Importers\ProductsImporter;
+use App\Domain\Imports\Importers\ProductsUpdateImporter;
 use App\Domain\Imports\Importers\StockAdjustmentImporter;
 use App\Domain\Imports\Importers\StockCountImporter;
 use App\Domain\Imports\Importers\SupplierBalancesImporter;
@@ -42,6 +43,7 @@ final class ImportService
 {
     public const TYPES = [
         'products' => ProductsImporter::class,
+        'products_update' => ProductsUpdateImporter::class,
         'prices' => PricesImporter::class,
         'customers' => CustomersImporter::class,
         'suppliers' => SuppliersImporter::class,

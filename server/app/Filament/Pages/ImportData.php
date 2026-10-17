@@ -79,6 +79,9 @@ class ImportData extends Page
 
     public bool $createMissing = true;
 
+    /** Products — create new: allow a new product whose name another product already has (e.g. two strengths). */
+    public bool $allowSameName = false;
+
     public $file = null;
 
     public ?string $lastId = null;
@@ -194,7 +197,7 @@ class ImportData extends Page
 
     public function options(): array
     {
-        return ['skip_errors' => $this->skipErrors, 'create_missing' => $this->createMissing, 'warehouse_id' => $this->warehouseId ?: null,
+        return ['skip_errors' => $this->skipErrors, 'create_missing' => $this->createMissing, 'allow_same_name' => $this->allowSameName, 'warehouse_id' => $this->warehouseId ?: null,
             'reason_code' => $this->reasonCode, 'category_id' => $this->categoryId ?: null, 'source' => $this->source, 'as_of' => $this->asOf ?: now()->toDateString(),
             'industry' => $this->asksIndustry() ? $this->industry : 'shared'];
     }
