@@ -34,7 +34,7 @@ Every list in the back office (products, customers, invoices, stock on hand, sal
 | **Prices (price list update)** | Sets one price (list, unit, from-quantity, optional dates for a promotion) | SKU + list + unit + quantity + dates |
 | **Customers** | Creates or updates a customer, optionally with credit limit and terms | Code, else phone number |
 | **Suppliers** | Creates or updates a supplier | Code |
-| **Opening stock** | The go-live quantity and cost of a product in a warehouse | Warehouse + SKU |
+| **Opening stock** | The go-live quantity and cost of a product in a warehouse (one row per batch, with its expiry, for batch-tracked products) | Warehouse + SKU (+ batch) |
 | **Stock adjustment lines** | Increase, decrease or "set to" lines in a stock adjustment | SKU or barcode |
 | **Stock count results** | Counted quantities in an open stock count | SKU or barcode (+ bin) |
 | **Chart of accounts (migration)** | Adds an account from the old books (QuickBooks types accepted) | Code, else name |

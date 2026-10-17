@@ -306,3 +306,30 @@ it('keeps creating and updating apart, so importing a file twice never duplicate
     $this->imports->run($this->o, 'products_update', $upd, 'u.csv', ['skip_errors' => true], null, true);
     expect(Product::count())->toBe($before)->and(Product::where('name', 'D10 dextrose')->count())->toBe(1);
 });
+
+it('loads opening stock with several batches of one medicine, each with its expiry, and refuses what must stay refused', function () {
+    $amox = makeProduct($this->owner, 'AMOX', 'Amoxicillin 500mg', retail: '15.00');
+    app(CatalogService::class)->saveProduct($this->o, $amox, ['track_batches' => true]);
+    makeProduct($this->owner, 'BAG', 'Carrier bag', retail: '1.00');
+    $wh = $this->wh->code;
+    $file = importCsvFile([['warehouse', 'sku', 'qty', 'unit_cost', 'batch_no', 'expires_on'],
+        [$wh, 'AMOX', '30', '5.00', 'B1', '2027-03-31'],
+        [$wh, 'AMOX', '20', '5.20', 'B2', '2027-06-30'],
+        [$wh, 'AMOX', '10', '5.40', 'B3', '31/12/2027'],
+        [$wh, 'BAG', '500', '0.20', '', ''],
+    ]);
+    $done = $this->imports->run($this->o, 'opening_stock', $file, 'opening.csv', [], null, true);
+    expect($done->status)->toBe('imported')->and($done->rows_error)->toBe(0)
+        ->and(skuOnHand($this->wh, 'AMOX'))->toBe('60.000')->and(skuOnHand($this->wh, 'BAG'))->toBe('500.000')
+        ->and(StockBatch::where('product_id', $amox->id)->orderBy('batch_no')->get()->map(fn ($b) => $b->batch_no.' '.$b->expires_on->toDateString())->all())
+        ->toBe(['B1 2027-03-31', 'B2 2027-06-30', 'B3 2027-12-31']);
+
+    // The same file again: every row is refused (same batch again; the bag already has its opening balance).
+    $again = $this->imports->run($this->o, 'opening_stock', $file, 'opening.csv', ['skip_errors' => true], null, true);
+    expect($again->rows_error)->toBe(4)->and(skuOnHand($this->wh, 'AMOX'))->toBe('60.000');
+
+    // After the medicine has moved (sold, received, adjusted), a new batch is no longer an opening balance.
+    app(InventoryService::class)->adjust($this->o, $this->wh, $amox->fresh(), $amox->units->first(), '-1', 'adjustment', 'damaged', null, null, 'B1');
+    $late = $this->imports->run($this->o, 'opening_stock', importCsvFile([['warehouse', 'sku', 'qty', 'batch_no', 'expires_on'], [$wh, 'AMOX', '5', 'B4', '2028-01-31']]), 'o.csv', [], null, false);
+    expect($late->errors[0]['message'])->toContain('use an adjustment instead');
+});
