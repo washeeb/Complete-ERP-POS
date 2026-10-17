@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Fixed
+- **Ubuntu installer: updates no longer stop when Launchpad is unreachable.** Re-adding the PHP package source asks Launchpad's website; an update now skips it when the source is already there, and a first install tries three times. Found when updating the first client.
 - **Product imports can no longer create duplicates.** One import used to create and update: a row without an SKU always made a new product, so importing a file again to update it created second copies. Now **Products — create new** refuses rows whose SKU or name already exists, and **Products — update existing** changes products by SKU and never creates. `php artisan erp:merge-duplicate-products` (show, then `--apply`) cleans up earlier duplicates: it keeps the first copies, moves barcodes onto them, removes unused copies and switches off used ones, all audited. Found at the first client.
 - **Renamed accounts are traceable without cluttering records.** Records and prints keep the name used at the time. Where the account has been renamed since (shifts, till sales, the audit log, orders, prescriptions, stock documents and more), a small icon shows and hovering gives today's name. **People & access → Users → the person → Name history** lists every change of name and username, with when and who.
 - **The new-user form no longer fills in your own sign-in.** The browser's saved username and password appeared in it; it and every other password, PIN and key field now tell browsers they are new details. Found at the first client.
