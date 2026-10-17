@@ -77,9 +77,18 @@ final class InventoryService
             if ($milli < 0) {
                 throw new DomainException('An opening balance cannot be negative.');
             }
-            $hasHistory = StockMovement::where('warehouse_id', $warehouse->id)->where('product_id', $product->id)->exists();
-            if ($hasHistory) {
-                throw new DomainException('This product already has stock history here; use an adjustment instead.');
+            // One opening balance per product, or per batch for a batch-tracked product (several batches at go-live).
+            // Anything else already moved (a sale, a receipt, an adjustment), or the same batch again, means it is too late.
+            $history = StockMovement::where('warehouse_id', $warehouse->id)->where('product_id', $product->id);
+            $batchNo = trim((string) $batchNo);
+            if ($product->track_batches && $batchNo !== '') {
+                $batchId = StockBatch::where('product_id', $product->id)->where('batch_no', $batchNo)->value('id');
+                $history->where(fn ($q) => $q->where('type', '<>', 'opening')->when($batchId, fn ($q2) => $q2->orWhere('batch_id', $batchId)));
+            }
+            if ($history->exists()) {
+                throw new DomainException($product->track_batches && $batchNo !== ''
+                    ? "Batch {$batchNo} already has an opening balance here, or this product has already moved (sold, received or adjusted); use an adjustment instead."
+                    : 'This product already has stock history here; use an adjustment instead.');
             }
         }
         $decimals = $unit->uom->decimals;

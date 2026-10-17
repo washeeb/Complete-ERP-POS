@@ -493,6 +493,9 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## Opening balances per batch (2026-10-17)
+- An opening balance is allowed once per product and warehouse, and for a batch-tracked product once per batch: earlier opening movements of other batches do not count as history; any other movement type, or the same batch, does.
+
 ## Creating and updating products are separate imports (2026-10-17)
 - **`products` creates, `products_update` updates** (`ProductsUpdateImporter` extends `ProductsImporter`, mode create/update). Create refuses an existing SKU and, unless "allow same name", an existing name in the same industry (spaces and case ignored). Update requires a known SKU and never creates, so re-importing is idempotent.
 - **Duplicate clean-up is a command, not a button:** `erp:merge-duplicate-products` (dry run unless `--apply`). Copies are matched by name, industry and base unit, and by import run (from the `product.created` audit rows with reason "CSV import" and `data_imports.completed_at`), so same-name products within one file are kept. Later copies give their barcodes to the kept product (same unit); unused copies are deleted (with a `product.deleted` audit row), used ones switched off; with branch servers paired, copies are only switched off so every node keeps the same products.
