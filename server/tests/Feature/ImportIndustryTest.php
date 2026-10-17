@@ -44,7 +44,7 @@ it('downloads the chosen industry\'s products only, with their industry', functi
     Livewire::test(ImportData::class, ['type' => 'products', 'industry' => $this->pharmacy->id])
         ->set('file', ($this->csv)(",Paracetamol,,5\n,Rice 5kg,grocery,90\n"))->call('import');
     $rows = iterator_to_array(app(ImportService::class)->importer('products')->exportRows(actorFor($this->owner), ['industry' => $this->pharmacy->id], null), false);
-    expect(array_column($rows, 1))->toBe(['Paracetamol'])->and($rows[0][11])->toBe($this->pharmacy->name);
+    expect(array_column($rows, 1))->toBe(['Paracetamol'])->and($rows[0][12])->toBe($this->pharmacy->name);
 });
 
 it('moves products imported to the wrong industry; their system SKUs take its series', function () {

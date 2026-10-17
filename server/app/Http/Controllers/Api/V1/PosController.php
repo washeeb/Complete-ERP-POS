@@ -174,7 +174,7 @@ class PosController extends Controller
                 'interactions' => DrugInteraction::orderBy('ingredient_a')->get(['ingredient_a', 'ingredient_b', 'severity', 'note'])->toArray(),
             ] : null,
             'products' => $products->map(fn (Product $p) => [
-                'id' => $p->id, 'sku' => $p->sku, 'name' => $p->name, 'category_id' => $p->category_id, 'track_stock' => $p->track_stock, 'plu' => $p->plu,
+                'id' => $p->id, 'sku' => $p->sku, 'name' => $p->name, 'category_id' => $p->category_id, 'track_stock' => $p->track_stock, 'plu' => $p->plu, 'location' => $p->location,
                 'station' => $p->station, 'modifier_group_ids' => $p->modifier_group_ids ?? [], 'track_serials' => $p->track_serials, 'warranty_months' => $p->warranty_months,
                 'style_id' => $p->style_id, 'size' => $p->size, 'colour' => $p->colour,
                 'service_minutes' => $p->service_minutes, 'is_pack' => $p->pack !== null, 'licence_keys' => $p->licence_keys,

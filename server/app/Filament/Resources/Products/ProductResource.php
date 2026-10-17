@@ -97,6 +97,8 @@ class ProductResource extends Resource
                     ->default(fn () => IndustryContext::selected())->placeholder('All industries (shared)')
                     ->visible(fn () => Industry::exists())
                     ->helperText('Each industry has its own catalogue: its tills and screens show only its products. Shared items are sold by every industry.'),
+                TextInput::make('location')->label('Location / shelf')->maxLength(60)->placeholder('e.g. Shelf B2')
+                    ->helperText('Where it is kept: shows on the stock and count sheets and in the till\'s search.'),
                 Select::make('category_id')->label('Category')->options(fn () => Category::where('is_active', true)->orderBy('name')->pluck('name', 'id'))->searchable(),
                 Select::make('brand_id')->label('Brand')->options(fn () => Brand::orderBy('name')->pluck('name', 'id'))->searchable(),
                 Select::make('tax_group_id')->label('Tax')->required()
@@ -252,6 +254,7 @@ class ProductResource extends Resource
                         ->orWhereHas('barcodes', fn ($b) => $b->where('code', trim($search))))),
                 TextColumn::make('name')->sortable()->wrap(),
                 TextColumn::make('category.name')->label('Category')->toggleable(),
+                TextColumn::make('location')->label('Location')->placeholder('—')->toggleable()->searchable(),
                 TextColumn::make('industry.name')->label('Industry')->placeholder('Shared')->toggleable()->visible(fn () => Industry::exists()),
                 TextColumn::make('price')->label($default ? $default->name.' price' : 'Price')
                     ->state(function (Product $r) use ($default) {

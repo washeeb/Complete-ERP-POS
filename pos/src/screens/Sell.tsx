@@ -523,7 +523,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
           {results.map((p) => (
             <li key={p.id}>
               <button type="button" onClick={() => add(p)}>
-                <span>{p.name}<br /><span className="muted small">{p.sku}{stockLeft(p) && <> · <span className={stockLeft(p)!.out ? 'stock-out' : ''}>{stockLeft(p)!.text}</span></>}</span></span>
+                <span>{p.name}<br /><span className="muted small">{p.sku}{p.location ? ` · ${p.location}` : ''}{stockLeft(p) && <> · <span className={stockLeft(p)!.out ? 'stock-out' : ''}>{stockLeft(p)!.text}</span></>}</span></span>
                 {(() => { const base = p.units.find((u) => u.is_base); const pr = base && priceOf(p, base)
                   return <span className="result-price mono">{pr ? money(pr.amount_minor) : 'no price'}{base && p.units.length > 1 ? <span className="muted small"> /{base.uom_code}</span> : null}</span> })()}
               </button>

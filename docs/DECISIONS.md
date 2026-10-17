@@ -493,6 +493,11 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## Stock sheet by batch; product location (2026-10-17)
+- **"Set" for a batch is turned into an increase or decrease** of the difference with the batch's holding at import time (the adjustment service keeps refusing "set" on batch products, because a batch figure frozen until posting would be wrong). The line note records the count; stock moving between import and posting is the usual risk of a quick correction (a stock count is the tool for that).
+- **Expiry corrections apply at import** (`InventoryService::correctBatchExpiry`, audited `stock_batch.expiry_corrected`): the expiry is batch master data, not a stock movement.
+- **`products.location`** is free text for shops without bins; bins stay the warehouse feature (counts per bin, put-away), shown on the sheet for reference only.
+
 ## Closing and correcting shifts from the back office (2026-10-16)
 - **A shift belongs to the device that opened it**; a till re-enrolled after a reinstall is a new device and cannot close the old one, so `ShiftService::closeFromOffice` closes it like a till would (expected, count, over/short; posted by AutoPoster as usual). Vault shifts are refused: the cash chain decides those.
 - **Counts are corrected, never edited:** `shift_count_corrections` keeps before/after, reason and person; each posts the difference once (`gl_postings` source `shift_correction`) between `cash_till` and `cash_over_short`. Lists show the latest corrected figure with the original on hover.

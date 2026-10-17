@@ -8,6 +8,7 @@ use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
 use App\Models\Product;
 use App\Models\ProductUom;
+use App\Models\StockBatch;
 use App\Models\StockMovement;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
@@ -42,6 +43,17 @@ final class InventoryService
     ) {}
 
     /** $qty is the signed change in the chosen unit, as a decimal string ("-2", "1.5"). */
+    /** Correct a batch's expiry date (a mistyped date on receipt). Audited and synced; the batch keeps its stock. */
+    public function correctBatchExpiry(Actor $actor, StockBatch $batch, string $expiresOn): StockBatch
+    {
+        if (! $actor->user || ! $this->authz->allowsAnywhere($actor->user, 'stock.adjust')) {
+            throw new AccessDenied;
+        }
+        $batch->expires_on = $expiresOn;
+
+        return $this->recorder->transaction(fn () => $this->recorder->save($actor, $batch, 'stock_batch.expiry_corrected', 'Expiry date corrected'));
+    }
+
     public function adjust(Actor $actor, Warehouse $warehouse, Product $product, ProductUom $unit, string $qty, string $type, string $reasonCode, ?string $note = null, ?string $unitCost = null,
         ?string $batchNo = null, ?string $expiresOn = null, array|string|null $serials = null): StockMovement
     {
