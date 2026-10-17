@@ -75,7 +75,15 @@ say "1/10 Packages: PHP ${PHP_V}, PostgreSQL ${PG_MAJOR}, Caddy (why: the server
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -q
 apt-get install -y -q software-properties-common curl ca-certificates gnupg unzip git cron debian-keyring debian-archive-keyring apt-transport-https
-add-apt-repository -y ppa:ondrej/php >/dev/null
+# PHP's package source (ondrej/php). Adding it asks Launchpad's website, which is sometimes unreachable: an update
+# skips it when the source is already there, and a first install tries three times.
+if ! grep -rqs "ondrej/php" /etc/apt/sources.list /etc/apt/sources.list.d/; then
+  for try in 1 2 3; do
+    add-apt-repository -y ppa:ondrej/php >/dev/null && break
+    [ "$try" = 3 ] && die "could not add the PHP package source (Launchpad did not answer). Wait a few minutes and run the installer again."
+    echo "Launchpad did not answer; trying again in 20 seconds."; sleep 20
+  done
+fi
 install -d /usr/share/postgresql-common/pgdg
 curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
 echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" > /etc/apt/sources.list.d/pgdg.list
