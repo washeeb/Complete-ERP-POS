@@ -1,7 +1,9 @@
 <?php
 
+use App\Domain\Catalog\CatalogService;
 use App\Domain\Customers\CustomerService;
 use App\Domain\Imports\CsvFile;
+use App\Domain\Imports\Importers\StockRows;
 use App\Domain\Imports\ImportService;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Inventory\StockAdjustmentService;
@@ -21,6 +23,7 @@ use App\Models\DataImport;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\StockAdjustment;
+use App\Models\StockBatch;
 use App\Models\StockLevel;
 use App\Models\Supplier;
 use App\Models\Warehouse;
@@ -231,4 +234,47 @@ it('shows the import and stock adjustment screens and exports an adjustment vouc
     $this->get(StockAdjustmentResource::getUrl('view', ['record' => $a]))->assertSee('Rice 5 kg')->assertSee('37.000');
     Livewire::test(ImportData::class, ['type' => 'products'])->call('downloadTemplate')->assertFileDownloaded();
     Livewire::test(ViewStockAdjustment::class, ['record' => $a->id])->callAction('voucherPdf')->assertFileDownloaded();
+});
+
+it('lists each batch with its expiry on the stock sheet, sets a batch, adds a new batch and corrects an expiry date', function () {
+    $amox = makeProduct($this->owner, 'AMOX', 'Amoxicillin 500mg', retail: '15.00');
+    app(CatalogService::class)->saveProduct($this->o, $amox, ['track_batches' => true, 'location' => 'Shelf B2']);
+    $inv = app(InventoryService::class);
+    $inv->adjust($this->o, $this->wh, $amox->fresh(), $amox->units->first(), '30', 'opening', '', null, '5.00', 'B1', '2027-03-31');
+    $inv->adjust($this->o, $this->wh, $amox->fresh(), $amox->units->first(), '20', 'adjustment', 'correction', null, '5.00', 'B2', '2027-06-30');
+
+    $importer = ImportService::importer('stock_adjustment');
+    $sheet = array_values(array_filter(iterator_to_array($importer->exportRows($this->o, ['warehouse_id' => $this->wh->id], null), false), fn ($r) => $r[0] === 'AMOX'));
+    expect($sheet)->toHaveCount(2)
+        ->and([$sheet[0][5], $sheet[0][6], $sheet[0][2], $sheet[0][1], $sheet[0][13]])->toBe(['B1', '2027-03-31', '30.000', 'set', 'Shelf B2'])
+        ->and([$sheet[1][5], $sheet[1][6], $sheet[1][2]])->toBe(['B2', '2027-06-30', '20.000']);
+
+    $sheet[0][2] = '28';           // B1: counted 28 (2 fewer)
+    $sheet[1][6] = '2027-07-31';   // B2: the expiry was typed wrongly on receipt
+    $new = $sheet[1];
+    [$new[5], $new[6], $new[2]] = ['B3', '2028-01-31', '12']; // B3: a new batch found on the shelf
+    $done = $this->imports->run($this->o, 'stock_adjustment', importCsvFile([$importer->headings(), $sheet[0], $sheet[1], $new]), 'sheet.csv',
+        ['warehouse_id' => $this->wh->id, 'reason_code' => 'correction'], null, true);
+    expect($done->rows_error)->toBe(0)->and($done->summary)->toMatchArray(['added' => 2, 'updated' => 1]);
+    expect(StockBatch::where('product_id', $amox->id)->where('batch_no', 'B2')->first()->expires_on->toDateString())->toBe('2027-07-31');
+
+    app(StockAdjustmentService::class)->post($this->o, StockAdjustment::findOrFail($done->context_id));
+    expect(StockRows::batchOnHand($this->wh->id, $amox->id, 'B1'))->toBe(28000)
+        ->and(StockRows::batchOnHand($this->wh->id, $amox->id, 'B3'))->toBe(12000)
+        ->and(skuOnHand($this->wh, 'AMOX'))->toBe('60.000');
+
+    // A new batch without its expiry date is refused.
+    $bad = $sheet[1];
+    [$bad[5], $bad[6], $bad[2]] = ['B9', '', '5'];
+    $check = $this->imports->run($this->o, 'stock_adjustment', importCsvFile([$importer->headings(), $bad]), 'sheet.csv', ['warehouse_id' => $this->wh->id], null, false);
+    expect($check->errors[0]['message'])->toContain('give its expiry date');
+});
+
+it('takes a product location from the products file and gives it back', function () {
+    $file = importCsvFile([['sku', 'name', 'location', 'price_retail'], ['', 'Zinc 50mg', 'Shelf A1', '10']]);
+    $this->imports->run($this->o, 'products', $file, 'p.csv', ['industry' => 'shared'], null, true);
+    expect(Product::where('name', 'Zinc 50mg')->value('location'))->toBe('Shelf A1');
+    $headings = ImportService::importer('products')->headings();
+    $row = collect(iterator_to_array(ImportService::importer('products')->exportRows($this->o, [], null), false))->firstWhere(1, 'Zinc 50mg');
+    expect($row[array_search('location', $headings, true)])->toBe('Shelf A1');
 });

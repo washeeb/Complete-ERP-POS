@@ -68,6 +68,7 @@ final class ProductsImporter extends Importer
             ['name' => 'track_batches', 'required' => false, 'help' => 'yes / no — batches and expiry dates.', 'example' => 'no'],
             ['name' => 'for_sale', 'required' => false, 'help' => 'yes / no — no takes it off the tills and shop.', 'example' => 'yes'],
             ['name' => 'plu', 'required' => false, 'help' => 'Scale code for weighed items (up to 5 digits).', 'example' => ''],
+            ['name' => 'location', 'required' => false, 'help' => 'Where it is kept, e.g. Shelf B2 (shows on stock sheets and the till).', 'example' => ''],
             ['name' => 'industry', 'required' => false, 'help' => 'Leave empty: new products go to the industry chosen on the import page. Or an industry name or code (e.g. Pharmacy), or "shared" for every industry. Existing products move only when this column is filled.', 'example' => ''],
             ['name' => 'barcodes', 'required' => false, 'help' => 'Barcodes of one base unit, separated by |. Replaces the current base-unit barcodes. In Excel, format this column as Text first, or Excel drops leading zeros and shortens long numbers.', 'example' => '6001067000123'],
         ];
@@ -135,6 +136,9 @@ final class ProductsImporter extends Importer
         if ($isNew) {
             $data['is_active'] ??= true;
         }
+        if (self::has($row, 'location')) {
+            $data['location'] = mb_substr(trim((string) $row['location']), 0, 60);
+        }
         if (self::has($row, 'plu')) {
             $data['plu'] = self::barcode($row['plu']);
         }
@@ -177,7 +181,7 @@ final class ProductsImporter extends Importer
         foreach ($products->orderBy('sku')->lazy(500) as $p) {
             $base = $p->units->firstWhere('is_base', true);
             $row = [$p->sku, $p->name, $p->description, $p->category?->name, $p->brand?->name, $p->taxGroup?->code, $p->baseUom?->code,
-                $p->track_stock ? 'yes' : 'no', $p->track_batches ? 'yes' : 'no', $p->is_active ? 'yes' : 'no', $p->plu, $p->industry?->name ?? 'shared', $base?->barcodes->pluck('code')->implode('|')];
+                $p->track_stock ? 'yes' : 'no', $p->track_batches ? 'yes' : 'no', $p->is_active ? 'yes' : 'no', $p->plu, $p->location, $p->industry?->name ?? 'shared', $base?->barcodes->pluck('code')->implode('|')];
             foreach ($lists as $list) {
                 $price = $p->prices->first(fn ($x) => $x->price_list_id === $list->id && $x->product_uom_id === $base?->id && (float) $x->min_qty <= 1 && ! $x->starts_at && ! $x->ends_at);
                 $row[] = $price ? Money::format($price->amount_minor, $list->currency_code) : '';
