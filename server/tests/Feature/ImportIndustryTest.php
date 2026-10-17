@@ -5,6 +5,7 @@ use App\Domain\Imports\ImportService;
 use App\Filament\Pages\ImportData;
 use App\Models\Industry;
 use App\Models\Product;
+use App\Support\IndustryContext;
 use Filament\Facades\Filament;
 use Illuminate\Http\UploadedFile;
 use Livewire\Livewire;
@@ -55,4 +56,18 @@ it('moves products imported to the wrong industry; their system SKUs take its se
         ->and(Product::whereIn('name', ['Paracetamol', 'Vitamin C'])->pluck('industry_id')->unique()->all())->toBe([$this->pharmacy->id])
         ->and($skus)->each->toMatch('/^1\d{5}$/') // shared: plain numbers
         ->and(Product::whereIn('name', ['Paracetamol', 'Vitamin C'])->pluck('sku')->all())->each->toStartWith($this->pharmacy->code.'-');
+});
+
+it('downloads every product for updating, or the industry chosen at the top', function () {
+    Livewire::test(ImportData::class, ['type' => 'products', 'industry' => $this->pharmacy->id])
+        ->set('file', ($this->csv)(",Paracetamol,,5\n,Rice 5kg,grocery,90\n"))->call('import');
+    $names = function () {
+        $page = Livewire::test(ImportData::class, ['type' => 'products_update']);
+        $rows = iterator_to_array(ImportService::importer('products_update')->exportRows(actorFor($this->owner), $page->instance()->options(), null), false);
+
+        return collect($rows)->pluck(1)->sort()->values()->all();
+    };
+    expect($names())->toBe(['Paracetamol', 'Rice 5kg']); // all industries at the top: every product
+    IndustryContext::set($this->pharmacy->id);
+    expect($names())->toBe(['Paracetamol']);
 });
