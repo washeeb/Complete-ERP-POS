@@ -58,6 +58,24 @@ Find the symptom, then try the fixes in order.
 | Online store not updating | Is the scheduler running (4.8 / 5.9)? Is the channel **Active**? Look at the channel's failed updates and **Retry failed updates**. |
 | No SMS arrive | Check the SMS gateway address in Settings and that the phone number is on the booking. Test your provider separately. |
 
+## Products imported twice
+
+If a product file was imported more than once with **Products — create new** before version 0.35 (when one import did both), each product may exist two or three times. On the server, in the `server` folder:
+
+```bash
+php artisan erp:merge-duplicate-products
+```
+
+This only **shows** what it would do: for each product, the copy created first is kept, and the later copies (same name, industry and unit, from a later import) are listed. Then:
+
+```bash
+php artisan erp:merge-duplicate-products --apply
+```
+
+Barcodes on the later copies move to the kept product; a later copy that was never used is removed; one that has stock, sales or orders is switched off instead (it keeps its history). Every step is in the audit log. Two different products with the same name in one file stay two products.
+
+**Why on the server:** removing products is permanent, so it is a deliberate step by the person looking after the server, after the automatic backup the update takes.
+
 ## Health checks
 
 **System → Health** shows the state of the server at a glance: database, scheduler, live updates, last backup and its check, disk space, live-site settings, HTTPS, e-mail, licence, PHP's code cache, slow pages, and anything stuck (messages, webhooks, GRA E-VAT, sync). Each line says what to do. Below the checks, **Slow pages** lists every page and till call that took over a second in the last 7 days, worst first.

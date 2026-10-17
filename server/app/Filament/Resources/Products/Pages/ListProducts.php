@@ -17,7 +17,8 @@ class ListProducts extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('importCsv')->label('Import products (CSV)')->icon(Heroicon::OutlinedArrowUpTray)->color('gray')->visible(fn () => Erp::canAnywhere('catalog.manage'))->url(ImportData::getUrl(['type' => 'products'])),
+            Action::make('importCsv')->label('Add new products (file)')->icon(Heroicon::OutlinedArrowUpTray)->color('gray')->visible(fn () => Erp::canAnywhere('catalog.manage'))->url(ImportData::getUrl(['type' => 'products'])),
+            Action::make('updateCsv')->label('Update products (file)')->icon(Heroicon::OutlinedArrowPath)->color('gray')->visible(fn () => Erp::canAnywhere('catalog.manage'))->url(ImportData::getUrl(['type' => 'products_update'])),
             Action::make('importPrices')->label('Import prices (CSV)')->icon(Heroicon::OutlinedCurrencyDollar)->color('gray')->visible(fn () => Erp::canAnywhere('pricing.manage'))->url(ImportData::getUrl(['type' => 'prices'])),
             CreateAction::make(),
         ];

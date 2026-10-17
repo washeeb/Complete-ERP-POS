@@ -88,38 +88,41 @@ it('reads CSV files the way spreadsheets save them', function () {
     expect(CsvFile::read($path)['rows'][0]['values']['name'])->toBe('Café');
 });
 
-it('checks a product file without saving, then creates and updates products with prices, all or nothing', function () {
+it('checks a product file without saving, then creates products, and updates others from a separate file', function () {
     makeProduct($this->owner, 'RICE-5', 'Rice 5 kg', retail: '120.00');
     $file = importCsvFile([
         ['sku', 'name', 'category', 'tax_group', 'barcodes', 'price_RETAIL', 'for_sale'],
-        ['RICE-5', 'Perfumed rice 5 kg', '', '', '', '118.50', ''],
         ['SUGAR-1', 'Sugar 1 kg', 'Groceries', 'STD', '6001234567893', '22.00', 'yes'],
         ['BAD SKU!', 'Broken', '', '', '', '', ''],
     ]);
     $check = $this->imports->run($this->o, 'products', $file, 'products.csv', ['industry' => 'shared'], null, false);
-    expect($check->status)->toBe('checked')->and($check->rows_error)->toBe(1)->and($check->errors[0]['row'])->toBe(4)
-        ->and(Product::where('sku', 'SUGAR-1')->exists())->toBeFalse()->and(Product::where('sku', 'RICE-5')->value('name'))->toBe('Rice 5 kg');
+    expect($check->status)->toBe('checked')->and($check->rows_error)->toBe(1)->and($check->errors[0]['row'])->toBe(3)
+        ->and(Product::where('sku', 'SUGAR-1')->exists())->toBeFalse();
 
     // All or nothing: one bad row stops the whole file.
     expect($this->imports->run($this->o, 'products', $file, 'products.csv', ['industry' => 'shared'], null, true)->status)->toBe('failed')
         ->and(Product::where('sku', 'SUGAR-1')->exists())->toBeFalse();
 
     $done = $this->imports->run($this->o, 'products', $file, 'products.csv', ['skip_errors' => true, 'create_missing' => true, 'industry' => 'shared'], null, true);
-    $rice = Product::where('sku', 'RICE-5')->first();
     $sugar = Product::where('sku', 'SUGAR-1')->first();
-    expect($done->status)->toBe('imported')->and($done->summary['created'])->toBe(1)->and($done->summary['updated'])->toBe(1)
-        ->and($rice->name)->toBe('Perfumed rice 5 kg')->and($sugar->category_id)->toBe(Category::where('name', 'Groceries')->value('id'))
-        ->and($sugar->barcodes()->value('code'))->toBe('6001234567893')
+    expect($done->status)->toBe('imported')->and($done->summary['created'])->toBe(1)
+        ->and($sugar->category_id)->toBe(Category::where('name', 'Groceries')->value('id'))->and($sugar->barcodes()->value('code'))->toBe('6001234567893');
+
+    // Updating is its own import: by SKU, only the filled-in cells.
+    $update = importCsvFile([['sku', 'name', 'barcodes', 'price_RETAIL'], ['RICE-5', 'Perfumed rice 5 kg', '', '118.50']]);
+    $up = $this->imports->run($this->o, 'products_update', $update, 'update.csv', [], null, true);
+    $rice = Product::where('sku', 'RICE-5')->first();
+    expect($up->summary['updated'])->toBe(1)->and($rice->name)->toBe('Perfumed rice 5 kg')
         ->and(app(PriceResolver::class)->resolve($this->retail, $rice->id, $rice->units->first()->id, 1000, now())->amount_minor)->toBe(11850)
-        ->and($rice->barcodes()->count())->toBe(1); // barcodes untouched when the column is empty
+        ->and($rice->barcodes()->count())->toBe(1); // barcodes untouched when the cell is empty
 
     // The current data comes out in the same layout, ready to edit and import again.
-    $rows = iterator_to_array(ImportService::importer('products')->exportRows($this->o, [], null), false);
+    $rows = iterator_to_array(ImportService::importer('products_update')->exportRows($this->o, [], null), false);
     expect(collect($rows)->firstWhere(0, 'SUGAR-1')[1])->toBe('Sugar 1 kg');
 
     $cashier = staff($this->owner, 'efua', 2, 'teller', ScopeType::Branch, $this->hq->id);
     expect(fn () => $this->imports->run(actorFor($cashier), 'products', $file, 'x.csv', [], null, true))->toThrow(AccessDenied::class)
-        ->and(DataImport::count())->toBe(3);
+        ->and(DataImport::count())->toBe(4);
 });
 
 it('imports prices, customers and suppliers', function () {
@@ -277,4 +280,29 @@ it('takes a product location from the products file and gives it back', function
     $headings = ImportService::importer('products')->headings();
     $row = collect(iterator_to_array(ImportService::importer('products')->exportRows($this->o, [], null), false))->firstWhere(1, 'Zinc 50mg');
     expect($row[array_search('location', $headings, true)])->toBe('Shelf A1');
+});
+
+it('keeps creating and updating apart, so importing a file twice never duplicates products', function () {
+    $file = importCsvFile([['sku', 'name', 'price_RETAIL'], ['', 'Paracetamol 500mg', '5'], ['', 'D10', '20']]);
+    expect($this->imports->run($this->o, 'products', $file, 'p.csv', ['industry' => 'shared'], null, true)->summary['created'])->toBe(2);
+
+    // The same "create" file again: every row is refused (the names exist), nothing is created twice.
+    $again = $this->imports->run($this->o, 'products', $file, 'p.csv', ['industry' => 'shared', 'skip_errors' => true], null, true);
+    expect($again->rows_error)->toBe(2)->and($again->errors[0]['message'])->toContain('already exists')->toContain('update existing')
+        ->and(Product::where('name', 'Paracetamol 500mg')->count())->toBe(1);
+    $sku = Product::where('name', 'D10')->value('sku');
+    expect($this->imports->run($this->o, 'products', importCsvFile([['sku', 'name'], [$sku, 'D10']]), 'p.csv', ['industry' => 'shared'], null, false)->errors[0]['message'])
+        ->toContain("SKU {$sku} already exists");
+
+    // A genuinely different product with the same name, when asked for.
+    $two = $this->imports->run($this->o, 'products', importCsvFile([['sku', 'name'], ['', 'D10']]), 'p.csv', ['industry' => 'shared', 'allow_same_name' => true], null, true);
+    expect($two->summary['created'])->toBe(1)->and(Product::where('name', 'D10')->count())->toBe(2);
+
+    // Updating never creates: a missing or unknown SKU is refused; the same update again changes nothing more.
+    $upd = importCsvFile([['sku', 'name', 'price_RETAIL'], [$sku, 'D10 dextrose', '22'], ['', 'New thing', '1'], ['NOPE-1', 'X', '1']]);
+    $u = $this->imports->run($this->o, 'products_update', $upd, 'u.csv', ['skip_errors' => true], null, true);
+    expect($u->summary['updated'])->toBe(1)->and($u->rows_error)->toBe(2)->and(Product::where('name', 'New thing')->exists())->toBeFalse();
+    $before = Product::count();
+    $this->imports->run($this->o, 'products_update', $upd, 'u.csv', ['skip_errors' => true], null, true);
+    expect(Product::count())->toBe($before)->and(Product::where('name', 'D10 dextrose')->count())->toBe(1);
 });

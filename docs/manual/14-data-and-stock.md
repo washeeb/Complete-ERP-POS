@@ -47,6 +47,11 @@ The migration imports are explained in Chapter 17.2. **Coming from** (QuickBooks
 ### Step by step
 
 1. **Choose what you are importing.** The page explains what a row does and lists every column (**Columns in this file**), with an example.
+   Products have **two separate imports**:
+   - **Products — create new** adds new products only. A row whose SKU already exists, or whose name already exists in the same industry, is refused, so importing the same file twice cannot create duplicates. Tick **Allow names that already exist** only for genuinely different products with the same name.
+   - **Products — update existing** changes existing products only, found by their SKU: start from **Download current data**, change what you need, and import it. Empty cells and missing columns stay as they are. It never creates a product, so importing it twice is harmless.
+
+   **Why two:** with one import, a row without an SKU always made a new product, so re-importing a file to "update" it created a second copy of everything.
    For **products**, a company with several industries also chooses **For which industry?** (for example *Pharmacy*, or *Shared by all industries*). New products go into that industry's catalogue, and **Download current data** gives that industry's products only. Check and Import stay refused until you choose. An `industry` column in the file can name a different industry for single rows.
 
    **Why:** each industry's tills and screens show only its own products. A product list imported to the wrong industry would show at the wrong shops.

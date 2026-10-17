@@ -16,11 +16,12 @@ use App\Support\Money;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Products: create new ones and update existing ones, matched by SKU. Blank cells leave the current value unchanged,
- * so a file can update just the columns it has (e.g. only names, or only retail prices). Prices go in columns named
- * price_<list code> (price_RETAIL, price_WHOLESALE): the base-unit price from 1 piece, without dates.
+ * Products — create new: every row is a new product. A row whose SKU exists, or whose name already exists in the same
+ * industry, is refused (it would be a duplicate): changes to existing products go through Products — update existing
+ * (ProductsUpdateImporter), which never creates. Prices go in columns named price_<list code> (price_RETAIL): the
+ * base-unit price from 1 piece, without dates.
  */
-final class ProductsImporter extends Importer
+class ProductsImporter extends Importer
 {
     private ?bool $hasIndustries = null;
 
@@ -31,14 +32,21 @@ final class ProductsImporter extends Importer
         return 'products';
     }
 
+    /** create: new products only; update: existing products only (by SKU). */
+    protected function mode(): string
+    {
+        return 'create';
+    }
+
     public function label(): string
     {
-        return 'Products (create and update)';
+        return 'Products — create new';
     }
 
     public function description(): string
     {
-        return 'One row per product, matched by SKU: a new SKU creates the product, an existing SKU updates it. Empty cells leave that detail as it is. '
+        return 'Adds NEW products, one per row. A row whose SKU already exists, or whose name already exists in the same industry, is refused so nothing is '
+            .'created twice: to change existing products use "Products — update existing". Leave sku empty and the system gives the SKU. '
             .'Category and brand are matched by name (and created if "Create missing categories and brands" is on). Barcodes: several separated by |. '
             .'Prices: a column per price list, named price_ followed by the list code (e.g. price_RETAIL); they set the price of one base unit. '
             .'Changing prices needs the pricing permission.';
@@ -46,7 +54,7 @@ final class ProductsImporter extends Importer
 
     public function industryScoped(): bool
     {
-        return true;
+        return $this->mode() === 'create';
     }
 
     public function permission(): string
@@ -87,13 +95,29 @@ final class ProductsImporter extends Importer
 
     public function optionDefaults(): array
     {
-        return ['create_missing' => true];
+        return ['create_missing' => true, 'allow_same_name' => false];
+    }
+
+    /** The SKU of a product with this name (spaces and case ignored) in the same industry, or among shared products. */
+    private static function sameName(string $name, ?string $industryId): ?string
+    {
+        $norm = mb_strtolower(trim((string) preg_replace('/\s+/', ' ', $name)));
+
+        return Product::whereRaw("lower(regexp_replace(trim(name), '\\s+', ' ', 'g')) = ?", [$norm])
+            ->where(fn ($q) => $industryId === null ? $q->whereNull('industry_id') : $q->where('industry_id', $industryId))->value('sku');
     }
 
     public function apply(Actor $actor, array $row, array $options, ?Model $context): string
     {
         $sku = self::has($row, 'sku') ? strtoupper(trim((string) $row['sku'])) : '';
         $product = $sku !== '' ? Product::where('sku', $sku)->first() : null;
+        if ($this->mode() === 'update' && ! $product) {
+            throw new DomainException($sku === '' ? 'Give the SKU of the product to update (download the current products first).'
+                : "No product with SKU {$sku}. To add new products, use \"Products — create new\".");
+        }
+        if ($this->mode() === 'create' && $product) {
+            throw new DomainException("SKU {$sku} already exists ({$product->name}). To change it, use \"Products — update existing\".");
+        }
         $isNew = ! $product;
         // Empty: the system gives the new product its SKU. A code brought from the previous system is kept, so that its
         // prices and opening stock (imported next, by that code) find it; codes stay unique either way.
@@ -110,6 +134,10 @@ final class ProductsImporter extends Importer
             $this->hasIndustries ??= Industry::licensed()->exists();
             $chosen = (string) ($options['industry'] ?? ($this->hasIndustries ? '' : 'shared'));
             $data['industry_id'] = $chosen === 'shared' ? null : ($chosen !== '' ? $chosen : throw new DomainException('Choose which industry these products are for (on the import page).'));
+        }
+        if ($isNew && empty($options['allow_same_name']) && ($same = self::sameName($data['name'], $data['industry_id'] ?? null))) {
+            throw new DomainException("A product named \"{$data['name']}\" already exists (SKU {$same}). To change it, use \"Products — update existing\"; "
+                .'to add a different product with the same name, tick "Allow names that already exist".');
         }
         if (self::has($row, 'description')) {
             $data['description'] = $row['description'];

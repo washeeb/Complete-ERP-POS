@@ -53,7 +53,7 @@
             <x-filament::button color="gray" icon="heroicon-o-document-arrow-down" wire:click="downloadTemplate('xlsx')">Download template (Excel)</x-filament::button>
             <x-filament::button color="gray" icon="heroicon-o-document-arrow-down" wire:click="downloadTemplate('csv')">Template (CSV)</x-filament::button>
             <x-filament::button color="gray" icon="heroicon-o-book-open" wire:click="downloadGuide">Column guide (PDF)</x-filament::button>
-            @if (in_array($type, ['products', 'prices', 'customers', 'suppliers', 'accounts'], true))
+            @if (in_array($type, ['products_update', 'prices', 'customers', 'suppliers', 'accounts'], true))
                 <x-filament::button color="gray" icon="heroicon-o-table-cells" wire:click="downloadCurrent('xlsx')">Download current data to edit (Excel)</x-filament::button>
                 <x-filament::button color="gray" icon="heroicon-o-table-cells" wire:click="downloadCurrent('csv')">Current data (CSV)</x-filament::button>
             @elseif ($ctx === 'stock_adjustment')
@@ -101,7 +101,8 @@
         @endif
         <div class="im-opts">
             <label><input type="checkbox" wire:model="skipErrors"> Skip rows with errors (import the good rows; otherwise nothing is imported while any row has an error)</label>
-            @if ($type === 'products')<label><input type="checkbox" wire:model="createMissing"> Create missing categories and brands</label>@endif
+            @if (in_array($type, ['products', 'products_update'], true))<label><input type="checkbox" wire:model="createMissing"> Create missing categories and brands</label>@endif
+            @if ($type === 'products')<label><input type="checkbox" wire:model="allowSameName"> Allow names that already exist (only for genuinely different products with the same name)</label>@endif
         </div>
         <div class="im-buttons">
             <x-filament::button color="gray" icon="heroicon-o-magnifying-glass" wire:click="check" wire:loading.attr="disabled">Check file (nothing is saved)</x-filament::button>
