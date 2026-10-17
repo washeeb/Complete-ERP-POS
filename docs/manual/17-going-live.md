@@ -77,6 +77,29 @@ For each file: **System → Import data**, choose the kind of import and **Comin
 
 Hand out the training material (17.7). When you want a clean start, **Archive the practice company** (its logins stop) and create a new one.
 
+### Clearing the test trading before go-live
+
+Staff should practise in the **practice company** (17.3). If test sales, shifts or stock were entered in the real company instead, clear them the day before going live, **before loading the opening stock**:
+
+1. On every till: make sure nothing is waiting to send (**Send now**), then close the till app.
+2. On the server, in the `server` folder:
+
+   ```bash
+   sudo -u www-data php artisan erp:clear-test-trading
+   ```
+
+   This only **lists** what would be removed: till shifts and sales, cash counts, stock movements and stock levels, stock adjustments, counts and transfers, purchase orders, receipts, supplier bills, invoices and payments, prescriptions, loyalty and gift cards, and every accounting entry.
+3. If the list is right, run it again with the company name exactly as it shows:
+
+   ```bash
+   sudo -u www-data php artisan erp:clear-test-trading --apply --confirm="Your Company Name"
+   ```
+
+   It takes a backup first, then clears. **Kept:** products, prices, barcodes, customers, suppliers, staff and roles, devices, branches and settings. Stock is then zero everywhere, and document numbers (invoices, receipts of payment, purchase orders …) start again.
+4. Load the opening stock (Chapter 7, Step 10), then open the tills again.
+
+**Why the audit log keeps the test period:** the audit log can never be edited or emptied, so it still shows the test sales, plus a line saying when the test trading was cleared and by whom. **Why it only works before go-live:** after go-live, every sale is real and is only ever corrected by a return or a reversal.
+
 ## 17.4 Check the figures
 
 When everything is loaded: **System → Go-live → Check the figures**.

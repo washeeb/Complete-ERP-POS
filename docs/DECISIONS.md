@@ -493,6 +493,11 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## Clearing test trading before go-live (2026-10-17)
+- **A guarded exception to append-only, before go-live only** (`TestTradingReset`, `erp:clear-test-trading`): refused when the go-live plan is `live` or branch servers are paired; dry run unless `--apply` with the exact company name; a backup first. The user triggers on the trading tables (append-only guards) are switched off for the one transaction (`SET CONSTRAINTS ALL IMMEDIATE` first, so waiting balance checks run) and on again; the app's database user owns its tables, so this needs no superuser.
+- **Scope, chosen by the owner:** all trading (`TestTradingReset::TABLES`), deleted children first from the foreign-key graph; optional links between trading rows are cleared first (transfers and requests point at each other); rows of kept tables pointing at trading rows are set to null, and a required one stops the clean-up. Trading document numbers restart; customer, staff, asset and SKU numbers do not.
+- **The audit log is never touched:** it keeps the test period, and `company.test_trading_cleared` records the counts.
+
 ## Opening balances per batch (2026-10-17)
 - An opening balance is allowed once per product and warehouse, and for a batch-tracked product once per batch: earlier opening movements of other batches do not count as history; any other movement type, or the same batch, does.
 
