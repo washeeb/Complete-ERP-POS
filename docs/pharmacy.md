@@ -11,6 +11,7 @@ Switch the module on per branch: **Company → Modules → Pharmacy**. The licen
 - **Location / shelf** (e.g. *Shelf B2*): shows on the stock sheet and in the till's search, so staff find the medicine quickly.
 - **Updating stock by batch:** the stock sheet (Stock → Stock adjustments → Update stock from a CSV file) lists every batch with its expiry date; set each batch's counted quantity, add new batches with their expiry, or correct an expiry date (manual 14).
 - Every medicine must have **Batches and expiry dates** switched on. It is received with its batch and expiry, sold earliest expiry first, and expired stock cannot be sold.
+- **Expired and near-expiry medicines:** Stock → Expiry & returns lists them; tick the batches and **Dispose** (method and witness; a witness is always needed for controlled drugs), **Return to supplier** (credit note, replacement, refund or nothing) or **Mark down**. A second person with *approve stock adjustments* approves every disposal and return, whatever its value. Print the disposal record, the return note and the **disposal register** for the premises file. Settings → Stock can stop sales a number of days before expiry (manual 14.5).
 
 ## Patients (Sales → Customers → Patient details)
 
@@ -61,9 +62,9 @@ Over-the-counter medicines need none of this. Neither does a branch where the Ph
 
 | Role | Can |
 |---|---|
-| **Pharmacist** | Dispense and approve prescription medicines (`pharmacy.dispense`); patient details; interaction table, register and NHIS claims (`pharmacy.manage`); till; receiving and counts |
-| **Pharmacy Technician** | Till; patient details; receiving and counts. A pharmacist approves their prescription sales |
-| **Superintendent Pharmacist** (L4) | Everything a pharmacist can, plus the pharmacy's catalogue, purchasing, stock adjustments, approving receipts, counts and stock requests, and insights |
+| **Pharmacist** | Dispense and approve prescription medicines (`pharmacy.dispense`); patient details; interaction table, register and NHIS claims (`pharmacy.manage`); till; receiving and counts; preparing disposals and returns of expired stock (`stock.expiry`) |
+| **Pharmacy Technician** | Till; patient details; receiving and counts; preparing disposals and returns of expired stock. A pharmacist approves their prescription sales |
+| **Superintendent Pharmacist** (L4) | Everything a pharmacist can, plus the pharmacy's catalogue, purchasing, stock adjustments, approving receipts, counts, stock requests, disposals and returns to suppliers (`stock.adjust.approve`), and insights |
 | **Medicine Counter Assistant (MCA)** (L2) | Till; patient details. Over-the-counter medicines; a pharmacist approves prescription sales |
 | **Doctor / Medical Officer**, **Physician Assistant** (L3) | Patient records (allergies, history, NHIS); add and update patients. They do not dispense |
 | **Nurse**, **Midwife** (L2) | Till; patient records. They do not dispense |

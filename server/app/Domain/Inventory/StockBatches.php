@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\StockBatch;
 use App\Models\Warehouse;
 use App\Support\Qty;
+use App\Support\Settings;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Ramsey\Uuid\Uuid;
@@ -81,7 +82,9 @@ final class StockBatches
             ->where('l.warehouse_id', $warehouse->id)->where('l.product_id', $product->id)->where('l.on_hand', '>', 0)
             ->orderByRaw('b.expires_on ASC NULLS LAST')->orderBy('b.created_at')->lockForUpdate()
             ->get(['b.id', 'b.expires_on', 'l.on_hand']);
-        $today = self::today();
+        // Selling stops a set number of days before expiry (Settings → Stock); 0 = until the expiry date.
+        $days = $sellable ? (int) app(Settings::class)->get('stock.block_sale_days_before_expiry', $warehouse->tenant_id) : 0;
+        $today = $days > 0 ? now()->addDays($days)->toDateString() : self::today();
         $expired = fn ($r) => $r->expires_on !== null && $r->expires_on < $today;
         $out = [];
         $take = function ($list) use (&$needBase, &$out) {
@@ -100,7 +103,8 @@ final class StockBatches
         if ($needBase > 0 && $sellable) {
             $old = $rows->filter($expired);
             if ($old->isNotEmpty() && ! $alreadyHappened) {
-                throw new DomainException("Only expired stock of {$product->name} is left here; it cannot be sold.", 'expired_stock');
+                throw new DomainException($days > 0 ? "Only stock of {$product->name} expiring within {$days} days (or expired) is left here; it cannot be sold."
+                    : "Only expired stock of {$product->name} is left here; it cannot be sold.", 'expired_stock');
             }
             $take($old);
         }

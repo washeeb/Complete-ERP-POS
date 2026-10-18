@@ -218,7 +218,11 @@ final class StockAdjustmentService
     public function post(Actor $actor, StockAdjustment $a): StockAdjustment
     {
         $warehouse = $a->warehouse;
-        $this->require($actor, 'stock.adjust', $warehouse);
+        if ($a->kind === 'disposal') { // disposals of expired stock: always a second person, whatever the value
+            app(ExpiryService::class)->requireApprover($actor, $warehouse, $a->submitted_by);
+        } else {
+            $this->require($actor, 'stock.adjust', $warehouse);
+        }
         if (! in_array($a->status, ['draft', 'submitted'], true)) {
             throw new DomainException("{$a->number} is already ".strtolower(StockAdjustment::STATUSES[$a->status]).'.');
         }
@@ -227,7 +231,7 @@ final class StockAdjustmentService
         }
         $limit = (int) $this->settings->get('stock.adjustment_approval_minor', $a->tenant_id);
         $gross = $this->preview($a)['gross'];
-        if ($gross > $limit) {
+        if ($gross > $limit && $a->kind !== 'disposal') {
             if (! $this->authz->allows($actor->user, 'stock.adjust.approve', $warehouse)) {
                 throw new DomainException('This adjustment is worth '.Money::format($gross, Tenant::find($a->tenant_id)->currency_code)
                     .', above the approval limit: submit it for approval by a manager.', 'approval_needed');
@@ -253,7 +257,7 @@ final class StockAdjustmentService
                     'qty_milli' => $l->mode === 'set' ? $p['change'] : ($l->mode === 'add' ? 1 : -1) * Qty::toMilli((string) $l->qty),
                     'unit_cost_minor' => $l->unit_cost_minor, 'serials' => $l->serials] + $batch;
             }
-            $reason = InventoryService::ADJUSTMENT_REASONS[$a->reason_code].($a->reference ? " ({$a->reference})" : '');
+            $reason = ($a->kind === 'disposal' ? 'disposal, ' : '').InventoryService::ADJUSTMENT_REASONS[$a->reason_code].($a->reference ? " ({$a->reference})" : '');
             if ($entries) {
                 $this->ledger->post($actor, $warehouse, 'adjustment', $entries, "Stock adjustment {$a->number}: {$reason}", 'stock_adjustment', $a->id);
             }
@@ -265,7 +269,7 @@ final class StockAdjustmentService
 
     public function cancel(Actor $actor, StockAdjustment $a, string $reason): StockAdjustment
     {
-        $this->require($actor, 'stock.adjust', $a->warehouse);
+        $this->require($actor, $a->kind === 'disposal' && $actor->user && ! $this->authz->allows($actor->user, 'stock.adjust', $a->warehouse) ? 'stock.expiry' : 'stock.adjust', $a->warehouse);
         if (! in_array($a->status, ['draft', 'submitted'], true) || trim($reason) === '') {
             throw new DomainException(trim($reason) === '' ? 'Give the reason.' : 'Only a draft or an adjustment waiting for approval can be cancelled.');
         }

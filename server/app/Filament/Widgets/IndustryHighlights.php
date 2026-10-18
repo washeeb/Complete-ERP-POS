@@ -2,9 +2,11 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Pages\ExpiryReturns;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
 use App\Support\IndustryContext;
+use App\Support\Settings;
 use Carbon\CarbonImmutable;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -37,8 +39,12 @@ class IndustryHighlights extends StatsOverviewWidget
         if ($industry?->module_key === 'pharmacy') {
             $stats[] = Stat::make('Prescriptions today', (string) DB::table('prescriptions')->whereIn('branch_id', $branches)
                 ->where('created_at', '>=', $today->utc())->count());
-            $stats[] = Stat::make('Batches expiring in 90 days', (string) ($n = $expiring(90)))->color($n ? 'warning' : 'success')
-                ->description('Medicines to sell first, return or write off');
+            $days = (int) app(Settings::class)->get('stock.expiry_alert_days', $user->tenant_id);
+            $link = ExpiryReturns::canAccess() ? ExpiryReturns::getUrl() : null;
+            $stats[] = Stat::make('Expired, still in stock', (string) ($n = $expiring(-1)))->color($n ? 'danger' : 'success')
+                ->description($n ? 'Batches to dispose of or return' : 'Nothing expired on the shelves')->url($link);
+            $stats[] = Stat::make("Batches expiring in {$days} days", (string) ($n = $expiring($days)))->color($n ? 'warning' : 'success')
+                ->description('Medicines to sell first, mark down or return')->url($link);
         } elseif ($industry?->module_key === 'grocery') {
             $stats[] = Stat::make('Batches expiring in 7 days', (string) ($n = $expiring(7)))->color($n ? 'warning' : 'success')
                 ->description('Candidates for a markdown sticker');

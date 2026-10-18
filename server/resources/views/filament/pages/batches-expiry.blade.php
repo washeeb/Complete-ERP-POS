@@ -42,12 +42,13 @@
         </x-filament::section>
     @endif
 
-    <x-filament::section heading="Expired — take off the shelf">
+    <x-filament::section heading="Expired — take off the shelf" description="Dispose of them or return them to the supplier from Stock → Expiry & returns (approved by a second person).">
+        @if (\App\Filament\Pages\ExpiryReturns::canAccess())<p><x-filament::link :href="\App\Filament\Pages\ExpiryReturns::getUrl()">Open Expiry & returns</x-filament::link></p>@endif
         <table class="be">
             @forelse ($this->expired() as $e)
                 <tr><td>{{ $e->name }}</td><td>{{ $e->batch_no }}</td><td>expired {{ \Illuminate\Support\Carbon::parse($e->expires_on)->format('j M Y') }}</td>
                     <td class="num">{{ $qty($e->on_hand) }}</td>
-                    <td>@if (\App\Filament\Support\Erp::canAnywhere('stock.adjust'))<x-filament::button size="sm" color="danger" wire:click="writeOff('{{ $e->batch_id }}')">Write off</x-filament::button>@endif</td></tr>
+                    <td></td></tr>
             @empty
                 <tr><td>Nothing expired in stock.</td></tr>
             @endforelse

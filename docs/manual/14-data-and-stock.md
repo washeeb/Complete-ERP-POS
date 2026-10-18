@@ -136,3 +136,42 @@ There are two ways to bring the system in line with what is on the shelves.
 **Why two ways:** a stock count freezes the expected figures and compares them (best for full counts while trading continues); the stock sheet route is quicker for a few corrections.
 
 **Tip:** count when the shop is closed, or count one area (bin or category) at a time. Sales during a count are still recorded normally.
+
+## 14.5 Expired and near-expiry stock: disposals and returns to suppliers
+
+**Stock → Expiry & returns** lists every batch in stock that has expired or expires soon, earliest first. For each batch it shows the days left (red once expired, amber under 30 days), the quantity, its value at cost, the store, the supplier it came from and whether that supplier still takes it back. Controlled drugs are marked.
+
+**Why:** expired medicines must leave the shelf and be destroyed (or returned) with a record. Doing it batch by batch from a list stops anything being missed, and the record satisfies an FDA inspection.
+
+1. Use **Show** to choose what to list: *Expired*, *Expiring within 30 days*, *within the warning period* (default 90 days, **System → Settings → Stock**) or every batch. Filter by store, supplier, **controlled drugs only** or **only what the supplier still takes back**. Search by product, SKU or batch.
+2. **Tick** the batches (or tick the box at the top for all of them). Tick one store at a time.
+3. Choose what to do:
+   - **Dispose** — for stock that will be destroyed. Give the reason (expired or damaged), how it is disposed of (incineration, destroyed under FDA supervision, an approved waste company…), the date and the **witness** (name and role). If your company asks for it, attach the **disposal certificate** (photo or PDF).
+   - **Return to supplier** — choose the supplier (filled in when the system knows it), what the supplier gives (**credit note**, **replacement stock**, **cash / MoMo / bank refund** or **nothing**) and the reason.
+   - **Mark down** — for stock that can still be sold at a lower price (needs the markdown permission). Print the stickers from **Stock → Batches & expiry**.
+4. The disposal or return is **prepared** and waits for approval. Keep the packs aside, marked "not for sale". Everyone allowed to approve is told.
+5. **Someone else** with *approve stock adjustments* opens it and clicks **Approve and post** (disposal, in **Stock → Stock adjustments**) or **Approve and send** (return, in **Stock → Returns to suppliers**). Only then does the stock leave the system. Nobody can approve what they prepared, whatever the value.
+
+**Why two people, always:** expired stock is an easy place to hide theft ("it expired" when it was sold privately). A second person checking every disposal and return, whatever its value, is the standard control for pharmacies.
+
+**Evidence (System → Settings → Stock → Evidence kept when stock is disposed of):**
+
+| Setting | The person preparing must give |
+|---|---|
+| Reason only | the reason |
+| Method and witness (default) | the reason, the method and a witness |
+| Method, witness and certificate | the above and an uploaded certificate |
+
+Controlled drugs always need a witness, whatever the setting.
+
+**Printing:** each disposal has **Disposal record (print)** with signature lines for the pharmacist, the witness and the approver; each return has a **Return note (print)** for the supplier's representative to sign. **Disposal register (print)** on *Expiry & returns* lists every approved disposal for a store and period — keep it in the premises file.
+
+**After a return is sent:** when the supplier settles, open the return and click **Record the supplier's settlement**: their credit note number, the delivery note of the replacement stock (receive the replacement as a normal delivery) or, for a refund, the amount and where the money went (refunds need the *pay suppliers* permission). A refund smaller than the value at cost books the difference as a stock loss.
+
+**What happens in the accounts (automatic):** a disposal is a stock loss at average cost. A return moves the stock to *Goods returned to suppliers (awaiting credit)*; a credit note or replacement reduces what you owe the supplier; *nothing* is a stock loss; a refund clears it when the money is recorded.
+
+**Each supplier's return window:** on the supplier (**Purchasing → Suppliers**), **Takes back expiring stock up to (days before expiry)** — for example 90 if they accept stock until 90 days before it expires. Leave it empty if they take nothing back. *Expiry & returns* then shows "can still go back" while there is time.
+
+**Stop selling before expiry:** **System → Settings → Stock → Stop selling a batch this many days before it expires** (default 0 = sell until the expiry date). With 30, the till takes the next batch, or refuses the sale if only stock with less than 30 days is left. Expired stock is never sold.
+
+**The dashboard** (Pharmacy) shows how many batches have expired and how many expire within the warning period; click either to open *Expiry & returns*.

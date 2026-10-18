@@ -41,7 +41,7 @@ final class SupplierService
 
         return $this->recorder->transaction(function () use ($actor, $supplier, $data, $code, $currency) {
             $supplier->fill(array_intersect_key($data, array_flip(['name', 'contact_name', 'phone', 'email', 'tax_no', 'address',
-                'payment_terms_days', 'lead_time_days', 'is_active', 'notes'])));
+                'payment_terms_days', 'lead_time_days', 'return_days_before_expiry', 'is_active', 'notes'])));
             $supplier->code = $code;
             $supplier->currency_code ??= $currency;
             if (! $supplier->exists) {

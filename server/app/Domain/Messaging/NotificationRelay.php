@@ -22,6 +22,8 @@ final class NotificationRelay
         'purchase_order.submitted' => ['purchasing.approve', 'Purchase order', 'purchase-orders'],
         'supplier_bill.held' => ['payables.approve', 'Supplier bill (price difference)', 'supplier-bills'],
         'stock_adjustment.submitted' => ['stock.adjust.approve', 'Stock adjustment', 'stock-adjustments'],
+        'stock_disposal.prepared' => ['stock.adjust.approve', 'Disposal of expired or damaged stock', 'stock-adjustments'],
+        'supplier_return.prepared' => ['stock.adjust.approve', 'Return to supplier', 'supplier-returns'],
         'goods_receipt.held' => ['stock.receive.approve', 'Delivery over the tolerance', 'goods-receipts'],
         'stock_count.submitted' => ['stock.count.approve', 'Stock count', 'stock-counts'],
         'van_settlement.submitted' => ['distribution.settle', 'Van settlement', 'van-settlements'],
@@ -53,8 +55,8 @@ final class NotificationRelay
         $branchId = $row['branch_id'] ?? (isset($row['warehouse_id']) ? DB::table('warehouses')->where('id', $row['warehouse_id'])->value('branch_id') : null);
         $number = $row['number'] ?? '';
         $this->notifier->toPermission($e->tenant_id, $permission, $branchId, "{$what} {$number} is waiting for approval",
-            trim(($row['submitted_by_name'] ?? $row['created_by_name'] ?? $row['claimant_name'] ?? '').' sent it.'),
-            url("/admin/{$slug}/{$e->aggregate_id}"), [$row['submitted_by'] ?? null, $row['created_by'] ?? null, $row['claimant_id'] ?? null]);
+            trim(($row['submitted_by_name'] ?? $row['prepared_by_name'] ?? $row['created_by_name'] ?? $row['claimant_name'] ?? '').' sent it.'),
+            url("/admin/{$slug}/{$e->aggregate_id}"), [$row['submitted_by'] ?? null, $row['prepared_by'] ?? null, $row['created_by'] ?? null, $row['claimant_id'] ?? null]);
     }
 
     private function invoice(OutboxEvent $e): void

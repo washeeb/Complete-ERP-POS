@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\StockAdjustments;
 
+use App\Domain\Inventory\ExpiryService;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Inventory\StockAdjustmentService;
 use App\Filament\Pages\ImportData;
@@ -129,6 +130,15 @@ class StockAdjustmentResource extends Resource
                 TextEntry::make('posted_by_name')->label('Approved and posted by')->placeholder('—')->belowContent(fn (StockAdjustment $r) => $r->posted_at?->format('j M Y H:i')),
                 TextEntry::make('note')->placeholder('—')->columnSpanFull(),
             ]),
+            Section::make('Disposal')->columns(4)->visible(fn (StockAdjustment $r) => $r->kind === 'disposal')
+                ->description('Removed from stock once approved by someone other than the person who prepared it. Keep the packs aside, marked "not for sale", until they are destroyed.')
+                ->schema([
+                    TextEntry::make('disposal_method')->label('Method')->placeholder('—')->formatStateUsing(fn ($state) => ExpiryService::DISPOSAL_METHODS[$state] ?? $state),
+                    TextEntry::make('disposed_on')->label('Disposed of on')->date('j M Y')->placeholder('—'),
+                    TextEntry::make('witness_name')->label('Witness')->placeholder('—'),
+                    TextEntry::make('certificate_path')->label('Certificate')->placeholder('none')->formatStateUsing(fn () => 'Open')
+                        ->url(fn (StockAdjustment $r) => $r->certificate_path ? route('disposal.certificate', $r) : null, true),
+                ]),
             Section::make('Lines')->schema([
                 TextEntry::make('lines_table')->hiddenLabel()->html()->state(fn (StockAdjustment $r) => new HtmlString(self::linesHtml($r))),
             ]),
@@ -185,7 +195,8 @@ class StockAdjustmentResource extends Resource
                 TextColumn::make('number')->searchable(),
                 TextColumn::make('created_at')->label('Date')->date('j M Y'),
                 TextColumn::make('warehouse.code')->label('Warehouse'),
-                TextColumn::make('reason_code')->label('Reason')->formatStateUsing(fn ($state) => InventoryService::ADJUSTMENT_REASONS[$state] ?? $state),
+                TextColumn::make('reason_code')->label('Reason')->formatStateUsing(fn ($state) => InventoryService::ADJUSTMENT_REASONS[$state] ?? $state)
+                    ->description(fn (StockAdjustment $r) => $r->kind === 'disposal' ? 'disposal' : null),
                 TextColumn::make('reference')->placeholder('—')->searchable(),
                 TextColumn::make('lines_count')->label('Lines'),
                 TextColumn::make('value_minor')->label('Value')->formatStateUsing(fn ($state, StockAdjustment $r) => $r->status === 'posted' ? FinanceUi::money((int) $state) : '—'),
@@ -193,7 +204,7 @@ class StockAdjustmentResource extends Resource
                     ->color(fn ($state) => ['posted' => 'success', 'submitted' => 'warning', 'cancelled' => 'gray'][$state] ?? 'info'),
                 TextColumn::make('created_by_name')->label('Prepared by')->toggleable(),
             ])
-            ->filters([SelectFilter::make('status')->options(StockAdjustment::STATUSES), SelectFilter::make('reason_code')->label('Reason')->options(InventoryService::ADJUSTMENT_REASONS)]);
+            ->filters([SelectFilter::make('status')->options(StockAdjustment::STATUSES), SelectFilter::make('kind')->label('Type')->options(StockAdjustment::KINDS), SelectFilter::make('reason_code')->label('Reason')->options(InventoryService::ADJUSTMENT_REASONS)]);
     }
 
     /** Submit, approve and post, send back, cancel, add lines from a file, and the adjustment voucher (CSV / PDF). */
@@ -212,12 +223,15 @@ class StockAdjustmentResource extends Resource
                 ->visible(fn (StockAdjustment $record) => in_array($record->status, ['draft', 'submitted'], true))
                 ->requiresConfirmation()->modalDescription('The changes are booked in the stock ledger now, against the stock on hand at this moment. A posted adjustment cannot be changed — correct it with another adjustment.')
                 ->action(fn (StockAdjustment $record) => Erp::run(fn ($actor) => $svc()->post($actor, $record), 'Posted to stock')),
-            Action::make('reopen')->label('Send back to draft')->color('gray')->visible(fn (StockAdjustment $record) => $record->status === 'submitted')
+            Action::make('reopen')->label('Send back to draft')->color('gray')->visible(fn (StockAdjustment $record) => $record->status === 'submitted' && $record->kind !== 'disposal')
                 ->schema([TextInput::make('reason')->required()->maxLength(255)])
                 ->action(fn (StockAdjustment $record, array $data) => Erp::run(fn ($actor) => $svc()->reopen($actor, $record, $data['reason']), 'Back to draft')),
             Action::make('cancel')->label('Cancel')->color('danger')->visible(fn (StockAdjustment $record) => in_array($record->status, ['draft', 'submitted'], true))
                 ->schema([TextInput::make('reason')->required()->maxLength(255)])
                 ->action(fn (StockAdjustment $record, array $data) => Erp::run(fn ($actor) => $svc()->cancel($actor, $record, $data['reason']), 'Cancelled')),
+            Action::make('disposalRecord')->label('Disposal record (print)')->icon(Heroicon::OutlinedPrinter)->color('gray')
+                ->visible(fn (StockAdjustment $record) => $record->kind === 'disposal')
+                ->url(fn (StockAdjustment $record) => route('print.disposal', $record), true),
             ActionGroup::make([
                 Action::make('voucherPdf')->label('Adjustment voucher (PDF)')->icon(Heroicon::OutlinedDocumentArrowDown)->action(fn (StockAdjustment $record) => self::voucher($record, 'pdf')),
                 Action::make('voucherCsv')->label('Lines (CSV)')->icon(Heroicon::OutlinedTableCells)->action(fn (StockAdjustment $record) => self::voucher($record, 'csv')),

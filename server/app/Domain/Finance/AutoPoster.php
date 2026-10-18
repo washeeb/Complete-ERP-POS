@@ -26,6 +26,7 @@ final class AutoPoster
         'customer_payments' => 'Customer payments', 'customer_openings' => 'Customer opening balances', 'online_orders' => 'Online orders',
         'shifts' => 'Till cash over / short', 'cash' => 'Till vaults, cash handovers and cash differences', 'loyalty' => 'Loyalty points', 'stored_value' => 'Gift cards and store credit',
         'supplier_bills' => 'Supplier bills', 'supplier_payments' => 'Supplier payments', 'supplier_openings' => 'Supplier opening balances',
+        'supplier_returns' => 'Returns to suppliers', 'supplier_refunds' => 'Refunds from suppliers for returns',
         'money_transfers' => 'Money moved between accounts', 'expense_claims' => 'Expense claims paid', 'depreciation' => 'Depreciation', 'asset_disposals' => 'Assets disposed of',
         'staff_loans' => 'Staff loans and advances paid out', 'payroll' => 'Payroll (approved)', 'payroll_payments' => 'Payroll paid',
         'deposits' => 'Booking deposits (restaurant)', 'production' => 'Production labour and cost differences',
@@ -37,6 +38,7 @@ final class AutoPoster
         'receipt' => 'grni', 'receipt_reversal' => 'grni',
         'transfer_out' => 'stock_in_transit', 'transfer_in' => 'stock_in_transit',
         'adjustment' => 'stock_adjustment', 'count' => 'stock_adjustment',
+        'supplier_return' => 'supplier_returns', // held until the supplier settles (credit, replacement, refund or nothing)
         'opening' => 'opening_equity',
         'trade_in' => 'trade_in_clearing', // used items taken in on a sale (the sale's trade-in tender is on the other side)
         'production_issue' => 'wip', 'production_return' => 'wip', 'production_output' => 'wip', 'by_product' => 'wip', // work orders
@@ -129,6 +131,10 @@ final class AutoPoster
             'supplier_bills' => [$this->unpostedQuery('supplier_bills', 'supplier_bill', $tenantId)->where('s.status', 'posted'), 's.bill_date'],
             'supplier_payments' => [$this->unpostedQuery('supplier_payments', 'supplier_payment', $tenantId), 's.paid_on'],
             'supplier_openings' => [$this->unpostedQuery('supplier_ledger', 'supplier_ledger', $tenantId)->where('s.type', 'opening'), $d('s.occurred_at')],
+            // A refund return is booked when the money comes in (supplier_refunds); the others when the goods leave.
+            'supplier_returns' => [$this->unpostedQuery('supplier_returns', 'supplier_return', $tenantId)->where('s.status', 'posted')->where('s.settlement', '<>', 'refund'), $d('s.posted_at')],
+            'supplier_refunds' => [$this->unpostedQuery('supplier_returns', 'supplier_return_refund', $tenantId)->where('s.status', 'posted')->where('s.settlement', 'refund')
+                ->whereNotNull('s.settled_at'), $d('s.settled_at')],
             'money_transfers' => [$this->unpostedQuery('money_transfers', 'money_transfer', $tenantId), 's.moved_on'],
             'expense_claims' => [$this->unpostedQuery('expense_claims', 'expense_claim', $tenantId)->where('s.status', 'paid'), 's.paid_on'],
             'depreciation' => [$this->unpostedQuery('asset_depreciation', 'asset_depreciation', $tenantId), "(date_trunc('month', s.month) + interval '1 month - 1 day')::date"],
@@ -477,6 +483,39 @@ final class AutoPoster
                 ['account' => 'payables', 'amount' => -(int) $o->amount_minor, 'branch_id' => $branch, 'party_type' => 'supplier', 'party_id' => $o->supplier_id],
                 ['account' => 'opening_equity', 'amount' => (int) $o->amount_minor, 'branch_id' => $branch],
             ], [['supplier_ledger', $o->id]], 'supplier_openings', late: true);
+        }
+
+        return count($rows);
+    }
+
+    /** Goods sent back: a credit note or replacement reduces what we owe the supplier; with no credit they are a stock loss. */
+    private function supplier_returns(Actor $actor, int $batch): int
+    {
+        $rows = $this->rows('supplier_returns', $actor->tenantId, $batch, ['s.id', 's.number', 's.supplier_id', 's.branch_id', 's.settlement', 's.total_minor']);
+        foreach ($rows as $r) {
+            $debit = $r->settlement === 'none' ? ['account' => 'stock_adjustment']
+                : ['account' => 'payables', 'party_type' => 'supplier', 'party_id' => $r->supplier_id];
+            $this->gl->post($actor, $r->d, 'auto', "Returned to supplier {$r->number}", [
+                $debit + ['amount' => (int) $r->total_minor, 'branch_id' => $r->branch_id],
+                ['account' => 'supplier_returns', 'amount' => -(int) $r->total_minor, 'branch_id' => $r->branch_id],
+            ], [['supplier_return', $r->id]], 'supplier_returns', late: true);
+        }
+
+        return count($rows);
+    }
+
+    /** The supplier refunded a return: the money in, the rest of its cost a stock loss. */
+    private function supplier_refunds(Actor $actor, int $batch): int
+    {
+        $rows = $this->rows('supplier_refunds', $actor->tenantId, $batch, ['s.id', 's.number', 's.branch_id', 's.total_minor', 's.refund_minor', 's.refund_account_id']);
+        foreach ($rows as $r) {
+            $refund = (int) $r->refund_minor;
+            $lines = [['account' => 'supplier_returns', 'amount' => -(int) $r->total_minor, 'branch_id' => $r->branch_id],
+                ['account' => 'stock_adjustment', 'amount' => (int) $r->total_minor - $refund, 'branch_id' => $r->branch_id]];
+            if ($refund > 0) {
+                $lines[] = ['account' => Account::withoutGlobalScopes()->findOrFail($r->refund_account_id), 'amount' => $refund, 'branch_id' => $r->branch_id];
+            }
+            $this->gl->post($actor, $r->d, 'auto', "Refund for return {$r->number}", $lines, [['supplier_return_refund', $r->id]], 'supplier_refunds', late: true);
         }
 
         return count($rows);

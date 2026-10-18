@@ -28,6 +28,7 @@ final class TestTradingReset
         // Stock
         'stock_movements', 'stock_movement_serials', 'stock_levels', 'stock_batch_levels', 'stock_bin_levels', 'stock_batches', 'serial_numbers', 'stock_reservations',
         'stock_adjustments', 'stock_adjustment_lines', 'stock_counts', 'stock_count_lines', 'stock_transfers', 'stock_transfer_lines', 'stock_requests', 'stock_request_lines', 'markdowns',
+        'supplier_returns', 'supplier_return_lines',
         // Purchasing and suppliers' accounts
         'purchase_orders', 'purchase_order_lines', 'goods_receipts', 'goods_receipt_lines', 'supplier_bills', 'supplier_bill_lines', 'supplier_payments', 'supplier_ledger',
         'supplier_balances', 'payable_allocations', 'consignment_sales',
@@ -48,7 +49,7 @@ final class TestTradingReset
 
     /** Document numbers that start again (customers, staff, assets and the like keep counting: those records stay). */
     public const RESTART_NUMBERS = ['PO', 'GRN', 'TRF', 'CNT', 'QT', 'SO', 'DN', 'INV', 'CRN', 'RCT', 'JE', 'BILL', 'SPAY', 'MT', 'RX', 'ORD', 'RES', 'JOB', 'ALT',
-        'APT', 'PASS', 'ADJ', 'VS', 'WO', 'QC', 'CH', 'SRQ'];
+        'APT', 'PASS', 'ADJ', 'RTS', 'VS', 'WO', 'QC', 'CH', 'SRQ'];
 
     public function __construct(private readonly AuditLog $audit) {}
 
