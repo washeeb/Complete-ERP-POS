@@ -137,7 +137,21 @@ There are two ways to bring the system in line with what is on the shelves.
 
 **Tip:** count when the shop is closed, or count one area (bin or category) at a time. Sales during a count are still recorded normally.
 
-## 14.5 Expired and near-expiry stock: disposals and returns to suppliers
+## 14.5 Minimum stock and reordering
+
+Every product that keeps stock has a **minimum** in each store. When stock (plus what is already on order or on its way) falls to it, **Purchasing → What to order** suggests topping it up to the **maximum** and turns the suggestions into draft purchase orders, one per supplier.
+
+**Why:** running out of a medicine loses the sale and the patient; a minimum on every product means nothing is forgotten, without anyone having to type 2,000 figures.
+
+- **The default** (System → Settings → Stock → *Default minimum stock*, 5): 5 of the unit the product is **bought** in — for example 5 packs of 100 tablets — and orders up to twice that (10 packs). New and existing products all get it. 0 switches it off.
+- **Your own figure:** **Purchasing → Reorder levels → Own figure for a product**: choose the store (or every store), the product, the unit and the minimum and maximum. It replaces the default in that store. **Use the default** on the row goes back. Many at once: the products file (Catalog → Products → Update products) has `min_qty` and `max_qty` columns, in the buying unit; type `default` to go back.
+- **Smart levels from sales** (Settings → Stock → *Smart reorder levels*): every Monday the system works out each product's minimum and maximum per store from the last 12 weeks of sales, the supplier's delivery time and a safety margin. With **Suggest** (the default) they wait on **Purchasing → Suggested levels**: tick the ones you agree with and click **Accept**. With **Update automatically** they are applied by themselves — but a figure you typed is never changed.
+- **Slow movers** (setting, off by default): products that have not sold in a store for 180 days get no default minimum there, so dead stock is not reordered.
+- **Low stock:** the dashboard shows how many products are at or below their minimum (click it to open What to order); buyers get a notification each morning; and with *Show stock left on the till* on, the till marks such items **Low** in amber.
+
+**Tip:** set the supplier's *delivery lead time* (Purchasing → Suppliers) and their unit and cost on the supplier's products list — smart levels and what-to-order use them.
+
+## 14.6 Expired and near-expiry stock: disposals and returns to suppliers
 
 **Stock → Expiry & returns** lists every batch in stock that has expired or expires soon, earliest first. For each batch it shows the days left (red once expired, amber under 30 days), the quantity, its value at cost, the store, the supplier it came from and whether that supplier still takes it back. Controlled drugs are marked.
 

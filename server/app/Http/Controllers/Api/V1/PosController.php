@@ -20,6 +20,7 @@ use App\Domain\Pos\PosSyncService;
 use App\Domain\Pos\ReturnService;
 use App\Domain\Pos\SaleService;
 use App\Domain\Pos\ShiftService;
+use App\Domain\Purchasing\ReorderLevels;
 use App\Domain\Restaurant\DiningSales;
 use App\Domain\Sales\ReceivablesService;
 use App\Domain\Services\AppointmentService;
@@ -47,6 +48,7 @@ use App\Models\Style;
 use App\Models\Tenant;
 use App\Models\Till;
 use App\Models\VaultSession;
+use App\Models\Warehouse;
 use App\Security\Authorizer;
 use App\Support\Money;
 use App\Support\Qty;
@@ -135,6 +137,7 @@ class PosController extends Controller
                 'prices' => fn ($q) => $q->whereIn('price_list_id', $lists)->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>', $now))])
             ->orderBy('name')->limit(20000)->get();
         $stock = $till ? StockLevel::where('warehouse_id', $till->warehouse_id)->pluck('on_hand', 'product_id') : collect();
+        $minimums = $till && ($w = Warehouse::find($till->warehouse_id)) ? app(ReorderLevels::class)->forWarehouse($w) : []; // the till marks low stock
 
         return response()->json([
             'version' => $version,
@@ -182,6 +185,7 @@ class PosController extends Controller
                 'drug' => $p->drug_schedule ? ['schedule' => $p->drug_schedule, 'generic_name' => $p->generic_name, 'strength' => $p->strength,
                     'dosage_form' => $p->dosage_form, 'active_ingredients' => $p->active_ingredients ?? []] : null,
                 'on_hand' => $p->track_stock ? (string) ($stock[$p->id] ?? '0.000') : null,
+                'min_qty' => isset($minimums[$p->id]) ? Qty::format($minimums[$p->id]['min']) : null,
                 'tax' => $p->taxGroup->rates->map(fn ($r) => ['code' => $r->code, 'name' => $r->name, 'rate_bp' => $r->rate_bp])->values(),
                 'units' => $p->units->map(fn ($u) => [
                     'id' => $u->id, 'uom_code' => $u->uom->code, 'uom_name' => $u->uom->name, 'decimals' => $u->uom->decimals,

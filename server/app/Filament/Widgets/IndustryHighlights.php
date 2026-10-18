@@ -2,9 +2,12 @@
 
 namespace App\Filament\Widgets;
 
+use App\Domain\Purchasing\ReorderLevels;
 use App\Filament\Pages\ExpiryReturns;
+use App\Filament\Pages\ReorderSuggestions;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
+use App\Models\Warehouse;
 use App\Support\IndustryContext;
 use App\Support\Settings;
 use Carbon\CarbonImmutable;
@@ -48,6 +51,15 @@ class IndustryHighlights extends StatsOverviewWidget
         } elseif ($industry?->module_key === 'grocery') {
             $stats[] = Stat::make('Batches expiring in 7 days', (string) ($n = $expiring(7)))->color($n ? 'warning' : 'success')
                 ->description('Candidates for a markdown sticker');
+        }
+        if (Erp::canAnywhere('purchasing.manage') || Erp::canAnywhere('warehouse.manage')) {
+            $low = 0;
+            foreach (Warehouse::whereIn('id', $warehouses)->where('is_active', true)->get() as $w) {
+                $low += count(app(ReorderLevels::class)->low($w));
+            }
+            $stats[] = Stat::make('Low stock', (string) $low)->color($low ? 'warning' : 'success')
+                ->description($low ? 'Products at or below their minimum' : 'Everything above its minimum')
+                ->url(ReorderSuggestions::canAccess() ? ReorderSuggestions::getUrl() : null);
         }
         $stats[] = Stat::make('Stock value', FinanceUi::money((int) DB::table('stock_levels')->whereIn('warehouse_id', $warehouses)
             ->selectRaw('COALESCE(SUM(ROUND(on_hand * COALESCE(avg_cost_minor, 0))), 0) AS v')->value('v')));

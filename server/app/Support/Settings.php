@@ -267,6 +267,27 @@ final class Settings
             'label' => 'Stock adjustments above this value need a manager\'s approval (in pesewas/cents)',
             'help' => 'Worked out at average cost (increases and decreases added up). 50000 = GHS 500. 0 = every adjustment document needs approval by someone else.',
         ],
+        'stock.default_min_qty' => [
+            'type' => 'int', 'default' => 5, 'min' => 0, 'max' => 100000, 'group' => 'Stock',
+            'label' => 'Default minimum stock (in the unit each product is bought in)',
+            'help' => 'Every product, new and existing, keeps at least this many of its buying unit (the supplier\'s unit, e.g. 5 packs; the base unit if it has only one) in each store, and is reordered up to twice that. A product\'s own figure (Purchasing → Reorder levels, or min_qty / max_qty in the products file) or an accepted smart level replaces it. 0 = no default minimum.',
+        ],
+        'stock.default_exclude_slow_movers' => [
+            'type' => 'bool', 'default' => false, 'group' => 'Stock',
+            'label' => 'No default minimum for slow movers',
+            'help' => 'On: products that have not sold in a store for 180 days (and are older than that) get no default minimum there, so dead stock is not reordered. Their own figures still apply.',
+        ],
+        'stock.smart_levels' => [
+            'type' => 'choice', 'default' => 'suggest', 'group' => 'Stock',
+            'options' => ['suggest' => 'Suggest from sales, I accept (recommended)', 'auto' => 'Update automatically from sales (never over an own figure)', 'off' => 'Off'],
+            'label' => 'Smart reorder levels',
+            'help' => 'Every Monday the system works out each product\'s minimum and maximum per store from the last 12 weeks of sales, the supplier\'s delivery time and a safety margin. Suggest: they wait on Purchasing → Suggested levels for you to tick and accept. Automatically: they replace the default and earlier smart levels by themselves; figures you typed are never changed.',
+        ],
+        'stock.low_stock_alerts' => [
+            'type' => 'bool', 'default' => true, 'group' => 'Stock',
+            'label' => 'Low-stock alerts',
+            'help' => 'Each morning, buyers (permission to manage purchasing) get a notification for each store with products at or below their minimum. The dashboard shows the count all the time.',
+        ],
         'stock.expiry_alert_days' => [
             'type' => 'int', 'default' => 90, 'min' => 7, 'max' => 365, 'group' => 'Stock',
             'label' => 'Warn about stock expiring within (days)',

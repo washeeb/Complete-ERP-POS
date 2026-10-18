@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { leftMilli, queuedLines, takenMilli } from './stock'
+import { isLow, leftMilli, queuedLines, takenMilli } from './stock'
 import type { Product } from './types'
 
 const tab = { id: 'u-tab', uom_code: 'TAB', uom_name: 'Tablet', decimals: 0, factor: '1', is_base: true, barcodes: [] }
@@ -22,5 +22,13 @@ describe('stock left while selling', () => {
 
   it('shows nothing for products whose stock is not tracked', () => {
     expect(leftMilli(service, new Map(), new Map())).toBeNull()
+  })
+
+  it('marks stock at or below the minimum as low, but not none left', () => {
+    const p = { ...para, min_qty: '50.000' } as Product
+    expect(isLow(p, 50000)).toBe(true)
+    expect(isLow(p, 51000)).toBe(false)
+    expect(isLow(p, 0)).toBe(false)
+    expect(isLow(para, 1000)).toBe(false) // no minimum known
   })
 })

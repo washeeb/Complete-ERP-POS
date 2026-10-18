@@ -4,6 +4,8 @@ namespace App\Domain\Imports\Importers;
 
 use App\Domain\Catalog\CatalogService;
 use App\Domain\Imports\Importer;
+use App\Domain\Purchasing\ReorderLevels;
+use App\Domain\Purchasing\ReorderService;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Models\Brand;
@@ -11,8 +13,12 @@ use App\Models\Category;
 use App\Models\Industry;
 use App\Models\PriceList;
 use App\Models\Product;
+use App\Models\ReorderRule;
 use App\Models\TaxGroup;
+use App\Models\Warehouse;
+use App\Security\Authorizer;
 use App\Support\Money;
+use App\Support\Qty;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -79,6 +85,8 @@ class ProductsImporter extends Importer
             ['name' => 'location', 'required' => false, 'help' => 'Where it is kept, e.g. Shelf B2 (shows on stock sheets and the till).', 'example' => ''],
             ['name' => 'industry', 'required' => false, 'help' => 'Leave empty: new products go to the industry chosen on the import page. Or an industry name or code (e.g. Pharmacy), or "shared" for every industry. Existing products move only when this column is filled.', 'example' => ''],
             ['name' => 'barcodes', 'required' => false, 'help' => 'Barcodes of one base unit, separated by |. Replaces the current base-unit barcodes. In Excel, format this column as Text first, or Excel drops leading zeros and shortens long numbers.', 'example' => '6001067000123'],
+            ['name' => 'min_qty', 'required' => false, 'help' => 'Own minimum stock, in the unit the product is bought in (e.g. packs), for every store. Empty: unchanged (new products follow the company default in Settings → Stock). "default" goes back to the company default.', 'example' => ''],
+            ['name' => 'max_qty', 'required' => false, 'help' => 'Order up to this many (buying unit). Empty with a min_qty: twice the minimum.', 'example' => ''],
         ];
         foreach (PriceList::where('is_active', true)->orderByDesc('is_default')->orderBy('code')->get() as $list) {
             $cols[] = ['name' => 'price_'.strtolower($list->code), 'required' => false,
@@ -191,10 +199,14 @@ class ProductsImporter extends Importer
         if ($priced) {
             $data['prices'] = $prices;
         }
-        if (! $isNew && count($data) === 1 && array_key_exists('track_stock', $data) && $data['track_stock'] === $product->track_stock) {
+        $levels = self::has($row, 'min_qty') || self::has($row, 'max_qty');
+        if (! $levels && ! $isNew && count($data) === 1 && array_key_exists('track_stock', $data) && $data['track_stock'] === $product->track_stock) {
             return 'unchanged';
         }
-        $this->catalog->saveProduct($actor, $product ?? new Product, $data, 'CSV import');
+        $saved = $this->catalog->saveProduct($actor, $product ?? new Product, $data, 'CSV import');
+        if ($levels) {
+            $this->levels($actor, $saved, $row);
+        }
 
         return $isNew ? 'created' : 'updated';
     }
@@ -209,13 +221,51 @@ class ProductsImporter extends Importer
         foreach ($products->orderBy('sku')->lazy(500) as $p) {
             $base = $p->units->firstWhere('is_base', true);
             $row = [$p->sku, $p->name, $p->description, $p->category?->name, $p->brand?->name, $p->taxGroup?->code, $p->baseUom?->code,
-                $p->track_stock ? 'yes' : 'no', $p->track_batches ? 'yes' : 'no', $p->is_active ? 'yes' : 'no', $p->plu, $p->location, $p->industry?->name ?? 'shared', $base?->barcodes->pluck('code')->implode('|')];
+                $p->track_stock ? 'yes' : 'no', $p->track_batches ? 'yes' : 'no', $p->is_active ? 'yes' : 'no', $p->plu, $p->location, $p->industry?->name ?? 'shared', $base?->barcodes->pluck('code')->implode('|'), ...self::ownLevels($p)];
             foreach ($lists as $list) {
                 $price = $p->prices->first(fn ($x) => $x->price_list_id === $list->id && $x->product_uom_id === $base?->id && (float) $x->min_qty <= 1 && ! $x->starts_at && ! $x->ends_at);
                 $row[] = $price ? Money::format($price->amount_minor, $list->currency_code) : '';
             }
             yield $row;
         }
+    }
+
+    /** Own minimum / maximum (buying unit) in every store the person manages, or back to the company default. */
+    private function levels(Actor $actor, Product $product, array $row): void
+    {
+        $warehouses = Warehouse::where('is_active', true)->orderBy('code')->get()
+            ->filter(fn ($w) => $actor->user && app(Authorizer::class)->allows($actor->user, 'warehouse.manage', $w));
+        if ($warehouses->isEmpty()) {
+            throw new DomainException('Setting minimum stock needs the permission to manage warehouses.');
+        }
+        $reorder = app(ReorderService::class);
+        if (strtolower(trim((string) ($row['min_qty'] ?? ''))) === 'default') {
+            foreach (ReorderRule::where('product_id', $product->id)->whereIn('warehouse_id', $warehouses->pluck('id'))->where('source', '<>', 'default')->get() as $rule) {
+                $reorder->useDefault($actor, $rule);
+            }
+
+            return;
+        }
+        $factor = ReorderLevels::buyingUnit($product->id)['factor'];
+        $min = Qty::toMilli(self::number((string) ($row['min_qty'] ?? ''), 'min_qty'));
+        $max = self::has($row, 'max_qty') ? Qty::toMilli(self::number((string) $row['max_qty'], 'max_qty')) : 2 * $min;
+        $base = fn (int $milli) => Qty::format((int) round($milli * $factor / 1_000_000));
+        foreach ($warehouses as $w) {
+            $reorder->saveRule($actor, $w, $product, $base($min), $base($max));
+        }
+    }
+
+    /** A product's own minimum and maximum (buying unit) when every store has the same, for the download. */
+    private static function ownLevels(Product $product): array
+    {
+        $rules = ReorderRule::where('product_id', $product->id)->where('source', '<>', 'default')->get(['min_qty', 'max_qty']);
+        if ($rules->isEmpty() || $rules->unique(fn ($r) => $r->min_qty.'|'.$r->max_qty)->count() > 1) {
+            return ['', ''];
+        }
+        $factor = ReorderLevels::buyingUnit($product->id)['factor'];
+        $unit = fn ($v) => Qty::format((int) round(Qty::toMilli((string) $v) * 1_000_000 / $factor));
+
+        return [$unit($rules[0]->min_qty), $unit($rules[0]->max_qty)];
     }
 
     /** A category or brand by name (created if allowed). */

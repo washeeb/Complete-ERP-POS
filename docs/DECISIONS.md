@@ -493,6 +493,14 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## Minimum stock for every product (2026-10-18)
+- **Owner answers:** default 5 of the **buying unit**, maximum twice the minimum, own figures per product and store, smart levels "suggest, I accept" by default with "update automatically" as an option, slow movers excluded as an option, low-stock alerts, min/max in the products file, low badge on the till.
+- **The default is worked out, not stored** (`ReorderLevels::forWarehouse`): no 2,000 × stores rows to create, keep in step with new products, or rewrite when the setting changes. Only own figures and smart levels are rows (`reorder_rules.source` own | smart | default); "back to the default" marks the row instead of deleting it, so it replicates like any change.
+- **Buying unit** = the preferred (else cheapest) active supplier's unit, else the biggest purchasable unit, else the base unit.
+- **At the minimum counts as low** (was strictly below), so "minimum 5" reorders when 5 are left.
+- **Smart levels reuse the demand forecast** (weekday, payday, holidays, lead time, 95 % safety stock). Only changes of 20 % or more are suggested, so the list stays short; suggestions are a working table rebuilt each Monday. Automatic mode never overrides an own figure; accepting a suggestion does (the person chose it).
+- **Slow mover** = older than 180 days and no sale in that store in 180 days; it only drops the default, never an own figure.
+
 ## Expired stock: disposals and returns to suppliers (2026-10-18)
 - **Owner answers:** settlement by credit note, replacement, refund or nothing; every disposal and return approved by a second person (not only above a value); near expiry gets an alert and dashboard list, a "stop selling N days before" setting, the supplier's return window and markdowns; disposal evidence is a setting (reason / method + witness (default) / + certificate). [+] controlled drugs always need a witness.
 - **A disposal is a stock adjustment of kind `disposal`**, not a new document: it reuses the adjustment's approval, voucher, ledger and posting (`stock_adjustment` counter account). `StockAdjustmentService::post` asks `stock.adjust.approve` and a different person for it whatever the value; preparing needs only `stock.expiry` (L2, new), so a pharmacist or storekeeper prepares and a manager approves.
