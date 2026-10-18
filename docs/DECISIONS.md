@@ -493,6 +493,10 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## Medicine schedule in bulk (2026-10-18)
+- `drug_schedule` in the products file accepts the code or common words (POM, prescription, Rx, CD, controlled, OTC, none) so a pharmacist's own spreadsheet works; anything else is refused rather than guessed.
+- Giving a schedule switches on batches and expiry (required for medicines) instead of refusing the row.
+
 ## Minimum stock for every product (2026-10-18)
 - **Owner answers:** default 5 of the **buying unit**, maximum twice the minimum, own figures per product and store, smart levels "suggest, I accept" by default with "update automatically" as an option, slow movers excluded as an option, low-stock alerts, min/max in the products file, low badge on the till.
 - **The default is worked out, not stored** (`ReorderLevels::forWarehouse`): no 2,000 × stores rows to create, keep in step with new products, or rewrite when the setting changes. Only own figures and smart levels are rows (`reorder_rules.source` own | smart | default); "back to the default" marks the row instead of deleting it, so it replicates like any change.
