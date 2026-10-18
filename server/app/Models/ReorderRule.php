@@ -13,7 +13,7 @@ class ReorderRule extends Model
 {
     use BelongsToTenant, HasOriginNode, HasUuids;
 
-    protected $fillable = ['warehouse_id', 'product_id', 'min_qty', 'max_qty'];
+    protected $fillable = ['warehouse_id', 'product_id', 'min_qty', 'max_qty', 'source'];
 
     protected function casts(): array
     {

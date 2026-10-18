@@ -99,8 +99,12 @@ Numbers are `PO-<node>-000001`, one sequence per server, so branch servers never
 
 ## Reorder levels (Purchasing → Reorder levels, What to order)
 
-- Set **minimum** and **maximum** (in the base unit) per product and warehouse.
-- **What to order** lists products where *on hand + on order + in transit* is below the minimum.
+- **Every stock product has a minimum without anyone setting it:** the company default (Settings → Stock, 5) of the unit it is bought in — the preferred supplier's unit, else its biggest unit, else the base unit — ordered up to twice that. New products get it at once; changing the setting changes it everywhere. 0 switches the default off.
+- **Own figure:** Purchasing → Reorder levels → *Own figure for a product*, for one store or every store, typed in any of its units (the buying unit is chosen for you). It replaces the default in that store. *Use the default* goes back. The products file has `min_qty` / `max_qty` columns (buying unit, every store; `default` goes back).
+- **Smart levels** (Settings → Stock → Smart reorder levels): every Monday the minimum and maximum are worked out per store from 12 weeks of sales, the supplier's delivery time and a safety margin (about 95 % of days covered). *Suggest* (default): Purchasing → Suggested levels lists the changes of a fifth or more; tick and **Accept**. *Automatically*: they are applied by themselves, but never over an own figure. *Work them out now* recalculates at once.
+- **Slow movers** (setting, off): products not sold in a store for 180 days get no default minimum there.
+- **Low stock:** the dashboard shows how many products are at or below their minimum; each morning buyers get a notification per store (setting *Low-stock alerts*, on); with *Show stock left on the till* on, the till marks them **Low** in amber.
+- **What to order** lists products where *on hand + on order + in transit* is at or below the minimum, and says where the minimum came from.
   - The suggested quantity tops up to the maximum, in the preferred supplier's unit and at least their minimum order.
 - Select rows and choose **Create draft purchase orders**. One draft is created per supplier, ready to check and submit.
 

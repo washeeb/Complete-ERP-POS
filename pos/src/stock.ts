@@ -29,3 +29,8 @@ export function leftMilli(product: Product, cart: Map<string, number>, queued: M
   if (!product.track_stock || product.on_hand === null) return null
   return toMilli(product.on_hand) - (cart.get(product.id) ?? 0) - (queued.get(product.id) ?? 0)
 }
+
+/** At or below the product's minimum in this store (own figure, smart level or the company default): shown in amber. */
+export function isLow(product: Product, left: number | null): boolean {
+  return left !== null && left > 0 && product.min_qty != null && left <= toMilli(product.min_qty)
+}

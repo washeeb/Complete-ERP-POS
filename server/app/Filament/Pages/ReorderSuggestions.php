@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Domain\Purchasing\ReorderLevels;
 use App\Domain\Purchasing\ReorderService;
 use App\Filament\Resources\PurchaseOrders\PurchaseOrderResource;
 use App\Filament\Support\Erp;
@@ -59,7 +60,8 @@ class ReorderSuggestions extends Page implements HasTable
                 TextColumn::make('on_hand')->label('On hand')->formatStateUsing(fn ($state) => Fields::qty(Qty::format($state))),
                 TextColumn::make('on_order')->label('On order')->formatStateUsing(fn ($state) => Fields::qty(Qty::format($state))),
                 TextColumn::make('in_transit')->label('In transit')->formatStateUsing(fn ($state) => Fields::qty(Qty::format($state))),
-                TextColumn::make('min')->label('Min / max')->formatStateUsing(fn ($state, array $record) => Fields::qty(Qty::format($state)).' / '.Fields::qty(Qty::format($record['max']))),
+                TextColumn::make('min')->label('Min / max')->formatStateUsing(fn ($state, array $record) => Fields::qty(Qty::format($state)).' / '.Fields::qty(Qty::format($record['max'])))
+                    ->description(fn (array $record) => ReorderLevels::SOURCES[$record['source']] ?? null),
                 TextColumn::make('supplier')->label('Supplier')->placeholder('none set up')->color(fn ($state) => $state ? null : 'danger'),
                 TextColumn::make('suggest_qty')->label('Order')->weight('bold')
                     ->formatStateUsing(fn ($state, array $record) => Fields::qty(Qty::format($state), $record['uom_code'])),
@@ -80,6 +82,6 @@ class ReorderSuggestions extends Page implements HasTable
                     }),
             ])
             ->emptyStateHeading('Nothing to order')
-            ->emptyStateDescription('Everything with a reorder level is above its minimum (counting what is already on order or in transit).');
+            ->emptyStateDescription('Everything is above its minimum (counting what is already on order or in transit). Products without their own figure use the company default from Settings → Stock.');
     }
 }

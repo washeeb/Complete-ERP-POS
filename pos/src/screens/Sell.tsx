@@ -21,7 +21,7 @@ import { achieved, withDeposits } from '../distribution'
 import { submitRoadEvent } from '../till'
 import { v7 as uuidv7 } from 'uuid'
 import { formatMoney, prettyQty, toMilli } from '../money'
-import { leftMilli, queuedLines, takenMilli, type QueuedLine } from '../stock'
+import { isLow, leftMilli, queuedLines, takenMilli, type QueuedLine } from '../stock'
 import type { Appointment, Services, ServicePass, StaffMember } from '../types'
 import type { Alteration, Bootstrap, DiningItem, DiningOrder, Fashion, Grocery, Pharmacy, Restaurant, RepairJob, Style, TradeInItem, Payment, PostedSale, Product, PromotionRow, TillCustomer, Unit } from '../types'
 import { parseMoney } from '../money'
@@ -142,7 +142,8 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
     const n = boot.show_stock ? leftMilli(p, inCart, inQueue) : null
     if (n === null) return null
     const unit = p.units.find((u) => u.is_base)?.uom_code ?? ''
-    return n > 0 ? { text: `${prettyQty(n)} ${unit} left`, out: false } : { text: n === 0 ? 'None left' : `None left (${prettyQty(n)} ${unit})`, out: true }
+    if (n <= 0) return { text: n === 0 ? 'None left' : `None left (${prettyQty(n)} ${unit})`, out: true, low: false }
+    return isLow(p, n) ? { text: `Low: ${prettyQty(n)} ${unit} left`, out: false, low: true } : { text: `${prettyQty(n)} ${unit} left`, out: false, low: false }
   }
 
   useEffect(() => {
@@ -523,7 +524,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
           {results.map((p) => (
             <li key={p.id}>
               <button type="button" onClick={() => add(p)}>
-                <span>{p.name}<br /><span className="muted small">{p.sku}{p.location ? ` · ${p.location}` : ''}{stockLeft(p) && <> · <span className={stockLeft(p)!.out ? 'stock-out' : ''}>{stockLeft(p)!.text}</span></>}</span></span>
+                <span>{p.name}<br /><span className="muted small">{p.sku}{p.location ? ` · ${p.location}` : ''}{stockLeft(p) && <> · <span className={stockLeft(p)!.out ? 'stock-out' : stockLeft(p)!.low ? 'stock-low' : ''}>{stockLeft(p)!.text}</span></>}</span></span>
                 {(() => { const base = p.units.find((u) => u.is_base); const pr = base && priceOf(p, base)
                   return <span className="result-price mono">{pr ? money(pr.amount_minor) : 'no price'}{base && p.units.length > 1 ? <span className="muted small"> /{base.uom_code}</span> : null}</span> })()}
               </button>
@@ -544,7 +545,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
               {cart.lines.map((l) => (
                 <tr key={l.key} className={l.price ? '' : 'unpriced'}>
                   <td>{l.service ? `Service charge (${(restaurant?.service_charge?.bp ?? 0) / 100} %)` : l.product.name}
-                    {!l.service && stockLeft(l.product) && <div className={`small ${stockLeft(l.product)!.out ? 'stock-out' : 'muted'}`}>{stockLeft(l.product)!.text}</div>}
+                    {!l.service && stockLeft(l.product) && <div className={`small ${stockLeft(l.product)!.out ? 'stock-out' : stockLeft(l.product)!.low ? 'stock-low' : 'muted'}`}>{stockLeft(l.product)!.text}</div>}
                     {l.note && <div className="small muted">{l.note}</div>}
                     {l.serials && <div className="small muted mono">S/N {l.serials.join(', ')}</div>}
                     {l.markdown && <div className="small promo">Marked-down sticker</div>}
