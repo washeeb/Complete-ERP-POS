@@ -5,9 +5,11 @@ namespace App\Support;
 use App\Domain\Fiscal\FiscalService;
 use App\Domain\Inventory\ExpiryService;
 use App\Domain\Org\IndustryService;
+use App\Domain\Pharmacy\PharmacyRules;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
+use App\Models\Branch;
 use App\Models\Setting;
 use InvalidArgumentException;
 
@@ -207,6 +209,37 @@ final class Settings
             'label' => 'Electronic shelf labels: price update address',
             'help' => 'If you use electronic shelf labels, their gateway\'s web address. Price changes are sent there as they happen. Leave blank if you do not.',
         ],
+        'pharmacy.pom_rule' => [
+            'type' => 'choice', 'default' => 'approve', 'group' => 'Pharmacy', 'branch' => true, 'options' => PharmacyRules::LEVELS,
+            'label' => 'Selling prescription-only (POM) medicines',
+            'help' => 'Pharmacist approves (recommended, Pharmacy Council practice): the patient, the prescription and a pharmacist\'s username and PIN. Prescription details only: the teller records the patient and prescription and sells. Patient only: the teller picks the patient. Sell freely: no questions. A branch can choose differently (Company → Branches).',
+        ],
+        'pharmacy.controlled_rule' => [
+            'type' => 'choice', 'default' => 'approve', 'group' => 'Pharmacy', 'branch' => true, 'options' => PharmacyRules::LEVELS,
+            'label' => 'Selling controlled drugs',
+            'help' => 'As for prescription-only medicines. Controlled drugs always go in the controlled-drug register, whoever sells them.',
+        ],
+        'pharmacy.controlled_always_strict' => [
+            'type' => 'bool', 'default' => false, 'group' => 'Pharmacy', 'branch' => true,
+            'label' => 'Controlled drugs always need a pharmacist',
+            'help' => 'On: controlled drugs need a pharmacist\'s approval and the prescription whatever "Selling controlled drugs" says, in every branch where this is on.',
+        ],
+        'pharmacy.max_qty_without_pharmacist' => [
+            'type' => 'int', 'default' => 0, 'min' => 0, 'max' => 100000, 'group' => 'Pharmacy', 'branch' => true,
+            'label' => 'A pharmacist must approve more than this many (smallest unit) of one medicine',
+            'help' => 'Where tellers may sell prescription-only or controlled medicines, a line above this quantity (in the unit stock is counted in, e.g. tablets) still needs a pharmacist. Stops bulk sales of codeine, tramadol and the like. 0 = no limit.',
+        ],
+        'pharmacy.major_warning_needs_pharmacist' => [
+            'type' => 'bool', 'default' => true, 'group' => 'Pharmacy', 'branch' => true,
+            'label' => 'A major allergy or interaction warning needs a pharmacist',
+            'help' => 'Warnings always show to the person selling. On: when one is major (the patient is allergic, or the medicines must not be taken together), a pharmacist must approve the sale even where tellers may sell.',
+        ],
+        'pharmacy.after_sale_check' => [
+            'type' => 'choice', 'default' => 'signoff', 'group' => 'Pharmacy', 'branch' => true,
+            'options' => ['signoff' => 'A pharmacist signs them off afterwards', 'summary' => 'Daily summary to the superintendent', 'none' => 'Nothing (recorded on the sale)'],
+            'label' => 'Medicine sales made without a pharmacist',
+            'help' => 'Sign off: they wait on Pharmacy → Sales to sign off for a pharmacist to check and sign, and pharmacists are reminded each evening. Daily summary: people who manage the pharmacy get the day\'s list each evening. Pharmacy → Sales to sign off lists them either way, ready for an inspection.',
+        ],
         'pharmacy.premises_licence_no' => [
             'type' => 'string', 'default' => '', 'max' => 60, 'group' => 'Pharmacy',
             'label' => 'Pharmacy Council premises licence number',
@@ -361,7 +394,24 @@ final class Settings
         return $this->cache[$tenantId][$key] ?? $def['default'];
     }
 
-    public function set(Actor $actor, string $key, mixed $value, ?string $reason = null): void
+    /** A setting a branch may set for itself ('branch' => true): the branch's value, else the company's. */
+    public function forBranch(string $key, Branch|string|null $branch, ?string $tenantId): mixed
+    {
+        $def = self::DEFINITIONS[$key] ?? throw new InvalidArgumentException("Unknown setting [{$key}]");
+        $branch = is_string($branch) ? Branch::withoutGlobalScopes()->find($branch) : $branch;
+        $own = ! empty($def['branch']) ? ($branch?->settings[$key] ?? null) : null;
+
+        return $own ?? $this->get($key, $tenantId ?? $branch?->tenant_id);
+    }
+
+    /** @return list<string> settings a branch may set for itself */
+    public static function branchKeys(?string $prefix = null): array
+    {
+        return array_keys(array_filter(self::DEFINITIONS, fn ($d, $k) => ! empty($d['branch']) && ($prefix === null || str_starts_with($k, $prefix)), ARRAY_FILTER_USE_BOTH));
+    }
+
+    /** A value checked against the setting's definition (type, range, options). */
+    public static function valid(string $key, mixed $value): mixed
     {
         $def = self::DEFINITIONS[$key] ?? throw new InvalidArgumentException("Unknown setting [{$key}]");
         if ($def['type'] === 'int') {
@@ -382,6 +432,13 @@ final class Settings
                 throw new DomainException("{$def['label']} can be at most {$def['max']} characters.");
             }
         }
+
+        return $value;
+    }
+
+    public function set(Actor $actor, string $key, mixed $value, ?string $reason = null): void
+    {
+        $value = self::valid($key, $value);
 
         $setting = Setting::withoutGlobalScopes()->firstOrNew(['tenant_id' => $actor->tenantId, 'key' => $key]);
         $setting->tenant_id = $actor->tenantId;

@@ -493,6 +493,12 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## Pharmacy sale rules are a choice (2026-10-18)
+- **Owner answers:** four levels (approve / details / patient / free) per kind (POM, controlled); company default with branch overrides; after-sale check as a choice (sign-off, daily summary, nothing); quantity cap; major warnings need a pharmacist; controlled can be locked strict; report of unapproved sales. Default stays the strict rule, so nothing changes until someone chooses otherwise.
+- **The strictest medicine in the sale decides**, computed the same way on the till (`pharmacy.ts saleLevel`) and the server (`PharmacyRules::saleLevel`); the server stays the judge (a till with old rules is caught by `pharmacist_needed`). A till without rules from the server assumes strict.
+- **Branch overrides are generic:** `branches.settings` (jsonb) holds values only for settings marked `'branch' => true`; `Settings::forBranch` falls back to the company. Values are validated with the same `Settings::valid` as company settings.
+- **"Unapproved" is derived, not stored:** a posted sale with a POM/controlled line whose prescription has no pharmacist. Sign-offs are their own rows (`pharmacy_signoffs`, one per sale), so the report needs no extra flag on sales.
+
 ## Medicine schedule in bulk (2026-10-18)
 - `drug_schedule` in the products file accepts the code or common words (POM, prescription, Rx, CD, controlled, OTC, none) so a pharmacist's own spreadsheet works; anything else is refused rather than guessed.
 - Giving a schedule switches on batches and expiry (required for medicines) instead of refusing the row.

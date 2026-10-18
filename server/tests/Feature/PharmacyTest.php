@@ -7,8 +7,11 @@ use App\Domain\Devices\DeviceService;
 use App\Domain\Devices\OfflineGrant;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Modules\ModuleService;
+use App\Domain\Org\OrgService;
 use App\Domain\Pharmacy\PharmacyReports;
+use App\Domain\Pharmacy\PharmacyRules;
 use App\Domain\Pharmacy\PharmacyService;
+use App\Domain\Pharmacy\PharmacySignoffs;
 use App\Domain\Pos\SaleService;
 use App\Domain\Pos\ShiftService;
 use App\Domain\Pricing\PriceResolver;
@@ -16,6 +19,8 @@ use App\Domain\Pricing\PromotionEngine;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\DomainException;
 use App\Filament\Pages\ControlledDrugRegister;
+use App\Filament\Pages\MedicineSignoffs;
+use App\Filament\Resources\Branches\Pages\EditBranch;
 use App\Filament\Resources\DrugInteractions\DrugInteractionResource;
 use App\Filament\Resources\Prescriptions\PrescriptionResource;
 use App\Filament\Resources\Products\ProductResource;
@@ -29,8 +34,11 @@ use App\Models\Till;
 use App\Models\Warehouse;
 use App\Security\ScopeType;
 use App\Support\Qty;
+use App\Support\Settings;
+use Filament\Facades\Filament;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Livewire\Livewire;
 
 beforeEach(function () {
     [$this->tenant, $this->owner] = installCompany();
@@ -180,7 +188,7 @@ it('gives pharmacy tills the drug details and interaction table, and allergies o
 
     $cashierToken = $token('efua2');
     $cat = $this->withToken($cashierToken)->getJson('/api/v1/pos/catalog')->assertOk()->json();
-    expect($cat['pharmacy'])->toBe(['interactions' => []])
+    expect($cat['pharmacy']['interactions'])->toBe([])->and($cat['pharmacy']['rules'])->toMatchArray(['pom' => 'approve', 'controlled' => 'approve', 'after' => 'signoff'])
         ->and(collect($cat['products'])->firstWhere('sku', 'AMX')['drug'])->toMatchArray(['schedule' => 'pom', 'active_ingredients' => ['amoxicillin']]);
     $ama = collect($this->withToken($cashierToken)->getJson('/api/v1/pos/customers')->assertOk()->json('customers'))->firstWhere('id', $this->ama->id);
     expect($ama)->not->toHaveKey('allergies');
@@ -224,4 +232,70 @@ it('shows the pharmacy screens to pharmacy staff', function () {
     $this->get(PrescriptionResource::getUrl('view', ['record' => Prescription::sole()]))->assertSee('Dr. K. Mensah');
     $this->flushSession();
     $this->actingAs(withMfa($this->cashier))->get(PrescriptionResource::getUrl('index'))->assertForbidden();
+});
+
+it('lets a branch allow tellers to sell prescription medicines, within the limits', function () {
+    $settings = app(Settings::class);
+    $settings->set(actorFor($this->owner), 'pharmacy.pom_rule', 'details');
+    $settings->set(actorFor($this->owner), 'pharmacy.max_qty_without_pharmacist', 10);
+    // Prescription details only: the teller sells; no patient or details is still refused.
+    expect(fn () => rxSale($this, [[$this->amox, '1']]))->toThrow(DomainException::class, 'choose the patient');
+    $sale = rxSale($this, [[$this->amox, '2']], ['customer_id' => $this->ama->id, 'prescription' => $this->rx]);
+    expect(Prescription::find($sale->lines[0]->prescription_id)->pharmacist_id)->toBeNull();
+    // Above the limit a pharmacist is needed.
+    expect(fn () => rxSale($this, [[$this->amox, '11']], ['customer_id' => $this->ama->id, 'prescription' => $this->rx]))->toThrow(DomainException::class, 'pharmacist must approve');
+
+    // This branch sells freely; the company stays strict for controlled drugs.
+    app(OrgService::class)->updateBranch(actorFor($this->owner), $this->hq, ['settings' => ['pharmacy.pom_rule' => 'free']]);
+    expect($settings->forBranch('pharmacy.pom_rule', $this->hq->fresh(), $this->tenant->id))->toBe('free')
+        ->and($settings->forBranch('pharmacy.pom_rule', $this->branches['BA'], $this->tenant->id))->toBe('details');
+    $free = rxSale($this, [[$this->amox, '1']]);
+    expect($free->status)->toBe('posted');
+    expect(fn () => app(OrgService::class)->updateBranch(actorFor($this->owner), $this->hq, ['settings' => ['pharmacy.pom_rule' => 'whatever']]))
+        ->toThrow(DomainException::class);
+
+    // A major warning still needs a pharmacist.
+    app(PharmacyService::class)->saveInteraction(actorFor($this->owner), new DrugInteraction, ['ingredient_a' => 'amoxicillin', 'ingredient_b' => 'warfarin', 'severity' => 'major', 'note' => 'Bleeding risk']);
+    expect(fn () => rxSale($this, [[$this->amox, '1'], [$this->warf, '1']], ['customer_id' => $this->ama->id, 'prescription' => $this->rx]))
+        ->toThrow(DomainException::class, 'pharmacist must approve');
+});
+
+it('keeps controlled drugs strict when locked, and lists unapproved sales for a pharmacist to sign off', function () {
+    $peth = makeProduct($this->owner, 'PTH', 'Pethidine 50mg', retail: '20.00');
+    app(CatalogService::class)->saveProduct(actorFor($this->owner), $peth, ['track_batches' => true, 'drug_schedule' => 'controlled']);
+    $peth = $peth->fresh();
+    app(InventoryService::class)->adjust(actorFor($this->owner), $this->wh, $peth, $peth->units->first(), '20', 'opening', '', null, '5.00', 'PTH-1', now()->addYear()->toDateString());
+    $settings = app(Settings::class);
+    foreach (['pharmacy.pom_rule' => 'patient', 'pharmacy.controlled_rule' => 'free', 'pharmacy.controlled_always_strict' => true] as $k => $v) {
+        $settings->set(actorFor($this->owner), $k, $v);
+    }
+    expect(app(PharmacyRules::class)->forBranch($this->hq)['controlled'])->toBe('approve');
+    expect(fn () => rxSale($this, [[$peth, '1']], ['customer_id' => $this->ama->id, 'prescription' => $this->rx]))->toThrow(DomainException::class, 'pharmacist must approve');
+
+    $sale = rxSale($this, [[$this->amox, '1']], ['customer_id' => $this->ama->id]); // patient only
+    $approved = rxSale($this, [[$this->amox, '1']], ['customer_id' => $this->ama->id, 'pharmacist_approval' => ['username' => 'kwame', 'pin' => '771204']]);
+    $range = [now()->subDay()->toDateTimeString(), now()->addDay()->toDateTimeString()];
+    expect(PharmacyRules::unapproved($this->tenant->id, null, ...$range)->pluck('id')->all())->toBe([$sale->id]);
+
+    expect(fn () => app(PharmacySignoffs::class)->sign(actorFor($this->cashier), [$sale->id]))->toThrow(AccessDenied::class);
+    expect(app(PharmacySignoffs::class)->sign(actorFor($this->pharmacist), [$sale->id], 'Counselled'))->toBe(1)
+        ->and(app(PharmacySignoffs::class)->sign(actorFor($this->pharmacist), [$sale->id]))->toBe(0);
+    expect(PharmacyRules::unapproved($this->tenant->id, null, ...$range)->whereNull('so.id')->count())->toBe(0);
+    $this->artisan('erp:pharmacy-signoffs')->assertSuccessful();
+});
+
+it('shows the sales to sign off and the branch pharmacy rules on screen', function () {
+    app(Settings::class)->set(actorFor($this->owner), 'pharmacy.pom_rule', 'patient');
+    $sale = rxSale($this, [[$this->amox, '1']], ['customer_id' => $this->ama->id]);
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
+    $this->actingAs(withMfa($this->pharmacist));
+    Livewire::test(MedicineSignoffs::class)->assertSee($sale->receipt_no)->assertSee('Amoxicillin 500mg caps')
+        ->callTableBulkAction('sign', [$sale->id], ['note' => 'Checked'])->assertNotified('1 sale(s) signed off');
+    expect(DB::table('pharmacy_signoffs')->value('signed_by_name'))->toBe($this->pharmacist->name);
+
+    $this->actingAs(withMfa($this->owner));
+    Livewire::test(EditBranch::class, ['record' => $this->hq->id])
+        ->assertSee('Pharmacy rules for this branch')->assertSee('Company: Patient only (the teller sells)')
+        ->fillForm(['own_pharmacy__pom_rule' => 'free', 'reason' => 'No pharmacist on Sundays'])->call('save')->assertHasNoFormErrors();
+    expect($this->hq->fresh()->settings)->toBe(['pharmacy.pom_rule' => 'free']);
 });

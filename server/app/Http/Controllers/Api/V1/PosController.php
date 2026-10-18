@@ -15,6 +15,7 @@ use App\Domain\Licensing\Watermark;
 use App\Domain\Messaging\ReceiptSender;
 use App\Domain\Messaging\Templates;
 use App\Domain\Modules\ModuleService;
+use App\Domain\Pharmacy\PharmacyRules;
 use App\Domain\Pos\CashControl;
 use App\Domain\Pos\PosSyncService;
 use App\Domain\Pos\ReturnService;
@@ -175,6 +176,7 @@ class PosController extends Controller
             // Pharmacy: prescription-only medicines need a pharmacist; the interaction table drives the till's warnings.
             'pharmacy' => app(ModuleService::class)->isEnabled($device->branch_id, 'pharmacy') ? [
                 'interactions' => DrugInteraction::orderBy('ingredient_a')->get(['ingredient_a', 'ingredient_b', 'severity', 'note'])->toArray(),
+                'rules' => app(PharmacyRules::class)->forBranch($branch), // how strictly POM and controlled medicines are sold here
             ] : null,
             'products' => $products->map(fn (Product $p) => [
                 'id' => $p->id, 'sku' => $p->sku, 'name' => $p->name, 'category_id' => $p->category_id, 'track_stock' => $p->track_stock, 'plu' => $p->plu, 'location' => $p->location,

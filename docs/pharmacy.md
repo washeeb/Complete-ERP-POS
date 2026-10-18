@@ -46,6 +46,27 @@ Each such sale creates a **prescription** with an RX number, linked to the sale 
 
 Over-the-counter medicines need none of this. Neither does a branch where the Pharmacy module is off.
 
+## How strictly medicines are sold (Settings → Pharmacy)
+
+By default a pharmacist approves every prescription-only (POM) and controlled sale, with the patient and the prescription. Where a pharmacy works differently, choose per kind of medicine:
+
+| Level | At the till |
+|---|---|
+| **Pharmacist approves, with the prescription** (default) | Patient, prescriber and date, and a pharmacist's username and PIN (or the pharmacist sells) |
+| **Prescription details only** | The teller records the patient and the prescription, and sells |
+| **Patient only** | The teller picks the patient, and sells |
+| **Sell freely** | No questions; warnings still show |
+
+- **Controlled drugs always need a pharmacist** (switch): keeps controlled drugs at the first level whatever is chosen.
+- **Quantity limit:** above this many of one medicine (smallest unit, e.g. tablets) a pharmacist must approve, even where tellers sell. 0 = no limit.
+- **Major warning needs a pharmacist** (on): an allergy or a major interaction brings back full approval.
+- **Afterwards:** a pharmacist **signs off** the sales made without them (Pharmacy → Sales to sign off; reminder each evening), or a **daily summary** goes to those who manage the pharmacy, or nothing. The page lists them either way, by period, branch and teller, with **Download (CSV)** for an inspection.
+- **Per branch:** Company → Branches → the branch → *Pharmacy rules for this branch*. Empty = the company setting.
+
+A pharmacist may still approve a sale where tellers may sell (the till offers it); such sales count as approved. Controlled drugs are always in the controlled-drug register, whoever sold them.
+
+**Why:** the Pharmacy Council expects a pharmacist to supervise prescription medicines; where the business chooses otherwise, the system keeps the record of who sold what and lets a pharmacist check it afterwards, and the quantity limit and warnings stop the riskiest sales.
+
 ## Pharmacy menu
 
 - **Prescriptions:** every prescription dispensed, with the patient, prescriber, pharmacist, medicines and warnings. Prescriptions are never edited.

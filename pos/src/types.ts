@@ -6,7 +6,10 @@ export type Markdown = { id: string; code: string; product_id: string; product_u
 export type Grocery = { scale_prefixes: string[]; markdown_prefix: string; markdowns: Markdown[] }
 export type Drug = { schedule: 'otc' | 'pom' | 'controlled'; generic_name: string | null; strength: string | null; dosage_form: string | null; active_ingredients: string[] }
 export type Interaction = { ingredient_a: string; ingredient_b: string; severity: 'minor' | 'moderate' | 'major'; note: string }
-export type Pharmacy = { interactions: Interaction[] }
+export type RxLevel = 'approve' | 'details' | 'patient' | 'free'
+/** How strictly prescription-only and controlled medicines are sold at this branch (server: PharmacyRules). max_qty in base units × 1000. */
+export type PharmacyRules = { pom: RxLevel; controlled: RxLevel; max_qty: number; major_needs_pharmacist: boolean; after: string }
+export type Pharmacy = { interactions: Interaction[]; rules?: PharmacyRules }
 // Restaurant
 export type ModifierGroup = { id: string; name: string; min: number; max: number; options: { id: string; name: string; product_id: string | null }[] }
 export type Restaurant = { modifier_groups: ModifierGroup[]; service_charge: { product_id: string; bp: number } | null; tips: boolean }

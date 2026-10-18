@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Branches;
 
+use App\Domain\Modules\ModuleService;
 use App\Filament\Resources\Branches\Pages\CreateBranch;
 use App\Filament\Resources\Branches\Pages\EditBranch;
 use App\Filament\Resources\Branches\Pages\ListBranches;
@@ -12,6 +13,7 @@ use App\Models\Branch;
 use App\Models\Industry;
 use App\Models\LegalEntity;
 use App\Modules\ModuleRegistry;
+use App\Support\Settings;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
@@ -19,6 +21,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -87,7 +90,35 @@ class BranchResource extends Resource
                     ->helperText('Inactive branches keep their history but cannot trade.'),
                 TextInput::make('reason')->label('Reason for change')->maxLength(255)->visibleOn('edit')->dehydrated(),
             ]),
+            Section::make('Pharmacy rules for this branch')->visibleOn('edit')->visible(fn () => ModuleService::enabledAnywhere('pharmacy'))->collapsible()
+                ->description('Empty = the company setting (System → Settings → Pharmacy). Set a value only where this branch works differently, e.g. a shop without a pharmacist on duty.')
+                ->columns(2)->schema(self::ownSettingFields('pharmacy.')),
         ]);
+    }
+
+    /** One field per setting a branch may set for itself; empty follows the company. */
+    private static function ownSettingFields(string $prefix): array
+    {
+        $settings = app(Settings::class);
+        $fields = [];
+        foreach (Settings::branchKeys($prefix) as $key) {
+            $def = Settings::DEFINITIONS[$key];
+            $company = $settings->get($key, Erp::user()?->tenant_id);
+            $field = self::ownField($key);
+            $fields[] = match ($def['type']) {
+                'choice' => Select::make($field)->options($def['options'])->placeholder('Company: '.($def['options'][$company] ?? $company)),
+                'bool' => Select::make($field)->options(['1' => 'Yes', '0' => 'No'])->placeholder('Company: '.($company ? 'Yes' : 'No')),
+                default => TextInput::make($field)->numeric()->minValue($def['min'] ?? null)->maxValue($def['max'] ?? null)->placeholder('Company: '.$company),
+            };
+            $fields[array_key_last($fields)]->label($def['label'])->helperText($def['help']);
+        }
+
+        return $fields;
+    }
+
+    public static function ownField(string $key): string
+    {
+        return 'own_'.str_replace('.', '__', $key);
     }
 
     public static function table(Table $table): Table

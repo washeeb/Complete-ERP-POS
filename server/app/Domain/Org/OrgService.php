@@ -16,6 +16,7 @@ use App\Models\Tenant;
 use App\Models\Till;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
+use App\Support\Settings;
 
 /** Company, legal entity, branches, warehouses and tills — including the first-run setup wizard. */
 final class OrgService
@@ -135,6 +136,18 @@ final class OrgService
     {
         $this->require($actor, 'setup.company.manage', $branch);
         $branch->fill(array_intersect_key($data, array_flip(['name', 'address', 'phone', 'timezone', 'is_active', 'legal_entity_id'])));
+        if (array_key_exists('settings', $data)) { // the branch's own values for settings that allow it; null = the company setting
+            $own = [];
+            foreach ((array) $data['settings'] as $key => $value) {
+                if (! in_array($key, Settings::branchKeys(), true)) {
+                    throw new DomainException('That setting cannot differ by branch.');
+                }
+                if ($value !== null && $value !== '') {
+                    $own[$key] = Settings::valid($key, $value);
+                }
+            }
+            $branch->settings = $own ?: null;
+        }
 
         return $this->recorder->transaction(function () use ($actor, $branch, $data, $reason) {
             $this->recorder->save($actor, $branch, 'branch.updated', $reason, $branch->id);
