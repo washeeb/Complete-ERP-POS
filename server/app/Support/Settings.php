@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Domain\Fiscal\FiscalService;
+use App\Domain\Inventory\ExpiryService;
 use App\Domain\Org\IndustryService;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
@@ -265,6 +266,21 @@ final class Settings
             'type' => 'int', 'default' => 50000, 'min' => 0, 'max' => 1000000000, 'group' => 'Stock',
             'label' => 'Stock adjustments above this value need a manager\'s approval (in pesewas/cents)',
             'help' => 'Worked out at average cost (increases and decreases added up). 50000 = GHS 500. 0 = every adjustment document needs approval by someone else.',
+        ],
+        'stock.expiry_alert_days' => [
+            'type' => 'int', 'default' => 90, 'min' => 7, 'max' => 365, 'group' => 'Stock',
+            'label' => 'Warn about stock expiring within (days)',
+            'help' => 'Stock → Expiry & returns lists batches expiring within this many days (amber under 30 days, red once expired), and the dashboard shows how many there are. Time to sell them, mark them down or send them back to the supplier.',
+        ],
+        'stock.block_sale_days_before_expiry' => [
+            'type' => 'int', 'default' => 0, 'min' => 0, 'max' => 365, 'group' => 'Stock',
+            'label' => 'Stop selling a batch this many days before it expires',
+            'help' => '0 = sell until the expiry date (expired batches are never sold). For example 30: the till skips batches with less than 30 days left and takes the next batch, or refuses if there is none; useful where patients must finish a course before the expiry date.',
+        ],
+        'stock.disposal_evidence' => [
+            'type' => 'choice', 'default' => 'method_witness', 'group' => 'Stock', 'options' => ExpiryService::EVIDENCE,
+            'label' => 'Evidence kept when expired or damaged stock is disposed of',
+            'help' => 'What the person preparing a disposal must record. Controlled drugs always need a witness, whatever is chosen. The FDA expects the method and a witness; a certificate from the waste company or the FDA officer can be uploaded as well.',
         ],
         'services.slot_minutes' => [
             'type' => 'int', 'default' => 15, 'min' => 5, 'max' => 120, 'group' => 'Services',

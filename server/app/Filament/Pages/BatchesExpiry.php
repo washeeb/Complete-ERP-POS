@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Url;
 use UnitEnum;
 
-/** Batches on hand by expiry; near-expiry markdowns to apply; expired stock to write off; stickers to print. */
+/** Batches on hand by expiry; near-expiry markdowns to apply; expired stock to take off the shelf (disposed of from Expiry & returns); stickers to print. */
 class BatchesExpiry extends Page
 {
     use ExportsPage;
@@ -98,11 +98,6 @@ class BatchesExpiry extends Page
     {
         $this->attempt(fn ($actor) => app(MarkdownService::class)->apply($actor, Warehouse::findOrFail($this->warehouse), $batchId,
             (int) round((float) ($this->percent[$batchId] ?? 0) * 100)), 'Markdown applied — print the stickers');
-    }
-
-    public function writeOff(string $batchId): void
-    {
-        $this->attempt(fn ($actor) => app(MarkdownService::class)->writeOffExpired($actor, Warehouse::findOrFail($this->warehouse), $batchId), 'Written off as expired');
     }
 
     public function withdraw(string $id): void

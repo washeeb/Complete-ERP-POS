@@ -27,6 +27,10 @@ You receive goods, move stock between stores and count it. Everything is in the 
 3. Type the counts in (or import the sheet: **Import counts**). **Submit** for approval.
 4. A manager approves; the differences become stock movements with their value.
 
+## Expired and near-expiry stock
+
+**Stock → Expiry & returns**: tick the expired batches (one store at a time), then **Dispose** (method and witness) or **Return to supplier**. Put the packs aside marked "not for sale"; a second person approves before the stock leaves the system. Print the disposal record or the return note for signatures.
+
 ## Adjusting stock (damage, expiry, theft)
 
 **Stock → Stock adjustments → New**, reason, items, quantities. Above the limit, another manager approves. Never adjust to "make the count right" without a count.

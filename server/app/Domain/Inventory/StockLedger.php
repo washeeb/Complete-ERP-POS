@@ -28,7 +28,7 @@ use LogicException;
 final class StockLedger
 {
     /** Movement types that may not take stock below zero (sales follow the shop's setting; offline sales never refuse). */
-    private const STRICT = ['adjustment', 'opening', 'transfer_out', 'putaway', 'receipt_reversal', 'delivery', 'production_issue']; // counts record what is there
+    private const STRICT = ['adjustment', 'supplier_return', 'opening', 'transfer_out', 'putaway', 'receipt_reversal', 'delivery', 'production_issue']; // counts record what is there
 
     public function __construct(private readonly Settings $settings, private readonly Outbox $outbox, private readonly StockProjection $projection,
         private readonly StockBatches $batches, private readonly SerialRegistry $serials) {}

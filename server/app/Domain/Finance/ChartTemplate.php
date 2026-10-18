@@ -40,6 +40,7 @@ final class ChartTemplate
         ['1320', 'Stock in transit between branches', 'asset', '1300', false, null, 'stock_in_transit'],
         ['1330', 'Returnable containers with customers', 'asset', '1300', false, null, 'containers_out'],
         ['1340', 'Work in progress (production)', 'asset', '1300', false, null, 'wip'],
+        ['1350', 'Goods returned to suppliers (awaiting credit)', 'asset', '1300', false, null, 'supplier_returns'],
         ['1400', 'Tax assets', 'asset', '1000', true, null, null],
         ['1410', 'Input VAT', 'asset', '1400', false, null, 'input_tax:VAT'],
         ['1411', 'Input NHIL', 'asset', '1400', false, null, 'input_tax:NHIL'],

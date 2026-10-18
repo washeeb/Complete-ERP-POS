@@ -53,7 +53,13 @@ Route::prefix('print')->middleware(['auth', 'license:output'])->name('print.')->
     Route::get('payroll/{run}/pay-list.csv', [PrintController::class, 'payList'])->name('pay-list')->whereUuid('run');
     Route::get('controlled-register', [PrintController::class, 'controlledRegister'])->name('controlled-register');
     Route::get('nhis-claims.csv', [PrintController::class, 'nhisClaims'])->name('nhis-claims');
+    Route::get('supplier-return/{return}', [PrintController::class, 'supplierReturn'])->name('supplier-return')->whereUuid('return');
+    Route::get('disposal/{adjustment}', [PrintController::class, 'disposal'])->name('disposal')->whereUuid('adjustment');
+    Route::get('disposal-register', [PrintController::class, 'disposalRegister'])->name('disposal-register');
 });
 
 // Receipt photos attached to expense claims (private storage).
 Route::get('expense-receipt/{claim}', ExpenseReceiptController::class)->middleware(['auth', 'license:output'])->name('expense.receipt')->whereUuid('claim');
+
+// Disposal certificates attached to disposals of expired or damaged stock (private storage).
+Route::get('disposal-certificate/{adjustment}', [PrintController::class, 'disposalCertificate'])->middleware(['auth', 'license:output'])->name('disposal.certificate')->whereUuid('adjustment');

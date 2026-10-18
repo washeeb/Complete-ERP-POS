@@ -81,6 +81,8 @@ class SupplierResource extends Resource
                 TextInput::make('tax_no')->label('TIN / VAT number')->maxLength(40),
                 TextInput::make('payment_terms_days')->label('Payment terms (days)')->numeric()->minValue(0)->maxValue(365)->default(0),
                 TextInput::make('lead_time_days')->label('Delivery lead time (days)')->numeric()->minValue(0)->maxValue(365),
+                TextInput::make('return_days_before_expiry')->label('Takes back expiring stock up to (days before expiry)')->numeric()->minValue(0)->maxValue(730)
+                    ->helperText('Leave empty if they take nothing back. For example 90: stock can go back until 90 days before it expires (Stock → Expiry & returns shows it).'),
                 Textarea::make('address')->columnSpan(2),
                 Toggle::make('is_active')->label('Active')->default(true)->inline(false),
                 Textarea::make('notes')->columnSpanFull(),

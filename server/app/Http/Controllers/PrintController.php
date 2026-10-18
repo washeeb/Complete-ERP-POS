@@ -17,6 +17,8 @@ use App\Models\Markdown;
 use App\Models\PayrollRun;
 use App\Models\Payslip;
 use App\Models\Sale;
+use App\Models\StockAdjustment;
+use App\Models\SupplierReturn;
 use App\Models\Tenant;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
@@ -24,6 +26,7 @@ use App\Support\Settings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -177,6 +180,44 @@ class PrintController extends Controller
 
         return view('print.markdown-labels', ['labels' => $labels, 'company' => $this->company($labels->first()->branch_id),
             'currency' => Tenant::find($labels->first()->tenant_id)->currency_code]);
+    }
+
+    /** Return note for the supplier: what goes back, signed by the store and the supplier's representative. */
+    public function supplierReturn(Request $request, SupplierReturn $return): View
+    {
+        $this->allow($request, ['stock.expiry', 'stock.adjust.approve', 'payables.view'], $return->branch_id, $return->tenant_id);
+
+        return view('print.supplier-return', ['r' => $return->load('lines.product.baseUom', 'supplier', 'warehouse'), 'company' => $this->company($return->branch_id)]);
+    }
+
+    /** Record of a disposal of expired or damaged stock (method, witness, signatures), for the premises file and FDA inspections. */
+    public function disposal(Request $request, StockAdjustment $adjustment): View
+    {
+        abort_unless($adjustment->kind === 'disposal', 404);
+        $this->allow($request, ['stock.expiry', 'stock.adjust.approve', 'stock.view'], $adjustment->branch_id, $adjustment->tenant_id);
+
+        return view('print.disposal', ['a' => $adjustment->load('lines.product.baseUom', 'warehouse'), 'company' => $this->company($adjustment->branch_id)]);
+    }
+
+    /** Disposal register: every disposal approved in a period, for a store. */
+    public function disposalRegister(Request $request): View
+    {
+        $w = Warehouse::findOrFail((string) $request->query('warehouse'));
+        $this->allow($request, ['stock.expiry', 'stock.adjust.approve'], $w->branch_id, $w->tenant_id);
+        [$from, $to] = $this->period($request);
+        $tz = Tenant::find($w->tenant_id)->timezone ?: 'UTC';
+        $disposals = StockAdjustment::with('lines.product.baseUom')->where('warehouse_id', $w->id)->where('kind', 'disposal')->where('status', 'posted')
+            ->whereBetween('posted_at', [Carbon::parse($from, $tz)->startOfDay()->utc(), Carbon::parse($to, $tz)->endOfDay()->utc()])->orderBy('posted_at')->get();
+
+        return view('print.disposal-register', ['warehouse' => $w, 'from' => $from, 'to' => $to, 'disposals' => $disposals, 'company' => $this->company($w->branch_id)]);
+    }
+
+    public function disposalCertificate(Request $request, StockAdjustment $adjustment): StreamedResponse
+    {
+        $this->allow($request, ['stock.expiry', 'stock.adjust.approve', 'stock.view'], $adjustment->branch_id, $adjustment->tenant_id);
+        abort_unless($adjustment->certificate_path && Storage::disk('local')->exists($adjustment->certificate_path), 404);
+
+        return Storage::disk('local')->response($adjustment->certificate_path);
     }
 
     /** Controlled-drug register for a warehouse and period (Pharmacy): every movement with a running balance. */

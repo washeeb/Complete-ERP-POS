@@ -16,13 +16,15 @@ class StockAdjustment extends Model
 
     public const STATUSES = ['draft' => 'Draft', 'submitted' => 'Waiting for approval', 'posted' => 'Posted', 'cancelled' => 'Cancelled'];
 
+    public const KINDS = ['adjustment' => 'Adjustment', 'disposal' => 'Disposal (expired or damaged)'];
+
     public const MODES = ['add' => 'Increase (+)', 'remove' => 'Decrease (−)', 'set' => 'Set to counted quantity'];
 
     protected $guarded = [];
 
     protected function casts(): array
     {
-        return ['submitted_at' => 'datetime', 'posted_at' => 'datetime', 'value_minor' => 'integer'];
+        return ['submitted_at' => 'datetime', 'posted_at' => 'datetime', 'value_minor' => 'integer', 'disposed_on' => 'date'];
     }
 
     public function lines(): HasMany
