@@ -87,6 +87,12 @@ class ProductsImporter extends Importer
             ['name' => 'barcodes', 'required' => false, 'help' => 'Barcodes of one base unit, separated by |. Replaces the current base-unit barcodes. In Excel, format this column as Text first, or Excel drops leading zeros and shortens long numbers.', 'example' => '6001067000123'],
             ['name' => 'min_qty', 'required' => false, 'help' => 'Own minimum stock, in the unit the product is bought in (e.g. packs), for every store. Empty: unchanged (new products follow the company default in Settings → Stock). "default" goes back to the company default.', 'example' => ''],
             ['name' => 'max_qty', 'required' => false, 'help' => 'Order up to this many (buying unit). Empty with a min_qty: twice the minimum.', 'example' => ''],
+            ['name' => 'drug_schedule', 'required' => false, 'help' => 'Medicines: otc (over the counter), pom (prescription only) or controlled. pom and controlled need a pharmacist\'s approval at the till; controlled drugs go in the controlled-drug register. A medicine tracks batches and expiry (switched on for you). "none" = not a medicine. Empty: unchanged.', 'example' => ''],
+            ['name' => 'generic_name', 'required' => false, 'help' => 'Medicines: generic (INN) name, e.g. Paracetamol.', 'example' => ''],
+            ['name' => 'strength', 'required' => false, 'help' => 'Medicines: e.g. 500 mg.', 'example' => ''],
+            ['name' => 'dosage_form', 'required' => false, 'help' => 'Medicines: tablet, capsule, syrup, injection…', 'example' => ''],
+            ['name' => 'fda_reg_no', 'required' => false, 'help' => 'Medicines: FDA registration number.', 'example' => ''],
+            ['name' => 'active_ingredients', 'required' => false, 'help' => 'Medicines: active ingredients separated by | (allergy and interaction warnings), e.g. Amoxicillin|Clavulanic acid.', 'example' => ''],
         ];
         foreach (PriceList::where('is_active', true)->orderByDesc('is_default')->orderBy('code')->get() as $list) {
             $cols[] = ['name' => 'price_'.strtolower($list->code), 'required' => false,
@@ -175,6 +181,20 @@ class ProductsImporter extends Importer
         if (self::has($row, 'location')) {
             $data['location'] = mb_substr(trim((string) $row['location']), 0, 60);
         }
+        if (self::has($row, 'drug_schedule')) {
+            $data['drug_schedule'] = self::schedule((string) $row['drug_schedule']);
+            if ($data['drug_schedule'] && ! ($data['track_batches'] ?? $product?->track_batches)) {
+                $data['track_batches'] = true; // every medicine is received and sold by batch and expiry
+            }
+        }
+        foreach (['generic_name' => 255, 'strength' => 60, 'dosage_form' => 40, 'fda_reg_no' => 60] as $col => $max) {
+            if (self::has($row, $col)) {
+                $data[$col] = mb_substr(trim((string) $row[$col]), 0, $max);
+            }
+        }
+        if (self::has($row, 'active_ingredients')) {
+            $data['active_ingredients'] = self::list($row['active_ingredients']);
+        }
         if (self::has($row, 'plu')) {
             $data['plu'] = self::barcode($row['plu']);
         }
@@ -221,13 +241,28 @@ class ProductsImporter extends Importer
         foreach ($products->orderBy('sku')->lazy(500) as $p) {
             $base = $p->units->firstWhere('is_base', true);
             $row = [$p->sku, $p->name, $p->description, $p->category?->name, $p->brand?->name, $p->taxGroup?->code, $p->baseUom?->code,
-                $p->track_stock ? 'yes' : 'no', $p->track_batches ? 'yes' : 'no', $p->is_active ? 'yes' : 'no', $p->plu, $p->location, $p->industry?->name ?? 'shared', $base?->barcodes->pluck('code')->implode('|'), ...self::ownLevels($p)];
+                $p->track_stock ? 'yes' : 'no', $p->track_batches ? 'yes' : 'no', $p->is_active ? 'yes' : 'no', $p->plu, $p->location, $p->industry?->name ?? 'shared', $base?->barcodes->pluck('code')->implode('|'), ...self::ownLevels($p),
+                $p->drug_schedule, $p->generic_name, $p->strength, $p->dosage_form, $p->fda_reg_no, implode('|', $p->active_ingredients ?? [])];
             foreach ($lists as $list) {
                 $price = $p->prices->first(fn ($x) => $x->price_list_id === $list->id && $x->product_uom_id === $base?->id && (float) $x->min_qty <= 1 && ! $x->starts_at && ! $x->ends_at);
                 $row[] = $price ? Money::format($price->amount_minor, $list->currency_code) : '';
             }
             yield $row;
         }
+    }
+
+    /** otc / pom / controlled from the code or the words people type; none (or "no") clears it. */
+    private static function schedule(string $value): ?string
+    {
+        $v = strtolower(trim($value));
+
+        return match (true) {
+            in_array($v, ['none', 'no', '-', 'not a medicine'], true) => null,
+            in_array($v, ['otc', 'over the counter', 'over-the-counter', 'gsl', 'general sale'], true) => 'otc',
+            in_array($v, ['pom', 'prescription', 'prescription only', 'prescription-only', 'rx', 'p'], true) => 'pom',
+            in_array($v, ['controlled', 'controlled drug', 'cd', 'narcotic'], true) => 'controlled',
+            default => throw new DomainException('drug_schedule: otc, pom or controlled (or none).'),
+        };
     }
 
     /** Own minimum / maximum (buying unit) in every store the person manages, or back to the company default. */

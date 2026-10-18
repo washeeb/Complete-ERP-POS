@@ -45,6 +45,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use UnitEnum;
 
 class ProductResource extends Resource
@@ -255,6 +256,10 @@ class ProductResource extends Resource
                 TextColumn::make('name')->sortable()->wrap(),
                 TextColumn::make('category.name')->label('Category')->toggleable(),
                 TextColumn::make('location')->label('Location')->placeholder('—')->toggleable()->searchable(),
+                TextColumn::make('drug_schedule')->label('Schedule')->badge()->placeholder('—')->toggleable()
+                    ->formatStateUsing(fn ($state) => ['otc' => 'OTC', 'pom' => 'POM', 'controlled' => 'Controlled'][$state] ?? $state)
+                    ->color(fn ($state) => ['controlled' => 'danger', 'pom' => 'warning'][$state] ?? 'gray')
+                    ->visible(fn () => ModuleService::enabledAnywhere('pharmacy')),
                 TextColumn::make('industry.name')->label('Industry')->placeholder('Shared')->toggleable()->visible(fn () => Industry::exists()),
                 TextColumn::make('price')->label($default ? $default->name.' price' : 'Price')
                     ->state(function (Product $r) use ($default) {
@@ -273,10 +278,34 @@ class ProductResource extends Resource
             ->filters([
                 SelectFilter::make('category_id')->label('Category')->options(fn () => Category::orderBy('name')->pluck('name', 'id')),
                 TernaryFilter::make('is_active')->label('For sale'),
+                SelectFilter::make('drug_schedule')->label('Medicine schedule')->options(Product::SCHEDULES + ['none' => 'Not a medicine'])
+                    ->query(fn (Builder $q, array $data) => match ($data['value'] ?? null) {
+                        null, '' => $q, 'none' => $q->whereNull('drug_schedule'), default => $q->where('drug_schedule', $data['value'])
+                    })
+                    ->visible(fn () => ModuleService::enabledAnywhere('pharmacy')),
             ])
             ->defaultSort('name')
             ->recordActions([EditAction::make()])
             ->toolbarActions([
+                BulkAction::make('schedule')->label('Set medicine schedule')->icon(Heroicon::OutlinedShieldCheck)
+                    ->visible(fn () => ModuleService::enabledAnywhere('pharmacy') && Erp::can('catalog.manage'))
+                    ->modalDescription('Prescription-only and controlled medicines need a pharmacist\'s approval at the till; controlled drugs go in the controlled-drug register. Medicines are switched to batches and expiry dates.')
+                    ->schema([Select::make('drug_schedule')->label('Schedule for the ticked products')->required()
+                        ->options(Product::SCHEDULES + ['none' => 'Not a medicine'])])
+                    ->action(function (Collection $records, array $data) {
+                        @set_time_limit(1800);
+                        $schedule = $data['drug_schedule'] === 'none' ? null : $data['drug_schedule'];
+                        $n = Erp::run(fn ($actor) => DB::transaction(function () use ($actor, $records, $schedule) {
+                            foreach ($records as $p) {
+                                app(CatalogService::class)->saveProduct($actor, $p, ['drug_schedule' => $schedule] + ($schedule && ! $p->track_batches ? ['track_batches' => true] : []),
+                                    'Medicine schedule set from the products list');
+                            }
+
+                            return $records->count();
+                        }));
+                        Notification::make()->success()->title("{$n} product(s) updated")->send();
+                    })
+                    ->deselectRecordsAfterCompletion(),
                 // Products in the wrong industry's catalogue (e.g. imported before the import asked): move the ticked ones.
                 BulkAction::make('moveIndustry')->label('Move to industry')->icon(Heroicon::OutlinedArrowsRightLeft)
                     ->visible(fn () => Industry::licensed()->exists() && Erp::can('catalog.manage'))
