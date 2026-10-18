@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { generics, names, needsPrescription, warnings } from './pharmacy'
+import { generics, names, needsPrescription, saleLevel, warnings } from './pharmacy'
 import type { Product } from './types'
 
 const drug = (id: string, name: string, schedule: 'otc' | 'pom' | 'controlled', generic: string, strength = '500 mg', ingredients: string[] = []): Product => ({
@@ -32,5 +32,19 @@ describe('pharmacy rules at the till', () => {
   it('offers generics with the same name and strength', () => {
     expect(generics([amox, amoxGen, warf, para], amox).map((p) => p.id)).toEqual(['amx2'])
     expect(generics([amox, warf], para)).toEqual([])
+  })
+})
+
+describe('how strictly medicines are sold at this branch', () => {
+  const codeine = drug('cod', 'Codeine 30', 'controlled', 'codeine')
+  const relaxed = { pom: 'free' as const, controlled: 'details' as const, max_qty: 20000, major_needs_pharmacist: true, after: 'signoff' }
+  it('takes the strictest medicine, and needs a pharmacist above the limit or with a major warning', () => {
+    expect(saleLevel(relaxed, [{ product: para, qtyBaseMilli: 5000 }], false)).toBeNull()
+    expect(saleLevel(relaxed, [{ product: amox, qtyBaseMilli: 5000 }], false)).toBe('free')
+    expect(saleLevel(relaxed, [{ product: amox, qtyBaseMilli: 5000 }, { product: codeine, qtyBaseMilli: 10000 }], false)).toBe('details')
+    expect(saleLevel(relaxed, [{ product: codeine, qtyBaseMilli: 30000 }], false)).toBe('approve')
+    expect(saleLevel(relaxed, [{ product: amox, qtyBaseMilli: 1000 }], true)).toBe('approve')
+    expect(saleLevel({ ...relaxed, major_needs_pharmacist: false }, [{ product: amox, qtyBaseMilli: 1000 }], true)).toBe('free')
+    expect(saleLevel(undefined, [{ product: amox, qtyBaseMilli: 1000 }], false)).toBe('approve') // older server: strict
   })
 })

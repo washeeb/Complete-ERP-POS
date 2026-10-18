@@ -62,7 +62,7 @@ final class Replication
                 'appointment' => 'appointments', 'commission' => 'commissions', 'visit' => 'visits']],
         'cash' => ['label' => 'Till vaults, cash handovers and cash differences', 'direction' => 'both',
             'tables' => ['vault_session' => 'vault_sessions', 'cash_handover' => 'cash_handovers', 'cash_variance' => 'cash_variances', 'cash_movement' => 'cash_movements']],
-        'reviews' => ['label' => 'Items needing review', 'direction' => 'up', 'tables' => ['review_item' => 'review_items']],
+        'reviews' => ['label' => 'Items needing review and pharmacist sign-offs', 'direction' => 'up', 'tables' => ['review_item' => 'review_items', 'pharmacy_signoff' => 'pharmacy_signoffs']],
         'attendance' => ['label' => 'Clock-in and clock-out', 'direction' => 'up', 'tables' => ['attendance_batch' => null]],
         'purchasing' => ['label' => 'Suppliers, purchase orders and goods received', 'direction' => 'both',
             'tables' => ['supplier' => 'suppliers', 'purchase_order' => 'purchase_orders', 'goods_receipt' => 'goods_receipts']],

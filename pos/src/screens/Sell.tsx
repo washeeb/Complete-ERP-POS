@@ -7,7 +7,7 @@ import { findMarkdown, parseScaleLabel, productForPlu } from '../scale'
 import { db, nextSeq, type CacheRecord } from '../db'
 import { exportQueueFile, offlineSignIn, retryRefused } from '../offline'
 import { queueMode, submitSale, type RxDetails } from '../till'
-import { generics, needsPrescription, warnings as rxWarnings } from '../pharmacy'
+import { generics, needsPrescription, saleLevel, warnings as rxWarnings } from '../pharmacy'
 import { billLines, groupsFor, kitchenNote } from '../restaurant'
 import { BillView, FloorView, ModifierPicker, type Choice } from './Restaurant'
 import { RepairsScreen, SerialPrompt } from './Electronics'
@@ -22,7 +22,7 @@ import { submitRoadEvent } from '../till'
 import { v7 as uuidv7 } from 'uuid'
 import { formatMoney, prettyQty, toMilli } from '../money'
 import { isLow, leftMilli, queuedLines, takenMilli, type QueuedLine } from '../stock'
-import type { Appointment, Services, ServicePass, StaffMember } from '../types'
+import type { Appointment, Services, ServicePass, StaffMember, RxLevel } from '../types'
 import type { Alteration, Bootstrap, DiningItem, DiningOrder, Fashion, Grocery, Pharmacy, Restaurant, RepairJob, Style, TradeInItem, Payment, PostedSale, Product, PromotionRow, TillCustomer, Unit } from '../types'
 import { parseMoney } from '../money'
 import { ReturnScreen } from './ReturnScreen'
@@ -83,7 +83,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   const containers = useMemo(() => products.filter((p) => p.is_container), [products])
   // Pharmacy: the prescription and the pharmacist's approval for prescription-only medicines in this sale.
   const [rx, setRx] = useState<Rx | null>(null)
-  const [rxPrompt, setRxPrompt] = useState<{ message: string; payments?: Payment[]; approvals?: Approvals } | null>(null)
+  const [rxPrompt, setRxPrompt] = useState<{ message: string; payments?: Payment[]; approvals?: Approvals; level?: RxLevel } | null>(null)
   const [coupon, setCoupon] = useState('')
   const [couponInput, setCouponInput] = useState('')
   const [saleBp, setSaleBp] = useState(0)
@@ -358,8 +358,14 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
     }
     setPayError('')
     if (pharmacy && lines.some((l) => needsPrescription(l.product)) && !rx) {
-      setRxPrompt({ message: '' })
-      return
+      // Ask only for what this branch requires (Settings → Pharmacy); warnings are always shown.
+      const found = rxWarnings([...new Map(lines.map((l) => [l.product.id, l.product])).values()], customer?.allergies ?? [], pharmacy.interactions)
+      const level = saleLevel(pharmacy.rules, lines.map((l) => ({ product: l.product, qtyBaseMilli: Math.round(l.qtyMilli * Number(l.unit.factor)) })),
+        found.some((w) => w.severity === 'major'))
+      if (level !== 'free' || found.length > 0) {
+        setRxPrompt({ message: '', level: level ?? 'approve' })
+        return
+      }
     }
     if (cart.total === 0 && lines.length) {
       complete([], {}) // only sessions from prepaid passes: nothing to pay
@@ -423,7 +429,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       const e = err instanceof ApiError ? err : null
       const retrying = ['approval_failed', 'over_limit', 'own_document', 'pin_locked'].includes(e?.code ?? '')
       if (['prescription_required', 'pharmacist_needed'].includes(e?.code ?? '') || (retrying && approvals.rx?.approval && !approvals.credit && !approvals.discount)) {
-        setRxPrompt({ message: e!.message, payments, approvals: { ...approvals, rx: undefined } })
+        setRxPrompt({ message: e!.message, payments, approvals: { ...approvals, rx: undefined }, level: e?.code === 'pharmacist_needed' ? 'approve' : 'details' })
         return
       }
       if (e?.code === 'credit_needs_approval' || (retrying && approvals.credit && !approvals.discount)) {
@@ -608,7 +614,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
           onPay={(p, tip, extra) => complete(p, { tip, tradeIns: extra.tradeIns, tradeInApproval: extra.tradeInApproval })} onCancel={() => setPaying(false)} />
       )}
       {rxPrompt && pharmacy && (
-        <PrescriptionForm message={rxPrompt.message} initial={rx} lines={lines} products={products} customer={customer} pharmacy={pharmacy}
+        <PrescriptionForm message={rxPrompt.message} level={rxPrompt.level ?? 'approve'} initial={rx} lines={lines} products={products} customer={customer} pharmacy={pharmacy}
           offline={!online} busy={busy} onPickPatient={() => setPicking(true)}
           onSwap={(line, alt) => setLines((l) => addToCart(setQty(l, line.key, 0), alt, alt.units.find((u) => u.is_base) ?? alt.units[0], line.qtyMilli))}
           onConfirm={confirmRx} onCancel={() => setRxPrompt(null)} />
@@ -653,8 +659,8 @@ type Rx = { details: RxDetails; approval?: { username: string; pin: string }; of
  * Pharmacy: before payment for prescription-only or controlled medicines — the patient, the prescription, the allergy and
  * interaction warnings, generic substitutes, and the pharmacist's username and PIN (empty when the pharmacist is signed in here).
  */
-function PrescriptionForm({ message, initial, lines, products, customer, pharmacy, offline, busy, onPickPatient, onSwap, onConfirm, onCancel }: {
-  message: string; initial: Rx | null; lines: CartLine[]; products: Product[]; customer: TillCustomer | null; pharmacy: Pharmacy; offline: boolean; busy: boolean
+function PrescriptionForm({ message, level, initial, lines, products, customer, pharmacy, offline, busy, onPickPatient, onSwap, onConfirm, onCancel }: {
+  message: string; level: RxLevel; initial: Rx | null; lines: CartLine[]; products: Product[]; customer: TillCustomer | null; pharmacy: Pharmacy; offline: boolean; busy: boolean
   onPickPatient: () => void; onSwap: (line: CartLine, alt: Product) => void
   onConfirm: (d: RxDetails, pharmacist: { username: string; pin: string } | null) => void; onCancel: () => void
 }) {
@@ -665,11 +671,12 @@ function PrescriptionForm({ message, initial, lines, products, customer, pharmac
   const [error, setError] = useState('')
   const set = (k: keyof RxDetails) => (e: React.ChangeEvent<HTMLInputElement>) => setD({ ...d, [k]: e.target.value })
   const medicines = lines.filter((l) => needsPrescription(l.product))
+  const needsDetails = level === 'approve' || level === 'details'
   const found = rxWarnings([...new Map(lines.map((l) => [l.product.id, l.product])).values()], customer?.allergies ?? [], pharmacy.interactions)
   function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!customer) return setError('Choose the patient.')
-    if (!d.prescriber_name.trim() || !d.issued_on) return setError('Enter the prescriber and the date on the prescription.')
+    if (level !== 'free' && !customer) return setError('Choose the patient.')
+    if (needsDetails && (!d.prescriber_name.trim() || !d.issued_on)) return setError('Enter the prescriber and the date on the prescription.')
     if (d.issued_on > today) return setError('The prescription date cannot be in the future.')
     if ((username && pin.length < 4) || (!username && pin)) return setError('Enter the pharmacist’s username and PIN, or leave both empty if you are the pharmacist.')
     onConfirm({ ...d, prescriber_name: d.prescriber_name.trim() }, username ? { username, pin } : null)
@@ -677,7 +684,7 @@ function PrescriptionForm({ message, initial, lines, products, customer, pharmac
   return (
     <div className="modal" role="dialog" aria-modal="true" aria-label="Prescription" onKeyDown={(e) => e.key === 'Escape' && onCancel()}>
       <form className="card pay rx" onSubmit={submit}>
-        <h2>Prescription</h2>
+        <h2>{needsDetails ? 'Prescription' : level === 'patient' ? 'Patient' : 'Medicine warnings'}</h2>
         {(message || error) && <p className="error">{error || message}</p>}
         <ul className="rx-meds">
           {medicines.map((l) => {
@@ -703,16 +710,22 @@ function PrescriptionForm({ message, initial, lines, products, customer, pharmac
             {found.map((w, i) => <li key={i} className={w.severity}><strong>{w.severity === 'major' ? 'Major' : w.severity === 'moderate' ? 'Moderate' : 'Minor'}</strong> · {w.message}</li>)}
           </ul>
         )}
-        <label>Prescriber<input autoFocus value={d.prescriber_name} onChange={set('prescriber_name')} placeholder="Dr. …" /></label>
-        <div className="row">
-          <label>Reg. no.<input value={d.prescriber_reg_no ?? ''} onChange={set('prescriber_reg_no')} /></label>
-          <label>Written on<input type="date" value={d.issued_on} max={today} onChange={set('issued_on')} /></label>
-        </div>
-        <div className="row">
-          <label>Hospital / clinic<input value={d.facility ?? ''} onChange={set('facility')} /></label>
-          <label>Prescription no.<input value={d.reference ?? ''} onChange={set('reference')} /></label>
-        </div>
-        <p className="muted small">Pharmacist approval{offline ? ' (checked on this till while offline)' : ''} — leave empty if you are the pharmacist.</p>
+        {needsDetails && <>
+          <label>Prescriber<input autoFocus value={d.prescriber_name} onChange={set('prescriber_name')} placeholder="Dr. …" /></label>
+          <div className="row">
+            <label>Reg. no.<input value={d.prescriber_reg_no ?? ''} onChange={set('prescriber_reg_no')} /></label>
+            <label>Written on<input type="date" value={d.issued_on} max={today} onChange={set('issued_on')} /></label>
+          </div>
+          <div className="row">
+            <label>Hospital / clinic<input value={d.facility ?? ''} onChange={set('facility')} /></label>
+            <label>Prescription no.<input value={d.reference ?? ''} onChange={set('reference')} /></label>
+          </div>
+        </>}
+        {level === 'approve' ? (
+          <p className="muted small">Pharmacist approval{offline ? ' (checked on this till while offline)' : ''} — leave empty if you are the pharmacist.</p>
+        ) : (
+          <p className="muted small">A pharmacist may approve now (optional){offline ? ', checked on this till while offline' : ''}; otherwise the sale {pharmacy.rules?.after === 'signoff' ? 'waits for a pharmacist to sign it off' : 'is recorded as sold without a pharmacist'}.</p>
+        )}
         <div className="row">
           <label>Pharmacist username<input value={username} onChange={(e) => setUsername(e.target.value)} autoCapitalize="none" /></label>
           <label>Pharmacist PIN<input type="password" inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))} /></label>

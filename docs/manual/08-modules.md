@@ -153,9 +153,11 @@ When an industry is first switched on, the system creates its company under **Co
 3. **System → Settings → Pharmacy:** the Pharmacy Council premises licence number and the superintendent pharmacist, printed on the controlled-drug register.
 4. Give pharmacists the **Pharmacist** role (and technicians **Pharmacy Technician**) at the branch.
 
-**Why:** every prescription-only or controlled medicine sale needs a pharmacist's approval and records the prescription; controlled drugs go into the Controlled Drug Register.
+5. **System → Settings → Pharmacy → Selling prescription-only / controlled medicines:** by default a pharmacist approves every such sale with the prescription. If tellers sell them in your pharmacy, choose *Prescription details only*, *Patient only* or *Sell freely* (a branch can differ: Company → Branches → the branch → *Pharmacy rules for this branch*), and how they are checked afterwards (a pharmacist signs them off on Pharmacy → Sales to sign off, or a daily summary). A quantity limit, major warnings and *Controlled drugs always need a pharmacist* keep the riskiest sales with a pharmacist.
 
-**Check:** sell a POM medicine on a till: the till asks for the patient, the prescription and the pharmacist's PIN.
+**Why:** the Pharmacy Council expects a pharmacist to approve prescription-only and controlled medicines, and the prescription is recorded; controlled drugs go into the Controlled Drug Register. Where a pharmacy works otherwise, the system still records who sold what so a pharmacist can check it.
+
+**Check:** sell a POM medicine on a till: with the default setting the till asks for the patient, the prescription and the pharmacist's PIN.
 
 ### Restaurant / Café / Bar
 

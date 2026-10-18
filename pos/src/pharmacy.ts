@@ -1,4 +1,4 @@
-import type { Drug, Interaction, Product } from './types'
+import type { Drug, Interaction, PharmacyRules, Product, RxLevel } from './types'
 
 /** Pharmacy at the till: which medicines need a prescription, and the allergy / interaction warnings (same rule as the server's PharmacyService). */
 export type Warning = { kind: 'allergy' | 'interaction'; severity: string; message: string }
@@ -44,4 +44,25 @@ export function generics(products: Product[], p: Product): Product[] {
   const strength = (p.drug?.strength ?? '').replace(/\s/g, '').toLowerCase()
   return products.filter((o) => o.id !== p.id && o.drug?.generic_name?.trim().toLowerCase() === g
     && (o.drug?.strength ?? '').replace(/\s/g, '').toLowerCase() === strength)
+}
+
+const ORDER: Record<RxLevel, number> = { free: 0, patient: 1, details: 2, approve: 3 }
+const STRICT: PharmacyRules = { pom: 'approve', controlled: 'approve', max_qty: 0, major_needs_pharmacist: true, after: 'signoff' }
+
+/**
+ * What a sale needs (same rule as the server's PharmacyRules::saleLevel): the strictest level among its prescription-only
+ * and controlled medicines; a line above the quantity limit, or a major warning, needs a pharmacist. null: none in the sale.
+ */
+export function saleLevel(rules: PharmacyRules | undefined, lines: { product: Product; qtyBaseMilli: number }[], majorWarning: boolean): RxLevel | null {
+  const r = rules ?? STRICT
+  let level: RxLevel | null = null
+  for (const l of lines) {
+    const schedule = l.product.drug?.schedule
+    if (schedule !== 'pom' && schedule !== 'controlled') continue
+    let lineLevel: RxLevel = r[schedule] ?? 'approve'
+    if (r.max_qty > 0 && Math.abs(l.qtyBaseMilli) > r.max_qty) lineLevel = 'approve'
+    if (level === null || ORDER[lineLevel] > ORDER[level]) level = lineLevel
+  }
+  if (level !== null && majorWarning && r.major_needs_pharmacist) level = 'approve'
+  return level
 }

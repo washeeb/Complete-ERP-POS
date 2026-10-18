@@ -13,6 +13,7 @@ use App\Domain\Fashion\ConsignmentService;
 use App\Domain\Inventory\SerialRegistry;
 use App\Domain\Inventory\StockLedger;
 use App\Domain\Modules\ModuleService;
+use App\Domain\Pharmacy\PharmacyRules;
 use App\Domain\Pharmacy\PharmacyService;
 use App\Domain\Pricing\PriceResolver;
 use App\Domain\Pricing\PromotionEngine;
@@ -458,9 +459,11 @@ final class SaleService
     }
 
     /**
-     * Prescription-only and controlled medicines (owner decision 2026-10-16: a pharmacist approves every such sale).
-     * The patient and the prescriber are recorded; the pharmacist approves with their username and PIN — or is the
-     * cashier. Offline the till checked the pharmacist's PIN against their offline sign-in; no approval becomes a review item.
+     * Prescription-only and controlled medicines. How strict depends on the branch (PharmacyRules, Settings → Pharmacy):
+     * a pharmacist approves with the prescription (default; owner decision 2026-10-16), the teller records the prescription,
+     * the patient only, or sells freely; above the quantity limit or with a major warning a pharmacist is needed anyway.
+     * The pharmacist approves with their username and PIN, or is the cashier. Offline the till checked the pharmacist's PIN
+     * against their offline sign-in; anything missing becomes a review item instead of a refusal.
      */
     private function prescription(Device $device, User $user, array $p, array $lines, ?Customer $customer, Branch $branch, bool $offline, array &$flags): ?Prescription
     {
@@ -469,20 +472,26 @@ final class SaleService
             return null;
         }
         $names = implode(', ', array_unique(array_map(fn ($l) => $l['product']->name, $medicines)));
+        $warnings = PharmacyService::warningsFor(array_map(fn ($l) => $l['product']->id, $lines), $customer?->id);
+        $level = PharmacyRules::saleLevel(app(PharmacyRules::class)->forBranch($branch),
+            array_map(fn ($l) => ['schedule' => $l['product']->drug_schedule, 'qty_base' => Qty::toBaseMilli($l['qty'], Qty::factorMicro((string) $l['unit']->factor))], $medicines),
+            collect($warnings)->contains('severity', 'major'));
         $data = is_array($p['prescription'] ?? null) ? $p['prescription'] : [];
         $prescriber = trim((string) ($data['prescriber_name'] ?? ''));
         $issued = ($data['issued_on'] ?? null) ? Carbon::parse($data['issued_on'])->toDateString() : null;
+        $needsPatient = $level !== 'free';
+        $needsDetails = in_array($level, ['approve', 'details'], true);
         if (! $offline) {
-            if (! $customer) {
-                throw new DomainException("{$names} need a prescription: choose the patient.", 'prescription_required');
+            if ($needsPatient && ! $customer) {
+                throw new DomainException("{$names}: choose the patient.", 'prescription_required');
             }
-            if ($prescriber === '' || ! $issued) {
+            if ($needsDetails && ($prescriber === '' || ! $issued)) {
                 throw new DomainException("{$names} need a prescription: enter the prescriber and the date it was written.", 'prescription_required');
             }
-            if ($issued > now()->toDateString()) {
+            if ($issued && $issued > now()->toDateString()) {
                 throw new DomainException('The prescription date cannot be in the future.', 'prescription_required');
             }
-        } elseif (! $customer || $prescriber === '' || ! $issued) {
+        } elseif (($needsPatient && ! $customer) || ($needsDetails && ($prescriber === '' || ! $issued))) {
             $flags[] = ['pharmacy_unapproved', "{$names} sold offline without the patient or prescription details"];
         }
 
@@ -494,13 +503,13 @@ final class SaleService
             $by = ! empty($p['pharmacist_offline_by']) ? User::where('tenant_id', $device->tenant_id)->find($p['pharmacist_offline_by']) : null;
             if ($by && $this->authz->allows($by, 'pharmacy.dispense', $branch)) {
                 [$pharmacist, $approvedOffline] = [$by, true];
-            } else {
+            } elseif ($level === 'approve') {
                 $flags[] = ['pharmacy_unapproved', "{$names} sold offline by {$user->name} without a pharmacist's approval"];
             }
-        } elseif (empty($p['pharmacist_approval'])) {
-            throw new DomainException("A pharmacist must approve {$names}.", 'pharmacist_needed');
-        } else {
+        } elseif (! empty($p['pharmacist_approval'])) { // asked for, or given though the branch lets tellers sell
             $pharmacist = $this->approvals->verify($device, $p['pharmacist_approval'], 'pharmacy.dispense', $branch, null, 0, '');
+        } elseif ($level === 'approve') {
+            throw new DomainException("A pharmacist must approve {$names}.", 'pharmacist_needed');
         }
         if (! $customer) {
             return null; // offline without a patient: nothing to file the prescription under; the review item covers it
@@ -512,7 +521,7 @@ final class SaleService
             'prescriber_reg_no' => self::short($data['prescriber_reg_no'] ?? null, 60), 'facility' => self::short($data['facility'] ?? null, 255),
             'reference' => self::short($data['reference'] ?? null, 60), 'issued_on' => $issued ?? Carbon::parse($p['occurred_at'])->toDateString(),
             'pharmacist_name' => $pharmacist?->name ?? 'Not approved', 'pharmacist_id' => $pharmacist?->id, 'approved_offline' => $approvedOffline,
-            'warnings' => PharmacyService::warningsFor(array_map(fn ($l) => $l['product']->id, $lines), $customer->id),
+            'warnings' => $warnings,
         ]);
     }
 

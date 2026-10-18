@@ -17,7 +17,7 @@ class Branch extends Model
 
     protected function casts(): array
     {
-        return ['is_hq' => 'boolean', 'is_active' => 'boolean'];
+        return ['is_hq' => 'boolean', 'is_active' => 'boolean', 'settings' => 'array'];
     }
 
     public function industry(): BelongsTo
