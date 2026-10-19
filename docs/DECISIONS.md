@@ -496,6 +496,8 @@ Design:
 ## A stock row from the start (2026-10-19)
 - Every stock-tracked product gets a stock row at 0 in each store of its industry (shared products: every store) when it is saved, when a store is created, when sync brings a product, after test trading is cleared, and once for existing data (migration). `ZeroStock::ensure` only inserts (`ON CONFLICT DO NOTHING`).
 - "Stock has moved" (base unit and unit sizes locked) is now `Product::hasMoved()` from the movements, no longer "has a stock row".
+## No double posting (2026-10-19)
+- Three layers: the button that started a request cannot be clicked until it finishes (Livewire's `data-loading`, one CSS rule for the whole back office); forms that stay on the page clear after posting (imports, timesheets, bank reconciliation; Filament create pages already redirect and modals close); and imports keep the file's SHA-256 so the same file into the same type (and the same stock count or adjustment) is refused unless *Import it again* is ticked. Till sales were already idempotent (sale id and device sequence).
 
 ## Moving and deleting catalogue lists (2026-10-19)
 - Moving products saves each product like an edit (`CatalogService::moveProducts`): audited, synced, nothing else changes. Merging duplicates = move all, then delete the empty one.

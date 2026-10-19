@@ -47,3 +47,6 @@ input[type='file']:hover::file-selector-button { background-color: var(--gray-50
 .dark input[type='file']::file-selector-button { border-color: rgb(255 255 255 / 0.2); background-color: rgb(255 255 255 / 0.05); color: #fff; }
 .dark input[type='file']:hover::file-selector-button { background-color: rgb(255 255 255 / 0.1); border-color: var(--primary-400); }
 input[type='file']:focus-visible { outline: 2px solid var(--primary-500); outline-offset: 2px; border-radius: 0.5rem; }
+
+/* While a button's request is running (Livewire marks it data-loading), it cannot be clicked again: no double posting. */
+button[data-loading], a[data-loading], [wire\:click][data-loading] { pointer-events: none; opacity: .6; cursor: progress; }

@@ -92,6 +92,14 @@ class ImportData extends Page
     /** @var array{headings: list<string>, rows: list<array>, total: int}|null the first rows of the uploaded file */
     public ?array $preview = null;
 
+    /** The same file was imported before: the person must tick this to import it again. */
+    public bool $importAgain = false;
+
+    public ?string $duplicateNote = null;
+
+    /** Changes after each import, so the file picker starts empty again (nothing left to post twice). */
+    public int $fileKey = 0;
+
     public static function canAccess(): bool
     {
         $user = Erp::user();
@@ -254,6 +262,8 @@ class ImportData extends Page
     {
         $this->preview = null;
         $this->mapping = [];
+        $this->importAgain = false;
+        $this->duplicateNote = null;
         if (! $this->file) {
             return;
         }
@@ -302,10 +312,18 @@ class ImportData extends Page
             return;
         }
         @set_time_limit(1800); // a few thousand products take minutes, beyond PHP's usual 30 seconds per request
+        if ($commit && ! $this->importAgain && ($done = ImportService::alreadyImported($this->type, hash_file('sha256', $this->file->getRealPath()) ?: null, $this->contextModel()?->getKey()))) {
+            $this->duplicateNote = "This file was already imported on {$done->completed_at?->format('j M Y H:i')} by {$done->user_name} ({$done->rows_ok} rows). "
+                .'Importing it again would add it a second time.';
+            Notification::make()->warning()->title('Already imported')->body($this->duplicateNote)->persistent()->send();
+
+            return;
+        }
         $stored = $this->file->store('imports', 'local');
         $path = Storage::disk('local')->path($stored);
         try {
-            $import = Erp::run(fn ($actor) => app(ImportService::class)->run($actor, $this->type, $path, $this->file->getClientOriginalName(), $this->options(), $this->contextModel(), $commit, $this->mapping));
+            $import = Erp::run(fn ($actor) => app(ImportService::class)->run($actor, $this->type, $path, $this->file->getClientOriginalName(),
+                $this->options() + ['import_again' => $this->importAgain], $this->contextModel(), $commit, $this->mapping));
         } catch (Halt) {
             return;
         }
@@ -317,10 +335,13 @@ class ImportData extends Page
             default => "Not imported: {$n} row(s) have errors. Fix them (download the error report) or tick “Skip rows with errors”.",
         });
         ($import->status === 'imported' || ($import->status === 'checked' && ! $n) ? $note->success() : $note->danger())->send();
-        if ($import->status === 'imported') {
+        if ($import->status === 'imported') { // done: the page starts clean, so the same file cannot be posted twice by mistake
             $this->file = null;
             $this->preview = null;
             $this->mapping = [];
+            $this->importAgain = false;
+            $this->duplicateNote = null;
+            $this->fileKey++;
         }
     }
 
