@@ -324,8 +324,21 @@ final class CatalogService
         $this->require($actor, $permission);
         $model->fill($data);
         $model->tenant_id = $actor->tenantId;
+        // One of each: the same category (under the same parent), brand or unit code twice is refused, whoever adds it.
+        $other = fn ($q) => $q->when($model->exists, fn ($w) => $w->whereKeyNot($model->getKey()));
+        if ($model instanceof Category || $model instanceof Brand) {
+            $model->name = trim((string) $model->name);
+            $same = $model::query()->whereRaw('lower(name) = ?', [mb_strtolower($model->name)])->tap($other)
+                ->when($model instanceof Category, fn ($q) => $model->parent_id ? $q->where('parent_id', $model->parent_id) : $q->whereNull('parent_id'))->exists();
+            if ($same) {
+                throw new DomainException(($model instanceof Category ? 'Category' : 'Brand')." {$model->name} already exists.");
+            }
+        }
         if ($model instanceof Uom) {
             $model->code = strtoupper(trim($model->code));
+            if (Uom::where('code', $model->code)->tap($other)->exists()) {
+                throw new DomainException("Unit {$model->code} already exists.");
+            }
             if ($model->decimals < 0 || $model->decimals > 3) {
                 throw new DomainException('A unit allows 0 to 3 decimal places.');
             }

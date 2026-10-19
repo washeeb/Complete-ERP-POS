@@ -14,6 +14,8 @@ use App\Models\Supplier;
 use App\Models\Uom;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * "+" next to a list: add the missing category, brand, unit, supplier, customer or department without leaving the
@@ -21,6 +23,23 @@ use Filament\Forms\Components\TextInput;
  */
 final class QuickCreate
 {
+    /** The record already there under that name, code or phone, if any. */
+    public static function existing(string $kind, array $d): ?Model
+    {
+        $name = mb_strtolower(trim((string) ($d['name'] ?? '')));
+        $byName = fn (string $class) => $name === '' ? null : $class::whereRaw('lower(name) = ?', [$name])->first();
+
+        return match ($kind) {
+            'category' => Category::whereRaw('lower(name) = ?', [$name])->whereNull('parent_id')->first(),
+            'brand' => $byName(Brand::class),
+            'uom' => Uom::where('code', strtoupper(trim((string) ($d['code'] ?? ''))))->first(),
+            'supplier' => Supplier::where('code', strtoupper(trim((string) ($d['code'] ?? ''))))->first() ?? $byName(Supplier::class),
+            'customer' => ($phone = CustomerService::normalisePhone((string) ($d['phone'] ?? ''))) ? Customer::where('phone', $phone)->first() : null,
+            'department' => Department::where('code', strtoupper(trim((string) ($d['code'] ?? ''))))->first(),
+            default => null,
+        };
+    }
+
     /** Each kind: permission, form fields, how it is saved. */
     public static function on(Select $select, string $kind): Select
     {
@@ -42,7 +61,15 @@ final class QuickCreate
 
         return $select
             ->createOptionForm($fields)
-            ->createOptionUsing(fn (array $data) => Erp::run(fn ($actor) => $save($actor, $data))->getKey())
+            ->createOptionUsing(function (array $data) use ($kind, $save) {
+                if ($existing = self::existing($kind, $data)) { // already there: pick it, never a second copy
+                    Notification::make()->info()->title("{$existing->name} already exists — selected")->send();
+
+                    return $existing->getKey();
+                }
+
+                return Erp::run(fn ($actor) => $save($actor, $data))->getKey();
+            })
             ->createOptionAction(fn ($action) => $action->modalHeading('Add '.($kind === 'uom' ? 'a unit' : "a {$kind}"))->visible(fn () => Erp::canAnywhere($permission)));
     }
 }
