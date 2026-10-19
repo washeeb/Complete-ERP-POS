@@ -198,6 +198,10 @@ fieldset.choices button.active, .segmented button.active { background: var(--pri
 .denoms { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px 28px; }
 .denom-group { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 6px; align-content: start; }
 .denom-group legend { padding: 0; margin-bottom: 4px; font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+/* Close shift: MoMo per network and the card terminal, two to a row on a wide screen. */
+.other-checks { border: 0; margin: 8px 0 0; padding: 0; min-width: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 6px 20px; }
+.other-checks legend { padding: 0; margin-bottom: 4px; font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.other-checks > p { grid-column: 1 / -1; margin: 0; }
 .denom-row { display: grid; grid-template-columns: minmax(0, 1fr) 5.5rem 6.5rem; align-items: center; gap: 10px; font-weight: 500; }
 .denom-row input { width: 100%; min-width: 0; padding: 8px 10px; text-align: right; }
 .denom-amount { text-align: right; font-size: .85rem; color: var(--muted); white-space: nowrap; }

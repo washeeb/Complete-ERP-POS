@@ -18,6 +18,9 @@ class SalePayment extends Model
 
     public const MOMO_PROVIDERS = ['mtn' => 'MTN MoMo', 'telecel' => 'Telecel Cash', 'at' => 'AT Money'];
 
+    /** What a till's close checks besides the cash: each MoMo network's merchant wallet and the card terminal. */
+    public const CLOSE_CHECKS = ['momo:mtn' => 'MTN MoMo', 'momo:telecel' => 'Telecel Cash', 'momo:at' => 'AT Money', 'card' => 'Card terminal'];
+
     public $timestamps = false;
 
     protected $guarded = [];
