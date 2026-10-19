@@ -82,6 +82,9 @@ final class Replication
                 'qc_inspection' => 'qc_inspections']],
     ];
 
+    /** Master records head office may delete (unused only); branch servers delete them too. */
+    public const DELETABLE = ['category', 'brand', 'uom'];
+
     /** Master data: owned by HQ, read-only on branch nodes (conflict policy "HQ wins", spec §4.2). */
     public const MASTER_GROUPS = ['org', 'people', 'catalog', 'pricing'];
 

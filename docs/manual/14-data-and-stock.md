@@ -42,6 +42,7 @@ Every list in the back office (products, customers, invoices, stock on hand, sal
 | **Customer / supplier balances owed (migration)** | What a customer owed you / you owed a supplier on the go-live date | Code, phone or name |
 | **Loyalty points / gift cards (migration)** | Points and unspent cards brought over from the old system | Customer; card number |
 
+**Reorganising the catalogue:** Catalog → Products: tick products → **Change category, brand or tax**. Catalog → Categories (or Brands): **Move products** moves all of them to another one — the way to merge two duplicates — and **Delete** removes one that nothing uses. **Why:** history stays intact; only empty lists can go.
 **Missing category, brand or unit?** On the product form, click **+** next to the list to add it without leaving the page (also suppliers on purchase orders and bills, customers on orders, departments on staff).
 **Wrong unit (e.g. Pieces instead of Pack):** after stock has moved, open the product and click **Correct the unit**, or put the right code in the `base_unit` column of the products update file. It only renames the unit — 30 pieces become 30 packs — and keeps prices, barcodes and stock. **Why:** the unit was simply wrong; to sell both packs and pieces, add the pack under *Other units* with how many pieces it holds.
 

@@ -301,6 +301,24 @@ class ProductResource extends Resource
             ->defaultSort('name')
             ->recordActions([EditAction::make()])
             ->toolbarActions([
+                BulkAction::make('move')->label('Change category, brand or tax')->icon(Heroicon::OutlinedArrowsRightLeft)
+                    ->visible(fn () => Erp::can('catalog.manage'))
+                    ->schema([
+                        Select::make('field')->label('Change')->required()->live()->default('category_id')
+                            ->options(['category_id' => 'Category', 'brand_id' => 'Brand', 'tax_group_id' => 'Tax group']),
+                        Select::make('to')->label('To')->searchable()->placeholder('None')->required(fn ($get) => $get('field') === 'tax_group_id')
+                            ->options(fn ($get) => match ($get('field')) {
+                                'brand_id' => Brand::orderBy('name')->pluck('name', 'id')->all(),
+                                'tax_group_id' => TaxGroup::orderBy('name')->pluck('name', 'id')->all(),
+                                default => Category::orderBy('name')->pluck('name', 'id')->all(),
+                            }),
+                    ])
+                    ->action(function (Collection $records, array $data) {
+                        @set_time_limit(1800);
+                        $n = Erp::run(fn ($actor) => app(CatalogService::class)->moveProducts($actor, $records, $data['field'], $data['to'] ?? null));
+                        Notification::make()->success()->title("{$n} product(s) moved")->send();
+                    })
+                    ->deselectRecordsAfterCompletion(),
                 BulkAction::make('schedule')->label('Set medicine schedule')->icon(Heroicon::OutlinedShieldCheck)
                     ->visible(fn () => ModuleService::enabledAnywhere('pharmacy') && Erp::can('catalog.manage'))
                     ->modalDescription('Prescription-only and controlled medicines need a pharmacist\'s approval at the till; controlled drugs go in the controlled-drug register. Medicines are switched to batches and expiry dates.')

@@ -6,6 +6,7 @@ use App\Filament\Resources\Categories\Pages\ListCategories;
 use App\Filament\Support\GlobalSearch;
 use App\Filament\Support\SimpleCatalogResource;
 use App\Models\Category;
+use App\Models\Product;
 use BackedEnum;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -36,6 +37,10 @@ class CategoryResource extends SimpleCatalogResource
 
     protected static ?string $model = Category::class;
 
+    protected static bool $deletable = true;
+
+    protected static ?string $movesProducts = 'category_id';
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedFolder;
 
     protected static string|UnitEnum|null $navigationGroup = 'Catalog';
@@ -57,6 +62,7 @@ class CategoryResource extends SimpleCatalogResource
         return static::crudTable($table->columns([
             TextColumn::make('name')->searchable()->sortable(),
             TextColumn::make('parent.name')->label('Inside'),
+            TextColumn::make('products_count')->label('Products')->state(fn ($record) => Product::where('category_id', $record->id)->count()),
             IconColumn::make('is_active')->boolean()->label('Active'),
         ])->defaultSort('name'));
     }

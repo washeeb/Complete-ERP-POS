@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Uoms;
 use App\Filament\Resources\Uoms\Pages\ListUoms;
 use App\Filament\Support\GlobalSearch;
 use App\Filament\Support\SimpleCatalogResource;
+use App\Models\ProductUom;
 use App\Models\Uom;
 use BackedEnum;
 use Filament\Forms\Components\Select;
@@ -34,6 +35,8 @@ class UomResource extends SimpleCatalogResource
 
     protected static ?string $model = Uom::class;
 
+    protected static bool $deletable = true;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedScale;
 
     protected static string|UnitEnum|null $navigationGroup = 'Catalog';
@@ -60,6 +63,7 @@ class UomResource extends SimpleCatalogResource
             TextColumn::make('code')->sortable()->searchable(),
             TextColumn::make('name')->searchable(),
             TextColumn::make('decimals')->label('Decimals'),
+            TextColumn::make('products_count')->label('Products')->state(fn ($record) => ProductUom::where('uom_id', $record->id)->distinct()->count('product_id')),
         ])->defaultSort('code'));
     }
 

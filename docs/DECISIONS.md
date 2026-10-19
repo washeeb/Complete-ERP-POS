@@ -493,6 +493,9 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## Moving and deleting catalogue lists (2026-10-19)
+- Moving products saves each product like an edit (`CatalogService::moveProducts`): audited, synced, nothing else changes. Merging duplicates = move all, then delete the empty one.
+- Delete only when unused (`deleteSimple`): products, sub-categories, styles and promotions for categories; products and styles for brands; product units for units. Foreign keys stay `restrict`, so anything missed is refused too. A `*.deleted` outbox event lets branch servers delete it as well, unless something there still uses it (`Replication::DELETABLE`).
 ## Editing keeps one record; adding from where you are (2026-10-19)
 - Every edit screen's uniqueness checks exclude the record itself (checked: SKU, codes, phone, coupons, bins…). The product barcode check now also allows a barcode to move between units of the *same* product; a changed base unit renames the base `product_uoms` row instead of adding a second one.
 - Inline creation (`App\Filament\Support\QuickCreate`) calls the same domain services as each record's own screen, so permissions, validation and the audit log are identical; the "+" only shows to people allowed to create that kind of record. Tax groups are not created inline (they need their rates).

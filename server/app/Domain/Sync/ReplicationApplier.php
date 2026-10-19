@@ -14,6 +14,7 @@ use App\Domain\Support\AuditLog;
 use App\Domain\Support\DomainException;
 use App\Models\Customer;
 use App\Support\Qty;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -59,6 +60,13 @@ final class ReplicationApplier
         } elseif ($type === 'stored_value_batch') {
             app(StoredValues::class)->apply(array_map(fn ($r) => array_intersect_key($r, array_flip($this->columnsOf('stored_value_ledger'))), $payload['entries'] ?? []),
                 $payload['touch'] ?? []);
+        } elseif (str_ends_with((string) $event['event_type'], '.deleted') && in_array($type, Replication::DELETABLE, true)) {
+            // Head office deleted an unused category, brand or unit: remove it here too, unless something here still uses it.
+            try {
+                DB::transaction(fn () => DB::table(Replication::tableOf($type))->where('id', $event['aggregate_id'])->delete());
+            } catch (QueryException) {
+                // still used on this node (e.g. a product created here): keep it
+            }
         } elseif ($type === 'customer') {
             $this->mergeCustomer($actor, $payload['snapshot']['row'] ?? throw new DomainException('Event has no snapshot.', 'malformed'), $event['origin_node']);
         } else {
