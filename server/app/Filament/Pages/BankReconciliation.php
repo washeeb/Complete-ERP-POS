@@ -139,6 +139,8 @@ class BankReconciliation extends Page
         $this->pickStatement = [];
         $this->pickLedger = [];
         $this->postMemo = '';
+        $this->postAccount = '';
+        $this->ignoreReason = '';
         if ($ok) {
             Notification::make()->success()->title($ok)->send();
         }
