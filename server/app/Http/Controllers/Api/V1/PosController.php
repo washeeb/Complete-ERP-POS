@@ -279,9 +279,11 @@ class PosController extends Controller
             'note' => ['nullable', 'string', 'max:255'],
             'denoms' => ['nullable', 'array'], // the count note by note: {key: count}
             'denoms.*' => ['integer', 'min:0', 'max:1000000'],
+            'other' => ['nullable', 'array'], // mobile money per network and card terminal: {"momo:mtn": minor, "card": minor}
+            'other.*' => ['nullable', 'integer', 'min:0', 'max:100000000000'],
         ]);
         $shift = $shifts->close($this->device($request), $request->user(), (int) $data['counted_cash_minor'], $data['note'] ?? null,
-            denoms: $data['denoms'] ?? null);
+            denoms: $data['denoms'] ?? null, other: $data['other'] ?? null);
 
         // On a vault the result stays blind too: the cashier counts it next, against the teller's count.
         return response()->json(['shift' => $this->shiftJson($shift, $shifts, reveal: ! $shift->vault_session_id)]);
@@ -412,6 +414,8 @@ class PosController extends Controller
             'expected_cash_minor' => $reveal ? $shift->expected_cash_minor : null,
             'counted_cash_minor' => $reveal ? $shift->counted_cash_minor : null,
             'over_short_minor' => $reveal ? $shift->over_short_minor : null,
+            // Mobile money and card are not in the tray: once closed, their check is shown even on a vault.
+            'other' => $shift->status === 'closed' ? $shift->otherChecks() : [],
         ];
     }
 

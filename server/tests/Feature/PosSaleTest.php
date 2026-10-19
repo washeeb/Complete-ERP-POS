@@ -10,6 +10,7 @@ use App\Domain\Pricing\TaxCalculator;
 use App\Filament\Resources\Devices\DeviceResource;
 use App\Filament\Resources\Roles\RoleResource;
 use App\Filament\Resources\Sales\SaleResource;
+use App\Filament\Resources\Shifts\Pages\ListShifts;
 use App\Filament\Resources\Shifts\ShiftResource;
 use App\Filament\Resources\StockLevels\StockLevelResource;
 use App\Filament\Resources\StockMovements\StockMovementResource;
@@ -21,6 +22,7 @@ use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\RoleAssignment;
 use App\Models\Sale;
+use App\Models\Shift;
 use App\Models\StockLevel;
 use App\Models\StockMovement;
 use App\Models\Till;
@@ -266,4 +268,36 @@ it('tells the till whether to show stock left while selling (off until switched 
     app(Settings::class)->set(actorFor($this->owner), 'pos.show_stock', true);
     app('auth')->forgetGuards();
     $this->withToken($this->token)->getJson('/api/v1/pos/bootstrap')->assertOk()->assertJsonPath('show_stock', true);
+});
+
+it('checks mobile money per network and the card terminal at the close, and shows them on Till shifts', function () {
+    $pay = function (array $payments) {
+        $sale = cart($this, [[$this->bread, true, '2']]); // 37.00
+        $sale['payments'] = $payments;
+        $this->withToken($this->token)->postJson('/api/v1/pos/sales', $sale)->assertCreated();
+    };
+    $pay([['method' => 'momo', 'provider' => 'mtn', 'amount_minor' => 3700, 'reference' => 'MTN0001']]);
+    $pay([['method' => 'momo', 'provider' => 'mtn', 'amount_minor' => 3700, 'reference' => 'MTN0002']]);
+    $pay([['method' => 'momo', 'provider' => 'telecel', 'amount_minor' => 3700, 'reference' => 'TEL0001']]);
+    $pay([['method' => 'cash', 'amount_minor' => 1700, 'tendered_minor' => 1700], ['method' => 'card', 'amount_minor' => 2000, 'reference' => 'C1']]);
+
+    // MTN: the phone shows one payment fewer; Telecel matches; card not checked.
+    $closed = $this->withToken($this->token)->postJson('/api/v1/pos/shifts/close', ['counted_cash_minor' => 21700, 'other' => ['momo:mtn' => 3700, 'momo:telecel' => 3700]])
+        ->assertOk()->json('shift');
+    expect($closed['over_short_minor'])->toBe(0)
+        ->and(collect($closed['other'])->keyBy('key')->map(fn ($c) => [$c['expected'], $c['counted'], $c['diff']])->all())->toBe([
+            'momo:mtn' => [7400, 3700, -3700], 'momo:telecel' => [3700, 3700, 0], 'card' => [2000, null, null],
+        ]);
+
+    $shift = Shift::find($this->shiftId);
+    expect(ShiftResource::otherSummary($shift))->toBe('MTN MoMo short GH₵ 37.00');
+    Filament\Facades\Filament::setCurrentPanel(Filament\Facades\Filament::getPanel('admin'));
+    app('auth')->forgetGuards(); // the till's token, not the back-office user
+    $this->actingAs(withMfa($this->owner), 'web');
+    Livewire\Livewire::test(ListShifts::class)->assertSee('MTN MoMo short')
+        ->callTableAction('report', $shift->id)->assertFileDownloaded();
+    app('auth')->forgetGuards();
+
+    $this->withToken($this->token)->postJson('/api/v1/pos/shifts/open', ['opening_float_minor' => 0])->assertCreated();
+    $this->withToken($this->token)->postJson('/api/v1/pos/shifts/close', ['counted_cash_minor' => 0, 'other' => ['bitcoin' => 5]])->assertStatus(422);
 });

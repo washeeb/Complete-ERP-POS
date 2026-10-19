@@ -18,7 +18,31 @@ class Shift extends Model
 
     protected function casts(): array
     {
-        return ['opened_at' => 'datetime', 'closed_at' => 'datetime', 'opening_float_minor' => 'integer', 'expected_cash_minor' => 'integer', 'counted_cash_minor' => 'integer', 'over_short_minor' => 'integer', 'counted_denoms' => 'array'];
+        return ['opened_at' => 'datetime', 'closed_at' => 'datetime', 'opening_float_minor' => 'integer', 'expected_cash_minor' => 'integer', 'counted_cash_minor' => 'integer', 'over_short_minor' => 'integer', 'counted_denoms' => 'array',
+            'expected_other' => 'array', 'counted_other' => 'array'];
+    }
+
+    /**
+     * Mobile money and card at the close, one row per check: what the system expected, what was read from the merchant
+     * phone / card terminal (null = not checked) and the difference. Only checks with takings or a figure entered.
+     *
+     * @return list<array{key: string, label: string, expected: int, counted: ?int, diff: ?int}>
+     */
+    public function otherChecks(): array
+    {
+        $expected = $this->expected_other ?? [];
+        $counted = $this->counted_other ?? [];
+        $rows = [];
+        foreach (SalePayment::CLOSE_CHECKS as $key => $label) {
+            if (! array_key_exists($key, $expected) && ! array_key_exists($key, $counted)) {
+                continue;
+            }
+            $e = (int) ($expected[$key] ?? 0);
+            $c = array_key_exists($key, $counted) ? (int) $counted[$key] : null;
+            $rows[] = ['key' => $key, 'label' => $label, 'expected' => $e, 'counted' => $c, 'diff' => $c === null ? null : $c - $e];
+        }
+
+        return $rows;
     }
 
     public function till(): BelongsTo

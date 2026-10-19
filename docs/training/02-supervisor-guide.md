@@ -21,7 +21,7 @@ You look after the tills and the cashiers during the day. You sign in at a till 
 
 ## End of the day
 
-1. Each cashier closes their shift and counts the cash. You see over/short in **Sales → Till shifts**.
+1. Each cashier closes their shift, counts the cash, and types what the MoMo merchant phone and card terminal show. You see over/short in **Sales → Till shifts**: the cash in *Over / short*, MoMo and card in *MoMo & card* (red when short; hover for each network). **Shift report** prints the shift: cash, takings by payment method and the MoMo / card check, with a line for your signature. A MoMo difference is not put in the books automatically (a payment can arrive late): check the transaction IDs on the receipts (Sales → Sales) against the MoMo statement.
 2. Any difference above the limit: talk to the cashier, add a note, tell the manager.
 
 **A shift that stays open** (the till was reinstalled or replaced, or someone left without closing): a manager opens **Sales → Till shifts**, the shift → **Close shift**, enters the cash actually there and why. **A count typed wrongly** (e.g. 4000 for 40): **Correct the count** with the right amount and why. The shift keeps its original count; the corrected figure shows with a ✎ (hover for the original, who and why), and the books are put right automatically. Both need the manager's cash set-up permission and are in the audit log.

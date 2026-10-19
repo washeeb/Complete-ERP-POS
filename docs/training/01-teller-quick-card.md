@@ -55,7 +55,7 @@ The bottom right says **"Server not answering — working offline"** or **"No ne
 
 ## End of the shift
 
-**Close shift** → count **all** the cash in the drawer (float included), note by note and coin by coin → **Close shift**. Only then do you see over/short. Add a note if there is a difference. Sign out.
+**Close shift** → count **all** the cash in the drawer (float included), note by note and coin by coin. Under **Mobile money and card**, type what the MoMo merchant phone shows for your shift for each network (MTN, Telecel, AT) and the card terminal's total; leave a box empty if you do not take it → **Close shift**. Only then do you see over/short, for the cash and for each MoMo network and the card. Add a note if there is a difference. Sign out.
 
 **With vaults:** you do not see the expected figure. Close the tray and hand it to the Cashier, who counts it again.
 

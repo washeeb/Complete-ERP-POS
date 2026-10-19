@@ -94,7 +94,8 @@ final class PosSyncService
                     ?? throw new DomainException('The shift being closed was not received.', 'no_shift');
                 $wasClosed = $shift->status === 'closed';
                 $this->shifts->close($device, $user, (int) $p['counted_cash_minor'], $p['note'] ?? null, $shift->id,
-                    Carbon::parse($p['closed_at']), offline: true, denoms: is_array($p['denoms'] ?? null) ? $p['denoms'] : null);
+                    Carbon::parse($p['closed_at']), offline: true, denoms: is_array($p['denoms'] ?? null) ? $p['denoms'] : null,
+                    other: is_array($p['other'] ?? null) ? $p['other'] : null);
 
                 return ['status' => $wasClosed ? 'duplicate' : 'accepted'];
 

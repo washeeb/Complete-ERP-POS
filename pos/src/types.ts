@@ -66,7 +66,15 @@ export type PriceList = { id: string; code: string; name: string; prices_include
 export type Shift = {
   id: string; status: 'open' | 'closed'; opened_at: string; opened_by: string; opening_float_minor: number
   expected_cash_minor: number | null; counted_cash_minor: number | null; over_short_minor: number | null
+  /** Mobile money per network and the card terminal at the close (empty while open, or offline until synced). */
+  other?: OtherCheck[]
 }
+export type OtherCheck = { key: string; label: string; expected: number; counted: number | null; diff: number | null }
+
+/** What Close shift checks besides the cash: the MoMo merchant wallets and the card terminal (as the payment screen offers). */
+export const CLOSE_CHECKS: { key: string; label: string }[] = [
+  { key: 'momo:mtn', label: 'MTN MoMo' }, { key: 'momo:telecel', label: 'Telecel Cash' }, { key: 'momo:at', label: 'AT Money' }, { key: 'card', label: 'Card terminal' },
+]
 
 // Distribution: the van behind this till, today's route and the rep's month
 export type VanDay = {

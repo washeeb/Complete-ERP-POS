@@ -195,7 +195,7 @@ The full guides for each person are in the training material (Chapter 17.7).
 
 Do a full test day with made-up sales:
 
-1. Open a shift on a till, sell with cash, MoMo and card, print receipts, do a return, close the shift.
+1. Open a shift on a till, sell with cash, MoMo and card, print receipts, do a return, close the shift (count the cash, and type the MoMo and card totals: each should show as balanced).
 2. Unplug the till's network cable (or switch off Wi-Fi), sell two items, reconnect, and watch the sales arrive (*Sales → Till sales*).
 3. Check *Sales → Review queue*, *Stock → Stock on hand* and, if licensed, *Finance → Reports → Trial balance*.
 4. Take a backup and **restore it on another PC** (Chapter 12).

@@ -54,7 +54,9 @@ test('opens on the issued vault and closes with a blind count by notes and coins
       case 'POST pos/shifts/close': {
         s.closed = req.postDataJSON()
         return json(route, 200, { shift: { ...(s.shift as object), status: 'closed', counted_cash_minor: (s.closed as { counted_cash_minor: number }).counted_cash_minor,
-          expected_cash_minor: null, over_short_minor: null } })
+          expected_cash_minor: null, over_short_minor: null,
+          // Mobile money is not in the tray: its check is shown even on a vault.
+          other: [{ key: 'momo:mtn', label: 'MTN MoMo', expected: 15000, counted: 12050, diff: -2950 }] } })
       }
     }
     return json(route, 404, { error: 'not_found', detail: path })
@@ -82,10 +84,13 @@ test('opens on the issued vault and closes with a blind count by notes and coins
   await page.getByLabel('Number of GH₵1 coins').fill('5')
   await expect(page.locator('.denoms-total')).toContainText('265.00')
   await expect(page.locator('.denom-amount', { hasText: '60.00' })).toBeVisible() // each line shows what it comes to (3 × GH₵20)
+  await page.getByLabel('MTN MoMo (GHS)').fill('120.50') // what the merchant phone shows; the others are not checked
   await page.setViewportSize({ width: 390, height: 844 })
   await axe(page, 'Close shift by notes')
   await page.getByRole('button', { name: 'Close shift' }).click()
   await expect(page.getByText(/hand it to the cashier/)).toBeVisible()
-  await expect(page.getByText('Expected')).toHaveCount(0)
-  expect(s.closed).toMatchObject({ counted_cash_minor: 26500, denoms: { n200: 1, n20: 3, c1: 5 } })
+  await expect(page.getByText('Expected', { exact: true })).toHaveCount(0) // the cash stays blind on a vault
+  await expect(page.getByText(/MTN MoMo/)).toBeVisible()
+  await expect(page.getByText(/short GH₵ 29\.50/)).toBeVisible()
+  expect(s.closed).toMatchObject({ counted_cash_minor: 26500, denoms: { n200: 1, n20: 3, c1: 5 }, other: { 'momo:mtn': 12050 } })
 })

@@ -86,8 +86,11 @@ final class ShiftService
     /**
      * Blind close: the person on the till counts first; the expected amount is revealed only in the result (and not at
      * all on a vault: the cashier counts it next). $denoms: the count note by note ({key: count}), when given.
+     * $other: what the merchant phone shows per MoMo network and the card terminal's total ({"momo:mtn": minor, "card": minor});
+     * a check left out is not checked. Differences are shown and listed for a manager, not posted: a MoMo payment can
+     * arrive late, so the mobile money reconciliation decides.
      */
-    public function close(Device $device, User $user, int $countedMinor, ?string $note = null, ?string $shiftId = null, ?CarbonInterface $closedAt = null, bool $offline = false, ?array $denoms = null): Shift
+    public function close(Device $device, User $user, int $countedMinor, ?string $note = null, ?string $shiftId = null, ?CarbonInterface $closedAt = null, bool $offline = false, ?array $denoms = null, ?array $other = null): Shift
     {
         $this->till($device, $user, $offline);
         if ($shiftId && ($named = Shift::where('device_id', $device->id)->find($shiftId)) && $named->status === 'closed') {
@@ -103,10 +106,12 @@ final class ShiftService
         if ($countedMinor < 0) {
             throw new DomainException('Counted cash cannot be negative.');
         }
+        $other = $this->otherCounts($other);
         $expected = $this->expectedCash($shift);
         $shift->forceFill([
             'closed_by' => $user->id, 'closed_by_name' => $user->name, 'closed_at' => $closedAt ?? now(), 'status' => 'closed',
             'expected_cash_minor' => $expected, 'counted_cash_minor' => $countedMinor, 'counted_denoms' => $denoms,
+            'expected_other' => $this->expectedOther($shift) ?: null, 'counted_other' => $other ?: null,
             'over_short_minor' => $countedMinor - $expected, 'close_note' => $note,
         ]);
 
@@ -140,6 +145,7 @@ final class ShiftService
         $expected = $this->expectedCash($shift);
         $shift->forceFill([
             'closed_by' => $actor->id, 'closed_by_name' => $actor->name, 'closed_at' => now(), 'status' => 'closed',
+            'expected_other' => $this->expectedOther($shift) ?: null,
             'expected_cash_minor' => $expected, 'counted_cash_minor' => $countedMinor, 'over_short_minor' => $countedMinor - $expected,
             'close_note' => mb_substr('Closed in the back office: '.trim($reason), 0, 255),
         ]);
@@ -205,6 +211,47 @@ final class ShiftService
             ->selectRaw("COALESCE(SUM(CASE WHEN kind = 'taken' THEN amount_minor ELSE -amount_minor END), 0) AS c")->value('c');
 
         return $shift->opening_float_minor + $cash;
+    }
+
+    /**
+     * Mobile money per network and card taken through this till in the shift: sales and returns (refunds are negative
+     * payments), customer-account payments and booking deposits (taken in, refunded out). Only non-zero checks.
+     *
+     * @return array<string, int> {"momo:mtn": minor, "card": minor}
+     */
+    public function expectedOther(Shift $shift): array
+    {
+        $key = fn (object $r) => $r->method === 'momo' ? 'momo:'.($r->provider ?: 'mtn') : 'card';
+        $rows = SalePayment::whereIn('sale_id', $shift->sales()->where('status', 'posted')->select('id'))->whereIn('method', ['momo', 'card'])
+            ->groupBy('method', 'provider')->selectRaw('method, provider, SUM(amount_minor) AS amount')->toBase()->get()
+            ->concat(DB::table('customer_payments')->where('shift_id', $shift->id)->whereIn('method', ['momo', 'card'])
+                ->groupBy('method', 'provider')->selectRaw('method, provider, SUM(amount_minor) AS amount')->get())
+            ->concat(DB::table('deposit_movements')->where('shift_id', $shift->id)->whereIn('method', ['momo', 'card'])
+                ->groupBy('method', 'provider')->selectRaw("method, provider, SUM(CASE WHEN kind = 'taken' THEN amount_minor ELSE -amount_minor END) AS amount")->get());
+        $out = [];
+        foreach ($rows as $r) {
+            $k = $key($r);
+            $out[$k] = ($out[$k] ?? 0) + (int) $r->amount;
+        }
+
+        return array_filter($out, fn ($v) => $v !== 0);
+    }
+
+    /** @return array<string, int> only known checks, 0 or more */
+    private function otherCounts(?array $other): array
+    {
+        $out = [];
+        foreach ($other ?? [] as $k => $v) {
+            if ($v === null || $v === '') {
+                continue;
+            }
+            if (! array_key_exists($k, SalePayment::CLOSE_CHECKS) || ! is_numeric($v) || (int) $v < 0) {
+                throw new DomainException('Mobile money and card: enter the amount shown (0 or more) or leave it empty.');
+            }
+            $out[$k] = (int) $v;
+        }
+
+        return $out;
     }
 
     private function till(Device $device, User $user, bool $offline = false): Till

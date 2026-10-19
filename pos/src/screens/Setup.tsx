@@ -1,12 +1,12 @@
 import { clock } from '../clock'
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { api, ApiError } from '../api'
 import { db } from '../db'
 import { createDeviceKey } from '../deviceKey'
 import { formatMoney, parseMoney } from '../money'
 import { offlineSignIn, saveGrant } from '../offline'
 import { closeShift, openShift } from '../till'
-import type { Bootstrap } from '../types'
+import { CLOSE_CHECKS, type Bootstrap, type OtherCheck } from '../types'
 
 /** First run on a new till: enter the one-time code an administrator got when registering this device. */
 export function Enroll({ onDone }: { onDone: () => void }) {
@@ -211,8 +211,9 @@ export function CloseShift({ boot, online, onClosed, onCancel }: { boot: Bootstr
   const [counted, setCounted] = useState('')
   const [counts, setCounts] = useState<Record<string, string>>({})
   const [note, setNote] = useState('')
+  const [other, setOther] = useState<Record<string, string>>({})
   const [error, setError] = useState('')
-  const [result, setResult] = useState<null | { expected: number | null; counted: number; diff: number | null; provisional: boolean }>(null)
+  const [result, setResult] = useState<null | { expected: number | null; counted: number; diff: number | null; provisional: boolean; other: OtherCheck[]; otherSent: boolean }>(null)
   const money = (m: number) => formatMoney(m, boot.company.currency, boot.company.exponent)
   const denominations = boot.cash?.denominations ?? []
   const byNotes = denominations.length > 0
@@ -223,8 +224,11 @@ export function CloseShift({ boot, online, onClosed, onCancel }: { boot: Bootstr
     try {
       const denoms = byNotes ? Object.fromEntries(denominations.map((d) => [d.key, parseInt(counts[d.key] || '0', 10) || 0]).filter(([, n]) => (n as number) > 0)) : null
       const amount = byNotes ? total : parseMoney(counted, boot.company.exponent)
-      const { shift, provisional } = await closeShift(amount, note, online, denoms)
-      setResult({ expected: shift.expected_cash_minor, counted: shift.counted_cash_minor ?? amount, diff: shift.over_short_minor, provisional })
+      // MoMo and card: only what was filled in is checked; an empty box means "not checked".
+      const read = Object.fromEntries(CLOSE_CHECKS.filter((c) => (other[c.key] ?? '').trim() !== '').map((c) => [c.key, parseMoney(other[c.key], boot.company.exponent)]))
+      const { shift, provisional } = await closeShift(amount, note, online, denoms, Object.keys(read).length ? read : null)
+      setResult({ expected: shift.expected_cash_minor, counted: shift.counted_cash_minor ?? amount, diff: shift.over_short_minor, provisional,
+        other: shift.other ?? [], otherSent: Object.keys(read).length > 0 })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not close the shift.')
     }
@@ -248,6 +252,24 @@ export function CloseShift({ boot, online, onClosed, onCancel }: { boot: Bootstr
             <dd className={(result.diff ?? 0) < 0 ? 'error' : ''}>{money(Math.abs(result.diff ?? 0))}</dd>
           </dl>
         )}
+        {result.other.length > 0 && (
+          <>
+            <h2>Mobile money and card</h2>
+            <dl className="totals">
+              {result.other.map((c) => (
+                <Fragment key={c.key}>
+                  <dt>{c.label}</dt>
+                  <dd className={(c.diff ?? 0) < 0 ? 'error' : ''}>
+                    {c.counted === null ? `${money(c.expected)} expected · not checked`
+                      : c.diff === 0 ? `${money(c.counted)} · balanced` : `${money(c.counted)} entered · ${money(c.expected)} expected · ${(c.diff ?? 0) < 0 ? 'short' : 'over'} ${money(Math.abs(c.diff ?? 0))}`}
+                  </dd>
+                </Fragment>
+              ))}
+            </dl>
+            {result.other.some((c) => (c.diff ?? 0) !== 0) && <p className="muted">A difference is listed for the manager on Till shifts. Check the MoMo transaction IDs on the receipts against the merchant statement.</p>}
+          </>
+        )}
+        {result.provisional && result.otherSent && <p className="muted">Mobile money and card are checked when the till reconnects.</p>}
         <button className="primary big" onClick={onClosed}>Done</button>
       </div>
     )
@@ -287,6 +309,17 @@ export function CloseShift({ boot, online, onClosed, onCancel }: { boot: Bootstr
           <input autoFocus className="big mono" inputMode="decimal" value={counted} onChange={(e) => setCounted(e.target.value)} required />
         </label>
       )}
+      <fieldset className="other-checks">
+        <legend>Mobile money and card</legend>
+        <p className="muted small">Type what the merchant phone (or MoMo statement) shows for this shift, and the card terminal's total. Leave a box empty if you do not take it.</p>
+        {CLOSE_CHECKS.map((c) => (
+          <label key={c.key}>
+            {c.label} ({boot.company.currency})
+            <input className="mono" inputMode="decimal" value={other[c.key] ?? ''} placeholder="not checked"
+              onChange={(e) => setOther({ ...other, [c.key]: e.target.value.replace(/[^0-9.]/g, '') })} />
+          </label>
+        ))}
+      </fieldset>
       <label>
         Note (optional)
         <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={255} />

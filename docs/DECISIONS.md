@@ -872,3 +872,9 @@ Design:
 - **No development phase names in the app.** Help text describes what a field does for the user, never a build phase.
 - **Till sign-ins renew while used.** `EnsureDeviceToken` pushes a till or handheld token's expiry to 12 hours from now on each use (written at most every 15 minutes). Before, 12 hours from sign-in signed cashiers out during long trading days (7:00-22:00). An idle till still ends after 12 hours.
 - **An ended sign-in is named, not treated as offline.** A 401 without an error code becomes `signed_out` on the till; a missing session no longer falls into the offline queue's "no offline sign-in" error. The payment screen asks the same cashier for username and PIN (`signInAgain`; another person is refused, since the shift and cart are theirs), saves the new session and offline sign-in, and completes the same sale with the same receipt number.
+
+## Close shift: mobile money and card (2026-10-19)
+- **Owner request:** count MoMo too, not only cash. At the close the cashier types what each MoMo merchant wallet (MTN, Telecel, AT) and the card terminal show; empty = not checked. Stored on the shift as `expected_other` / `counted_other` (`{"momo:mtn": minor, "card": minor}`).
+- **Blind like the cash:** the till does not show the system's MoMo or card figures before the count. They are shown in the result, on a vault as well, because MoMo and card are not in the tray the cashier counts next.
+- **Expected** = MoMo / card on the shift's posted sales and returns (refunds are negative payments), account payments taken at the till and booking deposits (taken minus refunded). A MoMo payment without a network counts as MTN.
+- **Not posted to the books:** a cash difference is posted to cash over/short, but a MoMo difference is often timing (a late confirmation) or a fake confirmation SMS. It is shown on Till shifts and the shift report for the MoMo reconciliation to decide.

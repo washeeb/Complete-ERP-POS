@@ -87,12 +87,13 @@ export async function openShift(floatMinor: number, online: boolean, vaultSessio
  * Blind close. Offline, the expected cash is worked out on the till and confirmed by the server at sync. On a vault the
  * result stays blind (the cashier counts next): expected and over/short come back empty.
  */
-export async function closeShift(countedMinor: number, note: string, online: boolean, denoms: Record<string, number> | null = null): Promise<{ shift: Shift; provisional: boolean }> {
+export async function closeShift(countedMinor: number, note: string, online: boolean, denoms: Record<string, number> | null = null,
+  other: Record<string, number> | null = null): Promise<{ shift: Shift; provisional: boolean }> {
   const local = await getLocalShift()
   let queued = await queueMode(online)
   if (!queued) {
     try {
-      const r = await api.closeShift(countedMinor, note, denoms)
+      const r = await api.closeShift(countedMinor, note, denoms, other)
       await db.kv.delete('shift')
       return { shift: r.shift, provisional: false }
     } catch (e) {
@@ -103,7 +104,7 @@ export async function closeShift(countedMinor: number, note: string, online: boo
   if (!local) throw new Error('This till does not know which shift is open. Reconnect to the server to close it.')
   const closedAt = new Date().toISOString()
   await enqueue({ id: uuidv7(), type: 'shift_close', grant: await currentGrant(),
-    payload: { shift_id: local.shiftId, counted_cash_minor: countedMinor, note: note || null, closed_at: closedAt, denoms } })
+    payload: { shift_id: local.shiftId, counted_cash_minor: countedMinor, note: note || null, closed_at: closedAt, denoms, other } })
   await db.kv.delete('shift')
   const expected = local.floatMinor + local.cashMinor
   const blind = local.vault === true

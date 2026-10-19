@@ -31,7 +31,7 @@ This guide is for shops that use **cash control with vaults**: each till has a c
   - open the shift.
 
   If the float is wrong, do not open: give the tray back.
-- **Close shift:** count everything in the tray, note by note and coin by coin, and enter the numbers. You do not see the expected figure. Close the tray and hand it to the Cashier.
+- **Close shift:** count everything in the tray, note by note and coin by coin, and enter the numbers. Then type what the MoMo merchant phone and the card terminal show (empty = not taken). You do not see the expected cash figure; MoMo and card, which are not in the tray, are shown at once. Close the tray and hand it to the Cashier.
 
 ## Cashier: receiving the trays
 
