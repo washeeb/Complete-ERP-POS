@@ -107,16 +107,19 @@ class StockAdjustmentResource extends Resource
             Section::make('Lines')->description('Increase (+) adds to stock, Decrease (−) takes away, Set to replaces the quantity on hand with what you counted. Nothing changes until the adjustment is posted.')
                 ->schema([
                     Repeater::make('lines')->hiddenLabel()->columns(6)->minItems(1)->addActionLabel('Add line')->schema([
-                        Fields::productUnit()->columnSpan(2),
+                        Fields::productUnit()->live()->columnSpan(2),
                         Select::make('mode')->label('Change')->required()->options(StockAdjustment::MODES)->default('remove')->live()->columnSpan(2),
                         TextInput::make('qty')->label(fn (Get $get) => $get('mode') === 'set' ? 'New quantity' : 'Quantity')->required()->numeric()->minValue(0),
                         TextInput::make('unit_cost')->label('Unit cost')->numeric()->minValue(0)->visible(fn (Get $get) => $get('mode') === 'add')
                             ->helperText('Empty = average cost'),
                         TextInput::make('batch_no')->label('Batch no.')->maxLength(60),
-                        DatePicker::make('expires_on')->label('Expiry'),
-                        Select::make('reason_code')->label('Reason (if different)')->options(InventoryService::ADJUSTMENT_REASONS),
-                        TextInput::make('note')->maxLength(255)->columnSpan(2),
-                        TagsInput::make('serials')->label('Serial / IMEI numbers (one per unit)')->columnSpanFull(),
+                        TagsInput::make('serials')->label('Serial / IMEI numbers (one per unit)')->columnSpanFull()
+                            ->visible(fn (Get $get) => Fields::serialised($get('product_uom_id')) || filled($get('serials'))),
+                        Fields::more([
+                            DatePicker::make('expires_on')->label('Expiry'),
+                            Select::make('reason_code')->label('Reason (if different)')->options(InventoryService::ADJUSTMENT_REASONS),
+                            TextInput::make('note')->maxLength(255)->columnSpan(2),
+                        ]),
                     ]),
                 ]),
         ]);

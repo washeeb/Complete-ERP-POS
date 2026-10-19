@@ -1,8 +1,8 @@
 import { v7 as uuidv7 } from 'uuid'
 import { warrantyUntil } from './electronics'
-import { api, ApiError, van as vanApi, type OrderBody, type VisitBody } from './api'
+import { api, ApiError, SIGNED_OUT, van as vanApi, type OrderBody, type VisitBody } from './api'
 import { db, getLocalShift, getSession, type OfflineGrant } from './db'
-import { enqueue, grantFor } from './offline'
+import { enqueue, grantFor, saveGrant } from './offline'
 import type { Bootstrap, Payment, PostedSale, Shift, TradeInItem } from './types'
 import type { priceCart } from './cart'
 
@@ -41,9 +41,24 @@ export async function submitRoadEvent(online: boolean, type: 'visit' | 'order', 
 
 async function currentGrant(): Promise<OfflineGrant> {
   const session = await getSession()
-  const g = session ? await grantFor(session.userId) : undefined
-  if (!g) throw new Error('No offline sign-in for you on this till. Sign out and sign in again while the server is reachable.')
+  // The sign-in ended (it lasts 12 hours from the last use): say so, so the cashier signs in again instead of guessing.
+  if (!session) throw new ApiError('signed_out', SIGNED_OUT, 401)
+  const g = await grantFor(session.userId)
+  if (!g) throw new Error('The server is not answering, and this till cannot keep the sale offline for you yet (sign in once while the server answers to allow that). Try again in a moment.')
   return g
+}
+
+/**
+ * Sign in again in place (the sign-in ended mid-sale): same person only, since the open shift and the cart are theirs.
+ * A fresh session and offline sign-in are saved, so the sale can be completed straight away.
+ */
+export async function signInAgain(userId: string, username: string, pin: string): Promise<void> {
+  const r = await api.login(username.trim(), pin)
+  if (r.user.id !== userId) {
+    throw new Error('Sign in as the person using this till. To change cashier, go back to the cart and sign out.')
+  }
+  if (r.offline_grant) await saveGrant(r.offline_grant)
+  await db.kv.put({ id: 'session', token: r.token, userId: r.user.id, userName: r.user.name, expiresAt: r.expires_at })
 }
 
 const isNetwork = (e: unknown) => e instanceof ApiError && e.code === 'network'

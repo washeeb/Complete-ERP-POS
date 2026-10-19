@@ -38,6 +38,7 @@ Find the symptom, then try the fixes in order.
 | The till does not work at all when the server is off | Offline was never enabled on that device: setups B/C/E need 9.3; then open the till once while the server is on. |
 | Enrolling a till fails on a network address (`http://192.168…`) | The browser does not trust the address yet: do 9.3 on that device. |
 | Cashier cannot sign in offline | They must have signed in on **this** till while it was online within the offline period (System → Settings → Offline till sign-in lasts). |
+| *Your sign-in on this till has ended* (payment screen) | The cashier's sign-in lasts 12 hours from the last time the till was used, so a till left idle (e.g. overnight) asks again. Enter your own username and PIN in the box; the sale completes and nothing in the cart is lost. **Why:** a till nobody is using should not stay signed in for anyone who walks up to it. Older tills showed *No offline sign-in for you on this till* instead; update the till (close and reopen it). |
 | *PIN locked* | Too many wrong PINs. A manager resets it: People & access → Users → the person → **Set POS PIN**. |
 | Red banner: items refused | A supervisor opens **Sales → Review queue** (*sync failed*) to see why, fixes it, then presses **Retry refused** on the till. |
 | *The price … changed. Refresh the till* | The price changed at head office while the item was in the cart. Remove the line and add it again. |

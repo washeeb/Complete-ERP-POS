@@ -35,7 +35,7 @@ const bootstrap = (shift: unknown) => ({
   receipt_footer: 'Thank you', shift, last_device_seq: 0, catalog_version: 'v1', server_time: new Date().toISOString(),
 })
 
-type Server = { up: boolean; shift: unknown; syncBodies: { body: string; signature: string | null }[]; sales: unknown[] }
+type Server = { up: boolean; shift: unknown; syncBodies: { body: string; signature: string | null }[]; sales: unknown[]; expired?: boolean }
 
 async function mockServer(page: Page, s: Server) {
   const json = (route: Route, status: number, body: unknown) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) })
@@ -44,9 +44,11 @@ async function mockServer(page: Page, s: Server) {
     if (!s.up) return route.fulfill({ status: 502, body: 'Bad Gateway' }) // what a proxy answers when the app server is down
     const req = route.request()
     const path = new URL(req.url()).pathname.replace('/api/v1/', '')
+    // The person's sign-in ran out: every till call is refused (as Sanctum answers) until they sign in again.
+    if (s.expired && path.startsWith('pos/') && path !== 'pos/login') return json(route, 401, { message: 'Unauthenticated.' })
     switch (`${req.method()} ${path}`) {
       case 'POST devices/enroll': return json(route, 201, { device_id: 'dev-1', token: 'device-token' })
-      case 'POST pos/login': return json(route, 200, { token: 'staff-token', expires_at: null, user: { id: 'u-esi', name: 'Esi Cashier' }, offline_grant: grant })
+      case 'POST pos/login': s.expired = false; return json(route, 200, { token: 'staff-token', expires_at: null, user: { id: 'u-esi', name: 'Esi Cashier' }, offline_grant: grant })
       case 'GET pos/bootstrap': return json(route, 200, bootstrap(s.shift))
       case 'GET pos/catalog': return req.headers()['if-none-match'] === '"v1"' ? route.fulfill({ status: 304 }) : json(route, 200, catalog)
       case 'POST pos/shifts/open': {
@@ -133,4 +135,27 @@ test('sells online, keeps selling with the server down, then sends the signed qu
   expect(sent.events[0].payload.device_seq).toBe(2)
   expect(sent.events[0].grant).toEqual(grant) // exactly as the server signed it
   expect(Buffer.from(s.syncBodies[0].signature ?? '', 'base64')).toHaveLength(64) // ECDSA P-256 raw r||s
+})
+
+test('a sign-in that ran out mid-sale: the cashier enters their PIN and the same sale completes', async ({ page }) => {
+  const s: Server = { up: true, shift: null, syncBodies: [], sales: [] }
+  await mockServer(page, s)
+  await page.goto('/')
+  await page.getByPlaceholder('ABCD-EFGH-JKMN').fill('ABCD-EFGH-JKMN')
+  await page.getByRole('button', { name: 'Enrol this device' }).click()
+  await signIn(page)
+  await page.getByPlaceholder('0.00').fill('100')
+  await page.getByRole('button', { name: 'Open shift' }).click()
+
+  await expect(page.getByLabel('Scan or search')).toBeVisible()
+  s.expired = true
+  await sellOneMilo(page)
+  const dialog = page.getByRole('dialog', { name: 'Sign in again' })
+  await expect(dialog.getByText('Your sign-in on this till has ended')).toBeVisible()
+  await expect(page.getByText('No offline sign-in')).toBeHidden()
+  await dialog.getByLabel('Your username').fill('esi')
+  await dialog.getByLabel('Your PIN').fill(PIN)
+  await dialog.getByRole('button', { name: 'Sign in and complete the sale' }).click()
+  await expect(page.getByText('Receipt HQ-T01A-000001')).toBeVisible()
+  expect(s.sales).toHaveLength(1)
 })

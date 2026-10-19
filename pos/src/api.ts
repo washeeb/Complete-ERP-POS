@@ -16,6 +16,7 @@ export class ApiError extends Error {
 }
 
 export const GATEWAY_DOWN = [502, 503, 504]
+export const SIGNED_OUT = 'Your sign-in on this till has ended. Enter your username and PIN to carry on; the sale is kept.'
 
 async function call<T>(path: string, init: RequestInit & { auth?: 'device' | 'session' | 'none' } = {}): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json', 'Content-Type': 'application/json' }
@@ -36,6 +37,7 @@ async function call<T>(path: string, init: RequestInit & { auth?: 'device' | 'se
   const body = await res.json().catch(() => ({}))
   if (!res.ok) {
     if (res.status === 401 && auth === 'session') await db.kv.delete('session')
+    if (res.status === 401 && auth === 'session' && !body.error) throw new ApiError('signed_out', SIGNED_OUT, 401)
     const detail = body.detail ?? body.message ?? `Server error (${res.status})`
     throw new ApiError(body.error ?? (res.status === 422 ? 'validation' : 'server'), detail, res.status)
   }

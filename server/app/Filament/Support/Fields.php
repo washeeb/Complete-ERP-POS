@@ -6,7 +6,10 @@ use App\Models\Bin;
 use App\Models\ProductUom;
 use App\Models\Warehouse;
 use App\Support\Qty;
+use Filament\Forms\Components\Field;
 use Filament\Forms\Components\Select;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Illuminate\Database\Eloquent\Builder;
 
 /** Form fields shared by the purchasing and warehouse screens. */
@@ -17,6 +20,26 @@ final class Fields
         $u->loadMissing('product', 'uom');
 
         return "{$u->product->sku} · {$u->product->name} — {$u->uom->code}".($u->is_base ? '' : ' × '.rtrim(rtrim((string) $u->factor, '0'), '.'));
+    }
+
+    /**
+     * A line's optional extras (expiry, reason, note…) folded under "More details" so the line stays short; it opens by
+     * itself when one of them already holds a value (an edited draft), and a click opens it when needed.
+     *
+     * @param  list<Field>  $fields
+     */
+    public static function more(array $fields, int $columns = 4): Section
+    {
+        $names = array_map(fn (Field $f) => $f->getName(), $fields);
+
+        return Section::make('More details')->compact()->collapsible()->columnSpanFull()->columns($columns)
+            ->collapsed(fn (Get $get) => collect($names)->every(fn ($n) => blank($get($n))))->schema($fields);
+    }
+
+    /** True when the product of the chosen unit is serial-numbered (phones, laptops…): only then ask for serials. */
+    public static function serialised(?string $productUomId): bool
+    {
+        return $productUomId !== null && (bool) ProductUom::with('product')->find($productUomId)?->product?->track_serials;
     }
 
     /** Search products by name, SKU or barcode; the value is the product unit (e.g. "Milo — CTN × 24"). */
