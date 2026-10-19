@@ -6,6 +6,7 @@ use App\Domain\Fiscal\FiscalService;
 use App\Domain\Inventory\ExpiryService;
 use App\Domain\Org\IndustryService;
 use App\Domain\Pharmacy\PharmacyRules;
+use App\Domain\Pos\SaleDetails;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
@@ -50,6 +51,11 @@ final class Settings
             'type' => 'bool', 'default' => false, 'group' => 'Tills and cash',
             'label' => 'Show stock left on the till while selling',
             'help' => 'On: each item in the sale and in the search list shows how many are left at that till\'s store, counting what is already in the sale and sales not yet sent. Off: no stock figures on the till. Tills pick up the change when they next sign in.',
+        ],
+        'pos.require_details' => [
+            'type' => 'choice', 'default' => 'none', 'group' => 'Tills and cash', 'branch' => true, 'options' => SaleDetails::REQUIRE,
+            'label' => 'Before payment, the till asks for',
+            'help' => 'Nothing: walk-ins buy without details (they can still be typed under Details). A name and/or phone: the cashier enters them, or picks a customer, before payment; useful for deliveries, credit or follow-up calls. Offline sales are never refused; a missing detail goes to the review list. A branch can choose differently (Company → Branches).',
         ],
         'cash.vaults' => [
             'type' => 'bool', 'default' => false, 'group' => 'Tills and cash',

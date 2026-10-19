@@ -5,6 +5,7 @@ namespace App\Filament\Resources\CustomerPayments;
 use App\Domain\Sales\ReceivablesService;
 use App\Filament\Resources\CustomerPayments\Pages\ListCustomerPayments;
 use App\Filament\Support\Erp;
+use App\Filament\Support\GlobalSearch;
 use App\Models\CustomerPayment;
 use App\Models\SalePayment;
 use App\Support\Money;
@@ -22,6 +23,25 @@ use UnitEnum;
 /** Payments received on customer accounts (recorded from the customer page). */
 class CustomerPaymentResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number', 'reference', 'customer.name'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Customer' => $record->customer?->name, 'Reference' => $record->reference]);
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['customer']);
+    }
+
     protected static ?string $model = CustomerPayment::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;

@@ -7,6 +7,7 @@ use App\Domain\Services\MembershipService;
 use App\Filament\Resources\Memberships\Pages\ListMemberships;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\QuickCreate;
 use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\Membership;
@@ -71,10 +72,10 @@ class MembershipResource extends Resource
         $ids = Erp::branchIds('services.memberships');
 
         return $schema->columns(3)->components([
-            Select::make('customer_id')->label('Customer')->required()->searchable()
+            QuickCreate::on(Select::make('customer_id')->label('Customer')->required()->searchable()
                 ->getSearchResultsUsing(fn (string $search) => Customer::where('is_active', true)->where(fn ($q) => $q->where('name', 'ilike', "%{$search}%")->orWhere('phone', 'like', "%{$search}%"))
                     ->orderBy('name')->limit(20)->get()->mapWithKeys(fn ($c) => [$c->id => trim("{$c->name} {$c->phone}")]))
-                ->getOptionLabelUsing(fn ($value) => Customer::whereKey($value)->value('name')),
+                ->getOptionLabelUsing(fn ($value) => Customer::whereKey($value)->value('name')), 'customer'),
             Select::make('membership_plan_id')->label('Plan')->required()
                 ->options(fn () => MembershipPlan::where('is_active', true)->orderBy('name')->get()->mapWithKeys(fn ($p) => [$p->id => "{$p->name} · ".FinanceUi::money($p->price_minor).' '.strtolower(MembershipService::INTERVALS[$p->interval_months])])),
             Select::make('branch_id')->label('Invoiced from (branch)')->required()

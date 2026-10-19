@@ -496,6 +496,26 @@ Design:
 ## Moving and deleting catalogue lists (2026-10-19)
 - Moving products saves each product like an edit (`CatalogService::moveProducts`): audited, synced, nothing else changes. Merging duplicates = move all, then delete the empty one.
 - Delete only when unused (`deleteSimple`): products, sub-categories, styles and promotions for categories; products and styles for brands; product units for units. Foreign keys stay `restrict`, so anything missed is refused too. A `*.deleted` outbox event lets branch servers delete it as well, unless something there still uses it (`Replication::DELETABLE`).
+## Editing keeps one record; adding from where you are (2026-10-19)
+- Every edit screen's uniqueness checks exclude the record itself (checked: SKU, codes, phone, coupons, bins…). The product barcode check now also allows a barcode to move between units of the *same* product; a changed base unit renames the base `product_uoms` row instead of adding a second one.
+- Inline creation (`App\Filament\Support\QuickCreate`) calls the same domain services as each record's own screen, so permissions, validation and the audit log are identical; the "+" only shows to people allowed to create that kind of record. Tax groups are not created inline (they need their rates).
+## Correcting a base unit (2026-10-19)
+- After stock has moved the base unit may be **renamed, never converted**: the base `product_uoms` row keeps its id (prices, barcodes and stock follow) and only its unit changes; documents keep the unit code they printed. Refused when the product already has that unit as a pack size, or when stock is in fractions the new unit cannot hold. Converting (1 pack = 10 pieces) stays a new unit under *Other units*.
+## Till details, calculator and waybills (2026-10-19)
+- **Owner answers:** calculator on the till (F1, *Use as amount* on payment), a change breakdown, and in the back office; sale comment, walk-in name/phone, industry extras and a per-branch "ask before payment" setting; waybills for deliveries, transfers, returns to suppliers and goods from suppliers.
+- **Walk-ins stay walk-ins:** their name and phone sit on the sale (`walk_in_name`, `walk_in_phone`, normalised to +233); *Save as customer* creates a customer without changing the posted sale. Industry details are a whitelisted `extras` JSON (age, sex, weight, pregnancy, guests, next visit), validated on the server.
+- **The calculator never uses eval:** a small parser (till and back office alike); percent works like a shop calculator (`200 + 10%` = 220).
+- **One waybill document for all four flows** (`waybills`, `WB`), with the goods copied from the source as sent. Proof of delivery by the office (signed copy / photo) or by the receiver through a random 40-character link in the QR code (no sign-in, throttled, valid only while the goods are on the way, cleared once used). Permissions follow what is carried: deliveries `sales.deliver`, transfers `stock.transfer`, returns `stock.expiry`, inbound `stock.receive`.
+## Top search covers the whole back office (2026-10-19)
+- Every main list declares its searchable columns and result details (`App\Filament\Support\GlobalSearch` trait); Filament only offers results from lists the person may open. A result opens the record's page, else its list searched for it, so lists without a page are still reachable.
+- Customer phone search normalises 024… to +233… like the stored numbers.
+## Licence generator (2026-10-18)
+- **Owner answers:** a vendor panel in this codebase (`/vendor`), only on the licence server; the signing key lives there (password + authenticator to use it); plans + add-ons with per-licence overrides; billing and payments, renewal reminders, a usage and health dashboard from the check-ins, and a licence certificate.
+- **Left out of client builds, not just switched off:** `release:build` deletes the panel, its screens, prints and routes; the panel provider is registered only when `LICENSE_SERVER=true` and the class exists. The licensing domain (`app/Domain/Licensing/Vendor`) stays because installations share the code that verifies keys.
+- **A licence is never edited:** renew and change package issue a new signed key for the same installation (`replaces` / `superseded_by`), delivered at the next check-in as before; status (active / expiring / grace / expired / revoked / replaced) is worked out from the dates, never stored.
+- **Access:** owners (level 6) of the licence server, plus e-mails in `LICENSE_VENDOR_STAFF`; no new permission in the client catalogue. Sudo-style password confirmation on issue, renew and revoke. Every action is in the audit log.
+- **Payment details** for invoices come from `LICENSE_PAYMENT_DETAILS`, not the repository.
+- `vendor_licenses.customer` (the name signed into the key) predates the customer table, so the relation is `client()`.
 
 ## Pharmacy sale rules are a choice (2026-10-18)
 - **Owner answers:** four levels (approve / details / patient / free) per kind (POM, controlled); company default with branch overrides; after-sale check as a choice (sign-off, daily summary, nothing); quantity cap; major warnings need a pharmacist; controlled can be locked strict; report of unapproved sales. Default stays the strict rule, so nothing changes until someone chooses otherwise.

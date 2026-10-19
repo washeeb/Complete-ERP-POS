@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Uoms;
 
 use App\Filament\Resources\Uoms\Pages\ListUoms;
+use App\Filament\Support\GlobalSearch;
 use App\Filament\Support\SimpleCatalogResource;
 use App\Models\ProductUom;
 use App\Models\Uom;
@@ -13,10 +14,25 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class UomResource extends SimpleCatalogResource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['code', 'name'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Code' => $record->code]);
+    }
+
     protected static ?string $model = Uom::class;
 
     protected static bool $deletable = true;

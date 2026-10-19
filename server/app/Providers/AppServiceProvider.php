@@ -10,6 +10,7 @@ use App\Filament\Support\TableExport;
 use App\Http\Middleware\RecordSlowRequests;
 use App\Models\User;
 use App\Modules\ModuleRegistry;
+use App\Providers\Filament\VendorPanelProvider;
 use App\Security\Authorizer;
 use App\Support\People;
 use App\Support\Settings;
@@ -33,6 +34,10 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // SyncLytics' licence generator (/vendor): only on the licence server, and its files are left out of client builds.
+        if (config('license.server.enabled') && class_exists(VendorPanelProvider::class)) {
+            $this->app->register(VendorPanelProvider::class);
+        }
         $this->app->singleton(RecordSlowRequests::class); // terminate() reads what handle() measured
         $this->app->singleton(ModuleRegistry::class, fn () => new ModuleRegistry(config('erp.modules_path')));
         // Request-scoped: memoised grants and settings never leak between requests or queue jobs.

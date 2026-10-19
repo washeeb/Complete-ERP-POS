@@ -269,13 +269,18 @@ final class CatalogService
         $this->assertOwned($actor, Category::class, $product->category_id, 'category', nullable: true);
         $this->assertOwned($actor, Brand::class, $product->brand_id, 'brand', nullable: true);
         if ($product->exists && $product->isDirty('base_uom_id') && $product->stockLevels()->exists()) {
-            throw new DomainException('The base unit cannot change once stock has moved; create a new product instead.');
+            throw new DomainException('The base unit cannot change once stock has moved; use Correct the unit on the product (it renames the unit, quantities stay).');
         }
 
         return $this->recorder->transaction(function () use ($actor, $product, $data, $pricesGiven, $reason, $startsBatches, $recipe) {
             $isNew = ! $product->exists;
             if ($startsBatches && ! $isNew) {
                 app(StockLedger::class)->assignOpeningBatches($actor, $product); // stock already here becomes batch OPENING
+            }
+            // A base unit changed before any stock (e.g. PC → PK): prices typed against the old unit follow it.
+            $oldBaseUom = ! $isNew && $product->isDirty('base_uom_id') ? $product->getOriginal('base_uom_id') : null;
+            if ($oldBaseUom && $pricesGiven) {
+                $data['prices'] = array_map(fn ($r) => ($r['uom_id'] ?? null) === $oldBaseUom ? ['uom_id' => $product->base_uom_id] + $r : $r, $data['prices']);
             }
             $product->tenant_id = $actor->tenantId;
             $product->updated_by = $actor->id;
@@ -285,8 +290,9 @@ final class CatalogService
             $this->recorder->save($actor, $product, $isNew ? 'product.created' : 'product.updated', $reason);
 
             $summary = [];
-            if (array_key_exists('units', $data) || $isNew) {
-                $summary['units'] = $this->syncUnits($actor, $product, $data['units'] ?? [], $data['base_barcodes'] ?? []);
+            if (array_key_exists('units', $data) || $isNew || $oldBaseUom) {
+                $keep = array_key_exists('units', $data) ? null : self::inputOf($product); // base unit changed from a file: keep the other units and barcodes
+                $summary['units'] = $this->syncUnits($actor, $product, $data['units'] ?? $keep['units'] ?? [], $data['base_barcodes'] ?? $keep['base_barcodes'] ?? []);
             }
             if ($pricesGiven) {
                 $summary['prices'] = $this->syncPrices($actor, $product, $data['prices']);
@@ -319,8 +325,21 @@ final class CatalogService
         $this->require($actor, $permission);
         $model->fill($data);
         $model->tenant_id = $actor->tenantId;
+        // One of each: the same category (under the same parent), brand or unit code twice is refused, whoever adds it.
+        $other = fn ($q) => $q->when($model->exists, fn ($w) => $w->whereKeyNot($model->getKey()));
+        if ($model instanceof Category || $model instanceof Brand) {
+            $model->name = trim((string) $model->name);
+            $same = $model::query()->whereRaw('lower(name) = ?', [mb_strtolower($model->name)])->tap($other)
+                ->when($model instanceof Category, fn ($q) => $model->parent_id ? $q->where('parent_id', $model->parent_id) : $q->whereNull('parent_id'))->exists();
+            if ($same) {
+                throw new DomainException(($model instanceof Category ? 'Category' : 'Brand')." {$model->name} already exists.");
+            }
+        }
         if ($model instanceof Uom) {
             $model->code = strtoupper(trim($model->code));
+            if (Uom::where('code', $model->code)->tap($other)->exists()) {
+                throw new DomainException("Unit {$model->code} already exists.");
+            }
             if ($model->decimals < 0 || $model->decimals > 3) {
                 throw new DomainException('A unit allows 0 to 3 decimal places.');
             }
@@ -474,6 +493,45 @@ final class CatalogService
         return $this->recorder->save($actor, $group, 'tax_group.verified', $note);
     }
 
+    /**
+     * Correct a product's base unit when it was set wrongly (e.g. Pieces instead of Pack), even after stock has moved.
+     * Only the name of the unit changes: 40 pieces become 40 packs. Prices, barcodes, stock and history stay with the same
+     * unit row; documents already printed keep the unit they showed. Refused when the product already has the new unit
+     * as a pack size, or when stock is in fractions the new unit cannot hold.
+     */
+    public function correctBaseUnit(Actor $actor, Product $product, string $uomId, string $reason): Product
+    {
+        $this->require($actor, 'catalog.manage');
+        $this->assertOwned($actor, Uom::class, $uomId, 'unit');
+        if (trim($reason) === '') {
+            throw new DomainException('Give the reason for the correction.');
+        }
+        if ($uomId === $product->base_uom_id) {
+            throw new DomainException('That is already the base unit.');
+        }
+        $new = Uom::findOrFail($uomId);
+        if ($product->units()->where('uom_id', $uomId)->exists()) {
+            throw new DomainException("{$product->name} already has {$new->code} as another unit: remove it first (Barcodes and selling units), then correct the base unit.");
+        }
+        $step = 10 ** (3 - min(3, $new->decimals));
+        foreach ($product->stockLevels()->get(['on_hand']) as $l) {
+            if (Qty::toMilli((string) $l->on_hand) % $step !== 0) {
+                throw new DomainException("Stock of {$product->name} is in fractions that {$new->code} does not allow ({$new->decimals} decimal places).");
+            }
+        }
+        $old = Uom::find($product->base_uom_id);
+
+        return $this->recorder->transaction(function () use ($actor, $product, $new, $old, $reason) {
+            $base = $product->units()->where('is_base', true)->firstOrFail();
+            $base->uom_id = $new->id;
+            $this->recorder->save($actor, $base, 'product_uom.base_unit_corrected', $reason);
+            $product->base_uom_id = $new->id;
+            $this->recorder->save($actor, $product, 'product.base_unit_corrected', "{$old?->code} → {$new->code}: ".trim($reason), payload: ['from' => $old?->code, 'to' => $new->code]);
+
+            return $product->fresh();
+        });
+    }
+
     // -------------------------------------------------------------------
 
     private function syncUnits(Actor $actor, Product $product, array $units, array $baseBarcodes): array
@@ -492,6 +550,11 @@ final class CatalogService
                 'is_purchasable' => (bool) ($u['is_purchasable'] ?? true), 'barcodes' => $u['barcodes'] ?? []];
         }
 
+        // The base unit was changed (no stock yet): the old base row takes the new unit, so its prices and barcodes follow.
+        $oldBase = $product->units()->where('is_base', true)->first();
+        if ($oldBase && $oldBase->uom_id !== $product->base_uom_id && ! $product->units()->where('uom_id', $product->base_uom_id)->exists()) {
+            $oldBase->forceFill(['uom_id' => $product->base_uom_id])->save();
+        }
         $existing = $product->units()->get()->keyBy('uom_id');
         $changes = [];
         foreach ($wanted as $uomId => $w) {
@@ -510,7 +573,7 @@ final class CatalogService
         foreach ($existing as $uomId => $pu) {
             if (! isset($wanted[$uomId])) {
                 // Units with history stay (receipts reference them); they just stop being sellable.
-                $pu->forceFill(['is_sellable' => false, 'is_purchasable' => false])->save();
+                $pu->forceFill(['is_base' => false, 'is_sellable' => false, 'is_purchasable' => false])->save();
                 $pu->barcodes()->delete();
                 $changes[] = 'retired '.Uom::find($uomId)->code;
             }
@@ -527,8 +590,12 @@ final class CatalogService
                 throw new DomainException("Barcode “{$code}” has invalid characters.");
             }
             $clash = Barcode::where('code', $code)->where('product_uom_id', '!=', $pu->id)->with('product')->first();
-            if ($clash) {
-                throw new DomainException("Barcode {$code} already belongs to {$clash->product->name}.");
+            if ($clash && $clash->product_id !== $product->id) {
+                throw new DomainException("Barcode {$code} already belongs to {$clash->product->name} ({$clash->product->sku}).");
+            }
+            if ($clash) { // on another unit of this same product (e.g. its base unit was changed): the barcode moves here
+                $clash->delete();
+                $changes[] = "barcode {$code} moved";
             }
         }
         $current = $pu->barcodes()->pluck('code')->all();

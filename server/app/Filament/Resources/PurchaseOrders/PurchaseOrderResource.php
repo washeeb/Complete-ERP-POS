@@ -11,6 +11,8 @@ use App\Filament\Resources\PurchaseOrders\Pages\ListPurchaseOrders;
 use App\Filament\Resources\PurchaseOrders\Pages\ViewPurchaseOrder;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
+use App\Filament\Support\GlobalSearch;
+use App\Filament\Support\QuickCreate;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
@@ -45,6 +47,25 @@ use UnitEnum;
 
 class PurchaseOrderResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number', 'supplier.name'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Supplier' => $record->supplier?->name, 'Status' => $record->status]);
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['supplier']);
+    }
+
     protected static ?string $model = PurchaseOrder::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
@@ -104,8 +125,8 @@ class PurchaseOrderResource extends Resource
     {
         return $schema->columns(1)->components([
             Section::make()->columns(3)->schema([
-                Select::make('supplier_id')->label('Supplier')->required()->searchable()
-                    ->options(fn () => Supplier::where('is_active', true)->orderBy('name')->pluck('name', 'id')),
+                QuickCreate::on(Select::make('supplier_id')->label('Supplier')->required()->searchable()
+                    ->options(fn () => Supplier::where('is_active', true)->orderBy('name')->pluck('name', 'id')), 'supplier'),
                 Select::make('warehouse_id')->label('Deliver to')->required()->options(fn () => Fields::warehouses('purchasing.manage')),
                 DatePicker::make('expected_on')->label('Expected delivery'),
                 Textarea::make('note')->columnSpanFull(),

@@ -7,6 +7,7 @@ use App\Filament\Resources\Prescriptions\Pages\ListPrescriptions;
 use App\Filament\Resources\Prescriptions\Pages\ViewPrescription;
 use App\Filament\Resources\Sales\SaleResource;
 use App\Filament\Support\Erp;
+use App\Filament\Support\GlobalSearch;
 use App\Models\Prescription;
 use BackedEnum;
 use Filament\Actions\ViewAction;
@@ -26,13 +27,30 @@ use UnitEnum;
 /** Prescriptions dispensed at the tills (created with the sale; never edited). */
 class PrescriptionResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number', 'reference', 'customer.name'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Patient' => $record->customer?->name, 'Prescriber' => $record->prescriber_name]);
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['customer']);
+    }
+
     protected static ?string $model = Prescription::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
     protected static string|UnitEnum|null $navigationGroup = 'Pharmacy';
-
-    protected static ?string $recordTitleAttribute = 'number';
 
     protected static ?int $navigationSort = 1;
 

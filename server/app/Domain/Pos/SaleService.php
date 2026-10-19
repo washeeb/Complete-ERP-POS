@@ -354,12 +354,13 @@ final class SaleService
         }
 
         $rx = $this->prescription($device, $user, $p, $lines, $customer, $branch, $offline, $flags);
+        $details = SaleDetails::from($p, $customer, $branch, $offline, $flags); // comment, walk-in name and phone, industry details
 
         $receiptNo = sprintf('%s-%s%s-%06d', $branch->code, $till->code, $device->receipt_series, $p['device_seq']);
         $actor = Actor::user($user, 'pos', $device->id);
 
         try {
-            $sale = $this->recorder->transaction(function () use ($p, $device, $till, $branch, $warehouse, $shift, $user, $list, $occurredAt, $hash, $receiptNo, $lines, $lineBreakdowns, $net, $tax, $total, $paid, $change, $payments, $actor, $offline, $grant, &$flags, $priceDiffs, $customer, $onAccount, $creditApprovedBy, $results, $discount, $coupon, $saleBp, $discountApprovedBy, $calc, $rx, $diningOrder, $tip, $tipUserId, $tradeIns) {
+            $sale = $this->recorder->transaction(function () use ($p, $device, $till, $branch, $warehouse, $shift, $user, $list, $occurredAt, $hash, $receiptNo, $lines, $lineBreakdowns, $net, $tax, $total, $paid, $change, $payments, $actor, $offline, $grant, &$flags, $priceDiffs, $customer, $onAccount, $creditApprovedBy, $results, $discount, $coupon, $saleBp, $discountApprovedBy, $calc, $rx, $diningOrder, $tip, $tipUserId, $tradeIns, $details) {
                 $sale = new Sale;
                 $sale->forceFill([
                     'id' => $p['id'], 'tenant_id' => $device->tenant_id, 'branch_id' => $branch->id, 'warehouse_id' => $warehouse->id,
@@ -374,7 +375,7 @@ final class SaleService
                     'discount_minor' => $discount, 'coupon_code' => $calc['coupon_applied'] ? $coupon : null, 'sale_discount_bp' => $saleBp,
                     'discount_approved_by_name' => $discountApprovedBy,
                     'dining_order_id' => $diningOrder?->id, 'tip_minor' => $tip, 'tip_user_id' => $tipUserId,
-                ])->save();
+                ] + $details)->save();
                 if ($rx) {
                     $rx->forceFill(['number' => $this->numbers->next($device->tenant_id, 'prescription'), 'sale_id' => $sale->id])->save();
                     $this->recorder->audit->record($actor, 'prescription.dispensed', $rx, ['number' => [null, $rx->number], 'pharmacist_name' => [null, $rx->pharmacist_name]], null, $branch->id);

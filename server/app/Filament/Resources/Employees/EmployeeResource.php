@@ -8,6 +8,8 @@ use App\Filament\Resources\Employees\Pages\EditEmployee;
 use App\Filament\Resources\Employees\Pages\ListEmployees;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\GlobalSearch;
+use App\Filament\Support\QuickCreate;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\User;
@@ -35,6 +37,20 @@ use UnitEnum;
 /** Employees. Pay and bank details are only shown to HR (hr.manage). */
 class EmployeeResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number', 'name', 'phone', 'email'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Staff no.' => $record->number, 'Phone' => $record->phone]);
+    }
+
     protected static ?string $model = Employee::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedIdentification;
@@ -111,7 +127,7 @@ class EmployeeResource extends Resource
             ]),
             Section::make('Job')->columns(3)->schema([
                 Select::make('branch_id')->label('Branch')->required()->options(fn () => FinanceUi::branches())->default(fn () => FinanceUi::hq()),
-                Select::make('department_id')->label('Department')->options(fn () => Department::orderBy('name')->pluck('name', 'id')),
+                QuickCreate::on(Select::make('department_id')->label('Department')->options(fn () => Department::orderBy('name')->pluck('name', 'id')), 'department'),
                 TextInput::make('job_title')->maxLength(255),
                 Select::make('employment_type')->required()->options(Employee::TYPES)->default('permanent'),
                 DatePicker::make('hire_date')->label('Start date')->required()->default(now()),

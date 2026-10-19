@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Domain\Customers\CustomerLedger;
+use App\Domain\Logistics\WaybillService;
 use App\Domain\Pharmacy\PharmacyReports;
 use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
@@ -21,7 +22,9 @@ use App\Models\StockAdjustment;
 use App\Models\SupplierReturn;
 use App\Models\Tenant;
 use App\Models\Warehouse;
+use App\Models\Waybill;
 use App\Security\Authorizer;
+use App\Support\Qr;
 use App\Support\Settings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -210,6 +213,23 @@ class PrintController extends Controller
             ->whereBetween('posted_at', [Carbon::parse($from, $tz)->startOfDay()->utc(), Carbon::parse($to, $tz)->endOfDay()->utc()])->orderBy('posted_at')->get();
 
         return view('print.disposal-register', ['warehouse' => $w, 'from' => $from, 'to' => $to, 'disposals' => $disposals, 'company' => $this->company($w->branch_id)]);
+    }
+
+    /** A waybill to print and travel with the goods; while they are on the way it carries the receiver's QR code. */
+    public function waybill(Request $request, Waybill $waybill): View
+    {
+        $this->allow($request, [WaybillService::PERMISSIONS[$waybill->kind], 'stock.view'], $waybill->branch_id, $waybill->tenant_id);
+        $qr = $waybill->confirm_token && in_array($waybill->status, ['prepared', 'dispatched'], true) ? Qr::svg(route('waybill.confirm', $waybill->confirm_token)) : null;
+
+        return view('print.waybill', ['w' => $waybill, 'qr' => $qr, 'company' => $this->company($waybill->branch_id)]);
+    }
+
+    public function waybillPod(Request $request, Waybill $waybill): StreamedResponse
+    {
+        $this->allow($request, [WaybillService::PERMISSIONS[$waybill->kind], 'stock.view'], $waybill->branch_id, $waybill->tenant_id);
+        abort_unless($waybill->pod_path && Storage::disk('local')->exists($waybill->pod_path), 404);
+
+        return Storage::disk('local')->response($waybill->pod_path);
     }
 
     public function disposalCertificate(Request $request, StockAdjustment $adjustment): StreamedResponse

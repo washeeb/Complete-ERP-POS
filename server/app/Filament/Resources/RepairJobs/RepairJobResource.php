@@ -9,6 +9,7 @@ use App\Filament\Resources\RepairJobs\Pages\ViewRepairJob;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\GlobalSearch;
 use App\Models\Branch;
 use App\Models\RepairJob;
 use App\Models\Supplier;
@@ -39,6 +40,25 @@ use UnitEnum;
 /** Repair job cards: devices in for repair, their parts and labour, and where each job stands. */
 class RepairJobResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number', 'phone', 'serial', 'customer.name'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Customer' => $record->customer?->name, 'Status' => $record->status]);
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['customer']);
+    }
+
     protected static ?string $model = RepairJob::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWrenchScrewdriver;
@@ -48,8 +68,6 @@ class RepairJobResource extends Resource
     protected static ?string $navigationLabel = 'Repairs';
 
     protected static ?string $modelLabel = 'repair job';
-
-    protected static ?string $recordTitleAttribute = 'number';
 
     protected static ?int $navigationSort = 1;
 

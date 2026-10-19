@@ -77,7 +77,7 @@ class ProductsImporter extends Importer
             ['name' => 'category', 'required' => false, 'help' => 'Category name.', 'example' => 'Groceries'],
             ['name' => 'brand', 'required' => false, 'help' => 'Brand name.', 'example' => 'Royal Aroma'],
             ['name' => 'tax_group', 'required' => false, 'help' => 'Tax group code (Pricing & tax → Tax groups). New products: STD if empty.', 'example' => 'STD'],
-            ['name' => 'base_unit', 'required' => false, 'help' => 'Unit stock is counted in: its code or name (PC, KG, TAB or Tablet). New products: PC if empty. Cannot change once stock has moved.', 'example' => 'PC'],
+            ['name' => 'base_unit', 'required' => false, 'help' => 'Unit stock is counted in: its code or name (PC, KG, TAB or Tablet). New products: PC if empty. After stock has moved, a different unit only corrects the name (40 pieces become 40 packs).', 'example' => 'PC'],
             ['name' => 'track_stock', 'required' => false, 'help' => 'yes / no. New products: yes if empty.', 'example' => 'yes'],
             ['name' => 'track_batches', 'required' => false, 'help' => 'yes / no — batches and expiry dates.', 'example' => 'no'],
             ['name' => 'for_sale', 'required' => false, 'help' => 'yes / no — no takes it off the tills and shop.', 'example' => 'yes'],
@@ -168,6 +168,10 @@ class ProductsImporter extends Importer
         if (self::has($row, 'base_unit') || $isNew) {
             $code = self::has($row, 'base_unit') ? $row['base_unit'] : 'PC';
             $data['base_uom_id'] = self::unitId($code) ?? throw new DomainException("Unknown unit {$code} (Catalog → Units of measure).");
+            // A product whose stock has moved: the unit is corrected (renamed, quantities stay), not converted.
+            if (! $isNew && $data['base_uom_id'] !== $product->base_uom_id && $product->stockLevels()->exists()) {
+                $product = $this->catalog->correctBaseUnit($actor, $product, $data['base_uom_id'], 'Products file');
+            }
         }
         $data['track_stock'] = self::has($row, 'track_stock') ? self::bool($row['track_stock'], 'track_stock') : ($isNew ? true : $product->track_stock);
         foreach (['track_batches' => 'track_batches', 'for_sale' => 'is_active'] as $col => $field) {

@@ -8,6 +8,8 @@ use App\Filament\Resources\Products\Pages\CreateProduct;
 use App\Filament\Resources\Products\Pages\EditProduct;
 use App\Filament\Resources\Products\Pages\ListProducts;
 use App\Filament\Support\Erp;
+use App\Filament\Support\GlobalSearch;
+use App\Filament\Support\QuickCreate;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Industry;
@@ -50,6 +52,25 @@ use UnitEnum;
 
 class ProductResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['sku', 'name', 'barcodes.code'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['SKU' => $record->sku, 'Category' => $record->category?->name]);
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['category']);
+    }
+
     protected static ?string $model = Product::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCube;
@@ -57,8 +78,6 @@ class ProductResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'Catalog';
 
     protected static ?int $navigationSort = 1;
-
-    protected static ?string $recordTitleAttribute = 'name';
 
     public static function canViewAny(): bool
     {
@@ -80,11 +99,6 @@ class ProductResource extends Resource
         return false; // sales and stock history reference products; deactivate instead
     }
 
-    public static function getGloballySearchableAttributes(): array
-    {
-        return ['sku', 'name'];
-    }
-
     public static function form(Schema $schema): Schema
     {
         $uoms = fn () => Uom::orderBy('code')->get()->mapWithKeys(fn ($u) => [$u->id => "{$u->code} · {$u->name}"]);
@@ -100,15 +114,15 @@ class ProductResource extends Resource
                     ->helperText('Each industry has its own catalogue: its tills and screens show only its products. Shared items are sold by every industry.'),
                 TextInput::make('location')->label('Location / shelf')->maxLength(60)->placeholder('e.g. Shelf B2')
                     ->helperText('Where it is kept: shows on the stock and count sheets and in the till\'s search.'),
-                Select::make('category_id')->label('Category')->options(fn () => Category::where('is_active', true)->orderBy('name')->pluck('name', 'id'))->searchable(),
-                Select::make('brand_id')->label('Brand')->options(fn () => Brand::orderBy('name')->pluck('name', 'id'))->searchable(),
+                QuickCreate::on(Select::make('category_id')->label('Category')->options(fn () => Category::where('is_active', true)->orderBy('name')->pluck('name', 'id'))->searchable(), 'category'),
+                QuickCreate::on(Select::make('brand_id')->label('Brand')->options(fn () => Brand::orderBy('name')->pluck('name', 'id'))->searchable(), 'brand'),
                 Select::make('tax_group_id')->label('Tax')->required()
                     ->options(fn () => TaxGroup::orderBy('name')->pluck('name', 'id'))
                     ->default(fn () => TaxGroup::where('code', 'STD')->value('id')),
-                Select::make('base_uom_id')->label('Base unit (stock is kept in this)')->required()->options($uoms)
+                QuickCreate::on(Select::make('base_uom_id')->label('Base unit (stock is kept in this)')->required()->options($uoms)
                     ->default(fn () => Uom::where('code', 'PC')->value('id'))
                     ->disabled(fn (?Product $record) => $record?->stockLevels()->exists())
-                    ->helperText(fn (?Product $record) => $record?->stockLevels()->exists() ? 'Fixed once stock has moved.' : null),
+                    ->helperText(fn (?Product $record) => $record?->stockLevels()->exists() ? 'Stock has moved: use Correct the unit (top of the page) if it is wrong.' : null), 'uom'),
                 Toggle::make('track_stock')->label('Track stock')->default(true)->inline(false),
                 Toggle::make('is_active')->label('For sale')->default(true)->inline(false),
                 Toggle::make('track_batches')->label('Batches and expiry dates')->inline(false)
@@ -193,7 +207,7 @@ class ProductResource extends Resource
                     TagsInput::make('base_barcodes')->label('Barcodes for the base unit')->placeholder('Scan or type, then Enter'),
                     Repeater::make('units')->label('Other units')->defaultItems(0)->columns(5)->reorderable(false)
                         ->schema([
-                            Select::make('uom_id')->label('Unit')->required()->options($uoms),
+                            QuickCreate::on(Select::make('uom_id')->label('Unit')->required()->options($uoms), 'uom'),
                             TextInput::make('factor')->label('Base units in one')->required()->numeric()->minValue(0.000001),
                             Toggle::make('is_sellable')->label('Sold')->default(true)->inline(false),
                             Toggle::make('is_purchasable')->label('Bought')->default(true)->inline(false),

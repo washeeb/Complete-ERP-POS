@@ -68,7 +68,7 @@ final class Replication
             'tables' => ['supplier' => 'suppliers', 'purchase_order' => 'purchase_orders', 'goods_receipt' => 'goods_receipts']],
         'warehouse' => ['label' => 'Bins, transfers, stock requests, counts and reorder levels', 'direction' => 'both',
             'tables' => ['bin' => 'bins', 'stock_transfer' => 'stock_transfers', 'stock_request' => 'stock_requests', 'stock_count' => 'stock_counts', 'reorder_rule' => 'reorder_rules',
-                'stock_adjustment' => 'stock_adjustments', 'supplier_return' => 'supplier_returns', 'van_settlement' => 'van_settlements']],
+                'stock_adjustment' => 'stock_adjustments', 'supplier_return' => 'supplier_returns', 'waybill' => 'waybills', 'van_settlement' => 'van_settlements']],
         'customers' => ['label' => 'Customers and what they owe', 'direction' => 'both',
             'tables' => ['customer' => 'customers', 'customer_ledger_batch' => null, 'loyalty_batch' => null, 'stored_value' => 'stored_values', 'stored_value_batch' => null, 'patient_profile' => 'patient_profiles',
                 'reservation' => 'reservations', 'deposit_movement' => 'deposit_movements',

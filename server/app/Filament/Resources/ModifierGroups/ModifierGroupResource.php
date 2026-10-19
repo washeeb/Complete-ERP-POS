@@ -72,8 +72,8 @@ class ModifierGroupResource extends Resource
                     TextInput::make('name')->required()->maxLength(120),
                     Select::make('product_id')->label('Charged as (optional)')->placeholder('Free')->searchable()
                         ->getSearchResultsUsing(fn (string $search) => Product::where('is_active', true)->where(fn ($q) => $q->where('name', 'ilike', "%{$search}%")->orWhere('sku', 'ilike', "%{$search}%"))
-                            ->limit(30)->pluck('name', 'id')->all())
-                        ->getOptionLabelUsing(fn ($value) => Product::find($value)?->name),
+                            ->limit(30)->get()->mapWithKeys(fn ($p) => [$p->id => "{$p->sku} · {$p->name}"])->all())
+                        ->getOptionLabelUsing(fn ($value) => ($p = Product::find($value)) ? "{$p->sku} · {$p->name}" : null),
                 ]),
         ]);
     }

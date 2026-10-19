@@ -2,9 +2,12 @@
 
 namespace App\Filament\Resources\Sales;
 
+use App\Domain\Pos\SaleDetails;
 use App\Filament\Resources\Sales\Pages\ListSales;
 use App\Filament\Resources\Sales\Pages\ViewSale;
 use App\Filament\Support\Erp;
+use App\Filament\Support\FinanceUi;
+use App\Filament\Support\GlobalSearch;
 use App\Models\Branch;
 use App\Models\Sale;
 use App\Models\SalePayment;
@@ -29,6 +32,20 @@ use UnitEnum;
 
 class SaleResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'receipt_no';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['receipt_no'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Date' => $record->occurred_at?->format('j M Y H:i'), 'Cashier' => $record->cashier_name, 'Total' => FinanceUi::money((int) $record->total_minor)]);
+    }
+
     protected static ?string $model = Sale::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShoppingCart;
@@ -36,8 +53,6 @@ class SaleResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'Sales';
 
     protected static ?string $navigationLabel = 'Till sales';
-
-    protected static ?string $recordTitleAttribute = 'receipt_no';
 
     protected static ?int $navigationSort = 1;
 
@@ -96,6 +111,14 @@ class SaleResource extends Resource
                 TextEntry::make('kind')->label('Type')->badge()->formatStateUsing(fn ($state, Sale $r) => $state === 'return' ? 'Return'.($r->return_reason ? ": {$r->return_reason}" : '') : 'Sale')
                     ->color(fn ($state) => $state === 'return' ? 'warning' : 'gray'),
                 TextEntry::make('points_earned')->label('Points earned')->visible(fn (Sale $r) => $r->points_earned > 0),
+            ]),
+            Section::make('Customer details and comment')->columns(4)->visible(fn (Sale $r) => $r->comment || $r->walk_in_name || $r->walk_in_phone || $r->extras)->schema([
+                TextEntry::make('walk_in_name')->label('Walk-in name')->placeholder('—'),
+                TextEntry::make('walk_in_phone')->label('Walk-in phone')->placeholder('—'),
+                TextEntry::make('extras')->label('Details')->columnSpan(2)->placeholder('—')
+                    ->state(fn (Sale $r) => collect($r->extras ?? [])->map(fn ($v, $k) => (SaleDetails::EXTRAS[$k][0] ?? $k).': '.(is_bool($v) ? ($v ? 'yes' : 'no') : $v))->implode(' · ') ?: null),
+                TextEntry::make('comment')->columnSpanFull()->placeholder('—')
+                    ->belowContent(fn (Sale $r) => $r->comment_on_receipt ? 'Printed on the receipt' : null),
             ]),
             Section::make('Items')->schema([
                 RepeatableEntry::make('lines')->hiddenLabel()->columns(6)->schema([
