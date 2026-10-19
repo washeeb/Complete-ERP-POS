@@ -87,6 +87,7 @@ export function receiptEscPos(sale: PostedSale, boot: Bootstrap, logo: Raster | 
   if (boot.company.tin || boot.company.vat_no) p.line([boot.company.tin && `TIN ${boot.company.tin}`, boot.company.vat_no && `VAT ${boot.company.vat_no}`].filter(Boolean).join(' '))
   p.bold(true).line(`${sale.kind === 'return' ? 'RETURN' : 'Receipt'} ${sale.receipt_no}`).bold(false).line(`${when} · ${sale.cashier}`)
   if (sale.order_number) p.bold(true).line(`Order ${sale.order_number.slice(-3)}`).bold(false)
+  if (sale.walk_in?.name) p.line(`Customer: ${sale.walk_in.name}`)
   p.align('left').rule()
   for (const l of sale.lines) {
     const unit = PLAIN_UNITS.has(l.uom) ? '' : ` ${l.uom}`
@@ -96,6 +97,7 @@ export function receiptEscPos(sale: PostedSale, boot: Bootstrap, logo: Raster | 
     if (l.note) p.line(`  ${l.note}`)
     if (l.serials?.length) p.line(`  S/N ${l.serials.join(', ')}`)
   }
+  if (sale.comment) p.rule().line(sale.comment)
   p.rule()
   if ((sale.discount_minor ?? 0) > 0) p.columns('You saved', m(sale.discount_minor ?? 0))
   p.bold(true).columns(sale.kind === 'return' ? 'REFUND' : 'TOTAL', m(sale.total_minor)).bold(false)

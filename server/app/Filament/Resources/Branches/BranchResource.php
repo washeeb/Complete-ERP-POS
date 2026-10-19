@@ -93,6 +93,9 @@ class BranchResource extends Resource
             Section::make('Pharmacy rules for this branch')->visibleOn('edit')->visible(fn () => ModuleService::enabledAnywhere('pharmacy'))->collapsible()
                 ->description('Empty = the company setting (System → Settings → Pharmacy). Set a value only where this branch works differently, e.g. a shop without a pharmacist on duty.')
                 ->columns(2)->schema(self::ownSettingFields('pharmacy.')),
+            Section::make('Tills at this branch')->visibleOn('edit')->collapsible()->collapsed()
+                ->description('Empty = the company setting (System → Settings → Tills and cash).')
+                ->columns(2)->schema(self::ownSettingFields('pos.')),
         ]);
     }
 

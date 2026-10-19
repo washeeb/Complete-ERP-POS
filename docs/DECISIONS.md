@@ -493,6 +493,12 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## Till details, calculator and waybills (2026-10-19)
+- **Owner answers:** calculator on the till (F1, *Use as amount* on payment), a change breakdown, and in the back office; sale comment, walk-in name/phone, industry extras and a per-branch "ask before payment" setting; waybills for deliveries, transfers, returns to suppliers and goods from suppliers.
+- **Walk-ins stay walk-ins:** their name and phone sit on the sale (`walk_in_name`, `walk_in_phone`, normalised to +233); *Save as customer* creates a customer without changing the posted sale. Industry details are a whitelisted `extras` JSON (age, sex, weight, pregnancy, guests, next visit), validated on the server.
+- **The calculator never uses eval:** a small parser (till and back office alike); percent works like a shop calculator (`200 + 10%` = 220).
+- **One waybill document for all four flows** (`waybills`, `WB`), with the goods copied from the source as sent. Proof of delivery by the office (signed copy / photo) or by the receiver through a random 40-character link in the QR code (no sign-in, throttled, valid only while the goods are on the way, cleared once used). Permissions follow what is carried: deliveries `sales.deliver`, transfers `stock.transfer`, returns `stock.expiry`, inbound `stock.receive`.
+
 ## Pharmacy sale rules are a choice (2026-10-18)
 - **Owner answers:** four levels (approve / details / patient / free) per kind (POM, controlled); company default with branch overrides; after-sale check as a choice (sign-off, daily summary, nothing); quantity cap; major warnings need a pharmacist; controlled can be locked strict; report of unapproved sales. Default stays the strict rule, so nothing changes until someone chooses otherwise.
 - **The strictest medicine in the sale decides**, computed the same way on the till (`pharmacy.ts saleLevel`) and the server (`PharmacyRules::saleLevel`); the server stays the judge (a till with old rules is caught by `pharmacist_needed`). A till without rules from the server assumes strict.

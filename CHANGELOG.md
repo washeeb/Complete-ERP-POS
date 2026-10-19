@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- **Till: Details, comment and calculator.** *Details* takes a walk-in's name and phone without creating a customer (saved later with *Save as customer* on the sale), a comment that can be printed on the receipt, and industry details (pharmacy: age, sex, weight, pregnancy; restaurant: guests; services: next visit). A branch can require a name and/or phone before payment (Settings → Tills and cash, or per branch); offline sales are never refused, a missing detail goes to the review list. **Calculator (F1)** on the till (percent like a shop calculator, *Use as amount* on the payment screen) and in the back-office top bar; the payment screen shows the change in notes and coins.
+- **Waybills** (Stock → Waybills, number `WB`): for deliveries to customers, transfers between branches and returns to suppliers, plus the supplier's own waybill on goods received. The goods are copied from the document; transporter, driver, vehicle, packages and weight; print with signature lines and a **QR code the receiver scans to confirm delivery** on their phone (name, optional photo, note); dispatch, mark delivered with the signed copy or a photo, cancel. Shortcuts on transfers, delivered customer orders, supplier returns and goods received.
 ### Fixed
 - **Update products: Download current data was empty.** The update page does not ask for an industry and fell back to shared products only; it now gives every product, or those of the industry chosen at the top. Found at the first client.
 - **Opening stock takes several batches of one medicine.** Only the first batch of a product went in; each further batch row was refused as stock history. Now each batch has its own opening balance (with its expiry); the same batch twice, or a product already sold, received or adjusted, is still refused. Found while preparing the first client's go-live.

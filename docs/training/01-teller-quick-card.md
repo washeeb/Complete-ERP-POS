@@ -28,6 +28,12 @@ A **red line** has no price on that list: it cannot be sold on it.
 
 Where the shop has switched it on, each item shows **how many are left** (e.g. *14 TAB left*). **None left** in red: the system shows no more in stock; tell a supervisor.
 
+## Details, comment and calculator
+
+- **Details** (next to Clear): the walk-in's **name and phone** (no customer record needed), a **comment** (tick *Print the comment on the receipt* if the customer should see it), and in a pharmacy the patient's **age, sex, weight** and pregnancy. Some branches ask for a name or phone before payment: the till tells you.
+- **Calculator (F1)**: tap or type a sum (`200 + 10%` = 220). On the payment screen, **Calculator → Use as amount** puts the result in *Cash received*.
+- **Change:** the payment screen shows the change in notes and coins (e.g. 1 × GH₵20 · 1 × GH₵5).
+
 ## Taking payment
 
 - **Cash** — tap the amount handed over (or type it). The change shows and prints.
