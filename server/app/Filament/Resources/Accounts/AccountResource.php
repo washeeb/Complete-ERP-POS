@@ -6,6 +6,7 @@ use App\Domain\Finance\AccountService;
 use App\Filament\Resources\Accounts\Pages\ListAccounts;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\GlobalSearch;
 use App\Models\Account;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -27,6 +28,20 @@ use UnitEnum;
 /** The chart of accounts (Ghana SME template to start; owner decision 2026-10-12). */
 class AccountResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['code', 'name'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Code' => $record->code]);
+    }
+
     protected static ?string $model = Account::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedListBullet;

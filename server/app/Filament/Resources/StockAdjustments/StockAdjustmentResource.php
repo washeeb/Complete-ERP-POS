@@ -13,6 +13,7 @@ use App\Filament\Resources\StockAdjustments\Pages\ViewStockAdjustment;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\GlobalSearch;
 use App\Models\StockAdjustment;
 use App\Support\Exports\Exporter;
 use App\Support\Money;
@@ -43,6 +44,20 @@ use UnitEnum;
 /** Stock adjustments: increases, decreases and "set to counted quantity", prepared, approved and posted to the ledger. */
 class StockAdjustmentResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number', 'reference'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Reference' => $record->reference, 'Status' => $record->status]);
+    }
+
     protected static ?string $model = StockAdjustment::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAdjustmentsVertical;
@@ -50,8 +65,6 @@ class StockAdjustmentResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'Stock';
 
     protected static ?string $navigationLabel = 'Stock adjustments';
-
-    protected static ?string $recordTitleAttribute = 'number';
 
     protected static ?int $navigationSort = 3;
 

@@ -9,6 +9,7 @@ use App\Filament\Resources\Suppliers\Pages\ListSuppliers;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\GlobalSearch;
 use App\Models\Supplier;
 use App\Support\Money;
 use BackedEnum;
@@ -33,6 +34,20 @@ use UnitEnum;
 
 class SupplierResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'code', 'phone', 'email'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Code' => $record->code, 'Phone' => $record->phone]);
+    }
+
     protected static ?string $model = Supplier::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTruck;

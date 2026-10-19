@@ -7,6 +7,7 @@ use App\Filament\Resources\StockCounts\Pages\ListStockCounts;
 use App\Filament\Resources\StockCounts\Pages\ViewStockCount;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
+use App\Filament\Support\GlobalSearch;
 use App\Models\Product;
 use App\Models\ProductUom;
 use App\Models\StockCount;
@@ -35,6 +36,20 @@ use UnitEnum;
 
 class StockCountResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Status' => $record->status]);
+    }
+
     protected static ?string $model = StockCount::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;

@@ -6,6 +6,7 @@ use App\Domain\Devices\DeviceService;
 use App\Filament\Resources\Devices\Pages\CreateDevice;
 use App\Filament\Resources\Devices\Pages\ListDevices;
 use App\Filament\Support\Erp;
+use App\Filament\Support\GlobalSearch;
 use App\Models\Branch;
 use App\Models\Device;
 use App\Models\Till;
@@ -27,6 +28,20 @@ use UnitEnum;
 
 class DeviceResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Status' => $record->status]);
+    }
+
     protected static ?string $model = Device::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedComputerDesktop;

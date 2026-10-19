@@ -80,7 +80,7 @@ class ReorderRuleResource extends Resource
             Select::make('product_id')->label('Product')->required()->disabledOn('edit')->searchable()->live()
                 ->getSearchResultsUsing(fn (string $search) => Product::where('track_stock', true)->where(fn ($q) => $q->where('name', 'ilike', "%{$search}%")
                     ->orWhere('sku', 'ilike', "%{$search}%"))->limit(30)->get()->mapWithKeys(fn ($p) => [$p->id => "{$p->sku} · {$p->name}"]))
-                ->getOptionLabelUsing(fn ($value) => Product::find($value)?->name)
+                ->getOptionLabelUsing(fn ($value) => ($p = Product::find($value)) ? "{$p->sku} · {$p->name}" : null)
                 ->afterStateUpdated(fn ($state, Set $set) => $set('product_uom_id', $state ? self::buyingUnitId($state) : null)),
             Select::make('product_uom_id')->label('Unit')->required()
                 ->options(fn (Get $get) => ProductUom::with('uom')->where('product_id', $get('product_id'))->orderBy('factor')->get()
