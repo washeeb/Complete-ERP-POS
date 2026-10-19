@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Fixed
+- **A wrong base unit can be corrected after stock has moved** (e.g. Pieces → Pack). *Correct the unit* on the product page (or a different `base_unit` in the products update file) renames the unit: 30 pieces become 30 packs; prices, barcodes, stock and history stay; it is in the audit log. To sell in packs as well as pieces, add the pack under *Other units* instead. Found at the first client.
 - **Update products: Download current data was empty.** The update page does not ask for an industry and fell back to shared products only; it now gives every product, or those of the industry chosen at the top. Found at the first client.
 - **Opening stock takes several batches of one medicine.** Only the first batch of a product went in; each further batch row was refused as stock history. Now each batch has its own opening balance (with its expiry); the same batch twice, or a product already sold, received or adjusted, is still refused. Found while preparing the first client's go-live.
 - **Ubuntu installer: updates no longer stop when Launchpad is unreachable.** Re-adding the PHP package source asks Launchpad's website; an update now skips it when the source is already there, and a first install tries three times. Found when updating the first client.

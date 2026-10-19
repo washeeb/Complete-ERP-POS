@@ -493,6 +493,9 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## Correcting a base unit (2026-10-19)
+- After stock has moved the base unit may be **renamed, never converted**: the base `product_uoms` row keeps its id (prices, barcodes and stock follow) and only its unit changes; documents keep the unit code they printed. Refused when the product already has that unit as a pack size, or when stock is in fractions the new unit cannot hold. Converting (1 pack = 10 pieces) stays a new unit under *Other units*.
+
 ## Pharmacy sale rules are a choice (2026-10-18)
 - **Owner answers:** four levels (approve / details / patient / free) per kind (POM, controlled); company default with branch overrides; after-sale check as a choice (sign-off, daily summary, nothing); quantity cap; major warnings need a pharmacist; controlled can be locked strict; report of unapproved sales. Default stays the strict rule, so nothing changes until someone chooses otherwise.
 - **The strictest medicine in the sale decides**, computed the same way on the till (`pharmacy.ts saleLevel`) and the server (`PharmacyRules::saleLevel`); the server stays the judge (a till with old rules is caught by `pharmacist_needed`). A till without rules from the server assumes strict.
