@@ -7,6 +7,7 @@ use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Filament\Resources\Users\RelationManagers\AccessGrantsRelationManager;
 use App\Filament\Support\Erp;
+use App\Filament\Support\GlobalSearch;
 use App\Models\User;
 use App\Security\SecurityLevel;
 use BackedEnum;
@@ -29,6 +30,20 @@ use UnitEnum;
 
 class UserResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'username', 'email'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Username' => $record->username]);
+    }
+
     protected static ?string $model = User::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
@@ -36,8 +51,6 @@ class UserResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'People & access';
 
     protected static ?int $navigationSort = 1;
-
-    protected static ?string $recordTitleAttribute = 'name';
 
     public static function canViewAny(): bool
     {

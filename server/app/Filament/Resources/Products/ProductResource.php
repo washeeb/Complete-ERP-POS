@@ -8,6 +8,7 @@ use App\Filament\Resources\Products\Pages\CreateProduct;
 use App\Filament\Resources\Products\Pages\EditProduct;
 use App\Filament\Resources\Products\Pages\ListProducts;
 use App\Filament\Support\Erp;
+use App\Filament\Support\GlobalSearch;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Industry;
@@ -50,6 +51,25 @@ use UnitEnum;
 
 class ProductResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['sku', 'name', 'barcodes.code'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['SKU' => $record->sku, 'Category' => $record->category?->name]);
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['category']);
+    }
+
     protected static ?string $model = Product::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCube;
@@ -57,8 +77,6 @@ class ProductResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'Catalog';
 
     protected static ?int $navigationSort = 1;
-
-    protected static ?string $recordTitleAttribute = 'name';
 
     public static function canViewAny(): bool
     {
@@ -78,11 +96,6 @@ class ProductResource extends Resource
     public static function canDelete(Model $record): bool
     {
         return false; // sales and stock history reference products; deactivate instead
-    }
-
-    public static function getGloballySearchableAttributes(): array
-    {
-        return ['sku', 'name'];
     }
 
     public static function form(Schema $schema): Schema

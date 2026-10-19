@@ -9,6 +9,7 @@ use App\Filament\Resources\WorkOrders\Pages\ViewWorkOrder;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\GlobalSearch;
 use App\Filament\Support\MiniTable;
 use App\Models\Bom;
 use App\Models\CustomerOrder;
@@ -44,9 +45,21 @@ use UnitEnum;
 /** Work orders: make a quantity of a product, issue materials, report output and time, pass quality checks, finish at actual cost. */
 class WorkOrderResource extends Resource
 {
-    protected static ?string $model = WorkOrder::class;
+    use GlobalSearch;
 
     protected static ?string $recordTitleAttribute = 'number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Status' => $record->status]);
+    }
+
+    protected static ?string $model = WorkOrder::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWrenchScrewdriver;
 

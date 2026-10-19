@@ -6,6 +6,7 @@ use App\Domain\Channels\OnlineOrderService;
 use App\Filament\Resources\SalesOrders\Pages\ListSalesOrders;
 use App\Filament\Resources\SalesOrders\Pages\ViewSalesOrder;
 use App\Filament\Support\Erp;
+use App\Filament\Support\GlobalSearch;
 use App\Models\SalesOrder;
 use App\Support\Money;
 use App\Support\Qty;
@@ -31,6 +32,20 @@ use UnitEnum;
 /** Online orders from every channel: reserved on arrival, stock issued only when handed over. */
 class SalesOrderResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Status' => $record->status]);
+    }
+
     protected static ?string $model = SalesOrder::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShoppingBag;

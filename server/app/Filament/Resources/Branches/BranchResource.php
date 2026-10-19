@@ -9,6 +9,7 @@ use App\Filament\Resources\Branches\Pages\ListBranches;
 use App\Filament\Resources\Branches\RelationManagers\TillsRelationManager;
 use App\Filament\Resources\Branches\RelationManagers\WarehousesRelationManager;
 use App\Filament\Support\Erp;
+use App\Filament\Support\GlobalSearch;
 use App\Models\Branch;
 use App\Models\Industry;
 use App\Models\LegalEntity;
@@ -33,6 +34,20 @@ use UnitEnum;
 
 class BranchResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['code', 'name'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Code' => $record->code]);
+    }
+
     protected static ?string $model = Branch::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingStorefront;
@@ -40,8 +55,6 @@ class BranchResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'Company';
 
     protected static ?int $navigationSort = 1;
-
-    protected static ?string $recordTitleAttribute = 'name';
 
     public static function canViewAny(): bool
     {
@@ -93,6 +106,9 @@ class BranchResource extends Resource
             Section::make('Pharmacy rules for this branch')->visibleOn('edit')->visible(fn () => ModuleService::enabledAnywhere('pharmacy'))->collapsible()
                 ->description('Empty = the company setting (System → Settings → Pharmacy). Set a value only where this branch works differently, e.g. a shop without a pharmacist on duty.')
                 ->columns(2)->schema(self::ownSettingFields('pharmacy.')),
+            Section::make('Tills at this branch')->visibleOn('edit')->collapsible()->collapsed()
+                ->description('Empty = the company setting (System → Settings → Tills and cash).')
+                ->columns(2)->schema(self::ownSettingFields('pos.')),
         ]);
     }
 

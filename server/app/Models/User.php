@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Domain\Licensing\LicenseManager;
+use App\Domain\Licensing\Vendor\VendorLicensing;
 use App\Domain\Support\Actor;
 use App\Domain\Support\Recorder;
 use App\Models\Concerns\HasOriginNode;
@@ -69,6 +70,10 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
 
     public function canAccessPanel(Panel $panel): bool
     {
+        if ($panel->getId() === 'vendor') { // SyncLytics' licence generator: the licence server only
+            return VendorLicensing::allowed($this);
+        }
+
         // L0 external users get portals later, never the back office.
         return $this->is_active && $this->security_level >= SecurityLevel::Restricted->value;
     }

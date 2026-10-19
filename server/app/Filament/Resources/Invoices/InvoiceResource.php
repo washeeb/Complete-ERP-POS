@@ -7,6 +7,7 @@ use App\Filament\Resources\Invoices\Pages\ListInvoices;
 use App\Filament\Resources\Invoices\Pages\ViewInvoice;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
+use App\Filament\Support\GlobalSearch;
 use App\Models\Invoice;
 use App\Models\Warehouse;
 use App\Support\Money;
@@ -32,6 +33,25 @@ use UnitEnum;
 /** Customer invoices: read-only once posted; corrected with credit notes. */
 class InvoiceResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number', 'customer.name'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Customer' => $record->customer?->name, 'Status' => $record->status]);
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['customer']);
+    }
+
     protected static ?string $model = Invoice::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;

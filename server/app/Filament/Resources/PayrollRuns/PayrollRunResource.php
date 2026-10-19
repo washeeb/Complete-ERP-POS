@@ -7,6 +7,7 @@ use App\Filament\Resources\PayrollRuns\Pages\ListPayrollRuns;
 use App\Filament\Resources\PayrollRuns\Pages\ViewPayrollRun;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\GlobalSearch;
 use App\Models\Account;
 use App\Models\Employee;
 use App\Models\PayrollRun;
@@ -31,6 +32,20 @@ use UnitEnum;
 /** Monthly payroll: prepare → approve (someone else) → pay. */
 class PayrollRunResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Status' => $record->status]);
+    }
+
     protected static ?string $model = PayrollRun::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;

@@ -8,6 +8,7 @@ use App\Filament\Resources\Promotions\Pages\CreatePromotion;
 use App\Filament\Resources\Promotions\Pages\EditPromotion;
 use App\Filament\Resources\Promotions\Pages\ListPromotions;
 use App\Filament\Support\Erp;
+use App\Filament\Support\GlobalSearch;
 use App\Models\Branch;
 use App\Models\Category;
 use App\Models\PriceList;
@@ -38,6 +39,20 @@ use UnitEnum;
 /** Promotions and coupons (head office). The till and the server run the same engine. */
 class PromotionResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails([]);
+    }
+
     protected static ?string $model = Promotion::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;

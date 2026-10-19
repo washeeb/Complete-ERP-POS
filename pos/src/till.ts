@@ -112,6 +112,7 @@ export async function submitSale(args: {
   prescription?: RxDetails | null; pharmacistApproval?: { username: string; pin: string } | null; pharmacistOfflineBy?: string | null
   diningOrderId?: string | null; tipMinor?: number; kitchenTickets?: boolean
   tradeIns?: TradeInItem[]; tradeInApproval?: { username: string; pin: string } | null
+  details?: { comment?: string; comment_on_receipt?: boolean; walk_in?: { name: string | null; phone: string | null }; extras?: Record<string, unknown> }
 }): Promise<PostedSale> {
   const { boot, cart, payments } = args
   const local = await getLocalShift()
@@ -142,6 +143,7 @@ export async function submitSale(args: {
     ...(args.diningOrderId ? { dining_order_id: args.diningOrderId } : {}),
     ...(args.tipMinor ? { tip_minor: args.tipMinor } : {}),
     ...(args.tradeIns?.length ? { trade_ins: args.tradeIns.map((t) => ({ product_id: t.product_id, serial: t.serial, condition: t.condition, value_minor: t.value_minor })) } : {}),
+    ...(args.details ?? {}), // comment, walk-in name and phone, industry details
     coupon_code: args.coupon || null,
     sale_discount_bp: args.saleDiscountBp ?? 0,
     // Offline, a supervisor's PIN was checked against their offline sign-in on this till; the server checks their limit.
@@ -180,6 +182,7 @@ export async function submitSale(args: {
   const list = boot.price_lists.find((l) => l.id === args.listId)!
   return {
     id: payload.id, receipt_no: receiptNo, device_seq: args.seq, status: 'queued', occurred_at: payload.occurred_at,
+    comment: args.details?.comment_on_receipt ? args.details.comment ?? null : null, walk_in: args.details?.walk_in ?? null,
     cashier: session?.userName ?? '', currency: boot.company.currency, prices_include_tax: list.prices_include_tax,
     net_minor: cart.net, tax_minor: cart.tax, total_minor: cart.total,
     paid_minor: payments.reduce((a, p) => a + p.amount_minor, 0),
