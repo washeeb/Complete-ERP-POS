@@ -3,6 +3,7 @@
 namespace App\Domain\Catalog;
 
 use App\Domain\Inventory\StockLedger;
+use App\Domain\Inventory\ZeroStock;
 use App\Domain\Pharmacy\PharmacyService;
 use App\Domain\Services\PassService;
 use App\Domain\Support\AccessDenied;
@@ -268,7 +269,7 @@ final class CatalogService
         $this->assertOwned($actor, TaxGroup::class, $product->tax_group_id, 'tax group');
         $this->assertOwned($actor, Category::class, $product->category_id, 'category', nullable: true);
         $this->assertOwned($actor, Brand::class, $product->brand_id, 'brand', nullable: true);
-        if ($product->exists && $product->isDirty('base_uom_id') && $product->stockLevels()->exists()) {
+        if ($product->exists && $product->isDirty('base_uom_id') && $product->hasMoved()) {
             throw new DomainException('The base unit cannot change once stock has moved; use Correct the unit on the product (it renames the unit, quantities stay).');
         }
 
@@ -315,6 +316,8 @@ final class CatalogService
                 $this->recorder->outbox->publish($actor, $product->fresh(), 'product.details_changed',
                     ['product_id' => $product->id] + array_filter($summary));
             }
+
+            ZeroStock::ensure($actor->tenantId, [$product->id]); // on Stock on hand from the start, in each store of its industry
 
             return $product->fresh(['units.uom', 'barcodes', 'prices']);
         });
@@ -559,7 +562,7 @@ final class CatalogService
         $changes = [];
         foreach ($wanted as $uomId => $w) {
             $pu = $existing[$uomId] ?? new ProductUom(['product_id' => $product->id, 'uom_id' => $uomId]);
-            if ($pu->exists && Qty::factorMicro($pu->factor) !== Qty::factorMicro($w['factor']) && $product->stockLevels()->exists()) {
+            if ($pu->exists && Qty::factorMicro($pu->factor) !== Qty::factorMicro($w['factor']) && $product->hasMoved()) {
                 throw new DomainException('A unit’s conversion factor cannot change once stock has moved; add a new unit instead.');
             }
             $pu->fill(['factor' => $w['factor'], 'is_base' => $w['is_base'], 'is_sellable' => $w['is_sellable'], 'is_purchasable' => $w['is_purchasable']]);

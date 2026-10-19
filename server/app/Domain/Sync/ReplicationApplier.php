@@ -8,6 +8,7 @@ use App\Domain\Customers\StoredValues;
 use App\Domain\Hr\AttendanceService;
 use App\Domain\Inventory\SerialRegistry;
 use App\Domain\Inventory\StockProjection;
+use App\Domain\Inventory\ZeroStock;
 use App\Domain\Licensing\LicenseManager;
 use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
@@ -74,6 +75,9 @@ final class ReplicationApplier
             $snapshot = $payload['snapshot'] ?? throw new DomainException('Event has no snapshot.', 'malformed');
             $this->upsert($table, $snapshot['row']);
             $this->children($type, $snapshot);
+            if ($type === 'product') {
+                ZeroStock::ensure($event['tenant_id'], [$snapshot['row']['id']]); // listed in this node's stores too
+            }
         }
 
         $this->audit->recordRef($actor, 'sync.'.$event['event_type'], $type, $event['aggregate_id'], [],

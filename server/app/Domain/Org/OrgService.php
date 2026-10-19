@@ -2,6 +2,7 @@
 
 namespace App\Domain\Org;
 
+use App\Domain\Inventory\ZeroStock;
 use App\Domain\Licensing\LicenseManager;
 use App\Domain\Modules\ModuleService;
 use App\Domain\Support\AccessDenied;
@@ -167,7 +168,10 @@ final class OrgService
         $warehouse->code = strtoupper($warehouse->code);
         $warehouse->tenant_id = $actor->tenantId;
 
-        return $this->recorder->save($actor, $warehouse, $warehouse->exists ? 'warehouse.updated' : 'warehouse.created', branchId: $branch->id);
+        $saved = $this->recorder->save($actor, $warehouse, $warehouse->exists ? 'warehouse.updated' : 'warehouse.created', branchId: $branch->id);
+        ZeroStock::ensure($actor->tenantId, null, [$saved->id]); // its industry's products, at 0
+
+        return $saved;
     }
 
     public function saveTill(Actor $actor, Till $till, array $data): Till

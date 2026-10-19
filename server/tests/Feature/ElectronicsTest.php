@@ -176,7 +176,7 @@ it('takes a used phone in trade with a supervisor and puts it into stock at the 
     $sale = elecSale($this, $item, $trade + ['trade_in_approval' => ['username' => 'kojo', 'pin' => '771204']], $pay);
     expect($sale->paid_minor)->toBe(150000)->and(TradeIn::sole()->approved_by_name)->toBe('Kojo')
         ->and(SerialNumber::where('serial', '352000111222333')->sole()->status)->toBe('in_stock')
-        ->and((string) DB::table('stock_levels')->where('product_id', $this->used->id)->value('avg_cost_minor'))->toStartWith('50000');
+        ->and((string) DB::table('stock_levels')->where('product_id', $this->used->id)->where('on_hand', '>', 0)->value('avg_cost_minor'))->toStartWith('50000');
 
     app(AutoPoster::class)->run($this->tenant->id);
     $bal = fn (string $k) => (int) DB::table('journal_lines')->where('account_id', Account::where('system_key', $k)->value('id'))->sum('amount_minor');
@@ -198,7 +198,7 @@ it('runs repair jobs: in warranty for free with parts written off, otherwise pai
     $svc->setStatus($tech, $job, 'repairing', 'Screen replaced');
     $svc->setStatus($tech, $job->fresh(), 'ready');
     $job = $svc->handOver($tech, $job->fresh(), $this->wh);
-    expect($job->status)->toBe('collected')->and((string) DB::table('stock_levels')->where('product_id', $this->screen->id)->value('on_hand'))->toBe('9.000');
+    expect($job->status)->toBe('collected')->and((string) DB::table('stock_levels')->where('product_id', $this->screen->id)->max('on_hand'))->toBe('9.000');
 
     // Out of warranty (not sold by us): priced parts and labour, collected by paying at the till.
     $job = $svc->open($tech, ['branch_id' => $this->hq->id, 'customer_name' => 'Esi', 'device' => 'Samsung A12', 'fault' => 'Will not charge']);
@@ -208,7 +208,7 @@ it('runs repair jobs: in warranty for free with parts written off, otherwise pai
     expect(fn () => $svc->handOver($tech, $job->fresh(), $this->wh))->toThrow(DomainException::class, 'take payment');
     $sale = elecSale($this, [[$this->screen, '1', ['repair_job_id' => $job->id]], [$this->labour, '1', ['repair_job_id' => $job->id]]]);
     expect($job->fresh()->status)->toBe('collected')->and($job->fresh()->sale_id)->toBe($sale->id)
-        ->and((string) DB::table('stock_levels')->where('product_id', $this->screen->id)->value('on_hand'))->toBe('8.000');
+        ->and((string) DB::table('stock_levels')->where('product_id', $this->screen->id)->max('on_hand'))->toBe('8.000');
 
     // Back to the supplier (RMA).
     $rma = $svc->open($tech, ['branch_id' => $this->hq->id, 'customer_name' => 'Yaa', 'serial' => '356901010000001', 'fault' => 'Dead']);

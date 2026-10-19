@@ -11,7 +11,6 @@ use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -84,7 +83,10 @@ class StockLevelResource extends Resource
                 SelectFilter::make('warehouse_id')->label('Warehouse')
                     ->options(fn () => Warehouse::when(self::warehouseIds() !== null, fn ($q) => $q->whereIn('id', self::warehouseIds()))
                         ->orderBy('code')->get()->mapWithKeys(fn ($w) => [$w->id => "{$w->code} · {$w->name}"])),
-                Filter::make('negative')->label('Negative stock (investigate)')->query(fn ($q) => $q->where('on_hand', '<', 0)),
+                SelectFilter::make('level')->label('Stock')->options(['in' => 'In stock', 'out' => 'Out of stock (0)', 'negative' => 'Negative (investigate)'])
+                    ->query(fn ($query, array $data) => match ($data['value'] ?? null) {
+                        'in' => $query->where('on_hand', '>', 0), 'out' => $query->where('on_hand', 0), 'negative' => $query->where('on_hand', '<', 0), default => $query
+                    }),
             ])
             ->defaultSort('warehouse_id');
     }

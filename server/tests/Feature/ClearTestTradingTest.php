@@ -68,9 +68,10 @@ it('shows the test trading without changing anything, then clears it and keeps p
 
     $code = Artisan::call('erp:clear-test-trading', ['--apply' => true, '--confirm' => Tenant::where('is_practice', false)->orderBy('created_at')->value('name'), '--skip-backup' => true]);
     expect($code)->toBe(0, Artisan::output());
-    foreach (['sales', 'sale_lines', 'sale_payments', 'shifts', 'stock_movements', 'stock_levels', 'journal_entries', 'journal_lines', 'gl_postings'] as $t) {
+    foreach (['sales', 'sale_lines', 'sale_payments', 'shifts', 'stock_movements', 'journal_entries', 'journal_lines', 'gl_postings'] as $t) {
         expect(DB::table($t)->count())->toBe(0, $t);
     }
+    expect(DB::table('stock_levels')->where('on_hand', '<>', 0)->count())->toBe(0); // products stay listed, at 0
     expect(Product::where('sku', 'MILO')->exists())->toBeTrue()->and(Customer::where('name', 'Ama Owusu')->exists())->toBeTrue()
         ->and(User::where('username', 'janet')->exists())->toBeTrue()->and(Device::count())->toBe(1)
         ->and(DB::table('document_sequences')->where('doc_type', 'INV')->exists())->toBeFalse()          // invoice numbers start again

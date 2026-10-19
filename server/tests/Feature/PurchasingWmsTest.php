@@ -44,7 +44,9 @@ beforeEach(function () {
 
 function whQty(Warehouse $w, string $productId): string
 {
-    return (string) DB::table('stock_levels')->where('warehouse_id', $w->id)->where('product_id', $productId)->value('on_hand');
+    $q = DB::table('stock_levels')->where('warehouse_id', $w->id)->where('product_id', $productId)->value('on_hand');
+
+    return $q === null || (float) $q === 0.0 && ! DB::table('stock_movements')->where('warehouse_id', $w->id)->where('product_id', $productId)->exists() ? '' : (string) $q; // '' = nothing ever moved here
 }
 
 function inBin(Bin $b, string $productId): string
