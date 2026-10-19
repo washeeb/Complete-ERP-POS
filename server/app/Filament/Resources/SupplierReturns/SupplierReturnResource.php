@@ -5,11 +5,13 @@ namespace App\Filament\Resources\SupplierReturns;
 use App\Domain\Inventory\ExpiryService;
 use App\Filament\Resources\SupplierReturns\Pages\ListSupplierReturns;
 use App\Filament\Resources\SupplierReturns\Pages\ViewSupplierReturn;
+use App\Filament\Resources\Waybills\WaybillResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
 use App\Filament\Support\GlobalSearch;
 use App\Models\SupplierReturn;
+use App\Models\Waybill;
 use App\Support\Qty;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -179,6 +181,10 @@ class SupplierReturnResource extends Resource
             Action::make('cancel')->label('Cancel')->color('danger')->visible(fn (SupplierReturn $record) => $record->status === 'submitted')
                 ->schema([TextInput::make('reason')->required()->maxLength(255)])
                 ->action(fn (SupplierReturn $record, array $data) => Erp::run(fn ($actor) => $svc()->cancelReturn($actor, $record, $data['reason']), 'Cancelled')),
+            Action::make('waybill')->label('Waybill')->icon('heroicon-o-truck')->color('gray')
+                ->url(fn (SupplierReturn $record) => ($w = Waybill::where('source_id', $record->id)->where('status', '<>', 'cancelled')->first())
+                    ? WaybillResource::getUrl('view', ['record' => $w])
+                    : WaybillResource::getUrl('create', ['kind' => 'supplier_return', 'source' => $record->id])),
             Action::make('print')->label('Return note (print)')->icon(Heroicon::OutlinedPrinter)->color('gray')
                 ->url(fn (SupplierReturn $record) => route('print.supplier-return', $record), true),
         ];

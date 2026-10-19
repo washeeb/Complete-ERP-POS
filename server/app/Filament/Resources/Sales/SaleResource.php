@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Sales;
 
+use App\Domain\Pos\SaleDetails;
 use App\Filament\Resources\Sales\Pages\ListSales;
 use App\Filament\Resources\Sales\Pages\ViewSale;
 use App\Filament\Support\Erp;
@@ -110,6 +111,14 @@ class SaleResource extends Resource
                 TextEntry::make('kind')->label('Type')->badge()->formatStateUsing(fn ($state, Sale $r) => $state === 'return' ? 'Return'.($r->return_reason ? ": {$r->return_reason}" : '') : 'Sale')
                     ->color(fn ($state) => $state === 'return' ? 'warning' : 'gray'),
                 TextEntry::make('points_earned')->label('Points earned')->visible(fn (Sale $r) => $r->points_earned > 0),
+            ]),
+            Section::make('Customer details and comment')->columns(4)->visible(fn (Sale $r) => $r->comment || $r->walk_in_name || $r->walk_in_phone || $r->extras)->schema([
+                TextEntry::make('walk_in_name')->label('Walk-in name')->placeholder('—'),
+                TextEntry::make('walk_in_phone')->label('Walk-in phone')->placeholder('—'),
+                TextEntry::make('extras')->label('Details')->columnSpan(2)->placeholder('—')
+                    ->state(fn (Sale $r) => collect($r->extras ?? [])->map(fn ($v, $k) => (SaleDetails::EXTRAS[$k][0] ?? $k).': '.(is_bool($v) ? ($v ? 'yes' : 'no') : $v))->implode(' · ') ?: null),
+                TextEntry::make('comment')->columnSpanFull()->placeholder('—')
+                    ->belowContent(fn (Sale $r) => $r->comment_on_receipt ? 'Printed on the receipt' : null),
             ]),
             Section::make('Items')->schema([
                 RepeatableEntry::make('lines')->hiddenLabel()->columns(6)->schema([

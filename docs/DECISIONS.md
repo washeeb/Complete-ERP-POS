@@ -493,6 +493,11 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## Till details, calculator and waybills (2026-10-19)
+- **Owner answers:** calculator on the till (F1, *Use as amount* on payment), a change breakdown, and in the back office; sale comment, walk-in name/phone, industry extras and a per-branch "ask before payment" setting; waybills for deliveries, transfers, returns to suppliers and goods from suppliers.
+- **Walk-ins stay walk-ins:** their name and phone sit on the sale (`walk_in_name`, `walk_in_phone`, normalised to +233); *Save as customer* creates a customer without changing the posted sale. Industry details are a whitelisted `extras` JSON (age, sex, weight, pregnancy, guests, next visit), validated on the server.
+- **The calculator never uses eval:** a small parser (till and back office alike); percent works like a shop calculator (`200 + 10%` = 220).
+- **One waybill document for all four flows** (`waybills`, `WB`), with the goods copied from the source as sent. Proof of delivery by the office (signed copy / photo) or by the receiver through a random 40-character link in the QR code (no sign-in, throttled, valid only while the goods are on the way, cleared once used). Permissions follow what is carried: deliveries `sales.deliver`, transfers `stock.transfer`, returns `stock.expiry`, inbound `stock.receive`.
 ## Top search covers the whole back office (2026-10-19)
 - Every main list declares its searchable columns and result details (`App\Filament\Support\GlobalSearch` trait); Filament only offers results from lists the person may open. A result opens the record's page, else its list searched for it, so lists without a page are still reachable.
 - Customer phone search normalises 024… to +233… like the stored numbers.

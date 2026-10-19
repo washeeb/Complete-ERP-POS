@@ -29,6 +29,7 @@ import { ReturnScreen } from './ReturnScreen'
 import { cachedCustomers, refreshCustomers } from '../customers'
 import { CustomerPicker } from './CustomerPicker'
 import { Pay } from './Pay'
+import { Calculator, detailsMissing, detailsPayload, emptyDetails, SaleDetailsDialog, type SaleDetailsState } from './TillTools'
 
 export function Sell({ boot, products, online, catalogVersion, queue, onPosted, onRefresh, onSendNow, onCloseShift, onLogout }: {
   boot: Bootstrap; products: Product[]; online: boolean; catalogVersion: string | null
@@ -90,6 +91,10 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   const [editing, setEditing] = useState<CartLine | null>(null)
   const [returning, setReturning] = useState(false)
   const [takingPayment, setTakingPayment] = useState(false)
+  // A comment, a walk-in's name and phone, industry details (Details); the calculator (F1).
+  const [details, setDetails] = useState<SaleDetailsState>(emptyDetails)
+  const [detailsPrompt, setDetailsPrompt] = useState<{ message: string } | null>(null)
+  const [calcOpen, setCalcOpen] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { // promotions come with the cached catalog
@@ -149,6 +154,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'F2') { e.preventDefault(); searchRef.current?.focus() }
+      if (e.key === 'F1') { e.preventDefault(); setCalcOpen(true) }
       if (e.key === 'F12' && lines.length && !paying) { e.preventDefault(); startPay() }
       if (e.key === 'F4' && !paying) { e.preventDefault(); setPicking(true) }
       if (e.key === 'F8' && !paying && online) { e.preventDefault(); setReturning(true) }
@@ -357,6 +363,11 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       return
     }
     setPayError('')
+    const missing = detailsMissing(boot.require_details, details, customer)
+    if (missing.length) {
+      setDetailsPrompt({ message: `Enter the customer's ${missing.join(' and ')} before payment, or choose a customer.` })
+      return
+    }
     if (pharmacy && lines.some((l) => needsPrescription(l.product)) && !rx) {
       // Ask only for what this branch requires (Settings → Pharmacy); warnings are always shown.
       const found = rxWarnings([...new Map(lines.map((l) => [l.product.id, l.product])).values()], customer?.allergies ?? [], pharmacy.interactions)
@@ -410,7 +421,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
         offlineApproverId: approvals.offlineApproverId ?? null, coupon: cart.couponApplied ? coupon : null, saleDiscountBp: saleBp,
         prescription: approvals.rx?.details ?? null, pharmacistApproval: approvals.rx?.approval ?? null, pharmacistOfflineBy: approvals.rx?.offlineBy ?? null,
         diningOrderId: payingBill?.id ?? null, tipMinor: approvals.tip ?? 0, kitchenTickets: !!restaurant,
-        tradeIns: approvals.tradeIns ?? [], tradeInApproval: approvals.tradeInApproval ?? null })
+        tradeIns: approvals.tradeIns ?? [], tradeInApproval: approvals.tradeInApproval ?? null, details: detailsPayload(details, !!customer) })
       setLines([])
       setPaying(false)
       setApproval(null)
@@ -418,6 +429,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       setCouponInput('')
       setSaleBp(0)
       setRx(null)
+      setDetails(emptyDetails())
       setPayingBill(null)
       if (routeCtx && customer?.id === routeCtx.customerId) { // a sale on the route is the visit's outcome
         recordVisit(online, routeCtx.customerId, routeCtx.routeId, 'sold', { sale_id: sale.id }).catch(() => undefined)
@@ -430,6 +442,11 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       const retrying = ['approval_failed', 'over_limit', 'own_document', 'pin_locked'].includes(e?.code ?? '')
       if (['prescription_required', 'pharmacist_needed'].includes(e?.code ?? '') || (retrying && approvals.rx?.approval && !approvals.credit && !approvals.discount)) {
         setRxPrompt({ message: e!.message, payments, approvals: { ...approvals, rx: undefined }, level: e?.code === 'pharmacist_needed' ? 'approve' : 'details' })
+        return
+      }
+      if (e?.code === 'details_required' || e?.code === 'details_invalid') {
+        setPaying(false)
+        setDetailsPrompt({ message: e.message })
         return
       }
       if (e?.code === 'credit_needs_approval' || (retrying && approvals.credit && !approvals.discount)) {
@@ -488,6 +505,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
               <button type="button" className="link" onClick={() => pickCustomer(null)} aria-label="Remove customer">✕</button>
             </span>
           ) : <button type="button" onClick={() => setPicking(true)}>Customer (F4)</button>}
+          <button type="button" onClick={() => setCalcOpen(true)} title="Calculator">Calculator (F1)</button>
           {online && restaurant && <button type="button" onClick={() => setFloorOpen(true)}>Tables (F6)</button>}
           {online && electronics && <button type="button" onClick={() => setRepairsOpen(true)}>Repairs (F7)</button>}
           {online && fashion && <button type="button" onClick={() => setAlterationsOpen(true)}>Alterations (F9)</button>}
@@ -602,6 +620,8 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
           </form>
           <div className="row">
             <button type="button" onClick={() => setLines([])} disabled={!lines.length}>Clear</button>
+            <button type="button" onClick={() => setDetailsPrompt({ message: '' })} aria-label="Sale details">
+              Details{details.comment || details.name || details.phone || Object.keys(details.extras).length ? ' ✓' : ''}</button>
             <button type="button" className="primary big" onClick={startPay} disabled={!lines.length || busy}>{orderMode ? 'Send order (F12)' : cart.total < 0 ? 'Pay out deposit (F12)' : 'Pay (F12)'}</button>
           </div>
         </div>
@@ -613,6 +633,9 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
           tradeInProducts={electronics && online ? products : null}
           onPay={(p, tip, extra) => complete(p, { tip, tradeIns: extra.tradeIns, tradeInApproval: extra.tradeInApproval })} onCancel={() => setPaying(false)} />
       )}
+      {calcOpen && <Calculator onClose={() => setCalcOpen(false)} />}
+      {detailsPrompt && <SaleDetailsDialog value={details} message={detailsPrompt.message} hasCustomer={!!customer} pharmacy={!!pharmacy} restaurant={!!restaurant} services={!!services}
+        onSave={(d) => { setDetails(d); setDetailsPrompt(null) }} onCancel={() => setDetailsPrompt(null)} />}
       {rxPrompt && pharmacy && (
         <PrescriptionForm message={rxPrompt.message} level={rxPrompt.level ?? 'approve'} initial={rx} lines={lines} products={products} customer={customer} pharmacy={pharmacy}
           offline={!online} busy={busy} onPickPatient={() => setPicking(true)}

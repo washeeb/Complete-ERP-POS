@@ -84,6 +84,7 @@ class PosController extends Controller
             ])->values(),
             'receipt_footer' => $settings->get('receipt.footer', $device->tenant_id),
             'show_stock' => (bool) $settings->get('pos.show_stock', $device->tenant_id),
+            'require_details' => (string) $settings->forBranch('pos.require_details', $device->branch_id, $device->tenant_id), // name / phone before payment
             // The company's brand (Company → Branding): logo for the screen and the printed receipt, colour, and the product line.
             'brand' => (fn ($b) => ['color' => $b['color'], 'on_color' => $b['on_color'], 'logo_url' => $b['logo_url'], 'logo_dark_url' => $b['logo_dark_url'],
                 'icon_url' => $b['icon_url'], 'receipt_logo' => $b['receipt_logo'], 'powered_by' => $b['powered_by'], 'credit' => $b['credit'], 'product' => config('brand.name')])(Branding::forTenant($tenant)),
@@ -468,6 +469,7 @@ class PosController extends Controller
                 'id' => $l->id, 'staff_id' => $l->staff_id, 'service_pass_id' => $l->service_pass_id,
                 'warranty_until' => $l->serials ? SerialNumber::where('sale_id', $s->id)->whereIn('serial', $l->serials)->max('warranty_until') : null])->values(),
             'tip_minor' => (int) $s->tip_minor,
+            'comment' => $s->comment_on_receipt ? $s->comment : null, 'walk_in' => $s->walk_in_name || $s->walk_in_phone ? ['name' => $s->walk_in_name, 'phone' => $s->walk_in_phone] : null,
             'licence_keys' => LicenceKeyService::forSale($s->id), // Services: printed on the receipt
             'order_number' => $s->dining_order_id ? DiningOrder::whereKey($s->dining_order_id)->value('number') : null,
             'kind' => $s->kind, 'discount_minor' => (int) $s->discount_minor, 'points_earned' => (int) $s->points_earned,

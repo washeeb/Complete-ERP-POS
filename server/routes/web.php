@@ -4,6 +4,7 @@ use App\Http\Controllers\BrandAssetController;
 use App\Http\Controllers\ExpenseReceiptController;
 use App\Http\Controllers\PrintController;
 use App\Http\Controllers\StorefrontController;
+use App\Http\Controllers\WaybillConfirmController;
 use App\Security\Passkeys\PasskeyLoginController;
 use Illuminate\Support\Facades\Route;
 use Spatie\LaravelPasskeys\Http\Controllers\GeneratePasskeyAuthenticationOptionsController;
@@ -56,6 +57,8 @@ Route::prefix('print')->middleware(['auth', 'license:output'])->name('print.')->
     Route::get('supplier-return/{return}', [PrintController::class, 'supplierReturn'])->name('supplier-return')->whereUuid('return');
     Route::get('disposal/{adjustment}', [PrintController::class, 'disposal'])->name('disposal')->whereUuid('adjustment');
     Route::get('disposal-register', [PrintController::class, 'disposalRegister'])->name('disposal-register');
+    Route::get('waybill/{waybill}', [PrintController::class, 'waybill'])->name('waybill')->whereUuid('waybill');
+    Route::get('waybill/{waybill}/pod', [PrintController::class, 'waybillPod'])->name('waybill.pod')->whereUuid('waybill');
 });
 
 // Receipt photos attached to expense claims (private storage).
@@ -63,3 +66,7 @@ Route::get('expense-receipt/{claim}', ExpenseReceiptController::class)->middlewa
 
 // Disposal certificates attached to disposals of expired or damaged stock (private storage).
 Route::get('disposal-certificate/{adjustment}', [PrintController::class, 'disposalCertificate'])->middleware(['auth', 'license:output'])->name('disposal.certificate')->whereUuid('adjustment');
+
+// The receiver of a waybill confirms delivery from the QR code: no sign-in, the waybill's secret link only.
+Route::get('w/{token}', [WaybillConfirmController::class, 'show'])->name('waybill.confirm')->middleware('throttle:30,1');
+Route::post('w/{token}', [WaybillConfirmController::class, 'confirm'])->middleware('throttle:10,1');

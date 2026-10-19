@@ -9,11 +9,14 @@ use App\Filament\Resources\CustomerOrders\Pages\EditCustomerOrder;
 use App\Filament\Resources\CustomerOrders\Pages\ListCustomerOrders;
 use App\Filament\Resources\CustomerOrders\Pages\ViewCustomerOrder;
 use App\Filament\Resources\Invoices\InvoiceResource;
+use App\Filament\Resources\Waybills\WaybillResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\GlobalSearch;
 use App\Models\Customer;
 use App\Models\CustomerOrder;
+use App\Models\Delivery;
+use App\Models\Waybill;
 use App\Support\Money;
 use App\Support\Qty;
 use BackedEnum;
@@ -225,6 +228,16 @@ class CustomerOrderResource extends Resource
                 }),
             Action::make('print')->label('Print')->icon(Heroicon::OutlinedPrinter)->color('gray')
                 ->url(fn (CustomerOrder $record) => route('print.order', $record), shouldOpenInNewTab: true),
+            // The waybill for the latest delivery of this order (driver, vehicle, signed proof of delivery).
+            Action::make('waybill')->label('Waybill')->icon(Heroicon::OutlinedTruck)->color('gray')
+                ->visible(fn (CustomerOrder $record) => Delivery::where('customer_order_id', $record->id)->exists())
+                ->url(function (CustomerOrder $record) {
+                    $d = Delivery::where('customer_order_id', $record->id)->latest()->first();
+                    $w = Waybill::where('source_id', $d->id)->where('status', '<>', 'cancelled')->first();
+
+                    return $w ? WaybillResource::getUrl('view', ['record' => $w])
+                        : WaybillResource::getUrl('create', ['kind' => 'delivery', 'source' => $d->id]);
+                }),
             Action::make('invoices')->label('Invoices')->icon(Heroicon::OutlinedDocumentText)->color('gray')
                 ->visible(fn (CustomerOrder $record) => in_array($record->status, ['partially_delivered', 'delivered'], true))
                 ->url(fn (CustomerOrder $record) => InvoiceResource::getUrl('index', ['tableSearch' => $record->number])),
