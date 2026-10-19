@@ -9,6 +9,7 @@ use App\Filament\Resources\StockRequests\Pages\ViewStockRequest;
 use App\Filament\Resources\StockTransfers\StockTransferResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
+use App\Filament\Support\GlobalSearch;
 use App\Models\Product;
 use App\Models\StockRequest;
 use App\Models\Warehouse;
@@ -37,6 +38,20 @@ use UnitEnum;
 /** Stock → Stock requests: ask another branch for stock; between industries both sides approve first. */
 class StockRequestResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Status' => $record->status]);
+    }
+
     protected static ?string $model = StockRequest::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHandRaised;

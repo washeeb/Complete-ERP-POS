@@ -5,6 +5,8 @@ namespace App\Filament\Resources\Sales;
 use App\Filament\Resources\Sales\Pages\ListSales;
 use App\Filament\Resources\Sales\Pages\ViewSale;
 use App\Filament\Support\Erp;
+use App\Filament\Support\FinanceUi;
+use App\Filament\Support\GlobalSearch;
 use App\Models\Branch;
 use App\Models\Sale;
 use App\Models\SalePayment;
@@ -29,6 +31,20 @@ use UnitEnum;
 
 class SaleResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'receipt_no';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['receipt_no'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Date' => $record->occurred_at?->format('j M Y H:i'), 'Cashier' => $record->cashier_name, 'Total' => FinanceUi::money((int) $record->total_minor)]);
+    }
+
     protected static ?string $model = Sale::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShoppingCart;
@@ -36,8 +52,6 @@ class SaleResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'Sales';
 
     protected static ?string $navigationLabel = 'Till sales';
-
-    protected static ?string $recordTitleAttribute = 'receipt_no';
 
     protected static ?int $navigationSort = 1;
 

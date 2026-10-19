@@ -8,6 +8,7 @@ use App\Filament\Resources\SupplierReturns\Pages\ViewSupplierReturn;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\GlobalSearch;
 use App\Models\SupplierReturn;
 use App\Support\Qty;
 use BackedEnum;
@@ -30,6 +31,25 @@ use UnitEnum;
 /** Returns to suppliers: prepared from Expiry & returns, approved and sent by someone else, then settled. */
 class SupplierReturnResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number', 'supplier.name'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Supplier' => $record->supplier?->name, 'Status' => $record->status]);
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['supplier']);
+    }
+
     protected static ?string $model = SupplierReturn::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTruck;
@@ -37,8 +57,6 @@ class SupplierReturnResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'Stock';
 
     protected static ?string $navigationLabel = 'Returns to suppliers';
-
-    protected static ?string $recordTitleAttribute = 'number';
 
     protected static ?int $navigationSort = 8;
 

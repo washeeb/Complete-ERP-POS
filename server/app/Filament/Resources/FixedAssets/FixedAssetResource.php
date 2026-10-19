@@ -8,6 +8,7 @@ use App\Filament\Resources\FixedAssets\Pages\ListFixedAssets;
 use App\Filament\Resources\FixedAssets\Pages\ViewFixedAsset;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\GlobalSearch;
 use App\Models\Account;
 use App\Models\AssetClass;
 use App\Models\FixedAsset;
@@ -35,6 +36,20 @@ use UnitEnum;
 /** The fixed asset register: straight-line monthly depreciation (owner decision 2026-10-13). */
 class FixedAssetResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number', 'name'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Number' => $record->number]);
+    }
+
     protected static ?string $model = FixedAsset::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedComputerDesktop;

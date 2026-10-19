@@ -8,6 +8,7 @@ use App\Filament\Resources\ExpenseClaims\Pages\ListExpenseClaims;
 use App\Filament\Resources\ExpenseClaims\Pages\ViewExpenseClaim;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\GlobalSearch;
 use App\Models\Account;
 use App\Models\Branch;
 use App\Models\ExpenseClaim;
@@ -33,6 +34,20 @@ use UnitEnum;
 /** Expense claims and petty cash (owner decision 2026-10-13). */
 class ExpenseClaimResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number', 'description'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['For' => $record->description, 'Status' => $record->status]);
+    }
+
     protected static ?string $model = ExpenseClaim::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedReceiptPercent;

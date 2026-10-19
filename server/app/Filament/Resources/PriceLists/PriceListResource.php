@@ -5,6 +5,7 @@ namespace App\Filament\Resources\PriceLists;
 use App\Domain\Catalog\CatalogService;
 use App\Filament\Resources\PriceLists\Pages\ListPriceLists;
 use App\Filament\Support\Erp;
+use App\Filament\Support\GlobalSearch;
 use App\Filament\Support\SimpleCatalogResource;
 use App\Models\Branch;
 use App\Models\Industry;
@@ -26,6 +27,20 @@ use UnitEnum;
 
 class PriceListResource extends SimpleCatalogResource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['code', 'name'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Code' => $record->code]);
+    }
+
     protected static ?string $model = PriceList::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCurrencyDollar;
