@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- **Move products between categories, brands and tax groups, and delete empty ones.** Products list: tick products → *Change category, brand or tax*. Categories and Brands: *Move products* moves all of one to another (also how two duplicates are merged), and *Delete* removes a category, brand or unit that nothing uses — otherwise it says what still uses it. Each list shows its number of products. Deletions are audited and reach branch servers. Asked for by the first client.
 ### Fixed
 - **Update products: Download current data was empty.** The update page does not ask for an industry and fell back to shared products only; it now gives every product, or those of the industry chosen at the top. Found at the first client.
 - **Opening stock takes several batches of one medicine.** Only the first batch of a product went in; each further batch row was refused as stock history. Now each batch has its own opening balance (with its expiry); the same batch twice, or a product already sold, received or adjusted, is still refused. Found while preparing the first client's go-live.

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Brands;
 use App\Filament\Resources\Brands\Pages\ListBrands;
 use App\Filament\Support\SimpleCatalogResource;
 use App\Models\Brand;
+use App\Models\Product;
 use BackedEnum;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
@@ -16,6 +17,10 @@ use UnitEnum;
 class BrandResource extends SimpleCatalogResource
 {
     protected static ?string $model = Brand::class;
+
+    protected static bool $deletable = true;
+
+    protected static ?string $movesProducts = 'brand_id';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
 
@@ -30,7 +35,7 @@ class BrandResource extends SimpleCatalogResource
 
     public static function table(Table $table): Table
     {
-        return static::crudTable($table->columns([TextColumn::make('name')->searchable()->sortable()])->defaultSort('name'));
+        return static::crudTable($table->columns([TextColumn::make('name')->searchable()->sortable(), TextColumn::make('products_count')->label('Products')->state(fn ($record) => Product::where('brand_id', $record->id)->count())])->defaultSort('name'));
     }
 
     public static function getPages(): array

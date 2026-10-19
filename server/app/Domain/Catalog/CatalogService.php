@@ -27,6 +27,7 @@ use App\Security\Authorizer;
 use App\Support\Money;
 use App\Support\Qty;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -327,6 +328,73 @@ final class CatalogService
         $type = strtolower(class_basename($model));
 
         return $this->recorder->save($actor, $model, $type.($model->exists ? '.updated' : '.created'));
+    }
+
+    /** What products can be moved between: field => [model, label]. */
+    public const MOVABLE = ['category_id' => [Category::class, 'category'], 'brand_id' => [Brand::class, 'brand'], 'tax_group_id' => [TaxGroup::class, 'tax group']];
+
+    /**
+     * Move products to another category, brand or tax group (or none, for category and brand). Each product is saved
+     * like an edit (audited, synced); nothing else about them changes.
+     *
+     * @param  iterable<Product|string>  $products
+     */
+    public function moveProducts(Actor $actor, iterable $products, string $field, ?string $to, ?string $reason = null): int
+    {
+        $this->require($actor, 'catalog.manage');
+        [$class, $what] = self::MOVABLE[$field] ?? throw new DomainException('Products can be moved between categories, brands or tax groups.');
+        if ($to === null && $field === 'tax_group_id') {
+            throw new DomainException('Every product needs a tax group.');
+        }
+        if ($to !== null) {
+            $this->assertOwned($actor, $class, $to, $what);
+        }
+        $n = 0;
+        foreach ($products as $p) {
+            $p = Product::findOrFail($p instanceof Product ? $p->id : $p); // as it is now, not as the list loaded it
+            if ($p->{$field} === $to) {
+                continue;
+            }
+            $this->saveProduct($actor, $p, [$field => $to], $reason ?? "Moved to another {$what}");
+            $n++;
+        }
+
+        return $n;
+    }
+
+    /**
+     * Delete a category, brand or unit that nothing uses (no products, sub-categories, styles, promotions or units).
+     * Anything in use is refused with what still uses it; move those first. Audited, and branch servers follow.
+     */
+    public function deleteSimple(Actor $actor, Model $model, string $permission = 'catalog.manage'): void
+    {
+        $this->require($actor, $permission);
+        $label = $model instanceof Uom ? "unit {$model->code}" : strtolower(class_basename($model))." {$model->name}";
+        $uses = match (true) {
+            $model instanceof Category => array_filter([
+                'products' => Product::where('category_id', $model->id)->count(),
+                'sub-categories' => Category::where('parent_id', $model->id)->count(),
+                'styles' => DB::table('styles')->where('category_id', $model->id)->count(),
+                'promotions' => DB::table('promotions')->whereRaw('category_ids @> ?::jsonb', [json_encode([$model->id])])->count(),
+            ]),
+            $model instanceof Brand => array_filter(['products' => Product::where('brand_id', $model->id)->count(),
+                'styles' => DB::table('styles')->where('brand_id', $model->id)->count()]),
+            $model instanceof Uom => array_filter(['products' => ProductUom::where('uom_id', $model->id)->distinct()->count('product_id')]),
+            default => throw new DomainException('Only categories, brands and units can be deleted here.'),
+        };
+        if ($uses) {
+            throw new DomainException(ucfirst($label).' is still used by '.collect($uses)->map(fn ($n, $k) => "{$n} {$k}")->implode(', ')
+                .'. Move them to another one first.');
+        }
+        $this->recorder->transaction(function () use ($actor, $model, $label) {
+            $this->recorder->outbox->publish($actor, $model, strtolower(class_basename($model)).'.deleted'); // branch servers remove it too
+            $this->recorder->audit->record($actor, strtolower(class_basename($model)).'.deleted', $model, ['name' => [$model->name, null]], "Deleted {$label}");
+            try {
+                $model->delete();
+            } catch (QueryException $e) {
+                throw new DomainException(ucfirst($label).' is still used elsewhere (e.g. past documents) and cannot be deleted.');
+            }
+        });
     }
 
     /** Exactly one default list; currency is the company's (multi-currency lists arrive with Finance). */

@@ -493,6 +493,10 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## Moving and deleting catalogue lists (2026-10-19)
+- Moving products saves each product like an edit (`CatalogService::moveProducts`): audited, synced, nothing else changes. Merging duplicates = move all, then delete the empty one.
+- Delete only when unused (`deleteSimple`): products, sub-categories, styles and promotions for categories; products and styles for brands; product units for units. Foreign keys stay `restrict`, so anything missed is refused too. A `*.deleted` outbox event lets branch servers delete it as well, unless something there still uses it (`Replication::DELETABLE`).
+
 ## Pharmacy sale rules are a choice (2026-10-18)
 - **Owner answers:** four levels (approve / details / patient / free) per kind (POM, controlled); company default with branch overrides; after-sale check as a choice (sign-off, daily summary, nothing); quantity cap; major warnings need a pharmacist; controlled can be locked strict; report of unapproved sales. Default stays the strict rule, so nothing changes until someone chooses otherwise.
 - **The strictest medicine in the sale decides**, computed the same way on the till (`pharmacy.ts saleLevel`) and the server (`PharmacyRules::saleLevel`); the server stays the judge (a till with old rules is caught by `pharmacist_needed`). A till without rules from the server assumes strict.
