@@ -493,6 +493,10 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## Editing keeps one record; adding from where you are (2026-10-19)
+- Every edit screen's uniqueness checks exclude the record itself (checked: SKU, codes, phone, coupons, bins…). The product barcode check now also allows a barcode to move between units of the *same* product; a changed base unit renames the base `product_uoms` row instead of adding a second one.
+- Inline creation (`App\Filament\Support\QuickCreate`) calls the same domain services as each record's own screen, so permissions, validation and the audit log are identical; the "+" only shows to people allowed to create that kind of record. Tax groups are not created inline (they need their rates).
+
 ## Pharmacy sale rules are a choice (2026-10-18)
 - **Owner answers:** four levels (approve / details / patient / free) per kind (POM, controlled); company default with branch overrides; after-sale check as a choice (sign-off, daily summary, nothing); quantity cap; major warnings need a pharmacist; controlled can be locked strict; report of unapproved sales. Default stays the strict rule, so nothing changes until someone chooses otherwise.
 - **The strictest medicine in the sale decides**, computed the same way on the till (`pharmacy.ts saleLevel`) and the server (`PharmacyRules::saleLevel`); the server stays the judge (a till with old rules is caught by `pharmacist_needed`). A till without rules from the server assumes strict.

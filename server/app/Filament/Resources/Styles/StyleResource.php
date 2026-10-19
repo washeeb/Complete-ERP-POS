@@ -10,6 +10,7 @@ use App\Filament\Resources\Styles\Pages\ViewStyle;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\QuickCreate;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Style;
@@ -74,8 +75,8 @@ class StyleResource extends Resource
         return $schema->columns(3)->components([
             TextInput::make('code')->label('Style code')->required()->maxLength(30)->helperText('SKUs become CODE-COLOUR-SIZE.'),
             TextInput::make('name')->required()->maxLength(255)->columnSpan(2),
-            Select::make('category_id')->label('Category')->options(fn () => Category::orderBy('name')->pluck('name', 'id')),
-            Select::make('brand_id')->label('Brand')->options(fn () => Brand::orderBy('name')->pluck('name', 'id')),
+            QuickCreate::on(Select::make('category_id')->label('Category')->options(fn () => Category::orderBy('name')->pluck('name', 'id')), 'category'),
+            QuickCreate::on(Select::make('brand_id')->label('Brand')->options(fn () => Brand::orderBy('name')->pluck('name', 'id')), 'brand'),
             Select::make('tax_group_id')->label('Tax')->required()->options(fn () => TaxGroup::orderBy('name')->pluck('name', 'id'))
                 ->default(fn () => TaxGroup::where('code', 'STD')->value('id')),
             TextInput::make('season')->maxLength(30)->placeholder('SS26'),

@@ -276,6 +276,11 @@ final class CatalogService
             if ($startsBatches && ! $isNew) {
                 app(StockLedger::class)->assignOpeningBatches($actor, $product); // stock already here becomes batch OPENING
             }
+            // A base unit changed before any stock (e.g. PC → PK): prices typed against the old unit follow it.
+            $oldBaseUom = ! $isNew && $product->isDirty('base_uom_id') ? $product->getOriginal('base_uom_id') : null;
+            if ($oldBaseUom && $pricesGiven) {
+                $data['prices'] = array_map(fn ($r) => ($r['uom_id'] ?? null) === $oldBaseUom ? ['uom_id' => $product->base_uom_id] + $r : $r, $data['prices']);
+            }
             $product->tenant_id = $actor->tenantId;
             $product->updated_by = $actor->id;
             if ($isNew) {
@@ -284,8 +289,9 @@ final class CatalogService
             $this->recorder->save($actor, $product, $isNew ? 'product.created' : 'product.updated', $reason);
 
             $summary = [];
-            if (array_key_exists('units', $data) || $isNew) {
-                $summary['units'] = $this->syncUnits($actor, $product, $data['units'] ?? [], $data['base_barcodes'] ?? []);
+            if (array_key_exists('units', $data) || $isNew || $oldBaseUom) {
+                $keep = array_key_exists('units', $data) ? null : self::inputOf($product); // base unit changed from a file: keep the other units and barcodes
+                $summary['units'] = $this->syncUnits($actor, $product, $data['units'] ?? $keep['units'] ?? [], $data['base_barcodes'] ?? $keep['base_barcodes'] ?? []);
             }
             if ($pricesGiven) {
                 $summary['prices'] = $this->syncPrices($actor, $product, $data['prices']);
@@ -424,6 +430,11 @@ final class CatalogService
                 'is_purchasable' => (bool) ($u['is_purchasable'] ?? true), 'barcodes' => $u['barcodes'] ?? []];
         }
 
+        // The base unit was changed (no stock yet): the old base row takes the new unit, so its prices and barcodes follow.
+        $oldBase = $product->units()->where('is_base', true)->first();
+        if ($oldBase && $oldBase->uom_id !== $product->base_uom_id && ! $product->units()->where('uom_id', $product->base_uom_id)->exists()) {
+            $oldBase->forceFill(['uom_id' => $product->base_uom_id])->save();
+        }
         $existing = $product->units()->get()->keyBy('uom_id');
         $changes = [];
         foreach ($wanted as $uomId => $w) {
@@ -442,7 +453,7 @@ final class CatalogService
         foreach ($existing as $uomId => $pu) {
             if (! isset($wanted[$uomId])) {
                 // Units with history stay (receipts reference them); they just stop being sellable.
-                $pu->forceFill(['is_sellable' => false, 'is_purchasable' => false])->save();
+                $pu->forceFill(['is_base' => false, 'is_sellable' => false, 'is_purchasable' => false])->save();
                 $pu->barcodes()->delete();
                 $changes[] = 'retired '.Uom::find($uomId)->code;
             }
@@ -459,8 +470,12 @@ final class CatalogService
                 throw new DomainException("Barcode “{$code}” has invalid characters.");
             }
             $clash = Barcode::where('code', $code)->where('product_uom_id', '!=', $pu->id)->with('product')->first();
-            if ($clash) {
-                throw new DomainException("Barcode {$code} already belongs to {$clash->product->name}.");
+            if ($clash && $clash->product_id !== $product->id) {
+                throw new DomainException("Barcode {$code} already belongs to {$clash->product->name} ({$clash->product->sku}).");
+            }
+            if ($clash) { // on another unit of this same product (e.g. its base unit was changed): the barcode moves here
+                $clash->delete();
+                $changes[] = "barcode {$code} moved";
             }
         }
         $current = $pu->barcodes()->pluck('code')->all();

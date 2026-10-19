@@ -11,6 +11,7 @@ use App\Filament\Resources\PurchaseOrders\Pages\ListPurchaseOrders;
 use App\Filament\Resources\PurchaseOrders\Pages\ViewPurchaseOrder;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
+use App\Filament\Support\QuickCreate;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
@@ -104,8 +105,8 @@ class PurchaseOrderResource extends Resource
     {
         return $schema->columns(1)->components([
             Section::make()->columns(3)->schema([
-                Select::make('supplier_id')->label('Supplier')->required()->searchable()
-                    ->options(fn () => Supplier::where('is_active', true)->orderBy('name')->pluck('name', 'id')),
+                QuickCreate::on(Select::make('supplier_id')->label('Supplier')->required()->searchable()
+                    ->options(fn () => Supplier::where('is_active', true)->orderBy('name')->pluck('name', 'id')), 'supplier'),
                 Select::make('warehouse_id')->label('Deliver to')->required()->options(fn () => Fields::warehouses('purchasing.manage')),
                 DatePicker::make('expected_on')->label('Expected delivery'),
                 Textarea::make('note')->columnSpanFull(),

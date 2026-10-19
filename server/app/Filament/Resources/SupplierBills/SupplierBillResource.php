@@ -9,6 +9,7 @@ use App\Filament\Resources\SupplierBills\Pages\ViewSupplierBill;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\QuickCreate;
 use App\Models\GoodsReceipt;
 use App\Models\Supplier;
 use App\Models\SupplierBill;
@@ -108,9 +109,9 @@ class SupplierBillResource extends Resource
 
         return $schema->columns(1)->components([
             Section::make()->columns(3)->schema([
-                Select::make('supplier_id')->label('Supplier')->required()->searchable()->live()
+                QuickCreate::on(Select::make('supplier_id')->label('Supplier')->required()->searchable()->live()
                     ->options(fn () => Supplier::where('is_active', true)->orderBy('name')->pluck('name', 'id'))
-                    ->afterStateUpdated(fn (Set $set) => $set('stock_lines', [])),
+                    ->afterStateUpdated(fn (Set $set) => $set('stock_lines', [])), 'supplier'),
                 TextInput::make('supplier_invoice_no')->label('Supplier’s invoice number')->required()->maxLength(60),
                 Select::make('branch_id')->label('Branch')->required()->options(fn () => FinanceUi::branches())->default(fn () => FinanceUi::hq()),
                 DatePicker::make('bill_date')->label('Invoice date')->required()->default(now())->maxDate(now()),
