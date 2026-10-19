@@ -12,6 +12,7 @@ use App\Filament\Resources\Invoices\InvoiceResource;
 use App\Filament\Resources\Waybills\WaybillResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
+use App\Filament\Support\GlobalSearch;
 use App\Models\Customer;
 use App\Models\CustomerOrder;
 use App\Models\Delivery;
@@ -45,6 +46,25 @@ use UnitEnum;
 /** Quotations and customer (B2B / wholesale) orders: quote → order → deliveries (each raises its invoice). */
 class CustomerOrderResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number', 'customer.name'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Customer' => $record->customer?->name, 'Status' => $record->status]);
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['customer']);
+    }
+
     protected static ?string $model = CustomerOrder::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentCurrencyDollar;

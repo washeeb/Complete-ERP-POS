@@ -10,7 +10,16 @@
 - **Till:** `src/calc.ts` (calculator, change breakdown), `src/screens/TillTools.tsx` (Calculator, SaleDetailsDialog, detailsMissing, detailsPayload); Sell: Details button, F1, require check; Pay: change in notes and coins, calculator.
 - **Back office:** calculator in the top bar (`resources/views/filament/calculator.blade.php`).
 - **Waybills:** `App\Domain\Logistics\WaybillService` (prepare, dispatch, deliver, cancel), `WaybillResource` (list, create, view), `print.waybill` with QR (`App\Support\Qr`), `print.waybill.pod`, public `waybill.confirm` (`WaybillConfirmController`). Shortcuts on transfers, customer orders, supplier returns, goods received. Sync: warehouse group; in `TestTradingReset`.
-- **Tests:** `SaleDetailsWaybillTest` (3), `calc.test.ts`, `saleDetails.test.ts`.
+- **Tests:** `SaleDetailsWaybillTest` (3), `calc.test.ts`, `saleDetails.test.ts`. · Top search across 37 lists with details (SKU for products), product pickers show the SKU (branch `global-search`) · Repo private · Licence generator `/vendor` (branch `licence-generator`) · Pharmacy sale rules (PR #65) · Medicine schedule in the products file and a bulk action on the list (branch `medicine-import`) · Repo private
+
+
+## Licence generator — branch `licence-generator`
+- **Database:** migration `2026_11_14_100001`: `vendor_customers`, `vendor_plans`, `vendor_addons`, `vendor_invoices`, `vendor_payments`, `vendor_reminders`; `vendor_licenses` + customer_id, plan_id, addons, kind, site, starts_on, expires_on, price, replaces, request_code, notes, revoked_by, last_checkin_at (dates backfilled from payloads).
+- **Rules:** `VendorLicensing` (`allowed`, `modules`, `package`, `issue`, `renew`, `revoke`, `health`), `VendorBilling` (`invoice`, `invoiceForLicense`, `pay`, `void`, `figures`); `LicenseIssuer` accepts an installation for renewals; `CheckinServer` records last seen.
+- **Panel:** `VendorPanelProvider` (`/vendor`, registered only with `LICENSE_SERVER=true`, MFA required): Dashboard (LicenceFigures, LicenceAttention), Licences (list, issue, view: renew / change / e-mail / certificate / revoke), Customers, Plans, Add-ons, Invoices (payments, print, void), Check-ins. Prints in `routes/vendor.php` + `VendorPrintController` (certificate, invoice, CSV).
+- **Config:** `license.server.url`, `staff`, `payment_details` (`LICENSE_SERVER_URL`, `LICENSE_VENDOR_STAFF`, `LICENSE_PAYMENT_DETAILS`). Command `vendor:license-reminders` 08:00.
+- **Builds:** `release:build` removes the panel, screens, prints and routes. `phpunit.xml` sets `LICENSE_SERVER=true` so the panel is tested.
+- **Tests:** `VendorLicensingTest` (7); LicensingTest checks the build leaves the generator out.
 
 ## Pharmacy sale rules — branch `pharmacy-sale-rules`
 - **Database:** migration `2026_11_13_100001`: `branches.settings` (jsonb, branch overrides), `pharmacy_signoffs` (one per sale).

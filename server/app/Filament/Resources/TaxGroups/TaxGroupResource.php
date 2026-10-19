@@ -5,6 +5,7 @@ namespace App\Filament\Resources\TaxGroups;
 use App\Domain\Catalog\CatalogService;
 use App\Filament\Resources\TaxGroups\Pages\ListTaxGroups;
 use App\Filament\Support\Erp;
+use App\Filament\Support\GlobalSearch;
 use App\Filament\Support\SimpleCatalogResource;
 use App\Models\TaxGroup;
 use App\Models\TaxRate;
@@ -24,6 +25,20 @@ use UnitEnum;
 
 class TaxGroupResource extends SimpleCatalogResource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['code', 'name'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Code' => $record->code]);
+    }
+
     protected static ?string $model = TaxGroup::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalculator;

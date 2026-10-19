@@ -67,6 +67,12 @@ class ReleaseBuildCommand extends Command
         unlink($tar);
         $commit = trim(Process::path($repo)->run(['git', 'rev-parse', 'HEAD'])->output());
 
+        // The licence generator (vendor panel, its screens, prints and routes) never goes to customers.
+        foreach (['app/Filament/Vendor', 'app/Providers/Filament/VendorPanelProvider.php', 'app/Http/Controllers/VendorPrintController.php',
+            'resources/views/licensing-vendor', 'routes/vendor.php'] as $vendorOnly) {
+            File::isDirectory($root.'/'.$vendorOnly) ? File::deleteDirectory($root.'/'.$vendorOnly) : File::delete($root.'/'.$vendorOnly);
+        }
+
         // 2. Hidden stamp in the code.
         $stamp = "\n// ".Watermark::hide("{$build}|{$customer}")."\n";
         $n = 0;

@@ -13,6 +13,7 @@ use App\Filament\Resources\Customers\Pages\EditCustomer;
 use App\Filament\Resources\Customers\Pages\ListCustomers;
 use App\Filament\Resources\Customers\Pages\ViewCustomer;
 use App\Filament\Support\Erp;
+use App\Filament\Support\GlobalSearch;
 use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\PatientProfile;
@@ -46,6 +47,28 @@ use UnitEnum;
 
 class CustomerResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'code', 'phone', 'email'];
+    }
+
+    /** A phone typed as 024… also finds the number stored as +233…. */
+    public static function modifyGlobalSearchQuery(Builder $query, string $search): void
+    {
+        if (($phone = CustomerService::normalisePhone($search)) && strlen($phone) >= 8) {
+            $query->orWhere('phone', $phone);
+        }
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Code' => $record->code, 'Phone' => $record->phone]);
+    }
+
     protected static ?string $model = Customer::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
@@ -53,8 +76,6 @@ class CustomerResource extends Resource
     protected static string|UnitEnum|null $navigationGroup = 'Sales';
 
     protected static ?int $navigationSort = 0;
-
-    protected static ?string $recordTitleAttribute = 'name';
 
     public static function canViewAny(): bool
     {
