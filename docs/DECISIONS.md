@@ -493,6 +493,10 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## A stock row from the start (2026-10-19)
+- Every stock-tracked product gets a stock row at 0 in each store of its industry (shared products: every store) when it is saved, when a store is created, when sync brings a product, after test trading is cleared, and once for existing data (migration). `ZeroStock::ensure` only inserts (`ON CONFLICT DO NOTHING`).
+- "Stock has moved" (base unit and unit sizes locked) is now `Product::hasMoved()` from the movements, no longer "has a stock row".
+
 ## Moving and deleting catalogue lists (2026-10-19)
 - Moving products saves each product like an edit (`CatalogService::moveProducts`): audited, synced, nothing else changes. Merging duplicates = move all, then delete the empty one.
 - Delete only when unused (`deleteSimple`): products, sub-categories, styles and promotions for categories; products and styles for brands; product units for units. Foreign keys stay `restrict`, so anything missed is refused too. A `*.deleted` outbox event lets branch servers delete it as well, unless something there still uses it (`Replication::DELETABLE`).

@@ -2,6 +2,7 @@
 
 namespace App\Domain\Launch;
 
+use App\Domain\Inventory\ZeroStock;
 use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
 use App\Domain\Support\DomainException;
@@ -99,6 +100,7 @@ final class TestTradingReset
                 $this->scoped($t, $tenantId)->delete();
             }
             DB::table('document_sequences')->where('tenant_id', $tenantId)->where('node', '<>', 'catalog')->whereIn('doc_type', self::RESTART_NUMBERS)->delete();
+            ZeroStock::ensure($tenantId); // products stay listed on Stock on hand, at 0
             foreach ($withTriggers as $t) {
                 DB::statement("ALTER TABLE \"{$t}\" ENABLE TRIGGER USER");
             }

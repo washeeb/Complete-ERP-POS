@@ -169,7 +169,7 @@ class ProductsImporter extends Importer
             $code = self::has($row, 'base_unit') ? $row['base_unit'] : 'PC';
             $data['base_uom_id'] = self::unitId($code) ?? throw new DomainException("Unknown unit {$code} (Catalog → Units of measure).");
             // A product whose stock has moved: the unit is corrected (renamed, quantities stay), not converted.
-            if (! $isNew && $data['base_uom_id'] !== $product->base_uom_id && $product->stockLevels()->exists()) {
+            if (! $isNew && $data['base_uom_id'] !== $product->base_uom_id && $product->hasMoved()) {
                 $product = $this->catalog->correctBaseUnit($actor, $product, $data['base_uom_id'], 'Products file');
             }
         }

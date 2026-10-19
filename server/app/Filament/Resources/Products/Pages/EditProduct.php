@@ -31,7 +31,7 @@ class EditProduct extends EditRecord
         return [
             // A wrong base unit (Pieces instead of Pack) after stock has moved: renamed, quantities stay.
             Action::make('correctUnit')->label('Correct the unit')->icon(Heroicon::OutlinedArrowsRightLeft)->color('gray')
-                ->visible(fn () => Erp::canAnywhere('catalog.manage') && $this->record->stockLevels()->exists())
+                ->visible(fn () => Erp::canAnywhere('catalog.manage') && $this->record->hasMoved())
                 ->modalDescription(fn () => 'The unit is renamed, the quantities stay: '.Qty::format((int) $this->record->stockLevels->sum(fn ($l) => Qty::toMilli((string) $l->on_hand)))
                     .' '.$this->record->baseUom?->code.' become the same number in the new unit. Prices and barcodes stay. To sell in packs as well as pieces, add Pack under Other units instead.')
                 ->schema([

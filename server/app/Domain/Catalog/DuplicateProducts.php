@@ -22,7 +22,8 @@ use Illuminate\Support\Facades\DB;
 final class DuplicateProducts
 {
     /** Rows that go with the product itself; anything else referring to it (or its units) means it is in use. */
-    private const OWN_COLUMNS = ['product_uoms.product_id', 'barcodes.product_id', 'barcodes.product_uom_id', 'prices.product_id', 'prices.product_uom_id'];
+    private const OWN_COLUMNS = ['product_uoms.product_id', 'barcodes.product_id', 'barcodes.product_uom_id', 'prices.product_id', 'prices.product_uom_id',
+        'stock_levels.product_id']; // a stock row at 0 is not use; real stock has movements, which count
 
     public function __construct(private readonly Recorder $recorder, private readonly AuditLog $audit) {}
 
@@ -104,6 +105,7 @@ final class DuplicateProducts
                         DB::table('prices')->where('product_id', $copy->id)->delete();
                         DB::table('barcodes')->where('product_id', $copy->id)->delete();
                         DB::table('product_uoms')->where('product_id', $copy->id)->delete();
+                        DB::table('stock_levels')->where('product_id', $copy->id)->where('on_hand', 0)->delete();
                         $this->audit->record($actor, 'product.deleted', $copy, ['sku' => [$copy->sku, null], 'name' => [$copy->name, null]], "Duplicate of {$keep->sku}");
                         DB::table('products')->where('id', $copy->id)->delete();
                         $removed[] = $copy->sku;

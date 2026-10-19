@@ -56,6 +56,7 @@ final class StockRows
         $q = DB::table('products as p')->leftJoin('stock_levels as l', fn ($j) => $j->on('l.product_id', '=', 'p.id')->where('l.warehouse_id', $warehouse->id))
             ->leftJoin('categories as c', 'c.id', '=', 'p.category_id')->leftJoin('uoms as u', 'u.id', '=', 'p.base_uom_id')
             ->where('p.tenant_id', $warehouse->tenant_id)->where('p.track_stock', true)
+            ->when(DB::table('branches')->where('id', $warehouse->branch_id)->value('industry_id'), fn ($w, $industry) => $w->where(fn ($i) => $i->whereNull('p.industry_id')->orWhere('p.industry_id', $industry)))
             ->where(fn ($w) => $w->where('p.is_active', true)->orWhere('l.on_hand', '<>', 0))
             ->when($categoryId, fn ($w) => $w->where('p.category_id', $categoryId))
             ->when(! $withZero, fn ($w) => $w->where('l.on_hand', '<>', 0))

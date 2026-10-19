@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Product extends Model
 {
@@ -40,6 +41,12 @@ class Product extends Model
     public function brand(): BelongsTo
     {
         return $this->belongsTo(Brand::class);
+    }
+
+    /** Stock has moved (received, sold, adjusted, counted…): the base unit and unit sizes are then fixed. */
+    public function hasMoved(): bool
+    {
+        return $this->exists && DB::table('stock_movements')->where('product_id', $this->id)->exists();
     }
 
     public function baseUom(): BelongsTo

@@ -121,8 +121,8 @@ class ProductResource extends Resource
                     ->default(fn () => TaxGroup::where('code', 'STD')->value('id')),
                 QuickCreate::on(Select::make('base_uom_id')->label('Base unit (stock is kept in this)')->required()->options($uoms)
                     ->default(fn () => Uom::where('code', 'PC')->value('id'))
-                    ->disabled(fn (?Product $record) => $record?->stockLevels()->exists())
-                    ->helperText(fn (?Product $record) => $record?->stockLevels()->exists() ? 'Stock has moved: use Correct the unit (top of the page) if it is wrong.' : null), 'uom'),
+                    ->disabled(fn (?Product $record) => (bool) $record?->hasMoved())
+                    ->helperText(fn (?Product $record) => $record?->hasMoved() ? 'Stock has moved: use Correct the unit (top of the page) if it is wrong.' : null), 'uom'),
                 Toggle::make('track_stock')->label('Track stock')->default(true)->inline(false),
                 Toggle::make('is_active')->label('For sale')->default(true)->inline(false),
                 Toggle::make('track_batches')->label('Batches and expiry dates')->inline(false)
