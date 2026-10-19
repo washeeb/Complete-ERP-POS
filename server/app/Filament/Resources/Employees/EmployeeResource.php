@@ -8,6 +8,7 @@ use App\Filament\Resources\Employees\Pages\EditEmployee;
 use App\Filament\Resources\Employees\Pages\ListEmployees;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\GlobalSearch;
 use App\Filament\Support\QuickCreate;
 use App\Models\Department;
 use App\Models\Employee;
@@ -36,6 +37,20 @@ use UnitEnum;
 /** Employees. Pay and bank details are only shown to HR (hr.manage). */
 class EmployeeResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number', 'name', 'phone', 'email'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Staff no.' => $record->number, 'Phone' => $record->phone]);
+    }
+
     protected static ?string $model = Employee::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedIdentification;

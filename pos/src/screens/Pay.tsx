@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { formatMoney, parseMoney } from '../money'
 import { evenSplit } from '../restaurant'
+import { changeBreakdown } from '../calc'
+import { Calculator } from './TillTools'
 import type { DiningOrder, Payment, Product, TillCustomer, TradeInItem } from '../types'
 import { TradeInDialog } from './Electronics'
 
@@ -43,6 +45,7 @@ export function Pay({ total: bill, currency, exponent, busy, error, customer, ti
   const [reference, setReference] = useState('')
   const [phone, setPhone] = useState('')
   const [formError, setFormError] = useState('')
+  const [calcOpen, setCalcOpen] = useState(false)
   const money = (m: number) => formatMoney(m, currency, exponent)
 
   const applied = payments.reduce((a, p) => a + p.amount_minor, 0)
@@ -118,6 +121,10 @@ export function Pay({ total: bill, currency, exponent, busy, error, customer, ti
           <dt className="strong">Due</dt><dd className="strong">{money(due)}</dd>
           {change > 0 && <><dt>Change</dt><dd className="strong">{money(change)}</dd></>}
         </dl>
+        {change > 0 && changeBreakdown(change, exponent).length > 0 && (
+          <p className="muted small change-notes" aria-label="Change in notes and coins">
+            {changeBreakdown(change, exponent).map((c) => `${c.count} × ${money(c.value)}`).join(' · ')}</p>
+        )}
 
         {payments.length > 0 && (
           <ul className="payments">
@@ -198,11 +205,13 @@ export function Pay({ total: bill, currency, exponent, busy, error, customer, ti
                   <input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} />
                 </label>
               )}
+              <button type="button" onClick={() => setCalcOpen(true)} disabled={busy}>Calculator</button>
               <button className="primary big" disabled={busy}>Add {method === 'account' ? 'to account' : LABEL[method].toLowerCase()}</button>
             </form>
           </>
         )}
         {(formError || error) && <p className="error" role="alert">{formError || error}</p>}
+        {calcOpen && <Calculator useLabel="Use as amount" onUse={(v) => setAmount(v.toFixed(exponent))} onClose={() => setCalcOpen(false)} />}
         {tradingIn && tradeInProducts && <TradeInDialog products={tradeInProducts} currency={currency} exponent={exponent} due={due}
           onAdd={addTradeIn} onCancel={() => setTradingIn(false)} />}
         <div className="row">

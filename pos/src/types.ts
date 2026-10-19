@@ -95,6 +95,7 @@ export type Bootstrap = {
   price_lists: PriceList[]
   receipt_footer: string
   show_stock?: boolean
+  require_details?: string // none | phone | name | name_phone: what the till asks before payment (branch setting)
   /** The company's brand (Company → Branding); missing on servers older than 0.26. */
   brand?: { color: string; on_color: string; logo_url: string | null; logo_dark_url: string | null; icon_url: string; receipt_logo: boolean; powered_by: string | null; credit?: string[]; product: string }
   send_receipt?: ('sms' | 'whatsapp' | 'email')[] // channels the business has switched on for digital receipts
@@ -119,6 +120,7 @@ export type PostedSale = {
   tax_breakdown: TaxLine[]
   lines: { line_no: number; sku: string; name: string; uom: string; qty: string; unit_price_minor: number; line_total_minor: number; discount_minor?: number; promotions?: { name: string; saving_minor: number }[]; note?: string | null; serials?: string[]; warranty_until?: string | null; id?: string; staff_id?: string | null; service_pass_id?: string | null }[]
   tip_minor?: number; order_number?: string | null
+  comment?: string | null; walk_in?: { name: string | null; phone: string | null } | null // printed on the receipt
   licence_keys?: { sale_line_id: string; key: string }[] // Services: software keys handed out, printed on the receipt
   fiscal?: { status: string; code: string | null; qr: string | null; mode: string } | null // GRA E-VAT
   kitchen?: { name: string; qty: string; note: string | null; station: string }[] // offline counter sale: ticket the till prints itself

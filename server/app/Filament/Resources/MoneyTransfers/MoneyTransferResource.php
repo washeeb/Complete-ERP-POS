@@ -5,6 +5,7 @@ namespace App\Filament\Resources\MoneyTransfers;
 use App\Filament\Resources\MoneyTransfers\Pages\ListMoneyTransfers;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\GlobalSearch;
 use App\Models\MoneyTransfer;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -18,6 +19,20 @@ use UnitEnum;
 /** Money moved between the company's own accounts. */
 class MoneyTransferResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number', 'reference'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Reference' => $record->reference]);
+    }
+
     protected static ?string $model = MoneyTransfer::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowsRightLeft;

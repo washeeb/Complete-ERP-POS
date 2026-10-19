@@ -45,7 +45,9 @@
         <tr><td>Sold</td><td class="num">{{ $sale->occurred_at?->format('j M Y H:i') }}</td></tr>
         <tr><td>Teller</td><td class="num">{{ $sale->cashier_name }}</td></tr>
         @if ($sale->till)<tr><td>Till</td><td class="num">{{ $sale->till->code }}</td></tr>@endif
+        @if ($sale->walk_in_name)<tr><td>Customer</td><td class="num">{{ $sale->walk_in_name }}</td></tr>@endif
     </table>
+    @if ($sale->comment_on_receipt && $sale->comment)<p class="small">{{ $sale->comment }}</p>@endif
     <div class="rule"></div>
     <table>
         @foreach ($sale->lines->sortBy('line_no') as $l)

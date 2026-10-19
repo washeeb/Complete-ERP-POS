@@ -87,6 +87,7 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => Blade::render('@livewire(\'report-problem\')'))
             // Industries: show one industry (its branches, catalogue, stock, sales, reports) or all.
             ->renderHook(PanelsRenderHook::GLOBAL_SEARCH_BEFORE, fn () => Blade::render('@livewire(\'industry-switcher\')'))
+            ->renderHook(PanelsRenderHook::GLOBAL_SEARCH_AFTER, fn () => view('filament.calculator')) // calculator for everyone in the top bar
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => new HtmlString(Watermark::meta()))
             // Where am I (current menu item, group and tab stand out) and file pickers that look like buttons.
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => new HtmlString('<link rel="stylesheet" href="'.asset('css/seslabs/admin.css').'?v='.@filemtime(public_path('css/seslabs/admin.css')).'">'))

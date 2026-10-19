@@ -57,7 +57,7 @@ class ListStockLevels extends ListRecords
                         ->getSearchResultsUsing(fn (string $search) => Product::where('track_stock', true)
                             ->where(fn ($q) => $q->where('name', 'ilike', "%{$search}%")->orWhere('sku', 'ilike', "%{$search}%"))
                             ->limit(30)->get()->mapWithKeys(fn ($p) => [$p->id => "{$p->sku} · {$p->name}"]))
-                        ->getOptionLabelUsing(fn ($value) => Product::find($value)?->name),
+                        ->getOptionLabelUsing(fn ($value) => ($p = Product::find($value)) ? "{$p->sku} · {$p->name}" : null),
                     Select::make('product_uom_id')->label('Unit')->required()
                         ->options(fn (Get $get) => ProductUom::with('uom')->where('product_id', $get('product_id'))->get()
                             ->mapWithKeys(fn ($u) => [$u->id => $u->uom->code.($u->is_base ? '' : ' (× '.rtrim(rtrim((string) $u->factor, '0'), '.').')')])),

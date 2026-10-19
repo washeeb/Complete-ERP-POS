@@ -6,6 +6,7 @@ use App\Domain\Payables\SupplierPaymentService;
 use App\Filament\Resources\SupplierPayments\Pages\ListSupplierPayments;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\GlobalSearch;
 use App\Models\Account;
 use App\Models\Branch;
 use App\Models\Supplier;
@@ -27,6 +28,25 @@ use UnitEnum;
 /** Money paid to suppliers (settles the oldest bills first). */
 class SupplierPaymentResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number', 'reference', 'supplier.name'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Supplier' => $record->supplier?->name, 'Reference' => $record->reference]);
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['supplier']);
+    }
+
     protected static ?string $model = SupplierPayment::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBanknotes;

@@ -20,6 +20,18 @@ You receive goods, move stock between stores and count it. Everything is in the 
 
 **Grocery stores, every morning:** **Grocery → Markdowns**: apply the suggested markdowns, print and stick the stickers, and write off expired packs.
 
+## Waybills (goods on the move)
+
+**Stock → Waybills → New waybill**, or the **Waybill** button on a stock transfer, a customer order that has been delivered, or a return to a supplier.
+
+1. Choose what it is for and the document; the goods are copied from it. Add the transport company, driver, vehicle, packages and weight.
+2. **Print waybill** and send it with the goods. **Dispatch** when they leave (driver and vehicle).
+3. When they arrive, the receiver **scans the QR code** on the waybill with their phone, types their name (and can add a photo) and confirms; or bring back the signed copy and click **Mark delivered** (upload a photo of it).
+
+On goods received from a supplier, **Supplier waybill** records their waybill number, transporter and vehicle, with a scan.
+
+**Why:** a waybill proves what left, who carried it and who received it; disputes about missing items are settled with the signed copy or the receiver's confirmation.
+
 ## Counting
 
 1. **Stock → Stock counts → New** for the store (all products, or one category). Print the **count sheet**.

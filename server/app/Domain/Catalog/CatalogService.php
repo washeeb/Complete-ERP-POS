@@ -268,7 +268,7 @@ final class CatalogService
         $this->assertOwned($actor, Category::class, $product->category_id, 'category', nullable: true);
         $this->assertOwned($actor, Brand::class, $product->brand_id, 'brand', nullable: true);
         if ($product->exists && $product->isDirty('base_uom_id') && $product->stockLevels()->exists()) {
-            throw new DomainException('The base unit cannot change once stock has moved; create a new product instead.');
+            throw new DomainException('The base unit cannot change once stock has moved; use Correct the unit on the product (it renames the unit, quantities stay).');
         }
 
         return $this->recorder->transaction(function () use ($actor, $product, $data, $pricesGiven, $reason, $startsBatches, $recipe) {
@@ -423,6 +423,45 @@ final class CatalogService
         $group->verified_by_name = $actor->name;
 
         return $this->recorder->save($actor, $group, 'tax_group.verified', $note);
+    }
+
+    /**
+     * Correct a product's base unit when it was set wrongly (e.g. Pieces instead of Pack), even after stock has moved.
+     * Only the name of the unit changes: 40 pieces become 40 packs. Prices, barcodes, stock and history stay with the same
+     * unit row; documents already printed keep the unit they showed. Refused when the product already has the new unit
+     * as a pack size, or when stock is in fractions the new unit cannot hold.
+     */
+    public function correctBaseUnit(Actor $actor, Product $product, string $uomId, string $reason): Product
+    {
+        $this->require($actor, 'catalog.manage');
+        $this->assertOwned($actor, Uom::class, $uomId, 'unit');
+        if (trim($reason) === '') {
+            throw new DomainException('Give the reason for the correction.');
+        }
+        if ($uomId === $product->base_uom_id) {
+            throw new DomainException('That is already the base unit.');
+        }
+        $new = Uom::findOrFail($uomId);
+        if ($product->units()->where('uom_id', $uomId)->exists()) {
+            throw new DomainException("{$product->name} already has {$new->code} as another unit: remove it first (Barcodes and selling units), then correct the base unit.");
+        }
+        $step = 10 ** (3 - min(3, $new->decimals));
+        foreach ($product->stockLevels()->get(['on_hand']) as $l) {
+            if (Qty::toMilli((string) $l->on_hand) % $step !== 0) {
+                throw new DomainException("Stock of {$product->name} is in fractions that {$new->code} does not allow ({$new->decimals} decimal places).");
+            }
+        }
+        $old = Uom::find($product->base_uom_id);
+
+        return $this->recorder->transaction(function () use ($actor, $product, $new, $old, $reason) {
+            $base = $product->units()->where('is_base', true)->firstOrFail();
+            $base->uom_id = $new->id;
+            $this->recorder->save($actor, $base, 'product_uom.base_unit_corrected', $reason);
+            $product->base_uom_id = $new->id;
+            $this->recorder->save($actor, $product, 'product.base_unit_corrected', "{$old?->code} → {$new->code}: ".trim($reason), payload: ['from' => $old?->code, 'to' => $new->code]);
+
+            return $product->fresh();
+        });
     }
 
     // -------------------------------------------------------------------

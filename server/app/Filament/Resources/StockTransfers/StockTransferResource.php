@@ -9,6 +9,7 @@ use App\Filament\Resources\StockTransfers\Pages\ListStockTransfers;
 use App\Filament\Resources\StockTransfers\Pages\ViewStockTransfer;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
+use App\Filament\Support\GlobalSearch;
 use App\Models\StockTransfer;
 use App\Models\Warehouse;
 use BackedEnum;
@@ -37,6 +38,20 @@ use UnitEnum;
 
 class StockTransferResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Status' => $record->status]);
+    }
+
     protected static ?string $model = StockTransfer::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowsRightLeft;

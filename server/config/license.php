@@ -21,6 +21,9 @@ return [
         'enabled' => (bool) env('LICENSE_SERVER', false),
         'private_key_path' => env('LICENSE_PRIVATE_KEY_PATH'), // outside the repository, readable only by the server user
         'kid' => env('LICENSE_KID'),
+        'url' => env('LICENSE_SERVER_URL'), // the address installations check in with (default: APP_URL)
+        'staff' => env('LICENSE_VENDOR_STAFF', ''),
+        'payment_details' => env('LICENSE_PAYMENT_DETAILS', ''), // printed on licence invoices (bank and MoMo numbers; | starts a new line) // e-mails of SyncLytics staff who may use the licence generator (/vendor) besides owners
     ],
 
     'warn_days' => 30, // banner before expiry

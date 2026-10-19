@@ -9,6 +9,7 @@ use App\Filament\Resources\SupplierBills\Pages\ViewSupplierBill;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\GlobalSearch;
 use App\Filament\Support\QuickCreate;
 use App\Models\GoodsReceipt;
 use App\Models\Supplier;
@@ -42,6 +43,25 @@ use UnitEnum;
 /** Supplier invoices, matched to goods received (3-way match) or charged to expense accounts. */
 class SupplierBillResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number', 'supplier_invoice_no', 'supplier.name'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Supplier' => $record->supplier?->name, 'Their invoice' => $record->supplier_invoice_no]);
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['supplier']);
+    }
+
     protected static ?string $model = SupplierBill::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;

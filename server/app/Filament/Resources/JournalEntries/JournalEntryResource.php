@@ -7,6 +7,7 @@ use App\Filament\Resources\JournalEntries\Pages\ListJournalEntries;
 use App\Filament\Resources\JournalEntries\Pages\ViewJournalEntry;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\GlobalSearch;
 use App\Models\JournalEntry;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -30,6 +31,20 @@ use UnitEnum;
 /** Every posted journal: automatic ones from the other modules and those typed by finance. */
 class JournalEntryResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails([]);
+    }
+
     protected static ?string $model = JournalEntry::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookOpen;

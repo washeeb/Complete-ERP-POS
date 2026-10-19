@@ -7,6 +7,7 @@ use App\Filament\Resources\GoodsReceipts\Pages\ListGoodsReceipts;
 use App\Filament\Resources\GoodsReceipts\Pages\ViewGoodsReceipt;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
+use App\Filament\Support\GlobalSearch;
 use App\Models\GoodsReceipt;
 use App\Support\Money;
 use BackedEnum;
@@ -29,6 +30,25 @@ use UnitEnum;
 /** Goods received notes: posted ones are read-only; held ones wait for a manager; mistakes are reversed. */
 class GoodsReceiptResource extends Resource
 {
+    use GlobalSearch;
+
+    protected static ?string $recordTitleAttribute = 'number';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number', 'supplier_ref', 'supplier.name'];
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return static::searchDetails(['Supplier' => $record->supplier?->name, 'Delivery note' => $record->supplier_ref]);
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return parent::getGlobalSearchEloquentQuery()->with(['supplier']);
+    }
+
     protected static ?string $model = GoodsReceipt::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedInboxArrowDown;

@@ -13,13 +13,14 @@ use Illuminate\Support\Str;
 final class LicenseIssuer
 {
     /**
-     * @param  array{customer: string, request_code: string, expires_at: string, branches?: ?int, devices?: ?int, users?: ?int, features?: ?array, modules?: ?array,
+     * @param  array{customer: string, request_code?: string, installation?: array{installation_id: string, fingerprint: string}, expires_at: string, branches?: ?int, devices?: ?int, users?: ?int, features?: ?array, modules?: ?array,
      *               grace_days?: int, checkin_days?: ?int, server_url?: ?string, dev?: bool}  $o
      * @return array{license_id: string, key: string, payload: array}
      */
     public static function issue(array $o, array $keys, ?string $issuedBy = null, bool $record = true): array
     {
-        $req = LicenseService::readInstallationCode($o['request_code']);
+        // A renewal for the same installation can name it directly instead of a new installation code.
+        $req = isset($o['installation']) ? $o['installation'] : LicenseService::readInstallationCode($o['request_code']);
         $payload = [
             'v' => 1, 'kid' => $keys['kid'], 'license_id' => (string) Str::uuid7(), 'customer' => $o['customer'],
             'installation_id' => $req['installation_id'], 'fingerprint' => $req['fingerprint'],
