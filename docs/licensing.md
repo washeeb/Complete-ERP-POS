@@ -49,6 +49,41 @@ php artisan license:issue --key=/secure/…/ses-labs-license.key --customer="Kof
 - **Withdraw:** `php artisan license:revoke <licence id> "reason"`. The installation becomes read-only at its next check-in.
 - **Licence server:** one installation run with `LICENSE_SERVER=true`, `LICENSE_PRIVATE_KEY_PATH` and `LICENSE_KID` answers `POST /api/license/checkin`. Every check-in is kept in `vendor_checkins`: the same licence on two machines, a modified copy, or usage over the licence shows up there.
 
+## Licence generator (SyncLytics only: `/vendor` on the licence server)
+
+The screens SyncLytics uses to sell and track licences. They exist only on the licence server and are **left out of every client build** (`release:build` removes them).
+
+**Setting up the licence server** (in its `server/.env`; the key file stays outside the repository, readable only by the web user):
+
+```
+LICENSE_SERVER=true
+LICENSE_PRIVATE_KEY_PATH=/etc/seslabs/license-signing-syn-2026-1.json
+LICENSE_KID=syn-2026-1
+LICENSE_SERVER_URL=https://licence.example.com          # where installations check in (default APP_URL)
+LICENSE_VENDOR_STAFF=staff1@example.com,staff2@example.com   # besides owners, who may use /vendor
+LICENSE_PAYMENT_DETAILS="ABSA account …|MTN MoMo merchant …|Telecel Cash …"   # printed on invoices; | = new line
+```
+
+Sign in at `/vendor`. Everyone must use an authenticator app, and signing, renewing or revoking asks for your password again.
+
+| Screen | What it keeps |
+|---|---|
+| **Dashboard** | Active, ending within 60 days, ended, revoked; yearly licence revenue; money owed and overdue; collected this month; **Needs attention** (ending, silent installations, modified software, more machines or more use than licensed) |
+| **Licences** | Every licence: customer, site, installation, plan and add-ons, limits, modules, features, start and end, grace and check-in rules, price, issued by and when, what it replaces / was replaced by, revoked by and why, last seen. Filters by status, customer, plan and kind; **Download (CSV)** of the whole register |
+| **Licence page** | **Renew** (same installation and package, next period, invoice), **Change package** (new key replacing the old), **Send key by e-mail**, **Licence certificate** (print / PDF, with the key and signature lines), invoices, **Revoke**; the key itself; health from the check-ins (last seen and from where, version and build, branches/devices/users in use against the limits, warnings) |
+| **Customers** | Trading and legal name, contact, e-mail and WhatsApp (for reminders), phone, TIN, address, industry; their licences and what they owe |
+| **Plans / Add-ons** | Packages: default branches, tills and devices, users, industry modules, features (Finance, HR & payroll), length and price; add-ons add to them per unit (extra branch, extra tills, HR…). Any licence can still be customised |
+| **Invoices** | `SYN-YYYY-0001` numbers, lines, due date, payments (ABSA, MTN MoMo, Telecel Cash, cash, card) with references, balance, overdue; print / PDF with how to pay; void (unpaid only, with a reason) |
+| **Check-ins** | Every daily check-in: when, from which address, build and version, what is in use, modified or not, the answer given |
+
+**Issuing:** *Issue a licence* → customer (or add one), the **installation code** the customer sends from Settings → Licence (`SYNREQ-…`), site, paid / trial / internal, plan and add-ons (the package total shows as you choose), optionally your own limits, modules, features or price, dates (empty end = the plan's length; trial 30 days), grace days, check-in interval (0 = never, for offline sites), invoice yes/no. The key is shown on the licence page; send it by e-mail or print the certificate.
+
+**Renewal reminders:** each morning (08:00) the server e-mails and WhatsApps the customer 60, 30 and 7 days before the end and once it has ended, and notifies SyncLytics owners. Each step is sent once per licence.
+
+**Why:** one place for who has which licence, until when, with what, at what price and whether they paid — and early warning of copies, tampering and over-use from the check-ins.
+
+The command line (`license:issue`, `license:revoke`) still works; licences issued that way show on the screens too (without a customer record until you link it).
+
 ## Protection layers
 
 1. **Signed keys bound to the installation**: a random installation id, plus a fingerprint of the machine (OS machine id and database cluster id). A copied server or database asks to be re-activated.
