@@ -75,7 +75,7 @@
 
     <x-filament::section heading="3. Upload, check, import">
         <div class="im-grid">
-            <label>File (Excel .xlsx or CSV) <input type="file" wire:model="file" accept=".csv,.xlsx,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="im-file"></label>
+            <label wire:key="file-{{ $fileKey }}">File (Excel .xlsx or CSV) <input type="file" wire:model="file" accept=".csv,.xlsx,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" class="im-file"></label>
             <div wire:loading wire:target="file" class="im-desc">Uploading…</div>
             @error('file')<p class="im-err">{{ $message }}</p>@enderror
         </div>
@@ -105,6 +105,10 @@
             @if ($type === 'products')<label><input type="checkbox" wire:model="allowSameName"> Allow names that already exist (only for genuinely different products with the same name)</label>@endif
         </div>
         <div class="im-buttons">
+            @if ($duplicateNote)
+                <p class="im-desc" style="color: rgb(var(--danger-600, 220 38 38))">{{ $duplicateNote }}</p>
+                <label class="im-desc"><input type="checkbox" wire:model="importAgain"> Import it again (I really mean to add it a second time)</label>
+            @endif
             <x-filament::button color="gray" icon="heroicon-o-magnifying-glass" wire:click="check" wire:loading.attr="disabled">Check file (nothing is saved)</x-filament::button>
             <x-filament::button icon="heroicon-o-arrow-up-tray" wire:click="import" wire:loading.attr="disabled"
                 wire:confirm="Import this file now? Every row is recorded under your name in the audit log.">Import</x-filament::button>

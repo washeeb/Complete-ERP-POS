@@ -493,6 +493,9 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## No double posting (2026-10-19)
+- Three layers: the button that started a request cannot be clicked until it finishes (Livewire's `data-loading`, one CSS rule for the whole back office); forms that stay on the page clear after posting (imports, timesheets, bank reconciliation; Filament create pages already redirect and modals close); and imports keep the file's SHA-256 so the same file into the same type (and the same stock count or adjustment) is refused unless *Import it again* is ticked. Till sales were already idempotent (sale id and device sequence).
+
 ## Moving and deleting catalogue lists (2026-10-19)
 - Moving products saves each product like an edit (`CatalogService::moveProducts`): audited, synced, nothing else changes. Merging duplicates = move all, then delete the empty one.
 - Delete only when unused (`deleteSimple`): products, sub-categories, styles and promotions for categories; products and styles for brands; product units for units. Foreign keys stay `restrict`, so anything missed is refused too. A `*.deleted` outbox event lets branch servers delete it as well, unless something there still uses it (`Replication::DELETABLE`).

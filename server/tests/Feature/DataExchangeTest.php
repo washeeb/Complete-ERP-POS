@@ -287,7 +287,8 @@ it('keeps creating and updating apart, so importing a file twice never duplicate
     expect($this->imports->run($this->o, 'products', $file, 'p.csv', ['industry' => 'shared'], null, true)->summary['created'])->toBe(2);
 
     // The same "create" file again: every row is refused (the names exist), nothing is created twice.
-    $again = $this->imports->run($this->o, 'products', $file, 'p.csv', ['industry' => 'shared', 'skip_errors' => true], null, true);
+    expect(fn () => $this->imports->run($this->o, 'products', $file, 'p.csv', ['industry' => 'shared'], null, true))->toThrow(DomainException::class, 'already imported');
+    $again = $this->imports->run($this->o, 'products', $file, 'p.csv', ['industry' => 'shared', 'skip_errors' => true, 'import_again' => true], null, true);
     expect($again->rows_error)->toBe(2)->and($again->errors[0]['message'])->toContain('already exists')->toContain('update existing')
         ->and(Product::where('name', 'Paracetamol 500mg')->count())->toBe(1);
     $sku = Product::where('name', 'D10')->value('sku');
@@ -303,7 +304,7 @@ it('keeps creating and updating apart, so importing a file twice never duplicate
     $u = $this->imports->run($this->o, 'products_update', $upd, 'u.csv', ['skip_errors' => true], null, true);
     expect($u->summary['updated'])->toBe(1)->and($u->rows_error)->toBe(2)->and(Product::where('name', 'New thing')->exists())->toBeFalse();
     $before = Product::count();
-    $this->imports->run($this->o, 'products_update', $upd, 'u.csv', ['skip_errors' => true], null, true);
+    $this->imports->run($this->o, 'products_update', $upd, 'u.csv', ['skip_errors' => true, 'import_again' => true], null, true);
     expect(Product::count())->toBe($before)->and(Product::where('name', 'D10 dextrose')->count())->toBe(1);
 });
 
@@ -325,7 +326,7 @@ it('loads opening stock with several batches of one medicine, each with its expi
         ->toBe(['B1 2027-03-31', 'B2 2027-06-30', 'B3 2027-12-31']);
 
     // The same file again: every row is refused (same batch again; the bag already has its opening balance).
-    $again = $this->imports->run($this->o, 'opening_stock', $file, 'opening.csv', ['skip_errors' => true], null, true);
+    $again = $this->imports->run($this->o, 'opening_stock', $file, 'opening.csv', ['skip_errors' => true, 'import_again' => true], null, true);
     expect($again->rows_error)->toBe(4)->and(skuOnHand($this->wh, 'AMOX'))->toBe('60.000');
 
     // After the medicine has moved (sold, received, adjusted), a new batch is no longer an opening balance.

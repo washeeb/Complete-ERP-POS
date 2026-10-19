@@ -89,6 +89,13 @@ final class ImportService
      * @param  array{skip_errors?: bool}  $options
      * @param  array<string, string>  $mapping  expected column => the file's own heading (the "match columns" step)
      */
+    /** The last successful import of exactly this file (same type and, for a stock count or adjustment, the same one). */
+    public static function alreadyImported(string $type, ?string $hash, ?string $contextId): ?DataImport
+    {
+        return $hash ? DataImport::where('type', $type)->where('file_hash', $hash)->where('status', 'imported')
+            ->when($contextId, fn ($q) => $q->where('context_id', $contextId))->latest('completed_at')->first() : null;
+    }
+
     public function run(Actor $actor, string $type, string $path, string $fileName, array $options = [], ?Model $context = null, bool $commit = false, array $mapping = []): DataImport
     {
         $importer = self::importer($type);
@@ -96,6 +103,11 @@ final class ImportService
             throw new AccessDenied;
         }
         $options += $importer->optionDefaults();
+        $hash = hash_file('sha256', $path) ?: null;
+        if ($commit && empty($options['import_again']) && ($done = self::alreadyImported($type, $hash, $context?->getKey()))) {
+            throw new DomainException("This file was already imported on {$done->completed_at?->format('j M Y H:i')} by {$done->user_name} ({$done->rows_ok} rows). "
+                .'Tick "Import it again" only if you really mean to add it a second time.', 'already_imported');
+        }
         $csv = SheetFile::read($path, $fileName, $mapping); // CSV or Excel
         $csv = ImportSources::prepare((string) ($options['source'] ?? 'excel'), $type, $csv); // QuickBooks / other till exports
         $missing = array_diff(array_column(array_filter($importer->columns(), fn ($c) => $c['required'] === true), 'name'), $csv['headings']);
@@ -125,9 +137,9 @@ final class ImportService
 
         $status = ! $commit ? 'checked' : ($keep ? 'imported' : 'failed');
 
-        return DB::transaction(function () use ($actor, $type, $fileName, $path, $status, $options, $contextId, $givenContextId, $csv, $errors, $counts, $ignored, $results, $importer) {
+        return DB::transaction(function () use ($actor, $type, $fileName, $path, $status, $options, $contextId, $givenContextId, $csv, $errors, $counts, $ignored, $results, $importer, $hash) {
             $import = DataImport::create(['id' => (string) Str::uuid7(), 'tenant_id' => $actor->tenantId, 'type' => $type, 'file_name' => mb_substr($fileName, 0, 255),
-                'stored_path' => $path, 'status' => $status, 'options' => $options, 'context_id' => $status === 'imported' ? $contextId : $givenContextId,
+                'stored_path' => $path, 'file_hash' => $hash, 'status' => $status, 'options' => $options, 'context_id' => $status === 'imported' ? $contextId : $givenContextId,
                 'rows_total' => count($csv['rows']), 'rows_ok' => count($csv['rows']) - count($errors), 'rows_error' => count($errors),
                 'summary' => $counts + ['ignored_columns' => $ignored, 'results' => array_slice($results, 0, 500)],
                 'errors' => array_slice($errors, 0, 1000), 'user_id' => $actor->id, 'user_name' => $actor->name, 'completed_at' => now()]);

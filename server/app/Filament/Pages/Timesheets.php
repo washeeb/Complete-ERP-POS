@@ -132,6 +132,7 @@ class Timesheets extends Page
             return;
         }
         $this->reason = '';
+        $this->addAt = ''; // posted: the form starts empty, so a second click does not add the same clock-in twice
         Notification::make()->success()->title($ok)->send();
     }
 }
