@@ -493,6 +493,9 @@ Design:
 ## HTTP/3 on Ubuntu servers (2026-10-15)
 - **443/udp open** so Caddy's HTTP/3 (on by default) is used. Ghana to Contabo EU measured 150–230 ms with some loss; QUIC saves handshake round trips and avoids TCP head-of-line stalls. Contabo has no African region; a server nearer the shops is the next lever if needed.
 
+## Editing keeps one record; adding from where you are (2026-10-19)
+- Every edit screen's uniqueness checks exclude the record itself (checked: SKU, codes, phone, coupons, bins…). The product barcode check now also allows a barcode to move between units of the *same* product; a changed base unit renames the base `product_uoms` row instead of adding a second one.
+- Inline creation (`App\Filament\Support\QuickCreate`) calls the same domain services as each record's own screen, so permissions, validation and the audit log are identical; the "+" only shows to people allowed to create that kind of record. Tax groups are not created inline (they need their rates).
 ## Correcting a base unit (2026-10-19)
 - After stock has moved the base unit may be **renamed, never converted**: the base `product_uoms` row keeps its id (prices, barcodes and stock follow) and only its unit changes; documents keep the unit code they printed. Refused when the product already has that unit as a pack size, or when stock is in fractions the new unit cannot hold. Converting (1 pack = 10 pieces) stays a new unit under *Other units*.
 ## Till details, calculator and waybills (2026-10-19)

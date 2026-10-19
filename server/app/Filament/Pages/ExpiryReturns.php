@@ -9,6 +9,7 @@ use App\Filament\Resources\SupplierReturns\SupplierReturnResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\QuickCreate;
 use App\Models\Supplier;
 use App\Models\SupplierReturn;
 use App\Models\Warehouse;
@@ -143,9 +144,9 @@ class ExpiryReturns extends Page implements HasTable
                 BulkAction::make('return')->label('Return to supplier')->icon(Heroicon::OutlinedTruck)->color('warning')
                     ->modalHeading('Return the ticked batches to a supplier')
                     ->schema([
-                        Select::make('supplier_id')->label('Supplier')->required()->searchable()
+                        QuickCreate::on(Select::make('supplier_id')->label('Supplier')->required()->searchable()
                             ->options(fn () => Supplier::where('is_active', true)->orderBy('name')->pluck('name', 'id')->all())
-                            ->default(fn () => collect($this->ticked())->pluck('supplier_id')->filter()->first()),
+                            ->default(fn () => collect($this->ticked())->pluck('supplier_id')->filter()->first()), 'supplier'),
                         Select::make('settlement')->label('The supplier gives')->required()->options(SupplierReturn::SETTLEMENTS)->default('credit_note'),
                         Select::make('reason')->label('Reason')->required()->options(SupplierReturn::REASONS)
                             ->default(fn () => collect($this->ticked())->every(fn ($r) => $r['days_left'] < 0) ? 'expired' : 'near_expiry'),

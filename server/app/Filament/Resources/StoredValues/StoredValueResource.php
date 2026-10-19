@@ -6,6 +6,7 @@ use App\Domain\Customers\StoredValues;
 use App\Filament\Resources\Customers\CustomerResource;
 use App\Filament\Resources\StoredValues\Pages\ListStoredValues;
 use App\Filament\Support\Erp;
+use App\Filament\Support\QuickCreate;
 use App\Models\Customer;
 use App\Models\StoredValue;
 use App\Support\Money;
@@ -69,9 +70,9 @@ class StoredValueResource extends Resource
                 Select::make('paid_by')->label('Paid with')->required()->options(['cash' => 'Cash', 'momo' => 'Mobile money', 'card' => 'Card', 'bank' => 'Bank transfer', 'free' => 'Given free (promotion)']),
                 TextInput::make('reference')->label('Payment reference')->maxLength(30),
                 TextInput::make('code')->label('Card number (printed card)')->maxLength(30)->helperText('Leave blank to generate one.'),
-                Select::make('customer_id')->label('For customer (optional)')->searchable()
+                QuickCreate::on(Select::make('customer_id')->label('For customer (optional)')->searchable()
                     ->getSearchResultsUsing(fn (string $search) => Customer::where('name', 'ilike', "%{$search}%")->limit(20)->pluck('name', 'id'))
-                    ->getOptionLabelUsing(fn ($value) => Customer::find($value)?->name),
+                    ->getOptionLabelUsing(fn ($value) => Customer::find($value)?->name), 'customer'),
             ])
             ->action(function (array $data) {
                 $card = Erp::run(fn ($actor) => app(StoredValues::class)->sellCard($actor, Money::toMinor((string) $data['amount'], CustomerResource::currency()),

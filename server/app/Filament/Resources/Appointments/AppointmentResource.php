@@ -6,6 +6,7 @@ use App\Domain\Modules\ModuleService;
 use App\Domain\Services\AppointmentService;
 use App\Filament\Resources\Appointments\Pages\ListAppointments;
 use App\Filament\Support\Erp;
+use App\Filament\Support\QuickCreate;
 use App\Models\Appointment;
 use App\Models\Branch;
 use App\Models\Customer;
@@ -88,10 +89,10 @@ class AppointmentResource extends Resource
             Select::make('employee_id')->label('With')->required()
                 ->options(fn (Get $get) => $get('branch_id') ? AppointmentService::staff($get('branch_id'))->pluck('name', 'id') : []),
             DateTimePicker::make('starts_at')->label('Starts')->required()->seconds(false)->minutesStep(5),
-            Select::make('customer_id')->label('Customer (if known)')->searchable()
+            QuickCreate::on(Select::make('customer_id')->label('Customer (if known)')->searchable()
                 ->getSearchResultsUsing(fn (string $search) => Customer::where('is_active', true)->where(fn ($q) => $q->where('name', 'ilike', "%{$search}%")->orWhere('phone', 'like', "%{$search}%"))
                     ->orderBy('name')->limit(20)->get()->mapWithKeys(fn ($c) => [$c->id => trim("{$c->name} {$c->phone}")]))
-                ->getOptionLabelUsing(fn ($value) => Customer::whereKey($value)->value('name')),
+                ->getOptionLabelUsing(fn ($value) => Customer::whereKey($value)->value('name')), 'customer'),
             TextInput::make('customer_name')->label('Name (if not a customer)')->maxLength(120),
             TextInput::make('phone')->tel()->maxLength(20)->helperText('For the SMS confirmation and reminder.'),
             TextInput::make('note')->maxLength(255)->columnSpan(2),

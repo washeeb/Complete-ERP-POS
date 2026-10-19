@@ -13,6 +13,7 @@ use App\Filament\Resources\Waybills\WaybillResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\GlobalSearch;
+use App\Filament\Support\QuickCreate;
 use App\Models\Customer;
 use App\Models\CustomerOrder;
 use App\Models\Delivery;
@@ -135,10 +136,10 @@ class CustomerOrderResource extends Resource
     {
         return $schema->columns(1)->components([
             Section::make()->columns(3)->schema([
-                Select::make('customer_id')->label('Customer')->required()->searchable()
+                QuickCreate::on(Select::make('customer_id')->label('Customer')->required()->searchable()
                     ->getSearchResultsUsing(fn (string $search) => Customer::where('is_active', true)->where(fn ($q) => $q->where('name', 'ilike', "%{$search}%")
                         ->orWhere('code', 'ilike', "%{$search}%")->when(preg_replace('/\D/', '', $search) !== '', fn ($x) => $x->orWhere('phone', 'like', '%'.preg_replace('/\D/', '', $search).'%')))->limit(30)->pluck('name', 'id'))
-                    ->getOptionLabelUsing(fn ($value) => Customer::find($value)?->name),
+                    ->getOptionLabelUsing(fn ($value) => Customer::find($value)?->name), 'customer'),
                 Select::make('warehouse_id')->label('Supply from')->required()->options(fn () => Fields::warehouses('sales.orders.manage')),
                 DatePicker::make('valid_until')->label('Quote valid until')->default(now()->addDays(14)),
                 TextInput::make('customer_ref')->label('Customer’s PO / reference')->maxLength(60),
