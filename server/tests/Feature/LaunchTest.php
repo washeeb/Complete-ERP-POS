@@ -104,7 +104,7 @@ it('migrates books from QuickBooks: chart, items with stock, customers, vendors,
     // Loyalty and gift cards from the old till system (other POS export names).
     $pts = migrate($this, 'loyalty_points', 'other_pos', [['Phone', 'Points balance'], ['0244123456', '350']]);
     expect($pts->rows_error)->toBe(0);
-    expect(migrate($this, 'loyalty_points', 'other_pos', [['Phone', 'Points balance'], ['0244123456', '350']])->summary['unchanged'])->toBe(1); // once only
+    expect(migrate($this, 'loyalty_points', 'other_pos', [['Phone', 'Points balance'], ['0244123456', '350']], options: ['import_again' => true])->summary['unchanged'])->toBe(1); // once only
     expect(migrate($this, 'gift_cards', 'other_pos', [['Card number', 'Remaining balance'], ['GC-0001-2345', '200.00']])->rows_error)->toBe(0);
 
     // The old trial balance: control-account rows are skipped (they came in through their own ledgers above).
@@ -112,7 +112,7 @@ it('migrates books from QuickBooks: chart, items with stock, customers, vendors,
     Account::where('system_key', 'receivables')->update(['name' => 'Accounts Receivable (A/R)']);
     $ob = migrate($this, 'opening_balances', 'quickbooks', $tb);
     expect($ob->status)->toBe('imported')->and($ob->summary['skipped'])->toBe(1)->and($ob->summary['added'])->toBe(2);
-    $again = migrate($this, 'opening_balances', 'quickbooks', $tb);
+    $again = migrate($this, 'opening_balances', 'quickbooks', $tb, options: ['import_again' => true]);
     expect($again->status)->toBe('failed')->and($again->errors[0]['message'])->toContain('already loaded');
 
     // Old system's figures on the go-live date; after posting, everything ties and "Opening balances (to clear)" is zero.
