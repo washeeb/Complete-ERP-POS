@@ -42,7 +42,7 @@ Every list in the back office (products, customers, invoices, stock on hand, sal
 | **Customer / supplier balances owed (migration)** | What a customer owed you / you owed a supplier on the go-live date | Code, phone or name |
 | **Loyalty points / gift cards (migration)** | Points and unspent cards brought over from the old system | Customer; card number |
 
-**Reorganising the catalogue:** Catalog → Products: tick products → **Change category, brand or tax**. Catalog → Categories (or Brands): **Move products** moves all of them to another one — the way to merge two duplicates — and **Delete** removes one that nothing uses. **Why:** history stays intact; only empty lists can go.
+**Reorganising the catalogue:** Catalog → Products: tick products → **Change category, brand or tax**. Catalog → Categories (or Brands): **Move products** moves all of them to another one — the way to merge two duplicates — and **Delete** removes one that nothing uses. Every product moves, however many there are, and each product's history records the move. **Why:** history stays intact; only empty lists can go.
 **Missing category, brand or unit?** On the product form, click **+** next to the list to add it without leaving the page (also suppliers on purchase orders and bills, customers on orders, departments on staff).
 **Wrong unit (e.g. Pieces instead of Pack):** after stock has moved, open the product and click **Correct the unit**, or put the right code in the `base_unit` column of the products update file. It only renames the unit — 30 pieces become 30 packs — and keeps prices, barcodes and stock. **Why:** the unit was simply wrong; to sell both packs and pieces, add the pack under *Other units* with how many pieces it holds.
 
@@ -107,7 +107,8 @@ The migration imports are explained in Chapter 17.2. **Coming from** (QuickBooks
    - **Increase (+)** — adds to stock (give the unit cost if you know it; otherwise the average cost is used);
    - **Decrease (−)** — takes away from stock;
    - **Set to counted quantity** — the new quantity on hand; the system works out the difference when you post.
-   Batch-tracked products need the batch number; serial-numbered products need one serial number per unit.
+   Batch-tracked products need the batch number; serial-numbered products need one serial number per unit (the box appears only for those products).
+   The expiry date, a different reason for this line and a note sit under **More details**: click it when you need them. **Why:** most lines need only the product and quantity, so the list stays short and quick to check.
 3. Save. The adjustment is a **Draft**: you can still change it, or **Add lines from CSV**.
 4. **Post** — the changes go into the stock ledger.
 

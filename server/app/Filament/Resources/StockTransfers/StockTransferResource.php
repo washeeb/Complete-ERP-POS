@@ -26,6 +26,7 @@ use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -114,9 +115,10 @@ class StockTransferResource extends Resource
             ]),
             Section::make('Lines')->schema([
                 Repeater::make('lines')->hiddenLabel()->columns(3)->minItems(1)->addActionLabel('Add line')->schema([
-                    Fields::productUnit()->columnSpan(2),
+                    Fields::productUnit()->live()->columnSpan(2),
                     TextInput::make('qty')->label('Quantity')->required()->numeric()->minValue(0.001),
-                    TagsInput::make('serials')->label('Serial / IMEI numbers (serial-numbered items: one per unit)')->columnSpanFull(),
+                    TagsInput::make('serials')->label('Serial / IMEI numbers (one per unit)')->columnSpanFull()
+                        ->visible(fn (Get $get) => Fields::serialised($get('product_uom_id')) || filled($get('serials'))),
                 ]),
             ]),
         ]);

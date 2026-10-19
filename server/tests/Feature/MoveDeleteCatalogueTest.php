@@ -11,6 +11,7 @@ use App\Models\Category;
 use App\Models\Uom;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -71,4 +72,19 @@ it('moves ticked products and merges from the screens', function () {
     expect(Category::find($this->meds->id))->toBeNull();
     Livewire::test(ListBrands::class)->callTableAction('delete', $this->ernest->id)->assertNotified();
     expect(Brand::find($this->ernest->id))->not->toBeNull(); // still used by Paracetamol
+});
+
+it('moves every product of a category, even older ones that break a newer rule, and more than one page of them', function () {
+    // An older product made before "medicines track batches" (it would fail a full re-save), and 250 more.
+    DB::table('products')->where('id', $this->p1->id)->update(['drug_schedule' => 'rx', 'track_batches' => false]);
+    $row = (array) DB::table('products')->where('id', $this->p2->id)->first();
+    DB::table('products')->insert(array_map(fn ($i) => ['id' => (string) Str::uuid7(), 'sku' => "BULK-{$i}", 'name' => "Bulk {$i}"] + $row, range(1, 250)));
+    expect(DB::table('products')->where('category_id', $this->meds->id)->count())->toBe(252);
+
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
+    $this->actingAs(withMfa($this->owner));
+    Livewire::test(ListCategories::class)->callTableAction('moveProducts', $this->meds->id, ['to' => $this->medicine->id])->assertNotified('252 product(s) moved')
+        ->callTableAction('delete', $this->meds->id)->assertNotified('Deleted');
+    expect(DB::table('products')->where('category_id', $this->medicine->id)->count())->toBe(252)
+        ->and(DB::table('audit_events')->where('action', 'product.updated')->where('reason', 'Moved to another category')->count())->toBeGreaterThanOrEqual(252);
 });

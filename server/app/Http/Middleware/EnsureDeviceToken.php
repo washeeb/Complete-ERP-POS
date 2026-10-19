@@ -2,11 +2,13 @@
 
 namespace App\Http\Middleware;
 
+use App\Domain\Devices\PosAuthService;
 use App\Models\Device;
 use App\Models\User;
 use App\Support\TenantContext;
 use Closure;
 use Illuminate\Http\Request;
+use Laravel\Sanctum\PersonalAccessToken;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -34,8 +36,26 @@ class EnsureDeviceToken
 
         app(TenantContext::class)->set($device->tenant_id);
         $request->attributes->set('device', $device);
+        if ($mode !== 'device') {
+            $this->keepAlive($token);
+        }
 
         return $next($request);
+    }
+
+    /**
+     * A till sign-in lasts 12 hours from its last use, not from the morning sign-in: a long trading day never signs the
+     * cashier out mid-sale, while a till left idle still ends. Written at most every 15 minutes.
+     */
+    private function keepAlive(mixed $token): void
+    {
+        if (! $token instanceof PersonalAccessToken || ! $token->expires_at) {
+            return;
+        }
+        $until = now()->addHours(PosAuthService::TOKEN_HOURS);
+        if ($token->expires_at->lt($until->copy()->subMinutes(15))) {
+            $token->forceFill(['expires_at' => $until])->save();
+        }
     }
 
     private function boundDevice(array $abilities): ?Device

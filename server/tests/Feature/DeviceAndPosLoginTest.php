@@ -96,3 +96,22 @@ it('does not accept a device token as a staff session or vice versa', function (
 it('rejects trivially guessable PINs', function () {
     app(AccessService::class)->setPin(actorFor($this->owner), $this->cashier, '1234');
 })->throws(DomainException::class, 'too easy');
+
+it('keeps a till sign-in alive while it is used, and ends it after 12 idle hours', function () {
+    $deviceToken = enroll($this);
+    $token = $this->withToken($deviceToken)->postJson('/api/v1/pos/login', ['username' => 'esi', 'pin' => '4826'])->assertOk()->json('token');
+    $use = function () use ($token) {
+        app('auth')->forgetGuards();
+
+        return $this->withToken($token)->getJson('/api/v1/pos/me');
+    };
+
+    // A long trading day: used every 3 hours for 15 hours, never signed out.
+    foreach (range(1, 5) as $i) {
+        $this->travel(3)->hours();
+        $use()->assertOk();
+    }
+    // Left idle overnight: the sign-in ends.
+    $this->travel(13)->hours();
+    $use()->assertUnauthorized();
+});

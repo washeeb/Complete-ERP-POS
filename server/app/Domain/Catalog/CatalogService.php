@@ -371,14 +371,23 @@ final class CatalogService
         if ($to !== null) {
             $this->assertOwned($actor, $class, $to, $what);
         }
-        $n = 0;
+        // Only this one field changes (audited, synced). Not a full re-save: a product made before a newer rule (e.g. a
+        // medicine without batches) would refuse it and stop the whole move, and nothing it checks is touched here.
+        $ids = [];
         foreach ($products as $p) {
-            $p = Product::findOrFail($p instanceof Product ? $p->id : $p); // as it is now, not as the list loaded it
-            if ($p->{$field} === $to) {
-                continue;
+            $ids[] = $p instanceof Product ? $p->id : $p; // ids first: moving shrinks the list a lazy query is paging through
+        }
+        $n = 0;
+        foreach (array_chunk($ids, 200) as $chunk) {
+            foreach (Product::whereIn('id', $chunk)->get() as $p) { // as it is now, not as the list loaded it
+                if ($p->{$field} === $to) {
+                    continue;
+                }
+                $p->{$field} = $to;
+                $p->updated_by = $actor->id;
+                $this->recorder->save($actor, $p, 'product.updated', $reason ?? "Moved to another {$what}");
+                $n++;
             }
-            $this->saveProduct($actor, $p, [$field => $to], $reason ?? "Moved to another {$what}");
-            $n++;
         }
 
         return $n;

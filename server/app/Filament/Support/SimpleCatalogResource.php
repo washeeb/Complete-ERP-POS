@@ -68,7 +68,7 @@ abstract class SimpleCatalogResource extends Resource
                     ->placeholder('None')])
                 ->action(function (Model $record, array $data) use ($field) {
                     @set_time_limit(1800);
-                    $n = Erp::run(fn ($actor) => app(CatalogService::class)->moveProducts($actor, Product::where($field, $record->getKey())->lazy(200), $field, $data['to'] ?? null));
+                    $n = Erp::run(fn ($actor) => app(CatalogService::class)->moveProducts($actor, Product::where($field, $record->getKey())->pluck('id')->all(), $field, $data['to'] ?? null));
                     Notification::make()->success()->title("{$n} product(s) moved")->send();
                 });
         }

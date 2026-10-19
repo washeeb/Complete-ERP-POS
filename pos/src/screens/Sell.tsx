@@ -6,7 +6,7 @@ import { addMarkdown, addToCart, addWeighed, findByBarcode, priceCart, qtyAllowe
 import { findMarkdown, parseScaleLabel, productForPlu } from '../scale'
 import { db, nextSeq, type CacheRecord } from '../db'
 import { exportQueueFile, offlineSignIn, retryRefused } from '../offline'
-import { queueMode, submitSale, type RxDetails } from '../till'
+import { queueMode, signInAgain, submitSale, type RxDetails } from '../till'
 import { generics, needsPrescription, saleLevel, warnings as rxWarnings } from '../pharmacy'
 import { billLines, groupsFor, kitchenNote } from '../restaurant'
 import { BillView, FloorView, ModifierPicker, type Choice } from './Restaurant'
@@ -51,7 +51,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   // seq: a retry of the same sale (after an approval) keeps its receipt number, so numbers have no gaps.
   type Approvals = { credit?: { username: string; pin: string }; discount?: { username: string; pin: string }; offlineApproverId?: string; seq?: number; rx?: Rx; tip?: number
     tradeIns?: TradeInItem[]; tradeInApproval?: { username: string; pin: string } | null }
-  const [approval, setApproval] = useState<{ payments: Payment[]; message: string; kind: 'credit' | 'discount' | 'discount_offline'; approvals: Approvals } | null>(null)
+  const [approval, setApproval] = useState<{ payments: Payment[]; message: string; kind: 'credit' | 'discount' | 'discount_offline' | 'sign_in'; approvals: Approvals } | null>(null)
   const [promotions, setPromotions] = useState<PromotionRow[]>([])
   const [utcOffset, setUtcOffset] = useState(0)
   const [grocery, setGrocery] = useState<Grocery | null>(null)
@@ -453,6 +453,10 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
         setApproval({ payments, message: e!.message, kind: 'credit', approvals: { ...approvals, credit: undefined } })
         return
       }
+      if (e?.code === 'signed_out') {
+        setApproval({ payments, message: e.message, kind: 'sign_in', approvals })
+        return
+      }
       if (e?.code === 'offline_approval_needed') {
         setApproval({ payments, message: e.message, kind: 'discount_offline', approvals })
         return
@@ -473,6 +477,14 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
     const { payments, kind, approvals } = approval
     if (kind === 'credit') return complete(payments, { ...approvals, credit: a })
     if (kind === 'discount') return complete(payments, { ...approvals, discount: a })
+    if (kind === 'sign_in') {
+      try {
+        await signInAgain(boot.user.id, a.username, a.pin)
+      } catch (err) {
+        return setApproval({ ...approval, message: err instanceof Error ? err.message : String(err) })
+      }
+      return complete(payments, approvals)
+    }
     try {
       const g = await offlineSignIn(a.username, a.pin)
       if (g.user_id === boot.user.id) throw new Error('Another person must approve this.')
@@ -666,8 +678,8 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       {repairsOpen && <RepairsScreen products={products} currency={boot.company.currency} exponent={boot.company.exponent}
         onCollect={collectRepair} onClose={() => setRepairsOpen(false)} />}
       {picking && <CustomerPicker customers={customers} money={money} onPick={pickCustomer} onCancel={() => setPicking(false)} />}
-      {approval && <CreditApproval title={approval.kind === 'credit' ? 'Supervisor approval — credit' : 'Supervisor approval — discount'} message={approval.message} busy={busy}
-        onApprove={approve} onCancel={() => setApproval(null)} />}
+      {approval && <CreditApproval title={approval.kind === 'sign_in' ? 'Sign in again' : approval.kind === 'credit' ? 'Supervisor approval — credit' : 'Supervisor approval — discount'}
+        self={approval.kind === 'sign_in'} message={approval.message} busy={busy} onApprove={approve} onCancel={() => setApproval(null)} />}
       {editing && <LineDiscount line={editing} money={money} onSave={(m) => { setLines((x) => setManual(x, editing.key, m)); setEditing(null) }} onCancel={() => setEditing(null)} />}
       {takingPayment && customer && <AccountPayment customer={customer} money={money} exponent={boot.company.exponent}
         onDone={(balance) => { setTakingPayment(false); if (balance !== null) setCustomer({ ...customer, balance_minor: balance }) }} />}
@@ -762,22 +774,23 @@ function PrescriptionForm({ message, level, initial, lines, products, customer, 
   )
 }
 
-/** A supervisor approves a credit sale over the customer's limit with their own username and PIN. */
-function CreditApproval({ title, message, busy, onApprove, onCancel }: {
-  title: string; message: string; busy: boolean; onApprove: (a: { username: string; pin: string }) => void; onCancel: () => void
+/** A supervisor approves with their own username and PIN (or, `self`, the cashier signs in again to finish the sale). */
+function CreditApproval({ title, message, busy, onApprove, onCancel, self = false }: {
+  title: string; message: string; busy: boolean; onApprove: (a: { username: string; pin: string }) => void; onCancel: () => void; self?: boolean
 }) {
+  const who = self ? 'Your' : 'Supervisor'
   const [username, setUsername] = useState('')
   const [pin, setPin] = useState('')
   return (
-    <div className="modal" role="dialog" aria-modal="true" aria-label="Supervisor approval">
+    <div className="modal" role="dialog" aria-modal="true" aria-label={self ? 'Sign in again' : 'Supervisor approval'}>
       <form className="card pay" onSubmit={(e) => { e.preventDefault(); if (username && pin) onApprove({ username, pin }) }}>
         <h2>{title}</h2>
         <p className="error">{message}</p>
-        <label>Supervisor username<input autoFocus value={username} onChange={(e) => setUsername(e.target.value)} autoCapitalize="none" /></label>
-        <label>Supervisor PIN<input type="password" inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))} /></label>
+        <label>{who} username<input autoFocus value={username} onChange={(e) => setUsername(e.target.value)} autoCapitalize="none" /></label>
+        <label>{who} PIN<input type="password" inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))} /></label>
         <div className="row">
           <button type="button" onClick={onCancel} disabled={busy}>Back</button>
-          <button className="primary big" disabled={busy || !username || pin.length < 4}>{busy ? 'Checking…' : 'Approve'}</button>
+          <button className="primary big" disabled={busy || !username || pin.length < 4}>{busy ? 'Checking…' : self ? 'Sign in and complete the sale' : 'Approve'}</button>
         </div>
       </form>
     </div>

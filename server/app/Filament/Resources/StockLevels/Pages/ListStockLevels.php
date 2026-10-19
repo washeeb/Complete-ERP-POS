@@ -70,7 +70,7 @@ class ListStockLevels extends ListRecords
                         ->helperText('Batch-tracked product. Removing stock without a batch takes the earliest expiry first.'),
                     DatePicker::make('expires_on')->label('Expiry')->visible(fn (Get $get) => (bool) Product::find($get('product_id'))?->track_batches),
                     TextInput::make('unit_cost')->label('Unit cost (optional)')->numeric()->minValue(0)
-                        ->helperText('Used for stock value from Phase 7. Leave blank if unknown.'),
+                        ->helperText('What one unit cost you. It values your stock and works out profit on sales. Leave blank if unknown.'),
                 ])
                 ->action(function (array $data) {
                     Erp::run(fn ($actor) => app(InventoryService::class)->adjust(
