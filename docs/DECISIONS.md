@@ -496,6 +496,13 @@ Design:
 ## Top search covers the whole back office (2026-10-19)
 - Every main list declares its searchable columns and result details (`App\Filament\Support\GlobalSearch` trait); Filament only offers results from lists the person may open. A result opens the record's page, else its list searched for it, so lists without a page are still reachable.
 - Customer phone search normalises 024… to +233… like the stored numbers.
+## Licence generator (2026-10-18)
+- **Owner answers:** a vendor panel in this codebase (`/vendor`), only on the licence server; the signing key lives there (password + authenticator to use it); plans + add-ons with per-licence overrides; billing and payments, renewal reminders, a usage and health dashboard from the check-ins, and a licence certificate.
+- **Left out of client builds, not just switched off:** `release:build` deletes the panel, its screens, prints and routes; the panel provider is registered only when `LICENSE_SERVER=true` and the class exists. The licensing domain (`app/Domain/Licensing/Vendor`) stays because installations share the code that verifies keys.
+- **A licence is never edited:** renew and change package issue a new signed key for the same installation (`replaces` / `superseded_by`), delivered at the next check-in as before; status (active / expiring / grace / expired / revoked / replaced) is worked out from the dates, never stored.
+- **Access:** owners (level 6) of the licence server, plus e-mails in `LICENSE_VENDOR_STAFF`; no new permission in the client catalogue. Sudo-style password confirmation on issue, renew and revoke. Every action is in the audit log.
+- **Payment details** for invoices come from `LICENSE_PAYMENT_DETAILS`, not the repository.
+- `vendor_licenses.customer` (the name signed into the key) predates the customer table, so the relation is `client()`.
 
 ## Pharmacy sale rules are a choice (2026-10-18)
 - **Owner answers:** four levels (approve / details / patient / free) per kind (POM, controlled); company default with branch overrides; after-sale check as a choice (sign-off, daily summary, nothing); quantity cap; major warnings need a pharmacist; controlled can be locked strict; report of unapproved sales. Default stays the strict rule, so nothing changes until someone chooses otherwise.

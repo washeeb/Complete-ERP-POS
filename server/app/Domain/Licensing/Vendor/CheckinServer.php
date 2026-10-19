@@ -28,6 +28,9 @@ final class CheckinServer
         } elseif ($lic->superseded_by) {
             $renewed = DB::table('vendor_licenses')->where('id', $lic->superseded_by)->whereNull('revoked_at')->value('license_key');
         }
+        if ($lic) {
+            DB::table('vendor_licenses')->where('id', $lic->id)->update(['last_checkin_at' => now()]); // last seen, for the vendor dashboard
+        }
         DB::table('vendor_checkins')->insert(['id' => (string) Str::uuid7(), 'license_id' => (string) ($report['license_id'] ?? Str::uuid7()),
             'installation_id' => mb_substr((string) ($report['installation_id'] ?? ''), 0, 60), 'fingerprint' => mb_substr((string) ($report['fingerprint'] ?? ''), 0, 64),
             'build_id' => isset($report['build_id']) ? mb_substr((string) $report['build_id'], 0, 60) : null, 'tampered' => (bool) ($report['tampered'] ?? false),
