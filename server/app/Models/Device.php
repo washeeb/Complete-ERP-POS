@@ -39,7 +39,7 @@ class Device extends Model
 
     protected function casts(): array
     {
-        return [
+        return ['health' => 'array', 'health_at' => 'datetime',
             'enrollment_expires_at' => 'datetime',
             'enrolled_at' => 'datetime',
             'last_seen_at' => 'datetime',

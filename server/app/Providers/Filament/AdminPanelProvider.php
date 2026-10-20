@@ -82,6 +82,7 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::PAGE_END, fn () => Blade::render('@livewire(\'passkeys\')'), scopes: EditProfile::class)
             ->renderHook(PanelsRenderHook::BODY_START, fn () => view('license.banner'))
             ->renderHook(PanelsRenderHook::BODY_START, fn () => view('launch.practice-banner'))
+            ->renderHook(PanelsRenderHook::BODY_START, fn () => view('remote.support-banner'))
             ->renderHook(PanelsRenderHook::FOOTER, fn () => view('branding.powered-by'))
             // "Report a problem" for everyone signed in (pilot support, Phase 14).
             ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => Blade::render('@livewire(\'report-problem\')'))

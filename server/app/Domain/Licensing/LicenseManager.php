@@ -67,6 +67,15 @@ final class LicenseManager
         return $f === null || in_array($feature, $f, true);
     }
 
+    /**
+     * A paid add-on (e.g. remote_access): only when the licence names it. "All features" does not include add-ons, and
+     * neither does an installation without a licence. SyncLytics support never needs it (support access grants).
+     */
+    public function hasAddon(string $addon): bool
+    {
+        return in_array($addon, $this->status()['features'] ?? [], true);
+    }
+
     public function allowsModule(string $module): bool
     {
         $m = $this->status()['modules'];

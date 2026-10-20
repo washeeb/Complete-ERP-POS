@@ -4,6 +4,7 @@ use App\Http\Controllers\BrandAssetController;
 use App\Http\Controllers\ExpenseReceiptController;
 use App\Http\Controllers\PrintController;
 use App\Http\Controllers\StorefrontController;
+use App\Http\Controllers\SupportScreenshotController;
 use App\Http\Controllers\WaybillConfirmController;
 use App\Security\Passkeys\PasskeyLoginController;
 use Illuminate\Support\Facades\Route;
@@ -62,6 +63,7 @@ Route::prefix('print')->middleware(['auth', 'license:output'])->name('print.')->
 });
 
 // Receipt photos attached to expense claims (private storage).
+Route::get('support-screenshot/{report}', SupportScreenshotController::class)->middleware(['auth'])->name('support.screenshot')->whereUuid('report');
 Route::get('expense-receipt/{claim}', ExpenseReceiptController::class)->middleware(['auth', 'license:output'])->name('expense.receipt')->whereUuid('claim');
 
 // Disposal certificates attached to disposals of expired or damaged stock (private storage).

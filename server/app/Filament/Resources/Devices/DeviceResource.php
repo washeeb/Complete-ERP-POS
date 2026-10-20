@@ -3,12 +3,14 @@
 namespace App\Filament\Resources\Devices;
 
 use App\Domain\Devices\DeviceService;
+use App\Domain\Remote\DeviceHealth;
 use App\Filament\Resources\Devices\Pages\CreateDevice;
 use App\Filament\Resources\Devices\Pages\ListDevices;
 use App\Filament\Support\Erp;
 use App\Filament\Support\GlobalSearch;
 use App\Models\Branch;
 use App\Models\Device;
+use App\Models\DeviceCommand;
 use App\Models\Till;
 use App\Support\ClientInfo;
 use BackedEnum;
@@ -24,6 +26,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\HtmlString;
 use UnitEnum;
 
 class DeviceResource extends Resource
@@ -105,12 +108,34 @@ class DeviceResource extends Resource
                 }),
                 TextColumn::make('enrollment_expires_at')->label('Code expires')->since()->placeholder('—'),
                 TextColumn::make('last_seen_at')->label('Last seen')->since()->placeholder('never'),
+                // The till's own report every few minutes: what is wrong now, in plain words (hover for the details).
+                TextColumn::make('health')->label('Health')->wrap()
+                    ->state(fn (Device $record) => $record->health_at === null ? null : (implode('; ', app(DeviceHealth::class)->problems($record)) ?: 'OK'))
+                    ->color(fn ($state) => $state === 'OK' ? 'success' : ($state ? 'danger' : null))->placeholder('—')
+                    ->tooltip(fn (Device $record) => $record->health ? collect($record->health)->map(fn ($v, $k) => "{$k}: ".(is_bool($v) ? ($v ? 'yes' : 'no') : ($v ?? '—')))->implode(' · ')
+                        .' · reported '.$record->health_at?->diffForHumans() : null),
                 TextColumn::make('last_client')->label('Last used from')->placeholder('—')->wrap()
                     ->state(fn (Device $r) => ClientInfo::summary($r->last_client, $r->last_ip))
                     ->description(fn (Device $r) => $r->last_client['mac'] ?? null),
             ])
             ->defaultSort('created_at', 'desc')
             ->recordActions([
+                // A fix the till runs at its next health check (Remote access add-on; control permission).
+                Action::make('fix')->label('Send a fix')->icon(Heroicon::OutlinedWrenchScrewdriver)->color('gray')
+                    ->visible(fn (Device $record) => $record->isActive() && in_array($record->kind, ['pos', 'handheld'], true) && app(DeviceHealth::class)->canFix(Erp::user(), $record))
+                    ->modalDescription('The till does it within about 5 minutes (at its next health check) and reports back below. Unsent sales are never touched.')
+                    ->schema([
+                        Select::make('command')->label('What to do')->required()->options(DeviceCommand::COMMANDS),
+                        TextInput::make('reason')->label('Why (optional)')->maxLength(255),
+                    ])
+                    ->action(fn (Device $record, array $data) => Erp::run(fn ($actor) => app(DeviceHealth::class)->queue($actor, $record, $data['command'], $data['reason'] ?? null), 'Fix sent')),
+                Action::make('fixes')->label('Fixes')->icon(Heroicon::OutlinedClock)->color('gray')
+                    ->visible(fn (Device $record) => DeviceCommand::where('device_id', $record->id)->exists())
+                    ->modalSubmitAction(false)->modalCancelActionLabel('Close')
+                    ->modalContent(fn (Device $record) => new HtmlString('<table style="width:100%;font-size:.85rem"><tr><th align="left">When</th><th align="left">What</th><th align="left">By</th><th align="left">Result</th></tr>'
+                        .DeviceCommand::where('device_id', $record->id)->latest()->limit(20)->get()->map(fn ($c) => '<tr><td>'.e($c->created_at->format('j M H:i')).'</td><td>'
+                            .e(DeviceCommand::COMMANDS[$c->command] ?? $c->command).'</td><td>'.e($c->requested_by_name).'</td><td>'.e(ucfirst($c->status)
+                            .($c->result ? ': '.mb_strimwidth($c->result, 0, 200, '…') : '')).'</td></tr>')->implode('').'</table>')),
                 Action::make('reissue')->label('New code')->icon(Heroicon::OutlinedArrowPath)
                     ->visible(fn (Device $r) => $r->status === 'pending')
                     ->requiresConfirmation()
