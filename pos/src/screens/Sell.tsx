@@ -26,6 +26,8 @@ import type { Appointment, Services, ServicePass, StaffMember, RxLevel } from '.
 import type { Alteration, Bootstrap, DiningItem, DiningOrder, Fashion, Grocery, Pharmacy, Restaurant, RepairJob, Style, TradeInItem, Payment, PostedSale, Product, PromotionRow, TillCustomer, Unit } from '../types'
 import { parseMoney } from '../money'
 import { ReturnScreen } from './ReturnScreen'
+import { DrawerScreen } from './Drawer'
+import { checkCashLimit } from '../drawer'
 import { cachedCustomers, refreshCustomers } from '../customers'
 import { CustomerPicker } from './CustomerPicker'
 import { Pay } from './Pay'
@@ -43,6 +45,12 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   const [query, setQuery] = useState('')
   const [message, setMessage] = useState('')
   const [paying, setPaying] = useState(false)
+  // The drawer: pay-out, pay-in, cash drop, open without a sale; the cash-limit warning; a short confirmation.
+  const [drawerTab, setDrawerTab] = useState<null | 'payout' | 'payin' | 'drop' | 'no_sale'>(null)
+  const [cashHigh, setCashHigh] = useState(false)
+  const [drawerNote, setDrawerNote] = useState('')
+  // The cash limit is checked again whenever this screen opens (e.g. after a receipt), so the warning stays until a drop.
+  useEffect(() => { checkCashLimit(online, boot.drawer?.cash_limit_minor ?? 0).then(setCashHigh).catch(() => undefined) }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const [busy, setBusy] = useState(false)
   const [payError, setPayError] = useState('')
   const [customers, setCustomers] = useState<TillCustomer[]>([])
@@ -436,6 +444,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       }
       setRouteCtx(null)
       pickCustomer(null)
+      checkCashLimit(online, boot.drawer?.cash_limit_minor ?? 0).then(setCashHigh).catch(() => undefined)
       onPosted(sale)
     } catch (err) {
       const e = err instanceof ApiError ? err : null
@@ -530,11 +539,19 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
           {payingBill && <span className="chip" aria-label="Paying bill">Paying {payingBill.label}
             <button type="button" className="link" onClick={() => { setPayingBill(null); setLines([]) }} aria-label="Stop paying this bill">✕</button></span>}
           {online && <button type="button" onClick={() => setReturning(true)}>Return (F8)</button>}
+          <button type="button" onClick={() => setDrawerTab('payout')}>Drawer</button>
           <button type="button" onClick={onCloseShift}>Close shift</button>
           <button type="button" onClick={onLogout}>Sign out</button>
         </div>
       </header>
 
+      {cashHigh && (
+        <div className="banner warn" role="status">
+          <span><strong>Cash in the drawer is above {formatMoney(boot.drawer?.cash_limit_minor ?? 0, boot.company.currency, boot.company.exponent)}.</strong> Ask a supervisor for a cash drop.</span>
+          <button type="button" onClick={() => setDrawerTab('drop')}>Cash drop</button>
+        </div>
+      )}
+      {drawerNote && <div className="banner ok" role="status"><span>{drawerNote}</span><button type="button" className="link" onClick={() => setDrawerNote('')} aria-label="Dismiss">✕</button></div>}
       {(queue.pending > 0 || queue.review > 0 || !online) && (
         <div className={`banner ${queue.review ? 'bad' : 'warn'}`} role="status">
           <span>
@@ -677,6 +694,8 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       {serialPick && <SerialPrompt product={serialPick} onDone={(s) => addSerials(serialPick, s)} onCancel={() => setSerialPick(null)} />}
       {repairsOpen && <RepairsScreen products={products} currency={boot.company.currency} exponent={boot.company.exponent}
         onCollect={collectRepair} onClose={() => setRepairsOpen(false)} />}
+      {drawerTab && <DrawerScreen boot={boot} online={online} initial={drawerTab} onCancel={() => setDrawerTab(null)}
+        onDone={(m) => { setDrawerTab(null); setDrawerNote(m); checkCashLimit(online, boot.drawer?.cash_limit_minor ?? 0).then(setCashHigh).catch(() => undefined) }} />}
       {picking && <CustomerPicker customers={customers} money={money} onPick={pickCustomer} onCancel={() => setPicking(false)} />}
       {approval && <CreditApproval title={approval.kind === 'sign_in' ? 'Sign in again' : approval.kind === 'credit' ? 'Supervisor approval — credit' : 'Supervisor approval — discount'}
         self={approval.kind === 'sign_in'} message={approval.message} busy={busy} onApprove={approve} onCancel={() => setApproval(null)} />}

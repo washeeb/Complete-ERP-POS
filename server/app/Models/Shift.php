@@ -26,7 +26,7 @@ class Shift extends Model
      * Mobile money and card at the close, one row per check: what the system expected, what was read from the merchant
      * phone / card terminal (null = not checked) and the difference. Only checks with takings or a figure entered.
      *
-     * @return list<array{key: string, label: string, expected: int, counted: ?int, diff: ?int}>
+     * @return list<array{key: string, label: string, expected: int, counted: ?int, diff: ?int, pieces: bool}>
      */
     public function otherChecks(): array
     {
@@ -39,10 +39,16 @@ class Shift extends Model
             }
             $e = (int) ($expected[$key] ?? 0);
             $c = array_key_exists($key, $counted) ? (int) $counted[$key] : null;
-            $rows[] = ['key' => $key, 'label' => $label, 'expected' => $e, 'counted' => $c, 'diff' => $c === null ? null : $c - $e];
+            $rows[] = ['key' => $key, 'label' => $label, 'expected' => $e, 'counted' => $c, 'diff' => $c === null ? null : $c - $e,
+                'pieces' => in_array($key, SalePayment::COUNTED_IN_PIECES, true)];
         }
 
         return $rows;
+    }
+
+    public function drawerEvents(): HasMany
+    {
+        return $this->hasMany(TillDrawerEvent::class);
     }
 
     public function till(): BelongsTo

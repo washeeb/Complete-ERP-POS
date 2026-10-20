@@ -57,6 +57,16 @@ final class Settings
             'label' => 'Before payment, the till asks for',
             'help' => 'Nothing: walk-ins buy without details (they can still be typed under Details). A name and/or phone: the cashier enters them, or picks a customer, before payment; useful for deliveries, credit or follow-up calls. Offline sales are never refused; a missing detail goes to the review list. A branch can choose differently (Company → Branches).',
         ],
+        'pos.payout_approval_minor' => [
+            'type' => 'int', 'default' => 10000, 'min' => 0, 'max' => 100000000, 'group' => 'Tills and cash',
+            'label' => 'Expenses paid from the till: a supervisor approves above (pesewas)',
+            'help' => '10000 = GHS 100. A cashier can pay an expense out of the drawer (transport, cleaning, water…) up to this amount; above it a supervisor approves with their PIN. 0 = every pay-out needs a supervisor. Each pay-out is also an expense claim, paid from the till.',
+        ],
+        'pos.drawer_cash_limit_minor' => [
+            'type' => 'int', 'default' => 0, 'min' => 0, 'max' => 1000000000, 'group' => 'Tills and cash',
+            'label' => 'Cash limit in a till drawer (pesewas)',
+            'help' => '0 = off. e.g. 200000 = GHS 2,000: when the cash in a drawer goes above it, the till asks for a cash drop and supervisors are told. Less cash in the drawer means less to lose.',
+        ],
         'cash.vaults' => [
             'type' => 'bool', 'default' => false, 'group' => 'Tills and cash',
             'label' => 'Cash control with vaults (Teller → Cashier → Income Controller)',

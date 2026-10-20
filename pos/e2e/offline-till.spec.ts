@@ -32,10 +32,11 @@ const bootstrap = (shift: unknown) => ({
   device: { id: 'dev-1', name: 'Front PC', receipt_series: 'A' },
   user: { id: 'u-esi', name: 'Esi Cashier' },
   price_lists: [{ id: 'pl-retail', code: 'RETAIL', name: 'Retail', prices_include_tax: true, is_default: true }],
-  receipt_footer: 'Thank you', shift, last_device_seq: 0, catalog_version: 'v1', server_time: new Date().toISOString(),
+  receipt_footer: 'Thank you', shift, last_device_seq: 0,
+  drawer: { payout_approval_minor: 10000, cash_limit_minor: 15000, categories: [{ id: 'acc-transport', name: 'Transport and fuel' }] }, catalog_version: 'v1', server_time: new Date().toISOString(),
 })
 
-type Server = { up: boolean; shift: unknown; syncBodies: { body: string; signature: string | null }[]; sales: unknown[]; expired?: boolean }
+type Server = { up: boolean; shift: unknown; syncBodies: { body: string; signature: string | null }[]; sales: unknown[]; expired?: boolean; drawer?: Record<string, unknown>[] }
 
 async function mockServer(page: Page, s: Server) {
   const json = (route: Route, status: number, body: unknown) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) })
@@ -68,6 +69,11 @@ async function mockServer(page: Page, s: Server) {
         const body = req.postData() ?? ''
         s.syncBodies.push({ body, signature: req.headers()['x-device-signature'] ?? null })
         return json(route, 200, { results: JSON.parse(body).events.map((e: { id: string }) => ({ id: e.id, status: 'accepted' })) })
+      }
+      case 'POST pos/drawer': {
+        const b = req.postDataJSON()
+        ;(s.drawer ??= []).push(b)
+        return json(route, 201, { event: { id: b.id, kind: b.kind, amount_minor: b.amount_minor ?? 0, approved_by: b.approval ? 'Kojo Supervisor' : null } })
       }
       case 'POST pos/logout': return json(route, 200, { ok: true })
     }
@@ -158,4 +164,45 @@ test('a sign-in that ran out mid-sale: the cashier enters their PIN and the same
   await dialog.getByRole('button', { name: 'Sign in and complete the sale' }).click()
   await expect(page.getByText('Receipt HQ-T01A-000001')).toBeVisible()
   expect(s.sales).toHaveLength(1)
+})
+
+test('the drawer: an expense paid out, a cash drop by a supervisor, and the cash-limit warning', async ({ page }) => {
+  const s: Server = { up: true, shift: null, syncBodies: [], sales: [] }
+  await mockServer(page, s)
+  await page.goto('/')
+  await page.getByPlaceholder('ABCD-EFGH-JKMN').fill('ABCD-EFGH-JKMN')
+  await page.getByRole('button', { name: 'Enrol this device' }).click()
+  await signIn(page)
+  await page.getByPlaceholder('0.00').fill('100')
+  await page.getByRole('button', { name: 'Open shift' }).click()
+
+  // Pay out GH₵ 20 for transport: within the limit, no supervisor.
+  await page.getByRole('button', { name: 'Drawer' }).click()
+  const d = page.getByRole('dialog', { name: 'Drawer' })
+  await d.getByLabel(/^Amount/).fill('20')
+  await d.getByLabel('Spent on').selectOption('acc-transport')
+  await d.getByLabel('What for').fill('Taxi to the bank')
+  await expect(d.getByText('Supervisor PIN')).toBeHidden()
+  await d.getByRole('button', { name: 'Pay out (expense)' }).last().click()
+  await expect(page.getByText('Paid out GH₵ 20.00.')).toBeVisible()
+  expect(s.drawer?.[0]).toMatchObject({ kind: 'payout', amount_minor: 2000, account_id: 'acc-transport', reason: 'Taxi to the bank', approval: null })
+
+  // A sale takes the drawer to 100 − 20 + 58 = 138: under the GH₵ 150 limit. A second sale goes over it.
+  await sellOneMilo(page)
+  await page.getByRole('button', { name: 'New sale' }).click()
+  await expect(page.getByText(/Cash in the drawer is above/)).toBeHidden()
+  await sellOneMilo(page)
+  await page.getByRole('button', { name: 'New sale' }).click()
+  await expect(page.getByText(/Cash in the drawer is above GH₵ 150\.00/)).toBeVisible()
+  expect(s.drawer?.some((e) => e.kind === 'limit_alert' && e.amount_minor === 19600)).toBe(true)
+
+  // Cash drop from the banner: the supervisor's PIN is needed; the warning clears.
+  await page.getByRole('button', { name: 'Cash drop' }).click()
+  await d.getByLabel(/^Amount/).fill('150')
+  await d.getByLabel('Supervisor username').fill('kojo')
+  await d.getByLabel('Supervisor PIN').fill('7391')
+  await d.getByRole('button', { name: 'Cash drop' }).last().click()
+  await expect(page.getByText('Cash drop of GH₵ 150.00 recorded.')).toBeVisible()
+  await expect(page.getByText(/Cash in the drawer is above/)).toBeHidden()
+  expect(s.drawer?.at(-1)).toMatchObject({ kind: 'drop', amount_minor: 15000, approval: { username: 'kojo', pin: '7391' } })
 })

@@ -16,7 +16,7 @@ export type SessionRecord = {
   expiresAt: string | null
 }
 export type CounterRecord = { id: 'receipt_seq'; value: number }
-export type LocalShift = { id: 'shift'; shiftId: string; openedAt: string; floatMinor: number; cashMinor: number; queued: boolean; vault?: boolean } // vault: opened on a cash-control vault (the close stays blind)
+export type LocalShift = { id: 'shift'; shiftId: string; openedAt: string; floatMinor: number; cashMinor: number; queued: boolean; vault?: boolean; limitAlerted?: boolean } // vault: opened on a cash-control vault (the close stays blind)
 export type CacheRecord =
   | { id: 'bootstrap'; data: Bootstrap; savedAt: string }
   | { id: 'catalog'; version: string; products: Product[]; promotions?: PromotionRow[]; utc_offset_minutes?: number; grocery?: Grocery | null; pharmacy?: Pharmacy | null; restaurant?: Restaurant | null; electronics?: boolean; fashion?: Fashion | null; services?: Services | null; savedAt: string }
@@ -32,7 +32,7 @@ export type OfflineGrant = {
 export type QueueItem = {
   seq?: number
   id: string
-  type: 'shift_open' | 'sale' | 'shift_close' | 'clock' | 'visit' | 'order'
+  type: 'shift_open' | 'sale' | 'shift_close' | 'clock' | 'visit' | 'order' | 'drawer'
   payload: Record<string, unknown>
   grant: OfflineGrant
   status: 'pending' | 'review'

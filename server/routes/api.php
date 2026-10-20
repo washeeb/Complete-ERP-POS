@@ -43,6 +43,7 @@ Route::prefix('v1')->group(function () {
         Route::get('customers', [PosController::class, 'customers']);
         Route::post('shifts/open', [PosController::class, 'openShift']);
         Route::post('shifts/close', [PosController::class, 'closeShift']);
+        Route::post('drawer', [PosController::class, 'drawer']);
         Route::post('sales', [PosController::class, 'postSale']);
         Route::get('sales/{id}', [PosController::class, 'showSale'])->whereUuid('id');
         Route::post('sales/{id}/send', [PosController::class, 'sendReceipt'])->whereUuid('id')->middleware('throttle:pos-sync');

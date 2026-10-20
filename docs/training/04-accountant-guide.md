@@ -14,6 +14,7 @@ Sales, purchases, stock and payroll post to the accounts **automatically**. Your
 
 - **Finance → Bank reconciliation** for each bank and MoMo account.
 - **Aged receivables / payables**: chase what is overdue, plan payments.
+- **Sales → Till drawer**: expenses paid from tills (each is also a paid expense claim, posted from *Cash on hand – tills* to its expense account), and cash drops / pay-ins between tills and the safe (*Cash on hand – office and safe*). Check the receipt photos.
 - **GRA E-VAT** (if used): nothing waiting or refused for more than a day.
 
 ## Month-end

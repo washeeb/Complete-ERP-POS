@@ -28,7 +28,7 @@ Show a return with the receipt number, choosing one item and the reason; then a 
 
 ## 5. Closing the shift (cashiers, 2 min)
 
-Show Close shift, counting, typing the count, typing the MoMo and card totals from the merchant phone and terminal, the over/short shown afterwards, adding a note. Say: "Count everything in the drawer, including the float. You see the difference only after you type your count."
+Show the Drawer screen: a pay-out with a receipt photo, a cash drop with the supervisor's PIN, opening the drawer with a reason. Show Close shift, counting, typing the count, typing the MoMo and card totals from the merchant phone and terminal, the vouchers and the coupons, the over/short shown afterwards, adding a note. Say: "Count everything in the drawer, including the float. You see the difference only after you type your count."
 
 ## 6. Receiving a delivery (storekeepers, 3 min)
 

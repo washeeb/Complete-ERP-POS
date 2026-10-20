@@ -69,11 +69,14 @@ export type Shift = {
   /** Mobile money per network and the card terminal at the close (empty while open, or offline until synced). */
   other?: OtherCheck[]
 }
-export type OtherCheck = { key: string; label: string; expected: number; counted: number | null; diff: number | null }
+export type DrawerInfo = { payout_approval_minor: number; cash_limit_minor: number; categories: { id: string; name: string }[] }
+export type DrawerKind = 'payout' | 'payin' | 'drop' | 'no_sale' | 'limit_alert'
+export type OtherCheck = { key: string; label: string; expected: number; counted: number | null; diff: number | null; pieces?: boolean }
 
 /** What Close shift checks besides the cash: the MoMo merchant wallets and the card terminal (as the payment screen offers). */
-export const CLOSE_CHECKS: { key: string; label: string }[] = [
+export const CLOSE_CHECKS: { key: string; label: string; pieces?: boolean }[] = [
   { key: 'momo:mtn', label: 'MTN MoMo' }, { key: 'momo:telecel', label: 'Telecel Cash' }, { key: 'momo:at', label: 'AT Money' }, { key: 'card', label: 'Card terminal' },
+  { key: 'vouchers', label: 'Gift vouchers and credit notes' }, { key: 'coupons', label: 'Coupons', pieces: true },
 ]
 
 // Distribution: the van behind this till, today's route and the rep's month
@@ -111,6 +114,8 @@ export type Bootstrap = {
   shift: Shift | null
   /** Cash control: vaults issued to this teller at this till, and the notes and coins to count (missing on servers before 0.30). */
   cash?: CashInfo
+  /** The drawer: pay-out categories, the limit above which a supervisor approves a pay-out, the cash limit (0 = off). */
+  drawer?: DrawerInfo
   last_device_seq: number
   catalog_version: string
   realtime?: Realtime | null

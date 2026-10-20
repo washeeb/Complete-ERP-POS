@@ -138,14 +138,14 @@
             </tbody></table></div>
         </x-filament::section>
     @elseif ($tab === 'loss')
-        <x-filament::section heading="Loss prevention (last 30 days)" description="Each cashier compared with the others: refunds, refunds without a receipt, discounts, drawer over / short at close, kitchen voids. The risk score (0–100) says how unusual the pattern is — a reason to look at receipts and CCTV, not proof. Cashiers with fewer than 20 receipts are not scored.">
-            <div class="ins-scroll"><table class="ins"><thead><tr><th>Cashier</th><th class="num">Receipts</th><th class="num">Takings</th><th class="num">Refunds</th><th class="num">Refund value</th><th class="num">No-receipt refunds</th><th class="num">Discounts</th><th class="num">Shifts (short)</th><th class="num">Over / short total</th><th class="num">Voids</th><th class="num">Risk</th><th>Why</th></tr></thead><tbody>
+        <x-filament::section heading="Loss prevention (last 30 days)" description="Each cashier compared with the others: refunds, refunds without a receipt, discounts, drawer over / short at close, kitchen voids, drawer opened without a sale. The risk score (0–100) says how unusual the pattern is — a reason to look at receipts and CCTV, not proof. Cashiers with fewer than 20 receipts are not scored.">
+            <div class="ins-scroll"><table class="ins"><thead><tr><th>Cashier</th><th class="num">Receipts</th><th class="num">Takings</th><th class="num">Refunds</th><th class="num">Refund value</th><th class="num">No-receipt refunds</th><th class="num">Discounts</th><th class="num">Shifts (short)</th><th class="num">Over / short total</th><th class="num">Voids</th><th class="num">No-sale opens</th><th class="num">Risk</th><th>Why</th></tr></thead><tbody>
             @forelse ($this->loss() as $r)
                 <tr><td>{{ $r['name'] }}</td><td class="num">{{ $r['receipts'] }}</td><td class="num">{{ $this->money($r['takings_minor']) }}</td><td class="num">{{ $r['refunds'] }}</td><td class="num">{{ $this->money($r['refund_value_minor']) }}</td>
                     <td class="num">{{ $r['no_receipt_refunds'] }}</td><td class="num">{{ $this->money($r['discount_minor']) }}</td><td class="num">{{ $r['shifts'] }} ({{ $r['short_shifts'] }})</td><td class="num">{{ $this->money($r['over_short_minor']) }}</td>
-                    <td class="num">{{ $r['voids'] }}</td><td class="num {{ ($r['risk'] ?? 0) >= 50 ? 'bad' : '' }}"><strong>{{ $r['risk'] ?? '—' }}</strong></td><td>{{ implode(', ', $r['flags']) }}</td></tr>
+                    <td class="num">{{ $r['voids'] }}</td><td class="num">{{ $r['no_sales'] }}</td><td class="num {{ ($r['risk'] ?? 0) >= 50 ? 'bad' : '' }}"><strong>{{ $r['risk'] ?? '—' }}</strong></td><td>{{ implode(', ', $r['flags']) }}</td></tr>
             @empty
-                <tr><td colspan="12">No till sales in the last 30 days.</td></tr>
+                <tr><td colspan="13">No till sales in the last 30 days.</td></tr>
             @endforelse
             </tbody></table></div>
         </x-filament::section>

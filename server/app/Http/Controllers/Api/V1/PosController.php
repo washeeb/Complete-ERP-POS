@@ -17,6 +17,7 @@ use App\Domain\Messaging\Templates;
 use App\Domain\Modules\ModuleService;
 use App\Domain\Pharmacy\PharmacyRules;
 use App\Domain\Pos\CashControl;
+use App\Domain\Pos\DrawerService;
 use App\Domain\Pos\PosSyncService;
 use App\Domain\Pos\ReturnService;
 use App\Domain\Pos\SaleService;
@@ -91,6 +92,12 @@ class PosController extends Controller
             'send_receipt' => array_values(array_filter(['sms', 'whatsapp', 'email'], fn ($ch) => (bool) Templates::find($device->tenant_id, 'receipt', $ch)?->is_active)),
             'license' => (fn ($s) => ['state' => $s['state'], 'read_only' => $s['read_only'], 'message' => $s['message'], 'ref' => Watermark::reference()])(app(LicenseManager::class)->status()),
             'shift' => $this->shiftJson($shifts->current($device), $shifts),
+            // The drawer: pay-out categories and the limit above which a supervisor approves; the cash limit (0 = off).
+            'drawer' => [
+                'payout_approval_minor' => (int) $settings->get('pos.payout_approval_minor', $device->tenant_id),
+                'cash_limit_minor' => (int) $settings->get('pos.drawer_cash_limit_minor', $device->tenant_id),
+                'categories' => collect(DrawerService::payoutAccounts())->map(fn ($name, $id) => ['id' => $id, 'name' => $name])->values(),
+            ],
             // Cash control: the vaults the cashier issued to this teller at this till, and the notes and coins to count.
             'cash' => app(CashControl::class)->enabled($device->tenant_id) ? [
                 'vaults' => true,
@@ -287,6 +294,20 @@ class PosController extends Controller
 
         // On a vault the result stays blind too: the cashier counts it next, against the teller's count.
         return response()->json(['shift' => $this->shiftJson($shift, $shifts, reveal: ! $shift->vault_session_id)]);
+    }
+
+    /** Pay-out, pay-in, cash drop, drawer opened without a sale, or the cash-limit warning (DrawerService). */
+    public function drawer(Request $request, DrawerService $drawer): JsonResponse
+    {
+        $data = $request->validate([
+            'id' => ['required', 'uuid'], 'kind' => ['required', 'string', 'max:20'], 'amount_minor' => ['nullable', 'integer', 'min:0', 'max:100000000000'],
+            'account_id' => ['nullable', 'uuid'], 'payee' => ['nullable', 'string', 'max:255'], 'reason' => ['nullable', 'string', 'max:255'],
+            'reference' => ['nullable', 'string', 'max:80'], 'photo' => ['nullable', 'string', 'max:4200000'],
+            'approval' => ['nullable', 'array'], 'approval.username' => ['required_with:approval', 'string'], 'approval.pin' => ['required_with:approval', 'string'],
+        ]);
+        $e = $drawer->record($this->device($request), $request->user(), $data);
+
+        return response()->json(['event' => ['id' => $e->id, 'kind' => $e->kind, 'amount_minor' => $e->amount_minor, 'approved_by' => $e->approved_by_name]], 201);
     }
 
     public function postSale(Request $request, SaleService $sales): JsonResponse

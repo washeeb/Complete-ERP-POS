@@ -59,7 +59,7 @@ final class Replication
         'sales' => ['label' => 'Till sales, shifts and devices', 'direction' => 'up',
             'tables' => ['device' => 'devices', 'shift' => 'shifts', 'sale' => 'sales', 'prescription' => 'prescriptions', 'dining_order' => 'dining_orders',
                 'repair_job' => 'repair_jobs', 'alteration' => 'alterations', 'consignment_sale' => 'consignment_sales',
-                'appointment' => 'appointments', 'commission' => 'commissions', 'visit' => 'visits']],
+                'appointment' => 'appointments', 'commission' => 'commissions', 'visit' => 'visits', 'till_drawer_event' => 'till_drawer_events']],
         'cash' => ['label' => 'Till vaults, cash handovers and cash differences', 'direction' => 'both',
             'tables' => ['vault_session' => 'vault_sessions', 'cash_handover' => 'cash_handovers', 'cash_variance' => 'cash_variances', 'cash_movement' => 'cash_movements']],
         'reviews' => ['label' => 'Items needing review and pharmacist sign-offs', 'direction' => 'up', 'tables' => ['review_item' => 'review_items', 'pharmacy_signoff' => 'pharmacy_signoffs']],

@@ -49,13 +49,22 @@ Then **Print receipt** (prints straight away on the desktop till's receipt print
 - **Discount above your limit** — a supervisor approves with their username and PIN.
 - **Wrong item rung up** — remove the line before paying. After payment it is a return: never ring the sale up again.
 
+## The drawer (button **Drawer** at the top)
+
+- **Pay out (expense)** — money taken from the drawer for the shop (taxi, water, cleaning…): the amount, what it was **spent on**, who was paid, what for, and a photo of the receipt if you have one. Keep the paper receipt with the cash. Above the limit (GHS 100 unless your manager changed it) a supervisor types their username and PIN.
+- **Pay in** — cash added to the drawer (e.g. more change from the safe), with the reason.
+- **Cash drop** — when the yellow bar says the drawer holds too much cash, a supervisor counts some out in front of you and takes it to the safe; they type their PIN.
+- **Open drawer (no sale)** — only with a reason (e.g. change for a customer). Every opening is recorded under your name.
+
+Each of these changes the cash expected when you close, so the drawer still balances.
+
 ## When the network or server is down
 
 The bottom right says **"Server not answering — working offline"** or **"No network"**. **Keep selling.** Sales are kept on the till and sent on their own when the server is back. A yellow bar counts what is waiting. **Never ring a sale up twice.** A red bar means the server refused something: call your supervisor.
 
 ## End of the shift
 
-**Close shift** → count **all** the cash in the drawer (float included), note by note and coin by coin. Under **Mobile money and card**, type what the MoMo merchant phone shows for your shift for each network (MTN, Telecel, AT) and the card terminal's total; leave a box empty if you do not take it → **Close shift**. Only then do you see over/short, for the cash and for each MoMo network and the card. Add a note if there is a difference. Sign out.
+**Close shift** → count **all** the cash in the drawer (float included), note by note and coin by coin. Under **Mobile money, card, vouchers and coupons**, type what the MoMo merchant phone shows for your shift for each network (MTN, Telecel, AT), the card terminal's total, the value of the gift vouchers and credit notes you took, and how many paper coupons you collected; leave a box empty if you do not take it → **Close shift**. Only then do you see over/short, for the cash and for each of these. Add a note if there is a difference. Sign out.
 
 **With vaults:** you do not see the expected figure. Close the tray and hand it to the Cashier, who counts it again.
 

@@ -39,7 +39,7 @@ export async function submitRoadEvent(online: boolean, type: 'visit' | 'order', 
   return { queued: true }
 }
 
-async function currentGrant(): Promise<OfflineGrant> {
+export async function currentGrant(): Promise<OfflineGrant> {
   const session = await getSession()
   // The sign-in ended (it lasts 12 hours from the last use): say so, so the cashier signs in again instead of guessing.
   if (!session) throw new ApiError('signed_out', SIGNED_OUT, 401)

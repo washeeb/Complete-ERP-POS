@@ -191,11 +191,17 @@ Nobody sees the figure they are checking against before they have counted: these
 
 The full guides for each person are in the training material (Chapter 17.7).
 
+**The till drawer (with or without vaults).** In **System → Settings → Tills and cash**:
+- **Expenses paid from the till: a supervisor approves above** — default 10000 pesewas (GHS 100). **Why:** small shop expenses (water, a taxi) can be paid on the spot, while larger ones need a second person.
+- **Cash limit in a till drawer** — off by default; for example 200000 (GHS 2,000). **Why:** above it the till asks for a *cash drop* to the safe and supervisors are told, so little cash sits in the drawer.
+
+Each pay-out is also recorded under **Expenses → Expense claims** as paid from the till, against an operating-expense account (the categories the till offers). **Check:** on the test day, pay out a small amount for transport, do a cash drop with a supervisor's PIN, and open the drawer once without a sale. Then **Sales → Till drawer** lists all three, and the cash still balances at the close.
+
 ## Step 15 — Test before going live
 
 Do a full test day with made-up sales:
 
-1. Open a shift on a till, sell with cash, MoMo and card, print receipts, do a return, close the shift (count the cash, and type the MoMo and card totals: each should show as balanced).
+1. Open a shift on a till, sell with cash, MoMo and card, print receipts, do a return, close the shift (count the cash, and type the MoMo, card, voucher and coupon totals: each should show as balanced).
 2. Unplug the till's network cable (or switch off Wi-Fi), sell two items, reconnect, and watch the sales arrive (*Sales → Till sales*).
 3. Check *Sales → Review queue*, *Stock → Stock on hand* and, if licensed, *Finance → Reports → Trial balance*.
 4. Take a backup and **restore it on another PC** (Chapter 12).
