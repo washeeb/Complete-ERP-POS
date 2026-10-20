@@ -141,7 +141,7 @@ class StockCountResource extends Resource
                 ->schema(fn (StockCount $record) => [
                     Select::make('bin_id')->label('Bin')->options(Fields::bins($record->warehouse_id))
                         ->visible($record->warehouse->use_bins && ! $record->bin_id)->required($record->warehouse->use_bins && ! $record->bin_id),
-                    Repeater::make('items')->hiddenLabel()->columns(3)->minItems(1)->defaultItems(1)->addActionLabel('Add another product')->schema([
+                    Repeater::make('items')->itemNumbers()->hiddenLabel()->columns(3)->minItems(1)->defaultItems(1)->addActionLabel('Add another product')->schema([
                         Fields::productUnit()->columnSpan(2),
                         TextInput::make('qty')->label('Counted')->numeric()->minValue(0)->required(),
                     ]),

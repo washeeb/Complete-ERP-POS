@@ -6,11 +6,19 @@ use App\Models\Bin;
 use App\Models\ProductUom;
 use App\Models\Warehouse;
 use App\Support\Qty;
-use Filament\Forms\Components\Field;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
-use Filament\Schemas\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Actions;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Support\Enums\Alignment;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 /** Form fields shared by the purchasing and warehouse screens. */
 final class Fields
@@ -23,17 +31,107 @@ final class Fields
     }
 
     /**
-     * A line's optional extras (expiry, reason, note…) folded under "More details" so the line stays short; it opens by
-     * itself when one of them already holds a value (an edited draft), and a click opens it when needed.
+     * A line's optional extras (batch, expiry, cost, reason, note…) below the line, shown by the line's own Details
+     * button ({@see detailsToggle()}). Shown and hidden in the browser, so what was typed is kept (and saved) while
+     * folded away. It opens by itself for an edited line that holds extras, or for a batch-tracked product.
      *
-     * @param  list<Field>  $fields
+     * @param  list<Component>  $fields
      */
-    public static function more(array $fields, int $columns = 4): Section
+    public static function more(array $fields, int $columns = 4): Group
     {
-        $names = array_map(fn (Field $f) => $f->getName(), $fields);
+        return Group::make($fields)->columns($columns)->columnSpanFull()->visibleJs("\$get('more')");
+    }
 
-        return Section::make('More details')->compact()->collapsible()->columnSpanFull()->columns($columns)
-            ->collapsed(fn (Get $get) => collect($names)->every(fn ($n) => blank($get($n))))->schema($fields);
+    /**
+     * The end-of-line "Details" button (a drop-down for the line's extras) and its open/closed state. The state is not
+     * saved. $open decides the first state of a line from its saved values.
+     *
+     * @return list<Component>
+     */
+    public static function detailsToggle(): array
+    {
+        return [
+            Hidden::make('more')->dehydrated(false)->default(false),
+            Actions::make([Action::make('details')->label('Details')->icon(Heroicon::ChevronUpDown)->iconPosition('after')->link()->color('gray')
+                ->alpineClickHandler("\$set('more', ! \$get('more'))")])->alignment(Alignment::End)->verticallyAlignEnd(),
+        ];
+    }
+
+    /** Opens the line's Details by itself when the chosen product tracks batches (medicines): the batch is not forgotten. */
+    public static function openForBatches(Select $productUnit): Select
+    {
+        return $productUnit->afterStateUpdated(function ($state, Set $set) {
+            if ($state && ProductUom::with('product')->find($state)?->product?->track_batches) {
+                $set('more', true);
+            }
+        });
+    }
+
+    /**
+     * Stock of the chosen unit's product at a store (and of one batch when its number is given): in the chosen unit,
+     * with the average cost per base unit. Null when no product or store is chosen yet.
+     *
+     * @return array{qty: float, unit: string, factor: float, cost: ?float, batch: ?float}|null
+     */
+    public static function stockOf(?string $productUomId, ?string $warehouseId, ?string $batchNo = null): ?array
+    {
+        $u = ($productUomId && $warehouseId) ? ProductUom::with('uom')->find($productUomId) : null;
+        if (! $u) {
+            return null;
+        }
+        $factor = (float) $u->factor ?: 1.0;
+        $row = DB::table('stock_levels')->where('warehouse_id', $warehouseId)->where('product_id', $u->product_id)->first(['on_hand', 'avg_cost_minor']);
+        $batch = filled($batchNo) ? DB::table('stock_batch_levels as l')->join('stock_batches as b', 'b.id', '=', 'l.batch_id')
+            ->where('l.warehouse_id', $warehouseId)->where('l.product_id', $u->product_id)->where('b.batch_no', trim($batchNo))->sum('l.on_hand') : null;
+
+        return ['qty' => (float) ($row->on_hand ?? 0) / $factor, 'unit' => $u->uom->code, 'factor' => $factor,
+            'cost' => isset($row->avg_cost_minor) ? (float) $row->avg_cost_minor : null, 'batch' => $batch === null ? null : (float) $batch / $factor];
+    }
+
+    /** "12 PK" (and "batch B123: 4 PK"): what the line's store holds of the product now. */
+    public static function available(string $warehousePath, ?string $batchField = null): TextEntry
+    {
+        return TextEntry::make('available')->label('Available')->state(function (Get $get) use ($warehousePath, $batchField) {
+            $s = self::stockOf($get('product_uom_id'), $get($warehousePath), $batchField ? $get($batchField) : null);
+            if (! $s) {
+                return '—';
+            }
+
+            return self::qty((string) round($s['qty'], 3), $s['unit']).($s['batch'] !== null ? ' · batch '.self::qty((string) round($s['batch'], 3)) : '');
+        })->color(fn ($state) => str_starts_with((string) $state, '-') ? 'danger' : null);
+    }
+
+    /**
+     * "Also on line 2" when the same product (and batch, when given) is on another line of the same document — usually
+     * a mistake; two lines are still allowed (e.g. two batches).
+     */
+    public static function duplicateWarning(?string $batchField = null): TextEntry
+    {
+        $others = function (Get $get, TextEntry $component) use ($batchField): array {
+            $mine = $get('product_uom_id');
+            if (! $mine) {
+                return [];
+            }
+            $product = ProductUom::find($mine)?->product_id;
+            $self = last(explode('.', $component->getContainer()->getStatePath()));
+            $lines = array_keys((array) $get('../../lines'));
+            $hits = [];
+            foreach ((array) $get('../../lines') as $key => $line) {
+                if ($key === $self || ! ($line['product_uom_id'] ?? null) || ProductUom::find($line['product_uom_id'])?->product_id !== $product) {
+                    continue;
+                }
+                if ($batchField && trim((string) ($line[$batchField] ?? '')) !== trim((string) $get($batchField))) {
+                    continue;
+                }
+                $hits[] = array_search($key, $lines, true) + 1;
+            }
+
+            return $hits;
+        };
+
+        return TextEntry::make('duplicate')->hiddenLabel()->color('warning')->icon(Heroicon::ExclamationTriangle)->columnSpanFull()
+            ->state(fn (Get $get, TextEntry $component) => ($hits = $others($get, $component)) ? 'This product'.($batchField ? ' and batch' : '').' is also on line '.implode(', ', $hits).'.' : null)
+            ->visible(fn (Get $get, TextEntry $component) => $others($get, $component) !== []);
     }
 
     /** True when the product of the chosen unit is serial-numbered (phones, laptops…): only then ask for serials. */

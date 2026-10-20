@@ -120,7 +120,7 @@ class VanResource extends Resource
             ->visible(fn () => Erp::canAnywhere('stock.transfer'))
             ->modalDescription($unload ? 'Stock goes from the van back to its warehouse (a transfer, received at once).' : 'Stock goes from the warehouse onto the van (a transfer, received at once — both are at the depot).')
             ->schema([
-                Repeater::make('lines')->hiddenLabel()->columns(3)->minItems(1)->addActionLabel('Add product')->schema([
+                Repeater::make('lines')->itemNumbers()->hiddenLabel()->columns(3)->minItems(1)->addActionLabel('Add product')->schema([
                     Fields::productUnit()->columnSpan(2),
                     TextInput::make('qty')->label('Quantity')->required()->numeric()->minValue(0.001),
                 ]),

@@ -132,10 +132,12 @@ class PurchaseOrderResource extends Resource
                 Textarea::make('note')->columnSpanFull(),
             ]),
             Section::make('Lines')->description('Costs are before tax. Leave the cost blank to use the supplier’s last cost.')->schema([
-                Repeater::make('lines')->hiddenLabel()->columns(4)->minItems(1)->addActionLabel('Add line')->schema([
-                    Fields::productUnit()->columnSpan(2),
+                Repeater::make('lines')->hiddenLabel()->itemNumbers()->columns(6)->minItems(1)->addActionLabel('Add line')->schema([
+                    Fields::productUnit()->live()->columnSpan(3),
                     TextInput::make('qty')->label('Quantity')->required()->numeric()->minValue(0.001),
                     TextInput::make('unit_cost')->label('Cost per unit')->numeric()->minValue(0),
+                    Fields::available('../../warehouse_id')->label('In stock there'),
+                    Fields::duplicateWarning(),
                 ]),
             ]),
         ]);
@@ -199,7 +201,7 @@ class PurchaseOrderResource extends Resource
                 ])->all()])
                 ->schema(fn (PurchaseOrder $record) => [
                     TextInput::make('supplier_ref')->label('Supplier delivery note / invoice no.')->maxLength(60),
-                    Repeater::make('lines')->columns(6)->addable(false)->deletable(false)->reorderable(false)->schema([
+                    Repeater::make('lines')->itemNumbers()->columns(6)->addable(false)->deletable(false)->reorderable(false)->schema([
                         TextInput::make('item')->disabled()->dehydrated(false)->columnSpan(2),
                         TextInput::make('qty')->label('Received now')->numeric()->minValue(0)->required(),
                         Select::make('bin_id')->label('Into bin')->options(Fields::bins($record->warehouse_id))

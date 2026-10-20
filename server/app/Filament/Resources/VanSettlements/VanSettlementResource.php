@@ -147,7 +147,7 @@ class VanSettlementResource extends Resource
                     'product_id' => $l->product_id, 'item' => "{$l->product->sku} · {$l->product->name} (should be ".Qty::format(Qty::toMilli((string) $l->expected_qty)).')',
                     'counted' => $l->counted_qty === null ? null : rtrim(rtrim((string) $l->counted_qty, '0'), '.'), 'unload' => rtrim(rtrim((string) $l->unload_qty, '0'), '.') ?: '0'])->values()->all()])
                 ->schema([
-                    Repeater::make('lines')->hiddenLabel()->columns(4)->addable(false)->deletable(false)->reorderable(false)->schema([
+                    Repeater::make('lines')->itemNumbers()->hiddenLabel()->columns(4)->addable(false)->deletable(false)->reorderable(false)->schema([
                         Hidden::make('product_id'),
                         TextInput::make('item')->disabled()->dehydrated(false)->columnSpan(2),
                         TextInput::make('counted')->label('Counted on van')->numeric()->minValue(0),

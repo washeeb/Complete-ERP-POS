@@ -143,7 +143,7 @@ class SupplierBillResource extends Resource
                     ->options(fn (Get $get) => $get('supplier_id') ? GoodsReceipt::where('supplier_id', $get('supplier_id'))->where('status', 'posted')->orderBy('number')->pluck('number', 'id') : [])
                     ->afterStateUpdated(fn ($state, Get $get, Set $set) => $set('stock_lines', array_values(array_map(fn ($l) => ['goods_receipt_line_id' => $l['goods_receipt_line_id'],
                         'qty' => Fields::qty($l['open_qty']), 'unit_cost' => Money::format($l['order_cost_minor'], $currency())], self::billableLines($get('supplier_id'), $state ?: []))))),
-                Repeater::make('stock_lines')->hiddenLabel()->columns(4)->addActionLabel('Add a received line')->defaultItems(0)->schema([
+                Repeater::make('stock_lines')->itemNumbers()->hiddenLabel()->columns(4)->addActionLabel('Add a received line')->defaultItems(0)->schema([
                     Select::make('goods_receipt_line_id')->label('Received')->required()->columnSpan(2)->live()
                         ->options(fn (Get $get) => array_map(fn ($l) => $l['label'], self::billableLines($get('../../supplier_id'))))
                         ->afterStateUpdated(function ($state, Get $get, Set $set) use ($currency) {
@@ -158,7 +158,7 @@ class SupplierBillResource extends Resource
                 ]),
             ]),
             Section::make('Other charges')->description('Rent, electricity, transport… charged straight to an expense account.')->collapsed()->schema([
-                Repeater::make('expense_lines')->hiddenLabel()->columns(4)->addActionLabel('Add a charge')->defaultItems(0)->schema([
+                Repeater::make('expense_lines')->itemNumbers()->hiddenLabel()->columns(4)->addActionLabel('Add a charge')->defaultItems(0)->schema([
                     Select::make('account_id')->label('Account')->required()->searchable()->options(fn () => FinanceUi::accounts(withControl: false, types: ['expense', 'asset'])),
                     TextInput::make('description')->maxLength(255),
                     TextInput::make('amount')->label('Amount (before tax)')->required()->numeric()->minValue(0.01),

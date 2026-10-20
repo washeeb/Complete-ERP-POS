@@ -114,9 +114,11 @@ class StockTransferResource extends Resource
                 Textarea::make('note')->columnSpanFull(),
             ]),
             Section::make('Lines')->schema([
-                Repeater::make('lines')->hiddenLabel()->columns(3)->minItems(1)->addActionLabel('Add line')->schema([
-                    Fields::productUnit()->live()->columnSpan(2),
+                Repeater::make('lines')->hiddenLabel()->itemNumbers()->columns(6)->minItems(1)->addActionLabel('Add line')->schema([
+                    Fields::productUnit()->live()->columnSpan(3),
                     TextInput::make('qty')->label('Quantity')->required()->numeric()->minValue(0.001),
+                    Fields::available('../../from_warehouse_id')->label('Available to send')->columnSpan(2),
+                    Fields::duplicateWarning(),
                     TagsInput::make('serials')->label('Serial / IMEI numbers (one per unit)')->columnSpanFull()
                         ->visible(fn (Get $get) => Fields::serialised($get('product_uom_id')) || filled($get('serials'))),
                 ]),
@@ -164,7 +166,7 @@ class StockTransferResource extends Resource
                 ->fillForm(fn (StockTransfer $record) => ['lines' => $record->lines()->get()->map(fn ($l) => ['line_id' => $l->id,
                     'item' => "{$l->sku} · {$l->name} ({$l->uom_code})", 'qty' => Fields::qty($l->qty)])->all()])
                 ->schema(fn (StockTransfer $record) => [
-                    Repeater::make('lines')->columns(3)->addable(false)->deletable(false)->reorderable(false)->schema([
+                    Repeater::make('lines')->itemNumbers()->columns(3)->addable(false)->deletable(false)->reorderable(false)->schema([
                         TextInput::make('item')->disabled()->dehydrated(false)->columnSpan(2),
                         TextInput::make('qty')->label('Arrived')->numeric()->minValue(0)->required(),
                         Hidden::make('line_id'),

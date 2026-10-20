@@ -117,9 +117,12 @@ class StockRequestResource extends Resource
                 Textarea::make('note')->label('Note (why, by when)')->columnSpanFull(),
             ]),
             Section::make('What you need')->description('Choose items as your branch sells them.')->schema([
-                Repeater::make('lines')->hiddenLabel()->columns(3)->minItems(1)->addActionLabel('Add line')->schema([
-                    Fields::productUnit()->columnSpan(2),
+                Repeater::make('lines')->hiddenLabel()->itemNumbers()->columns(7)->minItems(1)->addActionLabel('Add line')->schema([
+                    Fields::productUnit()->live()->columnSpan(3),
                     TextInput::make('qty')->label('Quantity')->required()->numeric()->minValue(0.001),
+                    Fields::available('../../to_warehouse_id')->label('You have')->columnSpan(1),
+                    Fields::available('../../from_warehouse_id')->label('They have')->columnSpan(2),
+                    Fields::duplicateWarning(),
                 ]),
             ]),
         ]);
@@ -178,7 +181,7 @@ class StockRequestResource extends Resource
                 ->fillForm(fn (StockRequest $record) => ['lines' => $record->lines()->get()->map(fn ($l) => ['line_id' => $l->id,
                     'item' => "{$l->sku} · {$l->name} ({$l->uom_code})", 'qty' => Fields::qty($l->qty)])->all()])
                 ->schema(fn (StockRequest $record) => [
-                    Repeater::make('lines')->columns(4)->addable(false)->deletable(false)->reorderable(false)->schema([
+                    Repeater::make('lines')->itemNumbers()->columns(4)->addable(false)->deletable(false)->reorderable(false)->schema([
                         TextInput::make('item')->label('Asked for')->disabled()->dehydrated(false)->columnSpan(2),
                         TextInput::make('qty')->label('Send (same unit)')->numeric()->minValue(0)->required(),
                         Select::make('send_product_id')->label('Your product')->searchable()->visible($record->cross_industry)

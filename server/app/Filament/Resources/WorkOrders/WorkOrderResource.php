@@ -289,7 +289,7 @@ class WorkOrderResource extends Resource
 
     private static function qtyRepeater(string $label): Repeater
     {
-        return Repeater::make('lines')->hiddenLabel()->columns(3)->addable(false)->deletable(false)->reorderable(false)->schema([
+        return Repeater::make('lines')->itemNumbers()->hiddenLabel()->columns(3)->addable(false)->deletable(false)->reorderable(false)->schema([
             Hidden::make('id'),
             TextInput::make('item')->disabled()->dehydrated(false)->columnSpan(2),
             TextInput::make('qty')->label($label)->numeric()->minValue(0),
