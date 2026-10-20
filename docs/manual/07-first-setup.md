@@ -195,7 +195,7 @@ The full guides for each person are in the training material (Chapter 17.7).
 - **Expenses paid from the till: a supervisor approves above** — default 10000 pesewas (GHS 100). **Why:** small shop expenses (water, a taxi) can be paid on the spot, while larger ones need a second person.
 - **Cash limit in a till drawer** — off by default; for example 200000 (GHS 2,000). **Why:** above it the till asks for a *cash drop* to the safe and supervisors are told, so little cash sits in the drawer.
 
-Each pay-out is also recorded under **Expenses → Expense claims** as paid from the till, against an operating-expense account (the categories the till offers). **Check:** on the test day, pay out a small amount for transport, do a cash drop with a supervisor's PIN, and open the drawer once without a sale. Then **Sales → Till drawer** lists all three, and the cash still balances at the close.
+Each pay-out is also recorded under **Expenses → Expense claims** as paid from the till, against an operating-expense account (the categories the till offers). **Check:** on the test day, pay out a small amount for transport, do a cash drop with a supervisor's PIN (a slip prints each time; check it on the receipt printer), and open the drawer once without a sale. Then **Sales → Till drawer** lists all three, and the cash still balances at the close.
 
 ## Step 15 — Test before going live
 

@@ -26,18 +26,18 @@ export async function cashInDrawer(): Promise<number | null> {
   return s ? s.floatMinor + s.cashMinor : null
 }
 
-export async function recordDrawer(online: boolean, body: DrawerBody): Promise<{ queued: boolean; approvedBy: string | null }> {
+export async function recordDrawer(online: boolean, body: DrawerBody): Promise<{ id: string; at: string; queued: boolean; approvedBy: string | null }> {
   const local = await getLocalShift()
   if (!local) throw new Error('Open a shift first.')
   const id = uuidv7()
   const occurredAt = new Date().toISOString()
-  let result: { queued: boolean; approvedBy: string | null } | null = null
+  let result: { id: string; at: string; queued: boolean; approvedBy: string | null } | null = null
   if (!(await queueMode(online))) {
     try {
       const { approved_by: _offlineOnly, ...sent } = body
       void _offlineOnly
       const r = await api.drawer({ id, ...sent })
-      result = { queued: false, approvedBy: r.event.approved_by }
+      result = { id, at: occurredAt, queued: false, approvedBy: r.event.approved_by }
     } catch (e) {
       if (!(e instanceof ApiError && e.code === 'network')) throw e // refused: nothing recorded, the cashier can fix and retry
     }
@@ -49,7 +49,7 @@ export async function recordDrawer(online: boolean, body: DrawerBody): Promise<{
     const { approval: _pinStaysHere, ...payload } = body // a supervisor's PIN never goes into the queue
     void _pinStaysHere
     await enqueue({ id, type: 'drawer', grant: await currentGrant(), payload: { ...payload, shift_id: local.shiftId, occurred_at: occurredAt } })
-    result = { queued: true, approvedBy: null }
+    result = { id, at: occurredAt, queued: true, approvedBy: null }
   }
   const effect = cashEffect(body.kind, body.amount_minor ?? 0)
   if (effect !== 0) {

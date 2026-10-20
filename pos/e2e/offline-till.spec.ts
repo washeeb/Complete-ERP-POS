@@ -184,7 +184,12 @@ test('the drawer: an expense paid out, a cash drop by a supervisor, and the cash
   await d.getByLabel('What for').fill('Taxi to the bank')
   await expect(d.getByText('Supervisor PIN')).toBeHidden()
   await d.getByRole('button', { name: 'Pay out (expense)' }).last().click()
-  await expect(page.getByText('Paid out GH₵ 20.00.')).toBeVisible()
+  // The slip prints (print window in a browser) and stays on screen for another copy.
+  const slip = page.getByRole('dialog', { name: 'Slip' })
+  await expect(slip.getByText('Paid out GH₵ 20.00.')).toBeVisible()
+  await expect(slip.getByText('PAY-OUT (EXPENSE)')).toBeVisible()
+  await expect(slip.getByText('Received by', { exact: true })).toBeVisible()
+  await slip.getByRole('button', { name: 'Done' }).click()
   expect(s.drawer?.[0]).toMatchObject({ kind: 'payout', amount_minor: 2000, account_id: 'acc-transport', reason: 'Taxi to the bank', approval: null })
 
   // A sale takes the drawer to 100 − 20 + 58 = 138: under the GH₵ 150 limit. A second sale goes over it.
@@ -202,7 +207,10 @@ test('the drawer: an expense paid out, a cash drop by a supervisor, and the cash
   await d.getByLabel('Supervisor username').fill('kojo')
   await d.getByLabel('Supervisor PIN').fill('7391')
   await d.getByRole('button', { name: 'Cash drop' }).last().click()
-  await expect(page.getByText('Cash drop of GH₵ 150.00 recorded.')).toBeVisible()
+  await expect(slip.getByText('Cash drop of GH₵ 150.00 recorded.')).toBeVisible()
+  await expect(slip.getByText('Kojo Supervisor')).toBeVisible() // taken by
+  await expect(slip.getByText('Supervisor (took the cash)', { exact: true })).toBeVisible()
+  await slip.getByRole('button', { name: 'Done' }).click()
   await expect(page.getByText(/Cash in the drawer is above/)).toBeHidden()
   expect(s.drawer?.at(-1)).toMatchObject({ kind: 'drop', amount_minor: 15000, approval: { username: 'kojo', pin: '7391' } })
 })

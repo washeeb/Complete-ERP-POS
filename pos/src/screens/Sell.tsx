@@ -27,6 +27,8 @@ import type { Alteration, Bootstrap, DiningItem, DiningOrder, Fashion, Grocery, 
 import { parseMoney } from '../money'
 import { ReturnScreen } from './ReturnScreen'
 import { DrawerScreen } from './Drawer'
+import { SlipScreen } from './Slip'
+import type { DrawerSlip } from '../slip'
 import { checkCashLimit } from '../drawer'
 import { cachedCustomers, refreshCustomers } from '../customers'
 import { CustomerPicker } from './CustomerPicker'
@@ -49,6 +51,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   const [drawerTab, setDrawerTab] = useState<null | 'payout' | 'payin' | 'drop' | 'no_sale'>(null)
   const [cashHigh, setCashHigh] = useState(false)
   const [drawerNote, setDrawerNote] = useState('')
+  const [slip, setSlip] = useState<{ slip: DrawerSlip; message: string } | null>(null)
   // The cash limit is checked again whenever this screen opens (e.g. after a receipt), so the warning stays until a drop.
   useEffect(() => { checkCashLimit(online, boot.drawer?.cash_limit_minor ?? 0).then(setCashHigh).catch(() => undefined) }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const [busy, setBusy] = useState(false)
@@ -695,7 +698,8 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       {repairsOpen && <RepairsScreen products={products} currency={boot.company.currency} exponent={boot.company.exponent}
         onCollect={collectRepair} onClose={() => setRepairsOpen(false)} />}
       {drawerTab && <DrawerScreen boot={boot} online={online} initial={drawerTab} onCancel={() => setDrawerTab(null)}
-        onDone={(m) => { setDrawerTab(null); setDrawerNote(m); checkCashLimit(online, boot.drawer?.cash_limit_minor ?? 0).then(setCashHigh).catch(() => undefined) }} />}
+        onDone={(m, s) => { setDrawerTab(null); if (s) setSlip({ slip: s, message: m }); else setDrawerNote(m); checkCashLimit(online, boot.drawer?.cash_limit_minor ?? 0).then(setCashHigh).catch(() => undefined) }} />}
+      {slip && <SlipScreen slip={slip.slip} boot={boot} message={slip.message} onDone={() => setSlip(null)} />}
       {picking && <CustomerPicker customers={customers} money={money} onPick={pickCustomer} onCancel={() => setPicking(false)} />}
       {approval && <CreditApproval title={approval.kind === 'sign_in' ? 'Sign in again' : approval.kind === 'credit' ? 'Supervisor approval — credit' : 'Supervisor approval — discount'}
         self={approval.kind === 'sign_in'} message={approval.message} busy={busy} onApprove={approve} onCancel={() => setApproval(null)} />}

@@ -888,7 +888,7 @@ Design:
 - **Cash limit** (`pos.drawer_cash_limit_minor`, 0 = off): the till keeps its own running figure (float + cash takings + drawer movements) and shows a bar; the first time over the limit (until the next drop) supervisors at the branch are notified in the back office.
 - **Receipt photos** are reduced on the till (longest side 1280 px, JPEG) and stored privately with expense receipts.
 - **Vouchers at close:** the value of gift cards and store credit taken as payment (the paper voucher / credit note is kept with the tray) and the number of sales with a coupon code. Gift cards are sold in the back office, so the till's close has no "sold" line.
-- **Not built:** a printed slip for a cash drop (the drop is on the shift report and the Till drawer list); expense claims created on a branch server stay there (single-server installs are unaffected).
+- **Not built yet:** expense claims created on a branch server stay there (single-server installs are unaffected); to do before a client with branch servers uses pay-outs: create the claim at head office when the drawer event arrives.
 - **Clearing test trading** (`erp:clear-test-trading`) now also clears till drawer events and expense claims (a test pay-out is an expense claim; left behind, it would be posted again once the books are cleared), and expense claim numbers start again.
 
 ## Stock Controller role (2026-10-20)
@@ -902,3 +902,6 @@ Design:
 - `Fields::available()` reads `stock_levels` (and `stock_batch_levels` when a batch number is typed) for the store on the document, converted to the line's unit. Adjustments also show *After* (red below zero) and *Value* (change in base units × average cost, or the cost typed for an increase) and the total against `stock.adjustment_approval_minor`, the same figure the service uses to require approval.
 - `Fields::duplicateWarning()` warns (does not refuse) when the same product, and batch where relevant, is on two lines; two batches of one product are legitimate.
 - Applied to transfers (available at the sending store), stock requests (both stores), purchase orders (in stock at the receiving store) and customer orders (available at the supplying store). Stock counts get line numbers but no stock figures: counts stay blind. Returns to suppliers are prepared from the batch list, which already shows each batch's quantity.
+
+## Drawer slip (2026-10-20)
+- Built at the owner's request after the drawer release. One content definition (`pos/src/slip.ts`) feeds both the ESC/POS print (desktop till, `print_raw`, no drawer kick) and the on-screen slip, which a browser prints alone (`body.printing-slip` hides the app). Printed once by itself, then *Print another copy*. The reference is the last 8 characters of the drawer event id, so a slip can be matched to Sales → Till drawer. Opening the drawer without a sale prints nothing.
