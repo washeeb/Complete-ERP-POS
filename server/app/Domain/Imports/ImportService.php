@@ -16,6 +16,7 @@ use App\Domain\Imports\Importers\StockAdjustmentImporter;
 use App\Domain\Imports\Importers\StockCountImporter;
 use App\Domain\Imports\Importers\SupplierBalancesImporter;
 use App\Domain\Imports\Importers\SuppliersImporter;
+use App\Domain\Imports\Importers\UnitChangesImporter;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
@@ -50,6 +51,7 @@ final class ImportService
         'opening_stock' => OpeningStockImporter::class,
         'stock_adjustment' => StockAdjustmentImporter::class,
         'stock_count' => StockCountImporter::class,
+        'unit_changes' => UnitChangesImporter::class,
         // Data migration (Phase 14): the books and balances on the go-live date.
         'accounts' => AccountsImporter::class,
         'opening_balances' => OpeningBalancesImporter::class,

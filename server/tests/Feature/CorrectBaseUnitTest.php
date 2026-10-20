@@ -39,6 +39,6 @@ it('corrects the unit from the products file and from the product page', functio
     Filament::setCurrentPanel(Filament::getPanel('admin'));
     $this->actingAs(withMfa($this->owner));
     Livewire::test(EditProduct::class, ['record' => $this->diapers->id])
-        ->callAction('correctUnit', ['uom_id' => $pc->id, 'reason' => 'Back to pieces'])->assertNotified('Unit corrected');
+        ->callAction('changeUnit', ['mode' => 'relabel', 'uom_id' => $pc->id, 'reason' => 'Back to pieces'])->assertNotified('Unit changed');
     expect($this->diapers->fresh()->base_uom_id)->toBe($pc->id);
 });

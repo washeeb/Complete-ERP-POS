@@ -29,18 +29,14 @@ class EditProduct extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            // A wrong base unit (Pieces instead of Pack) after stock has moved: renamed, quantities stay.
-            Action::make('correctUnit')->label('Correct the unit')->icon(Heroicon::OutlinedArrowsRightLeft)->color('gray')
-                ->visible(fn () => Erp::canAnywhere('catalog.manage') && $this->record->hasMoved())
-                ->modalDescription(fn () => 'The unit is renamed, the quantities stay: '.Qty::format((int) $this->record->stockLevels->sum(fn ($l) => Qty::toMilli((string) $l->on_hand)))
-                    .' '.$this->record->baseUom?->code.' become the same number in the new unit. Prices and barcodes stay. To sell in packs as well as pieces, add Pack under Other units instead.')
-                ->schema([
-                    Select::make('uom_id')->label('Correct unit')->required()->searchable()
-                        ->options(fn () => Uom::whereKeyNot($this->record->base_uom_id)->orderBy('code')->get()->mapWithKeys(fn ($u) => [$u->id => "{$u->code} · {$u->name}"])),
-                    TextInput::make('reason')->label('Reason')->required()->maxLength(255)->placeholder('e.g. counted and sold in packs, not pieces'),
-                ])
+            // Pack → Tablet, Strip of 10 → Tablet: convert by the pack size, or correct a wrong label (same numbers).
+            Action::make('changeUnit')->label('Change the unit')->icon(Heroicon::OutlinedArrowsRightLeft)->color('gray')
+                ->visible(fn () => Erp::canAnywhere('catalog.manage'))
+                ->modalDescription(fn () => 'Counted in '.$this->record->baseUom?->code.' now, '
+                    .Qty::format((int) $this->record->stockLevels->sum(fn ($l) => Qty::toMilli((string) $l->on_hand))).' in stock. Past receipts and documents keep what they showed.')
+                ->schema(ProductResource::unitChangeSchema())
                 ->action(function (array $data) {
-                    Erp::run(fn ($actor) => app(CatalogService::class)->correctBaseUnit($actor, $this->record, $data['uom_id'], $data['reason']), 'Unit corrected');
+                    Erp::run(fn ($actor) => ProductResource::changeUnit($actor, $this->record, $data), 'Unit changed');
                     $this->redirect(ProductResource::getUrl('edit', ['record' => $this->record]));
                 }),
             // Draft an online-shop description with the AI; the person edits it before saving.
