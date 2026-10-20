@@ -905,3 +905,9 @@ Design:
 
 ## Drawer slip (2026-10-20)
 - Built at the owner's request after the drawer release. One content definition (`pos/src/slip.ts`) feeds both the ESC/POS print (desktop till, `print_raw`, no drawer kick) and the on-screen slip, which a browser prints alone (`body.printing-slip` hides the app). Printed once by itself, then *Print another copy*. The reference is the last 8 characters of the drawer event id, so a slip can be matched to Sales → Till drawer. Opening the drawer without a sale prints nothing.
+
+## Stock Controller release 1: levels, bins, purchase requests (2026-10-20)
+- **Owner answers:** build all four groups (dashboard + cycle counting; reorder levels + purchase requests; labels + photos; reports + smart checks), in four releases; costs visible read-only (already so: no permission hides cost); the role manages bins; labels on A4 sheets by default, label printer as an option.
+- **Narrow permissions instead of wider roles:** `stock.levels` (reorder rules, suggested levels, min/max in the products file), `stock.bins` (create and edit bins; switching a store to bins stays `warehouse.manage`), `purchasing.request`. Each check accepts the new permission *or* the old one (`Authorizer::allowsAny`, `Fields::warehouses([...])`), so existing roles keep working; the role catalog sync attaches the new permissions to the Stock Controller on update.
+- **Purchase requests** (`purchase_requests`, PRQ, replicated with purchasing, cleared with test trading): requested → ordered (draft PO via `PurchaseOrderService::saveDraft`) / rejected / cancelled. The requester cannot order. Line cost on the draft: supplier's last price for the unit, else the store's average cost × unit factor, else 0, with a note on the PO to check prices.
+- **Low-stock alert** goes to `purchasing.manage` and `stock.levels` holders, each person once (`Notifier::toPermission` takes several permissions).

@@ -153,9 +153,18 @@ final class Fields
     }
 
     /** Warehouses where the signed-in person holds the permission. */
-    public static function warehouses(string $permission): array
+    /** @param  string|list<string>  $permission  any of these */
+    public static function warehouses(string|array $permission): array
     {
-        $ids = Erp::branchIds($permission);
+        $ids = [];
+        foreach ((array) $permission as $p) {
+            $branches = Erp::branchIds($p);
+            if ($branches === null) {
+                $ids = null;
+                break;
+            }
+            $ids = array_merge($ids, $branches);
+        }
 
         return Warehouse::where('is_active', true)->when($ids !== null, fn ($q) => $q->whereIn('branch_id', $ids))
             ->orderBy('code')->get()->mapWithKeys(fn ($w) => [$w->id => "{$w->code} · {$w->name}"])->all();

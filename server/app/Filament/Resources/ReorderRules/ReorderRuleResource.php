@@ -46,17 +46,17 @@ class ReorderRuleResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return Erp::canAnywhere('warehouse.manage') || Erp::canAnywhere('purchasing.manage');
+        return Erp::canAnywhere('warehouse.manage') || Erp::canAnywhere('stock.levels') || Erp::canAnywhere('purchasing.manage');
     }
 
     public static function canCreate(): bool
     {
-        return Erp::canAnywhere('warehouse.manage');
+        return Erp::canAnywhere('warehouse.manage') || Erp::canAnywhere('stock.levels');
     }
 
     public static function canEdit(Model $record): bool
     {
-        return Erp::can('warehouse.manage', $record->warehouse);
+        return Erp::can('warehouse.manage', $record->warehouse) || Erp::can('stock.levels', $record->warehouse);
     }
 
     public static function canDelete(Model $record): bool
@@ -76,7 +76,7 @@ class ReorderRuleResource extends Resource
     {
         return $schema->columns(2)->components([
             Select::make('warehouse_id')->label('Store')->required()->disabledOn('edit')
-                ->options(fn () => ['all' => 'Every store'] + Fields::warehouses('warehouse.manage')),
+                ->options(fn () => ['all' => 'Every store'] + Fields::warehouses(['warehouse.manage', 'stock.levels'])),
             Select::make('product_id')->label('Product')->required()->disabledOn('edit')->searchable()->live()
                 ->getSearchResultsUsing(fn (string $search) => Product::where('track_stock', true)->where(fn ($q) => $q->where('name', 'ilike', "%{$search}%")
                     ->orWhere('sku', 'ilike', "%{$search}%"))->limit(30)->get()->mapWithKeys(fn ($p) => [$p->id => "{$p->sku} · {$p->name}"]))
@@ -106,7 +106,7 @@ class ReorderRuleResource extends Resource
         $base = fn ($v) => Qty::format((int) round(Qty::toMilli((string) $v) * $factor / 1_000_000));
         $product = Product::findOrFail($data['product_id'] ?? $rule->product_id);
         $warehouses = ($data['warehouse_id'] ?? $rule->warehouse_id) === 'all'
-            ? Warehouse::whereIn('id', array_keys(Fields::warehouses('warehouse.manage')))->get()
+            ? Warehouse::whereIn('id', array_keys(Fields::warehouses(['warehouse.manage', 'stock.levels'])))->get()
             : collect([Warehouse::findOrFail($data['warehouse_id'] ?? $rule->warehouse_id)]);
 
         return Erp::run(fn ($actor) => DB::transaction(fn () => $warehouses->map(fn ($w) => app(ReorderService::class)
@@ -149,7 +149,7 @@ class ReorderRuleResource extends Resource
                     ->where('is_base', true)->value('id'), 'min' => (float) $record->min_qty, 'max' => (float) $record->max_qty] + $data)
                     ->using(fn (ReorderRule $record, array $data): Model => self::save(['product_id' => $record->product_id, 'warehouse_id' => $record->warehouse_id] + $data, $record)),
                 Action::make('useDefault')->label('Use the default')->color('gray')->requiresConfirmation()
-                    ->visible(fn (ReorderRule $record) => Erp::can('warehouse.manage', $record->warehouse))
+                    ->visible(fn (ReorderRule $record) => (Erp::can('warehouse.manage', $record->warehouse) || Erp::can('stock.levels', $record->warehouse)))
                     ->action(fn (ReorderRule $record) => Erp::run(fn ($actor) => app(ReorderService::class)->useDefault($actor, $record), 'Back to the default')),
             ]);
     }

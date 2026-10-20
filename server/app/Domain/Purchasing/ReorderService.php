@@ -27,7 +27,7 @@ final class ReorderService
     /** A product's own minimum and maximum in a store (base units), or a smart level accepted from Suggested levels. */
     public function saveRule(Actor $actor, Warehouse $warehouse, Product $product, string $min, string $max, string $source = 'own'): ReorderRule
     {
-        if (! $actor->user || ! $this->authz->allows($actor->user, 'warehouse.manage', $warehouse)) {
+        if (! $actor->user || ! $this->authz->allowsAny($actor->user, ['warehouse.manage', 'stock.levels'], $warehouse)) {
             throw new AccessDenied;
         }
 
@@ -37,7 +37,7 @@ final class ReorderService
     /** Back to the company default: the row stays (it replicates), marked as following the default. */
     public function useDefault(Actor $actor, ReorderRule $rule): ReorderRule
     {
-        if (! $actor->user || ! $this->authz->allows($actor->user, 'warehouse.manage', $rule->warehouse)) {
+        if (! $actor->user || ! $this->authz->allowsAny($actor->user, ['warehouse.manage', 'stock.levels'], $rule->warehouse)) {
             throw new AccessDenied;
         }
         $rule->source = 'default';

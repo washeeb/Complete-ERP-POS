@@ -37,6 +37,18 @@ final class Authorizer
      * who may hand a role to someone else: granting Cashier must not fail because the licence leaves out HR (Cashier
      * includes "request leave"). What anyone can actually use is still decided by allows(), which honours the licence.
      */
+    /** @param  list<string>  $permissions  true when the person holds any of them for the target */
+    public function allowsAny(User $user, array $permissions, ?Model $target = null): bool
+    {
+        foreach ($permissions as $p) {
+            if ($this->allows($user, $p, $target)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function holds(User $user, string $permission, ?Model $target = null): bool
     {
         $path = $target ? $this->scopePath($target) : [ScopeType::Tenant->value.':'.$user->tenant_id];

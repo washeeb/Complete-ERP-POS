@@ -49,12 +49,12 @@ class BinResource extends Resource
 
     public static function canCreate(): bool
     {
-        return Erp::canAnywhere('warehouse.manage');
+        return Erp::canAnywhere('warehouse.manage') || Erp::canAnywhere('stock.bins');
     }
 
     public static function canEdit(Model $record): bool
     {
-        return Erp::can('warehouse.manage', $record->warehouse);
+        return Erp::can('warehouse.manage', $record->warehouse) || Erp::can('stock.bins', $record->warehouse);
     }
 
     public static function canDelete(Model $record): bool

@@ -273,9 +273,9 @@ class ProductsImporter extends Importer
     private function levels(Actor $actor, Product $product, array $row): void
     {
         $warehouses = Warehouse::where('is_active', true)->orderBy('code')->get()
-            ->filter(fn ($w) => $actor->user && app(Authorizer::class)->allows($actor->user, 'warehouse.manage', $w));
+            ->filter(fn ($w) => $actor->user && app(Authorizer::class)->allowsAny($actor->user, ['warehouse.manage', 'stock.levels'], $w));
         if ($warehouses->isEmpty()) {
-            throw new DomainException('Setting minimum stock needs the permission to manage warehouses.');
+            throw new DomainException('Setting minimum stock needs the permission to set reorder levels.');
         }
         $reorder = app(ReorderService::class);
         if (strtolower(trim((string) ($row['min_qty'] ?? ''))) === 'default') {
