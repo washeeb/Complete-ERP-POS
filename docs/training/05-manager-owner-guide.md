@@ -35,7 +35,7 @@ When one of your branches asks a branch of another industry for stock (or the ot
 
 ## When staff report a problem
 
-Staff tap **Report a problem**. Support gets an e-mail; you and IT see the list under **System → Problem reports**. During the pilot, a **pilot report** is e-mailed every evening: sales per branch, cash over/short, tills that were offline, the parallel-run difference and open problems.
+Staff tap **Report a problem**. Support gets an e-mail with a picture of the screen; you and IT see the list under **System → Problem reports**. To let SyncLytics support connect to a till or computer, use **System → Support access** (free, for a few hours or until the problem is closed; a banner shows while it is open, and you can withdraw it). During the pilot, a **pilot report** is e-mailed every evening: sales per branch, cash over/short, tills that were offline, the parallel-run difference and open problems.
 
 ## Practise first
 

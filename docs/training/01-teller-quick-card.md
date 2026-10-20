@@ -70,4 +70,4 @@ The bottom right says **"Server not answering — working offline"** or **"No ne
 
 ## Something wrong?
 
-Tap **Report a problem** (bottom of the screen): say what you did and what happened. Support gets it with the screen you were on. Then tell your supervisor.
+Tap **Report a problem** (bottom of the screen): say what you did and what happened. Support gets it with a picture of your screen (untick *Include a picture of the screen* if it shows something private). Then tell your supervisor.

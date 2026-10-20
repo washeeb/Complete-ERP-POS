@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "dexie": "^4.4.6",
+    "html-to-image": "1.11.13",
     "laravel-echo": "^2.5.0",
     "pusher-js": "^8.6.0",
     "qrcode-generator": "^2.0.4",

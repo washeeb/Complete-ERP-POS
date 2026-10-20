@@ -24,7 +24,11 @@ use Illuminate\Support\Facades\DB;
  */
 final class VendorLicensing
 {
-    public const FEATURES = ['finance' => 'Finance (accounts, payables, banking, expenses, assets, budgets)', 'hr' => 'HR & payroll'];
+    public const FEATURES = ['finance' => 'Finance (accounts, payables, banking, expenses, assets, budgets)', 'hr' => 'HR & payroll',
+        'remote_access' => 'Remote access (paid add-on: the client\'s staff see and control devices, training sessions, device health and remote fixes)'];
+
+    /** Paid add-ons: only when ticked by name; "all features" does not include them (owner decision 2026-10-20). */
+    public const ADDON_FEATURES = ['remote_access'];
 
     public function __construct(private readonly AuditLog $audit, private readonly VendorBilling $billing) {}
 
@@ -67,6 +71,10 @@ final class VendorLicensing
                 }
             }
             foreach (['modules', 'features'] as $k) {
+                if ($k === 'features' && $p[$k] === null && array_intersect($addon->{$k} ?? [], self::ADDON_FEATURES)) {
+                    // "All features" does not include paid add-ons: spell out the standard ones, then add the add-on.
+                    $p[$k] = array_values(array_diff(array_keys(self::FEATURES), self::ADDON_FEATURES));
+                }
                 if ($p[$k] !== null && $addon->{$k}) {
                     $p[$k] = array_values(array_unique([...$p[$k], ...$addon->{$k}]));
                 }

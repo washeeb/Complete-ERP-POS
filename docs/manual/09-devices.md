@@ -170,3 +170,12 @@ Set the scale to print **EAN-13** labels starting with `21` (see Chapter 8, Groc
 - **Lost or stolen:** **System → Devices → Revoke** at once. Its access and every sign-in on it end immediately.
 - **Replacing a till that still has unsent sales:** on the old till press **Export unsent sales** (in the yellow banner). In the back office: **System → Sync Center → Import till file**. Then register and enrol the new device.
 - **Re-installing the same device:** register it as a new device (it gets the next receipt series letter, so receipt numbers never repeat).
+
+## 9.14 Device health and remote fixes
+
+Every till and handheld tells the server how it is doing every few minutes: its version, sales waiting to be sent, the connection to the server, free storage and the printer. **System → Devices** shows it in the **Health** column — *OK*, or what is wrong in plain words (hover for the details) — and IT is told once a day per problem: a till not heard from during trading hours, sales stuck for more than 30 minutes, items refused by the server, storage nearly full, an old till version.
+
+With the **Remote access** add-on, someone allowed to control devices can **Send a fix** to a till: reload it, send waiting sales now, refresh the catalogue, clear its cache (catalogue and pictures — never unsent sales) or collect its logs. The till does it within about five minutes and the result shows under **Fixes**. **Why:** most till problems are solved by one of these, without anyone travelling to the shop.
+
+**SyncLytics support** never needs the add-on: the owner opens **System → Support access** for a few hours or until a problem is closed (see Chapter 13).
+

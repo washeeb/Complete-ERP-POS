@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { toJpeg } from 'html-to-image'
 import { api, ApiError, wms } from './api'
 import { connectionState, pingServer, type ConnectionState } from './connection'
 import { db, getDevice, getLocalShift, getSession, queueCounts, type CacheRecord } from './db'
 import { connectLive, type LiveState } from './live'
 import { sendQueue } from './offline'
+import { HEALTH_EVERY_TICKS, reportHealth, type FixHandlers } from './health'
 import { CloseShift, Enroll, Login, OpenShift } from './screens/Setup'
 import { Handheld } from './screens/Handheld'
 import { Kitchen } from './screens/Kitchen'
@@ -34,6 +36,8 @@ export default function App() {
   const [queue, setQueue] = useState({ pending: 0, review: 0, sending: false, lastError: null as string | null })
   const [live, setLive] = useState<LiveState>('off')
   const sending = useRef(false)
+  const fixes = useRef<FixHandlers | null>(null)
+  const stageRef = useRef<string>('loading')
   const online = conn === 'online'
 
   useEffect(() => applyBrand(boot), [boot]) // the company's colour as the till's accent
@@ -118,6 +122,7 @@ export default function App() {
   // Connection watch + background sending of queued work (every 15 s while anything waits).
   useEffect(() => {
     let alive = true
+    let ticks = 0
     const tick = async () => {
       const ok = navigator.onLine && (await pingServer())
       if (!alive) return
@@ -125,6 +130,10 @@ export default function App() {
       const counts = await queueCounts()
       setQueue((q) => ({ ...q, pending: counts.pending, review: counts.review }))
       if (ok && counts.pending > 0) await flush()
+      // Health every 5 minutes (and at start) while signed in: the answer may carry a fix queued in the back office.
+      if (ok && ticks++ % HEALTH_EVERY_TICKS === 0 && (await getSession())?.token && fixes.current) {
+        await reportHealth(stageRef.current, fixes.current).catch(() => undefined)
+      }
     }
     tick()
     const id = setInterval(tick, 15_000)
@@ -152,6 +161,10 @@ export default function App() {
     setProducts(r.products)
     setCatalogVersion(r.version)
   }, [fetchOrCache])
+  useEffect(() => {
+    stageRef.current = stage
+    fixes.current = { syncNow: async () => { await flush() }, refreshCatalog: async () => { await refreshCatalog() } }
+  }, [stage, flush, refreshCatalog])
 
   // Live price/stock changes while selling; polling (cheap with ETag) covers a missing or dropped socket.
   const selling = stage === 'sell' || stage === 'receipt'
@@ -221,6 +234,18 @@ function ThemePicker() {
   )
 }
 
+/** The till screen as a JPEG (about 1280 px wide), drawn in the browser: no permission prompt; null when it cannot be drawn. */
+async function screenPicture(): Promise<string | null> {
+  const root = document.getElementById('root')
+  if (!root) return null
+  try {
+    const ratio = Math.min(1, 1280 / Math.max(1, root.clientWidth))
+    return await toJpeg(root, { quality: 0.7, pixelRatio: ratio, cacheBust: false, skipFonts: true, backgroundColor: getComputedStyle(document.body).backgroundColor || '#fff' })
+  } catch {
+    return null
+  }
+}
+
 /** "Report a problem" (bottom of the screen while signed in): the cashier's words go to support with the screen and the till's last errors. */
 function ReportProblem({ screen, online, queued }: { screen: string; online: boolean; queued: number }) {
   const [open, setOpen] = useState(false)
@@ -228,13 +253,23 @@ function ReportProblem({ screen, online, queued }: { screen: string; online: boo
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState('')
   const [error, setError] = useState('')
+  // A picture of the screen as it was when Report a problem was pressed (before this box covered it); the cashier can leave it out.
+  const [picture, setPicture] = useState<string | null>(null)
+  const [withPicture, setWithPicture] = useState(true)
+
+  async function openReport() {
+    setResult('')
+    setError('')
+    setPicture(await screenPicture())
+    setOpen(true)
+  }
 
   async function send(e: React.FormEvent) {
     e.preventDefault()
     setBusy(true)
     setError('')
     try {
-      const r = await api.reportProblem(text.trim(), screen, problemContext({ screen, online, queued }))
+      const r = await api.reportProblem(text.trim(), screen, problemContext({ screen, online, queued }), withPicture ? picture : null)
       setResult(`Thank you — problem ${r.number} is recorded${r.sent ? ' and support has been told' : ''}.`)
       setText('')
     } catch (err) {
@@ -246,7 +281,7 @@ function ReportProblem({ screen, online, queued }: { screen: string; online: boo
 
   return (
     <>
-      <button type="button" className="report-problem no-print" onClick={() => { setOpen(true); setResult(''); setError('') }}>Report a problem</button>
+      <button type="button" className="report-problem no-print" onClick={openReport}>Report a problem</button>
       {open && (
         <div className="modal" role="dialog" aria-modal="true" aria-label="Report a problem" onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}>
           <form className="card pay" onSubmit={send}>
@@ -257,6 +292,11 @@ function ReportProblem({ screen, online, queued }: { screen: string; online: boo
               <label>Describe it
                 <textarea value={text} onChange={(e) => setText(e.target.value)} rows={4} minLength={5} maxLength={5000} required autoFocus
                   placeholder="e.g. I pressed Print and nothing came out." />
+              </label>
+            )}
+            {!result && picture && (
+              <label className="inline">
+                <input type="checkbox" checked={withPicture} onChange={(e) => setWithPicture(e.target.checked)} /> Include a picture of the screen
               </label>
             )}
             <div className="row">

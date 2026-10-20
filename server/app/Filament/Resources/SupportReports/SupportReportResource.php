@@ -72,6 +72,9 @@ class SupportReportResource extends Resource
             TextEntry::make('source')->formatStateUsing(fn ($state) => SupportReport::SOURCES[$state] ?? $state), TextEntry::make('page')->placeholder('—'),
             TextEntry::make('status')->badge()->formatStateUsing(fn ($state) => SupportReport::STATUSES[$state] ?? $state),
             TextEntry::make('message')->label('What happened')->columnSpanFull()->extraAttributes(['style' => 'white-space:pre-wrap']),
+            TextEntry::make('screenshot')->label('Screen')->columnSpanFull()->placeholder('No picture')
+                ->state(fn (SupportReport $record) => $record->screenshot_path ? 'Open the picture of the screen' : null)
+                ->url(fn (SupportReport $record) => $record->screenshot_path ? route('support.screenshot', $record) : null, shouldOpenInNewTab: true)->color('primary'),
             TextEntry::make('resolution')->placeholder('—')->columnSpanFull(),
             TextEntry::make('send_error')->label('E-mail to support')->placeholder('Sent')->columnSpanFull(),
             TextEntry::make('context')->label('Details for support')->columnSpanFull()

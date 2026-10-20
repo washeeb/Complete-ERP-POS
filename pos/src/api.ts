@@ -54,8 +54,8 @@ export const api = {
   logout: () => call<{ ok: boolean }>('pos/logout', { method: 'POST' }),
   sendReceipt: (saleId: string, channel: 'sms' | 'whatsapp' | 'email', to: string) =>
     call<{ status: string; detail: string }>(`pos/sales/${saleId}/send`, { method: 'POST', body: JSON.stringify({ channel, to }) }),
-  reportProblem: (message: string, screen: string, context: Record<string, unknown>) =>
-    call<{ number: string; sent: boolean }>('pos/problems', { method: 'POST', body: JSON.stringify({ message, screen, context }) }),
+  reportProblem: (message: string, screen: string, context: Record<string, unknown>, screenshot: string | null = null) =>
+    call<{ number: string; sent: boolean }>('pos/problems', { method: 'POST', body: JSON.stringify({ message, screen, context, screenshot }) }),
   bootstrap: () => call<Bootstrap>('pos/bootstrap'),
   /** null = unchanged since the given version (HTTP 304), so the cached copy is current. */
   catalog: async (version?: string | null) => {
@@ -86,6 +86,9 @@ export const api = {
   closeShift: (countedMinor: number, note: string, denoms?: Record<string, number> | null, other?: Record<string, number> | null) =>
     call<{ shift: Shift }>('pos/shifts/close', { method: 'POST', body: JSON.stringify({ counted_cash_minor: countedMinor, note: note || null, denoms: denoms ?? null, other: other ?? null }) }),
   drawer: (body: unknown) => call<{ event: { id: string; kind: string; amount_minor: number; approved_by: string | null } }>('pos/drawer', { method: 'POST', body: JSON.stringify(body) }),
+  /** Device health (every few minutes); the answer carries fixes queued for this till in the back office. */
+  health: (snapshot: unknown) => call<{ commands: import('./health').RemoteCommand[] }>('pos/health', { method: 'POST', body: JSON.stringify(snapshot) }),
+  commandDone: (id: string, status: 'done' | 'failed', result: string) => call<{ ok: boolean }>(`pos/commands/${id}`, { method: 'POST', body: JSON.stringify({ status, result }) }),
   postSale: (payload: unknown) => call<{ sale: PostedSale; replayed: boolean }>('pos/sales', { method: 'POST', body: JSON.stringify(payload) }),
   lookupReceipt: (receiptNo: string) => call<{ sale: PostedSale; returnable: Returnable; customer_id: string | null }>(`pos/receipts?receipt=${encodeURIComponent(receiptNo)}`),
   postReturn: (payload: unknown) => call<{ sale: PostedSale; store_credit_code: string | null }>('pos/returns', { method: 'POST', body: JSON.stringify(payload) }),

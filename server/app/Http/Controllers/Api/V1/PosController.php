@@ -23,6 +23,7 @@ use App\Domain\Pos\ReturnService;
 use App\Domain\Pos\SaleService;
 use App\Domain\Pos\ShiftService;
 use App\Domain\Purchasing\ReorderLevels;
+use App\Domain\Remote\DeviceHealth;
 use App\Domain\Restaurant\DiningSales;
 use App\Domain\Sales\ReceivablesService;
 use App\Domain\Services\AppointmentService;
@@ -310,6 +311,22 @@ class PosController extends Controller
         return response()->json(['event' => ['id' => $e->id, 'kind' => $e->kind, 'amount_minor' => $e->amount_minor, 'approved_by' => $e->approved_by_name]], 201);
     }
 
+    /** The till's health snapshot; the answer carries fixes queued for it in the back office (DeviceHealth). */
+    public function health(Request $request, DeviceHealth $health): JsonResponse
+    {
+        // Only known keys are kept, each shortened to a plain value (DeviceHealth::record).
+        return response()->json(['commands' => $health->record($this->device($request), (array) $request->json()->all())]);
+    }
+
+    /** The result of a fix the till ran. */
+    public function commandDone(Request $request, DeviceHealth $health, string $id): JsonResponse
+    {
+        $data = $request->validate(['status' => ['required', 'in:done,failed'], 'result' => ['nullable', 'string', 'max:20000']]);
+        $health->complete($this->device($request), $id, $data['status'], $data['result'] ?? null);
+
+        return response()->json(['ok' => true]);
+    }
+
     public function postSale(Request $request, SaleService $sales): JsonResponse
     {
         $request->validate([
@@ -397,10 +414,10 @@ class PosController extends Controller
     public function reportProblem(Request $request): JsonResponse
     {
         $data = $request->validate(['message' => ['required', 'string', 'min:5', 'max:5000'], 'screen' => ['nullable', 'string', 'max:120'],
-            'context' => ['nullable', 'array', 'max:20']]);
+            'context' => ['nullable', 'array', 'max:20'], 'screenshot' => ['nullable', 'string', 'max:7000000']]);
         $device = $this->device($request);
         $r = app(SupportReports::class)->report(Actor::user($request->user(), 'pos', $device->id), 'till', $data['message'], $data['screen'] ?? null,
-            ($data['context'] ?? []) + ['device' => $device->name, 'till_id' => $device->till_id], $device->id, $device->branch_id);
+            ($data['context'] ?? []) + ['device' => $device->name, 'till_id' => $device->till_id], $device->id, $device->branch_id, $data['screenshot'] ?? null);
 
         return response()->json(['number' => $r->number, 'sent' => $r->sent_at !== null], 201);
     }

@@ -67,6 +67,17 @@ final class Settings
             'label' => 'Cash limit in a till drawer (pesewas)',
             'help' => '0 = off. e.g. 200000 = GHS 2,000: when the cash in a drawer goes above it, the till asks for a cash drop and supervisors are told. Less cash in the drawer means less to lose.',
         ],
+        'remote.consent' => [
+            'type' => 'choice', 'default' => 'outside_hours', 'group' => 'Remote access', 'branch' => true,
+            'options' => ['outside_hours' => 'Unattended outside trading hours; during trading the person at the device accepts', 'unattended' => 'Always unattended (a banner shows who is connected)', 'ask' => 'Always ask the person at the device'],
+            'label' => 'Remote connections to tills and computers',
+            'help' => 'Who may connect without someone at the device clicking Accept. Every connection shows a banner on the device and is in the audit log. A branch can choose differently (Company → Branches).',
+        ],
+        'remote.trading_hours' => [
+            'type' => 'string', 'default' => '07:00-21:00', 'max' => 11, 'group' => 'Remote access', 'branch' => true,
+            'label' => 'Trading hours (for remote connections)',
+            'help' => 'e.g. 07:00-21:00, or 08:00-20:00 for a branch that opens later. During these hours the person at the device accepts each connection (with the default setting above).',
+        ],
         'cash.vaults' => [
             'type' => 'bool', 'default' => false, 'group' => 'Tills and cash',
             'label' => 'Cash control with vaults (Teller → Cashier → Income Controller)',

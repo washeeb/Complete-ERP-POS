@@ -109,6 +109,9 @@ class BranchResource extends Resource
             Section::make('Tills at this branch')->visibleOn('edit')->collapsible()->collapsed()
                 ->description('Empty = the company setting (System → Settings → Tills and cash).')
                 ->columns(2)->schema(self::ownSettingFields('pos.')),
+            Section::make('Remote connections at this branch')->visibleOn('edit')->collapsible()->collapsed()
+                ->description('Empty = the company setting (System → Settings → Remote access).')
+                ->columns(2)->schema(self::ownSettingFields('remote.')),
         ]);
     }
 

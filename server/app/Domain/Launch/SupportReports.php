@@ -14,6 +14,7 @@ use App\Models\Tenant;
 use App\Security\Authorizer;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -27,8 +28,12 @@ final class SupportReports
 {
     public function __construct(private readonly Recorder $recorder, private readonly Authorizer $authz, private readonly DocumentNumbers $numbers) {}
 
-    /** @param array<string, mixed> $context from the screen: browser, screen size, till app version, the till's last errors */
-    public function report(Actor $actor, string $source, string $message, ?string $page = null, array $context = [], ?string $deviceId = null, ?string $branchId = null): SupportReport
+    /**
+     * @param  array<string, mixed>  $context  from the screen: browser, screen size, till app version, the till's last errors
+     * @param  ?string  $screenshot  a picture of the screen: raw image bytes or a data URL (PNG / JPEG / WebP, up to 5 MB)
+     */
+    public function report(Actor $actor, string $source, string $message, ?string $page = null, array $context = [], ?string $deviceId = null, ?string $branchId = null,
+        ?string $screenshot = null): SupportReport
     {
         if (! $actor->user && ! $deviceId) {
             throw new AccessDenied;
@@ -52,9 +57,34 @@ final class SupportReports
 
             return $this->recorder->save($actor, $r, 'support.reported', branchId: $branchId);
         });
+        if ($screenshot !== null && ($path = $this->storeScreenshot($report, $screenshot))) {
+            $report->forceFill(['screenshot_path' => $path])->save();
+        }
         $this->send($report);
 
         return $report->fresh();
+    }
+
+    /** Keep the picture privately; an unreadable one is dropped (the report still counts). */
+    private function storeScreenshot(SupportReport $report, string $data): ?string
+    {
+        if (str_starts_with($data, 'data:')) {
+            if (! preg_match('#^data:image/(png|jpeg|webp);base64,(.+)$#s', $data, $m)) {
+                return null;
+            }
+            $data = (string) base64_decode($m[2], true);
+        }
+        if ($data === '' || strlen($data) > 5_000_000 || ! ($info = @getimagesizefromstring($data))) {
+            return null;
+        }
+        $ext = ['image/png' => 'png', 'image/jpeg' => 'jpg', 'image/webp' => 'webp'][$info['mime']] ?? null;
+        if (! $ext) {
+            return null;
+        }
+        $path = "support-screenshots/{$report->id}.{$ext}";
+        Storage::disk('local')->put($path, $data);
+
+        return $path;
     }
 
     /** E-mail the report to support. A failure is kept on the report (Support → Problem reports shows it) and retried by "Send again". */
@@ -74,7 +104,8 @@ final class SupportReports
             ."What happened:\n{$report->message}\n\n"
             ."Details for support:\n".json_encode($c, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n";
         try {
-            Mail::to($to)->send(new PlainMessage("[{$tenant->name}] Problem {$report->number}: ".Str::limit(str_replace("\n", ' ', $report->message), 60), $text));
+            Mail::to($to)->send(new PlainMessage("[{$tenant->name}] Problem {$report->number}: ".Str::limit(str_replace("\n", ' ', $report->message), 60), $text,
+                $report->screenshot_path, $report->screenshot_path ? "{$report->number}-screen.".pathinfo($report->screenshot_path, PATHINFO_EXTENSION) : null));
             $report->forceFill(['sent_at' => now(), 'send_error' => null])->save();
 
             return true;

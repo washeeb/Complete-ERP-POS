@@ -106,6 +106,10 @@ The same checks run with `php artisan erp:health` (useful for monitoring tools: 
 | **Website** | synclyticsenterprisesystems.com |
 | **Address** | Puff Cl, Race Course St, Tabora, Accra (GhanaPost GPS GC-027-0884) |
 
-The quickest way is **Report a problem** in the back office (top right) or on the till: it attaches the technical details for you.
+The quickest way is **Report a problem** in the back office (top right) or on the till: it attaches the technical details for you, and a picture of the screen (the till takes it by itself; in the back office press **Win+Shift+S**, then **Ctrl+V** in the box). Whoever may give support access can tick *Let SyncLytics support connect* there.
+
+**Support access (free).** **System → Support access → Give support access** lets SyncLytics support reach your tills and computers to help — *see only* or *see and control*, every branch or one, for a few hours or until a problem report is closed. Everyone signed in sees a banner while it is open, and you can withdraw it at any time. **Why:** support can fix things without travelling, and only when you say so. The company's own staff connecting to devices (training, IT) is the paid *Remote access* add-on.
+
+**Remote connections and trading hours.** **System → Settings → Remote access**: by default a connection is unattended outside trading hours (07:00–21:00 unless changed) and must be accepted by the person at the device during them; a branch can choose differently (Company → Branches).
 
 Otherwise send: what you were doing, the exact message (a screenshot helps), the time it happened, and the last lines of `server/storage/logs/laravel.log`. **Never** send your `.env` file, passwords, PINs or recovery codes.
