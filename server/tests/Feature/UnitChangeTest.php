@@ -2,6 +2,7 @@
 
 use App\Domain\Catalog\CatalogService;
 use App\Domain\Catalog\UnitChangeService;
+use App\Domain\Imports\Importer;
 use App\Domain\Imports\ImportService;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Inventory\StockAdjustmentService;
@@ -106,5 +107,5 @@ it('edits a unit code and merges a duplicate unit into the right one', function 
     $pc = Uom::where('code', 'PC')->first();
     Livewire::test(ListUoms::class)->callTableAction('merge', $pcs->id, ['to' => $pc->id])->assertNotified('PCS merged: 1 product(s) moved');
     expect($p->fresh()->base_uom_id)->toBe($pc->id)->and($pcs->fresh()->merged_into_id)->toBe($pc->id)
-        ->and(App\Domain\Imports\Importer::unitId('pcs'))->toBe($pc->id); // files that still say PCS land on PC
+        ->and(Importer::unitId('pcs'))->toBe($pc->id); // files that still say PCS land on PC
 });

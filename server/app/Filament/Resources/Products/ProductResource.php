@@ -3,7 +3,10 @@
 namespace App\Filament\Resources\Products;
 
 use App\Domain\Catalog\CatalogService;
+use App\Domain\Catalog\UnitChangeService;
 use App\Domain\Modules\ModuleService;
+use App\Domain\Support\Actor;
+use App\Domain\Support\DomainException;
 use App\Filament\Resources\Products\Pages\CreateProduct;
 use App\Filament\Resources\Products\Pages\EditProduct;
 use App\Filament\Resources\Products\Pages\ListProducts;
@@ -24,14 +27,11 @@ use App\Models\Uom;
 use App\Support\IndustryContext;
 use App\Support\Money;
 use App\Support\Qty;
-use App\Domain\Catalog\UnitChangeService;
-use App\Domain\Support\Actor;
-use App\Domain\Support\DomainException;
-use Filament\Forms\Components\Radio;
 use BackedEnum;
 use Filament\Actions\BulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
