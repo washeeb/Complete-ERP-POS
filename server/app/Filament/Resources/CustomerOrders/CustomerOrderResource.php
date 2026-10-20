@@ -146,9 +146,11 @@ class CustomerOrderResource extends Resource
                 Textarea::make('note')->columnSpan(2),
             ]),
             Section::make('Lines')->description('Prices come from the customer’s price list (with quantity tiers) when you save.')->schema([
-                Repeater::make('lines')->hiddenLabel()->columns(3)->minItems(1)->addActionLabel('Add line')->schema([
-                    Fields::productUnit()->columnSpan(2),
+                Repeater::make('lines')->hiddenLabel()->itemNumbers()->columns(6)->minItems(1)->addActionLabel('Add line')->schema([
+                    Fields::productUnit()->live()->columnSpan(3),
                     TextInput::make('qty')->label('Quantity')->required()->numeric()->minValue(0.001),
+                    Fields::available('../../warehouse_id')->label('Available')->columnSpan(2),
+                    Fields::duplicateWarning(),
                 ]),
             ]),
         ]);
@@ -212,7 +214,7 @@ class CustomerOrderResource extends Resource
                     'item' => "{$l->sku} · {$l->name} ({$l->uom_code})",
                     'qty' => Fields::qty(Qty::format(max(0, Qty::toMilli((string) $l->qty) - Qty::toMilli((string) $l->delivered_qty))))])->all()])
                 ->schema([
-                    Repeater::make('lines')->columns(3)->addable(false)->deletable(false)->reorderable(false)->schema([
+                    Repeater::make('lines')->itemNumbers()->columns(3)->addable(false)->deletable(false)->reorderable(false)->schema([
                         TextInput::make('item')->disabled()->dehydrated(false)->columnSpan(2),
                         TextInput::make('qty')->label('Deliver now')->numeric()->minValue(0)->required(),
                         Hidden::make('line_id'),

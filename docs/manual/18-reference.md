@@ -9,7 +9,7 @@ A person's **security level** is the highest level of role they can ever be give
 | L6 · Owner | Owner / director (everything) |
 | L5 · Executive | General Manager, Finance Manager |
 | L4 · Manager | Branch Manager, Accountant, HR Manager, Warehouse Manager, Pharmacist, IT Admin |
-| L3 · Supervisor | Supervisor, Payroll Officer, Marketing |
+| L3 · Supervisor | Supervisor, Stock Controller, Payroll Officer, Marketing |
 | L2 · Staff | Cashier, Storekeeper, Waiter, Tailor, Repair Technician, Stylist / Therapist, Sales Rep |
 | L1 · Restricted | Auditor (read-only), Kitchen Staff |
 
@@ -17,7 +17,7 @@ A person's **security level** is the highest level of role they can ever be give
 
 ## 18.2 Roles provided
 
-Owner · General Manager · Finance Manager · Accountant · Auditor · HR Manager · Payroll Officer · Purchasing Officer · Purchase Approver · Warehouse Manager · Storekeeper · Picker / Packer · Branch Manager · Supervisor · Teller (sells at a till; called Cashier before version 0.30) · Cashier (issues floats, receives the tellers' cash) · Income Controller (accounts: receives the day, decides differences, banks the cash) · Sales Rep · Van Sales Rep · Customer Service · Marketing · E-commerce Manager · Delivery Rider · Production Manager · Machine Operator · Quality Inspector · Pharmacist · Pharmacy Technician · Waiter / Bartender · Kitchen Staff · Repair Technician · Tailor · Stylist / Therapist · IT Admin.
+Owner · General Manager · Finance Manager · Accountant · Auditor · HR Manager · Payroll Officer · Purchasing Officer · Purchase Approver · Warehouse Manager · Storekeeper · Stock Controller (products and stock: create and edit products, categories and brands, stock adjustments, counts, receiving and transfers; prices can be seen, not changed; no approvals, sales or money. Give it for **the whole company**: products belong to every branch, so a branch-only grant does not open the catalogue) · Picker / Packer · Branch Manager · Supervisor · Teller (sells at a till; called Cashier before version 0.30) · Cashier (issues floats, receives the tellers' cash) · Income Controller (accounts: receives the day, decides differences, banks the cash) · Sales Rep · Van Sales Rep · Customer Service · Marketing · E-commerce Manager · Delivery Rider · Production Manager · Machine Operator · Quality Inspector · Pharmacist · Pharmacy Technician · Waiter / Bartender · Kitchen Staff · Repair Technician · Tailor · Stylist / Therapist · IT Admin.
 
 You can change what a role allows under **People & access → Roles** (you can only add permissions you hold yourself).
 

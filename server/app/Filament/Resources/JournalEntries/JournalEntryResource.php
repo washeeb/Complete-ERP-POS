@@ -83,7 +83,7 @@ class JournalEntryResource extends Resource
         return [
             DatePicker::make('date')->required()->default(now())->maxDate(now()),
             TextInput::make('memo')->label('Description')->required(! $opening)->maxLength(255)->visible(! $opening),
-            Repeater::make('lines')->columns(5)->minItems($opening ? 1 : 2)->defaultItems(2)->addActionLabel('Add line')->schema([
+            Repeater::make('lines')->itemNumbers()->columns(5)->minItems($opening ? 1 : 2)->defaultItems(2)->addActionLabel('Add line')->schema([
                 Select::make('account_id')->label('Account')->required()->searchable()->options(fn () => FinanceUi::accounts(withControl: false))->columnSpan(2),
                 TextInput::make('debit')->numeric()->minValue(0),
                 TextInput::make('credit')->numeric()->minValue(0),

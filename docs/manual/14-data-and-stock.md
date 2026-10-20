@@ -108,7 +108,7 @@ The migration imports are explained in Chapter 17.2. **Coming from** (QuickBooks
    - **Decrease (−)** — takes away from stock;
    - **Set to counted quantity** — the new quantity on hand; the system works out the difference when you post.
    Batch-tracked products need the batch number; serial-numbered products need one serial number per unit (the box appears only for those products).
-   The expiry date, a different reason for this line and a note sit under **More details**: click it when you need them. **Why:** most lines need only the product and quantity, so the list stays short and quick to check.
+   Each line is numbered and fits on one row: the product, the change, the quantity, what the store holds now (**Available**), what it will hold (**After**, in red if it would go below zero) and the line's **Value** at average cost. The total value shows under the lines, with a note when a manager must approve it (above GHS 500 by default). The batch number, expiry date, unit cost, a different reason and a note are behind the **Details** drop-down at the end of the line; it opens by itself for batch-tracked products (all medicines). A warning shows when the same product (and batch) is on two lines. **Why:** you see the effect of each line before saving, and most lines need only the product and quantity.
 3. Save. The adjustment is a **Draft**: you can still change it, or **Add lines from CSV**.
 4. **Post** — the changes go into the stock ledger.
 

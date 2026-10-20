@@ -174,7 +174,7 @@ class RepairJobResource extends Resource
             Action::make('lines')->label('Parts and labour')->icon(Heroicon::OutlinedListBullet)->color('gray')
                 ->visible(fn (RepairJob $r) => in_array($r->status, RepairJob::OPEN, true))
                 ->fillForm(fn (RepairJob $r) => ['lines' => $r->lines->map(fn ($l) => ['product_uom_id' => $l->product_uom_id, 'qty' => Fields::qty($l->qty)])->all()])
-                ->schema([Repeater::make('lines')->columns(3)->defaultItems(0)->schema([
+                ->schema([Repeater::make('lines')->itemNumbers()->columns(3)->defaultItems(0)->schema([
                     Fields::productUnit()->columnSpan(2),
                     TextInput::make('qty')->required()->numeric()->minValue(0.001)->default('1'),
                 ])])

@@ -104,7 +104,7 @@ class BomResource extends Resource
             Section::make('Materials and by-products (per batch)')
                 ->description('Materials are used up; by-products come out alongside the product (e.g. bran from milling) and take part of the cost. Expected loss adds to the material used. Backflushed materials are issued automatically when output is reported; the others are issued by hand.')
                 ->schema([
-                    Repeater::make('lines')->hiddenLabel()->columns(6)->minItems(1)->addActionLabel('Add line')->schema([
+                    Repeater::make('lines')->itemNumbers()->hiddenLabel()->columns(6)->minItems(1)->addActionLabel('Add line')->schema([
                         Select::make('kind')->label('Type')->options(BomLine::KINDS)->default('material')->required()->live(),
                         Fields::productUnit()->columnSpan(2),
                         TextInput::make('qty')->label('Quantity')->required()->numeric()->minValue(0.001),

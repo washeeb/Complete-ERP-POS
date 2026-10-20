@@ -18,6 +18,7 @@ use App\Models\StockAdjustment;
 use App\Support\Exports\Exporter;
 use App\Support\Money;
 use App\Support\Qty;
+use App\Support\Settings;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -106,30 +107,89 @@ class StockAdjustmentResource extends Resource
             ]),
             Section::make('Lines')->description('Increase (+) adds to stock, Decrease (−) takes away, Set to replaces the quantity on hand with what you counted. Nothing changes until the adjustment is posted.')
                 ->schema([
-                    Repeater::make('lines')->hiddenLabel()->columns(6)->minItems(1)->addActionLabel('Add line')->schema([
-                        Fields::productUnit()->live()->columnSpan(2),
+                    // One line per row: product, change, quantity, what the store holds, what it will hold, the value, and an
+                    // end-of-line Details drop-down for batch, expiry, cost, reason and note (open by itself for batch items).
+                    Repeater::make('lines')->hiddenLabel()->itemNumbers()->columns(12)->minItems(1)->addActionLabel('Add line')->schema([
+                        Fields::openForBatches(Fields::productUnit()->live())->columnSpan(4),
                         Select::make('mode')->label('Change')->required()->options(StockAdjustment::MODES)->default('remove')->live()->columnSpan(2),
-                        TextInput::make('qty')->label(fn (Get $get) => $get('mode') === 'set' ? 'New quantity' : 'Quantity')->required()->numeric()->minValue(0),
-                        TextInput::make('unit_cost')->label('Unit cost')->numeric()->minValue(0)->visible(fn (Get $get) => $get('mode') === 'add')
-                            ->helperText('Empty = average cost'),
-                        TextInput::make('batch_no')->label('Batch no.')->maxLength(60),
+                        TextInput::make('qty')->label(fn (Get $get) => $get('mode') === 'set' ? 'New quantity' : 'Quantity')->required()->numeric()->minValue(0)
+                            ->live(onBlur: true),
+                        Fields::available('../../warehouse_id', 'batch_no')->columnSpan(2),
+                        TextEntry::make('after')->label('After')->state(fn (Get $get) => self::after($get))
+                            ->color(fn ($state) => str_starts_with((string) $state, '-') ? 'danger' : null),
+                        TextEntry::make('value')->label('Value')->state(fn (Get $get) => ($v = self::lineValue($get)) === null ? '—' : Money::display($v, FinanceUi::currency())),
+                        ...Fields::detailsToggle(),
+                        Fields::duplicateWarning('batch_no'),
                         TagsInput::make('serials')->label('Serial / IMEI numbers (one per unit)')->columnSpanFull()
                             ->visible(fn (Get $get) => Fields::serialised($get('product_uom_id')) || filled($get('serials'))),
                         Fields::more([
+                            TextInput::make('batch_no')->label('Batch no.')->maxLength(60)->live(onBlur: true),
                             DatePicker::make('expires_on')->label('Expiry'),
+                            TextInput::make('unit_cost')->label('Unit cost')->numeric()->minValue(0)->visible(fn (Get $get) => $get('mode') === 'add')
+                                ->helperText('Empty = average cost'),
                             Select::make('reason_code')->label('Reason (if different)')->options(InventoryService::ADJUSTMENT_REASONS),
                             TextInput::make('note')->maxLength(255)->columnSpan(2),
-                        ]),
+                        ], 6),
                     ]),
+                    // The adjustment's value at average cost, and whether a manager must approve it before posting.
+                    TextEntry::make('total_value')->hiddenLabel()->state(function (Get $get) {
+                        $sum = 0;
+                        foreach ((array) $get('lines') as $line) {
+                            $sum += self::lineValue(fn ($k) => $k === '../../warehouse_id' ? $get('warehouse_id') : ($line[$k] ?? null)) ?? 0;
+                        }
+                        $limit = (int) app(Settings::class)->get('stock.adjustment_approval_minor', Erp::user()->tenant_id);
+
+                        return 'Value at average cost: '.Money::display($sum, FinanceUi::currency())
+                            .($sum > $limit ? ' — above '.Money::display($limit, FinanceUi::currency()).': submit it for a manager to approve.' : '');
+                    }),
                 ]),
         ]);
     }
 
     public static function toFormData(StockAdjustment $a): array
     {
-        return ['lines' => $a->lines()->get()->map(fn ($l) => ['product_uom_id' => $l->product_uom_id, 'mode' => $l->mode, 'qty' => rtrim(rtrim((string) $l->qty, '0'), '.'),
+        return ['lines' => $a->lines()->with('product')->get()->map(fn ($l) => ['product_uom_id' => $l->product_uom_id, 'mode' => $l->mode, 'qty' => rtrim(rtrim((string) $l->qty, '0'), '.'),
             'unit_cost' => $l->unit_cost_minor === null ? null : $l->unit_cost_minor / 100, 'batch_no' => $l->batch_no, 'expires_on' => $l->expires_on?->toDateString(),
-            'reason_code' => $l->reason_code, 'note' => $l->note, 'serials' => $l->serials ?? []])->all()];
+            'reason_code' => $l->reason_code, 'note' => $l->note, 'serials' => $l->serials ?? [],
+            // Details open where something is filled in, or for a batch-tracked product.
+            'more' => filled($l->batch_no) || $l->expires_on || $l->unit_cost_minor !== null || filled($l->reason_code) || filled($l->note) || (bool) $l->product?->track_batches,
+        ])->all()];
+    }
+
+    /** What the store will hold after the line, in the line's unit ("9 PK"); "—" until the product and quantity are known. */
+    private static function after(Get $get): string
+    {
+        $s = Fields::stockOf($get('product_uom_id'), $get('../../warehouse_id'));
+        if (! $s || ! is_numeric($get('qty'))) {
+            return '—';
+        }
+        $q = (float) $get('qty');
+        $after = match ($get('mode')) {
+            'add' => $s['qty'] + $q, 'set' => $q, default => $s['qty'] - $q
+        };
+
+        return Fields::qty((string) round($after, 3), $s['unit']);
+    }
+
+    /**
+     * The line's value at average cost, in minor units: the change in base units × the average cost (or the cost typed
+     * for an increase). Null until the product and quantity are known, or when the product has no cost yet.
+     *
+     * @param  Get|callable(string): mixed  $get
+     */
+    private static function lineValue(Get|callable $get): ?int
+    {
+        $s = Fields::stockOf($get('product_uom_id'), $get('../../warehouse_id'));
+        if (! $s || ! is_numeric($get('qty'))) {
+            return null;
+        }
+        $q = (float) $get('qty');
+        $change = match ($get('mode')) {
+            'add' => $q, 'set' => $q - $s['qty'], default => -$q
+        };
+        $cost = ($get('mode') === 'add' && is_numeric($get('unit_cost'))) ? (float) $get('unit_cost') * 100 / $s['factor'] : $s['cost'];
+
+        return $cost === null ? null : (int) round(abs($change) * $s['factor'] * $cost);
     }
 
     public static function infolist(Schema $schema): Schema
