@@ -339,7 +339,11 @@ final class CatalogService
             }
         }
         if ($model instanceof Uom) {
+            // The code can be corrected: products, tills and new documents follow; documents already made keep what they showed.
             $model->code = strtoupper(trim($model->code));
+            if (! preg_match('/^[A-Z0-9]{1,10}$/', $model->code)) {
+                throw new DomainException('Unit code: up to 10 letters or digits, e.g. TAB, STRIP, PK.');
+            }
             if (Uom::where('code', $model->code)->tap($other)->exists()) {
                 throw new DomainException("Unit {$model->code} already exists.");
             }
@@ -391,6 +395,46 @@ final class CatalogService
         }
 
         return $n;
+    }
+
+    /**
+     * Merge a duplicate unit into the right one (PCS into PC): every product's unit row and base unit move over, with
+     * their factors, prices and barcodes. The duplicate stays (the stock history refers to it) but is no longer offered,
+     * and is deleted when nothing refers to it. Refused for products that have both units (one must be removed first).
+     */
+    public function mergeUom(Actor $actor, Uom $from, Uom $to, ?string $reason = null): int
+    {
+        $this->require($actor, 'catalog.manage');
+        if ($from->id === $to->id || $to->merged_into_id) {
+            throw new DomainException('Choose another unit that is in use.');
+        }
+        if ($from->merged_into_id) {
+            throw new DomainException("{$from->code} is already merged.");
+        }
+        $both = ProductUom::with('product')->where('uom_id', $from->id)->whereIn('product_id', ProductUom::where('uom_id', $to->id)->select('product_id'))->get();
+        if ($both->isNotEmpty()) {
+            throw new DomainException("These products have both {$from->code} and {$to->code}: remove one of the two on the product first: "
+                .$both->take(5)->map(fn ($u) => "{$u->product->sku} {$u->product->name}")->implode(', ').($both->count() > 5 ? '…' : ''));
+        }
+        $why = $reason ?: "Unit {$from->code} merged into {$to->code}";
+
+        return $this->recorder->transaction(function () use ($actor, $from, $to, $why) {
+            $products = ProductUom::where('uom_id', $from->id)->pluck('product_id')->merge(Product::where('base_uom_id', $from->id)->pluck('id'))->unique();
+            ProductUom::where('uom_id', $from->id)->update(['uom_id' => $to->id, 'version' => DB::raw('version + 1'), 'updated_at' => now()]);
+            foreach (Product::whereIn('id', $products)->get() as $p) {
+                if ($p->base_uom_id === $from->id) {
+                    $p->base_uom_id = $to->id;
+                    $this->recorder->save($actor, $p, 'product.updated', $why);
+                } else {
+                    $this->recorder->audit->record($actor, 'product.details_changed', $p, ['units' => [$from->code, $to->code]], $why);
+                }
+                $this->recorder->outbox->publish($actor, $p->fresh(), 'product.details_changed', ['product_id' => $p->id, 'units' => $why]); // units travel with the product
+            }
+            $from->merged_into_id = $to->id;
+            $this->recorder->save($actor, $from, 'uom.merged', $why);
+
+            return $products->count();
+        });
     }
 
     /**

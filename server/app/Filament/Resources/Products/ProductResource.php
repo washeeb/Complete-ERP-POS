@@ -3,7 +3,10 @@
 namespace App\Filament\Resources\Products;
 
 use App\Domain\Catalog\CatalogService;
+use App\Domain\Catalog\UnitChangeService;
 use App\Domain\Modules\ModuleService;
+use App\Domain\Support\Actor;
+use App\Domain\Support\DomainException;
 use App\Filament\Resources\Products\Pages\CreateProduct;
 use App\Filament\Resources\Products\Pages\EditProduct;
 use App\Filament\Resources\Products\Pages\ListProducts;
@@ -28,6 +31,7 @@ use BackedEnum;
 use Filament\Actions\BulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
@@ -101,7 +105,7 @@ class ProductResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        $uoms = fn () => Uom::orderBy('code')->get()->mapWithKeys(fn ($u) => [$u->id => "{$u->code} · {$u->name}"]);
+        $uoms = fn () => Uom::whereNull('merged_into_id')->orderBy('code')->get()->mapWithKeys(fn ($u) => [$u->id => "{$u->code} · {$u->name}"]);
 
         return $schema->columns(1)->components([
             Section::make('Product')->columns(3)->schema([
@@ -301,6 +305,25 @@ class ProductResource extends Resource
             ->defaultSort('name')
             ->recordActions([EditAction::make()])
             ->toolbarActions([
+                BulkAction::make('changeUnit')->label('Change the unit')->icon(Heroicon::OutlinedScale)
+                    ->visible(fn () => Erp::can('catalog.manage'))
+                    ->modalDescription('The same change for every ticked product. Products on open documents, or already in that unit, are skipped and listed.')
+                    ->schema(self::unitChangeSchema())
+                    ->action(function (Collection $records, array $data) {
+                        @set_time_limit(1800);
+                        $done = 0;
+                        $skipped = [];
+                        foreach ($records as $p) {
+                            try {
+                                self::changeUnit(Erp::actor(), $p, $data);
+                                $done++;
+                            } catch (DomainException $e) {
+                                $skipped[] = "{$p->name}: {$e->getMessage()}";
+                            }
+                        }
+                        $n = Notification::make()->title("{$done} product(s) changed")->body($skipped ? 'Not changed: '.implode(' · ', array_slice($skipped, 0, 8)).(count($skipped) > 8 ? ' …' : '') : null);
+                        ($skipped ? $n->warning()->persistent() : $n->success())->send();
+                    }),
                 BulkAction::make('move')->label('Change category, brand or tax')->icon(Heroicon::OutlinedArrowsRightLeft)
                     ->visible(fn () => Erp::can('catalog.manage'))
                     ->schema([
@@ -350,6 +373,32 @@ class ProductResource extends Resource
                     })
                     ->deselectRecordsAfterCompletion(),
             ]);
+    }
+
+    /** The Change the unit form: convert by pack size (default) or correct a wrong label. */
+    public static function unitChangeSchema(): array
+    {
+        return [
+            Radio::make('mode')->label('What is changing')->required()->default('convert')->live()->options([
+                'convert' => 'Convert by pack size (e.g. a strip of 10 becomes 10 tablets: stock × 10, price ÷ 10)',
+                'relabel' => 'The label was wrong (same numbers: 40 Pack becomes 40 Tablet)',
+            ]),
+            Select::make('uom_id')->label('New unit')->required()->searchable()
+                ->options(fn () => Uom::whereNull('merged_into_id')->orderBy('code')->get()->mapWithKeys(fn ($u) => [$u->id => "{$u->code} · {$u->name}"])),
+            TextInput::make('per')->label('How many of the new unit in one of the current unit')->numeric()->minValue(0.001)
+                ->required(fn ($get) => $get('mode') === 'convert')->visible(fn ($get) => $get('mode') === 'convert')
+                ->helperText('e.g. 10 tablets in a strip, 30 tablets in a pack. Stock is multiplied by it; the new unit\'s price is the old price divided by it. The old unit stays as a selling unit.'),
+            TextInput::make('reason')->label('Reason')->required()->maxLength(255)->placeholder('e.g. sold in single tablets from now on'),
+        ];
+    }
+
+    public static function changeUnit(Actor $actor, Product $product, array $data): Product
+    {
+        $svc = app(UnitChangeService::class);
+
+        return ($data['mode'] ?? 'convert') === 'relabel'
+            ? $svc->relabel($actor, $product, $data['uom_id'], $data['reason'])
+            : $svc->convert($actor, $product, $data['uom_id'], (string) $data['per'], $data['reason']);
     }
 
     public static function getPages(): array

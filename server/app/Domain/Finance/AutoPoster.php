@@ -38,6 +38,7 @@ final class AutoPoster
         'receipt' => 'grni', 'receipt_reversal' => 'grni',
         'transfer_out' => 'stock_in_transit', 'transfer_in' => 'stock_in_transit',
         'adjustment' => 'stock_adjustment', 'count' => 'stock_adjustment',
+        'unit_conversion' => 'stock_adjustment', // a product's unit changed (Pack → Tablet): out and back in at the same value
         'supplier_return' => 'supplier_returns', // held until the supplier settles (credit, replacement, refund or nothing)
         'opening' => 'opening_equity',
         'trade_in' => 'trade_in_clearing', // used items taken in on a sale (the sale's trade-in tender is on the other side)

@@ -190,7 +190,13 @@ abstract class Importer
     {
         $v = trim($value);
         $plain = rtrim(mb_strtolower($v), '.');
+        $id = self::findUnitId($v, $plain);
 
+        return $id ? (Uom::whereKey($id)->value('merged_into_id') ?? $id) : null; // a merged duplicate (PCS) means the unit it was merged into
+    }
+
+    private static function findUnitId(string $v, string $plain): ?string
+    {
         return Uom::where('code', strtoupper($v))->value('id')
             ?? Uom::where('code', strtoupper($plain))->value('id')
             ?? Uom::whereRaw('lower(name) in (?, ?)', [$plain, preg_replace('/s$/', '', $plain)])->value('id')
