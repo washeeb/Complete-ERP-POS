@@ -133,6 +133,7 @@ final class ReplicationApplier
             case 'goods_receipt':
             case 'stock_transfer':
             case 'stock_request':
+            case 'purchase_request':
             case 'stock_count':
             case 'modifier_group':
             case 'dining_order':

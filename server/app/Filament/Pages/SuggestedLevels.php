@@ -44,7 +44,7 @@ class SuggestedLevels extends Page implements HasTable
 
     public static function canAccess(): bool
     {
-        return Erp::canAnywhere('warehouse.manage') && app(Settings::class)->get('stock.smart_levels', Erp::user()?->tenant_id) !== 'off';
+        return (Erp::canAnywhere('warehouse.manage') || Erp::canAnywhere('stock.levels')) && app(Settings::class)->get('stock.smart_levels', Erp::user()?->tenant_id) !== 'off';
     }
 
     public function getSubheading(): ?string
@@ -59,7 +59,7 @@ class SuggestedLevels extends Page implements HasTable
             Action::make('recalculate')->label('Work them out now')->icon(Heroicon::OutlinedArrowPath)->color('gray')
                 ->action(function () {
                     $n = 0;
-                    foreach (Warehouse::whereIn('id', array_keys(Fields::warehouses('warehouse.manage')))->get() as $w) {
+                    foreach (Warehouse::whereIn('id', array_keys(Fields::warehouses(['warehouse.manage', 'stock.levels'])))->get() as $w) {
                         $n += app(SmartReorderLevels::class)->recalculate($w)['suggested'];
                     }
                     Notification::make()->success()->title("{$n} suggestion(s)")->send();
@@ -72,7 +72,7 @@ class SuggestedLevels extends Page implements HasTable
     {
         return $table
             ->records(function (?array $filters) {
-                $warehouses = array_keys(Fields::warehouses('warehouse.manage'));
+                $warehouses = array_keys(Fields::warehouses(['warehouse.manage', 'stock.levels']));
                 $wh = $filters['warehouse_id']['value'] ?? null;
                 $rows = DB::table('reorder_level_suggestions as s')->join('products as p', 'p.id', '=', 's.product_id')->join('warehouses as w', 'w.id', '=', 's.warehouse_id')
                     ->whereIn('s.warehouse_id', $wh && in_array($wh, $warehouses, true) ? [$wh] : $warehouses)->orderBy('p.name')
@@ -98,7 +98,7 @@ class SuggestedLevels extends Page implements HasTable
                     ->formatStateUsing(fn ($state, array $record) => ReorderRuleResource::inBuyingUnit($record['product_id'], $state).' / '
                         .ReorderRuleResource::inBuyingUnit($record['product_id'], $record['max_qty'])),
             ])
-            ->filters([SelectFilter::make('warehouse_id')->label('Store')->options(fn () => Fields::warehouses('warehouse.manage'))])
+            ->filters([SelectFilter::make('warehouse_id')->label('Store')->options(fn () => Fields::warehouses(['warehouse.manage', 'stock.levels']))])
             ->toolbarActions([
                 BulkAction::make('accept')->label('Accept')->icon(Heroicon::OutlinedCheck)->color('success')
                     ->action(function (Collection $records) {

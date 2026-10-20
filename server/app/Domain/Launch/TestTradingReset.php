@@ -31,7 +31,7 @@ final class TestTradingReset
         'stock_adjustments', 'stock_adjustment_lines', 'stock_counts', 'stock_count_lines', 'stock_transfers', 'stock_transfer_lines', 'stock_requests', 'stock_request_lines', 'markdowns',
         'supplier_returns', 'supplier_return_lines', 'waybills',
         // Purchasing and suppliers' accounts
-        'purchase_orders', 'purchase_order_lines', 'goods_receipts', 'goods_receipt_lines', 'supplier_bills', 'supplier_bill_lines', 'supplier_payments', 'supplier_ledger',
+        'purchase_orders', 'purchase_order_lines', 'purchase_requests', 'purchase_request_lines', 'goods_receipts', 'goods_receipt_lines', 'supplier_bills', 'supplier_bill_lines', 'supplier_payments', 'supplier_ledger',
         'supplier_balances', 'payable_allocations', 'consignment_sales',
         // Selling on account, orders and online orders
         'customer_orders', 'customer_order_lines', 'deliveries', 'delivery_lines', 'invoices', 'invoice_lines', 'credit_notes', 'customer_payments', 'customer_ledger',
@@ -50,7 +50,7 @@ final class TestTradingReset
 
     /** Document numbers that start again (customers, staff, assets and the like keep counting: those records stay). */
     public const RESTART_NUMBERS = ['PO', 'GRN', 'TRF', 'CNT', 'QT', 'SO', 'DN', 'INV', 'CRN', 'RCT', 'JE', 'BILL', 'SPAY', 'MT', 'RX', 'ORD', 'RES', 'JOB', 'ALT',
-        'APT', 'PASS', 'ADJ', 'RTS', 'WB', 'VS', 'WO', 'QC', 'CH', 'SRQ', 'EXP'];
+        'APT', 'PASS', 'ADJ', 'RTS', 'WB', 'VS', 'WO', 'QC', 'CH', 'SRQ', 'EXP', 'PRQ'];
 
     public function __construct(private readonly AuditLog $audit) {}
 

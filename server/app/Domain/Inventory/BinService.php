@@ -33,7 +33,10 @@ final class BinService
      */
     public function setUseBins(Actor $actor, Warehouse $warehouse, bool $on): Warehouse
     {
-        $this->require($actor, $warehouse);
+        // Switching a whole store to bins is the warehouse manager's; creating bins and locations is also the stock controller's.
+        if (! $actor->user || ! $this->authz->allows($actor->user, 'warehouse.manage', $warehouse)) {
+            throw new AccessDenied;
+        }
         if ($warehouse->use_bins === $on) {
             return $warehouse;
         }
@@ -131,7 +134,7 @@ final class BinService
 
     private function require(Actor $actor, Warehouse $warehouse): void
     {
-        if (! $actor->user || ! $this->authz->allows($actor->user, 'warehouse.manage', $warehouse)) {
+        if (! $actor->user || ! $this->authz->allowsAny($actor->user, ['warehouse.manage', 'stock.bins'], $warehouse)) {
             throw new AccessDenied;
         }
     }

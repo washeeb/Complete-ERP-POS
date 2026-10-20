@@ -87,7 +87,7 @@ final class SmartReorderLevels
         }
         foreach ($rows->groupBy('warehouse_id') as $warehouseId => $list) {
             $warehouse = Warehouse::findOrFail($warehouseId);
-            if (! $actor->user || ! $this->authz->allows($actor->user, 'warehouse.manage', $warehouse)) {
+            if (! $actor->user || ! $this->authz->allowsAny($actor->user, ['warehouse.manage', 'stock.levels'], $warehouse)) {
                 throw new AccessDenied;
             }
         }
