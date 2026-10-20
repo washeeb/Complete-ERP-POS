@@ -15,7 +15,7 @@ You look after the tills and the cashiers during the day. You sign in at a till 
 | Discount above the cashier's limit | At the till, type your username and PIN in the approval box. Only approve what you would do yourself: it is recorded under your name. |
 | Return without a receipt | Approve at the till; check the item came from your shop. |
 | Expense paid from the till above the limit | Check the receipt, then type your username and PIN in the **Supervisor** box on the till's Drawer screen. The pay-out is also listed under Expenses → Expense claims, under your name. |
-| "Cash in the drawer is above …" (yellow bar, and a notification for you) | Do a **cash drop**: on the till, **Cash drop**, count the cash out in front of the cashier, type the amount and your PIN, take it to the safe. |
+| "Cash in the drawer is above …" (yellow bar, and a notification for you) | Do a **cash drop**: on the till, **Cash drop**, count the cash out in front of the cashier, type the amount and your PIN, sign the slip that prints (and a second copy for the safe bag), take it to the safe. |
 | Cashier locked out (5 wrong PINs) | Wait 15 minutes, or a manager sets a new PIN: back office → **People & access → Users** → the cashier → **Set POS PIN**. |
 | A sale "stuck" on a till | Do not ring it again. Check the yellow bar: it counts sales waiting to send. They go on their own. |
 | Red bar on a till | The server refused a sale: open **Sales → Review queue**, read the reason, fix, then **Retry refused**. |

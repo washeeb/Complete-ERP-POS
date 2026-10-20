@@ -4,6 +4,7 @@ import { recordDrawer, shrinkPhoto, type DrawerBody } from '../drawer'
 import { openDrawer } from '../hardware'
 import { formatMoney, parseMoney } from '../money'
 import { offlineSignIn } from '../offline'
+import type { DrawerSlip } from '../slip'
 import type { Bootstrap } from '../types'
 
 type Tab = 'payout' | 'payin' | 'drop' | 'no_sale'
@@ -17,7 +18,7 @@ const TABS: { key: Tab; label: string }[] = [
  * added, with the reason. Cash drop: a supervisor takes cash to the safe (their PIN). Open drawer: no sale, with the reason.
  */
 export function DrawerScreen({ boot, online, initial = 'payout', onDone, onCancel }: {
-  boot: Bootstrap; online: boolean; initial?: Tab; onDone: (message: string) => void; onCancel: () => void
+  boot: Bootstrap; online: boolean; initial?: Tab; onDone: (message: string, slip: DrawerSlip | null) => void; onCancel: () => void
 }) {
   const [tab, setTab] = useState<Tab>(initial)
   const [amount, setAmount] = useState('')
@@ -45,17 +46,26 @@ export function DrawerScreen({ boot, online, initial = 'payout', onDone, onCance
       approval: needsSupervisor ? { username: supUser.trim(), pin: supPin } : null,
     }
     try {
+      let r: Awaited<ReturnType<typeof recordDrawer>>
+      let approver: string | null = null
       try {
-        await recordDrawer(online, body)
+        r = await recordDrawer(online, body)
       } catch (err) {
         if (!(err instanceof ApiError && err.code === 'offline_approval_needed') || !needsSupervisor) throw err
         // The server cannot be reached: the supervisor's PIN is checked here against their offline sign-in.
         const g = await offlineSignIn(supUser, supPin)
         if (g.user_id === boot.user.id) throw new Error('Another person must approve this.')
-        await recordDrawer(false, { ...body, approved_by: g.user_id })
+        r = await recordDrawer(false, { ...body, approved_by: g.user_id })
+        approver = g.user_name
       }
       if (tab === 'no_sale' || tab === 'payout' || tab === 'payin') await openDrawer().catch(() => undefined)
-      onDone(tab === 'payout' ? `Paid out ${money(minor)}.` : tab === 'payin' ? `Paid in ${money(minor)}.` : tab === 'drop' ? `Cash drop of ${money(minor)} recorded.` : 'Drawer opened.')
+      // A slip for the money that moved (not for opening the drawer).
+      const slip: DrawerSlip | null = tab === 'no_sale' ? null : {
+        id: r.id, kind: tab, amountMinor: minor, at: r.at, cashier: boot.user.name, approvedBy: r.approvedBy ?? approver, queued: r.queued,
+        category: tab === 'payout' ? drawer.categories.find((c) => c.id === accountId)?.name ?? null : null,
+        payee: body.payee ?? null, reason: body.reason ?? null, reference: body.reference ?? null,
+      }
+      onDone(tab === 'payout' ? `Paid out ${money(minor)}.` : tab === 'payin' ? `Paid in ${money(minor)}.` : tab === 'drop' ? `Cash drop of ${money(minor)} recorded.` : 'Drawer opened.', slip)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {

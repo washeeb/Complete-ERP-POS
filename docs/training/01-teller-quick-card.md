@@ -56,7 +56,7 @@ Then **Print receipt** (prints straight away on the desktop till's receipt print
 - **Cash drop** — when the yellow bar says the drawer holds too much cash, a supervisor counts some out in front of you and takes it to the safe; they type their PIN.
 - **Open drawer (no sale)** — only with a reason (e.g. change for a customer). Every opening is recorded under your name.
 
-Each of these changes the cash expected when you close, so the drawer still balances.
+Each of these changes the cash expected when you close, so the drawer still balances. After a pay-out, pay-in or cash drop a **slip** prints: both of you sign it. For a cash drop, press **Print another copy**: one slip goes in the safe bag, one stays with the drawer. Clip a pay-out slip to the shop's receipt.
 
 ## When the network or server is down
 

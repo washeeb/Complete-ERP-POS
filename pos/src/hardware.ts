@@ -1,5 +1,6 @@
 import { receiptRaster } from './brand'
 import { receiptEscPos } from './escpos'
+import { slipEscPos, type DrawerSlip } from './slip'
 import type { Bootstrap, PostedSale } from './types'
 
 /**
@@ -26,6 +27,15 @@ export async function printReceipt(sale: PostedSale, boot: Bootstrap): Promise<b
   const cash = sale.payments.some((p) => p.method === 'cash')
   const logo = await receiptRaster(boot).catch(() => null) // the company logo, from the till's cache when offline
   await t.core.invoke('print_raw', { data: receiptEscPos(sale, boot, logo).toBase64(), openDrawer: cash })
+  return true
+}
+
+/** Print a drawer slip silently on the receipt printer; false when there is none (use the print window instead). */
+export async function printSlip(slip: DrawerSlip, boot: Bootstrap): Promise<boolean> {
+  const t = tauri()
+  const cfg = await hardware()
+  if (!t || !cfg?.printer) return false
+  await t.core.invoke('print_raw', { data: slipEscPos(slip, boot).toBase64(), openDrawer: false })
   return true
 }
 
