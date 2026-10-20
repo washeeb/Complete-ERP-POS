@@ -210,19 +210,27 @@ final class ShiftService
         $cash += (int) DB::table('deposit_movements')->where('shift_id', $shift->id)->where('method', 'cash')
             ->selectRaw("COALESCE(SUM(CASE WHEN kind = 'taken' THEN amount_minor ELSE -amount_minor END), 0) AS c")->value('c');
 
+        // Pay-ins add; expenses paid out and cash drops to the safe take away.
+        $cash += DrawerService::cashEffect($shift);
+
         return $shift->opening_float_minor + $cash;
     }
 
     /**
      * Mobile money per network and card taken through this till in the shift: sales and returns (refunds are negative
-     * payments), customer-account payments and booking deposits (taken in, refunded out). Only non-zero checks.
+     * payments), customer-account payments and booking deposits (taken in, refunded out); gift vouchers and credit notes
+     * taken as payment; and the number of coupons used. Only non-zero checks.
      *
      * @return array<string, int> {"momo:mtn": minor, "card": minor}
      */
     public function expectedOther(Shift $shift): array
     {
-        $key = fn (object $r) => $r->method === 'momo' ? 'momo:'.($r->provider ?: 'mtn') : 'card';
-        $rows = SalePayment::whereIn('sale_id', $shift->sales()->where('status', 'posted')->select('id'))->whereIn('method', ['momo', 'card'])
+        $key = fn (object $r) => match ($r->method) {
+            'momo' => 'momo:'.($r->provider ?: 'mtn'),
+            'gift_card', 'store_credit' => 'vouchers',
+            default => 'card',
+        };
+        $rows = SalePayment::whereIn('sale_id', $shift->sales()->where('status', 'posted')->select('id'))->whereIn('method', ['momo', 'card', 'gift_card', 'store_credit'])
             ->groupBy('method', 'provider')->selectRaw('method, provider, SUM(amount_minor) AS amount')->toBase()->get()
             ->concat(DB::table('customer_payments')->where('shift_id', $shift->id)->whereIn('method', ['momo', 'card'])
                 ->groupBy('method', 'provider')->selectRaw('method, provider, SUM(amount_minor) AS amount')->get())
@@ -233,6 +241,8 @@ final class ShiftService
             $k = $key($r);
             $out[$k] = ($out[$k] ?? 0) + (int) $r->amount;
         }
+        // Coupons: how many sales used a coupon code (each paper coupon is kept with the tray).
+        $out['coupons'] = $shift->sales()->where('status', 'posted')->where('kind', 'sale')->whereNotNull('coupon_code')->count();
 
         return array_filter($out, fn ($v) => $v !== 0);
     }

@@ -7,7 +7,8 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Loss prevention: per cashier, how often money goes back out (refunds, refunds without a receipt), how much is given
- * away (discounts), how far the drawer is off at close (over / short), and kitchen voids — each compared with the other
+ * away (discounts), how far the drawer is off at close (over / short), kitchen voids and the drawer opened without a
+ * sale — each compared with the other
  * cashiers over the same period. A risk score (0–100) adds up how unusual someone is; it is a reason to look, not proof.
  */
 final class LossPrevention
@@ -39,6 +40,8 @@ final class LossPrevention
             ->where('o.tenant_id', $tenantId)->where('i.status', 'void')->where('i.added_at', '>=', $from->utc())->where('i.added_at', '<', $to->utc())
             ->when($branchIds !== null, fn ($w) => $w->whereIn('o.branch_id', $branchIds))
             ->groupBy('i.voided_by_name')->selectRaw('i.voided_by_name AS name, COUNT(*) AS n')->pluck('n', 'name');
+        $noSales = $range(DB::table('till_drawer_events')->where('tenant_id', $tenantId)->where('kind', 'no_sale'), 'occurred_at')
+            ->groupBy('user_id')->selectRaw('user_id, COUNT(*) AS n')->pluck('n', 'user_id');
 
         $rows = [];
         foreach ($sales as $id => $s) {
@@ -47,19 +50,21 @@ final class LossPrevention
             $rows[] = ['user_id' => $id, 'name' => $s->cashier_name, 'receipts' => $receipts, 'takings_minor' => (int) $s->takings,
                 'refunds' => (int) $s->refunds, 'refund_value_minor' => (int) $s->refund_value, 'no_receipt_refunds' => (int) $s->no_receipt_refunds,
                 'discount_minor' => (int) $s->discounts, 'shifts' => (int) ($sh->shifts ?? 0), 'short_shifts' => (int) ($sh->short ?? 0),
-                'over_short_minor' => (int) ($sh->off ?? 0), 'voids' => (int) ($voids[$s->cashier_name] ?? 0),
+                'over_short_minor' => (int) ($sh->off ?? 0), 'voids' => (int) ($voids[$s->cashier_name] ?? 0), 'no_sales' => (int) ($noSales[$id] ?? 0),
                 // Rates that make cashiers with different volumes comparable.
                 'm' => ['refund_rate' => $receipts ? $s->refunds / $receipts : 0, 'refund_share' => $s->takings > 0 ? $s->refund_value / $s->takings : 0,
                     'no_receipt_rate' => $receipts ? $s->no_receipt_refunds / $receipts : 0, 'discount_share' => $s->takings > 0 ? $s->discounts / ($s->takings + $s->discounts) : 0,
-                    'off_per_shift' => $sh && $sh->shifts ? $sh->off / $sh->shifts : 0, 'void_rate' => $receipts ? ($voids[$s->cashier_name] ?? 0) / $receipts : 0]];
+                    'off_per_shift' => $sh && $sh->shifts ? $sh->off / $sh->shifts : 0, 'void_rate' => $receipts ? ($voids[$s->cashier_name] ?? 0) / $receipts : 0,
+                    'no_sale_rate' => $receipts ? ($noSales[$id] ?? 0) / $receipts : 0]];
         }
 
         $scored = array_values(array_filter($rows, fn ($r) => $r['receipts'] >= self::MIN_RECEIPTS));
         $labels = ['refund_rate' => 'many refunds', 'refund_share' => 'high refund value', 'no_receipt_rate' => 'refunds without a receipt',
-            'discount_share' => 'high discounts', 'off_per_shift' => 'drawer often off at close', 'void_rate' => 'many kitchen voids'];
+            'discount_share' => 'high discounts', 'off_per_shift' => 'drawer often off at close', 'void_rate' => 'many kitchen voids',
+            'no_sale_rate' => 'drawer often opened without a sale'];
         // How many of each event lie behind a rate: a pattern needs at least 3 (one refund is not a pattern).
         $events = ['refund_rate' => 'refunds', 'refund_share' => 'refunds', 'no_receipt_rate' => 'no_receipt_refunds', 'discount_share' => null,
-            'off_per_shift' => 'short_shifts', 'void_rate' => 'voids'];
+            'off_per_shift' => 'short_shifts', 'void_rate' => 'voids', 'no_sale_rate' => 'no_sales'];
         foreach ($rows as &$r) {
             $r['risk'] = null;
             $r['flags'] = [];

@@ -7,6 +7,7 @@ use App\Filament\Resources\Shifts\Pages\ListShifts;
 use App\Filament\Support\Erp;
 use App\Models\SalePayment;
 use App\Models\Shift;
+use App\Models\TillDrawerEvent;
 use App\Support\Exports\Exporter;
 use App\Support\Money;
 use BackedEnum;
@@ -58,7 +59,7 @@ class ShiftResource extends Resource
     {
         $ids = Erp::branchIds('sales.view');
 
-        return parent::getEloquentQuery()->with('branch', 'till', 'latestCorrection')->withCount('sales')
+        return parent::getEloquentQuery()->with('branch', 'till', 'latestCorrection', 'drawerEvents')->withCount('sales')
             ->when($ids !== null, fn ($q) => $q->whereIn('branch_id', $ids));
     }
 
@@ -84,11 +85,13 @@ class ShiftResource extends Resource
                 TextColumn::make('over_short_minor')->label('Over / short')
                     ->state(fn (Shift $r) => $r->latestCorrection?->over_short_after_minor ?? $r->over_short_minor)->formatStateUsing($m)
                     ->color(fn ($state) => $state === null ? null : ($state < 0 ? 'danger' : ($state > 0 ? 'warning' : 'success'))),
-                // Mobile money per network and the card terminal: what was read at the close against the system.
-                TextColumn::make('other')->label('MoMo & card')->state(fn (Shift $r) => self::otherSummary($r))
+                // Expenses paid out, pay-ins and cash drops during the shift (they change the cash expected).
+                TextColumn::make('drawer')->label('Drawer')->state(fn (Shift $r) => self::drawerSummary($r))->placeholder('—')->wrap(),
+                // Mobile money per network, the card terminal, vouchers and coupons: what was read at the close against the system.
+                TextColumn::make('other')->label('MoMo, card & vouchers')->state(fn (Shift $r) => self::otherSummary($r))
                     ->color(fn ($state) => str_contains((string) $state, 'short') ? 'danger' : (str_contains((string) $state, 'over') ? 'warning' : null))
-                    ->tooltip(fn (Shift $r) => collect($r->otherChecks())->map(fn ($c) => "{$c['label']}: expected ".Money::display($c['expected'], $r->currency_code)
-                        .', '.($c['counted'] === null ? 'not checked' : 'entered '.Money::display($c['counted'], $r->currency_code)))->implode(' · ') ?: null),
+                    ->tooltip(fn (Shift $r) => collect($r->otherChecks())->map(fn ($c) => "{$c['label']}: expected ".self::amount($c, $c['expected'], $r)
+                        .', '.($c['counted'] === null ? 'not checked' : 'entered '.self::amount($c, $c['counted'], $r)))->implode(' · ') ?: null),
                 TextColumn::make('close_note')->label('Note')->limit(40)->toggleable(),
             ])
             ->filters([SelectFilter::make('status')->options(['open' => 'Open', 'closed' => 'Closed'])])
@@ -133,10 +136,33 @@ class ShiftResource extends Resource
             return collect($checks)->contains(fn ($c) => $c['counted'] === null) ? 'Not checked' : 'Balanced';
         }
 
-        return collect($off)->map(fn ($c) => $c['label'].' '.($c['diff'] < 0 ? 'short ' : 'over ').Money::display(abs($c['diff']), $r->currency_code))->implode('; ');
+        return collect($off)->map(fn ($c) => $c['label'].' '.($c['diff'] < 0 ? 'short ' : 'over ').self::amount($c, abs($c['diff']), $r))->implode('; ');
     }
 
-    /** Shift report (Z report): the cash count, then every payment method taken, with the MoMo and card checks. */
+    /** Money, or pieces for coupons. */
+    private static function amount(array $check, int $value, Shift $r): string
+    {
+        return $check['pieces'] ? (string) $value : Money::display($value, $r->currency_code);
+    }
+
+    /** e.g. "Paid out GH₵ 45.00 (2) · Dropped GH₵ 2,000.00 · 3 no-sale opens". */
+    public static function drawerSummary(Shift $r): ?string
+    {
+        $by = $r->drawerEvents->groupBy('kind');
+        $parts = [];
+        foreach (['payout' => 'Paid out', 'payin' => 'Paid in', 'drop' => 'Dropped'] as $kind => $label) {
+            if ($by->has($kind)) {
+                $parts[] = "{$label} ".Money::display((int) $by[$kind]->sum('amount_minor'), $r->currency_code).($by[$kind]->count() > 1 ? ' ('.$by[$kind]->count().')' : '');
+            }
+        }
+        if ($by->has('no_sale')) {
+            $parts[] = $by['no_sale']->count().' no-sale open'.($by['no_sale']->count() > 1 ? 's' : '');
+        }
+
+        return $parts ? implode(' · ', $parts) : null;
+    }
+
+    /** Shift report (Z report): the cash count, every payment method taken, the MoMo / card / voucher / coupon checks, the drawer and coupons. */
     private static function report(Shift $r)
     {
         $cur = $r->currency_code;
@@ -148,14 +174,23 @@ class ShiftResource extends Resource
             ->groupBy('method', 'provider')->orderBy('method')->selectRaw('method, provider, COUNT(*) AS n, SUM(amount_minor) AS amount')->get()
             ->map(fn ($p) => [(SalePayment::METHODS[$p->method] ?? $p->method).($p->provider ? ' · '.(SalePayment::MOMO_PROVIDERS[$p->provider] ?? $p->provider) : ''),
                 (string) $p->n, $m((int) $p->amount)])->all();
-        $checks = array_map(fn ($c) => [$c['label'], $m($c['expected']), $c['counted'] === null ? 'not checked' : $m($c['counted']),
-            $c['diff'] === null ? '' : $m($c['diff'])], $r->otherChecks());
+        $v = fn (array $c, ?int $x) => $x === null ? '' : ($c['pieces'] ? (string) $x : $m($x));
+        $checks = array_map(fn ($c) => [$c['label'], $v($c, $c['expected']), $c['counted'] === null ? 'not checked' : $v($c, $c['counted']),
+            $v($c, $c['diff'])], $r->otherChecks());
+        $drawer = $r->drawerEvents()->with('account')->orderBy('occurred_at')->get()->map(fn (TillDrawerEvent $e) => [$e->occurred_at->format('H:i'),
+            TillDrawerEvent::KINDS[$e->kind] ?? $e->kind, $e->kind === 'no_sale' ? '' : $m($e->amount_minor),
+            trim(($e->account?->name ? $e->account->name.': ' : '').($e->reason ?? '').($e->payee ? " (paid to {$e->payee})" : '')), $e->user_name, $e->approved_by_name ?? ''])->all();
+        $sales = $r->sales()->where('status', 'posted')->where('kind', 'sale');
+        $coupons = (clone $sales)->whereNotNull('coupon_code')->groupBy('coupon_code')->selectRaw('coupon_code, COUNT(*) AS n, SUM(discount_minor) AS d')->toBase()->get()
+            ->map(fn ($c) => ["Coupon {$c->coupon_code}", (string) $c->n, $m((int) $c->d)])->all();
         $where = "{$r->branch->code} · {$r->till->code} · opened {$r->opened_at->format('j M Y H:i')} by {$r->opened_by_name} · closed "
             .($r->closed_at?->format('j M Y H:i') ?? '').' by '.($r->closed_by_name ?? '');
         $sheets = [
             ['title' => 'Cash', 'headings' => ['', 'Amount'], 'rows' => $cash, 'note' => $where.' · Checked by: ______________', 'numeric' => [1]],
             ['title' => 'Takings by payment method', 'headings' => ['Method', 'Payments', 'Amount'], 'rows' => $methods, 'numeric' => [1, 2]],
-            ['title' => 'Mobile money and card check', 'headings' => ['Check', 'Expected', 'Entered at close', 'Over / short'], 'rows' => $checks, 'numeric' => [1, 2, 3]],
+            ['title' => 'Mobile money, card, vouchers and coupons check', 'headings' => ['Check', 'Expected', 'Entered at close', 'Over / short'], 'rows' => $checks, 'numeric' => [1, 2, 3]],
+            ['title' => 'Drawer: expenses paid out, pay-ins, cash drops, no-sale opens', 'headings' => ['Time', 'What', 'Amount', 'Details', 'By', 'Approved by'], 'rows' => $drawer, 'numeric' => [2]],
+            ['title' => 'Coupons used (discount given)', 'headings' => ['Coupon', 'Sales', 'Discount on those sales'], 'rows' => $coupons, 'numeric' => [1, 2]],
         ];
 
         return Erp::run(fn ($actor) => app(Exporter::class)->pdf($actor, "Shift report {$r->till->code}", $sheets, [$r->branch->code], 'portrait'));

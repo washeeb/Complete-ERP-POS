@@ -85,6 +85,7 @@ export const api = {
     call<{ shift: Shift }>('pos/shifts/open', { method: 'POST', body: JSON.stringify({ opening_float_minor: floatMinor, id, vault_session_id: vaultSessionId ?? null }) }),
   closeShift: (countedMinor: number, note: string, denoms?: Record<string, number> | null, other?: Record<string, number> | null) =>
     call<{ shift: Shift }>('pos/shifts/close', { method: 'POST', body: JSON.stringify({ counted_cash_minor: countedMinor, note: note || null, denoms: denoms ?? null, other: other ?? null }) }),
+  drawer: (body: unknown) => call<{ event: { id: string; kind: string; amount_minor: number; approved_by: string | null } }>('pos/drawer', { method: 'POST', body: JSON.stringify(body) }),
   postSale: (payload: unknown) => call<{ sale: PostedSale; replayed: boolean }>('pos/sales', { method: 'POST', body: JSON.stringify(payload) }),
   lookupReceipt: (receiptNo: string) => call<{ sale: PostedSale; returnable: Returnable; customer_id: string | null }>(`pos/receipts?receipt=${encodeURIComponent(receiptNo)}`),
   postReturn: (payload: unknown) => call<{ sale: PostedSale; store_credit_code: string | null }>('pos/returns', { method: 'POST', body: JSON.stringify(payload) }),

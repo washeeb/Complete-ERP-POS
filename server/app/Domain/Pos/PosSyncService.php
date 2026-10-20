@@ -23,7 +23,7 @@ use Illuminate\Support\Str;
  */
 final class PosSyncService
 {
-    public const TYPES = ['shift_open', 'sale', 'shift_close', 'clock'];
+    public const TYPES = ['shift_open', 'sale', 'shift_close', 'drawer', 'clock'];
 
     public function __construct(
         private readonly OfflineGrant $grants,
@@ -98,6 +98,11 @@ final class PosSyncService
                     other: is_array($p['other'] ?? null) ? $p['other'] : null);
 
                 return ['status' => $wasClosed ? 'duplicate' : 'accepted'];
+
+            case 'drawer': // pay-out, pay-in, cash drop, no sale or cash-limit warning recorded while offline
+                $r = app(DrawerService::class)->record($device, $user, ['id' => $e['id']] + $p, offline: true);
+
+                return ['status' => $r->wasRecentlyCreated ? 'accepted' : 'duplicate'];
 
             case 'visit': // Distribution: a rep's call on a customer, recorded while offline
                 return app(RouteService::class)->visit($device, $user, ['id' => $e['id']] + $p);

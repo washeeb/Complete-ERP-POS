@@ -18,8 +18,12 @@ class SalePayment extends Model
 
     public const MOMO_PROVIDERS = ['mtn' => 'MTN MoMo', 'telecel' => 'Telecel Cash', 'at' => 'AT Money'];
 
-    /** What a till's close checks besides the cash: each MoMo network's merchant wallet and the card terminal. */
-    public const CLOSE_CHECKS = ['momo:mtn' => 'MTN MoMo', 'momo:telecel' => 'Telecel Cash', 'momo:at' => 'AT Money', 'card' => 'Card terminal'];
+    /** What a till's close checks besides the cash: each MoMo network's merchant wallet, the card terminal, vouchers and coupons taken. */
+    public const CLOSE_CHECKS = ['momo:mtn' => 'MTN MoMo', 'momo:telecel' => 'Telecel Cash', 'momo:at' => 'AT Money', 'card' => 'Card terminal',
+        'vouchers' => 'Gift vouchers and credit notes', 'coupons' => 'Coupons (number)'];
+
+    /** Close checks counted in pieces, not money. */
+    public const COUNTED_IN_PIECES = ['coupons'];
 
     public $timestamps = false;
 

@@ -101,6 +101,11 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
   .receipt-screen { display: block; } .receipt { width: 80mm; }
 }
 .banner.bad { background: var(--bad-bg); color: var(--bad-text); }
+.banner.ok { background: var(--ok-bg); color: var(--ok-text); }
+/* Drawer: action tabs wrap on a narrow screen; the receipt photo preview stays small. */
+.drawer .tabs { flex-wrap: wrap; gap: 6px; }
+.drawer .supervisor { border: 1px solid currentColor; border-radius: 8px; padding: 8px 12px; display: grid; gap: 6px; }
+.receipt-photo { max-width: 160px; max-height: 160px; border-radius: 6px; object-fit: contain; }
 
 /* Warehouse handheld (phone-sized scanner) */
 .handheld { max-width: 640px; margin: 0 auto; padding: 10px; display: grid; gap: 12px; }

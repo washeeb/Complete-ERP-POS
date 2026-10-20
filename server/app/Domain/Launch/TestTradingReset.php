@@ -24,7 +24,7 @@ final class TestTradingReset
     /** The trading tables (with their lines). The order of deleting is worked out from the foreign keys. */
     public const TABLES = [
         // Tills and cash
-        'sales', 'sale_lines', 'sale_payments', 'trade_ins', 'shifts', 'shift_count_corrections', 'vault_sessions', 'cash_movements', 'cash_handovers', 'cash_variances',
+        'sales', 'sale_lines', 'sale_payments', 'trade_ins', 'shifts', 'shift_count_corrections', 'vault_sessions', 'cash_movements', 'cash_handovers', 'cash_variances', 'till_drawer_events', 'expense_claims',
         'prescriptions', 'pharmacy_signoffs', 'review_items', 'fiscal_submissions', 'commissions',
         // Stock
         'stock_movements', 'stock_movement_serials', 'stock_levels', 'stock_batch_levels', 'stock_bin_levels', 'stock_batches', 'serial_numbers', 'stock_reservations',
@@ -50,7 +50,7 @@ final class TestTradingReset
 
     /** Document numbers that start again (customers, staff, assets and the like keep counting: those records stay). */
     public const RESTART_NUMBERS = ['PO', 'GRN', 'TRF', 'CNT', 'QT', 'SO', 'DN', 'INV', 'CRN', 'RCT', 'JE', 'BILL', 'SPAY', 'MT', 'RX', 'ORD', 'RES', 'JOB', 'ALT',
-        'APT', 'PASS', 'ADJ', 'RTS', 'WB', 'VS', 'WO', 'QC', 'CH', 'SRQ'];
+        'APT', 'PASS', 'ADJ', 'RTS', 'WB', 'VS', 'WO', 'QC', 'CH', 'SRQ', 'EXP'];
 
     public function __construct(private readonly AuditLog $audit) {}
 

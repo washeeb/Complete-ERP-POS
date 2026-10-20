@@ -225,7 +225,8 @@ export function CloseShift({ boot, online, onClosed, onCancel }: { boot: Bootstr
       const denoms = byNotes ? Object.fromEntries(denominations.map((d) => [d.key, parseInt(counts[d.key] || '0', 10) || 0]).filter(([, n]) => (n as number) > 0)) : null
       const amount = byNotes ? total : parseMoney(counted, boot.company.exponent)
       // MoMo and card: only what was filled in is checked; an empty box means "not checked".
-      const read = Object.fromEntries(CLOSE_CHECKS.filter((c) => (other[c.key] ?? '').trim() !== '').map((c) => [c.key, parseMoney(other[c.key], boot.company.exponent)]))
+      const read = Object.fromEntries(CLOSE_CHECKS.filter((c) => (other[c.key] ?? '').trim() !== '')
+        .map((c) => [c.key, c.pieces ? parseInt(other[c.key], 10) || 0 : parseMoney(other[c.key], boot.company.exponent)]))
       const { shift, provisional } = await closeShift(amount, note, online, denoms, Object.keys(read).length ? read : null)
       setResult({ expected: shift.expected_cash_minor, counted: shift.counted_cash_minor ?? amount, diff: shift.over_short_minor, provisional,
         other: shift.other ?? [], otherSent: Object.keys(read).length > 0 })
@@ -254,14 +255,17 @@ export function CloseShift({ boot, online, onClosed, onCancel }: { boot: Bootstr
         )}
         {result.other.length > 0 && (
           <>
-            <h2>Mobile money and card</h2>
+            <h2>Mobile money, card, vouchers and coupons</h2>
             <dl className="totals">
               {result.other.map((c) => (
                 <Fragment key={c.key}>
                   <dt>{c.label}</dt>
                   <dd className={(c.diff ?? 0) < 0 ? 'error' : ''}>
-                    {c.counted === null ? `${money(c.expected)} expected · not checked`
-                      : c.diff === 0 ? `${money(c.counted)} · balanced` : `${money(c.counted)} entered · ${money(c.expected)} expected · ${(c.diff ?? 0) < 0 ? 'short' : 'over'} ${money(Math.abs(c.diff ?? 0))}`}
+                    {(() => {
+                      const v = (n: number) => (c.pieces ? String(n) : money(n))
+                      return c.counted === null ? `${v(c.expected)} expected · not checked`
+                        : c.diff === 0 ? `${v(c.counted)} · balanced` : `${v(c.counted)} entered · ${v(c.expected)} expected · ${(c.diff ?? 0) < 0 ? 'short' : 'over'} ${v(Math.abs(c.diff ?? 0))}`
+                    })()}
                   </dd>
                 </Fragment>
               ))}
@@ -310,13 +314,13 @@ export function CloseShift({ boot, online, onClosed, onCancel }: { boot: Bootstr
         </label>
       )}
       <fieldset className="other-checks">
-        <legend>Mobile money and card</legend>
-        <p className="muted small">Type what the merchant phone (or MoMo statement) shows for this shift, and the card terminal's total. Leave a box empty if you do not take it.</p>
+        <legend>Mobile money, card, vouchers and coupons</legend>
+        <p className="muted small">Type what the merchant phone (or MoMo statement) shows for this shift, the card terminal's total, the value of the gift vouchers and credit notes you took, and how many coupons you collected. Leave a box empty if you do not take it.</p>
         {CLOSE_CHECKS.map((c) => (
           <label key={c.key}>
-            {c.label} ({boot.company.currency})
-            <input className="mono" inputMode="decimal" value={other[c.key] ?? ''} placeholder="not checked"
-              onChange={(e) => setOther({ ...other, [c.key]: e.target.value.replace(/[^0-9.]/g, '') })} />
+            {c.label}{c.pieces ? ' collected' : ` (${boot.company.currency})`}
+            <input className="mono" inputMode={c.pieces ? 'numeric' : 'decimal'} value={other[c.key] ?? ''} placeholder="not checked"
+              onChange={(e) => setOther({ ...other, [c.key]: e.target.value.replace(c.pieces ? /[^0-9]/g : /[^0-9.]/g, '') })} />
           </label>
         ))}
       </fieldset>
