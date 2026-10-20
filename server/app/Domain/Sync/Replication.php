@@ -12,6 +12,7 @@ use App\Models\Invoice;
 use App\Models\ModifierGroup;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
+use App\Models\PurchaseRequest;
 use App\Models\RepairJob;
 use App\Models\Role;
 use App\Models\Sale;
@@ -65,7 +66,7 @@ final class Replication
         'reviews' => ['label' => 'Items needing review and pharmacist sign-offs', 'direction' => 'up', 'tables' => ['review_item' => 'review_items', 'pharmacy_signoff' => 'pharmacy_signoffs']],
         'attendance' => ['label' => 'Clock-in and clock-out', 'direction' => 'up', 'tables' => ['attendance_batch' => null]],
         'purchasing' => ['label' => 'Suppliers, purchase orders and goods received', 'direction' => 'both',
-            'tables' => ['supplier' => 'suppliers', 'purchase_order' => 'purchase_orders', 'goods_receipt' => 'goods_receipts']],
+            'tables' => ['supplier' => 'suppliers', 'purchase_order' => 'purchase_orders', 'goods_receipt' => 'goods_receipts', 'purchase_request' => 'purchase_requests']],
         'warehouse' => ['label' => 'Bins, transfers, stock requests, counts and reorder levels', 'direction' => 'both',
             'tables' => ['bin' => 'bins', 'stock_transfer' => 'stock_transfers', 'stock_request' => 'stock_requests', 'stock_count' => 'stock_counts', 'reorder_rule' => 'reorder_rules',
                 'stock_adjustment' => 'stock_adjustments', 'supplier_return' => 'supplier_returns', 'waybill' => 'waybills', 'van_settlement' => 'van_settlements']],
@@ -98,6 +99,7 @@ final class Replication
         GoodsReceipt::class => ['lines', 'goods_receipt_lines'],
         StockTransfer::class => ['lines', 'stock_transfer_lines'],
         StockRequest::class => ['lines', 'stock_request_lines'],
+        PurchaseRequest::class => ['lines', 'purchase_request_lines'],
         StockCount::class => ['lines', 'stock_count_lines'],
         StockAdjustment::class => ['lines', 'stock_adjustment_lines'],
         SupplierReturn::class => ['lines', 'supplier_return_lines'],

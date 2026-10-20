@@ -19,7 +19,7 @@ final class DocumentNumbers
         'prescription' => 'RX', 'dining_order' => 'ORD', 'reservation' => 'RES', 'repair_job' => 'JOB', 'alteration' => 'ALT',
         'appointment' => 'APT', 'service_pass' => 'PASS', 'membership' => 'MEM',
         'stock_adjustment' => 'ADJ', 'supplier_return' => 'RTS', 'waybill' => 'WB', 'van_settlement' => 'VS',
-        'work_order' => 'WO', 'qc_inspection' => 'QC', 'support_report' => 'SUP', 'cash_handover' => 'CH', 'stock_request' => 'SRQ'];
+        'work_order' => 'WO', 'qc_inspection' => 'QC', 'support_report' => 'SUP', 'cash_handover' => 'CH', 'stock_request' => 'SRQ', 'purchase_request' => 'PRQ'];
 
     public function next(string $tenantId, string $docType): string
     {
