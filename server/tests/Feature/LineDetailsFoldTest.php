@@ -4,6 +4,8 @@ use App\Domain\Catalog\CatalogService;
 use App\Domain\Inventory\InventoryService;
 use App\Filament\Resources\StockAdjustments\Pages\CreateStockAdjustment;
 use App\Filament\Resources\StockAdjustments\Pages\EditStockAdjustment;
+use App\Filament\Resources\StockRequests\Pages\CreateStockRequest;
+use App\Filament\Resources\StockTransfers\Pages\CreateStockTransfer;
 use App\Filament\Support\Fields;
 use App\Models\StockAdjustment;
 use App\Models\Warehouse;
@@ -47,10 +49,10 @@ it('keeps a line on one row: available, after, value, and an end-of-line Details
 it('shows the stock available on transfer and stock request lines, and numbers them', function () {
     $ctn = $this->milo->units->firstWhere('is_base', false);
     $ba = Warehouse::where('branch_id', $this->branches['BA']->id)->first();
-    Livewire::test(App\Filament\Resources\StockTransfers\Pages\CreateStockTransfer::class)
+    Livewire::test(CreateStockTransfer::class)
         ->fillForm(['from_warehouse_id' => $this->hq->id, 'to_warehouse_id' => $ba->id, 'lines' => [['product_uom_id' => $ctn->id, 'qty' => '1']]])
         ->assertSee('Available to send')->assertSee('2 CTN');
-    Livewire::test(App\Filament\Resources\StockRequests\Pages\CreateStockRequest::class)
+    Livewire::test(CreateStockRequest::class)
         ->fillForm(['to_warehouse_id' => $ba->id, 'from_warehouse_id' => $this->hq->id, 'lines' => [['product_uom_id' => $ctn->id, 'qty' => '1']]])
         ->assertSee('You have')->assertSee('0 CTN')->assertSee('They have')->assertSee('2 CTN');
 });
