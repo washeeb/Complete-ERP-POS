@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Domain\Access\SupportAccount;
 use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
 use App\Domain\Sync\Transport\HttpSyncTransport;
@@ -74,7 +75,14 @@ class AppServiceProvider extends ServiceProvider
             }
             DB::transaction(fn () => app(AuditLog::class)->record(Actor::user($user, 'web'), $action, $user));
         };
-        Event::listen(Login::class, fn (Login $e) => $e->guard === 'web' ? $signIn('auth.signed_in', $e->user) : null);
+        Event::listen(Login::class, function (Login $e) use ($signIn) {
+            if ($e->guard === 'web') {
+                $signIn('auth.signed_in', $e->user);
+                if ($e->user instanceof User) {
+                    app(SupportAccount::class)->signedIn($e->user); // the owner is told each time SyncLytics support signs in
+                }
+            }
+        });
         Event::listen(Logout::class, fn (Logout $e) => $e->guard === 'web' ? $signIn('auth.signed_out', $e->user) : null);
         Event::listen(Failed::class, fn (Failed $e) => $e->guard === 'web' ? $signIn('auth.sign_in_failed', $e->user) : null);
 

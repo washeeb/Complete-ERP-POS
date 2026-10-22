@@ -3,6 +3,7 @@
 namespace App\Domain\Access;
 
 use App\Domain\Licensing\LicenseManager;
+use App\Domain\Messaging\Phone;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
@@ -34,7 +35,7 @@ final class AccessService
         $this->require($actor, 'admin.users.manage');
         $level = (int) $data['security_level'];
         $this->assertLevelGrantable($actor, $level);
-        app(LicenseManager::class)->assertWithin('users', User::where('is_active', true)->count(), 'active users');
+        app(LicenseManager::class)->assertWithin('users', User::where('is_active', true)->where('security_level', '<', SecurityLevel::Platform->value)->count(), 'active users');
 
         $user = new User;
         $user->forceFill([
@@ -46,7 +47,10 @@ final class AccessService
             'security_level' => $level,
             'is_active' => true,
             'created_by' => $actor->id,
+            'phone' => filled($data['phone'] ?? null) ? trim($data['phone']) : null,
+            'signin_method' => $data['signin_method'] ?? 'default',
         ]);
+        $this->assertSignIn($user);
         $this->assertUnique($user);
 
         return $this->recorder->save($actor, $user, 'user.created');
@@ -70,12 +74,14 @@ final class AccessService
         }
 
         if (! empty($data['is_active']) && ! $user->is_active) {
-            app(LicenseManager::class)->assertWithin('users', User::where('is_active', true)->count(), 'active users');
+            app(LicenseManager::class)->assertWithin('users', User::where('is_active', true)->where('security_level', '<', SecurityLevel::Platform->value)->count(), 'active users');
         }
         $user->fill(array_intersect_key($data, array_flip(['name', 'username', 'email', 'security_level', 'is_active'])));
+        $user->forceFill(array_intersect_key($data, array_flip(['phone', 'signin_method'])));
         if (! empty($data['password'])) {
             $user->password = $data['password'];
         }
+        $this->assertSignIn($user);
         $this->assertUnique($user);
         $this->recorder->save($actor, $user, 'user.updated', $reason);
         $this->authz->forget($user);
@@ -267,6 +273,22 @@ final class AccessService
         if (! $actor->user || ! $this->authz->allows($actor->user, $permission)) {
             throw new AccessDenied;
         }
+    }
+
+    /** The sign-in method is one of the known ones; password only is for low-risk staff; a WhatsApp number must look right. */
+    private function assertSignIn(User $user): void
+    {
+        $user->signin_method = $user->signin_method ?: 'default';
+        if (! array_key_exists($user->signin_method, User::SIGNIN_METHODS)) {
+            throw new DomainException('Choose how the person signs in.');
+        }
+        if ($user->signin_method === 'password' && $user->security_level > User::PASSWORD_ONLY_MAX_LEVEL) {
+            throw new DomainException('Password only is for staff up to level L'.User::PASSWORD_ONLY_MAX_LEVEL.' (supervisors). Managers and above approve money and access, so they sign in with a second step.');
+        }
+        if ($user->phone !== null && $user->phone !== '' && ! Phone::looksValid($user->phone)) {
+            throw new DomainException('That phone number does not look right.');
+        }
+        $user->phone = $user->phone ?: null;
     }
 
     /** Nobody hands out a level above their own (owners may create co-owners at L6). */

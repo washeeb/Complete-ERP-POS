@@ -78,9 +78,36 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
         return $this->is_active && $this->security_level >= SecurityLevel::Restricted->value;
     }
 
+    /** How a person may sign in, chosen by the administrator (owner request 2026-10-22). */
+    public const SIGNIN_METHODS = [
+        'default' => 'Company rule (System → Settings → Security)',
+        'app' => 'Password and the authenticator app',
+        'code' => 'Password and a code by WhatsApp or e-mail',
+        'password' => 'Password only',
+    ];
+
+    /** Password only is for low-risk staff: up to supervisors. Higher levels approve money and access. */
+    public const PASSWORD_ONLY_MAX_LEVEL = 3;
+
+    public function isSupport(): bool
+    {
+        return $this->security_level >= SecurityLevel::Platform->value;
+    }
+
+    /** A second step at sign-in is needed: always for SyncLytics support; else as the administrator chose; else the company rule. */
     public function requiresMfa(): bool
     {
-        return $this->security_level >= (int) app(Settings::class)->get('security.mfa_from_level', $this->tenant_id);
+        if ($this->isSupport()) {
+            return true;
+        }
+
+        $companyRule = $this->security_level >= (int) app(Settings::class)->get('security.mfa_from_level', $this->tenant_id);
+
+        return match ($this->signin_method) {
+            'app', 'code' => true,
+            'password' => $this->security_level > self::PASSWORD_ONLY_MAX_LEVEL && $companyRule, // promoted since: the company rule again
+            default => $companyRule,
+        };
     }
 
     public function hasPermission(string $permission, mixed $target = null): bool

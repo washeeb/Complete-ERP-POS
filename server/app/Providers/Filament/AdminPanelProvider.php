@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Domain\Licensing\Watermark;
 use App\Filament\Auth\EditProfile;
+use App\Filament\Auth\Login;
 use App\Filament\Support\PanelBrand;
 use App\Filament\Widgets\BusinessStats;
 use App\Filament\Widgets\IndustryHighlights;
@@ -11,6 +12,7 @@ use App\Filament\Widgets\IndustryOverview;
 use App\Http\Middleware\EnforceLicense;
 use App\Http\Middleware\RedirectToSetupWizard;
 use App\Http\Middleware\TrackComputer;
+use App\Security\SignInCode;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -44,11 +46,11 @@ class AdminPanelProvider extends PanelProvider
             ->darkModeBrandLogo(fn () => PanelBrand::darkLogo())
             ->brandLogoHeight('2.25rem')
             ->favicon(fn () => PanelBrand::favicon())
-            ->login()
+            ->login(Login::class)
             ->profile(EditProfile::class, isSimple: false)
             // Authenticator app with recovery codes. Who must use it is decided per person by
             // the erp.mfa middleware (security level ≥ the configured threshold), not panel-wide.
-            ->multiFactorAuthentication([AppAuthentication::make()->recoverable()])
+            ->multiFactorAuthentication([AppAuthentication::make()->recoverable(), SignInCode::make()])
             ->requiresMultiFactorAuthentication()
             ->multiFactorAuthenticationRequiredMiddlewareName('erp.mfa')
             ->colors(fn () => PanelBrand::colors())

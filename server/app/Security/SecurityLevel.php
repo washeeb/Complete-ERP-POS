@@ -24,7 +24,7 @@ enum SecurityLevel: int
             self::Manager => 'L4 · Branch / department manager',
             self::Executive => 'L5 · Executive / finance controller',
             self::Owner => 'L6 · Account owner / director',
-            self::Platform => 'L7 · Platform operator',
+            self::Platform => 'L7 · Superadmin (SyncLytics support)',
         };
     }
 

@@ -46,6 +46,10 @@ final class Templates
             'sms' => [null, '{company}: we received {amount} ({number}). Balance now {balance}. Thank you.', false, null],
             'email' => ['Payment received — {number}', "Dear {customer},\n\nWe received {amount} ({number}). Your balance is now {balance}.\n\nThank you.\n{company}", false, null],
         ]],
+        'signin_code' => ['Sign-in code (back office)', '{code} {company} {minutes}', [
+            'whatsapp' => [null, '{code} is your sign-in code for {company}. It works for {minutes} minutes. Do not share it.', true, 'signin_code'],
+            'email' => ['Your sign-in code for {company}', "Your sign-in code is {code}.\n\nIt works once, for {minutes} minutes. If you did not try to sign in, tell your administrator.\n\n{company}", true, null],
+        ]],
         'purchase_order' => ['Purchase order sent to a supplier', '{company} {supplier} {number} {total} {deliver_by} {note} {link}', [
             'email' => ['Purchase order {number} from {company}', "Dear {supplier},\n\nPlease find attached our purchase order {number} for {total}.{deliver_by}\n\n{note}\n\nPlease quote {number} on your delivery note and invoice, and deliver only the items and quantities on the order.\n\nThank you.\n{company}", true, null],
             'whatsapp' => [null, '{company}: purchase order {number} for {total}. Download it here: {link}', true, 'purchase_order'],
