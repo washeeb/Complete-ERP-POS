@@ -24,6 +24,7 @@ Schedule::command('erp:appointment-reminders')->everyFiveMinutes()->withoutOverl
 Schedule::command('erp:bill-memberships')->dailyAt('01:30')->withoutOverlapping(60); // head office only
 Schedule::command('erp:insights')->dailyAt('04:30')->withoutOverlapping(120); // forecasts and alerts (no AI model needed)
 Schedule::command('erp:reorder-levels --smart')->weeklyOn(1, '05:00')->withoutOverlapping(120); // smart minimum / maximum from sales (Mondays)
+Schedule::command('erp:payment-summary')->everyFiveMinutes()->withoutOverlapping(10); // daily MoMo / card summary after its time
 Schedule::command('erp:pharmacy-signoffs')->dailyAt('19:00')->withoutOverlapping(30); // medicine sales without a pharmacist: reminder or summary
 Schedule::command('vendor:license-reminders')->dailyAt('08:00')->withoutOverlapping(30); // licence server only: renewal reminders
 Schedule::command('erp:reorder-levels --alerts')->dailyAt('07:00')->withoutOverlapping(60); // low-stock message to buyers

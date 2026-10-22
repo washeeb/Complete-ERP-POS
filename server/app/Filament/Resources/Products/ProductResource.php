@@ -146,6 +146,9 @@ class ProductResource extends Resource
                     TextInput::make('fda_reg_no')->label('FDA registration no.')->maxLength(60),
                     TagsInput::make('active_ingredients')->label('Active ingredients')->placeholder('Type, then Enter')
                         ->helperText('Used for allergy and interaction warnings.'),
+                    TextInput::make('dosage')->label('Usual dosage (directions)')->maxLength(255)->caps()->columnSpanFull()
+                        ->placeholder('1 TABLET 3 TIMES DAILY AFTER MEALS FOR 5 DAYS')
+                        ->helperText('Filled in on the till for each sale (it can be changed there) and printed on the dosage label and the receipt.'),
                 ]),
             Section::make('Serial numbers and warranty')->columns(2)->visible(fn () => ModuleService::enabledAnywhere('electronics'))
                 ->description('Electronics: each unit is received, transferred and sold by its serial / IMEI number; the warranty runs from the date sold.')

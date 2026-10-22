@@ -135,6 +135,11 @@ final class CashControl
         if (ShiftTemplate::where('name', $name)->when($tpl->exists, fn ($q) => $q->whereKeyNot($tpl->getKey()))->exists()) {
             throw new DomainException('A shift with that name exists.');
         }
+        if (($data['is_active'] ?? true) && mb_strtolower($name) !== mb_strtolower(AutoShifts::STRAIGHT_DAY)) { // at most an hour's handover between shifts
+            AutoShifts::assertTemplate(substr($from, 0, 5), substr($to, 0, 5), ShiftTemplate::where('is_active', true)
+                ->when($tpl->exists, fn ($q) => $q->whereKeyNot($tpl->getKey()))->get()
+                ->map(fn ($t) => [$t->name, substr((string) $t->starts_at, 0, 5), substr((string) $t->ends_at, 0, 5)])->all());
+        }
         $tpl->fill(['name' => mb_substr($name, 0, 40), 'starts_at' => substr($from, 0, 5), 'ends_at' => substr($to, 0, 5),
             'sort' => (int) ($data['sort'] ?? $tpl->sort ?? 0), 'is_active' => (bool) ($data['is_active'] ?? true)]);
         $tpl->tenant_id ??= $actor->tenantId;

@@ -12,6 +12,7 @@ use App\Domain\Fashion\AlterationService;
 use App\Domain\Fashion\ConsignmentService;
 use App\Domain\Inventory\SerialRegistry;
 use App\Domain\Inventory\StockLedger;
+use App\Domain\Messaging\PaymentAlerts;
 use App\Domain\Modules\ModuleService;
 use App\Domain\Pharmacy\PharmacyRules;
 use App\Domain\Pharmacy\PharmacyService;
@@ -43,6 +44,7 @@ use App\Models\Till;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
+use App\Support\Caps;
 use App\Support\Qty;
 use App\Support\Settings;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -177,6 +179,7 @@ final class SaleService
             }
             $unitPrice = (int) $l['unit_price_minor'];
             $note = isset($l['note']) ? mb_substr(trim((string) $l['note']), 0, 255) ?: null : null;
+            $dosage = isset($l['dosage']) ? Caps::upper(mb_substr(trim((string) $l['dosage']), 0, 255)) ?: null : null; // the directions given to the patient
             $diningItem = isset($l['dining_item_id']) ? (string) $l['dining_item_id'] : null;
             if (! empty($l['service_charge'])) {
                 // Restaurant service charge: one line of the service product, priced from the rest of the bill below.
@@ -225,7 +228,7 @@ final class SaleService
             }, 'category_id' => $markdown || $alteration || $pass || $product->is_container ? null : $product->category_id, 'qty_milli' => $qty,
                 'unit_price_minor' => $unitPrice, 'tax' => $rates, 'manual' => $manual];
             $serials = $product->track_serials ? SerialRegistry::normalise($l['serials'] ?? []) : [];
-            $lines[] = compact('product', 'unit', 'qty', 'unitPrice', 'manual', 'rates', 'key', 'markdown', 'note', 'serials') + ['no' => $i + 1, 'given' => (int) ($l['line_total_minor'] ?? -1),
+            $lines[] = compact('product', 'unit', 'qty', 'unitPrice', 'manual', 'rates', 'key', 'markdown', 'note', 'dosage', 'serials') + ['no' => $i + 1, 'given' => (int) ($l['line_total_minor'] ?? -1),
                 'service' => false, 'dining_item' => $diningItem, 'repair_job' => isset($l['repair_job_id']) ? (string) $l['repair_job_id'] : null, 'alteration' => $alteration, 'svc' => $svc];
         }
         if ($lines === [] || $engineLines === []) {
@@ -392,7 +395,7 @@ final class SaleService
                         'discount_minor' => $results[$l['key']]['discount'], 'promotions' => $results[$l['key']]['promotions'], 'manual_discount' => $l['manual'],
                         'markdown_id' => $l['markdown']?->id,
                         'prescription_id' => $rx && $l['product']->needsPrescription() ? $rx->id : null,
-                        'dining_item_id' => $l['dining_item'], 'note' => $l['note'], 'is_service_charge' => $l['service'], 'serials' => ($l['serials'] ?? []) ?: null,
+                        'dining_item_id' => $l['dining_item'], 'note' => $l['note'], 'dosage' => $l['dosage'] ?? null, 'is_service_charge' => $l['service'], 'serials' => ($l['serials'] ?? []) ?: null,
                         'repair_job_id' => $l['repair_job'] ?? null, 'alteration_id' => ($l['alteration'] ?? null)?->id,
                         'staff_id' => $l['svc']['staff_id'] ?? null, 'service_pass_id' => ($l['svc']['pass'] ?? null)['pass']->id ?? null,
                         'pass_item' => ($l['svc']['pass'] ?? null)['item'] ?? null, 'appointment_id' => $l['svc']['appointment_id'] ?? null,
@@ -430,6 +433,7 @@ final class SaleService
                 $this->consignment->record($actor, $sale); // consignment stock: the consignor's share of each line
                 $this->services->settle($actor, $sale, array_values(array_filter(array_map(fn ($l) => $l['svc']['appointment_id'] ?? null, $lines))), $customer, $offline, $flags);
                 $this->recorder->outbox->publish($actor, $sale, 'sale.posted', ['receipt_no' => $receiptNo, 'offline' => $offline]);
+                DB::afterCommit(fn () => app(PaymentAlerts::class)->forSale($sale->id)); // MoMo / card alerts, once the sale is safely saved
 
                 if ($offline) {
                     foreach ($flags as [$type, $summary]) {

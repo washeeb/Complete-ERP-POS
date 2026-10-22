@@ -122,7 +122,7 @@ class SaleResource extends Resource
             ]),
             Section::make('Items')->schema([
                 RepeatableEntry::make('lines')->hiddenLabel()->columns(6)->schema([
-                    TextEntry::make('name')->columnSpan(2),
+                    TextEntry::make('name')->columnSpan(2)->belowContent(fn ($record) => $record->dosage ? 'Dosage: '.$record->dosage : null),
                     TextEntry::make('qty')->formatStateUsing(fn ($state, $record) => rtrim(rtrim(Qty::format(Qty::toMilli((string) $state)), '0'), '.').' '.$record->uom_code),
                     TextEntry::make('unit_price_minor')->label('Unit price')->formatStateUsing(fn ($state, $record) => self::money($state, $record->sale)),
                     TextEntry::make('tax_minor')->label('Tax')->formatStateUsing(fn ($state, $record) => self::money($state, $record->sale)),

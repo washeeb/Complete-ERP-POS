@@ -232,6 +232,10 @@ fieldset.choices button.active, .segmented button.active { background: var(--pri
 .slip .signature { margin-top: 28px; display: flex; gap: 8px; align-items: flex-end; }
 .slip .sign-line { flex: 1; border-bottom: 1px solid currentColor; height: 1.2em; }
 .slip-print { display: none; }
+.dosage-input { display: block; width: 100%; margin-top: 2px; text-transform: uppercase; }
+.dosage-label { border: 1px dashed currentColor; padding: 6px 8px; margin-bottom: 6px; break-after: page; }
+.dosage-label p { margin: 4px 0; }
+.dosage-label .dosage-text { font-size: 1.25em; font-weight: 700; }
 @media print {
   body.printing-slip #root { display: none !important; }
   body.printing-slip .slip-print { display: block; }

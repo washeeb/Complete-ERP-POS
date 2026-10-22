@@ -46,6 +46,16 @@ final class Templates
             'sms' => [null, '{company}: we received {amount} ({number}). Balance now {balance}. Thank you.', false, null],
             'email' => ['Payment received — {number}', "Dear {customer},\n\nWe received {amount} ({number}). Your balance is now {balance}.\n\nThank you.\n{company}", false, null],
         ]],
+        'payment_alert' => ['Payment alert (mobile money / card)', '{company} {method} {amount} {receipt_no} {branch} {till} {cashier} {reference} {time}', [
+            'whatsapp' => [null, '{company}: {method} payment of {amount} at {branch} ({till}), receipt {receipt_no}, {time}. Ref {reference}.', true, 'payment_alert'],
+            'sms' => [null, '{company}: {method} {amount} at {branch} {till}, receipt {receipt_no}, {time}. Ref {reference}.', true, null],
+            'email' => ['{method} payment of {amount} — {receipt_no}', "{method} payment of {amount}\n\nReceipt {receipt_no}, {branch} ({till}), {time}\nCashier: {cashier}\nReference: {reference}\n\n{company}", true, null],
+        ]],
+        'payment_summary' => ['Daily mobile money and card summary', '{company} {date} {total} {count} {lines}', [
+            'whatsapp' => [null, '{company}: mobile money and card on {date}: {total} in {count} payment(s).', true, 'payment_summary'],
+            'sms' => [null, '{company} {date}: MoMo and card {total} in {count} payment(s). {lines}', true, null],
+            'email' => ['Mobile money and card on {date}: {total}', "Mobile money and card payments on {date}: {total} in {count} payment(s).\n\n{lines}\n\n{company}", true, null],
+        ]],
         'signin_code' => ['Sign-in code (back office)', '{code} {company} {minutes}', [
             'whatsapp' => [null, '{code} is your sign-in code for {company}. It works for {minutes} minutes. Do not share it.', true, 'signin_code'],
             'email' => ['Your sign-in code for {company}', "Your sign-in code is {code}.\n\nIt works once, for {minutes} minutes. If you did not try to sign in, tell your administrator.\n\n{company}", true, null],

@@ -221,7 +221,7 @@ it('shows the cash desk to the cashier and income control to the income controll
     $this->flushSession();
     app('auth')->forgetGuards();
     $this->actingAs(withMfa($this->owner), 'web')->get(CashSetup::getUrl())->assertOk()->assertSee('Morning');
-    Livewire\Livewire::test(CashSetup::class)->callAction('template', ['name' => 'Evening', 'starts_at' => '18:00', 'ends_at' => '23:00', 'sort' => 3, 'is_active' => true])
+    Livewire\Livewire::test(CashSetup::class)->callAction('template', ['name' => 'Evening', 'starts_at' => '22:00', 'ends_at' => '23:59', 'sort' => 3, 'is_active' => true])
         ->assertHasNoActionErrors();
     expect(Vault::where('till_id', $this->till->id)->count())->toBe(3);
 });

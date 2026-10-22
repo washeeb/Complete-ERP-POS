@@ -49,7 +49,7 @@ it('leaves out roles, settings and messages of industries not switched on', func
         ->call('save')->assertHasNoErrors();
     expect(app(Settings::class)->get('restaurant.tips_enabled', $this->tenant->id))->toBeTrue();
 
-    Livewire::test(ListMessageTemplates::class)
+    Livewire::test(ListMessageTemplates::class)->searchTable('re') // receipt, reservation… on one page
         ->assertCanNotSeeTableRecords(MessageTemplate::where('key', 'like', 'reservation%')->get())
         ->assertCanNotSeeTableRecords(MessageTemplate::where('key', 'like', 'appointment%')->get())
         ->assertCanSeeTableRecords(MessageTemplate::where('key', 'receipt')->get());

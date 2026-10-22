@@ -67,6 +67,7 @@ When WhatsApp is on and a message has an active WhatsApp template, customers get
 | Invoice sent to the customer | **Off** | An invoice is issued (e-mail to the customer's address) |
 | Payment received | **Off** | A customer pays on account |
 | Scheduled report | On | A scheduled report runs (16.6) |
+| Payment alert / Daily mobile money and card summary | On (sent only when *Payment alerts* are switched on, Chapter 7 Step 6) | A MoMo or card payment at a till, and the summary at its time. WhatsApp needs approved templates named `payment_alert` and `payment_summary` |
 | Sign-in code (back office) | On | Someone whose sign-in method is *password and a code* signs in (WhatsApp needs an approved template named `signin_code` with one parameter, the code; otherwise e-mail). The code is never shown in the message log |
 | Purchase order sent to a supplier | On | A buyer presses **Send to supplier** on an approved order (e-mail with the PDF, or WhatsApp with a download link; 14.6) |
 

@@ -1,6 +1,6 @@
 import { v7 as uuidv7 } from 'uuid'
 import { warrantyUntil } from './electronics'
-import { api, ApiError, SIGNED_OUT, van as vanApi, type OrderBody, type VisitBody } from './api'
+import { api, ApiError, SIGNED_OUT, van as vanApi, type OrderBody, type VisitBody, type ShiftGrant } from './api'
 import { db, getLocalShift, getSession, type OfflineGrant } from './db'
 import { enqueue, grantFor, saveGrant } from './offline'
 import type { Bootstrap, Payment, PostedSale, Shift, TradeInItem } from './types'
@@ -64,13 +64,13 @@ export async function signInAgain(userId: string, username: string, pin: string)
 const isNetwork = (e: unknown) => e instanceof ApiError && e.code === 'network'
 
 /** Open the till. With cash control, on the vault the cashier issued to this teller (its float is the vault's). */
-export async function openShift(floatMinor: number, online: boolean, vaultSessionId: string | null = null): Promise<void> {
+export async function openShift(floatMinor: number, online: boolean, vaultSessionId: string | null = null, grant: ShiftGrant | null = null): Promise<void> {
   const id = uuidv7()
   const openedAt = new Date().toISOString()
   let queued = await queueMode(online)
   if (!queued) {
     try {
-      await api.openShift(floatMinor, id, vaultSessionId)
+      await api.openShift(floatMinor, id, vaultSessionId, grant)
     } catch (e) {
       if (!isNetwork(e)) throw e
       queued = true
@@ -148,6 +148,7 @@ export async function submitSale(args: {
       ...(l.markdown ? { markdown_id: l.markdown.id } : {}),
       ...(l.diningItemId ? { dining_item_id: l.diningItemId } : {}),
       ...(l.note ? { note: l.note } : {}),
+      ...(l.dosage?.trim() ? { dosage: l.dosage.trim() } : {}),
       ...(l.service ? { service_charge: true } : {}),
       ...(l.serials?.length ? { serials: l.serials } : {}),
       ...(l.repairJobId ? { repair_job_id: l.repairJobId } : {}),
@@ -205,7 +206,7 @@ export async function submitSale(args: {
     change_minor: payments.reduce((a, p) => a + (p.tendered_minor - p.amount_minor), 0),
     tax_breakdown: cart.taxBreakdown,
     lines: cart.lines.map((l, i) => ({ line_no: i + 1, sku: l.product.sku, name: l.product.name, uom: l.unit.uom_code,
-      qty: (l.qtyMilli / 1000).toFixed(3), unit_price_minor: l.price!.amount_minor, line_total_minor: l.total, discount_minor: l.discount, promotions: l.promotions, note: l.note ?? null, serials: l.serials ?? [],
+      qty: (l.qtyMilli / 1000).toFixed(3), unit_price_minor: l.price!.amount_minor, line_total_minor: l.total, discount_minor: l.discount, promotions: l.promotions, note: l.note ?? null, dosage: l.dosage?.trim().toUpperCase() || null, serials: l.serials ?? [],
       warranty_until: l.serials?.length ? warrantyUntil(l.product.warranty_months) : null })),
     tip_minor: args.tipMinor ?? 0, order_number: null,
     // Restaurant counter sale while offline: the kitchen cannot see it yet, so the till prints the kitchen ticket.

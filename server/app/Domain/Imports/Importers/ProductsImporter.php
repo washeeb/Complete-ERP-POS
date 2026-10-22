@@ -93,6 +93,7 @@ class ProductsImporter extends Importer
             ['name' => 'dosage_form', 'required' => false, 'help' => 'Medicines: tablet, capsule, syrup, injection…', 'example' => ''],
             ['name' => 'fda_reg_no', 'required' => false, 'help' => 'Medicines: FDA registration number.', 'example' => ''],
             ['name' => 'active_ingredients', 'required' => false, 'help' => 'Medicines: active ingredients separated by | (allergy and interaction warnings), e.g. Amoxicillin|Clavulanic acid.', 'example' => ''],
+            ['name' => 'dosage', 'required' => false, 'help' => 'Usual directions, printed on the dosage label at the till, e.g. 1 tablet 3 times daily after meals for 5 days.', 'example' => ''],
         ];
         foreach (PriceList::where('is_active', true)->orderByDesc('is_default')->orderBy('code')->get() as $list) {
             $cols[] = ['name' => 'price_'.strtolower($list->code), 'required' => false,
@@ -191,7 +192,7 @@ class ProductsImporter extends Importer
                 $data['track_batches'] = true; // every medicine is received and sold by batch and expiry
             }
         }
-        foreach (['generic_name' => 255, 'strength' => 60, 'dosage_form' => 40, 'fda_reg_no' => 60] as $col => $max) {
+        foreach (['generic_name' => 255, 'strength' => 60, 'dosage_form' => 40, 'fda_reg_no' => 60, 'dosage' => 255] as $col => $max) {
             if (self::has($row, $col)) {
                 $data[$col] = mb_substr(trim((string) $row[$col]), 0, $max);
             }
@@ -246,7 +247,7 @@ class ProductsImporter extends Importer
             $base = $p->units->firstWhere('is_base', true);
             $row = [$p->sku, $p->name, $p->description, $p->category?->name, $p->brand?->name, $p->taxGroup?->code, $p->baseUom?->code,
                 $p->track_stock ? 'yes' : 'no', $p->track_batches ? 'yes' : 'no', $p->is_active ? 'yes' : 'no', $p->plu, $p->location, $p->industry?->name ?? 'shared', $base?->barcodes->pluck('code')->implode('|'), ...self::ownLevels($p),
-                $p->drug_schedule, $p->generic_name, $p->strength, $p->dosage_form, $p->fda_reg_no, implode('|', $p->active_ingredients ?? [])];
+                $p->drug_schedule, $p->generic_name, $p->strength, $p->dosage_form, $p->fda_reg_no, implode('|', $p->active_ingredients ?? []), $p->dosage];
             foreach ($lists as $list) {
                 $price = $p->prices->first(fn ($x) => $x->price_list_id === $list->id && $x->product_uom_id === $base?->id && (float) $x->min_qty <= 1 && ! $x->starts_at && ! $x->ends_at);
                 $row[] = $price ? Money::format($price->amount_minor, $list->currency_code) : '';

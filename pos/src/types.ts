@@ -60,7 +60,7 @@ export type DiningTable = { id: string; code: string; area: string | null; seats
 export type Floor = { tables: DiningTable[]; stations: { code: string; name: string; auto_print: boolean }[]; orders: DiningOrder[]; server_time: string
   reservations?: Reservation[]; hold_minutes?: number }
 export type KitchenTicket = { order_id: string; number: string; label: string; kind: string; waiter: string; paid: boolean; items: DiningItem[] }
-export type Product = { id: string; sku: string; name: string; category_id?: string | null; plu?: string | null; location?: string | null; drug?: Drug | null; station?: string | null; modifier_group_ids?: string[]; track_serials?: boolean; warranty_months?: number | null; style_id?: string | null; size?: string | null; colour?: string | null; service_minutes?: number | null; is_pack?: boolean; licence_keys?: boolean; is_container?: boolean; deposit_product_id?: string | null; deposit_per_unit?: string | null; track_stock: boolean; on_hand: string | null; expires_on?: string | null; min_qty?: string | null; tax: TaxRate[]; units: Unit[]; prices: Price[] }
+export type Product = { id: string; sku: string; name: string; category_id?: string | null; plu?: string | null; location?: string | null; dosage?: string | null; drug?: Drug | null; station?: string | null; modifier_group_ids?: string[]; track_serials?: boolean; warranty_months?: number | null; style_id?: string | null; size?: string | null; colour?: string | null; service_minutes?: number | null; is_pack?: boolean; licence_keys?: boolean; is_container?: boolean; deposit_product_id?: string | null; deposit_per_unit?: string | null; track_stock: boolean; on_hand: string | null; expires_on?: string | null; min_qty?: string | null; tax: TaxRate[]; units: Unit[]; prices: Price[] }
 export type PriceList = { id: string; code: string; name: string; prices_include_tax: boolean; is_default: boolean }
 
 export type Shift = {
@@ -131,7 +131,7 @@ export type PostedSale = {
   id: string; receipt_no: string; device_seq: number; status: string; occurred_at: string; cashier: string; currency: string
   prices_include_tax: boolean; net_minor: number; tax_minor: number; total_minor: number; paid_minor: number; change_minor: number
   tax_breakdown: TaxLine[]
-  lines: { line_no: number; sku: string; name: string; uom: string; qty: string; unit_price_minor: number; line_total_minor: number; discount_minor?: number; promotions?: { name: string; saving_minor: number }[]; note?: string | null; serials?: string[]; warranty_until?: string | null; id?: string; staff_id?: string | null; service_pass_id?: string | null }[]
+  lines: { line_no: number; sku: string; name: string; uom: string; qty: string; unit_price_minor: number; line_total_minor: number; discount_minor?: number; promotions?: { name: string; saving_minor: number }[]; note?: string | null; dosage?: string | null; serials?: string[]; warranty_until?: string | null; id?: string; staff_id?: string | null; service_pass_id?: string | null }[]
   tip_minor?: number; order_number?: string | null
   comment?: string | null; walk_in?: { name: string | null; phone: string | null } | null // printed on the receipt
   licence_keys?: { sale_line_id: string; key: string }[] // Services: software keys handed out, printed on the receipt

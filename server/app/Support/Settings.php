@@ -73,6 +73,46 @@ final class Settings
             'label' => 'Remote connections to tills and computers',
             'help' => 'Who may connect without someone at the device clicking Accept. Every connection shows a banner on the device and is in the audit log. A branch can choose differently (Company → Branches).',
         ],
+        'alerts.payments' => [
+            'type' => 'choice', 'default' => 'off', 'group' => 'Payment alerts',
+            'options' => ['off' => 'Off', 'each' => 'Each payment', 'each_summary' => 'Each payment and a daily summary', 'summary' => 'Daily summary only'],
+            'label' => 'Mobile money and card payment alerts',
+            'help' => 'Told to everyone with "receive payment alerts" (owner, general manager, finance manager, accountant by default): in the back office (bell), and by the channels below.',
+        ],
+        'alerts.payment_methods' => [
+            'type' => 'choice', 'default' => 'momo_card', 'group' => 'Payment alerts',
+            'options' => ['momo_card' => 'Mobile money and card', 'momo' => 'Mobile money only', 'card' => 'Card only'],
+            'label' => 'Which payments',
+            'help' => 'Cash is never alerted: it is counted at the close of each shift.',
+        ],
+        'alerts.payment_min_minor' => [
+            'type' => 'int', 'default' => 0, 'min' => 0, 'max' => 100_000_000_000, 'group' => 'Payment alerts',
+            'label' => 'Single alerts only from (pesewas)',
+            'help' => '50000 = GHS 500. Smaller payments are left out of the single alerts (they are still in the daily summary). 0 = every payment.',
+        ],
+        'alerts.by_email' => ['type' => 'bool', 'default' => false, 'group' => 'Payment alerts', 'label' => 'Also by e-mail', 'help' => 'To the e-mail address on the person’s user account.'],
+        'alerts.by_sms' => ['type' => 'bool', 'default' => false, 'group' => 'Payment alerts', 'label' => 'Also by SMS', 'help' => 'To the mobile number on the person\'s user account. Needs an SMS provider (Messages → Providers).'],
+        'alerts.by_whatsapp' => ['type' => 'bool', 'default' => false, 'group' => 'Payment alerts', 'label' => 'Also by WhatsApp', 'help' => 'Needs a WhatsApp Business provider and the approved templates payment_alert and payment_summary.'],
+        'alerts.summary_at' => [
+            'type' => 'string', 'default' => '21:00', 'max' => 5, 'group' => 'Payment alerts',
+            'label' => 'Daily summary time (HH:MM)',
+            'help' => 'The day’s mobile money and card totals per branch and network are sent once, after this time.',
+        ],
+        'pos.auto_shifts' => [
+            'type' => 'bool', 'default' => false, 'group' => 'Tills and cash', 'branch' => true,
+            'label' => 'Automatic shifts',
+            'help' => 'Each till session is named by the time it opens (the shifts under Cash → Cash set-up: Morning, Afternoon…), and one over the straight-day length is a Straight day. A till cannot open outside the trading hours below, or open again in a shift after it was closed, unless a manager allows it with their PIN and a reason.',
+        ],
+        'pos.trading_hours' => [
+            'type' => 'string', 'default' => '07:00-23:00', 'max' => 11, 'group' => 'Tills and cash', 'branch' => true,
+            'label' => 'Till trading hours (automatic shifts)',
+            'help' => 'e.g. 07:00-23:00. Outside these hours a till opens only with a manager\'s PIN and reason. Closing and counting are always allowed.',
+        ],
+        'pos.straight_day_hours' => [
+            'type' => 'int', 'default' => 10, 'min' => 6, 'max' => 18, 'group' => 'Tills and cash',
+            'label' => 'Straight day from (hours)',
+            'help' => 'A till session this long or longer is a Straight day, whatever time it opened.',
+        ],
         'remote.trading_hours' => [
             'type' => 'string', 'default' => '07:00-21:00', 'max' => 11, 'group' => 'Remote access', 'branch' => true,
             'label' => 'Trading hours (for remote connections)',

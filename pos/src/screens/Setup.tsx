@@ -1,6 +1,6 @@
 import { clock } from '../clock'
 import { Fragment, useState } from 'react'
-import { api, ApiError } from '../api'
+import { api, ApiError, type ShiftGrant } from '../api'
 import { db } from '../db'
 import { createDeviceKey } from '../deviceKey'
 import { formatMoney, parseMoney } from '../money'
@@ -141,20 +141,25 @@ export function OpenShift({ boot, online, onDone }: { boot: Bootstrap; online: b
   const issued = (boot.cash?.sessions ?? []).filter((v) => v.status === 'issued')
   const [vaultId, setVaultId] = useState<string>(issued[0]?.id ?? '')
   const [checked, setChecked] = useState(false)
+  // Automatic shifts: outside trading hours, or again after this till's shift was closed, a manager allows it.
+  const [needsGrant, setNeedsGrant] = useState(false)
+  const [grant, setGrant] = useState<ShiftGrant>({ username: '', pin: '', reason: '' })
   const money = (m: number) => formatMoney(m, boot.company.currency, boot.company.exponent)
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
+    const allowed = needsGrant ? grant : null
     try {
       if (vaults) {
         const v = issued.find((x) => x.id === vaultId)
         if (!v) throw new Error('Choose your vault.')
-        await openShift(v.float_minor, online, v.id)
+        await openShift(v.float_minor, online, v.id, allowed)
       } else {
-        await openShift(parseMoney(float || '0', boot.company.exponent), online)
+        await openShift(parseMoney(float || '0', boot.company.exponent), online, null, allowed)
       }
       onDone()
     } catch (err) {
+      if (err instanceof ApiError && (err.code === 'outside_hours' || err.code === 'till_closed')) setNeedsGrant(true)
       setError(err instanceof Error ? err.message : 'Could not open the shift.')
     }
   }
@@ -197,8 +202,16 @@ export function OpenShift({ boot, online, onDone }: { boot: Bootstrap; online: b
           <input autoFocus className="big mono" inputMode="decimal" value={float} onChange={(e) => setFloat(e.target.value)} placeholder="0.00" />
         </label>
       )}
+      {needsGrant && (
+        <fieldset className="grant">
+          <legend>A manager allows it</legend>
+          <label>Manager's username<input autoComplete="off" value={grant.username} onChange={(e) => setGrant({ ...grant, username: e.target.value })} required /></label>
+          <label>Manager's PIN<input type="password" inputMode="numeric" autoComplete="off" maxLength={8} value={grant.pin} onChange={(e) => setGrant({ ...grant, pin: e.target.value })} required /></label>
+          <label>Reason<input maxLength={255} value={grant.reason} onChange={(e) => setGrant({ ...grant, reason: e.target.value })} placeholder="e.g. late delivery to sell, cover for the afternoon" required /></label>
+        </fieldset>
+      )}
       {error && <p className="error" role="alert">{error}</p>}
-      <button className="primary big">Open shift</button>
+      <button className="primary big">{needsGrant ? 'Open shift (manager allows)' : 'Open shift'}</button>
     </form>
   )
 }

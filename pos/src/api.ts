@@ -4,6 +4,9 @@ import type { OfflineGrant } from './db'
 import type { Bootstrap, PostedSale, Product, PromotionRow, Returnable, Shift, TillCustomer, WmsBin, WmsBootstrap, WmsCount, WmsOrder, WmsTransfer, WmsUnit, Grocery, Pharmacy, Restaurant, DiningOrder, Floor, KitchenTicket, Reservation, RepairJob, SerialInfo, Fashion, Alteration, Services, Appointment, ServicePass, StaffMember, VanDay } from './types'
 
 /** Error with the server's stable code ("price_changed", "no_shift"…) and a message safe to show. */
+/** Automatic shifts: a manager allows a till to open outside trading hours, or again after its shift was closed. */
+export type ShiftGrant = { username: string; pin: string; reason: string }
+
 export class ApiError extends Error {
   code: string
   status: number
@@ -81,8 +84,8 @@ export const api = {
     if (!res || res.status === 304 || !res.ok) return null
     return (await res.json()) as { version: string; customers: TillCustomer[] }
   },
-  openShift: (floatMinor: number, id: string, vaultSessionId?: string | null) =>
-    call<{ shift: Shift }>('pos/shifts/open', { method: 'POST', body: JSON.stringify({ opening_float_minor: floatMinor, id, vault_session_id: vaultSessionId ?? null }) }),
+  openShift: (floatMinor: number, id: string, vaultSessionId?: string | null, grant?: ShiftGrant | null) =>
+    call<{ shift: Shift }>('pos/shifts/open', { method: 'POST', body: JSON.stringify({ opening_float_minor: floatMinor, id, vault_session_id: vaultSessionId ?? null, grant: grant ?? null }) }),
   closeShift: (countedMinor: number, note: string, denoms?: Record<string, number> | null, other?: Record<string, number> | null) =>
     call<{ shift: Shift }>('pos/shifts/close', { method: 'POST', body: JSON.stringify({ counted_cash_minor: countedMinor, note: note || null, denoms: denoms ?? null, other: other ?? null }) }),
   drawer: (body: unknown) => call<{ event: { id: string; kind: string; amount_minor: number; approved_by: string | null } }>('pos/drawer', { method: 'POST', body: JSON.stringify(body) }),
