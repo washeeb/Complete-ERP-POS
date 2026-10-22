@@ -161,9 +161,7 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
         <header className="center">
           <ReceiptLogo boot={boot} />
           <h2>{boot.company.name}</h2>
-          {boot.company.legal_name && boot.company.legal_name !== boot.company.name && <p>{boot.company.legal_name}</p>}
-          <p>{boot.branch.name}{boot.branch.address ? ` · ${boot.branch.address}` : ''}</p>
-          {boot.branch.phone && <p>Tel {boot.branch.phone}</p>}
+          <p>{boot.branch.name}{boot.branch.phone ? ` · Tel ${boot.branch.phone}` : ''}</p>
           {(boot.company.tin || boot.company.vat_no) && <p>{boot.company.tin && `TIN ${boot.company.tin}`} {boot.company.vat_no && `VAT ${boot.company.vat_no}`}</p>}
           <hr />
           <p><strong>{sale.kind === 'return' ? 'RETURN ' : 'Receipt '}{sale.receipt_no}</strong></p>

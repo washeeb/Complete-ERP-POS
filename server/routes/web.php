@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Purchasing\OrderSender;
+use App\Http\Controllers\AccessRequestController;
 use App\Http\Controllers\BrandAssetController;
 use App\Http\Controllers\ExpenseReceiptController;
 use App\Http\Controllers\PrintController;
@@ -89,6 +90,9 @@ Route::get('po/{po}', function (string $po) {
 
     return Storage::disk('local')->download($path, PurchaseOrder::withoutGlobalScopes()->whereKey($po)->value('number').'.pdf');
 })->name('purchase-order.pdf')->whereUuid('po')->middleware(['signed', 'throttle:30,1']);
+
+// "Ask for access" from the no-access page: the people who give roles are told who asked, for which page and why.
+Route::post('access-request', AccessRequestController::class)->middleware(['auth', 'throttle:5,10'])->name('access.request');
 
 // How far the signed-in person's long work has got (imports, bulk changes): asked by the progress card every second.
 Route::get('progress-status', fn () => response()->json(Progress::live()))->middleware(['auth'])->name('progress.status');

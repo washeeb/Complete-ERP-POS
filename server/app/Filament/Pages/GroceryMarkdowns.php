@@ -30,9 +30,16 @@ class GroceryMarkdowns extends BatchesExpiry
 
     public bool $markdownsOnly = true; // without the full batch list
 
+    /** Only for people who can see a branch that runs Grocery (a pharmacist at a pharmacy branch does not get the link). */
     public static function canAccess(): bool
     {
-        return (Erp::canAnywhere('grocery.markdowns') || Erp::canAnywhere('stock.view')) && ModuleService::enabledAnywhere('grocery');
+        if (! (Erp::canAnywhere('grocery.markdowns') || Erp::canAnywhere('stock.view')) || ! ModuleService::enabledAnywhere('grocery')) {
+            return false;
+        }
+        $ids = Erp::branchIds('stock.view');
+
+        return DB::table('branch_modules')->where('module_key', 'grocery')->where('status', 'enabled')
+            ->when($ids !== null, fn ($q) => $q->whereIn('branch_id', $ids))->exists();
     }
 
     /** Warehouses of the branches that run Grocery (and the person may see). */

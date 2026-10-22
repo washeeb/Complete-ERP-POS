@@ -12,6 +12,7 @@ use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\Promotion;
 use App\Models\User;
+use App\Support\Caps;
 use App\Support\TenantContext;
 use Illuminate\Console\Command;
 
@@ -42,7 +43,7 @@ class DemoSalesCommand extends Command
         $hq = Branch::where('is_hq', true)->value('id');
         try {
             foreach (self::CUSTOMERS as [$name, $type, $phone, $list, $limit, $terms]) {
-                if (Customer::where('name', $name)->exists()) {
+                if (Customer::where('name', Caps::upper($name))->exists()) {
                     continue;
                 }
                 $customers->save($actor, new Customer, ['name' => $name, 'type' => $type, 'phone' => $phone, 'home_branch_id' => $hq,

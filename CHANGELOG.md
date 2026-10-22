@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 ### Added
+- **"You can't open this page" says why:** the permission that is missing (in words, and where), who can give access, and **Ask for access**, which tells them on the bell (audited). Every link the back office shows was checked for every role, company-wide and at a branch, with sample data (menu, dashboard, list rows, New and Print): the ones that failed are fixed. Asked for by the first client.
+- **Search the menu** at the top of the side menu (`/` to jump there): matching pages stay with their sections opened; Enter opens the first. Asked for by the first client.
+
+### Changed
+- **Receipts and documents carry the company the branch trades as** (its industry's legal entity, e.g. Asante Pharmacy Ltd), not the group; the receipt top is shorter: name, branch · phone, TIN / VAT (no address, no second name). Same name on dosage labels and drawer slips, and at the top of the back office for people who work in one industry. Asked for by the first client.
+
+### Fixed
+- *Grocery → Markdowns* failed for branch staff where Grocery runs at another branch (now hidden for them), and *Batches & expiry* no longer shows a store the person may not see when its address is typed in.
+- The report builder's *Stock on hand* failed to open its rows.
+- The sample-data commands (`erp:demo-catalog`, `erp:demo-purchasing`, `erp:demo-sales`) failed or skipped products since names are kept in capitals.
 - **Dosage at the till:** each medicine's *usual dosage* (product page or the `dosage` column), shown under the medicine on the sale and changeable for the patient; printed on the receipt and on a **dosage label** per medicine (pharmacy, patient, medicine and quantity, directions, date, receipt number, *keep out of reach of children*) — by itself on the desktop till's receipt printer, *Print dosage labels* in a browser. Shown on the sale in the back office. Asked for by the first client.
 - **Mobile money and card payment alerts** (System → Settings → Payment alerts, off by default): each payment and/or a daily summary, to holders of the new *receive payment alerts* permission (Owner, General Manager, Finance Manager, Accountant) on the bell, and by e-mail, SMS or WhatsApp when switched on; minimum amount for single alerts; summary time. Sent through the relay, so a till never waits. Asked for by the first client.
 - **Automatic shifts** (Settings → Tills and cash, off by default, per branch): each till session is named by its shift (Cash set-up), a session of 10 hours or more is a *Straight day*; a till opens only within the trading hours (default 07:00–23:00) and once per shift, otherwise with a manager's username, PIN and reason (new permission *let a till open outside hours or again*, Branch Manager and above), shown on Till shifts. Shifts may overlap by at most an hour. Asked for by the first client.

@@ -98,7 +98,7 @@ export type VaultIssue = { id: string; vault: string; float_minor: number; statu
 export type CashInfo = { vaults: boolean; sessions: VaultIssue[]; denominations: Denomination[] }
 
 export type Bootstrap = {
-  company: { name: string; currency: string; exponent: number; timezone: string; legal_name: string | null; tin: string | null; vat_no: string | null; practice?: boolean }
+  company: { name: string; group_name?: string; currency: string; exponent: number; timezone: string; legal_name: string | null; tin: string | null; vat_no: string | null; practice?: boolean }
   branch: { id: string; code: string; name: string; address: string | null; phone: string | null }
   till: { id: string; code: string; name: string; warehouse: string } | null
   device: { id: string; name: string; receipt_series: string | null }

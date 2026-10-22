@@ -3,7 +3,7 @@ import { addToCart } from './cart'
 import { dosageEscPos, dosageLabels } from './dosage'
 import type { Bootstrap, PostedSale, Product } from './types'
 
-const boot = { company: { name: 'Oheneba Pharmacy', timezone: 'Africa/Accra' }, branch: { name: 'Osu', phone: '0302000000' } } as unknown as Bootstrap
+const boot = { company: { name: 'Asante Pharmacy', timezone: 'Africa/Accra' }, branch: { name: 'Osu', phone: '0302000000' } } as unknown as Bootstrap
 const sale = {
   receipt_no: 'R-1', occurred_at: '2026-10-22T10:00:00Z', walk_in: { name: 'AMA OWUSU', phone: null },
   lines: [

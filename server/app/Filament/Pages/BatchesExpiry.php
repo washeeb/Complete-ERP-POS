@@ -73,7 +73,14 @@ class BatchesExpiry extends Page
 
     public function mount(): void
     {
-        $this->warehouse = $this->warehouse ?: (string) array_key_first($this->warehouses());
+        $this->updatedWarehouse();
+    }
+
+    /** Only a store the person may see (the address bar or a changed request cannot show another branch's batches). */
+    public function updatedWarehouse(): void
+    {
+        $mine = $this->warehouses();
+        $this->warehouse = array_key_exists($this->warehouse, $mine) ? $this->warehouse : (string) array_key_first($mine);
     }
 
     public function canMarkDown(): bool
@@ -83,7 +90,7 @@ class BatchesExpiry extends Page
 
     public function suggestions(): array
     {
-        $rows = $this->warehouse ? app(MarkdownService::class)->suggestions(Erp::user()->tenant_id, [$this->warehouse]) : [];
+        $rows = $this->warehouse !== '' ? app(MarkdownService::class)->suggestions(Erp::user()->tenant_id, [$this->warehouse]) : [];
         foreach ($rows as $r) {
             $this->percent[$r->batch_id] ??= (string) ($r->suggested_bp / 100);
         }
@@ -93,6 +100,10 @@ class BatchesExpiry extends Page
 
     public function expired()
     {
+        if ($this->warehouse === '') {
+            return collect(); // no store this person can see
+        }
+
         return DB::table('stock_batch_levels as l')->join('stock_batches as b', 'b.id', '=', 'l.batch_id')->join('products as p', 'p.id', '=', 'l.product_id')
             ->where('l.warehouse_id', $this->warehouse)->where('l.on_hand', '>', 0)->where('b.expires_on', '<', StockBatches::today())
             ->orderBy('b.expires_on')->get(['l.batch_id', 'b.batch_no', 'b.expires_on', 'l.on_hand', 'p.name', 'p.sku']);
@@ -100,6 +111,10 @@ class BatchesExpiry extends Page
 
     public function batches()
     {
+        if ($this->warehouse === '') {
+            return collect();
+        }
+
         return DB::table('stock_batch_levels as l')->join('stock_batches as b', 'b.id', '=', 'l.batch_id')->join('products as p', 'p.id', '=', 'l.product_id')
             ->where('l.warehouse_id', $this->warehouse)->where('l.on_hand', '<>', 0)
             ->orderByRaw('b.expires_on ASC NULLS LAST')->orderBy('p.name')->limit(500)->get(['l.batch_id', 'b.batch_no', 'b.expires_on', 'l.on_hand', 'p.name', 'p.sku']);
@@ -107,6 +122,10 @@ class BatchesExpiry extends Page
 
     public function markdowns()
     {
+        if ($this->warehouse === '') {
+            return collect();
+        }
+
         return Markdown::with('product', 'batch')->where('warehouse_id', $this->warehouse)->where('status', 'active')->orderBy('valid_until')->get();
     }
 

@@ -70,7 +70,7 @@ final class ReportEngine
                 'brand' => ['Brand', "COALESCE(bd.name, '—')"], 'product' => ['Product', "p.sku || ' ' || p.name"]],
                 'measures' => ['on_hand' => ['On hand', 'SUM(sl.on_hand)', false], 'value' => ['Value at cost', 'SUM(sl.on_hand * COALESCE(sl.avg_cost_minor, 0))', true],
                     'products' => ['Products', 'COUNT(DISTINCT sl.product_id)', false]],
-                'detail' => ['sl.id']],
+                'detail' => ["sl.warehouse_id || ':' || sl.product_id"]], // one row per store and product (no id column)
             'stock_movements' => ['dims' => $date('LOCAL') + ['warehouse' => ['Warehouse', 'w.code'], 'branch' => ['Branch', 'br.code'], 'type' => ['Movement', 'm.type'],
                 'product' => ['Product', "p.sku || ' ' || p.name"], 'reason' => ['Reason', "COALESCE(m.reason, '')"], 'by' => ['By', 'm.actor_name']],
                 'measures' => ['qty' => ['Quantity (base units)', 'SUM(m.qty_base)', false], 'value' => ['Value at cost', 'SUM(ROUND(m.qty_entered * COALESCE(m.unit_cost_minor, 0)))', true],
