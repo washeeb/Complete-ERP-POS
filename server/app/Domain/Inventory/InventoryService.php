@@ -54,6 +54,27 @@ final class InventoryService
         return $this->recorder->transaction(fn () => $this->recorder->save($actor, $batch, 'stock_batch.expiry_corrected', 'Expiry date corrected'));
     }
 
+    /**
+     * Correct a batch's expiry date from the screen, with the reason (owner request 2026-10-22): a date typed wrongly or
+     * missing. The batch number itself is not renamed — a batch's identity comes from its number, on every server — so
+     * stock under a wrong number is moved to the right batch with a stock adjustment instead.
+     */
+    public function correctBatch(Actor $actor, StockBatch $batch, ?string $expiresOn, string $reason): StockBatch
+    {
+        if (! $actor->user || ! $this->authz->allowsAnywhere($actor->user, 'stock.adjust')) {
+            throw new AccessDenied;
+        }
+        if (mb_strlen(trim($reason)) < 3) {
+            throw new DomainException('Say why the date is corrected (for example "mistyped at receiving").');
+        }
+        $batch->expires_on = $expiresOn ?: null;
+        if (! $batch->isDirty()) {
+            throw new DomainException('Nothing was changed.');
+        }
+
+        return $this->recorder->transaction(fn () => $this->recorder->save($actor, $batch, 'stock_batch.corrected', trim($reason)));
+    }
+
     public function adjust(Actor $actor, Warehouse $warehouse, Product $product, ProductUom $unit, string $qty, string $type, string $reasonCode, ?string $note = null, ?string $unitCost = null,
         ?string $batchNo = null, ?string $expiresOn = null, array|string|null $serials = null): StockMovement
     {

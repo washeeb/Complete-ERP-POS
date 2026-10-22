@@ -48,7 +48,7 @@
             @forelse ($this->expired() as $e)
                 <tr><td>{{ $e->name }}</td><td>{{ $e->batch_no }}</td><td>expired {{ \Illuminate\Support\Carbon::parse($e->expires_on)->format('j M Y') }}</td>
                     <td class="num">{{ $qty($e->on_hand) }}</td>
-                    <td></td></tr>
+                    <td>@if ($this->canCorrect()){{ ($this->correctAction)(['batch' => $e->batch_id]) }}@endif</td></tr>
             @empty
                 <tr><td>Nothing expired in stock.</td></tr>
             @endforelse
@@ -56,11 +56,12 @@
     </x-filament::section>
 
     @unless ($markdownsOnly)
-    <x-filament::section heading="All batches on hand" collapsible collapsed>
+    <x-filament::section heading="All batches on hand" description="Correct an expiry date typed wrongly, or add a missing one. For a wrong batch number, use Add or move a batch." collapsible collapsed>
         <table class="be">
-            <thead><tr><th>Product</th><th>Batch</th><th>Expires</th><th class="num">On hand</th></tr></thead>
+            <thead><tr><th>Product</th><th>Batch</th><th>Expires</th><th class="num">On hand</th><th></th></tr></thead>
             @foreach ($this->batches() as $b)
-                <tr><td>{{ $b->name }}</td><td>{{ $b->batch_no }}</td><td>{{ $b->expires_on ? \Illuminate\Support\Carbon::parse($b->expires_on)->format('j M Y') : '—' }}</td><td class="num">{{ $qty($b->on_hand) }}</td></tr>
+                <tr><td>{{ $b->name }} <span class="muted">{{ $b->sku }}</span></td><td>{{ $b->batch_no }}</td><td>{{ $b->expires_on ? \Illuminate\Support\Carbon::parse($b->expires_on)->format('j M Y') : 'no date' }}</td><td class="num">{{ $qty($b->on_hand) }}</td>
+                    <td>@if ($this->canCorrect()){{ ($this->correctAction)(['batch' => $b->batch_id]) }}@endif</td></tr>
             @endforeach
         </table>
     </x-filament::section>

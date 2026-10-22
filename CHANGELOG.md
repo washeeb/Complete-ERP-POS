@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Added
+- **Correct an expiry date, add or move a batch from the screen** (Stock → Batches & expiry): *Correct expiry* on any batch (with the reason, audited; the stock stays put); *Add or move a batch* for a batch the system does not have, or stock under a wrong batch number, as a draft stock adjustment to check and post. Asked for by the first client.
 - **Sign in with the username** as well as the e-mail address (the same username as on the till).
 - **Sign-in method per person**, set by the administrator on the user: the company rule, password + authenticator app, **password + a code by WhatsApp or e-mail** (6 digits, once, 10 minutes; the code is never stored or logged), or **password only** (staff up to supervisors). Users get a *Mobile (WhatsApp) number*; the list shows how each person signs in. New message wording *Sign-in code*. Asked for by the first client.
 - **SyncLytics support account (Superadmin, L7):** added on the server with `php artisan erp:support-account` (the password is typed, never on the command line), never from the back office. Above the owner so it cannot be changed or locked out by mistake; always with the authenticator app; not counted as a licensed user; the owner and general manager are notified at every sign-in. Asked for by the first client.
