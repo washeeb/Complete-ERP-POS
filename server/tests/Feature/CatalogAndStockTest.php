@@ -62,15 +62,15 @@ it('resolves quantity tiers and scheduled prices', function () {
 });
 
 it('refuses duplicate barcodes across products and price edits without pricing rights', function () {
-    makeProduct($this->owner, 'A1', 'Item A', retail: '1.00', baseBarcode: '111222333');
+    makeProduct($this->owner, 'A1', 'ITEM A', retail: '1.00', baseBarcode: '111222333');
     expect(fn () => makeProduct($this->owner, 'B1', 'Item B', retail: '1.00', baseBarcode: '111222333'))
-        ->toThrow(DomainException::class, 'already belongs to Item A');
+        ->toThrow(DomainException::class, 'already belongs to ITEM A');
 
     $wm = staff($this->owner, 'wm', 4, 'warehouse_manager');
     $p = Product::where('sku', 'A1')->first();
     expect(fn () => app(CatalogService::class)->saveProduct(actorFor($wm), $p, ['prices' => []]))->toThrow(AccessDenied::class);
-    app(CatalogService::class)->saveProduct(actorFor($wm), $p, ['name' => 'Item A (renamed)']);
-    expect($p->fresh()->name)->toBe('Item A (renamed)');
+    app(CatalogService::class)->saveProduct(actorFor($wm), $p, ['name' => 'ITEM A (renamed)']);
+    expect($p->fresh()->name)->toBe('ITEM A (RENAMED)');
 });
 
 it('keeps stock as a ledger: opening, adjustments, carton conversion, projection equals ledger', function () {

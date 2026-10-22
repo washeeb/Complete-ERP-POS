@@ -176,29 +176,29 @@ it('gives every new product its SKU from its industry, and never changes it', fu
     IndustryContext::set($this->pharmacy->id);
     $pc = Uom::where('code', 'PC')->value('id');
     $std = TaxGroup::where('code', 'STD')->value('id');
-    foreach (['Amoxicillin 500mg', 'Ibuprofen 200mg'] as $name) {
+    foreach (['AMOXICILLIN 500MG', 'IBUPROFEN 200MG'] as $name) {
         Livewire::test(CreateProduct::class)
             ->fillForm(['name' => $name, 'base_uom_id' => $pc, 'tax_group_id' => $std, 'industry_id' => $this->pharmacy->id])->call('create')->assertHasNoFormErrors();
     }
     $code = $this->pharmacy->code;
-    $amox = Product::where('name', 'Amoxicillin 500mg')->first();
+    $amox = Product::where('name', 'AMOXICILLIN 500MG')->first();
     expect($amox->sku)->toBe("{$code}-000001")
-        ->and(Product::where('name', 'Ibuprofen 200mg')->value('sku'))->toBe("{$code}-000002");
+        ->and(Product::where('name', 'IBUPROFEN 200MG')->value('sku'))->toBe("{$code}-000002");
 
-    app(CatalogService::class)->saveProduct(actorFor($this->owner), $amox, ['sku' => 'CHANGED', 'name' => 'Amoxicillin 500mg caps']);
-    expect($amox->fresh()->sku)->toBe("{$code}-000001")->and($amox->fresh()->name)->toBe('Amoxicillin 500mg caps');
+    app(CatalogService::class)->saveProduct(actorFor($this->owner), $amox, ['sku' => 'CHANGED', 'name' => 'AMOXICILLIN 500MG CAPS']);
+    expect($amox->fresh()->sku)->toBe("{$code}-000001")->and($amox->fresh()->name)->toBe('AMOXICILLIN 500MG CAPS');
 });
 
 it('gives grocery its own menu: markdowns at grocery stores and the scale items', function () {
     Filament::setCurrentPanel(Filament::getPanel('admin'));
     $this->actingAs(withMfa($this->owner), 'web');
-    $mince = makeProduct($this->owner, 'MINCE', 'Minced beef', retail: '85.00');
+    $mince = makeProduct($this->owner, 'MINCE', 'MINCED BEEF', retail: '85.00');
     $mince->forceFill(['plu' => '123', 'industry_id' => $this->grocery->id])->saveQuietly();
 
     IndustryContext::set($this->grocery->id);
     expect(GroceryMarkdowns::canAccess())->toBeTrue()->and(ScaleItems::canAccess())->toBeTrue();
     $this->get('/admin')->assertOk()->assertSee('Markdowns')->assertSee('Scale items');
-    $this->get(ScaleItems::getUrl())->assertOk()->assertSee('00123')->assertSee('Minced beef')->assertSee('85.00');
+    $this->get(ScaleItems::getUrl())->assertOk()->assertSee('00123')->assertSee('MINCED BEEF')->assertSee('85.00');
     $this->get(GroceryMarkdowns::getUrl())->assertOk()->assertSee('Grocery Spintex')->assertDontSee('Pharmacy Osu')->assertDontSee('All batches on hand');
 
     IndustryContext::set($this->pharmacy->id);

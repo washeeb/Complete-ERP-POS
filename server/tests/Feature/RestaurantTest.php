@@ -157,7 +157,7 @@ it('takes a table order with modifiers and courses to the kitchen screen and bac
     [$kds, $code] = app(DeviceService::class)->register(actorFor($this->owner), ['branch_id' => $this->hq->id, 'name' => 'Pass', 'kind' => 'kds']);
     $token = $this->postJson('/api/v1/devices/enroll', ['code' => $code, 'public_key' => str_repeat('k', 64)])->json('token');
     $tickets = fn (?string $station = null) => $this->withToken($token)->getJson('/api/v1/kds/tickets'.($station ? "?station={$station}" : ''))->assertOk()->json('tickets');
-    expect($tickets()[0]['items'])->toHaveCount(2)->and($tickets('BAR')[0]['items'][0]['name'])->toBe('Club beer')
+    expect($tickets()[0]['items'])->toHaveCount(2)->and($tickets('BAR')[0]['items'][0]['name'])->toBe('CLUB BEER')
         ->and($tickets('KITCHEN')[0]['items'][0]['modifiers'][0]['name'])->toBe('Hot');
 
     $this->dining->fire($this->device, $this->waiter, $order, 2);
@@ -246,7 +246,7 @@ it('sends counter sales to the kitchen with an order number', function () {
     $sale = restSale($this, [[$this->jollof, '1', ['note' => 'Hot']], [$this->beer, '1'], [$this->cheese, '1']]);
     $counter = DiningOrder::where('kind', 'counter')->sole();
     expect($sale->fresh()->dining_order_id)->toBe($counter->id)->and($counter->status)->toBe('closed')
-        ->and($counter->items->pluck('name')->all())->toBe(['Jollof with chicken', 'Club beer'])
+        ->and($counter->items->pluck('name')->all())->toBe(['JOLLOF WITH CHICKEN', 'CLUB BEER'])
         ->and($counter->items->first()->note)->toBe('Hot')->and($counter->items->pluck('status')->unique()->all())->toBe(['fired']);
 
     // Offline counter sales are not sent to the kitchen later (the till printed the ticket at the time).
@@ -286,9 +286,9 @@ it('shows the restaurant screens to managers', function () {
         KitchenStationResource::getUrl('index'), ModifierGroupResource::getUrl('index'), RestaurantReport::getUrl(), ProductResource::getUrl('edit', ['record' => $this->jollof])] as $url) {
         $this->get($url)->assertOk();
     }
-    $this->get(DiningOrderResource::getUrl('view', ['record' => $order]))->assertSee('Club beer');
+    $this->get(DiningOrderResource::getUrl('view', ['record' => $order]))->assertSee('CLUB BEER');
     $this->get(RestaurantReport::getUrl())->assertSee('Ama');
-    $this->get(ProductResource::getUrl('edit', ['record' => $this->jollof]))->assertSee('Chicken portion');
+    $this->get(ProductResource::getUrl('edit', ['record' => $this->jollof]))->assertSee('CHICKEN PORTION');
     $this->flushSession();
     $this->actingAs(withMfa($this->waiter))->get(DiningTableResource::getUrl('index'))->assertForbidden();
 });

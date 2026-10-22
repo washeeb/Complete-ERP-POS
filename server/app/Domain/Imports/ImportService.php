@@ -24,6 +24,7 @@ use App\Domain\Support\DomainException;
 use App\Models\DataImport;
 use App\Models\User;
 use App\Security\Authorizer;
+use App\Support\Progress;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -100,6 +101,7 @@ final class ImportService
 
     public function run(Actor $actor, string $type, string $path, string $fileName, array $options = [], ?Model $context = null, bool $commit = false, array $mapping = []): DataImport
     {
+        $this->progressUser = $actor->id;
         $importer = self::importer($type);
         if (! $actor->user || ! $this->authz->allowsAnywhere($actor->user, $importer->permission())) {
             throw new AccessDenied;
@@ -124,17 +126,25 @@ final class ImportService
         $counts = ['created' => 0, 'updated' => 0, 'added' => 0, 'unchanged' => 0];
         $givenContextId = $context?->getKey();
         $contextId = $givenContextId;
-        if ($importer->inBatches()) {
-            // All or nothing: check every row first (nothing kept), then import only a clean file.
-            $check = $commit && empty($options['skip_errors']);
-            [$results, $errors, $counts] = $this->batches($actor, $importer, $type, $csv['rows'], $options, $context, $commit && ! $check);
-            $keep = $commit && ($errors === [] || ! empty($options['skip_errors']));
-            if ($check && $keep) {
-                // Rows that passed the check but fail now (someone changed the data in between) are reported, not imported.
-                [$results, $errors, $counts] = $this->batches($actor, $importer, $type, $csv['rows'], $options, $context, true);
+        $total = count($csv['rows']);
+        try {
+            if ($importer->inBatches()) {
+                // All or nothing: check every row first (nothing kept), then import only a clean file.
+                $check = $commit && empty($options['skip_errors']);
+                $this->pass(($commit && ! $check ? 'Importing' : 'Checking')." {$fileName}", $total);
+                [$results, $errors, $counts] = $this->batches($actor, $importer, $type, $csv['rows'], $options, $context, $commit && ! $check);
+                $keep = $commit && ($errors === [] || ! empty($options['skip_errors']));
+                if ($check && $keep) {
+                    // Rows that passed the check but fail now (someone changed the data in between) are reported, not imported.
+                    $this->pass("Importing {$fileName}", $total);
+                    [$results, $errors, $counts] = $this->batches($actor, $importer, $type, $csv['rows'], $options, $context, true);
+                }
+            } else {
+                $this->pass(($commit ? 'Importing' : 'Checking')." {$fileName}", $total);
+                [$results, $errors, $counts, $keep, $contextId] = $this->oneTransaction($actor, $importer, $type, $csv['rows'], $options, $context, $commit);
             }
-        } else {
-            [$results, $errors, $counts, $keep, $contextId] = $this->oneTransaction($actor, $importer, $type, $csv['rows'], $options, $context, $commit);
+        } finally {
+            Progress::finish($actor->id);
         }
 
         $status = ! $commit ? 'checked' : ($keep ? 'imported' : 'failed');
@@ -206,9 +216,22 @@ final class ImportService
     }
 
     /** Each row in its own savepoint: a bad row is reported and leaves nothing behind. */
+    /** Rows done in the current pass, for "Checking 150 of 2,000". */
+    private int $progressDone = 0;
+
+    private ?string $progressUser = null;
+
+    private function pass(string $label, int $total): void
+    {
+        $this->progressDone = 0;
+        Progress::start($label, $total, $this->progressUser);
+    }
+
     private function applyRows(Actor $actor, Importer $importer, string $type, array $rows, array $options, ?Model $context, array &$results, array &$errors, array &$counts): void
     {
+        $this->progressUser = $actor->id;
         foreach ($rows as $r) {
+            Progress::tick(++$this->progressDone, null, $actor->id);
             $ref = $importer->reference($r['values']);
             try {
                 $outcome = DB::transaction(fn () => $importer->apply($actor, $r['values'], $options, $context));

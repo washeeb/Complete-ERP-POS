@@ -50,7 +50,7 @@ class CategoryResource extends SimpleCatalogResource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('name')->required()->maxLength(120),
+            TextInput::make('name')->required()->maxLength(120)->caps(),
             Select::make('parent_id')->label('Inside category')
                 ->options(fn (?Category $record) => Category::when($record, fn ($q) => $q->whereKeyNot($record->id))->orderBy('name')->pluck('name', 'id')),
             Toggle::make('is_active')->default(true),

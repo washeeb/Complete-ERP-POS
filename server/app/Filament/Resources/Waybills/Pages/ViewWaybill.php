@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Waybills\Pages;
 use App\Domain\Logistics\WaybillService;
 use App\Filament\Resources\Waybills\WaybillResource;
 use App\Filament\Support\Erp;
+use App\Filament\Support\ReloadsAfterAction;
 use App\Models\Waybill;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
@@ -15,6 +16,8 @@ use Filament\Support\Icons\Heroicon;
 
 class ViewWaybill extends ViewRecord
 {
+    use ReloadsAfterAction;
+
     protected static string $resource = WaybillResource::class;
 
     protected function getHeaderActions(): array

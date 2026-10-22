@@ -224,7 +224,7 @@ it('scores cashiers against each other and raises loss-prevention, margin and st
 
 it('segments customers, spots regulars who stopped coming and products bought together', function () {
     $today = CarbonImmutable::now()->startOfDay();
-    $kojo = app(CustomerService::class)->save($this->o, new Customer, ['name' => 'Kojo Mensah', 'phone' => '0243334444']);
+    $kojo = app(CustomerService::class)->save($this->o, new Customer, ['name' => 'KOJO MENSAH', 'phone' => '0243334444']);
     $both = aiSale($this, [[$this->milo, '1'], [$this->sugar, '1']], ['customer_id' => $this->ama->id]);
     for ($i = 1; $i <= 6; $i++) {
         cloneSale($this, $both, $today->subDays($i * 7)->addHours(10), ['customer_id' => $this->ama->id]);
@@ -233,10 +233,10 @@ it('segments customers, spots regulars who stopped coming and products bought to
         cloneSale($this, $both, $today->subDays($d)->addHours(10), ['customer_id' => $kojo->id]);
     }
     $ci = app(CustomerInsights::class);
-    expect(collect($ci->churnRisk($this->tenant->id))->pluck('name')->all())->toBe(['Kojo Mensah'])
-        ->and(collect($ci->rfm($this->tenant->id))->firstWhere('name', 'Ama Owusu')['segment'])->toBeIn(['champions', 'loyal', 'promising'])
-        ->and(collect($ci->rfm($this->tenant->id))->firstWhere('name', 'Kojo Mensah')['segment'])->toBeIn(['at_risk', 'hibernating'])
-        ->and(collect([$ci->baskets($this->tenant->id)[0]['a'], $ci->baskets($this->tenant->id)[0]['b']])->sort()->values()->all())->toBe(['Milo 400g', 'Sugar 1kg'])
+    expect(collect($ci->churnRisk($this->tenant->id))->pluck('name')->all())->toBe(['KOJO MENSAH'])
+        ->and(collect($ci->rfm($this->tenant->id))->firstWhere('name', 'AMA OWUSU')['segment'])->toBeIn(['champions', 'loyal', 'promising'])
+        ->and(collect($ci->rfm($this->tenant->id))->firstWhere('name', 'KOJO MENSAH')['segment'])->toBeIn(['at_risk', 'hibernating'])
+        ->and(collect([$ci->baskets($this->tenant->id)[0]['a'], $ci->baskets($this->tenant->id)[0]['b']])->sort()->values()->all())->toBe(['MILO 400G', 'SUGAR 1KG'])
         ->and($ci->baskets($this->tenant->id)[0]['together'])->toBeGreaterThanOrEqual(7)
         ->and($ci->nextBestOffer($this->tenant->id, $this->ama->id))->toBeNull(); // she already buys both
 
@@ -290,9 +290,9 @@ it('answers questions through read-only reports within the person’s access, ma
     ], cloud: true);
     AiGateway::fake($fake);
     $r = app(Copilot::class)->ask($this->o, 'Which branch sold most, and who owes us? Call Ama on 0241112222');
-    expect($r['answer'])->toBe('HQ sold the most. Ama Owusu owes the most.')->and($r['tables'])->toHaveCount(2)
-        ->and($r['tables'][0]['rows'][0][0])->toContain('HQ')->and($r['tables'][1]['rows'][0][0])->toBe('Ama Owusu')
-        ->and($fake->sent())->not->toContain('Ama Owusu')->not->toContain('0241112222')->toContain('[Customer 1]')->toContain('[phone]')
+    expect($r['answer'])->toBe('HQ sold the most. AMA OWUSU owes the most.')->and($r['tables'])->toHaveCount(2)
+        ->and($r['tables'][0]['rows'][0][0])->toContain('HQ')->and($r['tables'][1]['rows'][0][0])->toBe('AMA OWUSU')
+        ->and($fake->sent())->not->toContain('AMA OWUSU')->not->toContain('0241112222')->toContain('[Customer 1]')->toContain('[phone]')
         ->and(collect($fake->calls[0]['tools'])->pluck('name')->all())->toContain('sales_summary', 'cash_position')
         ->and(AiRequest::count())->toBe(2);
 
@@ -308,7 +308,7 @@ it('answers questions through read-only reports within the person’s access, ma
     app(Settings::class)->set($this->o, 'ai.personal_data_local', true);
     AiGateway::fake(new FakeAiProvider([new AiReply('', [['id' => 't1', 'name' => 'customer_balances', 'arguments' => []]])], cloud: true));
     $r = app(Copilot::class)->ask($this->o, 'Who owes us?');
-    expect($r['notice'])->toContain('kept on your server')->and($r['tables'][0]['rows'][0][0])->toBe('Ama Owusu');
+    expect($r['notice'])->toContain('kept on your server')->and($r['tables'][0]['rows'][0][0])->toBe('AMA OWUSU');
 
     // Without AI: quick questions still answer; the copilot is for managers.
     AiGateway::fake(null);

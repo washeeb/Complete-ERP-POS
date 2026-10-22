@@ -80,7 +80,7 @@ it('suggests smart levels from sales to accept, or applies them itself without t
 
     Filament::setCurrentPanel(Filament::getPanel('admin'));
     $this->actingAs($this->owner);
-    Livewire::test(SuggestedLevels::class)->assertSee('Milo 400g')->callTableBulkAction('accept', [$row->id])->assertNotified('1 level(s) accepted');
+    Livewire::test(SuggestedLevels::class)->assertSee('MILO 400G')->callTableBulkAction('accept', [$row->id])->assertNotified('1 level(s) accepted');
     expect($this->levels->forWarehouse($this->wh)[$this->milo->id])->toBe(['min' => 251_000, 'max' => 671_000, 'source' => 'smart'])
         ->and(DB::table('reorder_level_suggestions')->count())->toBe(0);
 

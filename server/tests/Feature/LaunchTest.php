@@ -87,18 +87,18 @@ it('migrates books from QuickBooks: chart, items with stock, customers, vendors,
         ['Gari 1kg', '', 'Inventory', '', '18.00', '5.00', '20']];
     $p = migrate($this, 'products', 'quickbooks', $items);
     expect($p->status)->toBe('imported')->and($p->rows_error)->toBe(0)
-        ->and(Product::where('sku', 'MALT-330')->first())->name->toBe('Malta Guinness 330ml')
-        ->and(Product::where('sku', 'MALT-330')->first()->category?->name)->toBe('Drinks')
+        ->and(Product::where('sku', 'MALT-330')->first())->name->toBe('MALTA GUINNESS 330ML')
+        ->and(Product::where('sku', 'MALT-330')->first()->category?->name)->toBe('DRINKS')
         ->and(Product::where('sku', 'GARI-1KG')->exists())->toBeTrue();
     expect(migrate($this, 'prices', 'quickbooks', $items)->rows_error)->toBe(0);
     $stock = migrate($this, 'opening_stock', 'quickbooks', [array_merge(['warehouse'], $items[0]), ...array_map(fn ($r) => array_merge([$this->wh->code], $r), array_slice($items, 1))]);
     expect($stock->errors)->toBe([]);
 
     // Customer and vendor lists, then their open balances (Customer / Vendor Balance Summary: name + Total).
-    migrate($this, 'customers', 'quickbooks', [['Customer', 'Phone', 'Email'], ['Kofi Provisions', '0244123456', ''], ['Esi Chop Bar', '0201112222', '']]);
+    migrate($this, 'customers', 'quickbooks', [['Customer', 'Phone', 'Email'], ['KOFI PROVISIONS', '0244123456', ''], ['Esi Chop Bar', '0201112222', '']]);
     migrate($this, 'suppliers', 'quickbooks', [['Vendor', 'Phone'], ['Olam Ghana Ltd.', '0302123456']]);
-    expect(Supplier::where('name', 'Olam Ghana Ltd.')->value('code'))->toBe('OLAM-GHANA-LTD');
-    expect(migrate($this, 'customer_balances', 'quickbooks', [['Customer', 'Total'], ['Kofi Provisions', '1,200.00'], ['Esi Chop Bar', '0.00']])->rows_error)->toBe(0);
+    expect(Supplier::where('name', 'OLAM GHANA LTD.')->value('code'))->toBe('OLAM-GHANA-LTD');
+    expect(migrate($this, 'customer_balances', 'quickbooks', [['Customer', 'Total'], ['KOFI PROVISIONS', '1,200.00'], ['Esi Chop Bar', '0.00']])->rows_error)->toBe(0);
     expect(migrate($this, 'supplier_balances', 'quickbooks', [['Vendor', 'Total'], ['Olam Ghana Ltd.', '800.00']])->rows_error)->toBe(0);
 
     // Loyalty and gift cards from the old till system (other POS export names).

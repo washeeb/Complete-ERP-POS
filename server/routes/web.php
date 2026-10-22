@@ -7,6 +7,7 @@ use App\Http\Controllers\StorefrontController;
 use App\Http\Controllers\SupportScreenshotController;
 use App\Http\Controllers\WaybillConfirmController;
 use App\Security\Passkeys\PasskeyLoginController;
+use App\Support\Progress;
 use Illuminate\Support\Facades\Route;
 use Spatie\LaravelPasskeys\Http\Controllers\GeneratePasskeyAuthenticationOptionsController;
 
@@ -59,6 +60,11 @@ Route::prefix('print')->middleware(['auth', 'license:output'])->name('print.')->
     Route::get('disposal/{adjustment}', [PrintController::class, 'disposal'])->name('disposal')->whereUuid('adjustment');
     Route::get('disposal-register', [PrintController::class, 'disposalRegister'])->name('disposal-register');
     Route::get('waybill/{waybill}', [PrintController::class, 'waybill'])->name('waybill')->whereUuid('waybill');
+    Route::get('purchase-order/{po}', [PrintController::class, 'purchaseOrder'])->name('purchase-order')->whereUuid('po');
+    Route::get('goods-receipt/{grn}', [PrintController::class, 'goodsReceipt'])->name('goods-receipt')->whereUuid('grn');
+    Route::get('transfer/{t}', [PrintController::class, 'transfer'])->name('transfer')->whereUuid('t');
+    Route::get('stock-request/{r}', [PrintController::class, 'stockRequest'])->name('stock-request')->whereUuid('r');
+    Route::get('purchase-request/{r}', [PrintController::class, 'purchaseRequest'])->name('purchase-request')->whereUuid('r');
     Route::get('waybill/{waybill}/pod', [PrintController::class, 'waybillPod'])->name('waybill.pod')->whereUuid('waybill');
 });
 
@@ -72,3 +78,6 @@ Route::get('disposal-certificate/{adjustment}', [PrintController::class, 'dispos
 // The receiver of a waybill confirms delivery from the QR code: no sign-in, the waybill's secret link only.
 Route::get('w/{token}', [WaybillConfirmController::class, 'show'])->name('waybill.confirm')->middleware('throttle:30,1');
 Route::post('w/{token}', [WaybillConfirmController::class, 'confirm'])->middleware('throttle:10,1');
+
+// How far the signed-in person's long work has got (imports, bulk changes): asked by the progress card every second.
+Route::get('progress-status', fn () => response()->json(Progress::live()))->middleware(['auth'])->name('progress.status');

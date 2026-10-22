@@ -46,7 +46,7 @@ class BrandResource extends SimpleCatalogResource
 
     public static function form(Schema $schema): Schema
     {
-        return $schema->components([TextInput::make('name')->required()->maxLength(120)]);
+        return $schema->components([TextInput::make('name')->required()->maxLength(120)->caps()]);
     }
 
     public static function table(Table $table): Table

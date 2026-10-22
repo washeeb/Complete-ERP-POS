@@ -29,7 +29,7 @@ beforeEach(function () {
 it('stays hidden until the channel is activated', function () {
     $this->get('/shop/osu-shop')->assertNotFound();
     app(ChannelAdmin::class)->activate(actorFor($this->owner), $this->shop);
-    $this->get('/shop/osu-shop')->assertOk()->assertSee('Fresh from Osu')->assertSee('Milo 400g')->assertSee('58.00')->assertSee('4 available');
+    $this->get('/shop/osu-shop')->assertOk()->assertSee('Fresh from Osu')->assertSee('MILO 400G')->assertSee('58.00')->assertSee('4 available');
 });
 
 it('shows the current server price, never one sent by the browser', function () {
@@ -44,7 +44,7 @@ it('shows the current server price, never one sent by the browser', function () 
 
 it('will not add more than may be promised', function () {
     app(ChannelAdmin::class)->activate(actorFor($this->owner), $this->shop);
-    $this->post('/shop/osu-shop/cart', ['product_id' => $this->milo->id, 'qty' => 5])->assertSessionHas('error', 'Only 4 Milo 400g available.');
+    $this->post('/shop/osu-shop/cart', ['product_id' => $this->milo->id, 'qty' => 5])->assertSessionHas('error', 'Only 4 MILO 400G available.');
 });
 
 it('places a pay-at-pickup order once, reserves the stock and shows a signed confirmation', function () {

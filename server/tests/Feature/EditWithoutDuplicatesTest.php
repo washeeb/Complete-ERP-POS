@@ -24,7 +24,7 @@ beforeEach(function () {
 
 it('edits categories, brands, units, suppliers, customers and departments in place, never as new records', function () {
     $catalog = app(CatalogService::class);
-    $cat = $catalog->saveSimple($this->a, new Category, ['name' => 'Herbal', 'is_active' => true]);
+    $cat = $catalog->saveSimple($this->a, new Category, ['name' => 'HERBAL', 'is_active' => true]);
     $brand = $catalog->saveSimple($this->a, new Brand, ['name' => 'Ernest']);
     $uom = $catalog->saveSimple($this->a, new Uom, ['code' => 'sach', 'name' => 'Sachet', 'decimals' => 0]);
     $sup = app(SupplierService::class)->save($this->a, new Supplier, ['code' => 'KAMA', 'name' => 'Kama', 'phone' => '0302000000']);
@@ -33,14 +33,14 @@ it('edits categories, brands, units, suppliers, customers and departments in pla
     $counts = fn () => [Category::count(), Brand::count(), Uom::count(), Supplier::count(), Customer::count(), Department::count()];
     $before = $counts();
 
-    $catalog->saveSimple($this->a, $cat, ['name' => 'Herbal medicines']);
-    $catalog->saveSimple($this->a, $brand, ['name' => 'Ernest Chemists']);
+    $catalog->saveSimple($this->a, $cat, ['name' => 'HERBAL MEDICINES']);
+    $catalog->saveSimple($this->a, $brand, ['name' => 'ERNEST CHEMISTS']);
     $catalog->saveSimple($this->a, $uom, ['name' => 'Sachet (single)']);
     app(SupplierService::class)->save($this->a, $sup, ['name' => 'Kama Industries', 'phone' => '0302000000']);
-    app(CustomerService::class)->save($this->a, $cus, ['name' => 'Ama Owusu', 'phone' => '0241112222']);
+    app(CustomerService::class)->save($this->a, $cus, ['name' => 'AMA OWUSU', 'phone' => '0241112222']);
     app(HrService::class)->saveDepartment($this->a, $dep, 'DISP', 'Dispensary and counter');
-    expect($counts())->toBe($before)->and($cat->fresh()->name)->toBe('Herbal medicines')->and($cus->fresh()->name)->toBe('Ama Owusu')
-        ->and($sup->fresh()->name)->toBe('Kama Industries')->and($dep->fresh()->name)->toBe('Dispensary and counter');
+    expect($counts())->toBe($before)->and($cat->fresh()->name)->toBe('HERBAL MEDICINES')->and($cus->fresh()->name)->toBe('AMA OWUSU')
+        ->and($sup->fresh()->name)->toBe('KAMA INDUSTRIES')->and($dep->fresh()->name)->toBe('Dispensary and counter');
 
     // A second one with the same name or code is refused, in any letter case.
     expect(fn () => $catalog->saveSimple($this->a, new Category, ['name' => 'HERBAL MEDICINES']))->toThrow(DomainException::class, 'already exists')
@@ -51,7 +51,7 @@ it('edits categories, brands, units, suppliers, customers and departments in pla
 });
 
 it('picks the existing record when the "+" is used for something already there', function () {
-    app(CatalogService::class)->saveSimple($this->a, new Category, ['name' => 'Herbal', 'is_active' => true]);
+    app(CatalogService::class)->saveSimple($this->a, new Category, ['name' => 'HERBAL', 'is_active' => true]);
     app(SupplierService::class)->save($this->a, new Supplier, ['code' => 'KAMA', 'name' => 'Kama Industries']);
     expect(QuickCreate::existing('category', ['name' => ' herbal ']))->not->toBeNull()
         ->and(QuickCreate::existing('supplier', ['code' => 'NEW', 'name' => 'KAMA INDUSTRIES']))->not->toBeNull()
@@ -60,6 +60,6 @@ it('picks the existing record when the "+" is used for something already there',
     Filament::setCurrentPanel(Filament::getPanel('admin'));
     $this->actingAs(withMfa($this->owner));
     Livewire::test(CreateProduct::class)->callFormComponentAction('category_id', 'createOption', ['name' => 'HERBAL'])
-        ->assertNotified('Herbal already exists — selected')->assertFormSet(['category_id' => Category::where('name', 'Herbal')->value('id')]);
+        ->assertNotified('HERBAL already exists — selected')->assertFormSet(['category_id' => Category::where('name', 'HERBAL')->value('id')]);
     expect(Category::count())->toBe(1);
 });

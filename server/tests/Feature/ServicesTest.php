@@ -119,7 +119,7 @@ it('books appointments in staff calendars without double-booking, and the till s
     $at = now()->addDay()->setTime(10, 0);
     $a = $svc->book($s, new Appointment, ['branch_id' => $this->hq->id, 'employee_id' => $this->abla->id, 'product_id' => $this->cut->id, 'starts_at' => $at->toIso8601String(),
         'customer_id' => $this->ama->id]);
-    expect($a->number)->toStartWith('APT-')->and($a->ends_at->diffInMinutes($a->starts_at, true))->toEqual(45)->and($a->customer_name)->toBe('Ama Owusu')
+    expect($a->number)->toStartWith('APT-')->and($a->ends_at->diffInMinutes($a->starts_at, true))->toEqual(45)->and($a->customer_name)->toBe('AMA OWUSU')
         ->and($a->phone)->toBe('+233241112222');
     // Abla is busy 10:00–10:45; Yaw is free.
     expect(fn () => $svc->book($s, new Appointment, ['branch_id' => $this->hq->id, 'employee_id' => $this->abla->id, 'product_id' => $this->cut->id,

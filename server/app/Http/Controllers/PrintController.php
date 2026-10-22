@@ -7,18 +7,25 @@ use App\Domain\Logistics\WaybillService;
 use App\Domain\Pharmacy\PharmacyReports;
 use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
+use App\Filament\Support\Fields;
 use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\CustomerOrder;
 use App\Models\CustomerPayment;
 use App\Models\Employee;
+use App\Models\GoodsReceipt;
 use App\Models\Invoice;
 use App\Models\LegalEntity;
 use App\Models\Markdown;
 use App\Models\PayrollRun;
 use App\Models\Payslip;
+use App\Models\PurchaseOrder;
+use App\Models\PurchaseRequest;
 use App\Models\Sale;
 use App\Models\StockAdjustment;
+use App\Models\StockRequest;
+use App\Models\StockTransfer;
+use App\Models\Supplier;
 use App\Models\SupplierReturn;
 use App\Models\Tenant;
 use App\Models\Warehouse;
@@ -90,6 +97,72 @@ class PrintController extends Controller
         $this->allow($request, ['sales.orders.view'], $order->branch_id, $order->tenant_id);
 
         return view('print.order', ['doc' => $order->load('lines'), 'company' => $this->company($order->branch_id), 'customer' => Customer::find($order->customer_id)]);
+    }
+
+    public function purchaseOrder(Request $request, PurchaseOrder $po): View
+    {
+        $this->allow($request, ['purchasing.view', 'purchasing.manage'], $po->branch_id, $po->tenant_id);
+
+        return view('print.purchase-order', ['doc' => $po->load('lines'), 'company' => $this->company($po->branch_id),
+            'supplier' => Supplier::find($po->supplier_id), 'warehouse' => Warehouse::find($po->warehouse_id)]);
+    }
+
+    public function goodsReceipt(Request $request, GoodsReceipt $grn): View
+    {
+        $this->allow($request, ['purchasing.view', 'stock.receive'], $grn->branch_id, $grn->tenant_id);
+        $grn->load('lines');
+        $supplier = Supplier::find($grn->supplier_id);
+
+        return $this->stockDoc($grn->branch_id, 'Goods received', $grn->number, ($grn->received_at ?? $grn->created_at)->format('j M Y H:i'), GoodsReceipt::STATUSES[$grn->status] ?? $grn->status,
+            [['Supplier', array_filter([$supplier?->name, $grn->supplier_ref ? "Delivery note {$grn->supplier_ref}" : null])],
+                ['Received into', [Warehouse::find($grn->warehouse_id)?->name, $grn->purchase_order_id ? 'Purchase order '.PurchaseOrder::find($grn->purchase_order_id)?->number : null]]],
+            [['#', false], ['Item', false], ['Quantity', true]],
+            $grn->lines->map(fn ($l) => [$l->line_no, e($l->name).'<br><span class="small muted">'.e($l->sku).'</span>', e(Fields::qty((string) $l->qty, $l->uom_code))])->all(),
+            $grn->note, [['Received by', $grn->received_by_name], ['Checked by', $grn->approved_by_name ?? '']]);
+    }
+
+    public function transfer(Request $request, StockTransfer $t): View
+    {
+        $this->allow($request, ['stock.transfer', 'stock.view'], $t->from_branch_id, $t->tenant_id);
+        $t->load('lines');
+
+        return $this->stockDoc($t->from_branch_id, 'Stock transfer', $t->number, $t->created_at->format('j M Y'), StockTransfer::STATUSES[$t->status] ?? $t->status,
+            [['From', [Warehouse::find($t->from_warehouse_id)?->name]], ['To', [Warehouse::find($t->to_warehouse_id)?->name]]],
+            [['#', false], ['Item', false], ['Sent', true], ['Received', true]],
+            $t->lines->map(fn ($l) => [$l->line_no, e($l->name).'<br><span class="small muted">'.e($l->sku).'</span>', e(Fields::qty((string) $l->qty, $l->uom_code)),
+                $l->received_qty === null ? '' : e(Fields::qty((string) $l->received_qty, $l->uom_code))])->all(),
+            $t->note, [['Sent by', $t->dispatched_by_name ?? $t->created_by_name], ['Received by', $t->received_by_name ?? '']]);
+    }
+
+    public function stockRequest(Request $request, StockRequest $r): View
+    {
+        $this->allow($request, ['stock.request', 'stock.transfer', 'stock.view'], $r->to_branch_id, $r->tenant_id);
+        $r->load('lines');
+
+        return $this->stockDoc($r->to_branch_id, 'Stock request', $r->number, $r->created_at->format('j M Y'), StockRequest::STATUSES[$r->status] ?? $r->status,
+            [['Asked by', [Warehouse::find($r->to_warehouse_id)?->name, $r->requested_by_name]], ['Asked of', [Warehouse::find($r->from_warehouse_id)?->name]]],
+            [['#', false], ['Item', false], ['Asked for', true], ['Sent', true]],
+            $r->lines->map(fn ($l) => [$l->line_no, e($l->name).'<br><span class="small muted">'.e($l->sku).'</span>', e(Fields::qty((string) $l->qty, $l->uom_code)),
+                $l->supplied_qty === null ? '' : e(Fields::qty((string) $l->supplied_qty, $l->uom_code))])->all(),
+            $r->note, [['Asked by', $r->requested_by_name], ['Sent by', $r->supplied_by_name ?? '']]);
+    }
+
+    public function purchaseRequest(Request $request, PurchaseRequest $r): View
+    {
+        $this->allow($request, ['purchasing.request', 'purchasing.manage'], $r->branch_id, $r->tenant_id);
+        $r->load('lines');
+
+        return $this->stockDoc($r->branch_id, 'Purchase request', $r->number, $r->created_at->format('j M Y'), PurchaseRequest::STATUSES[$r->status] ?? $r->status,
+            [['For the store', array_filter([Warehouse::find($r->warehouse_id)?->name, $r->needed_by ? 'Needed by '.$r->needed_by->format('j M Y') : null])], ['Asked by', [$r->requested_by_name]]],
+            [['#', false], ['Item', false], ['Quantity', true], ['Note', false]],
+            $r->lines->map(fn ($l) => [$l->line_no, e($l->name).'<br><span class="small muted">'.e($l->sku).'</span>', e(Fields::qty((string) $l->qty, $l->uom_code)), e((string) $l->note)])->all(),
+            $r->note, [['Asked by', $r->requested_by_name], ['Ordered by', $r->status === 'ordered' ? $r->closed_by_name : '']]);
+    }
+
+    private function stockDoc(?string $branchId, string $title, string $number, string $date, ?string $status, array $boxes, array $columns, array $rows, ?string $note, array $signatures): View
+    {
+        return view('print.stock-document', ['company' => $this->company($branchId), 'title' => $title, 'number' => $number, 'date' => $date, 'status' => $status,
+            'boxes' => $boxes, 'columns' => $columns, 'rows' => $rows, 'note' => $note, 'signatures' => $signatures]);
     }
 
     public function statement(Request $request, Customer $customer): View

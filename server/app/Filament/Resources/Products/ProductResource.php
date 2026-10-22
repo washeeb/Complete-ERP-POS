@@ -26,6 +26,7 @@ use App\Models\TaxGroup;
 use App\Models\Uom;
 use App\Support\IndustryContext;
 use App\Support\Money;
+use App\Support\Progress;
 use App\Support\Qty;
 use BackedEnum;
 use Filament\Actions\BulkAction;
@@ -111,7 +112,7 @@ class ProductResource extends Resource
             Section::make('Product')->columns(3)->schema([
                 TextInput::make('sku')->label('SKU')->disabled()->dehydrated(false)->placeholder('Given automatically when saved')
                     ->helperText('Set by the system so no two products share one; it never changes.'),
-                TextInput::make('name')->required()->maxLength(160)->columnSpan(2),
+                TextInput::make('name')->required()->maxLength(160)->caps()->columnSpan(2),
                 Select::make('industry_id')->label('Industry')->options(fn () => Industry::licensed()->orderBy('sort')->pluck('name', 'id'))
                     ->default(fn () => IndustryContext::selected())->placeholder('All industries (shared)')
                     ->visible(fn () => Industry::exists())
@@ -139,7 +140,7 @@ class ProductResource extends Resource
                 ->description('Pharmacy: prescription-only and controlled medicines need a pharmacist’s approval at the till. Medicines must track batches and expiry.')
                 ->schema([
                     Select::make('drug_schedule')->label('Schedule')->options(Product::SCHEDULES)->placeholder('Not a medicine'),
-                    TextInput::make('generic_name')->label('Generic name')->maxLength(255),
+                    TextInput::make('generic_name')->label('Generic name')->maxLength(255)->caps(),
                     TextInput::make('strength')->maxLength(60)->placeholder('500 mg'),
                     TextInput::make('dosage_form')->label('Form')->maxLength(40)->placeholder('Capsule'),
                     TextInput::make('fda_reg_no')->label('FDA registration no.')->maxLength(60),
@@ -313,7 +314,10 @@ class ProductResource extends Resource
                         @set_time_limit(1800);
                         $done = 0;
                         $skipped = [];
+                        Progress::start('Changing the unit of products', $records->count());
+                        $progress = 0;
                         foreach ($records as $p) {
+                            Progress::tick(++$progress);
                             try {
                                 self::changeUnit(Erp::actor(), $p, $data);
                                 $done++;
@@ -351,7 +355,10 @@ class ProductResource extends Resource
                         @set_time_limit(1800);
                         $schedule = $data['drug_schedule'] === 'none' ? null : $data['drug_schedule'];
                         $n = Erp::run(fn ($actor) => DB::transaction(function () use ($actor, $records, $schedule) {
+                            Progress::start('Setting the medicine schedule', $records->count());
+                            $progress = 0;
                             foreach ($records as $p) {
+                                Progress::tick(++$progress);
                                 app(CatalogService::class)->saveProduct($actor, $p, ['drug_schedule' => $schedule] + ($schedule && ! $p->track_batches ? ['track_batches' => true] : []),
                                     'Medicine schedule set from the products list');
                             }

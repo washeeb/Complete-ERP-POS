@@ -58,6 +58,10 @@ Then **Print receipt** (prints straight away on the desktop till's receipt print
 
 Each of these changes the cash expected when you close, so the drawer still balances. After a pay-out, pay-in or cash drop a **slip** prints: both of you sign it. For a cash drop, press **Print another copy**: one slip goes in the safe bag, one stays with the drawer. Clip a pay-out slip to the shop's receipt.
 
+## Expiry dates
+
+Medicines and other batch items show the expiry of the pack you should sell next (*Exp 06/2027*), in the search list and on the sale. **Amber** = expires within 3 months; **red** = expired — do not sell it, tell your supervisor.
+
 ## When the network or server is down
 
 The bottom right says **"Server not answering — working offline"** or **"No network"**. **Keep selling.** Sales are kept on the till and sent on their own when the server is back. A yellow bar counts what is waiting. **Never ring a sale up twice.** A red bar means the server refused something: call your supervisor.

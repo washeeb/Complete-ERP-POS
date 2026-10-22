@@ -4,6 +4,7 @@ namespace App\Domain\Purchasing;
 
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
+use App\Domain\Support\DocumentNumbers;
 use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
 use App\Models\ProductUom;
@@ -11,12 +12,13 @@ use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Models\Tenant;
 use App\Security\Authorizer;
+use App\Support\Caps;
 use App\Support\Money;
 use App\Support\Qty;
 
 final class SupplierService
 {
-    public function __construct(private readonly Recorder $recorder, private readonly Authorizer $authz) {}
+    public function __construct(private readonly Recorder $recorder, private readonly Authorizer $authz, private readonly DocumentNumbers $numbers) {}
 
     /**
      * @param array{code?: string, name?: string, products?: list<array{product_uom_id: string, supplier_sku?: ?string,
@@ -24,10 +26,13 @@ final class SupplierService
      */
     public function save(Actor $actor, Supplier $supplier, array $data): Supplier
     {
-        if (! $actor->user || ! $this->authz->allows($actor->user, 'suppliers.manage')) {
+        // Suppliers serve the whole company: a buyer granted for one branch may add and edit them too.
+        if (! $actor->user || ! $this->authz->allowsAnywhere($actor->user, 'suppliers.manage')) {
             throw new AccessDenied;
         }
-        $code = strtoupper(trim((string) ($data['code'] ?? $supplier->code)));
+        $data = Caps::keys($data, ['name', 'contact_name']);
+        // The code is given by the system when left empty (SUP-HQ-000001), like customers; a typed one is kept.
+        $code = strtoupper(trim((string) ($data['code'] ?? $supplier->code))) ?: $this->numbers->next($actor->tenantId, 'supplier');
         if (! preg_match('/^[A-Z0-9][A-Z0-9\-]{0,19}$/', $code)) {
             throw new DomainException('Supplier codes use letters, digits and dashes (up to 20).');
         }

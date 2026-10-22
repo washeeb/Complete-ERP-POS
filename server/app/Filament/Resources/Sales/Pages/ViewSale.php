@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Sales\Pages;
 use App\Domain\Customers\CustomerService;
 use App\Filament\Resources\Sales\SaleResource;
 use App\Filament\Support\Erp;
+use App\Filament\Support\ReloadsAfterAction;
 use App\Models\Customer;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
@@ -13,6 +14,8 @@ use Filament\Support\Icons\Heroicon;
 
 class ViewSale extends ViewRecord
 {
+    use ReloadsAfterAction;
+
     protected static string $resource = SaleResource::class;
 
     /** A copy of the receipt, marked COPY: look at it first, or send it straight to the print window. Each is audited. */

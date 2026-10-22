@@ -191,7 +191,7 @@ it('runs repair jobs: in warranty for free with parts written off, otherwise pai
 
     // Sold by us four months ago-ish: under warranty → no charge, the screen is written off to the repair.
     $job = $svc->open($tech, ['branch_id' => $this->hq->id, 'customer_name' => 'Kofi', 'phone' => '0201234567', 'serial' => '3569 0101 0000001', 'fault' => 'Screen cracked by itself']);
-    expect($job->number)->toStartWith('JOB-')->and($job->in_warranty)->toBeTrue()->and($job->device)->toBe('Tecno Spark 20');
+    expect($job->number)->toStartWith('JOB-')->and($job->in_warranty)->toBeTrue()->and($job->device)->toBe('TECNO SPARK 20');
     $job = $svc->setLines($tech, $job, [['product_uom_id' => $this->screen->units->first()->id, 'qty' => '1']]);
     expect($job->lines->sole()->unit_price_minor)->toBe(0)
         ->and(fn () => $svc->setStatus($tech, $job, 'collected'))->toThrow(DomainException::class);

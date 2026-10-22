@@ -27,35 +27,35 @@ it('asks which industry the products are for, and puts them there', function () 
     $this->get(ImportData::getUrl(['type' => 'products']))->assertOk()->assertSee('For which industry?')->assertSee('Shared by all industries');
     $page = Livewire::test(ImportData::class, ['type' => 'products'])->set('file', ($this->csv)(",Paracetamol,,5\n,Vitamin C,,8\n"))
         ->call('import')->assertHasErrors('industry');
-    expect(Product::whereIn('name', ['Paracetamol', 'Vitamin C'])->count())->toBe(0); // nothing until the industry is chosen
+    expect(Product::whereIn('name', ['PARACETAMOL', 'VITAMIN C'])->count())->toBe(0); // nothing until the industry is chosen
 
     $page->set('industry', $this->pharmacy->id)->call('import')->assertHasNoErrors();
-    expect(Product::whereIn('name', ['Paracetamol', 'Vitamin C'])->pluck('industry_id')->unique()->all())->toBe([$this->pharmacy->id]);
+    expect(Product::whereIn('name', ['PARACETAMOL', 'VITAMIN C'])->pluck('industry_id')->unique()->all())->toBe([$this->pharmacy->id]);
 });
 
 it('takes the industry from the page by default, or from an industry column per row', function () {
     Livewire::test(ImportData::class, ['type' => 'products', 'industry' => 'shared'])
         ->set('file', ($this->csv)(",Carrier bag,,1\n,Rice 5kg,grocery,90\n,Ibuprofen,Pharmacy,6\n"))->call('import')->assertHasNoErrors();
     expect(Product::where('name', 'Carrier bag')->value('industry_id'))->toBeNull()
-        ->and(Product::where('name', 'Rice 5kg')->value('industry_id'))->toBe($this->grocery->id)
-        ->and(Product::where('name', 'Ibuprofen')->value('industry_id'))->toBe($this->pharmacy->id);
+        ->and(Product::where('name', 'RICE 5KG')->value('industry_id'))->toBe($this->grocery->id)
+        ->and(Product::where('name', 'IBUPROFEN')->value('industry_id'))->toBe($this->pharmacy->id);
 });
 
 it('downloads the chosen industry\'s products only, with their industry', function () {
     Livewire::test(ImportData::class, ['type' => 'products', 'industry' => $this->pharmacy->id])
         ->set('file', ($this->csv)(",Paracetamol,,5\n,Rice 5kg,grocery,90\n"))->call('import');
     $rows = iterator_to_array(app(ImportService::class)->importer('products')->exportRows(actorFor($this->owner), ['industry' => $this->pharmacy->id], null), false);
-    expect(array_column($rows, 1))->toBe(['Paracetamol'])->and($rows[0][12])->toBe($this->pharmacy->name);
+    expect(array_column($rows, 1))->toBe(['PARACETAMOL'])->and($rows[0][12])->toBe($this->pharmacy->name);
 });
 
 it('moves products imported to the wrong industry; their system SKUs take its series', function () {
     Livewire::test(ImportData::class, ['type' => 'products', 'industry' => 'shared'])->set('file', ($this->csv)(",Paracetamol,,5\n,Vitamin C,,8\n"))->call('import');
-    $products = Product::whereIn('name', ['Paracetamol', 'Vitamin C'])->get();
+    $products = Product::whereIn('name', ['PARACETAMOL', 'VITAMIN C'])->get();
     $skus = $products->pluck('sku')->all();
     expect(app(CatalogService::class)->moveToIndustry(actorFor($this->owner), $products, $this->pharmacy->id))->toBe(2)
-        ->and(Product::whereIn('name', ['Paracetamol', 'Vitamin C'])->pluck('industry_id')->unique()->all())->toBe([$this->pharmacy->id])
+        ->and(Product::whereIn('name', ['PARACETAMOL', 'VITAMIN C'])->pluck('industry_id')->unique()->all())->toBe([$this->pharmacy->id])
         ->and($skus)->each->toMatch('/^1\d{5}$/') // shared: plain numbers
-        ->and(Product::whereIn('name', ['Paracetamol', 'Vitamin C'])->pluck('sku')->all())->each->toStartWith($this->pharmacy->code.'-');
+        ->and(Product::whereIn('name', ['PARACETAMOL', 'VITAMIN C'])->pluck('sku')->all())->each->toStartWith($this->pharmacy->code.'-');
 });
 
 it('downloads every product for updating, or the industry chosen at the top', function () {
@@ -67,7 +67,7 @@ it('downloads every product for updating, or the industry chosen at the top', fu
 
         return collect($rows)->pluck(1)->sort()->values()->all();
     };
-    expect($names())->toBe(['Paracetamol', 'Rice 5kg']); // all industries at the top: every product
+    expect($names())->toBe(['PARACETAMOL', 'RICE 5KG']); // all industries at the top: every product
     IndustryContext::set($this->pharmacy->id);
-    expect($names())->toBe(['Paracetamol']);
+    expect($names())->toBe(['PARACETAMOL']);
 });

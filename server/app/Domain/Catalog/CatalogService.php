@@ -25,7 +25,9 @@ use App\Models\TaxGroup;
 use App\Models\TaxRate;
 use App\Models\Uom;
 use App\Security\Authorizer;
+use App\Support\Caps;
 use App\Support\Money;
+use App\Support\Progress;
 use App\Support\Qty;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
@@ -178,6 +180,7 @@ final class CatalogService
             throw new AccessDenied('Changing prices needs the pricing permission.');
         }
 
+        $data = Caps::keys($data, ['name', 'generic_name', 'strength', 'dosage_form']); // one uniform list
         $product->fill(array_intersect_key($data, array_flip(['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu', 'location',
             'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'fda_reg_no', 'station', 'track_serials', 'warranty_months', 'consignor_id', 'consignment_bp',
             'service_minutes', 'commission_bp', 'licence_keys',
@@ -331,7 +334,7 @@ final class CatalogService
         // One of each: the same category (under the same parent), brand or unit code twice is refused, whoever adds it.
         $other = fn ($q) => $q->when($model->exists, fn ($w) => $w->whereKeyNot($model->getKey()));
         if ($model instanceof Category || $model instanceof Brand) {
-            $model->name = trim((string) $model->name);
+            $model->name = Caps::upper((string) $model->name);
             $same = $model::query()->whereRaw('lower(name) = ?', [mb_strtolower($model->name)])->tap($other)
                 ->when($model instanceof Category, fn ($q) => $model->parent_id ? $q->where('parent_id', $model->parent_id) : $q->whereNull('parent_id'))->exists();
             if ($same) {
@@ -339,6 +342,7 @@ final class CatalogService
             }
         }
         if ($model instanceof Uom) {
+            $model->name = Caps::upper((string) $model->name);
             // The code can be corrected: products, tills and new documents follow; documents already made keep what they showed.
             $model->code = strtoupper(trim($model->code));
             if (! preg_match('/^[A-Z0-9]{1,10}$/', $model->code)) {
@@ -382,6 +386,8 @@ final class CatalogService
             $ids[] = $p instanceof Product ? $p->id : $p; // ids first: moving shrinks the list a lazy query is paging through
         }
         $n = 0;
+        $done = 0;
+        Progress::start('Moving products', count($ids), $actor->id);
         foreach (array_chunk($ids, 200) as $chunk) {
             foreach (Product::whereIn('id', $chunk)->get() as $p) { // as it is now, not as the list loaded it
                 if ($p->{$field} === $to) {
@@ -392,7 +398,9 @@ final class CatalogService
                 $this->recorder->save($actor, $p, 'product.updated', $reason ?? "Moved to another {$what}");
                 $n++;
             }
+            Progress::tick($done += count($chunk), null, $actor->id);
         }
+        Progress::finish($actor->id);
 
         return $n;
     }

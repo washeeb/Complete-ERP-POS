@@ -243,17 +243,17 @@ it('enforces HQ wins: master data cannot be edited on a branch server', function
 
 it('stages manual groups for preview, and applies them only when accepted', function () {
     Nodes::on('B01', fn () => SyncPeer::find(Nodes::$branchPeerId)->forceFill(['groups' => ['catalog' => 'manual'] + SyncPeer::find(Nodes::$branchPeerId)->groups])->save());
-    app(CatalogService::class)->saveProduct(actorFor($this->owner), $this->milo, ['name' => 'Milo 400g (new pack)']);
+    app(CatalogService::class)->saveProduct(actorFor($this->owner), $this->milo, ['name' => 'MILO 400G (new pack)']);
 
     $r = branchSync();
 
     expect($r['staged'])->toBeGreaterThan(0);
     Nodes::on('B01', function () {
-        expect(Product::where('sku', 'MILO')->value('name'))->toBe('Milo 400g');
+        expect(Product::where('sku', 'MILO')->value('name'))->toBe('MILO 400G');
         $peer = SyncPeer::find(Nodes::$branchPeerId);
         $staged = $peer->inbox()->where('status', 'staged')->pluck('id')->all();
         app(SyncEngine::class)->decide($peer, $staged, true, null);
-        expect(Product::where('sku', 'MILO')->value('name'))->toBe('Milo 400g (new pack)');
+        expect(Product::where('sku', 'MILO')->value('name'))->toBe('MILO 400G (NEW PACK)');
     });
 });
 
@@ -290,12 +290,12 @@ it('keeps going when one event cannot be applied, and applies it once the cause 
     app(Authorizer::class)->forget();
     $role = Role::where('key', 'supervisor')->first();
     app(AccessService::class)->saveRole(actorFor($this->owner), $role, [], [...$role->permissionKeys(), 'future.feature']);
-    app(CatalogService::class)->saveProduct(actorFor($this->owner), $this->bread, ['name' => 'Sliced bread']);
+    app(CatalogService::class)->saveProduct(actorFor($this->owner), $this->bread, ['name' => 'SLICED BREAD']);
 
     $r = branchSync();
 
     expect($r['failed'])->toBe(1);
-    Nodes::on('B01', fn () => expect(Product::where('sku', 'BREAD')->value('name'))->toBe('Sliced bread')
+    Nodes::on('B01', fn () => expect(Product::where('sku', 'BREAD')->value('name'))->toBe('SLICED BREAD')
         ->and(SyncInboxEvent::where('status', 'failed')->first()->last_error)->toContain('Update this node'));
 
     // The branch server is upgraded (the permission now exists there) → the next sync applies it.

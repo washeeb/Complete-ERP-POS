@@ -59,7 +59,7 @@ it('shows the chart, journals, months and reports to finance, and posts a journa
 });
 
 it('enters a bill from goods received, pays it, and shows what is owed', function () {
-    $supplier = app(SupplierService::class)->save(actorFor($this->owner), new Supplier, ['code' => 'NESTLE', 'name' => 'Nestlé Ghana', 'payment_terms_days' => 30]);
+    $supplier = app(SupplierService::class)->save(actorFor($this->owner), new Supplier, ['code' => 'NESTLE', 'name' => 'NESTLÉ GHANA', 'payment_terms_days' => 30]);
     $po = app(PurchaseOrderService::class)->saveDraft(actorFor($this->owner), new PurchaseOrder,
         ['supplier_id' => $supplier->id, 'warehouse_id' => $this->wh->id, 'lines' => [['product_uom_id' => $this->milo->units->first()->id, 'qty' => '5', 'unit_cost' => '40.00']]]);
     app(PurchaseOrderService::class)->submit(actorFor($this->owner), $po);
@@ -78,7 +78,7 @@ it('enters a bill from goods received, pays it, and shows what is owed', functio
     Livewire::test(ListSupplierPayments::class)->callAction('pay', ['supplier_id' => $supplier->id, 'account_id' => Account::where('system_key', 'bank')->value('id'),
         'method' => 'bank', 'amount' => '100', 'reference' => 'TRF-1', 'paid_on' => now()->toDateString(), 'branch_id' => $this->branches['HQ']->id])->assertNotified('Payment recorded');
     expect((int) DB::table('supplier_balances')->where('supplier_id', $supplier->id)->value('balance_minor'))->toBe(14000);
-    $this->get(AgedPayables::getUrl())->assertOk()->assertSee('Nestlé Ghana')->assertSee('140.00');
+    $this->get(AgedPayables::getUrl())->assertOk()->assertSee('NESTLÉ GHANA')->assertSee('140.00');
 });
 
 it('keeps finance away from people without access, including IT admin', function () {

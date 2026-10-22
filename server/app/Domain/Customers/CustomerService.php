@@ -11,6 +11,7 @@ use App\Models\Customer;
 use App\Models\PriceList;
 use App\Models\Tenant;
 use App\Security\Authorizer;
+use App\Support\Caps;
 use App\Support\Money;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -51,6 +52,7 @@ final class CustomerService
 
         return $this->recorder->transaction(function () use ($actor, $customer, $data, $phone, $consentSource) {
             $isNew = ! $customer->exists;
+            $data = Caps::keys($data, ['name', 'contact_name']); // one uniform list
             $customer->fill(array_intersect_key($data, array_flip(['type', 'name', 'contact_name', 'email', 'tax_no', 'address', 'price_list_id', 'home_branch_id', 'tags', 'notes', 'is_active'])));
             $customer->phone = $phone;
             if (array_key_exists('consents', $data)) {

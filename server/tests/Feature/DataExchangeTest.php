@@ -89,10 +89,10 @@ it('reads CSV files the way spreadsheets save them', function () {
 });
 
 it('checks a product file without saving, then creates products, and updates others from a separate file', function () {
-    makeProduct($this->owner, 'RICE-5', 'Rice 5 kg', retail: '120.00');
+    makeProduct($this->owner, 'RICE-5', 'RICE 5 KG', retail: '120.00');
     $file = importCsvFile([
         ['sku', 'name', 'category', 'tax_group', 'barcodes', 'price_RETAIL', 'for_sale'],
-        ['SUGAR-1', 'Sugar 1 kg', 'Groceries', 'STD', '6001234567893', '22.00', 'yes'],
+        ['SUGAR-1', 'Sugar 1 kg', 'GROCERIES', 'STD', '6001234567893', '22.00', 'yes'],
         ['BAD SKU!', 'Broken', '', '', '', '', ''],
     ]);
     $check = $this->imports->run($this->o, 'products', $file, 'products.csv', ['industry' => 'shared'], null, false);
@@ -106,19 +106,19 @@ it('checks a product file without saving, then creates products, and updates oth
     $done = $this->imports->run($this->o, 'products', $file, 'products.csv', ['skip_errors' => true, 'create_missing' => true, 'industry' => 'shared'], null, true);
     $sugar = Product::where('sku', 'SUGAR-1')->first();
     expect($done->status)->toBe('imported')->and($done->summary['created'])->toBe(1)
-        ->and($sugar->category_id)->toBe(Category::where('name', 'Groceries')->value('id'))->and($sugar->barcodes()->value('code'))->toBe('6001234567893');
+        ->and($sugar->category_id)->toBe(Category::where('name', 'GROCERIES')->value('id'))->and($sugar->barcodes()->value('code'))->toBe('6001234567893');
 
     // Updating is its own import: by SKU, only the filled-in cells.
     $update = importCsvFile([['sku', 'name', 'barcodes', 'price_RETAIL'], ['RICE-5', 'Perfumed rice 5 kg', '', '118.50']]);
     $up = $this->imports->run($this->o, 'products_update', $update, 'update.csv', [], null, true);
     $rice = Product::where('sku', 'RICE-5')->first();
-    expect($up->summary['updated'])->toBe(1)->and($rice->name)->toBe('Perfumed rice 5 kg')
+    expect($up->summary['updated'])->toBe(1)->and($rice->name)->toBe('PERFUMED RICE 5 KG')
         ->and(app(PriceResolver::class)->resolve($this->retail, $rice->id, $rice->units->first()->id, 1000, now())->amount_minor)->toBe(11850)
         ->and($rice->barcodes()->count())->toBe(1); // barcodes untouched when the cell is empty
 
     // The current data comes out in the same layout, ready to edit and import again.
     $rows = iterator_to_array(ImportService::importer('products_update')->exportRows($this->o, [], null), false);
-    expect(collect($rows)->firstWhere(0, 'SUGAR-1')[1])->toBe('Sugar 1 kg');
+    expect(collect($rows)->firstWhere(0, 'SUGAR-1')[1])->toBe('SUGAR 1 KG');
 
     $cashier = staff($this->owner, 'efua', 2, 'teller', ScopeType::Branch, $this->hq->id);
     expect(fn () => $this->imports->run(actorFor($cashier), 'products', $file, 'x.csv', [], null, true))->toThrow(AccessDenied::class)
@@ -126,7 +126,7 @@ it('checks a product file without saving, then creates products, and updates oth
 });
 
 it('imports prices, customers and suppliers', function () {
-    makeProduct($this->owner, 'RICE-5', 'Rice 5 kg', retail: '120.00', wholesale: '110.00');
+    makeProduct($this->owner, 'RICE-5', 'RICE 5 KG', retail: '120.00', wholesale: '110.00');
     $p = $this->imports->run($this->o, 'prices', importCsvFile([
         ['sku', 'price_list', 'price', 'unit', 'min_qty', 'starts_at', 'ends_at'],
         ['RICE-5', 'WHOLESALE', '105.00', '', '', '', ''],
@@ -139,14 +139,14 @@ it('imports prices, customers and suppliers', function () {
         ->and(app(PriceResolver::class)->resolve(PriceList::where('code', 'WHOLESALE')->first(), $rice->id, $unit, 1000, now())->amount_minor)->toBe(10500)
         ->and(app(PriceResolver::class)->resolve($this->retail, $rice->id, $unit, 12000, now())->amount_minor)->toBe(11500); // bulk tier
 
-    $existing = app(CustomerService::class)->save($this->o, new Customer, ['name' => 'Ama Owusu', 'phone' => '0241112222']);
+    $existing = app(CustomerService::class)->save($this->o, new Customer, ['name' => 'AMA OWUSU', 'phone' => '0241112222']);
     $c = $this->imports->run($this->o, 'customers', importCsvFile([
         ['code', 'name', 'phone', 'email', 'price_list', 'credit_limit', 'payment_terms_days'],
-        ['', 'Ama Owusu-Mensah', '0241112222', 'ama@example.com', '', '', ''],
-        ['', 'Kofi Provisions', '0245551234', '', 'WHOLESALE', '5000', '30'],
+        ['', 'AMA OWUSU-MENSAH', '0241112222', 'ama@example.com', '', '', ''],
+        ['', 'KOFI PROVISIONS', '0245551234', '', 'WHOLESALE', '5000', '30'],
     ]), 'customers.csv', [], null, true);
     $kofi = Customer::where('phone', '+233245551234')->first();
-    expect($c->summary)->toMatchArray(['created' => 1, 'updated' => 1])->and($existing->fresh()->name)->toBe('Ama Owusu-Mensah')
+    expect($c->summary)->toMatchArray(['created' => 1, 'updated' => 1])->and($existing->fresh()->name)->toBe('AMA OWUSU-MENSAH')
         ->and($kofi->credit_limit_minor)->toBe(500000)->and($kofi->payment_terms_days)->toBe(30);
 
     $s = $this->imports->run($this->o, 'suppliers', importCsvFile([['code', 'name', 'payment_terms_days', 'active'], ['OLAM', 'Olam Ghana', '30', 'yes']]), 's.csv', [], null, true);
@@ -224,7 +224,7 @@ it('imports counted quantities into a stock count from its count sheet', functio
 });
 
 it('shows the import and stock adjustment screens and exports an adjustment voucher', function () {
-    makeProduct($this->owner, 'RICE-5', 'Rice 5 kg', retail: '120.00');
+    makeProduct($this->owner, 'RICE-5', 'RICE 5 KG', retail: '120.00');
     $p = Product::where('sku', 'RICE-5')->first();
     app(InventoryService::class)->adjust($this->o, $this->wh, $p, $p->units->first(), '40', 'opening', '', null, '10.00');
     $a = app(StockAdjustmentService::class)->create($this->o, $this->wh, ['reason_code' => 'damaged']);
@@ -234,7 +234,7 @@ it('shows the import and stock adjustment screens and exports an adjustment vouc
         StockAdjustmentResource::getUrl('create'), StockAdjustmentResource::getUrl('view', ['record' => $a])] as $url) {
         $this->get($url)->assertOk();
     }
-    $this->get(StockAdjustmentResource::getUrl('view', ['record' => $a]))->assertSee('Rice 5 kg')->assertSee('37.000');
+    $this->get(StockAdjustmentResource::getUrl('view', ['record' => $a]))->assertSee('RICE 5 KG')->assertSee('37.000');
     Livewire::test(ImportData::class, ['type' => 'products'])->call('downloadTemplate')->assertFileDownloaded();
     Livewire::test(ViewStockAdjustment::class, ['record' => $a->id])->callAction('voucherPdf')->assertFileDownloaded();
 });
@@ -274,23 +274,23 @@ it('lists each batch with its expiry on the stock sheet, sets a batch, adds a ne
 });
 
 it('takes a product location from the products file and gives it back', function () {
-    $file = importCsvFile([['sku', 'name', 'location', 'price_retail'], ['', 'Zinc 50mg', 'Shelf A1', '10']]);
+    $file = importCsvFile([['sku', 'name', 'location', 'price_retail'], ['', 'ZINC 50MG', 'Shelf A1', '10']]);
     $this->imports->run($this->o, 'products', $file, 'p.csv', ['industry' => 'shared'], null, true);
-    expect(Product::where('name', 'Zinc 50mg')->value('location'))->toBe('Shelf A1');
+    expect(Product::where('name', 'ZINC 50MG')->value('location'))->toBe('Shelf A1');
     $headings = ImportService::importer('products')->headings();
-    $row = collect(iterator_to_array(ImportService::importer('products')->exportRows($this->o, [], null), false))->firstWhere(1, 'Zinc 50mg');
+    $row = collect(iterator_to_array(ImportService::importer('products')->exportRows($this->o, [], null), false))->firstWhere(1, 'ZINC 50MG');
     expect($row[array_search('location', $headings, true)])->toBe('Shelf A1');
 });
 
 it('keeps creating and updating apart, so importing a file twice never duplicates products', function () {
-    $file = importCsvFile([['sku', 'name', 'price_RETAIL'], ['', 'Paracetamol 500mg', '5'], ['', 'D10', '20']]);
+    $file = importCsvFile([['sku', 'name', 'price_RETAIL'], ['', 'PARACETAMOL 500MG', '5'], ['', 'D10', '20']]);
     expect($this->imports->run($this->o, 'products', $file, 'p.csv', ['industry' => 'shared'], null, true)->summary['created'])->toBe(2);
 
     // The same "create" file again: every row is refused (the names exist), nothing is created twice.
     expect(fn () => $this->imports->run($this->o, 'products', $file, 'p.csv', ['industry' => 'shared'], null, true))->toThrow(DomainException::class, 'already imported');
     $again = $this->imports->run($this->o, 'products', $file, 'p.csv', ['industry' => 'shared', 'skip_errors' => true, 'import_again' => true], null, true);
     expect($again->rows_error)->toBe(2)->and($again->errors[0]['message'])->toContain('already exists')->toContain('update existing')
-        ->and(Product::where('name', 'Paracetamol 500mg')->count())->toBe(1);
+        ->and(Product::where('name', 'PARACETAMOL 500MG')->count())->toBe(1);
     $sku = Product::where('name', 'D10')->value('sku');
     expect($this->imports->run($this->o, 'products', importCsvFile([['sku', 'name'], [$sku, 'D10']]), 'p.csv', ['industry' => 'shared'], null, false)->errors[0]['message'])
         ->toContain("SKU {$sku} already exists");
@@ -305,7 +305,7 @@ it('keeps creating and updating apart, so importing a file twice never duplicate
     expect($u->summary['updated'])->toBe(1)->and($u->rows_error)->toBe(2)->and(Product::where('name', 'New thing')->exists())->toBeFalse();
     $before = Product::count();
     $this->imports->run($this->o, 'products_update', $upd, 'u.csv', ['skip_errors' => true, 'import_again' => true], null, true);
-    expect(Product::count())->toBe($before)->and(Product::where('name', 'D10 dextrose')->count())->toBe(1);
+    expect(Product::count())->toBe($before)->and(Product::where('name', 'D10 DEXTROSE')->count())->toBe(1);
 });
 
 it('loads opening stock with several batches of one medicine, each with its expiry, and refuses what must stay refused', function () {

@@ -155,7 +155,7 @@ it('suggests reorders up to max in supplier cartons, counting what is already on
     app(ReorderService::class)->saveRule(actorFor($this->manager), $this->hq, $this->milo, '100', '300');
     $s = app(ReorderService::class)->suggestions($this->hq);
     expect($s)->toHaveCount(1)->and($s[0]['suggest_qty'])->toBe(13000) // 300 pc = 12.5 → 13 cartons
-        ->and($s[0]['supplier'])->toBe('Nestlé Ghana');
+        ->and($s[0]['supplier'])->toBe('NESTLÉ GHANA');
 
     $pos = app(ReorderService::class)->createDrafts(actorFor($this->officer), $this->hq, [$this->milo->id]);
     expect($pos)->toHaveCount(1)->and($pos[0]->status)->toBe('draft')->and((string) $pos[0]->lines[0]->qty)->toBe('13.000')

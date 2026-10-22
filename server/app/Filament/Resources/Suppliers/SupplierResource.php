@@ -63,12 +63,12 @@ class SupplierResource extends Resource
 
     public static function canCreate(): bool
     {
-        return Erp::can('suppliers.manage');
+        return Erp::canAnywhere('suppliers.manage'); // suppliers serve the whole company
     }
 
     public static function canEdit(Model $record): bool
     {
-        return Erp::can('suppliers.manage');
+        return Erp::canAnywhere('suppliers.manage'); // suppliers serve the whole company
     }
 
     public static function canDelete(Model $record): bool
@@ -88,9 +88,9 @@ class SupplierResource extends Resource
     {
         return $schema->columns(1)->components([
             Section::make()->columns(3)->schema([
-                TextInput::make('code')->required()->maxLength(20)->helperText('Short code, e.g. NESTLE'),
-                TextInput::make('name')->required()->maxLength(255)->columnSpan(2),
-                TextInput::make('contact_name')->label('Contact person')->maxLength(255),
+                TextInput::make('code')->maxLength(20)->placeholder('Given by the system')->helperText('Leave empty for the next number (SUP-…), or type a short code, e.g. NESTLE.'),
+                TextInput::make('name')->required()->maxLength(255)->caps()->columnSpan(2),
+                TextInput::make('contact_name')->label('Contact person')->maxLength(255)->caps(),
                 TextInput::make('phone')->tel()->maxLength(30),
                 TextInput::make('email')->email()->maxLength(255),
                 TextInput::make('tax_no')->label('TIN / VAT number')->maxLength(40),
