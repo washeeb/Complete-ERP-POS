@@ -52,7 +52,7 @@ it('creates a product with a carton unit, barcodes and prices from the screen', 
 
     Livewire::test(CreateProduct::class)
         ->fillForm([
-            'name' => 'Peak milk 160g', 'base_uom_id' => $pc, 'tax_group_id' => TaxGroup::where('code', 'STD')->value('id'),
+            'name' => 'PEAK MILK 160G', 'base_uom_id' => $pc, 'tax_group_id' => TaxGroup::where('code', 'STD')->value('id'),
             'base_barcodes' => ['8712100000001'],
             'units' => [['uom_id' => $ctn, 'factor' => '48', 'is_sellable' => true, 'is_purchasable' => true, 'barcodes' => ['8712100000048']]],
             'prices' => [
@@ -63,7 +63,7 @@ it('creates a product with a carton unit, barcodes and prices from the screen', 
         ->call('create')
         ->assertHasNoFormErrors();
 
-    $p = Product::where('name', 'Peak milk 160g')->with('units', 'barcodes', 'prices')->first();
+    $p = Product::where('name', 'PEAK MILK 160G')->with('units', 'barcodes', 'prices')->first();
     expect($p)->not->toBeNull()
         ->and($p->sku)->toMatch('/^([A-Z0-9]+-\d{6}|1\d{5})$/')->not->toStartWith('SKU') // given by the system: an industry's series or a plain number
         ->and($p->units)->toHaveCount(2)

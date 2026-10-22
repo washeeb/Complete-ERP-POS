@@ -145,7 +145,7 @@ it('stops selling a batch the set number of days before it expires', function ()
 it('prepares disposals and returns from the screen by ticking batches', function () {
     Filament::setCurrentPanel(Filament::getPanel('admin'));
     $this->actingAs($this->pharmacist);
-    Livewire::test(ExpiryReturns::class)->assertSee('Amoxicillin 500mg')->assertSee('A-OLD')->assertDontSee('A-NEW')
+    Livewire::test(ExpiryReturns::class)->assertSee('AMOXICILLIN 500MG')->assertSee('A-OLD')->assertDontSee('A-NEW')
         ->callTableBulkAction('dispose', [expKey($this, 'A-OLD')], ['reason' => 'expired', 'method' => 'incineration', 'disposed_on' => now()->toDateString(), 'witness' => 'Kofi'])
         ->assertHasNoTableBulkActionErrors();
     expect(StockAdjustment::where('kind', 'disposal')->sole()->witness_name)->toBe('Kofi');
@@ -155,7 +155,7 @@ it('prepares disposals and returns from the screen by ticking batches', function
         ->assertHasNoTableBulkActionErrors();
     expect(SupplierReturn::sole()->settlement)->toBe('none');
 
-    $this->get(route('print.supplier-return', SupplierReturn::sole()))->assertOk()->assertSee('RETURN TO SUPPLIER')->assertSee('Pethidine 50mg');
+    $this->get(route('print.supplier-return', SupplierReturn::sole()))->assertOk()->assertSee('RETURN TO SUPPLIER')->assertSee('PETHIDINE 50MG');
     $this->get(route('print.disposal', StockAdjustment::where('kind', 'disposal')->sole()))->assertOk()->assertSee('DISPOSAL RECORD')->assertSee('Kofi');
     $this->get(route('print.disposal-register', ['warehouse' => $this->wh->id]))->assertOk()->assertSee('No disposals approved');
 });

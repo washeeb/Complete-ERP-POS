@@ -23,8 +23,8 @@ beforeEach(function () {
 
 it('saves an edited product with its barcodes without calling them duplicates or making a new product', function () {
     $count = Product::count();
-    Livewire::test(EditProduct::class, ['record' => $this->milo->id])->fillForm(['name' => 'Milo 400g tin'])->call('save')->assertHasNoFormErrors();
-    expect(Product::count())->toBe($count)->and($this->milo->fresh()->name)->toBe('Milo 400g tin')
+    Livewire::test(EditProduct::class, ['record' => $this->milo->id])->fillForm(['name' => 'MILO 400G TIN'])->call('save')->assertHasNoFormErrors();
+    expect(Product::count())->toBe($count)->and($this->milo->fresh()->name)->toBe('MILO 400G TIN')
         ->and(DB::table('barcodes')->where('code', '6001067000123')->count())->toBe(1);
 });
 
@@ -44,10 +44,10 @@ it('changes the base unit before any stock: barcodes and prices follow, one base
 
 it('adds a missing category, brand, unit or supplier from the form it is needed on', function () {
     Livewire::test(CreateProduct::class)
-        ->callFormComponentAction('category_id', 'createOption', ['name' => 'Herbal'])
-        ->callFormComponentAction('brand_id', 'createOption', ['name' => 'Ernest Chemists'])
+        ->callFormComponentAction('category_id', 'createOption', ['name' => 'HERBAL'])
+        ->callFormComponentAction('brand_id', 'createOption', ['name' => 'ERNEST CHEMISTS'])
         ->callFormComponentAction('base_uom_id', 'createOption', ['code' => 'sach', 'name' => 'Sachet', 'decimals' => 0])
-        ->assertFormSet(['category_id' => Category::where('name', 'Herbal')->value('id'), 'brand_id' => Brand::where('name', 'Ernest Chemists')->value('id'),
+        ->assertFormSet(['category_id' => Category::where('name', 'HERBAL')->value('id'), 'brand_id' => Brand::where('name', 'ERNEST CHEMISTS')->value('id'),
             'base_uom_id' => Uom::where('code', 'SACH')->value('id')]);
     expect(DB::table('audit_events')->whereIn('action', ['category.created', 'brand.created', 'uom.created'])->count())->toBe(3);
 

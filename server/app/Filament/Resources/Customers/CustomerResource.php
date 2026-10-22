@@ -117,10 +117,10 @@ class CustomerResource extends Resource
         return $schema->columns(1)->components([
             Section::make()->columns(3)->schema([
                 Select::make('type')->options(Customer::TYPES)->default('individual')->required(),
-                TextInput::make('name')->required()->maxLength(255)->columnSpan(2),
+                TextInput::make('name')->required()->maxLength(255)->caps()->columnSpan(2),
                 TextInput::make('phone')->tel()->maxLength(30)->helperText('Ghana numbers are stored as +233…'),
                 TextInput::make('email')->email()->maxLength(255),
-                TextInput::make('contact_name')->label('Contact person')->maxLength(255),
+                TextInput::make('contact_name')->label('Contact person')->maxLength(255)->caps(),
                 TextInput::make('tax_no')->label('TIN / Ghana Card')->maxLength(40),
                 Select::make('price_list_id')->label('Price list')->placeholder('Company default')
                     ->options(fn () => PriceList::where('is_active', true)->orderBy('name')->pluck('name', 'id')),

@@ -46,25 +46,25 @@ beforeEach(function () {
 
 it('creates a supplier with its products, then a purchase order that fills in the supplier cost', function () {
     $this->actingAs($this->officer);
-    Livewire::test(CreateSupplier::class)->fillForm(['code' => 'NESTLE', 'name' => 'Nestlé Ghana', 'payment_terms_days' => 30,
+    Livewire::test(CreateSupplier::class)->fillForm(['code' => 'NESTLE', 'name' => 'NESTLÉ GHANA', 'payment_terms_days' => 30,
         'products' => [['product_uom_id' => $this->ctn->id, 'supplier_sku' => 'N-24', 'last_cost' => '240', 'min_order_qty' => '5', 'is_preferred' => true]]])
         ->call('create')->assertHasNoFormErrors();
     $supplier = Supplier::sole();
-    $this->get(SupplierResource::getUrl())->assertOk()->assertSee('Nestlé Ghana')->assertSee('30 days');
+    $this->get(SupplierResource::getUrl())->assertOk()->assertSee('NESTLÉ GHANA')->assertSee('30 days');
 
     Livewire::test(CreatePurchaseOrder::class)->fillForm(['supplier_id' => $supplier->id, 'warehouse_id' => $this->hq->id,
         'lines' => [['product_uom_id' => $this->ctn->id, 'qty' => '10', 'unit_cost' => '']]])->call('create')->assertHasNoFormErrors();
     $po = PurchaseOrder::sole();
     expect($po->net_minor)->toBe(240000)->and($po->status)->toBe('draft');
 
-    $this->get(PurchaseOrderResource::getUrl('view', ['record' => $po]))->assertOk()->assertSee($po->number)->assertSee('MILO · Milo 400g')->assertSee('2,400.00');
+    $this->get(PurchaseOrderResource::getUrl('view', ['record' => $po]))->assertOk()->assertSee($po->number)->assertSee('MILO · MILO 400G')->assertSee('2,400.00');
     Livewire::test(ViewPurchaseOrder::class, ['record' => $po->id])->callAction('submit')->assertNotified('Submitted for approval');
 });
 
 it('lets a manager approve and receive from the order screen, into a bin', function () {
     app(BinService::class)->setUseBins(actorFor($this->owner), $this->hq, true);
     $a1 = app(BinService::class)->saveBin(actorFor($this->owner), new Bin, ['warehouse_id' => $this->hq->id, 'code' => 'A-01']);
-    $supplier = app(SupplierService::class)->save(actorFor($this->owner), new Supplier, ['code' => 'NESTLE', 'name' => 'Nestlé Ghana']);
+    $supplier = app(SupplierService::class)->save(actorFor($this->owner), new Supplier, ['code' => 'NESTLE', 'name' => 'NESTLÉ GHANA']);
     $po = app(PurchaseOrderService::class)->saveDraft(actorFor($this->officer), new PurchaseOrder, ['supplier_id' => $supplier->id, 'warehouse_id' => $this->hq->id,
         'lines' => [['product_uom_id' => $this->ctn->id, 'qty' => '10', 'unit_cost' => '240']]]);
     app(PurchaseOrderService::class)->submit(actorFor($this->officer), $po);
@@ -79,7 +79,7 @@ it('lets a manager approve and receive from the order screen, into a bin', funct
     $grn = GoodsReceipt::sole();
     expect($grn->status)->toBe('posted')->and((string) DB::table('stock_bin_levels')->where('bin_id', $a1->id)->value('on_hand'))->toBe('240.000');
     $this->get(GoodsReceiptResource::getUrl('view', ['record' => $grn]))->assertOk()->assertSee('DN-1')->assertSee('A-01')->assertSee('Posted');
-    $this->get(BinResource::getUrl())->assertOk()->assertSee('A-01')->assertSee('240 Milo 400g');
+    $this->get(BinResource::getUrl())->assertOk()->assertSee('A-01')->assertSee('240 MILO 400G');
 });
 
 it('creates, dispatches and receives a transfer from the screens', function () {
@@ -87,7 +87,7 @@ it('creates, dispatches and receives a transfer from the screens', function () {
     $this->actingAs(withMfa($this->owner));
 
     Livewire::test(CreateStockTransfer::class)->fillForm(['from_warehouse_id' => $this->hq->id, 'to_warehouse_id' => $this->ba->id,
-        'lines' => [['product_uom_id' => $this->ctn->id, 'qty' => '2']]])->call('create')->assertHasNoFormErrors();
+        'lines' => [['product_uom_id' => $this->ctn->id, 'qty' => '2']]])->call('create')->assertHasNoFormErrors()->assertNotified();
     $t = StockTransfer::sole();
     Livewire::test(ViewStockTransfer::class, ['record' => $t->id])->callAction('dispatch')->assertNotified('Dispatched');
     $this->get(StockTransferResource::getUrl())->assertOk()->assertSee('In transit');
@@ -105,7 +105,7 @@ it('runs a blind count from the screens: counters do not see expected figures, a
 
     Livewire::test(ListStockCounts::class)->callAction('start', ['warehouse_id' => $this->hq->id, 'blind' => true]);
     $count = StockCount::sole();
-    $this->get(StockCountResource::getUrl('view', ['record' => $count]))->assertOk()->assertSee('Milo 400g')->assertDontSee('Expected / difference');
+    $this->get(StockCountResource::getUrl('view', ['record' => $count]))->assertOk()->assertSee('MILO 400G')->assertDontSee('Expected / difference');
     Livewire::test(ViewStockCount::class, ['record' => $count->id])
         ->callAction('count', ['items' => [['product_uom_id' => $this->milo->units->firstWhere('is_base', true)->id, 'qty' => '22']]])->assertNotified('1 count(s) saved');
     Livewire::test(ViewStockCount::class, ['record' => $count->id])->callAction('submit')->assertNotified('Submitted');
@@ -119,13 +119,13 @@ it('runs a blind count from the screens: counters do not see expected figures, a
 });
 
 it('shows what to order and creates draft orders per supplier', function () {
-    app(SupplierService::class)->save(actorFor($this->owner), new Supplier, ['code' => 'NESTLE', 'name' => 'Nestlé Ghana',
+    app(SupplierService::class)->save(actorFor($this->owner), new Supplier, ['code' => 'NESTLE', 'name' => 'NESTLÉ GHANA',
         'products' => [['product_uom_id' => $this->ctn->id, 'last_cost' => '240', 'is_preferred' => true]]]);
     app(ReorderService::class)->saveRule(actorFor($this->manager), $this->hq, $this->milo, '24', '96');
     $this->actingAs($this->manager);
 
-    $this->get(ReorderRuleResource::getUrl())->assertOk()->assertSee('Milo 400g');
-    Livewire::test(ReorderSuggestions::class)->assertSee('Nestlé Ghana')->assertSee('4 CTN')
+    $this->get(ReorderRuleResource::getUrl())->assertOk()->assertSee('MILO 400G');
+    Livewire::test(ReorderSuggestions::class)->assertSee('NESTLÉ GHANA')->assertSee('4 CTN')
         ->callTableBulkAction('order', [$this->milo->id])->assertNotified('1 draft purchase order(s) created');
     expect(PurchaseOrder::sole()->status)->toBe('draft');
 });

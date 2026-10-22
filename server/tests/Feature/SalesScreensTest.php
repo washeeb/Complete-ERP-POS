@@ -36,18 +36,18 @@ beforeEach(function () {
 });
 
 it('creates a credit customer with consent from the screen and shows the account', function () {
-    Livewire::test(CreateCustomer::class)->fillForm(['type' => 'business', 'name' => 'Kofi Provisions', 'phone' => '024 555 1234', 'price_list_id' => $this->wholesale->id,
+    Livewire::test(CreateCustomer::class)->fillForm(['type' => 'business', 'name' => 'KOFI PROVISIONS', 'phone' => '024 555 1234', 'price_list_id' => $this->wholesale->id,
         'consents' => ['sms' => true], 'consent_source' => 'paper form', 'credit_limit' => '10000', 'payment_terms_days' => 30])
         ->call('create')->assertHasNoFormErrors();
     $c = Customer::sole();
     expect($c->phone)->toBe('+233245551234')->and($c->credit_limit_minor)->toBe(1_000_000)->and($c->consents['sms']['source'])->toBe('paper form');
 
-    $this->get(CustomerResource::getUrl('view', ['record' => $c]))->assertOk()->assertSee('Kofi Provisions')->assertSee('10,000.00')->assertSee('Nothing outstanding')->assertSee('SMS');
+    $this->get(CustomerResource::getUrl('view', ['record' => $c]))->assertOk()->assertSee('KOFI PROVISIONS')->assertSee('10,000.00')->assertSee('Nothing outstanding')->assertSee('SMS');
     $this->get(CustomerResource::getUrl())->assertOk()->assertSee('CUS-');
 });
 
 it('runs quote → order → delivery → invoice → payment → statement from the screens', function () {
-    $c = app(CustomerService::class)->save(actorFor($this->owner), new Customer, ['type' => 'business', 'name' => 'Kofi Provisions', 'price_list_id' => $this->wholesale->id,
+    $c = app(CustomerService::class)->save(actorFor($this->owner), new Customer, ['type' => 'business', 'name' => 'KOFI PROVISIONS', 'price_list_id' => $this->wholesale->id,
         'credit_limit_minor' => 1_000_000, 'payment_terms_days' => 30]);
 
     Livewire::test(CreateCustomerOrder::class)->fillForm(['customer_id' => $c->id, 'warehouse_id' => $this->hq->id, 'customer_ref' => 'KP-88',
@@ -61,7 +61,7 @@ it('runs quote → order → delivery → invoice → payment → statement from
     $inv = Invoice::sole();
     expect($o->fresh()->status)->toBe('delivered');
     $this->get(InvoiceResource::getUrl('view', ['record' => $inv]))->assertOk()->assertSee($inv->number)->assertSee('3,300.00');
-    $this->get(route('print.invoice', $inv))->assertOk()->assertSee('TAX INVOICE')->assertSee('KP-88')->assertSee('Milo 400g');
+    $this->get(route('print.invoice', $inv))->assertOk()->assertSee('TAX INVOICE')->assertSee('KP-88')->assertSee('MILO 400G');
 
     Livewire::test(ViewCustomer::class, ['record' => $c->id])
         ->callAction('pay', ['branch_id' => $this->branches['HQ']->id, 'amount' => '1000', 'method' => 'cash'])->assertNotified('Payment recorded');
@@ -72,7 +72,7 @@ it('runs quote → order → delivery → invoice → payment → statement from
         ->assertOk()->assertSee('STATEMENT')->assertSee($inv->number)->assertSee('2,300.00');
 
     $this->travel(40)->days();
-    Livewire::test(AgedReceivables::class)->assertSee('Kofi Provisions')->assertSee('2,300.00');
+    Livewire::test(AgedReceivables::class)->assertSee('KOFI PROVISIONS')->assertSee('2,300.00');
     Livewire::test(ViewInvoice::class, ['record' => $inv->id])->callAction('credit', ['reason' => 'Wrong delivery'])->assertNotified('Credit note issued');
     expect($inv->fresh()->status)->toBe('credited');
 });

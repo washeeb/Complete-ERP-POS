@@ -209,13 +209,13 @@ it('keeps the controlled-drug register from the ledger and exports NHIS claims',
 
     [$entry] = PharmacyReports::controlledRegister($this->wh->id, now()->subDay()->toDateString(), now()->toDateString());
     expect($entry['product']->sku)->toBe('MOR')->and($entry['opening'])->toBe('0.000')->and($entry['closing'])->toBe('17.000')
-        ->and($entry['rows'][1]->patient)->toBe('Ama Owusu')->and($entry['rows'][1]->rx_number)->toStartWith('RX-')->and($entry['rows'][1]->balance)->toBe('17.000');
+        ->and($entry['rows'][1]->patient)->toBe('AMA OWUSU')->and($entry['rows'][1]->rx_number)->toStartWith('RX-')->and($entry['rows'][1]->balance)->toBe('17.000');
 
     $this->actingAs($this->pharmacist);
     $this->get(route('print.controlled-register', ['warehouse' => $this->wh->id, 'from' => now()->toDateString(), 'to' => now()->toDateString()]))
-        ->assertOk()->assertSee('CONTROLLED-DRUG REGISTER')->assertSee('Ama Owusu');
+        ->assertOk()->assertSee('CONTROLLED-DRUG REGISTER')->assertSee('AMA OWUSU');
     $csv = $this->get(route('print.nhis-claims', ['from' => now()->toDateString(), 'to' => now()->toDateString()]))->assertOk()->streamedContent();
-    expect($csv)->toContain('NHIS-778899')->toContain('Morphine 10mg tabs')->not->toContain('Paracetamol') // only prescription lines are claimed
+    expect($csv)->toContain('NHIS-778899')->toContain('MORPHINE 10MG TABS')->not->toContain('PARACETAMOL') // only prescription lines are claimed
         ->and(DB::table('sale_lines')->where('sale_id', $sale->id)->whereNotNull('prescription_id')->count())->toBe(1);
 
     $this->flushSession();
@@ -289,7 +289,7 @@ it('shows the sales to sign off and the branch pharmacy rules on screen', functi
     $sale = rxSale($this, [[$this->amox, '1']], ['customer_id' => $this->ama->id]);
     Filament::setCurrentPanel(Filament::getPanel('admin'));
     $this->actingAs(withMfa($this->pharmacist));
-    Livewire::test(MedicineSignoffs::class)->assertSee($sale->receipt_no)->assertSee('Amoxicillin 500mg caps')
+    Livewire::test(MedicineSignoffs::class)->assertSee($sale->receipt_no)->assertSee('AMOXICILLIN 500MG CAPS')
         ->callTableBulkAction('sign', [$sale->id], ['note' => 'Checked'])->assertNotified('1 sale(s) signed off');
     expect(DB::table('pharmacy_signoffs')->value('signed_by_name'))->toBe($this->pharmacist->name);
 

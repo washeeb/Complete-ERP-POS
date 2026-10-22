@@ -6,6 +6,7 @@ use App\Domain\Imports\ImportService;
 use App\Filament\Pages\ImportData;
 use App\Filament\Resources\StockCounts\StockCountResource;
 use App\Filament\Support\Erp;
+use App\Filament\Support\ReloadsAfterAction;
 use App\Support\Exports\Exporter;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -14,6 +15,8 @@ use Filament\Support\Icons\Heroicon;
 
 class ViewStockCount extends ViewRecord
 {
+    use ReloadsAfterAction;
+
     protected static string $resource = StockCountResource::class;
 
     protected function getHeaderActions(): array

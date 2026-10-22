@@ -83,7 +83,7 @@ it('generates one product per size and colour, with SKU, barcode and price, and 
     expect($this->styles->generate($this->o, $this->style))->toBe(6)
         ->and($this->styles->generate($this->o, $this->style->fresh()))->toBe(0); // nothing new the second time
     $m = Product::where('sku', 'KENTE-DR-BLACK-M')->sole();
-    expect($m->name)->toBe('Kente wrap dress Black M')->and($m->style_id)->toBe($this->style->id)->and([$m->size, $m->colour])->toBe(['M', 'Black'])
+    expect($m->name)->toBe('KENTE WRAP DRESS BLACK M')->and($m->style_id)->toBe($this->style->id)->and([$m->size, $m->colour])->toBe(['M', 'Black'])
         ->and(Ean13::valid($m->barcodes()->value('code')))->toBeTrue()->and(str_starts_with($m->barcodes()->value('code'), '20'))->toBeTrue()
         ->and(app(PriceResolver::class)->resolve($this->retail, $m->id, $m->units->first()->id, 1000, now())->amount_minor)->toBe(45000)
         ->and($this->style->season)->toBe('SS26');

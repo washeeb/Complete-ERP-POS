@@ -15,6 +15,7 @@ use App\Security\Authorizer;
 use App\Support\People;
 use App\Support\Settings;
 use App\Support\TenantContext;
+use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Support\Exceptions\Halt;
 use Filament\Tables\Columns\TextColumn;
@@ -49,6 +50,11 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Names and codes in capitals (owner decision 2026-10-22): shown as typed in capitals; the services store them so.
+        TextInput::macro('caps', function () {
+            /** @var TextInput $this */
+            return $this->extraInputAttributes(['style' => 'text-transform: uppercase']);
+        });
         // Who did it: the name at the time, as recorded (also on prints). If the account has been renamed since, an icon
         // and a hint give today's name; People & access → Users → Name history lists every rename.
         foreach ([TextColumn::class, TextEntry::class] as $component) {

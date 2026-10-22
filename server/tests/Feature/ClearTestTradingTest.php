@@ -72,7 +72,7 @@ it('shows the test trading without changing anything, then clears it and keeps p
         expect(DB::table($t)->count())->toBe(0, $t);
     }
     expect(DB::table('stock_levels')->where('on_hand', '<>', 0)->count())->toBe(0); // products stay listed, at 0
-    expect(Product::where('sku', 'MILO')->exists())->toBeTrue()->and(Customer::where('name', 'Ama Owusu')->exists())->toBeTrue()
+    expect(Product::where('sku', 'MILO')->exists())->toBeTrue()->and(Customer::where('name', 'AMA OWUSU')->exists())->toBeTrue()
         ->and(User::where('username', 'janet')->exists())->toBeTrue()->and(Device::count())->toBe(1)
         ->and(DB::table('document_sequences')->where('doc_type', 'INV')->exists())->toBeFalse()          // invoice numbers start again
         ->and(DB::table('document_sequences')->where('doc_type', 'CUS')->exists())->toBeTrue()           // customer numbers keep counting

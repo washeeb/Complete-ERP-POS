@@ -36,7 +36,7 @@ it('lists a new product on Stock on hand at 0 in every store, before anything mo
 
     Filament::setCurrentPanel(Filament::getPanel('admin'));
     $this->actingAs(withMfa($this->owner));
-    $never = makeProduct($this->owner, 'MAX', 'Maxmox /Letap (Amoxyllin) 250mg', retail: '5.00');
-    Livewire::test(ListStockLevels::class)->searchTable('MAXMOX')->assertSee('Maxmox /Letap')
-        ->filterTable('level', 'out')->assertSee('Maxmox /Letap')->assertDontSee('Gyprone Plus Tabs');
+    $never = makeProduct($this->owner, 'MAX', 'MAXMOX /LETAP (Amoxyllin) 250mg', retail: '5.00');
+    Livewire::test(ListStockLevels::class)->searchTable('MAXMOX')->assertSee('MAXMOX /LETAP')
+        ->filterTable('level', 'out')->assertSee('MAXMOX /LETAP')->assertDontSee('Gyprone Plus Tabs');
 });

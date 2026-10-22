@@ -147,6 +147,9 @@ class PosController extends Controller
                 'prices' => fn ($q) => $q->whereIn('price_list_id', $lists)->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>', $now))])
             ->orderBy('name')->limit(20000)->get();
         $stock = $till ? StockLevel::where('warehouse_id', $till->warehouse_id)->pluck('on_hand', 'product_id') : collect();
+        // The expiry the cashier sees: the batch sold next (earliest expiry with stock at this till's store).
+        $expiry = $till ? DB::table('stock_batch_levels as l')->join('stock_batches as b', 'b.id', '=', 'l.batch_id')->where('l.warehouse_id', $till->warehouse_id)
+            ->where('l.on_hand', '>', 0)->whereNotNull('b.expires_on')->groupBy('l.product_id')->selectRaw('l.product_id, MIN(b.expires_on) AS e')->pluck('e', 'product_id') : collect();
         $minimums = $till && ($w = Warehouse::find($till->warehouse_id)) ? app(ReorderLevels::class)->forWarehouse($w) : []; // the till marks low stock
 
         return response()->json([
@@ -196,6 +199,7 @@ class PosController extends Controller
                 'drug' => $p->drug_schedule ? ['schedule' => $p->drug_schedule, 'generic_name' => $p->generic_name, 'strength' => $p->strength,
                     'dosage_form' => $p->dosage_form, 'active_ingredients' => $p->active_ingredients ?? []] : null,
                 'on_hand' => $p->track_stock ? (string) ($stock[$p->id] ?? '0.000') : null,
+                'expires_on' => $p->track_batches && isset($expiry[$p->id]) ? substr((string) $expiry[$p->id], 0, 10) : null,
                 'min_qty' => isset($minimums[$p->id]) ? Qty::format($minimums[$p->id]['min']) : null,
                 'tax' => $p->taxGroup->rates->map(fn ($r) => ['code' => $r->code, 'name' => $r->name, 'rate_bp' => $r->rate_bp])->values(),
                 'units' => $p->units->map(fn ($u) => [

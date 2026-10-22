@@ -89,7 +89,7 @@ it('prepares, dispatches and delivers a transfer waybill, confirmed by the recei
 
     Filament::setCurrentPanel(Filament::getPanel('admin'));
     $this->actingAs(withMfa($this->owner));
-    $this->get(route('print.waybill', $w))->assertOk()->assertSee('WAYBILL')->assertSee('<svg', false)->assertSee('Milo 400g');
+    $this->get(route('print.waybill', $w))->assertOk()->assertSee('WAYBILL')->assertSee('<svg', false)->assertSee('MILO 400G');
     Livewire::test(ViewWaybill::class, ['record' => $w->id])->assertSee($w->number);
     auth()->logout();
 

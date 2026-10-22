@@ -135,7 +135,7 @@ it('runs a request between industries through the screens', function () {
     Filament::setCurrentPanel(Filament::getPanel('admin'));
     $this->actingAs(withMfa($this->g1Keeper), 'web');
     Livewire::test(CreateStockRequest::class)->fillForm(['to_warehouse_id' => $this->wh['G1']->id, 'from_warehouse_id' => $this->wh['P1']->id,
-        'lines' => [['product_uom_id' => $this->waterGr->units->first()->id, 'qty' => '3']]])->call('create')->assertHasNoFormErrors();
+        'lines' => [['product_uom_id' => $this->waterGr->units->first()->id, 'qty' => '3']]])->call('create')->assertHasNoFormErrors()->assertNotified();
     $r = StockRequest::firstOrFail();
     Livewire::test(ViewStockRequest::class, ['record' => $r->id])->assertActionHidden('approve')->assertActionHidden('supply')->assertActionVisible('cancel');
 

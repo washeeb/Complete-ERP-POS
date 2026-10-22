@@ -72,7 +72,7 @@ it('shows online orders and hands one over with the payment recorded', function 
         'payment_status' => 'pay_at_pickup', 'lines' => [['sku' => 'MILO', 'qty' => '2', 'unit_price_minor' => 5800]]])['order'];
 
     $this->get(SalesOrderResource::getUrl())->assertOk()->assertSee('WEB-X1')->assertSee('Akua')->assertSee('116.00')->assertSee('Pay at pickup');
-    $this->get(SalesOrderResource::getUrl('view', ['record' => $o]))->assertOk()->assertSee('MILO · Milo 400g')->assertSee('Reserved');
+    $this->get(SalesOrderResource::getUrl('view', ['record' => $o]))->assertOk()->assertSee('MILO · MILO 400G')->assertSee('Reserved');
 
     Livewire::test(ListSalesOrders::class)->callTableAction('ready', $o)->assertNotified('Marked ready for pickup');
     Livewire::test(ViewSalesOrder::class, ['record' => $o->id])

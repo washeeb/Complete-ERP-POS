@@ -54,7 +54,7 @@ class UomResource extends SimpleCatalogResource
         return $schema->components([
             TextInput::make('code')->required()->maxLength(10)->regex('/^[A-Za-z0-9]{1,10}$/')
                 ->helperText('Short code printed on receipts, e.g. PC, CTN, KG, TAB. Changing it changes it on every product, the tills and new documents; receipts and documents already made keep the old code.'),
-            TextInput::make('name')->required()->maxLength(60),
+            TextInput::make('name')->required()->maxLength(60)->caps(),
             Select::make('decimals')->label('Quantity decimals')->required()->default(0)
                 ->options([0 => '0 — whole units only', 1 => '1', 2 => '2', 3 => '3 — e.g. 1.250 kg'])
                 ->helperText('How precisely this unit can be sold or counted.'),

@@ -193,7 +193,7 @@ it('serves the public API with scoped keys acting as a person, and sends signed 
     $r = $this->withHeaders($h)->getJson('/api/public/v1/products?search=milo')->assertOk();
     expect($r->json('data.0.sku'))->toBe('MILO')->and($r->json('data.0.units.0.price_minor'))->toBe(5800)->and($r->json('data.0.currency'))->toBe('GHS');
     $this->withHeaders($h)->getJson('/api/public/v1/stock')->assertForbidden(); // no stock:read scope
-    $this->withHeaders($h)->getJson('/api/public/v1/products/'.$this->milo->id)->assertOk()->assertJsonPath('data.name', 'Milo 400g');
+    $this->withHeaders($h)->getJson('/api/public/v1/products/'.$this->milo->id)->assertOk()->assertJsonPath('data.name', 'MILO 400G');
 
     $c = $this->withHeaders($h)->postJson('/api/public/v1/customers', ['name' => 'Kofi Boateng', 'phone' => '0201234567'])->assertCreated();
     $this->withHeaders($h)->postJson('/api/public/v1/customers', ['name' => ''])->assertStatus(422);
@@ -209,7 +209,7 @@ it('serves the public API with scoped keys acting as a person, and sends signed 
     app(CatalogService::class)->saveProduct($this->o, $this->milo, ['name' => 'Milo 400 g tin']);
     app(WebhookDispatcher::class)->run();
     $d = WebhookDelivery::sole();
-    expect($d->status)->toBe('pending')->and($d->attempts)->toBe(1)->and($d->payload['data']['name'])->toBe('Milo 400 g tin');
+    expect($d->status)->toBe('pending')->and($d->attempts)->toBe(1)->and($d->payload['data']['name'])->toBe('MILO 400 G TIN');
     $this->travel(2)->minutes();
     app(WebhookDispatcher::class)->run();
     expect($d->fresh()->status)->toBe('sent');
@@ -265,7 +265,7 @@ it('builds reports with drill-down, keeps them within the person’s access, and
     Mail::assertSent(PlainMessage::class, fn ($e) => $e->hasTo('boss@example.test') && str_ends_with((string) $e->attachmentName, '.xlsx'));
     $file = Storage::disk('local')->allFiles('report-runs')[0];
     $read = SheetFile::xlsx(Storage::disk('local')->path($file));
-    expect($read['headings'])->toBe(['product', 'units', 'sales_before_tax'])->and($read['rows'][0]['values']['product'])->toBe('MILO Milo 400g')
+    expect($read['headings'])->toBe(['product', 'units', 'sales_before_tax'])->and($read['rows'][0]['values']['product'])->toBe('MILO MILO 400G')
         ->and($this->owner->fresh()->notifications()->count())->toBe(1);
 });
 
@@ -287,15 +287,15 @@ it('exports the books for QuickBooks, Xero and Sage, balanced, for company-wide 
 });
 
 it('writes and reads Excel files, and imports with the person’s own column names', function () {
-    $bytes = XlsxWriter::bytes([['title' => 'Products', 'headings' => ['Item code', 'Name', 'Price (GHS)'], 'rows' => [['SUGAR-1', 'Sugar 1 kg & more <b>', '22.00'], ['0244', 'Phone code kept as text', '1']]]]);
+    $bytes = XlsxWriter::bytes([['title' => 'Products', 'headings' => ['Item code', 'Name', 'Price (GHS)'], 'rows' => [['SUGAR-1', 'SUGAR 1 KG & MORE <B>', '22.00'], ['0244', 'Phone code kept as text', '1']]]]);
     $path = tempnam(sys_get_temp_dir(), 'x').'.xlsx';
     file_put_contents($path, $bytes);
     $read = SheetFile::xlsx($path);
-    expect($read['headings'])->toBe(['item_code', 'name', 'price_ghs'])->and($read['rows'][0]['values'])->toBe(['item_code' => 'SUGAR-1', 'name' => 'Sugar 1 kg & more <b>', 'price_ghs' => '22.00'])
+    expect($read['headings'])->toBe(['item_code', 'name', 'price_ghs'])->and($read['rows'][0]['values'])->toBe(['item_code' => 'SUGAR-1', 'name' => 'SUGAR 1 KG & MORE <B>', 'price_ghs' => '22.00'])
         ->and($read['rows'][1]['values']['item_code'])->toBe('0244')->and($read['rows'][0]['line'])->toBe(2);
 
     $import = app(ImportService::class)->run($this->o, 'products', $path, 'products.xlsx', ['create_missing' => true, 'industry' => 'shared'], null, true, ['sku' => 'item_code', 'price_retail' => 'price_ghs']);
-    expect($import->errors)->toBe([])->and($import->status)->toBe('imported')->and(Product::where('sku', 'SUGAR-1')->value('name'))->toBe('Sugar 1 kg & more <b>');
+    expect($import->errors)->toBe([])->and($import->status)->toBe('imported')->and(Product::where('sku', 'SUGAR-1')->value('name'))->toBe('SUGAR 1 KG & MORE <B>');
     @unlink($path);
 });
 
@@ -323,7 +323,7 @@ it('reprints a till receipt as a marked COPY, audited, with a print preview and 
     Filament::setCurrentPanel(Filament::getPanel('admin'));
     $this->actingAs(withMfa($this->owner), 'web');
     $this->get(route('print.receipt', $sale))->assertOk()->assertSee('COPY')->assertSee('Not the original receipt')->assertSee($sale->receipt_no)
-        ->assertSee('Milo 400g')->assertSee('TOTAL')->assertDontSee('window.print(), 300', false);
+        ->assertSee('MILO 400G')->assertSee('TOTAL')->assertDontSee('window.print(), 300', false);
     $this->get(route('print.receipt', ['sale' => $sale, 'print' => 1]))->assertOk()->assertSee('window.print(), 300', false);
     expect(AuditEvent::where('action', 'sale.receipt_reprinted')->where('subject_id', $sale->id)->count())->toBe(2);
     $this->get(SaleResource::getUrl('view', ['record' => $sale]))->assertOk()->assertSee('Print preview (copy)')->assertSee('Print copy');

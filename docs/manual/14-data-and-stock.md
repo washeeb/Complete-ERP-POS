@@ -52,6 +52,8 @@ Many products at once: tick them on the product list → **Change the unit** (sa
 
 **Imported twice by mistake?** The system remembers each file: importing exactly the same file again is stopped with when and by whom it was imported. Tick **Import it again** only if you really mean to add it a second time. After an import the page empties, ready for the next file.
 
+**How far it has got:** a long file shows a card at the bottom right — *Checking products.csv — 150 of 2,000* and about how long is left. Keep the page open until it finishes. **Why:** you can see it is working, so nobody clicks again or closes the page half-way.
+
 **Medicines in the products file:** `drug_schedule` says what kind of medicine a product is: `otc` (over the counter), `pom` (prescription only: a pharmacist approves it at the till) or `controlled` (pharmacist approval, and it goes in the controlled-drug register). Common words also work (POM, prescription, CD, controlled); `none` means not a medicine. With it: `generic_name`, `strength`, `dosage_form`, `fda_reg_no` and `active_ingredients` (separated by `|`, for allergy and interaction warnings). *Download current data* includes them, so you can fill the column in Excel and upload it with **Products — update existing**. **Why:** the till can only ask for a pharmacist, and the register can only list controlled drugs, when the system knows which products they are.
 
 The migration imports are explained in Chapter 17.2. **Coming from** (QuickBooks, another till system, or our templates) matches the old system's column names for you.

@@ -235,7 +235,7 @@ it('shows the sale, its ledger lines and its figures in the back office', functi
     $this->get(StockMovementResource::getUrl())->assertOk()
         ->assertSee('Sale HQ-T01A-000001')->assertSee('-2');
     $this->get(SaleResource::getUrl('view', ['record' => $r['id']]))->assertOk()
-        ->assertSee('GH₵ 90.00')->assertSee('Milo 400g')->assertSee('Cash');
+        ->assertSee('GH₵ 90.00')->assertSee('MILO 400G')->assertSee('Cash');
     $this->get(SaleResource::getUrl())->assertOk()->assertSee('GH₵ 90.00');
     $this->get(ShiftResource::getUrl())->assertOk()->assertSee('GH₵ 200.00');
     $this->get(TaxRateResource::getUrl())->assertOk()->assertSee('15.00%');
@@ -251,12 +251,12 @@ it('keeps posted sale lines immutable at the database', function () {
 })->throws(Exception::class, 'immutable');
 
 it('lists customers for the till with their credit snapshot, and answers 304 when nothing changed', function () {
-    $c = app(CustomerService::class)->save(actorFor($this->owner), new Customer, ['name' => 'Kofi Provisions', 'phone' => '0245551234',
+    $c = app(CustomerService::class)->save(actorFor($this->owner), new Customer, ['name' => 'KOFI PROVISIONS', 'phone' => '0245551234',
         'price_list_id' => PriceList::where('code', 'WHOLESALE')->value('id'), 'credit_limit_minor' => 500_000, 'payment_terms_days' => 30]);
     app('auth')->forgetGuards();
 
     $r = $this->withToken($this->token)->getJson('/api/v1/pos/customers')->assertOk();
-    expect($r->json('customers.0'))->toMatchArray(['name' => 'Kofi Provisions', 'phone' => '+233245551234', 'credit_limit_minor' => 500_000,
+    expect($r->json('customers.0'))->toMatchArray(['name' => 'KOFI PROVISIONS', 'phone' => '+233245551234', 'credit_limit_minor' => 500_000,
         'available_minor' => 500_000, 'overdue_minor' => 0, 'credit_hold' => false])
         ->and(collect($this->withToken($this->token)->getJson('/api/v1/pos/bootstrap')->json('price_lists'))->pluck('code'))->toContain('WHOLESALE');
     app('auth')->forgetGuards();
