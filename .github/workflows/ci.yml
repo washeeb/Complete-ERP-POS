@@ -59,6 +59,43 @@ jobs:
       - run: composer audit
       - run: php artisan test
 
+  # Every role, company-wide and at a branch, opens every link the back office shows (no 403, no error), and one link of
+  # each kind on every page with sample data (owner request 2026-10-22). Pull requests only, in parallel with the rest.
+  links:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: erp
+          POSTGRES_PASSWORD: erp
+          POSTGRES_DB: erp_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U erp" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: erp_test
+      DB_USERNAME: erp
+      DB_PASSWORD: erp
+      CRAWL: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, intl, bcmath, sodium, zip, gd
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist
+      - run: cp .env.example .env && php artisan key:generate
+      - run: php artisan test tests/Feature/NoForbiddenLinksTest.php
+
   pos:
     runs-on: ubuntu-latest
     defaults:
