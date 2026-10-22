@@ -76,6 +76,26 @@ final class PurchaseOrderService
         });
     }
 
+    /**
+     * Order again: a new draft with the same supplier, store and lines. Costs are the supplier's latest known cost
+     * (goods received update it), else the old order's; inactive products are left out.
+     */
+    public function copy(Actor $actor, PurchaseOrder $from): PurchaseOrder
+    {
+        $currency = $from->currency_code;
+        $lines = $from->lines()->get()->filter(fn ($l) => Product::where('id', $l->product_id)->where('is_active', true)->exists())
+            ->map(fn ($l) => ['product_uom_id' => $l->product_uom_id, 'qty' => (string) $l->qty,
+                'unit_cost' => SupplierProduct::where('supplier_id', $from->supplier_id)->where('product_uom_id', $l->product_uom_id)->whereNotNull('last_cost_minor')->exists()
+                    ? null : Money::format((int) $l->unit_cost_minor, $currency)])
+            ->values()->all();
+        if ($lines === []) {
+            throw new DomainException("None of the products on {$from->number} can be ordered any more.");
+        }
+
+        return $this->saveDraft($actor, new PurchaseOrder, ['supplier_id' => $from->supplier_id, 'warehouse_id' => $from->warehouse_id,
+            'note' => "Ordered again from {$from->number}", 'lines' => $lines]);
+    }
+
     public function submit(Actor $actor, PurchaseOrder $po): PurchaseOrder
     {
         $this->require($actor, 'purchasing.manage', $po->warehouse);

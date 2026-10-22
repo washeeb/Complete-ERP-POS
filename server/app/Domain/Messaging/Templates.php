@@ -46,6 +46,10 @@ final class Templates
             'sms' => [null, '{company}: we received {amount} ({number}). Balance now {balance}. Thank you.', false, null],
             'email' => ['Payment received — {number}', "Dear {customer},\n\nWe received {amount} ({number}). Your balance is now {balance}.\n\nThank you.\n{company}", false, null],
         ]],
+        'purchase_order' => ['Purchase order sent to a supplier', '{company} {supplier} {number} {total} {deliver_by} {note} {link}', [
+            'email' => ['Purchase order {number} from {company}', "Dear {supplier},\n\nPlease find attached our purchase order {number} for {total}.{deliver_by}\n\n{note}\n\nPlease quote {number} on your delivery note and invoice, and deliver only the items and quantities on the order.\n\nThank you.\n{company}", true, null],
+            'whatsapp' => [null, '{company}: purchase order {number} for {total}. Download it here: {link}', true, 'purchase_order'],
+        ]],
         'scheduled_report' => ['Scheduled report', '{company} {report} {period} {rows}', [
             'email' => ['{report} — {period}', "Attached: {report} for {period} ({rows} row(s)).\n\nSent automatically by {company}'s business system. Change the schedule under Reports.", true, null],
             'whatsapp' => [null, '{company}: {report} for {period} is ready ({rows} row(s)). It was e-mailed to the recipients.', true, 'report_ready'],

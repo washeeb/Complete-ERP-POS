@@ -164,9 +164,36 @@ Every product that keeps stock has a **minimum** in each store. When stock (plus
 - **Slow movers** (setting, off by default): products that have not sold in a store for 180 days get no default minimum there, so dead stock is not reordered.
 - **Low stock:** the dashboard shows how many products are at or below their minimum (click it to open What to order); buyers get a notification each morning; and with *Show stock left on the till* on, the till marks such items **Low** in amber.
 
+**Changing a line before ordering:** on *What to order*, **Change** on a line lets you pick another supplier (the product's own suppliers come first, with their last price), the unit, the quantity and, when the supplier has no price yet, the cost. If you may set reorder levels, the same box changes the product's minimum and maximum for that store, saved at once. The line then says *Changed by you*; **Undo change** puts it back. Filter by **Supplier** to order one supplier at a time (or *No supplier set up* to find what still needs one). Tick the lines and **Create draft purchase orders**.
+
+**Why:** the suggestion is a starting point. A cheaper supplier this week, a bigger pack or a slow month are things only the buyer knows.
+
 **Tip:** set the supplier's *delivery lead time* (Purchasing → Suppliers) and their unit and cost on the supplier's products list — smart levels and what-to-order use them.
 
-## 14.6 Expired and near-expiry stock: disposals and returns to suppliers
+## 14.6 Purchase orders from a file, ordering again and sending to the supplier
+
+**From a file:** **Purchasing → Purchase orders → Order from a file**.
+
+1. Choose **An Excel or CSV list** or **A supplier's pro-forma invoice** (a photo or PDF, read by the AI — it must be switched on under System → Settings → AI).
+2. Choose the supplier (for a pro-forma you may leave it empty: the system finds it from the paper) and the store to deliver to, then the file.
+3. The system makes a **draft** purchase order and opens it. Check every line and cost, change what is needed, and **Submit for approval** as usual.
+
+The list needs a heading row with a product column — **SKU** (or the supplier's code), **Barcode** or **Product** name — and **Qty**; **Unit** and **Cost** are optional (without a cost, the supplier's last price is used). Lines that match no product, have no quantity or have no cost at all are **left out and listed** on screen, never guessed.
+
+**Why:** suppliers send their price list or pro-forma; typing 80 lines again wastes an hour and invites mistakes.
+
+**Ordering again:** on any purchase order that is not a draft, **Order again** makes a new draft with the same supplier, store and lines, at the supplier's latest prices.
+
+**Sending to the supplier:** once an order is **approved**, **Send to supplier** sends it:
+- **E-mail** — with the order attached as a PDF (needs the e-mail settings, 16.1);
+- **WhatsApp from this computer** — WhatsApp opens with the message and a link to download the order; you press send. Works without any WhatsApp provider;
+- **WhatsApp (sent by the system)** — only when a WhatsApp Business provider is set up (16.3).
+
+The order then shows **Sent to supplier** with when, how and to whom; **Send again** sends it once more. The download link works for 30 days, only for that order. The wording is under **Messages → Templates → Purchase order sent to a supplier**.
+
+**Why:** the supplier gets a clean, numbered order straight away, and everyone can see that it went and how.
+
+## 14.7 Expired and near-expiry stock: disposals and returns to suppliers
 
 **Stock → Expiry & returns** lists every batch in stock that has expired or expires soon, earliest first. For each batch it shows the days left (red once expired, amber under 30 days), the quantity, its value at cost, the store, the supplier it came from and whether that supplier still takes it back. Controlled drugs are marked.
 

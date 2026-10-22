@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 ### Added
+- **Purchase orders from a file:** *Order from a file* on Purchasing → Purchase orders turns an Excel or CSV list (SKU, supplier code, barcode or name; quantity; optional unit and cost) or a supplier's **pro-forma invoice read by the AI** (photo or PDF) into a draft order to check and submit. Lines that cannot be matched, or have no cost, are listed, never guessed. **Order again** copies any earlier order into a new draft at the latest prices. Asked for by the first client.
+- **Send purchase orders to suppliers** from the order: e-mail with the order as a PDF, WhatsApp opened on this computer with the message and a 30-day download link (no provider needed), or WhatsApp sent by the system when a provider is set up. The order shows when, how and to whom it was sent; every message is in the message log. New message wording *Purchase order sent to a supplier*. Asked for by the first client.
+- **What to order: change before ordering.** *Change* on a line picks another supplier (the product's own suppliers first, with their last price), unit, quantity and cost, and — with the reorder-levels permission — the product's minimum and maximum for the store; *Undo change*; filter by supplier or *No supplier set up*. Asked for by the first client.
 - **Progress you can see:** imports and long bulk changes (change the unit, move products, set the medicine schedule) show a card with *Checking products.csv — 150 of 2,000* and the time left, so nobody clicks again or leaves the page.
 - **Print preview** for purchase orders, goods received, stock transfers, stock requests and purchase requests (Print opens it in a new tab: print or save as PDF), with signature lines.
 - **Expiry at the till:** batch items show the expiry of the batch sold next in the search list and on the sale line, amber within 90 days and red once expired.

@@ -26,14 +26,25 @@
         .wm { margin-top: 18px; font-size: 6pt; color: #b5b5b0; letter-spacing: .5px; }
         @media print { .no-print { display: none; } .page { padding: 0; } }
     </style>
+    @if (! empty($pdf))
+    {{-- The PDF sent to a supplier (Dompdf): no flex layout, a font with ₵, no Print button. --}}
+    <style>
+        body { font-family: "DejaVu Sans", sans-serif; font-size: 9.5pt; }
+        .page { max-width: none; padding: 0; }
+        header, .parties { display: table; width: 100%; }
+        header > div, .parties > div { display: table-cell; vertical-align: top; width: 50%; }
+        .parties > div + div { padding-left: 16px; }
+        .no-print { display: none; }
+    </style>
+    @endif
 </head>
 <body>
 <div class="page">
     <p class="no-print"><button onclick="window.print()">Print / Save as PDF</button></p>
-    @php($brand = \App\Domain\Branding\Branding::forTenant(\App\Models\Tenant::find(auth()->user()?->tenant_id)))
+    @php($brand = \App\Domain\Branding\Branding::forTenant(\App\Models\Tenant::find($tenantId ?? auth()->user()?->tenant_id)))
     <header style="border-bottom-color: {{ $brand['color'] }}">
         <div class="brand-block">
-            @if ($brand['logo_url'])<img class="brand-logo" src="{{ \App\Domain\Branding\Branding::logoDataUri(auth()->user()?->tenant_id) }}" alt="{{ $brand['company'] }}">@endif
+            @if ($brand['logo_url'])<img class="brand-logo" src="{{ \App\Domain\Branding\Branding::logoDataUri($tenantId ?? auth()->user()?->tenant_id, svgOk: empty($pdf)) }}" alt="{{ $brand['company'] }}">@endif
             <h1>{{ \App\Domain\Licensing\Watermark::stamp($company['name']) }}</h1>
             <div class="small">{{ $company['address'] }} @if ($company['phone']) · {{ $company['phone'] }} @endif</div>
             <div class="small">@if ($company['tin']) TIN {{ $company['tin'] }} @endif @if ($company['vat_no']) · VAT {{ $company['vat_no'] }} @endif</div>

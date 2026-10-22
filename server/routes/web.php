@@ -1,14 +1,17 @@
 <?php
 
+use App\Domain\Purchasing\OrderSender;
 use App\Http\Controllers\BrandAssetController;
 use App\Http\Controllers\ExpenseReceiptController;
 use App\Http\Controllers\PrintController;
 use App\Http\Controllers\StorefrontController;
 use App\Http\Controllers\SupportScreenshotController;
 use App\Http\Controllers\WaybillConfirmController;
+use App\Models\PurchaseOrder;
 use App\Security\Passkeys\PasskeyLoginController;
 use App\Support\Progress;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use Spatie\LaravelPasskeys\Http\Controllers\GeneratePasskeyAuthenticationOptionsController;
 
 Route::get('/', fn () => redirect('/admin'));
@@ -78,6 +81,14 @@ Route::get('disposal-certificate/{adjustment}', [PrintController::class, 'dispos
 // The receiver of a waybill confirms delivery from the QR code: no sign-in, the waybill's secret link only.
 Route::get('w/{token}', [WaybillConfirmController::class, 'show'])->name('waybill.confirm')->middleware('throttle:30,1');
 Route::post('w/{token}', [WaybillConfirmController::class, 'confirm'])->middleware('throttle:10,1');
+
+// A supplier downloads the purchase order sent to them by WhatsApp: no sign-in, a signed link for 30 days, that PDF only.
+Route::get('po/{po}', function (string $po) {
+    $path = OrderSender::download($po);
+    abort_unless($path, 404);
+
+    return Storage::disk('local')->download($path, PurchaseOrder::withoutGlobalScopes()->whereKey($po)->value('number').'.pdf');
+})->name('purchase-order.pdf')->whereUuid('po')->middleware(['signed', 'throttle:30,1']);
 
 // How far the signed-in person's long work has got (imports, bulk changes): asked by the progress card every second.
 Route::get('progress-status', fn () => response()->json(Progress::live()))->middleware(['auth'])->name('progress.status');

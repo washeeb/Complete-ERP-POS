@@ -22,7 +22,7 @@ class PurchaseOrder extends Model
 
     protected function casts(): array
     {
-        return ['expected_on' => 'date', 'submitted_at' => 'datetime', 'approved_at' => 'datetime', 'closed_at' => 'datetime',
+        return ['expected_on' => 'date', 'submitted_at' => 'datetime', 'approved_at' => 'datetime', 'closed_at' => 'datetime', 'sent_at' => 'datetime',
             'net_minor' => 'integer', 'tax_minor' => 'integer', 'total_minor' => 'integer'];
     }
 

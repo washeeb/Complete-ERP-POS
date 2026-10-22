@@ -90,7 +90,7 @@ final class InvoiceScanner
     private function form(Actor $actor, Branch $branch, array $d): array
     {
         $currency = Money::exponent(DB::table('tenants')->where('id', $actor->tenantId)->value('currency_code') ?? 'GHS');
-        $supplier = $this->supplier($d);
+        $supplier = self::matchSupplier($d);
         $date = self::date($d['invoice_date'] ?? null);
         $form = ['supplier_id' => $supplier?->id, 'supplier_invoice_no' => mb_substr(trim((string) ($d['invoice_number'] ?? '')), 0, 60), 'branch_id' => $branch->id,
             'bill_date' => $date && $date <= now()->toDateString() ? $date : now()->toDateString(), 'due_on' => self::date($d['due_date'] ?? null),
@@ -114,7 +114,8 @@ final class InvoiceScanner
         return $form;
     }
 
-    private function supplier(array $d): ?Supplier
+    /** The supplier named on a document: by TIN, else by the closest name (at least 60% alike). */
+    public static function matchSupplier(array $d): ?Supplier
     {
         $tin = preg_replace('/\s+/', '', (string) ($d['supplier_tax_no'] ?? ''));
         if ($tin !== '' && ($s = Supplier::where('is_active', true)->whereRaw("replace(tax_no, ' ', '') = ?", [$tin])->first())) {
@@ -177,7 +178,7 @@ final class InvoiceScanner
         return $score >= 55 ? $best : null;
     }
 
-    private static function date(?string $v): ?string
+    public static function date(?string $v): ?string
     {
         if (! $v) {
             return null;

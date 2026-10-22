@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\PurchaseOrders;
 
 use App\Domain\Purchasing\GoodsReceiptService;
+use App\Domain\Purchasing\OrderSender;
 use App\Domain\Purchasing\PurchaseOrderService;
 use App\Filament\Resources\GoodsReceipts\GoodsReceiptResource;
 use App\Filament\Resources\PurchaseOrders\Pages\CreatePurchaseOrder;
@@ -25,6 +26,7 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
@@ -36,6 +38,7 @@ use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -159,6 +162,10 @@ class PurchaseOrderResource extends Resource
                 TextEntry::make('approved_by_name')->asPerson('approved_by')->label('Approved by')->placeholder('—'),
                 TextEntry::make('rejected_reason')->label('Sent back because')->placeholder('—')->color('danger')->visible(fn (PurchaseOrder $record) => (bool) $record->rejected_reason),
                 TextEntry::make('close_reason')->label('Closed because')->visible(fn (PurchaseOrder $record) => (bool) $record->close_reason),
+                TextEntry::make('sent_at')->label('Sent to supplier')->placeholder('Not sent yet')
+                    ->formatStateUsing(fn (PurchaseOrder $record) => $record->sent_at->format('j M Y H:i').' · '.(OrderSender::CHANNELS[$record->sent_via] ?? $record->sent_via).' to '.$record->sent_to)
+                    ->belowContent(fn (PurchaseOrder $record) => $record->sent_by_name ? "by {$record->sent_by_name}" : null)
+                    ->visible(fn (PurchaseOrder $record) => in_array($record->status, ['approved', 'partially_received', 'received', 'closed'], true)),
                 TextEntry::make('note')->placeholder('—')->columnSpanFull(),
             ]),
             Section::make('Lines')->schema([
@@ -192,6 +199,34 @@ class PurchaseOrderResource extends Resource
                 ->visible(fn (PurchaseOrder $record) => $record->status === 'pending_approval' && Erp::can('purchasing.approve', $record->warehouse))
                 ->schema([TextInput::make('reason')->required()->maxLength(255)])
                 ->action(fn (PurchaseOrder $record, array $data) => Erp::run(fn ($actor) => $svc()->reject($actor, $record, $data['reason']), 'Sent back to draft')),
+            // Approved orders go to the supplier from here: e-mail with the PDF, WhatsApp by the system, or WhatsApp opened on this computer.
+            Action::make('send')->label(fn (PurchaseOrder $record) => $record->sent_at ? 'Send again' : 'Send to supplier')->icon(Heroicon::OutlinedPaperAirplane)
+                ->color(fn (PurchaseOrder $record) => $record->sent_at ? 'gray' : 'primary')
+                ->visible(fn (PurchaseOrder $record) => in_array($record->status, ['approved', 'partially_received'], true) && Erp::can('purchasing.manage', $record->warehouse))
+                ->fillForm(fn (PurchaseOrder $record) => ['channel' => 'email', 'to' => $record->supplier->email ?: $record->supplier->phone])
+                ->schema(fn (PurchaseOrder $record) => [
+                    Radio::make('channel')->label('How')->required()->live()->options(app(OrderSender::class)->channels($record->tenant_id))
+                        ->afterStateUpdated(fn ($state, Set $set) => $set('to', $state === 'email' ? $record->supplier->email : $record->supplier->phone)),
+                    TextInput::make('to')->label(fn (Get $get) => $get('channel') === 'email' ? 'E-mail address' : 'WhatsApp number')->required()->maxLength(160),
+                    Textarea::make('note')->label('Message to the supplier (optional)')->rows(2)->maxLength(500),
+                ])
+                ->modalDescription('The supplier gets the order as a PDF (by WhatsApp, as a download link valid for 30 days).')
+                ->action(function (PurchaseOrder $record, array $data) {
+                    $r = Erp::run(fn ($actor) => app(OrderSender::class)->send($actor, $record, $data['channel'], $data['to'], $data['note'] ?? null));
+                    $r['open']
+                        ? Notification::make()->success()->title('Ready in WhatsApp')->body('Open WhatsApp and press send.')->persistent()
+                            ->actions([Action::make('open')->label('Open WhatsApp')->button()->url($r['open'], shouldOpenInNewTab: true)])->send()
+                        : Notification::make()->success()->title($data['channel'] === 'email' ? 'E-mailed to the supplier' : 'Sent by WhatsApp')
+                            ->body('See Messages → Message log if it does not arrive.')->send();
+                }),
+            Action::make('copy')->label('Order again')->icon(Heroicon::OutlinedDocumentDuplicate)->color('gray')
+                ->visible(fn (PurchaseOrder $record) => $record->status !== 'draft' && Erp::can('purchasing.manage', $record->warehouse))
+                ->requiresConfirmation()->modalDescription('A new draft with the same supplier, store and lines, at the latest costs. Change it before submitting.')
+                ->action(function (PurchaseOrder $record, $livewire) use ($svc) {
+                    $po = Erp::run(fn ($actor) => $svc()->copy($actor, $record));
+                    Notification::make()->success()->title("{$po->number} created")->body('Check the quantities, then submit it for approval.')->send();
+                    $livewire->redirect(self::getUrl('edit', ['record' => $po]));
+                }),
             Action::make('receive')->label('Receive goods')->icon(Heroicon::OutlinedInboxArrowDown)->color('success')
                 ->visible(fn (PurchaseOrder $record) => $record->isReceivable() && Erp::can('stock.receive', $record->warehouse))
                 ->modalWidth('4xl')
