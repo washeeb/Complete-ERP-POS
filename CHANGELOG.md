@@ -6,7 +6,7 @@
 - **Search the menu** at the top of the side menu (`/` to jump there): matching pages stay with their sections opened; Enter opens the first. Asked for by the first client.
 
 ### Changed
-- **Receipts and documents carry the company the branch trades as** (its industry's legal entity, e.g. Oheneba Kingdom Pharmacy Ltd), not the group; the receipt top is shorter: name, branch · phone, TIN / VAT (no address, no second name). Same name on dosage labels and drawer slips, and at the top of the back office for people who work in one industry. Asked for by the first client.
+- **Receipts and documents carry the company the branch trades as** (its industry's legal entity, e.g. Asante Pharmacy Ltd), not the group; the receipt top is shorter: name, branch · phone, TIN / VAT (no address, no second name). Same name on dosage labels and drawer slips, and at the top of the back office for people who work in one industry. Asked for by the first client.
 
 ### Fixed
 - *Grocery → Markdowns* failed for branch staff where Grocery runs at another branch (now hidden for them), and *Batches & expiry* no longer shows a store the person may not see when its address is typed in.

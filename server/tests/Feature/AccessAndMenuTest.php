@@ -36,7 +36,7 @@ it('puts a menu search at the top of the side menu', function () {
 
 it('shows the company of the industry, not the group, on the till and in the back office', function () {
     $entity = LegalEntity::primary();
-    $entity->forceFill(['name' => 'Oheneba Kingdom Pharmacy Ltd'])->save();
+    $entity->forceFill(['name' => 'Asante Pharmacy Ltd'])->save();
     enableModule($this->owner, $this->branches['HQ'], 'pharmacy');
     $industry = Industry::where('module_key', 'pharmacy')->firstOrFail();
     $industry->forceFill(['legal_entity_id' => $entity->id])->save();
@@ -50,10 +50,10 @@ it('shows the company of the industry, not the group, on the till and in the bac
     $token = $this->withToken($deviceToken)->postJson('/api/v1/pos/login', ['username' => 'esi', 'pin' => '4826'])->json('token');
     app('auth')->forgetGuards();
     $this->withToken($token)->getJson('/api/v1/pos/bootstrap')->assertOk()
-        ->assertJsonPath('company.name', 'Oheneba Kingdom Pharmacy Ltd')->assertJsonPath('company.group_name', $this->tenant->name);
+        ->assertJsonPath('company.name', 'Asante Pharmacy Ltd')->assertJsonPath('company.group_name', $this->tenant->name);
 
     $pharmacist = staff($this->owner, 'ama', 4, 'branch_manager', ScopeType::Branch, $this->branches['HQ']->id);
     $this->actingAs($pharmacist, 'web');
-    expect(PanelBrand::industryCompany($pharmacist))->toBe('Oheneba Kingdom Pharmacy Ltd') // works in the pharmacy only
+    expect(PanelBrand::industryCompany($pharmacist))->toBe('Asante Pharmacy Ltd') // works in the pharmacy only
         ->and(PanelBrand::industryCompany($this->owner))->toBeNull(); // sees every industry: the group name stays
 });

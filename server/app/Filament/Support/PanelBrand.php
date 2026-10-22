@@ -43,8 +43,8 @@ final class PanelBrand
     }
 
     /**
-     * The company the person works for when it is one industry (owner request 2026-10-22: Oheneba Kingdom Pharmacy Ltd,
-     * not the group Oheneba Ventures): the industry chosen at the top, the only one the person may use, or the only one
+     * The company the person works for when it is one industry (owner request 2026-10-22: Asante Pharmacy Ltd,
+     * not the group Asante Holdings): the industry chosen at the top, the only one the person may use, or the only one
      * in use — its legal entity's name. Null when the person sees several industries (the group name stays).
      */
     public static function industryCompany(User $user): ?string

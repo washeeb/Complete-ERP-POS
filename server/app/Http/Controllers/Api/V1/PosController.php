@@ -73,7 +73,7 @@ class PosController extends Controller
         $till = $device->till_id ? Till::with('warehouse')->find($device->till_id) : null;
         $branch = Branch::with('legalEntity')->find($device->branch_id);
         $tenant = Tenant::find($device->tenant_id);
-        // The company the branch trades as (its industry's legal entity), not the group: Oheneba Kingdom Pharmacy Ltd, not Oheneba Ventures.
+        // The company the branch trades as (its industry's legal entity), not the group: Asante Pharmacy Ltd, not Asante Holdings.
         $entity = $branch->legalEntity ?? ($branch->industry_id ? LegalEntity::find(Industry::whereKey($branch->industry_id)->value('legal_entity_id')) : null) ?? LegalEntity::primary();
 
         return response()->json([

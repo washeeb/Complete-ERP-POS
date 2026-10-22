@@ -48,7 +48,7 @@ class CustomerResource extends Resource
     public static function fields(): array
     {
         return [
-            TextInput::make('code')->required()->maxLength(20)->unique(ignoreRecord: true)->helperText('Short code, e.g. OHENEBA'),
+            TextInput::make('code')->required()->maxLength(20)->unique(ignoreRecord: true)->helperText('Short code, e.g. ASANTE'),
             TextInput::make('name')->label('Trading name')->required()->maxLength(255),
             TextInput::make('legal_name')->label('Legal name (on the licence and invoices)')->maxLength(255),
             TextInput::make('industry')->maxLength(60)->placeholder('Pharmacy, retail…'),

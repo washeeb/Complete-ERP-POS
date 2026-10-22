@@ -47,7 +47,7 @@ The wizard opens by itself the first time.
 
 ### Your brand: logo, icon and colour
 
-**Which name prints:** receipts, dosage labels, drawer slips and invoices carry the name of the company the branch trades as — its industry's legal entity (Company → Legal entities and Company → Industries), e.g. *Oheneba Kingdom Pharmacy Ltd*, not the group *Oheneba Ventures*. The receipt top is short: that name, the branch and its phone on one line, the TIN and VAT number. In the back office the same name shows at the top for people who work in one industry (or after choosing one at the top); people who see several industries see the group name.
+**Which name prints:** receipts, dosage labels, drawer slips and invoices carry the name of the company the branch trades as — its industry's legal entity (Company → Legal entities and Company → Industries), e.g. *Asante Pharmacy Ltd*, not the group *Asante Holdings*. The receipt top is short: that name, the branch and its phone on one line, the TIN and VAT number. In the back office the same name shows at the top for people who work in one industry (or after choosing one at the top); people who see several industries see the group name.
 
 **Company → Branding.** Your brand is what staff and customers see: the back office's top bar, the till, printed receipts, invoices, statements, PDF exports and your online shop.
 
