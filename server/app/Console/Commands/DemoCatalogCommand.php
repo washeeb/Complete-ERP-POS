@@ -14,6 +14,7 @@ use App\Models\TaxGroup;
 use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Support\Caps;
 use App\Support\TenantContext;
 use Illuminate\Console\Command;
 
@@ -79,8 +80,8 @@ class DemoCatalogCommand extends Command
                 if (Product::where('sku', $sku)->exists()) {
                     continue;
                 }
-                $category = Category::firstWhere('name', $cat) ?? $catalog->saveSimple($actor, new Category, ['name' => $cat, 'is_active' => true]);
-                $brandModel = $brand ? (Brand::firstWhere('name', $brand) ?? $catalog->saveSimple($actor, new Brand, ['name' => $brand])) : null;
+                $category = Category::firstWhere('name', Caps::upper($cat)) ?? $catalog->saveSimple($actor, new Category, ['name' => $cat, 'is_active' => true]);
+                $brandModel = $brand ? (Brand::firstWhere('name', Caps::upper($brand)) ?? $catalog->saveSimple($actor, new Brand, ['name' => $brand])) : null;
                 $code = '200'.str_pad((string) ($i + 1), 4, '0', STR_PAD_LEFT);
                 $prices = [['price_list_id' => $retail->id, 'uom_id' => $pc->id, 'min_qty' => '1', 'amount' => $price]];
                 $units = [];

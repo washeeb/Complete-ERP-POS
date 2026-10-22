@@ -4,7 +4,11 @@ namespace App\Filament\Support;
 
 use App\Domain\Branding\Branding;
 use App\Models\BrandAsset;
+use App\Models\Industry;
+use App\Models\LegalEntity;
 use App\Models\Tenant;
+use App\Models\User;
+use App\Support\IndustryContext;
 use Filament\Support\Colors\Color;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\HtmlString;
@@ -24,14 +28,32 @@ final class PanelBrand
     public static function current(): array
     {
         $tenantId = auth()->user()?->tenant_id;
-        $key = $tenantId ?? 'guest';
+        $key = ($tenantId ?? 'guest').'|'.($tenantId ? IndustryContext::selected() : '');
         if (self::$memo !== null && self::$memoKey === $key && ! app()->runningUnitTests()) {
             return self::$memo;
         }
         $tenant = $tenantId ? Tenant::find($tenantId) : self::onlyCompany();
         self::$memoKey = $key;
+        $brand = Branding::forTenant($tenant);
+        if (($user = auth()->user()) instanceof User && ($name = self::industryCompany($user))) {
+            $brand['company'] = $name;
+        }
 
-        return self::$memo = Branding::forTenant($tenant);
+        return self::$memo = $brand;
+    }
+
+    /**
+     * The company the person works for when it is one industry (owner request 2026-10-22: Oheneba Kingdom Pharmacy Ltd,
+     * not the group Oheneba Ventures): the industry chosen at the top, the only one the person may use, or the only one
+     * in use — its legal entity's name. Null when the person sees several industries (the group name stays).
+     */
+    public static function industryCompany(User $user): ?string
+    {
+        $options = IndustryContext::options($user);
+        $id = IndustryContext::selected() ?? ($options->count() === 1 ? $options->keys()->first() : null);
+        $entityId = $id ? Industry::whereKey($id)->value('legal_entity_id') : null;
+
+        return $entityId ? LegalEntity::whereKey($entityId)->value('name') : null;
     }
 
     /** The one real company of a single-company installation that has uploaded a logo (for the sign-in page). */

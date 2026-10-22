@@ -37,6 +37,7 @@ use App\Models\Device;
 use App\Models\DiningOrder;
 use App\Models\DrugInteraction;
 use App\Models\FiscalSubmission;
+use App\Models\Industry;
 use App\Models\LegalEntity;
 use App\Models\ModifierGroup;
 use App\Models\PatientProfile;
@@ -72,10 +73,11 @@ class PosController extends Controller
         $till = $device->till_id ? Till::with('warehouse')->find($device->till_id) : null;
         $branch = Branch::with('legalEntity')->find($device->branch_id);
         $tenant = Tenant::find($device->tenant_id);
-        $entity = $branch->legalEntity ?? LegalEntity::primary();
+        // The company the branch trades as (its industry's legal entity), not the group: Oheneba Kingdom Pharmacy Ltd, not Oheneba Ventures.
+        $entity = $branch->legalEntity ?? ($branch->industry_id ? LegalEntity::find(Industry::whereKey($branch->industry_id)->value('legal_entity_id')) : null) ?? LegalEntity::primary();
 
         return response()->json([
-            'company' => ['name' => $tenant->name, 'currency' => $tenant->currency_code, 'exponent' => Money::exponent($tenant->currency_code), 'practice' => (bool) $tenant->is_practice,
+            'company' => ['name' => $entity?->name ?: $tenant->name, 'group_name' => $tenant->name, 'currency' => $tenant->currency_code, 'exponent' => Money::exponent($tenant->currency_code), 'practice' => (bool) $tenant->is_practice,
                 'timezone' => $branch->timezone ?? $tenant->timezone, 'legal_name' => $entity?->name, 'tin' => $entity?->tin, 'vat_no' => $entity?->vat_no],
             'branch' => ['id' => $branch->id, 'code' => $branch->code, 'name' => $branch->name, 'address' => $branch->address, 'phone' => $branch->phone],
             'till' => $till ? ['id' => $till->id, 'code' => $till->code, 'name' => $till->name, 'warehouse' => $till->warehouse->name] : null,

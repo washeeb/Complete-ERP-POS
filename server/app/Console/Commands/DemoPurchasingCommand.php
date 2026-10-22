@@ -16,6 +16,7 @@ use App\Models\ReorderRule;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Support\Caps;
 use App\Support\Money;
 use App\Support\Qty;
 use App\Support\TenantContext;
@@ -56,7 +57,7 @@ class DemoPurchasingCommand extends Command
                     continue;
                 }
                 $lines = [];
-                foreach (Product::whereHas('category', fn ($q) => $q->whereIn('name', $categories))->with('units')->get() as $p) {
+                foreach (Product::whereHas('category', fn ($q) => $q->whereIn('name', array_map([Caps::class, 'upper'], $categories)))->with('units')->get() as $p) {
                     $unit = $p->units->firstWhere('is_base', false) ?? $p->units->firstWhere('is_base', true);
                     $sell = Price::where('product_id', $p->id)->where('product_uom_id', $unit->id)->where('price_list_id', $retail?->id)->value('amount_minor');
                     $lines[] = ['product_uom_id' => $unit->id, 'supplier_sku' => $code.'-'.$p->sku, 'is_preferred' => true, 'min_order_qty' => '1',
