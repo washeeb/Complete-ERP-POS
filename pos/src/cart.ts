@@ -14,7 +14,9 @@ export type CartLine = { key: string; product: Product; unit: Unit; qtyMilli: nu
   // Services: who did it (commission), a session paid from the customer's prepaid pass (no charge), the appointment paid for.
   staff?: { id: string; name: string } | null; pass?: { id: string; item: number; number: string } | null; appointmentId?: string
   // Distribution: an automatic deposit line (containers that go with what is sold).
-  autoDeposit?: boolean }
+  autoDeposit?: boolean
+  // Pharmacy: the directions given with this medicine (printed on the dosage label and the receipt).
+  dosage?: string | null }
 
 /** Same rule as server PriceResolver: active at `at`, min_qty ≤ qty, highest tier, dated beats open-ended. */
 export function resolvePrice(product: Product, unitId: string, listId: string, qtyMilli: number, at: Date): Price | null {
@@ -91,7 +93,7 @@ export function addToCart(lines: CartLine[], product: Product, unit: Unit, qtyMi
   const key = `${product.id}:${unit.id}`
   const existing = lines.find((l) => l.key === key)
   if (existing) return lines.map((l) => (l.key === key ? { ...l, qtyMilli: l.qtyMilli + qtyMilli } : l))
-  return [...lines, { key, product, unit, qtyMilli }]
+  return [...lines, { key, product, unit, qtyMilli, ...(product.dosage ? { dosage: product.dosage } : {}) }]
 }
 
 /** A marked-down pack (sticker): its own line, at the sticker price. */

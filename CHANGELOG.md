@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 ### Added
+- **Dosage at the till:** each medicine's *usual dosage* (product page or the `dosage` column), shown under the medicine on the sale and changeable for the patient; printed on the receipt and on a **dosage label** per medicine (pharmacy, patient, medicine and quantity, directions, date, receipt number, *keep out of reach of children*) — by itself on the desktop till's receipt printer, *Print dosage labels* in a browser. Shown on the sale in the back office. Asked for by the first client.
+- **Mobile money and card payment alerts** (System → Settings → Payment alerts, off by default): each payment and/or a daily summary, to holders of the new *receive payment alerts* permission (Owner, General Manager, Finance Manager, Accountant) on the bell, and by e-mail, SMS or WhatsApp when switched on; minimum amount for single alerts; summary time. Sent through the relay, so a till never waits. Asked for by the first client.
+- **Automatic shifts** (Settings → Tills and cash, off by default, per branch): each till session is named by its shift (Cash set-up), a session of 10 hours or more is a *Straight day*; a till opens only within the trading hours (default 07:00–23:00) and once per shift, otherwise with a manager's username, PIN and reason (new permission *let a till open outside hours or again*, Branch Manager and above), shown on Till shifts. Shifts may overlap by at most an hour. Asked for by the first client.
+
+### Changed
+- Default shifts are now Morning 07:00–15:00 and Afternoon 14:00–23:00 (owner); companies still on the first defaults (07:00–14:00, 14:00–21:00) are moved to them, changed times are kept.
 - **Correct an expiry date, add or move a batch from the screen** (Stock → Batches & expiry): *Correct expiry* on any batch (with the reason, audited; the stock stays put); *Add or move a batch* for a batch the system does not have, or stock under a wrong batch number, as a draft stock adjustment to check and post. Asked for by the first client.
 - **Sign in with the username** as well as the e-mail address (the same username as on the till).
 - **Sign-in method per person**, set by the administrator on the user: the company rule, password + authenticator app, **password + a code by WhatsApp or e-mail** (6 digits, once, 10 minutes; the code is never stored or logged), or **password only** (staff up to supervisors). Users get a *Mobile (WhatsApp) number*; the list shows how each person signs in. New message wording *Sign-in code*. Asked for by the first client.

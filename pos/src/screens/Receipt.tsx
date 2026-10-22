@@ -2,7 +2,9 @@ import qrcode from 'qrcode-generator'
 import { useEffect, useState } from 'react'
 import { api, ApiError } from '../api'
 import { cachedImage } from '../brand'
-import { isDesktop, openHardwareSetup, printReceipt } from '../hardware'
+import { createPortal } from 'react-dom'
+import { dosageLabels, labelDate } from '../dosage'
+import { isDesktop, openHardwareSetup, printDosageLabels, printReceipt } from '../hardware'
 import { formatMoney, prettyQty, toMilli } from '../money'
 import type { Bootstrap, PostedSale } from '../types'
 
@@ -99,6 +101,49 @@ function PrintButton({ sale, boot }: { sale: PostedSale; boot: Bootstrap }) {
   </>
 }
 
+/** The dosage labels as they print: also used for the browser's print window. */
+function DosageLabelsPaper({ sale, boot }: { sale: PostedSale; boot: Bootstrap }) {
+  return <>{dosageLabels(sale).map((l, i) => (
+    <div key={i} className="receipt dosage-label">
+      <p className="center"><strong>{boot.company.name}</strong><br />{boot.branch.name}{boot.branch.phone ? ` · Tel ${boot.branch.phone}` : ''}</p>
+      <p>Patient: {sale.walk_in?.name ?? '______________________'}</p>
+      <p><strong>{l.name}</strong><br />Quantity: {l.qty}</p>
+      <p className="dosage-text">{l.dosage}</p>
+      <p className="small">{labelDate(sale, boot)} · {sale.receipt_no}</p>
+      <p className="center small"><strong>KEEP OUT OF REACH OF CHILDREN</strong></p>
+    </div>
+  ))}</>
+}
+
+/**
+ * Dosage labels, one per medicine with directions: printed by themselves after the sale on the desktop till's receipt
+ * printer (each label cut); in a browser, the button opens the print window with only the labels.
+ */
+function DosageLabelsButton({ sale, boot }: { sale: PostedSale; boot: Bootstrap }) {
+  const [note, setNote] = useState<string | null>(null)
+  const count = dosageLabels(sale).length
+  const print = async () => {
+    setNote(null)
+    try {
+      if (await printDosageLabels(sale, boot)) return
+      document.body.classList.add('printing-slip')
+      window.addEventListener('afterprint', () => document.body.classList.remove('printing-slip'), { once: true })
+      window.print()
+    } catch (e) {
+      setNote(`Printer: ${String(e)}`)
+    }
+  }
+  useEffect(() => {
+    if (count > 0 && isDesktop()) void printDosageLabels(sale, boot).catch(() => undefined) // silently, on the receipt printer
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  if (count === 0) return null
+  return <>
+    <button type="button" onClick={() => void print()}>Print dosage labels ({count})</button>
+    {note && <span className="small" role="alert">{note}</span>}
+    {createPortal(<div className="slip-print" aria-hidden="true"><DosageLabelsPaper sale={sale} boot={boot} /></div>, document.body)}
+  </>
+}
+
 /**
  * 80 mm thermal layout; the same markup prints on A4. Only .receipt is printed (see App.css @media print).
  * Header, sub-header and footer are centred; items, totals and tax run margin to margin.
@@ -142,6 +187,7 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
                 <td className="num">{n(l.line_total_minor)}</td>
               </tr>
               {l.note && <tr className="small"><td /><td colSpan={4}>{l.note}</td></tr>}
+              {l.dosage && <tr className="small"><td /><td colSpan={4}>Dosage: {l.dosage}</td></tr>}
               {(l.serials ?? []).length > 0 && <tr className="small"><td /><td colSpan={4}>S/N {l.serials!.join(', ')}{l.warranty_until ? ` · warranty to ${l.warranty_until}` : ''}</td></tr>}
               {(sale.licence_keys ?? []).filter((k) => k.sale_line_id === l.id).map((k) => (
                 <tr key={k.key} className="small"><td /><td colSpan={4} className="mono">Licence key: {k.key}</td></tr>
@@ -210,6 +256,7 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
       <SendReceipt sale={sale} channels={boot.send_receipt ?? []} />
       <div className="row no-print">
         <PrintButton sale={sale} boot={boot} />
+        <DosageLabelsButton sale={sale} boot={boot} />
         {isDesktop() && <button type="button" onClick={() => void openHardwareSetup()}>Printer and scale set-up</button>}
         <button type="button" className="primary big" autoFocus onClick={onNew}>New sale</button>
       </div>

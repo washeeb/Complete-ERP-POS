@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Models\VaultSession;
 use App\Security\Authorizer;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -34,7 +35,7 @@ final class ShiftService
     }
 
     /** $id/$openedAt come from the till (offline shifts are opened without us); $offline skips the live access check (reviewed via the grant instead). */
-    public function open(Device $device, User $user, int $floatMinor, ?string $id = null, ?CarbonInterface $openedAt = null, bool $offline = false, ?string $vaultSessionId = null): Shift
+    public function open(Device $device, User $user, int $floatMinor, ?string $id = null, ?CarbonInterface $openedAt = null, bool $offline = false, ?string $vaultSessionId = null, ?array $grant = null): Shift
     {
         if ($id && ($existing = Shift::find($id))) {
             if ($existing->device_id !== $device->id) {
@@ -50,6 +51,12 @@ final class ShiftService
         if ($this->current($device)) {
             throw new DomainException('This till already has an open shift.', 'shift_open');
         }
+        // Automatic shifts: named by the time it opens; outside trading hours or again after closing, a manager allows it (online only).
+        $auto = app(AutoShifts::class);
+        $at = Carbon::instance($openedAt ?? now());
+        $named = $offline
+            ? ['shift_name' => $auto->enabled($till->branch_id, $till->tenant_id) ? $auto->nameAt($till->tenant_id, $at->copy()->setTimezone($till->branch?->timezone ?: 'UTC')) : null]
+            : $auto->beforeOpen($device, $user, $till, $at, $grant);
         $actor = Actor::user($user, 'pos', $device->id);
         $vault = null;
         if ($this->cash->enabled($till->tenant_id)) {
@@ -69,10 +76,11 @@ final class ShiftService
             'tenant_id' => $till->tenant_id, 'branch_id' => $till->branch_id, 'till_id' => $till->id, 'device_id' => $device->id,
             'opened_by' => $user->id, 'opened_by_name' => $user->name, 'currency_code' => $user->tenant->currency_code,
             'opening_float_minor' => $floatMinor, 'opened_at' => $openedAt ?? now(), 'status' => 'open',
-        ]);
+        ] + $named);
 
         return $this->recorder->transaction(function () use ($actor, $shift, $till, $vault, $user, $offline) {
-            $this->recorder->save($actor, $shift, 'shift.opened', branchId: $till->branch_id);
+            $this->recorder->save($actor, $shift, $shift->granted_by_name ? 'shift.opened_granted' : 'shift.opened',
+                $shift->granted_by_name ? "Allowed by {$shift->granted_by_name}: {$shift->grant_reason}" : null, $till->branch_id);
             if ($vault && ($vault->status === 'issued' || ! $offline)) {
                 $this->cash->attachShift($vault, $shift, $user, $offline);
                 $shift->forceFill(['vault_session_id' => $vault->id]);
@@ -114,6 +122,7 @@ final class ShiftService
             'expected_other' => $this->expectedOther($shift) ?: null, 'counted_other' => $other ?: null,
             'over_short_minor' => $countedMinor - $expected, 'close_note' => $note,
         ]);
+        $shift->shift_name = app(AutoShifts::class)->nameAtClose($shift, Carbon::instance($shift->closed_at));
 
         return $this->recorder->transaction(function () use ($device, $user, $shift, $note, $countedMinor, $denoms, $expected) {
             $this->recorder->save(Actor::user($user, 'pos', $device->id), $shift, 'shift.closed', $note, $shift->branch_id);

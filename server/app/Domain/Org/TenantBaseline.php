@@ -80,7 +80,7 @@ final class TenantBaseline
             }
 
             // The two default shifts (cash control): each till gets a vault per shift when cash control is switched on.
-            foreach ([['Morning', '07:00', '14:00', 1], ['Afternoon', '14:00', '21:00', 2]] as [$name, $from, $to, $sort]) {
+            foreach ([['Morning', '07:00', '15:00', 1], ['Afternoon', '14:00', '23:00', 2]] as [$name, $from, $to, $sort]) {
                 if (! ShiftTemplate::withoutGlobalScopes()->where('tenant_id', $tenant->id)->where('name', $name)->exists()) {
                     (new ShiftTemplate(['name' => $name, 'starts_at' => $from, 'ends_at' => $to, 'sort' => $sort, 'is_active' => true]))->forceFill($base())->save();
                     $publish(ShiftTemplate::withoutGlobalScopes()->where('tenant_id', $tenant->id)->where('name', $name)->first());

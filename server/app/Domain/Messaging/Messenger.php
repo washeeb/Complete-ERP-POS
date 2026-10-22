@@ -85,6 +85,23 @@ final class Messenger
         return $m->fresh();
     }
 
+    /**
+     * Log a message from a template for the relay to deliver within seconds, without waiting for the provider here (alerts
+     * raised while a till syncs). An address that does not look right is skipped (null).
+     */
+    public function later(string $tenantId, string $channel, ?string $to, MessageTemplate $t, array $vars, ?string $reference, string $by): ?Message
+    {
+        $to = trim((string) $to);
+        if ($to === '' || ($channel === 'email' ? ! filter_var($to, FILTER_VALIDATE_EMAIL) : ! Phone::looksValid($to))) {
+            return null;
+        }
+        [$subject, $body, $params] = Templates::render($t, $vars);
+
+        return Message::create(['tenant_id' => $tenantId, 'channel' => $channel, 'to' => mb_substr($to, 0, 160), 'template_key' => $t->key,
+            'subject' => $subject ? mb_substr($subject, 0, 255) : null, 'body' => $body, 'params' => $params, 'reference' => $reference ? mb_substr($reference, 0, 80) : null,
+            'status' => 'queued', 'sent_by_name' => mb_substr($by, 0, 120), 'next_attempt_at' => now()]);
+    }
+
     /** Retry messages whose provider was down. Run by the relay every few seconds. */
     public function deliverDue(int $limit = 50): int
     {

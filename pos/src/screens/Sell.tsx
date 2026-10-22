@@ -605,6 +605,11 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
                     {!l.service && stockLeft(l.product) && <div className={`small ${stockLeft(l.product)!.out ? 'stock-out' : stockLeft(l.product)!.low ? 'stock-low' : 'muted'}`}>{stockLeft(l.product)!.text}</div>}
                     {expiryNote(l.product) && <div className={`small ${expiryNote(l.product)!.expired ? 'stock-out' : expiryNote(l.product)!.soon ? 'stock-low' : 'muted'}`}>{expiryNote(l.product)!.text}</div>}
                     {l.note && <div className="small muted">{l.note}</div>}
+                    {!l.service && (l.product.drug || l.product.dosage || l.dosage != null) && (
+                      <input className="dosage-input small" value={l.dosage ?? ''} maxLength={255} placeholder="Dosage, e.g. 1 tablet 3 times daily"
+                        onChange={(e) => { const v = e.target.value; setLines((x) => x.map((y) => (y.key === l.key ? { ...y, dosage: v } : y))) }}
+                        aria-label={`Dosage for ${l.product.name}`} />
+                    )}
                     {l.serials && <div className="small muted mono">S/N {l.serials.join(', ')}</div>}
                     {l.markdown && <div className="small promo">Marked-down sticker</div>}
                     {l.staff && <div className="small muted">with {l.staff.name}</div>}

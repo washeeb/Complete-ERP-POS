@@ -180,9 +180,9 @@ final class CatalogService
             throw new AccessDenied('Changing prices needs the pricing permission.');
         }
 
-        $data = Caps::keys($data, ['name', 'generic_name', 'strength', 'dosage_form']); // one uniform list
+        $data = Caps::keys($data, ['name', 'generic_name', 'strength', 'dosage_form', 'dosage']); // one uniform list
         $product->fill(array_intersect_key($data, array_flip(['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu', 'location',
-            'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'fda_reg_no', 'station', 'track_serials', 'warranty_months', 'consignor_id', 'consignment_bp',
+            'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'dosage', 'fda_reg_no', 'station', 'track_serials', 'warranty_months', 'consignor_id', 'consignment_bp',
             'service_minutes', 'commission_bp', 'licence_keys',
             'is_container', 'deposit_product_id', 'deposit_per_unit', 'industry_id'])));
         $product->industry_id = $product->industry_id ?: null; // null = shared by every industry (products from before industries)

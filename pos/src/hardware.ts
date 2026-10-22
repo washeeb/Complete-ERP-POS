@@ -1,5 +1,6 @@
 import { receiptRaster } from './brand'
 import { receiptEscPos } from './escpos'
+import { dosageEscPos, dosageLabels } from './dosage'
 import { slipEscPos, type DrawerSlip } from './slip'
 import type { Bootstrap, PostedSale } from './types'
 
@@ -36,6 +37,15 @@ export async function printSlip(slip: DrawerSlip, boot: Bootstrap): Promise<bool
   const cfg = await hardware()
   if (!t || !cfg?.printer) return false
   await t.core.invoke('print_raw', { data: slipEscPos(slip, boot).toBase64(), openDrawer: false })
+  return true
+}
+
+/** Print the dosage labels silently on the receipt printer (each cut); false when there is none or no label. */
+export async function printDosageLabels(sale: PostedSale, boot: Bootstrap): Promise<boolean> {
+  const t = tauri()
+  const cfg = await hardware()
+  if (!t || !cfg?.printer || dosageLabels(sale).length === 0) return false
+  await t.core.invoke('print_raw', { data: dosageEscPos(sale, boot).toBase64(), openDrawer: false })
   return true
 }
 

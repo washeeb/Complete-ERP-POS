@@ -191,7 +191,7 @@ class PosController extends Controller
                 'rules' => app(PharmacyRules::class)->forBranch($branch), // how strictly POM and controlled medicines are sold here
             ] : null,
             'products' => $products->map(fn (Product $p) => [
-                'id' => $p->id, 'sku' => $p->sku, 'name' => $p->name, 'category_id' => $p->category_id, 'track_stock' => $p->track_stock, 'plu' => $p->plu, 'location' => $p->location,
+                'id' => $p->id, 'sku' => $p->sku, 'name' => $p->name, 'category_id' => $p->category_id, 'track_stock' => $p->track_stock, 'plu' => $p->plu, 'location' => $p->location, 'dosage' => $p->dosage,
                 'station' => $p->station, 'modifier_group_ids' => $p->modifier_group_ids ?? [], 'track_serials' => $p->track_serials, 'warranty_months' => $p->warranty_months,
                 'style_id' => $p->style_id, 'size' => $p->size, 'colour' => $p->colour,
                 'service_minutes' => $p->service_minutes, 'is_pack' => $p->pack !== null, 'licence_keys' => $p->licence_keys,
@@ -277,9 +277,11 @@ class PosController extends Controller
             'opening_float_minor' => ['required', 'integer', 'min:0', 'max:100000000000'],
             'id' => ['nullable', 'uuid'], // till-generated, so the same shift can later be referenced offline
             'vault_session_id' => ['nullable', 'uuid'], // cash control: the vault the cashier issued to this teller
+            'grant' => ['nullable', 'array'], // automatic shifts: a manager allows opening outside hours or again after closing
+            'grant.username' => ['nullable', 'string', 'max:60'], 'grant.pin' => ['nullable', 'string', 'max:8'], 'grant.reason' => ['nullable', 'string', 'max:255'],
         ]);
         $shift = $shifts->open($this->device($request), $request->user(), (int) $data['opening_float_minor'], $data['id'] ?? null,
-            vaultSessionId: $data['vault_session_id'] ?? null);
+            vaultSessionId: $data['vault_session_id'] ?? null, grant: $data['grant'] ?? null);
 
         return response()->json(['shift' => $this->shiftJson($shift, $shifts)], 201);
     }
@@ -346,6 +348,7 @@ class PosController extends Controller
             'lines.*.unit_price_minor' => ['required', 'integer', 'min:0'],
             'lines.*.line_total_minor' => ['required', 'integer'], // negative for empties handed back
             'lines.*.note' => ['nullable', 'string', 'max:255'],
+            'lines.*.dosage' => ['nullable', 'string', 'max:255'],
             'lines.*.serials' => ['nullable', 'array', 'max:500'], 'lines.*.serials.*' => ['string', 'max:80'],
             'lines.*.repair_job_id' => ['nullable', 'uuid'],
             'lines.*.alteration_id' => ['nullable', 'uuid'],
@@ -450,7 +453,7 @@ class PosController extends Controller
         }
 
         return [
-            'id' => $shift->id, 'status' => $shift->status, 'opened_at' => $shift->opened_at->toIso8601String(),
+            'id' => $shift->id, 'status' => $shift->status, 'opened_at' => $shift->opened_at->toIso8601String(), 'shift_name' => $shift->shift_name,
             'opened_by' => $shift->opened_by_name, 'opening_float_minor' => $shift->opening_float_minor,
             // Blind count: expected cash is only revealed after the count is submitted.
             'expected_cash_minor' => $reveal ? $shift->expected_cash_minor : null,
@@ -511,7 +514,7 @@ class PosController extends Controller
             'tax_breakdown' => $s->tax_breakdown,
             'lines' => $s->lines->map(fn ($l) => ['line_no' => $l->line_no, 'sku' => $l->sku, 'name' => $l->name, 'uom' => $l->uom_code,
                 'qty' => Qty::format(Qty::toMilli((string) $l->qty)), 'unit_price_minor' => $l->unit_price_minor, 'line_total_minor' => $l->line_total_minor,
-                'discount_minor' => (int) $l->discount_minor, 'promotions' => $l->promotions ?? [], 'note' => $l->note, 'serials' => $l->serials ?? [],
+                'discount_minor' => (int) $l->discount_minor, 'promotions' => $l->promotions ?? [], 'note' => $l->note, 'dosage' => $l->dosage, 'serials' => $l->serials ?? [],
                 'id' => $l->id, 'staff_id' => $l->staff_id, 'service_pass_id' => $l->service_pass_id,
                 'warranty_until' => $l->serials ? SerialNumber::where('sale_id', $s->id)->whereIn('serial', $l->serials)->max('warranty_until') : null])->values(),
             'tip_minor' => (int) $s->tip_minor,

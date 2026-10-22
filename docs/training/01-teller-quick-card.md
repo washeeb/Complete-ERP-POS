@@ -7,6 +7,7 @@ Keep this card at the till. Practise first in the **practice company** (a purple
 
 1. **Sign in** — your username and PIN. Five wrong PINs lock you out for 15 minutes; a supervisor can reset it.
 2. **Open shift** — count the cash in the drawer and type it in as the opening float.
+   **Outside opening hours, or again after your shift was closed** (where the shop uses automatic shifts): the till asks for a **manager's username, PIN and the reason** — call your manager.
    **With vaults** (your shop uses a Cashier): take the tray the Cashier gives you, count the float in it, choose your vault on the till, tick *I have counted the float* and open. If the float is wrong, do not open: give the tray back.
 
 ## Selling
@@ -59,6 +60,8 @@ Then **Print receipt** (prints straight away on the desktop till's receipt print
 Each of these changes the cash expected when you close, so the drawer still balances. After a pay-out, pay-in or cash drop a **slip** prints: both of you sign it. For a cash drop, press **Print another copy**: one slip goes in the safe bag, one stays with the drawer. Clip a pay-out slip to the shop's receipt.
 
 ## Expiry dates
+
+**Dosage** (pharmacy): under each medicine on the sale is its usual dosage. Change it for this patient if the prescription says otherwise. It prints on the receipt and on a small **dosage label** for each medicine — stick it on the pack. In a browser, press **Print dosage labels** on the receipt screen.
 
 Medicines and other batch items show the expiry of the pack you should sell next (*Exp 06/2027*), in the search list and on the sale. **Amber** = expires within 3 months; **red** = expired — do not sell it, tell your supervisor.
 

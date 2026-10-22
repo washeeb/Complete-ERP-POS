@@ -95,6 +95,7 @@ export function receiptEscPos(sale: PostedSale, boot: Bootstrap, logo: Raster | 
     p.columns(`  ${prettyQty(toMilli(l.qty))}${unit} x ${m(l.unit_price_minor)}`, m(l.line_total_minor))
     for (const pr of l.promotions ?? []) p.columns(`  ${pr.name}`, `-${m(pr.saving_minor)}`)
     if (l.note) p.line(`  ${l.note}`)
+    if (l.dosage) p.line(`  Dosage: ${l.dosage}`)
     if (l.serials?.length) p.line(`  S/N ${l.serials.join(', ')}`)
   }
   if (sale.comment) p.rule().line(sale.comment)
