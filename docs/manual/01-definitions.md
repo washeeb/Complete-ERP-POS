@@ -29,7 +29,8 @@ You do not need to remember these. Come back to this page whenever a word is unc
 | **Role** | A set of permissions, such as *Cashier*, *Supervisor*, *Branch Manager* or *Accountant*. You give people roles. |
 | **Scope** | Where a role applies: the whole company, one branch, one warehouse or one till. A cashier with a till scope can sell only on that till. |
 | **Security level** | A ceiling (L1 to L6) on what a person can ever be given. It stops anyone from handing out more power than they have. |
-| **Two-factor sign-in** (2FA) | A second proof of identity after the password: a 6-digit code from an authenticator app on your phone, or a passkey. Required for managers. |
+| **Two-factor sign-in** (2FA) | A second proof of identity after the password: a 6-digit code from an authenticator app on your phone, a code sent by WhatsApp or e-mail, or a passkey. Required for managers. |
+| **Superadmin** | The SyncLytics support account (level L7), added on the server by SyncLytics. Always uses the authenticator app; the owner is told each time it signs in. |
 | **Passkey** | A sign-in using your device's fingerprint, face or PIN instead of a code. Optional. |
 
 ## How the software is organised

@@ -228,6 +228,18 @@ Controlled drugs always need a witness, whatever the setting.
 
 **Each supplier's return window:** on the supplier (**Purchasing → Suppliers**), **Takes back expiring stock up to (days before expiry)** — for example 90 if they accept stock until 90 days before it expires. Leave it empty if they take nothing back. *Expiry & returns* then shows "can still go back" while there is time.
 
+**Correcting an expiry date, adding or moving a batch** (**Stock → Batches & expiry**, choose the store):
+- **Correct expiry** on a batch (in *All batches on hand* or *Expired*): type the right date and why. The stock stays in the batch; the change and the reason are in the audit log. Use it for a date typed wrongly at receiving, or one that is missing.
+- **Add or move a batch** (top right):
+  - *Stock of a batch the system does not have* — found on the shelf, or never entered: the product, batch number, expiry and quantity (and the cost if you know it);
+  - *Stock recorded under the wrong batch number*: choose the batch it is wrongly under, then type the right batch number, its expiry and the quantity to move.
+
+  Either way a **draft stock adjustment** opens: check it and post it as usual (a manager approves it above the limit).
+
+**Why a wrong batch number is moved, not renamed:** the batch number is how every server and every delivery recognises the batch. Moving the stock keeps the history true and lets the next delivery of that batch join it.
+
+**Many at once:** the stock sheet import (14.2) also corrects dates and adds batches.
+
 **Stop selling before expiry:** **System → Settings → Stock → Stop selling a batch this many days before it expires** (default 0 = sell until the expiry date). With 30, the till takes the next batch, or refuses the sale if only stock with less than 30 days is left. Expired stock is never sold.
 
 **The dashboard** (Pharmacy) shows how many batches have expired and how many expire within the warning period; click either to open *Expiry & returns*.

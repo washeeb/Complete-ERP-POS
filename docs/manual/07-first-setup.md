@@ -7,7 +7,7 @@ Do these steps once, at head office, in this order. Allow a day for a single sho
 ## Step 1 — Sign in for the first time
 
 1. Open the back office: `https://<server-address>/admin` (Windows server) or `https://<your-domain>/admin` (Ubuntu).
-2. Sign in with the owner's **email and password** (from `erp:install`).
+2. Sign in with the owner's **email (or username) and password** (from `erp:install`). Everyone can type either their e-mail address or the username they use on the till.
 
 ## Step 2 — Set up two-factor sign-in
 
@@ -75,10 +75,19 @@ For each staff member:
 1. **People & access → Users → New user**: name, username, email (for back-office users), and a **Security level (ceiling)** (the highest level of what they can ever be given — see Chapter 18).
 2. On the next screen, **Grant access**: choose a **role** (Cashier, Supervisor, Branch Manager, Storekeeper, Stock Controller, Accountant, Pharmacist, Waiter, Stylist / Therapist…) and **where it applies** (a till, a branch, a warehouse or the whole company).
 3. For anyone who sells or clocks in on a till: **Set POS PIN** (4–8 digits; simple PINs like 1234 are refused).
+4. **How the person signs in to the back office** (on the user's page):
+   - **Company rule** (default): the authenticator app from the level set under System → Settings → Security (L3 unless you change it), password only below it;
+   - **Password and the authenticator app** — always, whatever the level;
+   - **Password and a code by WhatsApp or e-mail** — a 6-digit code is sent at each sign-in, works once for 10 minutes. It goes to the **Mobile (WhatsApp) number** when your WhatsApp Business provider is set up (16.3), otherwise to the e-mail address. *Send it by e-mail instead* is on the code screen;
+   - **Password only** — allowed for staff up to supervisors (L3).
+
+**Why:** a second step stops someone who learned a password. People without a smartphone app can get a code by WhatsApp or e-mail instead; low-risk staff who only look things up can use the password alone — your choice, person by person, and every change is in the audit log.
 
 **Why:** people see and do only what their role allows, only where it applies. A cashier with access to *Till 1* cannot sell on *Till 2* or open the back office.
 
 **Tip:** For temporary cover (e.g. a supervisor on leave), grant access **with an end date and a reason**: it stops by itself.
+
+**The SyncLytics support account:** the list may show *SyncLytics support (Superadmin)* at level L7. SyncLytics adds it on your server so support can help you; nobody in the company can change it. It always signs in with an authenticator app, it does not count as one of your licensed users, and the owner and general manager get a notification each time it signs in. Everything it does is in the audit log (System → Audit log).
 
 **Warning:** Do not share one account between several people. Every sale, refund and change is recorded under the person who signed in.
 
