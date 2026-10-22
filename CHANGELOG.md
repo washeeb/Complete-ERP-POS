@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 ### Added
+- **Barcode and shelf labels** (Stock Controller release 3): **Print labels** on the products list (ticked products), on a product and on a goods received note — shelf labels or barcode stickers, on A4 label sheets (24, 21 or 65 a sheet; skip labels already used) or a label printer (50 × 25, 38 × 25, 58 × 40 mm), with prices from a chosen list. Products without a barcode can be given an in-store EAN-13 first (prefix setting, default 20). EAN-13 or Code 128 bars (picqer/php-barcode-generator).
+- **Photos on stock adjustment lines** (Details → Photo of the goods), shown on the adjustment to people who may see that store's stock; setting *Photos on stock adjustment lines*: optional (default), required for damaged / expired / spoiled / missing stock, or not used.
+
+### Fixed
+- Two broken characters in the manual (*batch_no*, *expires_on* in chapter 7).
 - **Stock → My day** (Stock Controller release 2): per store, today's cycle count, low stock, expired and expiring batches, negative stock, never counted, adjustments waiting for a manager, transfers and orders on the way; each opens its page.
 - **Cycle counting:** a few products per store each day (setting *Cycle count: products per store per day*, default 20), chosen by value moved in 90 days (A every 30 days, B 60, C 120), never counted first, *often wrong* products twice as often; **Start today's count** makes a normal blind count.
 - **Training: New features — switch on and check**, a one-hour checklist for the session after an update (receipts, dosage, payment alerts, automatic shifts, sign-in, menu search, batches).

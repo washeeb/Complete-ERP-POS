@@ -26,6 +26,11 @@ You look after the product list and the stock in the shop: products, stock level
 
 **Why:** you see the effect of each line before saving, and large changes always get a second pair of eyes.
 
+## Labels and photos
+
+- **Labels:** Catalog → Products → tick products → **Print labels** (or on one product, or on a delivery under Goods received). Shelf labels or barcode stickers, on A4 label sheets or a label printer. Tick **Give products without a barcode an in-store barcode first** so every item scans at the till.
+- **Photos:** on a stock adjustment line, **Details → Photo of the goods** for damaged or expired stock. Your company may require it before the adjustment can be submitted.
+
 ## Counting
 
 **Stock → Stock counts.** Count what is on the shelf without looking at the system figure, and enter it. A manager approves and posts the count.

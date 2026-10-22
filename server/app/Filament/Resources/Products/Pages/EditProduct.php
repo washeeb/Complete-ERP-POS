@@ -7,6 +7,7 @@ use App\Domain\Ai\ProductWriter;
 use App\Domain\Catalog\CatalogService;
 use App\Filament\Resources\Products\ProductResource;
 use App\Filament\Support\Erp;
+use App\Filament\Support\LabelsAction;
 use App\Support\Qty;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
@@ -27,6 +28,7 @@ class EditProduct extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            LabelsAction::make(fn ($record) => [$record->id]),
             // Pack → Tablet, Strip of 10 → Tablet: convert by the pack size, or correct a wrong label (same numbers).
             Action::make('changeUnit')->label('Change the unit')->icon(Heroicon::OutlinedArrowsRightLeft)->color('gray')
                 ->visible(fn () => Erp::canAnywhere('catalog.manage'))

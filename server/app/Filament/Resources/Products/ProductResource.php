@@ -12,6 +12,7 @@ use App\Filament\Resources\Products\Pages\EditProduct;
 use App\Filament\Resources\Products\Pages\ListProducts;
 use App\Filament\Support\Erp;
 use App\Filament\Support\GlobalSearch;
+use App\Filament\Support\LabelsAction;
 use App\Filament\Support\QuickCreate;
 use App\Models\Brand;
 use App\Models\Category;
@@ -309,6 +310,7 @@ class ProductResource extends Resource
             ->defaultSort('name')
             ->recordActions([EditAction::make()])
             ->toolbarActions([
+                LabelsAction::bulk(),
                 BulkAction::make('changeUnit')->label('Change the unit')->icon(Heroicon::OutlinedScale)
                     ->visible(fn () => Erp::can('catalog.manage'))
                     ->modalDescription('The same change for every ticked product. Products on open documents, or already in that unit, are skipped and listed.')

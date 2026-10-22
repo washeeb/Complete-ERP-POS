@@ -4,6 +4,7 @@ namespace App\Filament\Resources\GoodsReceipts\Pages;
 
 use App\Filament\Resources\GoodsReceipts\GoodsReceiptResource;
 use App\Filament\Resources\Waybills\WaybillResource;
+use App\Filament\Support\LabelsAction;
 use App\Filament\Support\ReloadsAfterAction;
 use App\Models\GoodsReceipt;
 use App\Models\Waybill;
@@ -23,6 +24,7 @@ class ViewGoodsReceipt extends ViewRecord
             // Opens the print view in a new tab: the browser's print preview, Print or Save as PDF.
             Action::make('print')->label('Print')->icon(Heroicon::OutlinedPrinter)->color('gray')->url(fn () => route('print.goods-receipt', $this->record), shouldOpenInNewTab: true),
             ...GoodsReceiptResource::receiptActions(),
+            LabelsAction::make(fn (GoodsReceipt $record) => $record->lines()->pluck('product_id')->unique()->values()->all()), // labels for what came in
             Action::make('waybill')->label('Supplier waybill')->icon('heroicon-o-truck')->color('gray')
                 ->url(fn (GoodsReceipt $record) => ($w = Waybill::where('source_id', $record->id)->where('status', '<>', 'cancelled')->first())
                     ? WaybillResource::getUrl('view', ['record' => $w])

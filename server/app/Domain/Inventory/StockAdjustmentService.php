@@ -18,6 +18,7 @@ use App\Support\Money;
 use App\Support\Qty;
 use App\Support\Settings;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Stock adjustments (inventory adjustments): one document per warehouse and reason with any number of lines, each an
@@ -150,6 +151,7 @@ final class StockAdjustmentService
             $line = StockAdjustmentLine::create(['stock_adjustment_id' => $a->id, 'line_no' => (int) StockAdjustmentLine::where('stock_adjustment_id', $a->id)->max('line_no') + 1,
                 'product_id' => $product->id, 'product_uom_id' => $unit->id, 'mode' => $mode, 'qty' => Qty::format($milli), 'unit_cost_minor' => $mode === 'add' ? $cost : null,
                 'batch_no' => $batch, 'expires_on' => ! empty($l['expires_on']) ? $l['expires_on'] : null, 'serials' => $serials ?: null, 'reason_code' => $reason,
+                'photo_path' => self::photo($l['photo_path'] ?? null),
                 'note' => mb_substr(trim((string) ($l['note'] ?? '')), 0, 255) ?: null]);
             $a->touch();
             $this->recorder->audit->record($actor, 'stock_adjustment.line_added', $a, [$product->sku => [null, StockAdjustment::MODES[$mode].' '.Qty::format($milli).' '.$unit->uom->code]], null, $a->branch_id);
@@ -174,9 +176,33 @@ final class StockAdjustmentService
         if (! $a->lines()->exists()) {
             throw new DomainException('Add at least one line.');
         }
+        $this->assertPhotos($a);
         $a->forceFill(['status' => 'submitted', 'submitted_by' => $actor->id, 'submitted_by_name' => $actor->name, 'submitted_at' => now()]);
 
         return $this->recorder->save($actor, $a->load('lines'), 'stock_adjustment.submitted', branchId: $a->branch_id);
+    }
+
+    /** Stock lost (damaged, expired, spoiled, missing) needs a photo on the line when the company asks for it (Settings → Stock). */
+    private function assertPhotos(StockAdjustment $a): void
+    {
+        if ($this->settings->get('stock.adjustment_photos', $a->tenant_id) !== 'losses') {
+            return;
+        }
+        foreach ($a->lines()->orderBy('line_no')->get() as $l) {
+            $reason = $l->reason_code ?: $a->reason_code;
+            if ($l->mode === 'remove' && in_array($reason, self::PHOTO_REASONS, true) && ! $l->photo_path) {
+                throw new DomainException("Line {$l->line_no}: add a photo of the goods (".InventoryService::ADJUSTMENT_REASONS[$reason].').');
+            }
+        }
+    }
+
+    /** Reasons that need a photo when the company requires them. */
+    public const PHOTO_REASONS = ['damaged', 'expired', 'spoilage', 'theft'];
+
+    /** A photo uploaded on this screen (private disk, stock-photos/); anything else is ignored. */
+    private static function photo(?string $path): ?string
+    {
+        return $path && str_starts_with($path, 'stock-photos/') && ! str_contains($path, '..') && Storage::disk('local')->exists($path) ? $path : null;
     }
 
     /** Send a submitted adjustment back to draft (to correct it). */
@@ -229,6 +255,7 @@ final class StockAdjustmentService
         if (! $a->lines()->exists()) {
             throw new DomainException('Add at least one line.');
         }
+        $this->assertPhotos($a);
         $limit = (int) $this->settings->get('stock.adjustment_approval_minor', $a->tenant_id);
         $gross = $this->preview($a)['gross'];
         if ($gross > $limit && $a->kind !== 'disposal') {

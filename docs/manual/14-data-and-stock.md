@@ -114,7 +114,7 @@ The migration imports are explained in Chapter 17.2. **Coming from** (QuickBooks
    - **Decrease (−)** — takes away from stock;
    - **Set to counted quantity** — the new quantity on hand; the system works out the difference when you post.
    Batch-tracked products need the batch number; serial-numbered products need one serial number per unit (the box appears only for those products).
-   Each line is numbered and fits on one row: the product, the change, the quantity, what the store holds now (**Available**), what it will hold (**After**, in red if it would go below zero) and the line's **Value** at average cost. The total value shows under the lines, with a note when a manager must approve it (above GHS 500 by default). The batch number, expiry date, unit cost, a different reason and a note are behind the **Details** drop-down at the end of the line; it opens by itself for batch-tracked products (all medicines). A warning shows when the same product (and batch) is on two lines. **Why:** you see the effect of each line before saving, and most lines need only the product and quantity.
+   Each line is numbered and fits on one row: the product, the change, the quantity, what the store holds now (**Available**), what it will hold (**After**, in red if it would go below zero) and the line's **Value** at average cost. The total value shows under the lines, with a note when a manager must approve it (above GHS 500 by default). The batch number, expiry date, unit cost, a different reason, a note and a **photo of the goods** are behind the **Details** drop-down at the end of the line; it opens by itself for batch-tracked products (all medicines). A warning shows when the same product (and batch) is on two lines. **Why:** you see the effect of each line before saving, and most lines need only the product and quantity.
 3. Save. The adjustment is a **Draft**: you can still change it, or **Add lines from CSV**.
 4. **Post** — the changes go into the stock ledger.
 
@@ -125,6 +125,22 @@ The migration imports are explained in Chapter 17.2. **Coming from** (QuickBooks
 The adjustment page shows each line's stock **before**, the **change** and **after**, and the value. **Export → Adjustment voucher (PDF)** prints it with a signature line for the approver.
 
 **Note:** a posted adjustment cannot be changed or deleted. To correct it, post another adjustment. The quick **Opening stock / adjustment** button on *Stock on hand* still exists for a single product.
+
+**Photos of damaged or expired goods:** under **Details** on a line, **Photo of the goods** (a phone photo, up to 5 MB). The adjustment shows *Photos: Line 1 · Line 3* to open them; only people who may see that store's stock can. **System → Settings → Stock → Photos on stock adjustment lines**: *Optional* (default), *Required for damaged, expired, spoiled and missing stock* (the adjustment cannot be submitted or posted without them), or *Not used*. **Why:** a photo settles questions about a write-off months later, and makes "it was damaged" harder to say without proof.
+
+## 14.3a Barcode and shelf labels
+
+**Catalog → Products**: tick the products → **Print labels** (or **Print labels** on one product, or on a delivery under **Purchasing → Goods received** for what came in).
+
+1. **Label:** *Shelf label* (name and price large, barcode small) or *Barcode sticker* (barcode large, name and price small).
+2. **Print on:** an A4 label sheet — 24 (3 × 8, e.g. Avery L7159), 21 (3 × 7, L7160) or 65 small (5 × 13, L7651) — on any office printer, or a **label printer** (50 × 25, 38 × 25 or 58 × 40 mm; Zebra, Xprinter and similar, installed as a printer on the computer).
+3. **Prices from** the price list, **labels per product**, and on a used A4 sheet **leave empty at the start** the labels already peeled off.
+4. **Give products without a barcode an in-store barcode first** (people who may edit products): an EAN-13 starting with *20* (System → Settings → Stock → *In-store barcodes start with*), added to the product so the tills scan it.
+5. **Labels ready → Open the labels**: a page with the labels; **Print**. In the print window set **Margins: none** and **Scale: 100%**, and choose the label printer when using one.
+
+**Tip:** print one sheet on plain paper first and hold it against a label sheet to check the alignment.
+
+**Why:** products with a clear price and a barcode that scans sell faster and with fewer mistakes at the till; items that came without a barcode no longer need typing.
 
 ## 14.4 Stock takes (counting stock)
 
