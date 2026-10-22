@@ -23,7 +23,8 @@ Find the symptom, then try the fixes in order.
 | Symptom | Cause and fix |
 |---|---|
 | Lost the authenticator phone | Use a **recovery code**. If those are lost too, another owner/IT Admin resets the person's two-factor sign-in. |
-| A menu is missing | The module is off for your branches (Chapter 8), your licence does not include it (Chapter 6), or your role does not allow it (ask the owner). |
+| A menu is missing | The module is off for your branches (Chapter 8), your licence does not include it (Chapter 6), or your role does not allow it (ask the owner). Type part of the page's name in **Search the menu** (top of the side menu, or press `/`) to check. |
+| *You can't open this page* | The page says **why** (for example *it needs the permission "View users and their access"*) and **who can give access**. Press **Ask for access**: they get a notification with the page and your message, and decide. A link you cannot use should not show at all; if you find one, tell SyncLytics support. |
 | *This is managed at head office* | You are on a branch server; change master data at head office (Chapter 10). |
 | Everything is read-only, with a red banner | Licence expired, withdrawn or not checked in for 44 days (Chapter 6.4). Renew; nothing is lost. |
 | Passkey button does nothing | Passkeys need HTTPS or `localhost`. Use the authenticator app. |

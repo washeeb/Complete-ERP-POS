@@ -87,6 +87,7 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::BODY_START, fn () => view('remote.support-banner'))
             ->renderHook(PanelsRenderHook::BODY_END, fn () => view('progress.overlay')) // "Importing 150 of 2,000" for long work
             ->renderHook(PanelsRenderHook::BODY_END, fn () => view('layout.sidebar-focus')) // the current menu section at the top
+            ->renderHook(PanelsRenderHook::SIDEBAR_NAV_START, fn () => view('layout.menu-search')) // type to find a page in the menu
             ->renderHook(PanelsRenderHook::FOOTER, fn () => view('branding.powered-by'))
             // "Report a problem" for everyone signed in (pilot support, Phase 14).
             ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => Blade::render('@livewire(\'report-problem\')'))

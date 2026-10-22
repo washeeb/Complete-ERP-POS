@@ -47,6 +47,8 @@ The wizard opens by itself the first time.
 
 ### Your brand: logo, icon and colour
 
+**Which name prints:** receipts, dosage labels, drawer slips and invoices carry the name of the company the branch trades as — its industry's legal entity (Company → Legal entities and Company → Industries), e.g. *Oheneba Kingdom Pharmacy Ltd*, not the group *Oheneba Ventures*. The receipt top is short: that name, the branch and its phone on one line, the TIN and VAT number. In the back office the same name shows at the top for people who work in one industry (or after choosing one at the top); people who see several industries see the group name.
+
 **Company → Branding.** Your brand is what staff and customers see: the back office's top bar, the till, printed receipts, invoices, statements, PDF exports and your online shop.
 
 1. **Logo** — your logo with the name, on a transparent background (PNG) or as SVG, at least 600 pixels wide. Choose **Upload**.
@@ -90,6 +92,8 @@ For each staff member:
 **The SyncLytics support account:** the list may show *SyncLytics support (Superadmin)* at level L7. SyncLytics adds it on your server so support can help you; nobody in the company can change it. It always signs in with an authenticator app, it does not count as one of your licensed users, and the owner and general manager get a notification each time it signs in. Everything it does is in the audit log (System → Audit log).
 
 **Warning:** Do not share one account between several people. Every sale, refund and change is recorded under the person who signed in.
+
+**Finding a page:** at the top of the side menu, **Search the menu** — type part of a name (*adjust*, *expiry*, *momo*, *po*) and only the matching pages stay; **Enter** opens the first, **Esc** clears. Press `/` anywhere to jump there. To find a record (a product, a customer, a receipt), use the search at the top (Ctrl+K).
 
 ## Step 6 — Settings
 

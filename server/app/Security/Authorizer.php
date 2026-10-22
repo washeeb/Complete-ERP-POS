@@ -28,8 +28,12 @@ final class Authorizer
     public function allows(User $user, string $permission, ?Model $target = null): bool
     {
         $path = $target ? $this->scopePath($target) : [ScopeType::Tenant->value.':'.$user->tenant_id];
+        $ok = $this->grants($user, $permission)->contains(fn ($g) => in_array($g['scope'], $path, true));
+        if (! $ok) {
+            AccessReason::denied($permission, $target); // so a "no access" page can say which permission was missing
+        }
 
-        return $this->grants($user, $permission)->contains(fn ($g) => in_array($g['scope'], $path, true));
+        return $ok;
     }
 
     /**
@@ -59,7 +63,12 @@ final class Authorizer
     /** Allowed somewhere (used for navigation visibility, never for a write). */
     public function allowsAnywhere(User $user, string $permission): bool
     {
-        return $this->grants($user, $permission)->isNotEmpty();
+        $ok = $this->grants($user, $permission)->isNotEmpty();
+        if (! $ok) {
+            AccessReason::denied($permission, null);
+        }
+
+        return $ok;
     }
 
     /** Highest limit across grants covering the target; null when no grant covers it. Missing limit key = 0. */
