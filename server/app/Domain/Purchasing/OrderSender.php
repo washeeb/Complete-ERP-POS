@@ -35,7 +35,7 @@ final class OrderSender
 
     public function __construct(private readonly Messenger $messenger, private readonly Recorder $recorder, private readonly Authorizer $authz) {}
 
-    /** The channels this business can use now: WhatsApp by the system needs a WhatsApp provider (Messages → Providers). */
+    /** The channels this business can use now: WhatsApp by the system needs a WhatsApp provider (System → Messaging). */
     public function channels(string $tenantId): array
     {
         return $this->messenger->provider($tenantId, 'whatsapp') ? self::CHANNELS : array_diff_key(self::CHANNELS, ['whatsapp' => 1]);

@@ -15,7 +15,7 @@ use Illuminate\Support\Carbon;
 
 /**
  * Automatic shifts (owner request 2026-10-22), per branch (Settings → Tills and cash): a till session is named after the
- * shift whose hours it opens in (Cash → Cash set-up: Morning 07:00–15:00, Afternoon 14:00–23:00 by default); one that
+ * shift whose hours it opens in (Cash → Shifts and vaults: Morning 07:00–15:00, Afternoon 14:00–23:00 by default); one that
  * lasts the straight-day length or more is a Straight day. A till opens only within the trading hours, and only once
  * per shift: outside the hours, or again after its shift was closed, a manager allows it with their PIN and a reason.
  * Closing and counting are always allowed. Shifts opened offline are named but not blocked (the server cannot ask).

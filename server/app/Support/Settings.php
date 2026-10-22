@@ -91,7 +91,7 @@ final class Settings
             'help' => '50000 = GHS 500. Smaller payments are left out of the single alerts (they are still in the daily summary). 0 = every payment.',
         ],
         'alerts.by_email' => ['type' => 'bool', 'default' => false, 'group' => 'Payment alerts', 'label' => 'Also by e-mail', 'help' => 'To the e-mail address on the person’s user account.'],
-        'alerts.by_sms' => ['type' => 'bool', 'default' => false, 'group' => 'Payment alerts', 'label' => 'Also by SMS', 'help' => 'To the mobile number on the person\'s user account. Needs an SMS provider (Messages → Providers).'],
+        'alerts.by_sms' => ['type' => 'bool', 'default' => false, 'group' => 'Payment alerts', 'label' => 'Also by SMS', 'help' => 'To the mobile number on the person\'s user account. Needs an SMS provider (System → Messaging).'],
         'alerts.by_whatsapp' => ['type' => 'bool', 'default' => false, 'group' => 'Payment alerts', 'label' => 'Also by WhatsApp', 'help' => 'Needs a WhatsApp Business provider and the approved templates payment_alert and payment_summary.'],
         'alerts.summary_at' => [
             'type' => 'string', 'default' => '21:00', 'max' => 5, 'group' => 'Payment alerts',
@@ -101,7 +101,7 @@ final class Settings
         'pos.auto_shifts' => [
             'type' => 'bool', 'default' => false, 'group' => 'Tills and cash', 'branch' => true,
             'label' => 'Automatic shifts',
-            'help' => 'Each till session is named by the time it opens (the shifts under Cash → Cash set-up: Morning, Afternoon…), and one over the straight-day length is a Straight day. A till cannot open outside the trading hours below, or open again in a shift after it was closed, unless a manager allows it with their PIN and a reason.',
+            'help' => 'Each till session is named by the time it opens (the shifts under Cash → Shifts and vaults: Morning, Afternoon…), and one over the straight-day length is a Straight day. A till cannot open outside the trading hours below, or open again in a shift after it was closed, unless a manager allows it with their PIN and a reason.',
         ],
         'pos.trading_hours' => [
             'type' => 'string', 'default' => '07:00-23:00', 'max' => 11, 'group' => 'Tills and cash', 'branch' => true,
@@ -366,6 +366,11 @@ final class Settings
             'type' => 'int', 'default' => 50000, 'min' => 0, 'max' => 1000000000, 'group' => 'Stock',
             'label' => 'Stock adjustments above this value need a manager\'s approval (in pesewas/cents)',
             'help' => 'Worked out at average cost (increases and decreases added up). 50000 = GHS 500. 0 = every adjustment document needs approval by someone else.',
+        ],
+        'stock.cycle_count_per_day' => [
+            'type' => 'int', 'default' => 20, 'min' => 0, 'max' => 500, 'group' => 'Stock',
+            'label' => 'Cycle count: products per store per day',
+            'help' => 'Stock → My day lists this many products to count each day: fast-moving and valuable ones every 30 days, the next every 60, the rest every 120; products often wrong twice as often. 0 = no cycle counts.',
         ],
         'stock.default_min_qty' => [
             'type' => 'int', 'default' => 5, 'min' => 0, 'max' => 100000, 'group' => 'Stock',
