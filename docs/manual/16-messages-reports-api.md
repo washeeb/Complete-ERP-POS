@@ -67,6 +67,7 @@ When WhatsApp is on and a message has an active WhatsApp template, customers get
 | Invoice sent to the customer | **Off** | An invoice is issued (e-mail to the customer's address) |
 | Payment received | **Off** | A customer pays on account |
 | Scheduled report | On | A scheduled report runs (16.6) |
+| Purchase order sent to a supplier | On | A buyer presses **Send to supplier** on an approved order (e-mail with the PDF, or WhatsApp with a download link; 14.6) |
 
 **Messages → Message log** shows every message: to whom, the text, and whether it was **sent**, is **waiting** (the provider was down — it is retried automatically for a few hours), **failed**, or **not sent** because no provider is set up. **Try again** resends one.
 

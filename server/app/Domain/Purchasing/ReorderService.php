@@ -8,8 +8,11 @@ use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
 use App\Models\Product;
+use App\Models\ProductUom;
 use App\Models\PurchaseOrder;
 use App\Models\ReorderRule;
+use App\Models\Supplier;
+use App\Models\SupplierProduct;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
 use App\Support\Qty;
@@ -110,13 +113,49 @@ final class ReorderService
     }
 
     /**
-     * One draft purchase order per supplier from the chosen suggestions (product ids).
+     * A suggestion as the buyer changed it on "What to order": another supplier, unit or quantity (owner request 2026-10-22).
+     *
+     * @param  array{supplier_id?: ?string, product_uom_id?: ?string, qty?: ?string, cost?: ?string}  $change  qty and cost in the chosen unit
+     */
+    public static function change(array $s, array $change): array
+    {
+        if (! empty($change['supplier_id'])) {
+            $supplier = Supplier::where('id', $change['supplier_id'])->where('is_active', true)->first() ?? throw new DomainException("{$s['name']}: that supplier is not active.");
+            [$s['supplier_id'], $s['supplier']] = [$supplier->id, $supplier->name];
+        }
+        if (! empty($change['product_uom_id'])) {
+            $unit = ProductUom::with('uom')->where('id', $change['product_uom_id'])->where('product_id', $s['product_id'])->first()
+                ?? throw new DomainException("{$s['name']}: choose one of its own units.");
+            [$s['product_uom_id'], $s['uom_code']] = [$unit->id, $unit->uom->code];
+        }
+        if (isset($change['qty']) && $change['qty'] !== '') {
+            $qty = Qty::toMilli((string) $change['qty']);
+            if ($qty <= 0) {
+                throw new DomainException("{$s['name']}: enter a quantity above zero.");
+            }
+            $s['suggest_qty'] = $qty;
+        }
+        if (! $s['product_uom_id']) { // no supplier was set up: the suggestion is in the base unit
+            $base = ProductUom::with('uom')->where('product_id', $s['product_id'])->where('is_base', true)->first();
+            [$s['product_uom_id'], $s['uom_code']] = [$base?->id, $base?->uom->code];
+        }
+        if ($s['supplier_id'] && $s['product_uom_id']) {
+            $s['unit_cost_minor'] = SupplierProduct::where('supplier_id', $s['supplier_id'])->where('product_uom_id', $s['product_uom_id'])->value('last_cost_minor');
+        }
+        $s['cost'] = isset($change['cost']) && $change['cost'] !== '' ? (string) $change['cost'] : null; // typed by the buyer: wins over the supplier's last cost
+
+        return $s + ['changed' => true];
+    }
+
+    /**
+     * One draft purchase order per supplier from the chosen suggestions (product ids), with the buyer's changes.
      *
      * @return list<PurchaseOrder>
      */
-    public function createDrafts(Actor $actor, Warehouse $warehouse, array $productIds): array
+    public function createDrafts(Actor $actor, Warehouse $warehouse, array $productIds, array $changes = []): array
     {
-        $chosen = array_filter($this->suggestions($warehouse), fn ($s) => in_array($s['product_id'], $productIds, true));
+        $chosen = array_map(fn ($s) => isset($changes[$s['product_id']]) ? self::change($s, $changes[$s['product_id']]) : $s,
+            array_filter($this->suggestions($warehouse), fn ($s) => in_array($s['product_id'], $productIds, true)));
         $missing = array_filter($chosen, fn ($s) => $s['supplier_id'] === null);
         if ($missing) {
             throw new DomainException('No supplier is set up for: '.implode(', ', array_column($missing, 'name')).'. Add them to a supplier first.');
@@ -129,7 +168,7 @@ final class ReorderService
             $pos = [];
             foreach (collect($chosen)->groupBy('supplier_id') as $supplierId => $rows) {
                 $pos[] = $this->orders->saveDraft($actor, new PurchaseOrder, ['supplier_id' => $supplierId, 'warehouse_id' => $warehouse->id,
-                    'note' => 'From reorder suggestions', 'lines' => $rows->map(fn ($s) => ['product_uom_id' => $s['product_uom_id'], 'qty' => Qty::format($s['suggest_qty'])])->values()->all()]);
+                    'note' => 'From reorder suggestions', 'lines' => $rows->map(fn ($s) => ['product_uom_id' => $s['product_uom_id'], 'qty' => Qty::format($s['suggest_qty']), 'unit_cost' => $s['cost'] ?? null])->values()->all()]);
             }
 
             return $pos;

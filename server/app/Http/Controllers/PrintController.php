@@ -61,8 +61,14 @@ class PrintController extends Controller
 
     private function company(?string $branchId): array
     {
-        $tenant = Tenant::find(auth()->user()->tenant_id);
-        $branch = $branchId ? Branch::find($branchId) : Branch::where('is_hq', true)->first();
+        return self::companyOf(auth()->user()->tenant_id, $branchId);
+    }
+
+    /** The letterhead: the legal entity of the branch (else the company), its address and phone. Also used for PDFs sent out. */
+    public static function companyOf(string $tenantId, ?string $branchId): array
+    {
+        $tenant = Tenant::withoutGlobalScopes()->find($tenantId);
+        $branch = $branchId ? Branch::withoutGlobalScopes()->find($branchId) : Branch::withoutGlobalScopes()->where('tenant_id', $tenantId)->where('is_hq', true)->first();
         $entity = $branch?->legal_entity_id ? LegalEntity::find($branch->legal_entity_id) : LegalEntity::primary();
 
         return ['name' => $entity->name ?? $tenant->name, 'tin' => $entity->tin ?? null, 'vat_no' => $entity->vat_no ?? null,
