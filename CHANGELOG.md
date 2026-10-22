@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 ### Added
+- **Slow & dead stock** (Stock Controller release 4): what has not sold in a store for 60/90/180 days, its value at cost, and a suggestion — **Move** to the store where it sells (draft transfer in one click), supplier take-back, or mark down.
+- **Shrink report:** the last six months month by month, by category, by who recorded it, and products lost three times or more.
+- **Smart checks on My day:** losses larger than usual (3 × the store's usual loss line, at least GHS 100), products written off three times or more in 30 days, and possible duplicate products.
+
+### Fixed
+- *Stock → Shrink* no longer shows another branch's losses when that store is typed into the address.
 - **Barcode and shelf labels** (Stock Controller release 3): **Print labels** on the products list (ticked products), on a product and on a goods received note — shelf labels or barcode stickers, on A4 label sheets (24, 21 or 65 a sheet; skip labels already used) or a label printer (50 × 25, 38 × 25, 58 × 40 mm), with prices from a chosen list. Products without a barcode can be given an in-store EAN-13 first (prefix setting, default 20). EAN-13 or Code 128 bars (picqer/php-barcode-generator).
 - **Photos on stock adjustment lines** (Details → Photo of the goods), shown on the adjustment to people who may see that store's stock; setting *Photos on stock adjustment lines*: optional (default), required for damaged / expired / spoiled / missing stock, or not used.
 

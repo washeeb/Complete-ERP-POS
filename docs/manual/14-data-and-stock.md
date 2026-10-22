@@ -179,6 +179,14 @@ There are two ways to bring the system in line with what is on the shelves.
 
 **My day** also shows the store's low stock, expired and expiring batches, negative stock, products never counted, adjustments waiting for a manager, and transfers and orders on the way — each opens the page where it is dealt with.
 
+### D. Losses, slow stock and checks
+
+- **Stock → Shrink:** stock lost (damaged, expired, spoiled, stolen, count shortages) at cost for a period and store — by reason, by product, the **last six months** month by month, **by category**, **recorded by** whom, and products **lost again and again** (three times or more).
+- **Stock → Slow & dead stock:** what has not sold in a store for 60, 90 or 180 days (or, if never sold, since it came in), with its value at cost. For each product a suggestion: **Move** it to the store where it sells (a draft transfer in one click, to check and dispatch), ask the supplier to take it back where they do (Expiry & returns), or mark it down.
+- **Stock → My day → Checks:** losses in the last 30 days **larger than usual** for that store (three times the usual loss line and at least GHS 100), products **written off three times or more**, and **possible duplicate products** (same name). These point at what deserves a second look; they are not a verdict.
+
+**Why:** most stock losses are small and repeated; seeing them by month, by product and by person shows where to look, and stock that does not sell ties up money that could buy what does.
+
 ## 14.5 Minimum stock and reordering
 
 Every product that keeps stock has a **minimum** in each store. When stock (plus what is already on order or on its way) falls to it, **Purchasing → What to order** suggests topping it up to the **maximum** and turns the suggestions into draft purchase orders, one per supplier.

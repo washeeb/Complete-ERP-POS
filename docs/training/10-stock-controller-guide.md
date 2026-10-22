@@ -26,6 +26,12 @@ You look after the product list and the stock in the shop: products, stock level
 
 **Why:** you see the effect of each line before saving, and large changes always get a second pair of eyes.
 
+## Losses and slow stock
+
+- **Stock → Shrink:** what was lost, by reason, product, month, category and who recorded it; and products lost again and again.
+- **Stock → Slow & dead stock:** what has not sold for 60/90/180 days. **Move** sends it (as a draft transfer) to the store where it sells.
+- **My day → Checks:** unusually large write-offs, products written off three times or more, and possible duplicate products. Look into each one; tell your manager if something is not right.
+
 ## Labels and photos
 
 - **Labels:** Catalog → Products → tick products → **Print labels** (or on one product, or on a delivery under Goods received). Shelf labels or barcode stickers, on A4 label sheets or a label printer. Tick **Give products without a barcode an in-store barcode first** so every item scans at the till.
