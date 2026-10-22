@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\Catalog\Labels;
 use App\Domain\Customers\CustomerLedger;
 use App\Domain\Logistics\WaybillService;
 use App\Domain\Pharmacy\PharmacyReports;
@@ -250,6 +251,18 @@ class PrintController extends Controller
             }
             fclose($out);
         }, "salaries-{$run->number}.csv", ['Content-Type' => 'text/csv']);
+    }
+
+    /** Barcode and shelf labels prepared from the products list or a delivery (Labels::prepare), for the person who prepared them. */
+    public function labels(Request $request, string $token): View
+    {
+        $job = Labels::job($token);
+        abort_unless($job && $job['user_id'] === $request->user()?->id, 404);
+        $this->allow($request, ['catalog.view'], null, $request->user()->tenant_id);
+        $o = $job['options'];
+
+        return view('print.labels', ['labels' => app(Labels::class)->rows($request->user()->tenant_id, $job['products'], $o['price_list_id'] ?? null, (int) ($o['copies'] ?? 1)),
+            'kind' => $o['kind'], 'layout' => $o['layout'], 'skip' => Labels::LAYOUTS[$o['layout']][2] === 0 ? 0 : max(0, min(64, (int) ($o['skip'] ?? 0)))]);
     }
 
     /** Markdown stickers (EAN-13 with the reduced price) for near-expiry packs. */

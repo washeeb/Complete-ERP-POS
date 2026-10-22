@@ -367,6 +367,17 @@ final class Settings
             'label' => 'Stock adjustments above this value need a manager\'s approval (in pesewas/cents)',
             'help' => 'Worked out at average cost (increases and decreases added up). 50000 = GHS 500. 0 = every adjustment document needs approval by someone else.',
         ],
+        'catalog.internal_barcode_prefix' => [
+            'type' => 'string', 'default' => '20', 'max' => 2, 'group' => 'Stock',
+            'label' => 'In-store barcodes start with',
+            'help' => 'Products without a barcode can be given one when printing labels: an EAN-13 starting with these two digits (20–29 are for in-store use). Must differ from the scale and markdown prefixes (Grocery).',
+        ],
+        'stock.adjustment_photos' => [
+            'type' => 'choice', 'default' => 'optional', 'group' => 'Stock',
+            'options' => ['optional' => 'Optional', 'losses' => 'Required for damaged, expired, spoiled and missing stock', 'off' => 'Not used'],
+            'label' => 'Photos on stock adjustment lines',
+            'help' => 'A photo of the damaged or expired goods, attached to the line and kept with the adjustment. "Required" stops the adjustment from being submitted without one.',
+        ],
         'stock.cycle_count_per_day' => [
             'type' => 'int', 'default' => 20, 'min' => 0, 'max' => 500, 'group' => 'Stock',
             'label' => 'Cycle count: products per store per day',

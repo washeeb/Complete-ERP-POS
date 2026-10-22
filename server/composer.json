@@ -15,6 +15,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0",
         "phpseclib/phpseclib": "~3.0.40",
+        "picqer/php-barcode-generator": "^3.2",
         "pragmarx/google2fa-qrcode": "3.*",
         "spatie/laravel-passkeys": "1.*"
     },

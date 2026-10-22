@@ -23,6 +23,7 @@ use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
@@ -129,6 +130,9 @@ class StockAdjustmentResource extends Resource
                                 ->helperText('Empty = average cost'),
                             Select::make('reason_code')->label('Reason (if different)')->options(InventoryService::ADJUSTMENT_REASONS),
                             TextInput::make('note')->maxLength(255)->columnSpan(2),
+                            FileUpload::make('photo_path')->label('Photo of the goods')->image()->disk('local')->directory('stock-photos')->visibility('private')
+                                ->maxSize(5120)->imageResizeMode('contain')->imageResizeTargetWidth('1600')->columnSpan(2)
+                                ->visible(fn () => app(Settings::class)->get('stock.adjustment_photos', Erp::user()->tenant_id) !== 'off'),
                         ], 6),
                     ]),
                     // The adjustment's value at average cost, and whether a manager must approve it before posting.
@@ -150,9 +154,9 @@ class StockAdjustmentResource extends Resource
     {
         return ['lines' => $a->lines()->with('product')->get()->map(fn ($l) => ['product_uom_id' => $l->product_uom_id, 'mode' => $l->mode, 'qty' => rtrim(rtrim((string) $l->qty, '0'), '.'),
             'unit_cost' => $l->unit_cost_minor === null ? null : $l->unit_cost_minor / 100, 'batch_no' => $l->batch_no, 'expires_on' => $l->expires_on?->toDateString(),
-            'reason_code' => $l->reason_code, 'note' => $l->note, 'serials' => $l->serials ?? [],
+            'reason_code' => $l->reason_code, 'note' => $l->note, 'serials' => $l->serials ?? [], 'photo_path' => $l->photo_path,
             // Details open where something is filled in, or for a batch-tracked product.
-            'more' => filled($l->batch_no) || $l->expires_on || $l->unit_cost_minor !== null || filled($l->reason_code) || filled($l->note) || (bool) $l->product?->track_batches,
+            'more' => filled($l->batch_no) || $l->expires_on || $l->unit_cost_minor !== null || filled($l->reason_code) || filled($l->note) || filled($l->photo_path) || (bool) $l->product?->track_batches,
         ])->all()];
     }
 
@@ -256,7 +260,11 @@ class StockAdjustmentResource extends Resource
         $body = collect($t['rows'])->map(fn ($row) => '<tr>'.collect($row)->map(fn ($v) => '<td style="padding:4px 6px;border-top:1px solid color-mix(in srgb, currentColor 6%, transparent)">'.e($v).'</td>')->implode('').'</tr>')->implode('');
         $note = $r->status === 'posted' ? 'Value of the change at average cost: ' : 'If posted now (against stock on hand now), value at average cost: ';
 
-        return '<table style="width:100%;font-size:.85rem;border-collapse:collapse">'.$head.$body.'</table><p style="margin-top:8px;font-size:.85rem">'.e($note.Money::format($t['total'], $t['currency'])).'</p>';
+        $photos = $r->lines()->whereNotNull('photo_path')->orderBy('line_no')->get(['id', 'line_no'])
+            ->map(fn ($l) => '<a href="'.e(route('stock-photo', $l->id)).'" target="_blank" style="text-decoration:underline">Line '.$l->line_no.'</a>')->implode(' · ');
+
+        return '<table style="width:100%;font-size:.85rem;border-collapse:collapse">'.$head.$body.'</table><p style="margin-top:8px;font-size:.85rem">'.e($note.Money::format($t['total'], $t['currency'])).'</p>'
+            .($photos ? '<p style="margin-top:6px;font-size:.85rem">Photos: '.$photos.'</p>' : '');
     }
 
     private static function q($v): string

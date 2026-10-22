@@ -5,6 +5,7 @@ use App\Http\Controllers\AccessRequestController;
 use App\Http\Controllers\BrandAssetController;
 use App\Http\Controllers\ExpenseReceiptController;
 use App\Http\Controllers\PrintController;
+use App\Http\Controllers\StockPhotoController;
 use App\Http\Controllers\StorefrontController;
 use App\Http\Controllers\SupportScreenshotController;
 use App\Http\Controllers\WaybillConfirmController;
@@ -64,6 +65,7 @@ Route::prefix('print')->middleware(['auth', 'license:output'])->name('print.')->
     Route::get('disposal/{adjustment}', [PrintController::class, 'disposal'])->name('disposal')->whereUuid('adjustment');
     Route::get('disposal-register', [PrintController::class, 'disposalRegister'])->name('disposal-register');
     Route::get('waybill/{waybill}', [PrintController::class, 'waybill'])->name('waybill')->whereUuid('waybill');
+    Route::get('labels/{token}', [PrintController::class, 'labels'])->name('labels')->whereUuid('token');
     Route::get('purchase-order/{po}', [PrintController::class, 'purchaseOrder'])->name('purchase-order')->whereUuid('po');
     Route::get('goods-receipt/{grn}', [PrintController::class, 'goodsReceipt'])->name('goods-receipt')->whereUuid('grn');
     Route::get('transfer/{t}', [PrintController::class, 'transfer'])->name('transfer')->whereUuid('t');
@@ -90,6 +92,9 @@ Route::get('po/{po}', function (string $po) {
 
     return Storage::disk('local')->download($path, PurchaseOrder::withoutGlobalScopes()->whereKey($po)->value('number').'.pdf');
 })->name('purchase-order.pdf')->whereUuid('po')->middleware(['signed', 'throttle:30,1']);
+
+// The photo on a stock adjustment line: for people who may see that store's stock.
+Route::get('stock-photo/{line}', StockPhotoController::class)->middleware(['auth'])->name('stock-photo')->whereUuid('line');
 
 // "Ask for access" from the no-access page: the people who give roles are told who asked, for which page and why.
 Route::post('access-request', AccessRequestController::class)->middleware(['auth', 'throttle:5,10'])->name('access.request');

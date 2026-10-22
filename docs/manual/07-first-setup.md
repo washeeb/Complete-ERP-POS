@@ -153,7 +153,7 @@ Module settings (Grocery, Pharmacy, Restaurant, Fashion, Services) are explained
 
 **Why:** the cost is used for the value of your stock and the cost of goods sold in the accounts.
 
-**Tip:** count on a day you are closed, enter the counts, then start selling. For many products use **System → Import data (CSV / Excel) → Opening stock** (warehouse, SKU, quantity, unit cost per row). Medicines and other batch-tracked products: **one row per batch**, with its atch_no and xpires_on; a medicine with three batches on the shelf has three rows. Each batch can be loaded once; once a product has been sold, received or adjusted, further changes go through a stock adjustment.
+**Tip:** count on a day you are closed, enter the counts, then start selling. For many products use **System → Import data (CSV / Excel) → Opening stock** (warehouse, SKU, quantity, unit cost per row). Medicines and other batch-tracked products: **one row per batch**, with its `batch_no` and `expires_on`; a medicine with three batches on the shelf has three rows. Each batch can be loaded once; once a product has been sold, received or adjusted, further changes go through a stock adjustment.
 
 ## Step 11 — Customers and suppliers
 
