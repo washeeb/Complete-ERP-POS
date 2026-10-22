@@ -2,6 +2,12 @@
 
 You look after the product list and the stock in the shop: products, stock levels, counts, shelf locations and what needs ordering. You do not change selling prices, approve your own work, sell, or handle money. Everything is in the back office (web browser) under **Catalog**, **Stock** and **Purchasing**.
 
+## Start the day: My day
+
+**Stock → My day** (choose your store) shows what needs doing: **today's cycle count**, **low stock**, **expired** and **expiring** batches, **negative stock**, products **never counted**, **adjustments waiting for a manager**, and **transfers and orders** on the way. Click a figure to open the page where it is dealt with.
+
+**Why:** one look in the morning instead of searching six pages.
+
 ## Products
 
 - **Catalog → Products → New** to add a product; open one to correct it. Categories and brands can be added from the product form with **+**.
@@ -23,6 +29,13 @@ You look after the product list and the stock in the shop: products, stock level
 ## Counting
 
 **Stock → Stock counts.** Count what is on the shelf without looking at the system figure, and enter it. A manager approves and posts the count.
+
+**Cycle counting — a few products every day.** On **My day**, *Today's cycle count* lists the products to count today (20 by default). Press **Start today's count**: it becomes a normal blind count. Count them (paper sheet, the count page or the handheld), submit, and a manager posts it.
+
+- Products that move a lot of value come up every **30 days**, the next group every **60**, slow ones every **120**; never-counted products first.
+- Products whose counts keep coming out wrong are marked **often wrong** and come up twice as often.
+
+**Why:** a little every day finds mistakes while they are fresh, without closing the shop for a big stock-take.
 
 ## Minimum and maximum stock (reorder levels)
 

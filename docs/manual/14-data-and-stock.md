@@ -152,6 +152,17 @@ There are two ways to bring the system in line with what is on the shelves.
 
 **Tip:** count when the shop is closed, or count one area (bin or category) at a time. Sales during a count are still recorded normally.
 
+### C. Cycle counting (a few products every day)
+
+**Stock → My day** lists, for each store, the products to count today and **Start today's count** turns them into a blind stock count (way A). How many a day: **System → Settings → Stock → Cycle count: products per store per day** (default 20; 0 = off).
+
+- The system ranks products by the value that left the store in the last 90 days: the top 80% (A) are counted every 30 days, the next 15% (B) every 60, the rest (C) every 120. Products never counted come first.
+- A product with a difference in two of its last three counts is **often wrong** and is counted twice as often.
+
+**Why:** in a busy pharmacy a full stock-take means closing; a few products a day catches mistakes (and theft) within weeks, and the products that matter most are checked most.
+
+**My day** also shows the store's low stock, expired and expiring batches, negative stock, products never counted, adjustments waiting for a manager, and transfers and orders on the way — each opens the page where it is dealt with.
+
 ## 14.5 Minimum stock and reordering
 
 Every product that keeps stock has a **minimum** in each store. When stock (plus what is already on order or on its way) falls to it, **Purchasing → What to order** suggests topping it up to the **maximum** and turns the suggestions into draft purchase orders, one per supplier.
