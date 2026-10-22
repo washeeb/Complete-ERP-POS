@@ -40,7 +40,32 @@
         @endforeach
     </div>
 
+    @php($checks = $this->checks())
+    @php($money = fn ($v) => \App\Filament\Support\FinanceUi::money((int) $v))
+    @if ($checks['larger']->isNotEmpty() || $checks['again']->isNotEmpty() || $checks['duplicates']->isNotEmpty())
+        <x-filament::section heading="Checks" description="Worth a second look — not a verdict. Last 30 days in this store.">
+            @if ($checks['larger']->isNotEmpty())
+                <p class="md-sub">Losses larger than usual (usual here: {{ $money($checks['larger']->first()->usual) }} a line)</p>
+                <table class="md">@foreach ($checks['larger'] as $r)
+                    <tr><td>{{ \Illuminate\Support\Carbon::parse($r->when)->format('j M') }}</td><td>{{ $r->name }} <span class="muted">{{ $r->sku }}</span></td>
+                        <td>{{ $r->reason ?? 'Count shortage' }} · {{ $r->by }}</td><td class="num">{{ $money($r->value) }}</td>
+                        <td>@if ($r->url)<x-filament::link :href="$r->url">Open</x-filament::link>@endif</td></tr>
+                @endforeach</table>
+            @endif
+            @if ($checks['again']->isNotEmpty())
+                <p class="md-sub">Written off three times or more</p>
+                <table class="md">@foreach ($checks['again'] as $r)<tr><td>{{ $r->name }} <span class="muted">{{ $r->sku }}</span></td><td>{{ $r->times }} times</td><td class="num">{{ $money($r->value) }}</td></tr>@endforeach</table>
+            @endif
+            @if ($checks['duplicates']->isNotEmpty())
+                <p class="md-sub">Possible duplicate products (same name)</p>
+                <table class="md">@foreach ($checks['duplicates'] as $r)<tr><td>{{ $r->name }}</td><td class="muted">{{ $r->skus }}</td></tr>@endforeach</table>
+                <p class="muted small">Move the stock and sales to one of them, or ask SyncLytics support to merge them.</p>
+            @endif
+        </x-filament::section>
+    @endif
+
     <style>
+        .md-sub { font-weight: 600; margin: 10px 0 4px; } .md .num { text-align: right; }
         .md-filters { display: flex; gap: 12px; } .md-filters label { display: grid; gap: 4px; font-size: .875rem; }
         .md-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
         .md-card { display: grid; gap: 2px; padding: 14px 16px; border-radius: 12px; border: 1px solid color-mix(in srgb, currentColor 10%, transparent); text-decoration: none; color: inherit; }

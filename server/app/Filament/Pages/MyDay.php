@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Domain\Inventory\CycleCounts;
 use App\Domain\Inventory\StockBatches;
+use App\Domain\Inventory\StockChecks;
 use App\Domain\Purchasing\ReorderService;
 use App\Filament\Resources\ReorderRules\ReorderRuleResource;
 use App\Filament\Resources\StockAdjustments\StockAdjustmentResource;
@@ -127,6 +128,26 @@ class MyDay extends Page
         return ['on' => true, 'started' => $started, 'url' => $started ? StockCountResource::getUrl('view', ['record' => $started]) : null,
             'due' => $started ? collect() : $svc->due($w, $svc->perDay($w->tenant_id)), 'per_day' => $svc->perDay($w->tenant_id),
             'wrong' => DB::table('products')->whereIn('id', $svc->oftenWrongIds($w))->orderBy('name')->limit(10)->pluck('name')];
+    }
+
+    /** Smart checks: losses larger than usual, products written off again and again, possible duplicate products. */
+    public function checks(): array
+    {
+        $w = $this->store();
+        if (! $w) {
+            return ['larger' => collect(), 'again' => collect(), 'duplicates' => collect()];
+        }
+        $checks = app(StockChecks::class);
+        $link = fn ($r) => match ($r->source_type) {
+            'stock_adjustment' => StockAdjustmentResource::getUrl('view', ['record' => $r->source_id]),
+            'stock_count' => StockCountResource::getUrl('view', ['record' => $r->source_id]),
+            default => null,
+        };
+
+        return ['larger' => $checks->largerThanUsual($w->id)->each(function ($r) use ($link) {
+            $r->url = $link($r);
+        }),
+            'again' => $checks->againAndAgain($w->id), 'duplicates' => $checks->possibleDuplicates($w->tenant_id)];
     }
 
     public function startCycleAction(): Action
