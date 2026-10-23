@@ -105,6 +105,11 @@ final class DailySummary
         $shifts = DB::table('shifts')->where('tenant_id', $tenant->id)->where('status', 'closed')->whereBetween('closed_at', [$from, $to]);
         $overShort = (int) (clone $shifts)->sum('over_short_minor');
         $lines[] = 'Till closes: '.(clone $shifts)->count().', cash '.($overShort === 0 ? 'balanced' : ($overShort > 0 ? 'over ' : 'short ').$m(abs($overShort)));
+        // End-of-day close (Cash → Close the day): who closed each branch's day, or that it is not closed yet.
+        $closes = DB::table('day_closes')->where('tenant_id', $tenant->id)->where('business_date', $day->copy()->setTimezone($tz)->toDateString())->get()->keyBy('branch_id');
+        $lines[] = 'Day closed: '.$branches->map(fn ($b) => $b->name.' — '.(isset($closes[$b->id])
+            ? 'by '.$closes[$b->id]->closed_by_name.($closes[$b->id]->problems ? " ({$closes[$b->id]->problems} problem(s): {$closes[$b->id]->note})" : '')
+            : 'not yet'))->implode('; ');
 
         $warehouses = Warehouse::withoutGlobalScopes()->where('tenant_id', $tenant->id)->get();
         $low = $warehouses->sum(fn ($w) => count(app(ReorderService::class)->suggestions($w)));

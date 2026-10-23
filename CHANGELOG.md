@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- **Close the day (Cash → Close the day):** per branch, the checks before leaving — tills closed and counted, cash over / short by cashier, handed over and banked (cash control), sales all received from the tills, medicine sales signed off, approvals waiting, last night's backup — and the close with the cash banked (slip number) or kept in the safe; a red check needs a reason; closing again updates the record; recent days listed; the daily summary says who closed each branch's day. Permission *Close the day* (general manager, branch manager). Manual 12.1.
 ### Changed
 - **Long lists a page at a time:** What to order, Suggested levels, Expiry & returns and Sales to sign off show 25 rows per page (50 or 100 to choose); ticks stay when moving between pages and the bulk buttons act on every ticked row of every page. **What to order opens much faster:** the best supplier for each product is found in one query instead of one per product, and per-row checks are done once. Pinned row buttons no longer wrap onto several lines (rows stay their normal height).
 ### Added

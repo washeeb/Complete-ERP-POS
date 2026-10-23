@@ -91,6 +91,7 @@
     {"key": "remote.view", "label": "See device screens remotely and join training sessions (Remote access add-on)", "min_level": 3, "technical": true},
     {"key": "remote.control", "label": "Control devices remotely and run remote fixes (Remote access add-on)", "min_level": 4, "technical": true},
     {"key": "reports.daily_summary", "label": "Receive the daily summary of the business (sales, payments, stock, losses, approvals)", "min_level": 4},
+    {"key": "day.close", "label": "Close the day at a branch (tills closed, cash banked, checks) and see past closes", "min_level": 4},
     {"key": "payments.momo.manage", "label": "Set up mobile money payment requests (provider account and keys) and see the requests", "min_level": 5},
     {"key": "payments.alerts", "label": "Receive mobile money and card payment alerts and the daily summary", "min_level": 4},
     {"key": "pos.shift.grant", "label": "Let a till open outside trading hours, or open again after its shift closed (with a reason)", "min_level": 3},
