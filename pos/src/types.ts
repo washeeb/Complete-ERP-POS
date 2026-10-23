@@ -106,6 +106,7 @@ export type Bootstrap = {
   price_lists: PriceList[]
   receipt_footer: string
   show_stock?: boolean
+  auto_print_receipt?: boolean // the desktop till prints each receipt by itself
   require_details?: string // none | phone | name | name_phone: what the till asks before payment (branch setting)
   /** The company's brand (Company → Branding); missing on servers older than 0.26. */
   brand?: { color: string; on_color: string; logo_url: string | null; logo_dark_url: string | null; icon_url: string; receipt_logo: boolean; powered_by: string | null; credit?: string[]; product: string }

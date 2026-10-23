@@ -42,7 +42,7 @@ Where the shop has switched it on, each item shows **how many are left** (e.g. *
 - **Card** — run the card on the terminal first, then enter the approval code from the slip.
 - **Mixed** — e.g. part MoMo, rest cash. The sale completes when nothing is left to pay.
 
-Then **Print receipt** (prints straight away on the desktop till's receipt printer), or **Show print preview** to look at it first, or **Send receipt** by SMS/WhatsApp/e-mail. Then **New sale**.
+On the desktop till the receipt **prints by itself** as soon as the sale is done. In a browser press **Print receipt** (or **Show print preview** to look at it first). **Send receipt** sends it by SMS/WhatsApp/e-mail. Then **New sale**. If the network is slow the receipt still prints at once, marked *Recorded on this till while offline*: that is normal, the sale is sent by itself.
 
 ## Returns and mistakes
 

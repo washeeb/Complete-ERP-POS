@@ -98,6 +98,11 @@ final class Settings
             'label' => 'Daily summary time (HH:MM)',
             'help' => 'The day’s mobile money and card totals per branch and network are sent once, after this time.',
         ],
+        'pos.auto_print_receipt' => [
+            'type' => 'bool', 'default' => true, 'group' => 'Tills and cash',
+            'label' => 'Desktop till prints each receipt by itself',
+            'help' => 'On the desktop till with a receipt printer chosen: the receipt prints the moment the sale is done (and the drawer opens for cash), without a print window and without waiting for the server. Off: the cashier presses Print receipt. Browsers always show their print window.',
+        ],
         'pos.auto_shifts' => [
             'type' => 'bool', 'default' => false, 'group' => 'Tills and cash', 'branch' => true,
             'label' => 'Automatic shifts',

@@ -36,7 +36,7 @@ const bootstrap = (shift: unknown) => ({
   drawer: { payout_approval_minor: 10000, cash_limit_minor: 15000, categories: [{ id: 'acc-transport', name: 'Transport and fuel' }] }, catalog_version: 'v1', server_time: new Date().toISOString(),
 })
 
-type Server = { up: boolean; shift: unknown; syncBodies: { body: string; signature: string | null }[]; sales: unknown[]; expired?: boolean; drawer?: Record<string, unknown>[] }
+type Server = { up: boolean; shift: unknown; syncBodies: { body: string; signature: string | null }[]; sales: unknown[]; expired?: boolean; drawer?: Record<string, unknown>[]; slowSalesMs?: number }
 
 async function mockServer(page: Page, s: Server) {
   const json = (route: Route, status: number, body: unknown) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) })
@@ -59,6 +59,7 @@ async function mockServer(page: Page, s: Server) {
         return json(route, 201, { shift: s.shift })
       }
       case 'POST pos/sales': {
+        if (s.slowSalesMs) await new Promise((r) => setTimeout(r, s.slowSalesMs)) // a slow network: the answer comes late
         const b = req.postDataJSON()
         s.sales.push(b)
         return json(route, 201, { replayed: false, sale: { id: b.id, receipt_no: `HQ-T01A-${String(b.device_seq).padStart(6, '0')}`, device_seq: b.device_seq,
@@ -213,4 +214,27 @@ test('the drawer: an expense paid out, a cash drop by a supervisor, and the cash
   await slip.getByRole('button', { name: 'Done' }).click()
   await expect(page.getByText(/Cash in the drawer is above/)).toBeHidden()
   expect(s.drawer?.at(-1)).toMatchObject({ kind: 'drop', amount_minor: 15000, approval: { username: 'kojo', pin: '7391' } })
+})
+
+test('a slow server does not hold up the receipt: the till carries on and sends the sale afterwards', async ({ page }) => {
+  const s: Server = { up: true, shift: null, syncBodies: [], sales: [] }
+  await mockServer(page, s)
+  await page.goto('/')
+  await page.getByPlaceholder('ABCD-EFGH-JKMN').fill('ABCD-EFGH-JKMN')
+  await page.getByRole('button', { name: 'Enrol this device' }).click()
+  await signIn(page)
+  await page.getByPlaceholder('0.00').fill('100')
+  await page.getByRole('button', { name: 'Open shift' }).click()
+
+  s.slowSalesMs = 15_000
+  const started = Date.now()
+  await sellOneMilo(page)
+  await expect(page.getByText('Receipt HQ-T01A-000001')).toBeVisible({ timeout: 8_000 })
+  expect(Date.now() - started).toBeLessThan(8_000) // a few seconds at most, not the server's 15
+  await expect(page.getByText('Recorded on this till while offline')).toBeVisible()
+
+  // The sale still reaches the server, from the queue.
+  s.slowSalesMs = 0
+  await page.getByRole('button', { name: 'New sale' }).click()
+  await expect.poll(() => s.syncBodies.some((b) => b.body.includes('"type":"sale"')), { timeout: 20_000 }).toBe(true)
 })

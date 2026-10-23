@@ -82,6 +82,14 @@ export function SendReceipt({ sale, channels }: { sale: PostedSale; channels: ('
  */
 function PrintButton({ sale, boot }: { sale: PostedSale; boot: Bootstrap }) {
   const [note, setNote] = useState<string | null>(null)
+  // The desktop till prints every receipt by itself on its receipt printer (System → Settings → Tills and cash), straight
+  // from the till — it does not wait for the server or open a print window.
+  useEffect(() => {
+    if (!isDesktop() || boot.auto_print_receipt === false) return
+    printReceipt(sale, boot)
+      .then((printed) => { if (!printed) setNote('No receipt printer is chosen on this till: Printer and scale set-up.') })
+      .catch((e) => setNote(`Printer: ${String(e)}`))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const print = async () => {
     setNote(null)
     try {

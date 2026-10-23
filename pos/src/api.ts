@@ -3,10 +3,10 @@ import { db, getDevice, getSession } from './db'
 import type { OfflineGrant } from './db'
 import type { Bootstrap, PostedSale, Product, PromotionRow, Returnable, Shift, TillCustomer, WmsBin, WmsBootstrap, WmsCount, WmsOrder, WmsTransfer, WmsUnit, Grocery, Pharmacy, Restaurant, DiningOrder, Floor, KitchenTicket, Reservation, RepairJob, SerialInfo, Fashion, Alteration, Services, Appointment, ServicePass, StaffMember, VanDay } from './types'
 
-/** Error with the server's stable code ("price_changed", "no_shift"…) and a message safe to show. */
 /** Automatic shifts: a manager allows a till to open outside trading hours, or again after its shift was closed. */
 export type ShiftGrant = { username: string; pin: string; reason: string }
 
+/** Error with the server's stable code ("price_changed", "no_shift"…) and a message safe to show. */
 export class ApiError extends Error {
   code: string
   status: number
@@ -21,7 +21,10 @@ export class ApiError extends Error {
 export const GATEWAY_DOWN = [502, 503, 504]
 export const SIGNED_OUT = 'Your sign-in on this till has ended. Enter your username and PIN to carry on; the sale is kept.'
 
-async function call<T>(path: string, init: RequestInit & { auth?: 'device' | 'session' | 'none' } = {}): Promise<T> {
+/** No call waits longer than this: on a slow network the till carries on (offline queue) instead of hanging. */
+export const DEFAULT_WAIT_MS = 20_000
+
+async function call<T>(path: string, init: RequestInit & { auth?: 'device' | 'session' | 'none'; timeoutMs?: number } = {}): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json', 'Content-Type': 'application/json' }
   const auth = init.auth ?? 'session'
   if (auth === 'device') headers.Authorization = `Bearer ${(await getDevice())?.token ?? ''}`
@@ -30,10 +33,12 @@ async function call<T>(path: string, init: RequestInit & { auth?: 'device' | 'se
   if (client) headers['X-SES-Client'] = client
 
   let res: Response
+  const { timeoutMs, ...request } = init
   try {
-    res = await fetch(`/api/v1/${path}`, { ...init, headers })
-  } catch {
-    throw new ApiError('network', 'Cannot reach the server. Check the network cable or Wi-Fi.', 0)
+    res = await fetch(`/api/v1/${path}`, { ...request, headers, signal: request.signal ?? AbortSignal.timeout(timeoutMs ?? DEFAULT_WAIT_MS) })
+  } catch (e) {
+    const slow = e instanceof DOMException && (e.name === 'TimeoutError' || e.name === 'AbortError')
+    throw new ApiError('network', slow ? 'The server is slow to answer; the till carries on and sends it shortly.' : 'Cannot reach the server. Check the network cable or Wi-Fi.', 0)
   }
   // A proxy in front of a stopped app server answers 502/503/504: for the till that is the server being down.
   if (GATEWAY_DOWN.includes(res.status)) throw new ApiError('network', 'The server is not answering.', res.status)
@@ -92,7 +97,7 @@ export const api = {
   /** Device health (every few minutes); the answer carries fixes queued for this till in the back office. */
   health: (snapshot: unknown) => call<{ commands: import('./health').RemoteCommand[] }>('pos/health', { method: 'POST', body: JSON.stringify(snapshot) }),
   commandDone: (id: string, status: 'done' | 'failed', result: string) => call<{ ok: boolean }>(`pos/commands/${id}`, { method: 'POST', body: JSON.stringify({ status, result }) }),
-  postSale: (payload: unknown) => call<{ sale: PostedSale; replayed: boolean }>('pos/sales', { method: 'POST', body: JSON.stringify(payload) }),
+  postSale: (payload: unknown, timeoutMs?: number) => call<{ sale: PostedSale; replayed: boolean }>('pos/sales', { method: 'POST', body: JSON.stringify(payload), timeoutMs }),
   lookupReceipt: (receiptNo: string) => call<{ sale: PostedSale; returnable: Returnable; customer_id: string | null }>(`pos/receipts?receipt=${encodeURIComponent(receiptNo)}`),
   postReturn: (payload: unknown) => call<{ sale: PostedSale; store_credit_code: string | null }>('pos/returns', { method: 'POST', body: JSON.stringify(payload) }),
   accountPayment: (body: { customer_id: string; amount_minor: number; method: 'cash' | 'momo' | 'card'; provider?: string; reference?: string }) =>

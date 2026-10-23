@@ -1,6 +1,10 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+- **The till no longer waits for a slow network.** A sale waits at most 4 seconds for the server; then it is kept on the till, the receipt shows and prints at once, and the sale follows from the till's queue (the server ignores a second copy). Sales with a supervisor's PIN still wait for the server. No till call waits longer than 20 seconds.
+- **The desktop till prints each receipt by itself** on its receipt printer the moment the sale is done (setting *Desktop till prints each receipt by itself*, on by default), instead of waiting for **Print receipt**. Asked for by the first client.
+
 ### Added
 - **Slow & dead stock** (Stock Controller release 4): what has not sold in a store for 60/90/180 days, its value at cost, and a suggestion — **Move** to the store where it sells (draft transfer in one click), supplier take-back, or mark down.
 - **Shrink report:** the last six months month by month, by category, by who recorded it, and products lost three times or more.
