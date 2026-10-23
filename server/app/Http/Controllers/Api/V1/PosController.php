@@ -88,6 +88,7 @@ class PosController extends Controller
             ])->values(),
             'receipt_footer' => $settings->get('receipt.footer', $device->tenant_id),
             'show_stock' => (bool) $settings->get('pos.show_stock', $device->tenant_id),
+            'auto_print_receipt' => (bool) $settings->get('pos.auto_print_receipt', $device->tenant_id),
             'require_details' => (string) $settings->forBranch('pos.require_details', $device->branch_id, $device->tenant_id), // name / phone before payment
             // The company's brand (Company → Branding): logo for the screen and the printed receipt, colour, and the product line.
             'brand' => (fn ($b) => ['color' => $b['color'], 'on_color' => $b['on_color'], 'logo_url' => $b['logo_url'], 'logo_dark_url' => $b['logo_dark_url'],

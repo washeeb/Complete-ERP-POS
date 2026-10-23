@@ -93,7 +93,7 @@ test('the main till screens pass the automated WCAG 2.2 AA checks, in light and 
   await axe(page, 'Receipt (dark)')
 })
 
-test('the desktop till prints the receipt silently on the receipt printer and opens the drawer after cash', async ({ page }) => {
+test('the desktop till prints the receipt by itself, silently, on the receipt printer and opens the drawer after cash', async ({ page }) => {
   await page.addInitScript(() => {
     const calls: { cmd: string; args?: Record<string, unknown> }[] = []
     ;(window as unknown as { __calls: typeof calls }).__calls = calls
@@ -108,7 +108,7 @@ test('the desktop till prints the receipt silently on the receipt printer and op
   await expect(page.getByRole('img', { name: 'Demo Ltd' })).toBeVisible() // the company logo on the receipt
   await expect(page.getByText('Powered by SES Labs')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Printer and scale set-up' })).toBeVisible()
-  await page.getByRole('button', { name: 'Print receipt' }).click()
+  // It prints by itself, without the cashier pressing Print receipt (setting on by default).
   await expect.poll(async () => page.evaluate(() => (window as unknown as { __calls: { cmd: string }[] }).__calls.map((c) => c.cmd))).toContain('print_raw')
   const call = await page.evaluate(() => (window as unknown as { __calls: { cmd: string; args: { data: string; openDrawer: boolean } }[] }).__calls.find((c) => c.cmd === 'print_raw')!.args)
   const text = Buffer.from(call.data, 'base64').toString('latin1')

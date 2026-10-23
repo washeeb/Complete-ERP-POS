@@ -117,6 +117,9 @@ export async function closeShift(countedMinor: number, note: string, online: boo
 
 type Cart = ReturnType<typeof priceCart>
 
+/** How long a sale waits for the server before the till carries on without it (and prints). */
+export const SALE_WAIT_MS = 4000
+
 /** The paper prescription, as the pharmacist enters it before payment (Pharmacy). */
 export type RxDetails = { prescriber_name: string; prescriber_reg_no?: string; facility?: string; reference?: string; issued_on: string }
 
@@ -176,11 +179,14 @@ export async function submitSale(args: {
 
   if (!(await queueMode(args.online))) {
     try {
-      // A supervisor's PIN goes to the server only, never into the offline queue.
+      // A supervisor's PIN goes to the server only, never into the offline queue: then the till waits for the answer.
+      // Otherwise it waits a few seconds at most; on a slow network the sale is kept here, the receipt prints at once, and
+      // the sale follows from the queue (the server ignores a second copy of the same sale).
+      const approvals = !!(args.creditApproval || args.discountApproval || args.pharmacistApproval || args.tradeInApproval)
       const { sale } = await api.postSale({ ...payload, ...(args.creditApproval ? { credit_approval: args.creditApproval } : {}),
         ...(args.discountApproval ? { discount_approval: args.discountApproval } : {}),
         ...(args.pharmacistApproval ? { pharmacist_approval: args.pharmacistApproval } : {}),
-        ...(args.tradeInApproval ? { trade_in_approval: args.tradeInApproval } : {}) })
+        ...(args.tradeInApproval ? { trade_in_approval: args.tradeInApproval } : {}) }, approvals ? undefined : SALE_WAIT_MS)
       await recordCash()
       return sale
     } catch (e) {

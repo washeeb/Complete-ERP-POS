@@ -106,7 +106,9 @@ For a Windows till PC with a receipt printer, a cash drawer or a weighing scale,
 
 The app also tells the server **which computer it is** (its name, network card and address on the shop network), so the audit log and **System → Devices** (*Last used from*) show which till did what (12.1). **Open the back office** on its set-up page opens the back office in the app, so changes made there are recorded with the computer's details too.
 
-Receipts then print straight away without a print window, the drawer opens after cash sales, and items sold by weight show a **Weigh** button. **Printer and scale set-up** on the receipt screen opens these settings again.
+Receipts then **print by themselves** the moment the sale is done, without a print window, the drawer opens after cash sales, and items sold by weight show a **Weigh** button. **Printer and scale set-up** on the receipt screen opens these settings again. To print only when the cashier presses **Print receipt**: **System → Settings → Tills and cash → Desktop till prints each receipt by itself** (on by default).
+
+**Slow network:** every till (desktop or browser) waits at most a few seconds for the server to accept a sale. If it has not answered by then, the sale is kept on the till, the receipt shows and prints at once (marked *Recorded on this till while offline*), and the sale is sent from the till's queue moments later; the server never records it twice. No other call to the server waits longer than 20 seconds. **Why:** a customer should never wait for the network; the receipt number and the sale are the same either way.
 
 **Why:** the app sends the receipt to the printer in the printer's own language (ESC/POS), which is faster and more reliable than a browser print window, and can talk to the drawer and scale, which a browser cannot.
 
