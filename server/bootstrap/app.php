@@ -3,6 +3,7 @@
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\DomainException;
 use App\Http\Middleware\AssignRequestId;
+use App\Http\Middleware\BlockSiteCopiers;
 use App\Http\Middleware\EnforceLicense;
 use App\Http\Middleware\EnsureApiClient;
 use App\Http\Middleware\EnsureDeviceToken;
@@ -28,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->encryptCookies(except: ['ses_client']); // set by the desktop till app's own page script, not by Laravel
         $middleware->prepend(AssignRequestId::class);
         $middleware->append(SecurityHeaders::class); // browser protections on every answer
+        $middleware->web(append: [BlockSiteCopiers::class]); // website copiers refused, crawling slowed (after the session, to know who is signed in)
         $middleware->prepend(RecordSlowRequests::class); // slow pages, for System → Health
         $middleware->redirectGuestsTo('/admin/login'); // printable documents live outside the panel
         $middleware->alias([

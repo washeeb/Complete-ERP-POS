@@ -197,6 +197,12 @@ $tls
 `t`tmax_size 25MB
 `t}
 `theader -Server
+`theader X-Robots-Tag `"noindex, nofollow, noarchive`"
+`t# Website copiers (HTTrack, WebCopy, Offline Explorer, wget...) are refused before anything is served (same list as BlockSiteCopiers).
+`t@copiers header_regexp User-Agent (?i)(httrack|webcopier|webcopy|offline ?explorer|teleport ?pro|sitesucker|webzip|webreaper|website ?downloader|wget|webstripper|websitecopier|getright|a1 website|scrapy|grab-site|archivebox|heritrix|wpull)
+`thandle @copiers {
+`t`trespond `"Copying this site is not allowed.`" 403
+`t}
 `t# Files whose names or links change with each release (the till's code, the screens' styles and scripts) are kept by
 `t# the browser for a year instead of being asked for again on every page.
 `t@versioned path /pos/assets/* /build/* /css/* /js/* /fonts/* /vendor/*

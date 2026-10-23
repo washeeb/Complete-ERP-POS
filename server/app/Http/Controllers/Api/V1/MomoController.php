@@ -36,7 +36,7 @@ class MomoController extends Controller
     /** Unauthenticated: matched by the secret token in the address; Paystack's signature is checked, Hubtel's triggers a status check. */
     public function webhook(Request $request, string $token, MomoCollections $momo): Response
     {
-        return response('', $momo->webhook($token, $request->getContent(), $request->header('X-Paystack-Signature')) ? 200 : 404);
+        return response('', $momo->webhook($token, $request->getContent(), $request->header('X-Paystack-Signature') ?? $request->header('X-Signature')) ? 200 : 404);
     }
 
     private function device(Request $request): Device

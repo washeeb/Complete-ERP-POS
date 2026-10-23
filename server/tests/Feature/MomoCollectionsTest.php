@@ -129,6 +129,30 @@ it('trusts only signed Paystack callbacks, and counts a payment made after the t
     expect($c->fresh()->status)->toBe('success')->and($c->fresh()->sale_id)->toBeNull(); // shows as "Paid, not on a sale"
 });
 
+it('collects through any other provider behind the custom gateway contract, with signed callbacks', function () {
+    $secret = str_repeat('s3cret-', 5);
+    expect(fn () => $this->momo->saveGateway($this->o, ['provider' => 'custom', 'credentials' => ['url' => 'http://gw.example.test', 'secret' => $secret], 'is_active' => true]))
+        ->toThrow(DomainException::class, 'https://');
+    $g = $this->momo->saveGateway($this->o, ['provider' => 'custom', 'credentials' => ['url' => 'https://gw.example.test/momo/', 'secret' => $secret], 'is_active' => true]);
+    Http::fake([
+        'gw.example.test/momo/charges' => Http::response(['status' => 'otp', 'transaction_id' => 'FW-1', 'message' => 'Type the code the customer received']),
+        'gw.example.test/momo/charges/*/otp' => Http::response(['status' => 'pending', 'transaction_id' => 'FW-1']),
+        'gw.example.test/momo/charges/*' => Http::response(['status' => 'success', 'transaction_id' => 'FW-1', 'amount_minor' => 5000]),
+    ]);
+    $c = $this->momo->request($this->device, $this->cashier, ['id' => (string) Str::uuid7(), 'network' => 'telecel', 'phone' => '0201234567', 'amount_minor' => 5000]);
+    expect($c->status)->toBe('otp');
+    Http::assertSent(fn (HttpRequest $r) => $r->url() === 'https://gw.example.test/momo/charges' && $r->hasHeader('Authorization', "Bearer {$secret}")
+        && $r['network'] === 'telecel' && $r['phone'] === '233201234567' && $r['amount_minor'] === 5000 && $r['reference'] === $c->reference
+        && $r['callback_url'] === route('momo.webhook', ['token' => $g->webhook_token]));
+    expect($this->momo->otp($this->device, $c->id, '123456')->status)->toBe('pending');
+
+    $body = json_encode(['reference' => $c->reference, 'status' => 'success']);
+    $url = route('momo.webhook', ['token' => $g->webhook_token]);
+    $this->call('POST', $url, [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_X_SIGNATURE' => 'forged'], $body)->assertNotFound();
+    $this->call('POST', $url, [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_X_SIGNATURE' => hash_hmac('sha256', $body, $secret)], $body)->assertOk();
+    expect($c->fresh()->status)->toBe('success')->and($c->fresh()->provider_ref)->toBe('FW-1'); // confirmed by asking the gateway, not by the callback alone
+});
+
 it('collects through Hubtel, confirming the unsigned callback with Hubtel’s status check', function () {
     $g = $this->momo->saveGateway($this->o, ['provider' => 'hubtel', 'credentials' => ['client_id' => 'cid', 'client_secret' => 'sec', 'pos_sales_id' => '2020'], 'is_active' => true]);
     Http::fake([

@@ -83,6 +83,7 @@ Without this, the cashier types the transaction ID from the customer's MoMo mess
 |---|---|---|
 | **Paystack** | dashboard.paystack.com → Settings → API Keys & Webhooks | The **secret key** (`sk_live_…`). Never the public key. |
 | **Hubtel** | Hubtel business account → Developers / API keys; Receive Money must be enabled for your account | **API ID**, **API key** and the **POS Sales ID** (merchant account number). Ask Hubtel to allow your server's IP address for the status check. |
+| **Any other provider** (Flutterwave, ExpressPay, Korba, Theteller, MTN's own MoMo API, your bank…) | A developer sets up a small *gateway* service that follows the system's custom gateway contract (`docs/momo-custom-gateway.md`, about a day's work) | Choose **Other provider (custom gateway)**: the gateway's address (https only) and the shared secret agreed with the developer. |
 
 The provider pays the money into your bank account or wallet on its own schedule and charges its fee (about 2 %). **Why a provider:** it is the only way for the system to know, by itself, that a payment really arrived.
 

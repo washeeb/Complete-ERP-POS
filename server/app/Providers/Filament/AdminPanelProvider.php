@@ -9,6 +9,7 @@ use App\Filament\Support\PanelBrand;
 use App\Filament\Widgets\BusinessStats;
 use App\Filament\Widgets\IndustryHighlights;
 use App\Filament\Widgets\IndustryOverview;
+use App\Http\Middleware\BlockSiteCopiers;
 use App\Http\Middleware\EnforceLicense;
 use App\Http\Middleware\RedirectToSetupWizard;
 use App\Http\Middleware\TrackComputer;
@@ -66,6 +67,7 @@ class AdminPanelProvider extends PanelProvider
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
+                BlockSiteCopiers::class, // website copiers refused, crawling slowed (after the session, to know who is signed in)
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 PreventRequestForgery::class,
