@@ -1,6 +1,7 @@
 import { formatMoney, prettyQty, toMilli } from './money'
 import type { Raster } from './brand'
 import type { Bootstrap, PostedSale } from './types'
+import { sdcLines } from './evat'
 
 /**
  * ESC/POS receipts for 80 mm thermal printers (48 characters a line in font A), used by the desktop till for silent
@@ -108,6 +109,7 @@ export function receiptEscPos(sale: PostedSale, boot: Bootstrap, logo: Raster | 
   p.align('center')
   if (sale.fiscal?.code) {
     p.feed().line(`GRA E-VAT ${sale.fiscal.code}`)
+    for (const l of sdcLines(sale.fiscal.sdc)) p.line(l)
     if (sale.fiscal.qr) p.qr(sale.fiscal.qr, 5).feed()
   }
   p.feed().qr(sale.receipt_no).feed().line(boot.receipt_footer)

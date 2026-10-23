@@ -129,6 +129,9 @@ export type Realtime = { key: string; host: string; port: number; scheme: 'http'
 
 export type Payment = { method: 'cash' | 'momo' | 'card' | 'account' | 'points' | 'gift_card' | 'store_credit' | 'deposit' | 'aggregator' | 'trade_in'; provider?: string; amount_minor: number; tendered_minor: number; reference?: string; payer_phone?: string; momo_charge_id?: string }
 
+/** GRA E-VAT signature block (VSDC), printed on the receipt. */
+export type SdcSignature = { sdc_id: string; receipt: string; internal: string; signature: string; mrc: string; time: string }
+
 export type PostedSale = {
   id: string; receipt_no: string; device_seq: number; status: string; occurred_at: string; cashier: string; currency: string
   prices_include_tax: boolean; net_minor: number; tax_minor: number; total_minor: number; paid_minor: number; change_minor: number
@@ -137,7 +140,7 @@ export type PostedSale = {
   tip_minor?: number; order_number?: string | null
   comment?: string | null; walk_in?: { name: string | null; phone: string | null } | null // printed on the receipt
   licence_keys?: { sale_line_id: string; key: string }[] // Services: software keys handed out, printed on the receipt
-  fiscal?: { status: string; code: string | null; qr: string | null; mode: string } | null // GRA E-VAT
+  fiscal?: { status: string; code: string | null; qr: string | null; mode: string; sdc?: SdcSignature | null } | null // GRA E-VAT
   kitchen?: { name: string; qty: string; note: string | null; station: string }[] // offline counter sale: ticket the till prints itself
   kind?: 'sale' | 'return'; discount_minor?: number; points_earned?: number
   payments: { method: string; provider: string | null; amount_minor: number; tendered_minor: number; reference: string | null; status: string }[]

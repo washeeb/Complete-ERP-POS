@@ -194,6 +194,8 @@ final class FiscalService
 
         return [
             'type' => $type, 'number' => $sub->doc_number, 'original_number' => $original, 'date' => CarbonImmutable::parse($sub->doc_date)->toDateString(),
+            'datetime' => CarbonImmutable::parse($model->occurred_at ?? $model->created_at ?? $sub->doc_date)->utc()->format('Y-m-d\TH:i:s\Z'),
+            'user' => $model->cashier_name ?? $model->created_by_name ?? 'System', 'discount' => $amt(abs((int) ($model->discount_minor ?? 0))),
             'currency' => $tenant->currency_code, 'prices_include_tax' => (bool) ($model->prices_include_tax ?? false),
             'seller' => ['tin' => $entity?->tin ?: (string) config('fiscal.gra.tin'), 'name' => $entity?->name ?: $tenant->name, 'branch' => $branch?->code],
             'buyer' => ['tin' => $customer?->tax_no, 'name' => $customer?->name, 'phone' => $customer?->phone],

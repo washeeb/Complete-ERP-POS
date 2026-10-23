@@ -77,7 +77,40 @@ On each user (People & access → Users), choose **How the person signs in**:
 - [ ] **Stock → Batches & expiry → All batches on hand → Correct expiry** on one batch changes its date (with a reason).
 - [ ] **Add or move a batch** makes a draft stock adjustment to check and post.
 
+## 8. Refill reminders (pharmacy)
+
+1. On two or three medicines taken every day (blood pressure, diabetes), fill in **Used a day (refill reminders)**: *1* for one tablet a day, *2* for twice a day.
+2. **System → Settings → Refill reminders:** switch on; keep *3 days before* and *09:00*. An SMS or WhatsApp provider must be set up (System → Messaging).
+3. Make a test customer with your own phone number and tick **SMS** (or WhatsApp) consent. On the till choose that customer (F4) and sell one of the medicines.
+
+- [ ] Within 15 minutes **Pharmacy → Refill reminders** shows the reminder with the date it runs out.
+- [ ] **Send now** sends the message to your phone; it names the medicine and the branch's phone number.
+- [ ] Customers without consent show as *No phone or consent*: ask them at the next visit.
+
+**Why:** patients on long-term medicine come back before they run out.
+
+## 9. Mobile money payment requests
+
+Only with a Paystack or Hubtel merchant account.
+
+1. **System → Mobile money → Payment provider:** choose the provider, paste the keys, tick *Send payment requests*; copy the callback address into the provider's dashboard (Paystack).
+2. **System → Settings → Mobile money:** *Payment request; typing the ID still allowed*.
+3. On the till (sign in again): sell a small item → Pay → **Mobile money** → network → your own number → **Send payment request**. Approve on your phone with your PIN.
+
+- [ ] The till shows *Waiting for the customer…*, then completes the sale by itself.
+- [ ] **Sales → the sale** shows the MoMo payment as *verified* with the provider's transaction ID.
+- [ ] **System → Mobile money** lists the request as *Paid*.
+
+When staff are used to it, switch to **Payment request only** so a made-up transaction ID can no longer be typed (still possible when the till is offline).
+
+## 10. GRA E-VAT (VAT-registered companies)
+
+Only after GRA has given the company reference and security key (manual 11.5).
+
+- [ ] **System → Health** shows *GRA E-VAT: GRA's VSDC answers*.
+- [ ] A test sale's receipt prints the GRA block (SDC ID, signature, MRC) and the QR code; **Finance → GRA E-VAT** shows it *Accepted by GRA*.
+
 ## After the session
 
-- [ ] Tell the staff what changed: dosage labels, shifts, sign-in.
+- [ ] Tell the staff what changed: dosage labels, shifts, sign-in, refill reminders, mobile money requests.
 - [ ] Note anything that did not work as expected and send it to SyncLytics support (**Report a problem**, with a picture of the screen).
