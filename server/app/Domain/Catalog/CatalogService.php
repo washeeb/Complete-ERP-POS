@@ -182,9 +182,13 @@ final class CatalogService
 
         $data = Caps::keys($data, ['name', 'generic_name', 'strength', 'dosage_form', 'dosage']); // one uniform list
         $product->fill(array_intersect_key($data, array_flip(['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu', 'location',
-            'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'dosage', 'fda_reg_no', 'station', 'track_serials', 'warranty_months', 'consignor_id', 'consignment_bp',
+            'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'dosage', 'daily_use', 'fda_reg_no', 'station', 'track_serials', 'warranty_months', 'consignor_id', 'consignment_bp',
             'service_minutes', 'commission_bp', 'licence_keys',
             'is_container', 'deposit_product_id', 'deposit_per_unit', 'industry_id'])));
+        $product->daily_use = $product->daily_use === null || $product->daily_use === '' || (float) $product->daily_use <= 0 ? null : $product->daily_use; // refill reminders
+        if ($product->daily_use !== null && (float) $product->daily_use > 1000) {
+            throw new DomainException('Used a day: the amount one patient takes a day, in the base unit (e.g. 1 or 2 tablets).');
+        }
         $product->industry_id = $product->industry_id ?: null; // null = shared by every industry (products from before industries)
         // Distribution: returnable containers (crates, bottles, gas cylinders) and the container sold with each unit.
         $product->deposit_product_id = $product->deposit_product_id ?: null;

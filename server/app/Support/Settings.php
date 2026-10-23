@@ -78,6 +78,13 @@ final class Settings
             'label' => 'Remote connections to tills and computers',
             'help' => 'Who may connect without someone at the device clicking Accept. Every connection shows a banner on the device and is in the audit log. A branch can choose differently (Company → Branches).',
         ],
+        'refill.reminders' => [
+            'type' => 'bool', 'default' => false, 'group' => 'Refill reminders',
+            'label' => 'Remind customers to refill their medicines',
+            'help' => 'For medicines with “Used a day” filled in: a customer who bought one gets a WhatsApp (or SMS) message a few days before it runs out. Only named customers who agreed to WhatsApp or SMS messages (the customer’s consent); one message lists every medicine due. See Customers → Refill reminders.',
+        ],
+        'refill.days_before' => ['type' => 'int', 'default' => 3, 'min' => 0, 'max' => 14, 'group' => 'Refill reminders', 'label' => 'Days before it runs out', 'help' => 'Time to come back or send someone; 3 days suits most.'],
+        'refill.send_at' => ['type' => 'string', 'default' => '09:00', 'max' => 5, 'group' => 'Refill reminders', 'label' => 'Send at (HH:MM)', 'help' => 'Morning, when the pharmacy is open to answer.'],
         'summary.daily' => [
             'type' => 'bool', 'default' => false, 'group' => 'Daily summary',
             'label' => 'Send a daily summary of the business',

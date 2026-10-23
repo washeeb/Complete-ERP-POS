@@ -150,6 +150,8 @@ class ProductResource extends Resource
                     TextInput::make('dosage')->label('Usual dosage (directions)')->maxLength(255)->caps()->columnSpanFull()
                         ->placeholder('1 TABLET 3 TIMES DAILY AFTER MEALS FOR 5 DAYS')
                         ->helperText('Filled in on the till for each sale (it can be changed there) and printed on the dosage label and the receipt.'),
+                    TextInput::make('daily_use')->label('Used a day (refill reminders)')->numeric()->minValue(0)->maxValue(1000)
+                        ->helperText('For medicines taken every day (blood pressure, diabetes…): how much one patient uses a day, in the base unit — e.g. 1 tablet, or 2 for twice a day. Customers who buy it get a reminder before it runs out. Empty = no reminder.'),
                 ]),
             Section::make('Serial numbers and warranty')->columns(2)->visible(fn () => ModuleService::enabledAnywhere('electronics'))
                 ->description('Electronics: each unit is received, transferred and sold by its serial / IMEI number; the warranty runs from the date sold.')
