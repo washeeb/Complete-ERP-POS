@@ -131,6 +131,11 @@ final class Settings
             'label' => 'Straight day from (hours)',
             'help' => 'A till session this long or longer is a Straight day, whatever time it opened.',
         ],
+        'remote.agent_link' => [
+            'type' => 'string', 'default' => '', 'max' => 500, 'group' => 'Remote access',
+            'label' => 'Remote support agent install link',
+            'help' => 'The invitation link of this company’s device group on the remote support relay (installation guide, chapter 20). It is shown under System → Devices → Install remote support, to open on each till, computer and handheld.',
+        ],
         'remote.trading_hours' => [
             'type' => 'string', 'default' => '07:00-21:00', 'max' => 11, 'group' => 'Remote access', 'branch' => true,
             'label' => 'Trading hours (for remote connections)',

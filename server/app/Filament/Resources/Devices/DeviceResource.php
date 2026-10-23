@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Devices;
 
 use App\Domain\Devices\DeviceService;
 use App\Domain\Remote\DeviceHealth;
+use App\Domain\Remote\RemoteAccess;
 use App\Filament\Resources\Devices\Pages\CreateDevice;
 use App\Filament\Resources\Devices\Pages\ListDevices;
 use App\Filament\Support\Erp;
@@ -120,6 +121,13 @@ class DeviceResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->recordActions([
+                // Remote support phase 2: open the device on the relay (chapter 20); the route checks and audits again.
+                Action::make('view_screen')->label('View screen')->icon(Heroicon::OutlinedEye)->color('gray')
+                    ->visible(fn (Device $record) => self::remoteLevel($record) !== null)
+                    ->url(fn (Device $record) => route('remote.connect', [$record, 'view']), shouldOpenInNewTab: true),
+                Action::make('take_control')->label('Take control')->icon(Heroicon::OutlinedCursorArrowRays)->color('gray')
+                    ->visible(fn (Device $record) => self::remoteLevel($record) === 'control')
+                    ->url(fn (Device $record) => route('remote.connect', [$record, 'control']), shouldOpenInNewTab: true),
                 // A fix the till runs at its next health check (Remote access add-on; control permission).
                 Action::make('fix')->label('Send a fix')->icon(Heroicon::OutlinedWrenchScrewdriver)->color('gray')
                     ->visible(fn (Device $record) => $record->isActive() && in_array($record->kind, ['pos', 'handheld'], true) && app(DeviceHealth::class)->canFix(Erp::user(), $record))
@@ -159,6 +167,22 @@ class DeviceResource extends Resource
             ->title("Enrolment code for {$device->name}: {$code}")
             ->body('Shown once. Enter it on the device within '.$device->enrollment_expires_at->diffForHumans(syntax: true).'. If it is lost, issue a new code.')
             ->send();
+    }
+
+    /** 'control', 'view' or null: what the signed-in person may do on this device through the relay right now. */
+    public static function remoteLevel(Device $device): ?string
+    {
+        $user = Erp::user();
+        if (! $user || config('remote.relay_url') === '' || ! $device->isActive() || empty($device->last_client['computer'])) {
+            return null;
+        }
+        $branch = Branch::find($device->branch_id);
+        if (! $branch) {
+            return null;
+        }
+        $remote = app(RemoteAccess::class);
+
+        return $user->isSupport() ? $remote->supportLevel($branch) : $remote->staffLevel($user, $branch);
     }
 
     public static function getPages(): array

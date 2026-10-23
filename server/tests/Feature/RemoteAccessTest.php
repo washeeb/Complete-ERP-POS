@@ -7,13 +7,16 @@ use App\Domain\Licensing\LicenseManager;
 use App\Domain\Licensing\Vendor\VendorLicensing;
 use App\Domain\Remote\RemoteAccess;
 use App\Domain\Support\AccessDenied;
+use App\Filament\Resources\Devices\Pages\ListDevices;
 use App\Filament\Resources\SupportAccessGrants\Pages\ListSupportAccessGrants;
 use App\Livewire\ReportProblem;
 use App\Mail\PlainMessage;
+use App\Models\AuditEvent;
 use App\Models\Branch;
 use App\Models\SupportAccessGrant;
 use App\Models\SupportReport;
 use App\Models\Till;
+use App\Models\User;
 use App\Models\Vendor\VendorAddon;
 use App\Security\ScopeType;
 use Filament\Facades\Filament;
@@ -120,4 +123,40 @@ it('keeps a picture of the screen with a problem report (till and back office) a
     expect($r2->screenshot_path)->not->toBeNull()
         ->and(SupportAccessGrant::where('support_report_id', $r2->id)->value('level'))->toBe('control');
     $this->get(route('support.screenshot', $r2))->assertOk();
+});
+
+it('opens a device on the remote support relay only for those allowed, and logs each connection', function () {
+    config(['remote.relay_url' => 'https://remote.example.test']);
+    $till = Till::where('branch_id', $this->hq->id)->first();
+    [$device] = app(DeviceService::class)->register($this->a, ['branch_id' => $this->hq->id, 'till_id' => $till->id, 'name' => 'Till PC', 'kind' => 'pos']);
+    $device->forceFill(['status' => 'active', 'last_client' => ['computer' => 'TILL-01']])->save();
+    $this->hq->forceFill(['settings' => ['remote.consent' => 'ask']])->save();
+
+    // Staff: the add-on plus the permission; a view-only person cannot take control.
+    activateTestLicense(['features' => ['finance', 'remote_access']]);
+    LicenseManager::forget();
+    $it = staff($this->owner, 'it', 4, 'it_admin', ScopeType::Tenant, $this->tenant->id);
+    $this->actingAs($it)->get(route('remote.connect', [$device, 'control']))->assertOk()
+        ->assertSee('https://remote.example.test/?gotodevicename=TILL-01&amp;viewmode=11', false)
+        ->assertSee('will be asked to accept');
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
+    Livewire::test(ListDevices::class)->assertTableActionVisible('view_screen', $device)->assertTableActionVisible('take_control', $device)
+        ->assertActionVisible('remote_agent');
+    $clerk = staff($this->owner, 'ama', 2);
+    $this->actingAs($clerk)->get(route('remote.connect', [$device, 'view']))->assertForbidden();
+
+    // Support: only while the owner's grant is in force, and only at its level.
+    $this->artisan('erp:support-account', ['--email' => 'support@synclytics.test'])
+        ->expectsQuestion('Password for the support account (12+ characters)', 'a-long-support-password')->assertSuccessful();
+    $support = User::where('email', 'support@synclytics.test')->sole();
+    $this->actingAs($support)->get(route('remote.connect', [$device, 'view']))->assertForbidden();
+    $this->remote->grant($this->a, ['level' => 'view', 'hours' => 2, 'reason' => 'Printer help']);
+    $this->actingAs($support)->get(route('remote.connect', [$device, 'view']))->assertOk();
+    $this->actingAs($support)->get(route('remote.connect', [$device, 'control']))->assertForbidden();
+
+    expect(AuditEvent::where('subject_id', $device->id)->whereIn('action', ['remote.control_opened', 'remote.view_opened'])->count())->toBe(2);
+
+    // No relay configured: nothing to open.
+    config(['remote.relay_url' => '']);
+    $this->actingAs($it)->get(route('remote.connect', [$device, 'view']))->assertNotFound();
 });

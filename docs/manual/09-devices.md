@@ -221,3 +221,5 @@ With the **Remote access** add-on, someone allowed to control devices can **Send
 
 **SyncLytics support** never needs the add-on: the owner opens **System → Support access** for a few hours or until a problem is closed (see Chapter 13).
 
+**Seeing and controlling the screen:** once the remote support relay is set up (Chapter 20) and the agent is installed on a device (**System → Devices → Install remote support**), the device shows **View screen** and **Take control**. Who may connect, and whether the person at the device must accept, follow the same rules as above; every connection is in the audit log and recorded on the relay.
+
