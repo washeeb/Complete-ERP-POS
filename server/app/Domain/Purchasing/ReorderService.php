@@ -89,6 +89,14 @@ final class ReorderService
 
         $out = [];
         $names = DB::table('products')->whereIn('id', array_keys($levels))->get(['id', 'sku', 'name'])->keyBy('id');
+        $low = [];
+        foreach ($levels as $productId => $level) {
+            $have = Qty::toMilli((string) ($onHand[$productId] ?? '0'));
+            if ($have + Qty::toMilli(number_format((float) ($onOrder[$productId] ?? 0), 3, '.', '')) + ($transit[$productId] ?? 0) <= $level['min']) {
+                $low[] = $productId;
+            }
+        }
+        $suppliers = SupplierService::bestForMany($low); // one query, not one per product
         foreach ($levels as $productId => $level) {
             $have = Qty::toMilli((string) ($onHand[$productId] ?? '0'));
             $coming = Qty::toMilli(number_format((float) ($onOrder[$productId] ?? 0), 3, '.', ''));
@@ -98,7 +106,7 @@ final class ReorderService
                 continue;
             }
             $need = max($max - ($have + $coming + $moving), 1);
-            $sp = SupplierService::bestFor($productId);
+            $sp = $suppliers[$productId] ?? null;
             $factor = $sp ? Qty::factorMicro((string) $sp->unit->factor) : 1_000_000;
             $units = (int) ceil($need * 1_000_000 / $factor / 1000) * 1000; // whole purchase units
             if ($sp) {

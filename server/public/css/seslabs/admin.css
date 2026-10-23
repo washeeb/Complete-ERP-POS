@@ -73,3 +73,5 @@ button[data-loading], a[data-loading], [wire\:click][data-loading] { pointer-eve
 }
 .fi-ta-table tr:hover td.fi-ta-cell:has(> .fi-ta-actions):last-child { background: var(--gray-50, #fafafa); }
 .dark .fi-ta-table tr:hover td.fi-ta-cell:has(> .fi-ta-actions):last-child { background: var(--gray-800, #27272a); }
+/* The pinned buttons stay on one line, so rows keep their normal height. */
+.fi-ta-table td.fi-ta-cell:has(> .fi-ta-actions):last-child .fi-ta-actions { flex-wrap: nowrap; white-space: nowrap; }

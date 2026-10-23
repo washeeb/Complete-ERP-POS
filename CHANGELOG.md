@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+- **Long lists a page at a time:** What to order, Suggested levels, Expiry & returns and Sales to sign off show 25 rows per page (50 or 100 to choose); ticks stay when moving between pages and the bulk buttons act on every ticked row of every page. **What to order opens much faster:** the best supplier for each product is found in one query instead of one per product, and per-row checks are done once. Pinned row buttons no longer wrap onto several lines (rows stay their normal height).
 ### Added
 - **Offline handhelds:** receiving, put-away, transfers and counting keep working without the server — saved on the handheld, signed and sent by themselves when it is back, done once on the server even if sent twice; scans recognised from the handheld's own product and bin list (`wms/catalog`); handhelds receive an offline sign-in like tills; counts can be started offline; refused actions listed on the handheld with Send again / Discard. Manual 9.8.
 ### Security

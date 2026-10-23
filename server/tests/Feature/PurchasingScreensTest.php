@@ -130,6 +130,27 @@ it('shows what to order and creates draft orders per supplier', function () {
     expect(PurchaseOrder::sole()->status)->toBe('draft');
 });
 
+it('shows a long What to order list a page at a time, keeping ticks from earlier pages', function () {
+    $extra = collect(range(1, 30))->map(fn ($i) => makeProduct($this->owner, sprintf('ITEM%02d', $i), "Item {$i}", retail: '5.00'));
+    app(SupplierService::class)->save(actorFor($this->owner), new Supplier, ['code' => 'NESTLE', 'name' => 'NESTLÉ GHANA',
+        'products' => [['product_uom_id' => $this->ctn->id, 'last_cost' => '240', 'is_preferred' => true],
+            ['product_uom_id' => $extra->last()->units->first()->id, 'last_cost' => '3', 'is_preferred' => true]]]);
+    app(ReorderService::class)->saveRule(actorFor($this->manager), $this->hq, $this->milo, '24', '96');
+    foreach ($extra as $p) {
+        app(ReorderService::class)->saveRule(actorFor($this->manager), $this->hq, $p, '5', '10');
+    }
+    $this->actingAs($this->manager);
+
+    $page = Livewire::test(ReorderSuggestions::class);
+    expect($page->instance()->getTableRecords())->toHaveCount(25); // 31 lines: 25 now, the rest on page 2
+    $last = $extra->last();
+    $page->call('gotoPage', 2, 'page');
+    expect($page->instance()->getTableRecords()->keys())->toContain($last->id);
+    // Milo ticked on page 1 and the last item on page 2: both are ordered.
+    $page->callTableBulkAction('order', [$this->milo->id, $last->id])->assertNotified('1 draft purchase order(s) created');
+    expect(PurchaseOrder::sole()->lines)->toHaveCount(2); // one supplier, both lines
+});
+
 it('hides purchasing from people without access', function () {
     $cashier = withMfa(staff($this->owner, 'esi', 2, 'teller', ScopeType::Branch, $this->branches['HQ']->id));
     $this->actingAs($cashier);

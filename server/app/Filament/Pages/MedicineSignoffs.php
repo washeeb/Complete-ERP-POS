@@ -6,6 +6,7 @@ use App\Domain\Pharmacy\PharmacyRules;
 use App\Domain\Pharmacy\PharmacySignoffs;
 use App\Filament\Resources\Prescriptions\PrescriptionResource;
 use App\Filament\Support\Erp;
+use App\Filament\Support\PagedRecords;
 use App\Models\Branch;
 use App\Models\Tenant;
 use BackedEnum;
@@ -33,6 +34,7 @@ use UnitEnum;
 class MedicineSignoffs extends Page implements HasTable
 {
     use InteractsWithTable;
+    use PagedRecords;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
 
@@ -99,10 +101,15 @@ class MedicineSignoffs extends Page implements HasTable
         ];
     }
 
+    /** Every sale still to sign off (shown a page at a time by PagedRecords). */
+    protected function allRows(?array $filters, ?string $search): Collection
+    {
+        return $this->rows($filters)->mapWithKeys(fn ($r) => [$r->id => (array) $r]);
+    }
+
     public function table(Table $table): Table
     {
-        return $table
-            ->records(fn (?array $filters) => $this->rows($filters)->mapWithKeys(fn ($r) => [$r->id => (array) $r]))
+        return $this->paged($table)
             ->columns([
                 TextColumn::make('occurred_at')->label('Sold')->dateTime('j M Y H:i'),
                 TextColumn::make('receipt_no')->label('Receipt'),

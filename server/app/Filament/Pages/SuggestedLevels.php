@@ -7,6 +7,7 @@ use App\Domain\Purchasing\SmartReorderLevels;
 use App\Filament\Resources\ReorderRules\ReorderRuleResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
+use App\Filament\Support\PagedRecords;
 use App\Models\Warehouse;
 use App\Support\Qty;
 use App\Support\Settings;
@@ -29,6 +30,7 @@ use UnitEnum;
 class SuggestedLevels extends Page implements HasTable
 {
     use InteractsWithTable;
+    use PagedRecords;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSparkles;
 
@@ -68,22 +70,26 @@ class SuggestedLevels extends Page implements HasTable
         ];
     }
 
+    /** Every suggestion for the chosen store (shown a page at a time by PagedRecords). */
+    protected function allRows(?array $filters, ?string $search): Collection
+    {
+        $warehouses = array_keys(Fields::warehouses(['warehouse.manage', 'stock.levels']));
+        $wh = $filters['warehouse_id']['value'] ?? null;
+        $rows = DB::table('reorder_level_suggestions as s')->join('products as p', 'p.id', '=', 's.product_id')->join('warehouses as w', 'w.id', '=', 's.warehouse_id')
+            ->whereIn('s.warehouse_id', $wh && in_array($wh, $warehouses, true) ? [$wh] : $warehouses)->orderBy('p.name')
+            ->get(['s.id', 's.warehouse_id', 's.product_id', 's.min_qty', 's.max_qty', 's.avg_daily', 's.lead_days', 'p.sku', 'p.name', 'w.code as warehouse']);
+        $current = [];
+        foreach ($rows->groupBy('warehouse_id') as $whId => $list) {
+            $current[$whId] = app(ReorderLevels::class)->forWarehouse(Warehouse::find($whId), $list->pluck('product_id')->all());
+        }
+
+        return $rows->mapWithKeys(fn ($r) => [$r->id => (array) $r + ['key' => $r->id, 'now' => $current[$r->warehouse_id][$r->product_id] ?? null]]);
+
+    }
+
     public function table(Table $table): Table
     {
-        return $table
-            ->records(function (?array $filters) {
-                $warehouses = array_keys(Fields::warehouses(['warehouse.manage', 'stock.levels']));
-                $wh = $filters['warehouse_id']['value'] ?? null;
-                $rows = DB::table('reorder_level_suggestions as s')->join('products as p', 'p.id', '=', 's.product_id')->join('warehouses as w', 'w.id', '=', 's.warehouse_id')
-                    ->whereIn('s.warehouse_id', $wh && in_array($wh, $warehouses, true) ? [$wh] : $warehouses)->orderBy('p.name')
-                    ->get(['s.id', 's.warehouse_id', 's.product_id', 's.min_qty', 's.max_qty', 's.avg_daily', 's.lead_days', 'p.sku', 'p.name', 'w.code as warehouse']);
-                $current = [];
-                foreach ($rows->groupBy('warehouse_id') as $whId => $list) {
-                    $current[$whId] = app(ReorderLevels::class)->forWarehouse(Warehouse::find($whId), $list->pluck('product_id')->all());
-                }
-
-                return $rows->mapWithKeys(fn ($r) => [$r->id => (array) $r + ['key' => $r->id, 'now' => $current[$r->warehouse_id][$r->product_id] ?? null]]);
-            })
+        return $this->paged($table)
             ->columns([
                 TextColumn::make('name')->label('Product')->description(fn (array $record) => $record['sku']),
                 TextColumn::make('warehouse')->label('Store'),
