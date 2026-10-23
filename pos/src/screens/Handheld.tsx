@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { v7 as uuidv7 } from 'uuid'
 import { ApiError, wms } from '../api'
+import { cameraScanSupported, listenForScans, scanFeedback } from '../scanner'
+import { CameraScan } from './CameraScan'
 import type { WmsBin, WmsBootstrap, WmsCount, WmsOrder, WmsTransfer, WmsUnit, WmsWarehouse } from '../types'
 
 /**
  * Warehouse handheld (scanner phone): receive purchase orders, put away into bins, receive transfers, count.
  * Works online against its branch's server; every action is checked and recorded there.
- * A hardware scanner types the code and presses Enter, so the scan box is an ordinary text field.
+ * A hardware scanner types the code and presses Enter (or Tab), so the scan box is an ordinary text field; a scan that
+ * arrives while the cursor is elsewhere is caught too, and phones without a scanner use the camera (scanner.ts).
  */
 
 type Mode = 'home' | 'receive' | 'putaway' | 'transfers' | 'count'
@@ -16,9 +19,18 @@ const msg = (e: unknown) => (e instanceof ApiError || e instanceof Error ? e.mes
 
 function ScanBox({ onScan, label = 'Scan or type a code', autoFocus = true }: { onScan: (code: string) => void; label?: string; autoFocus?: boolean }) {
   const [v, setV] = useState('')
+  const [camera, setCamera] = useState(false)
+  const latest = useRef(onScan)
+  useEffect(() => { latest.current = onScan }, [onScan])
+  // A scan while the cursor is not in the box (after tapping a button or a list) still counts.
+  useEffect(() => listenForScans((code) => latest.current(code)), [])
+  const submit = () => { if (v.trim()) { scanFeedback(true); latest.current(v.trim()) } setV('') }
   return (
-    <form className="scan" onSubmit={(e) => { e.preventDefault(); if (v.trim()) onScan(v.trim()); setV('') }}>
-      <input aria-label={label} placeholder={label} value={v} onChange={(e) => setV(e.target.value)} autoFocus={autoFocus} className="big" autoComplete="off" />
+    <form className="scan" onSubmit={(e) => { e.preventDefault(); submit() }}>
+      <input aria-label={label} placeholder={label} value={v} onChange={(e) => setV(e.target.value)} autoFocus={autoFocus} className="big" autoComplete="off"
+        enterKeyHint="go" onKeyDown={(e) => { if (e.key === 'Tab' && v.trim()) { e.preventDefault(); submit() } }} />
+      {cameraScanSupported() && <button type="button" className="camera-btn" onClick={() => setCamera(true)} aria-label="Scan with the camera">📷</button>}
+      {camera && <CameraScan onScan={(code) => { setCamera(false); latest.current(code) }} onClose={() => setCamera(false)} />}
     </form>
   )
 }

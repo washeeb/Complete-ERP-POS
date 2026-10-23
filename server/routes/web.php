@@ -5,6 +5,7 @@ use App\Http\Controllers\AccessRequestController;
 use App\Http\Controllers\BrandAssetController;
 use App\Http\Controllers\ExpenseReceiptController;
 use App\Http\Controllers\PrintController;
+use App\Http\Controllers\RemoteConnectController;
 use App\Http\Controllers\StockPhotoController;
 use App\Http\Controllers\StorefrontController;
 use App\Http\Controllers\SupportScreenshotController;
@@ -75,6 +76,7 @@ Route::prefix('print')->middleware(['auth', 'license:output'])->name('print.')->
 });
 
 // Receipt photos attached to expense claims (private storage).
+Route::get('remote/connect/{device}/{mode}', RemoteConnectController::class)->middleware(['auth', 'throttle:30,1'])->name('remote.connect')->whereUuid('device')->where('mode', 'view|control');
 Route::get('support-screenshot/{report}', SupportScreenshotController::class)->middleware(['auth'])->name('support.screenshot')->whereUuid('report');
 Route::get('expense-receipt/{claim}', ExpenseReceiptController::class)->middleware(['auth', 'license:output'])->name('expense.receipt')->whereUuid('claim');
 

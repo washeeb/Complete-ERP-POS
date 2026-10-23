@@ -241,3 +241,10 @@ fieldset.choices button.active, .segmented button.active { background: var(--pri
   body.printing-slip .slip-print { display: block; }
   body.printing-slip .slip-print .receipt { width: 80mm; }
 }
+
+/* Scanning: camera button beside a scan box, and the camera view. */
+form.scan { display: flex; gap: 8px; align-items: stretch; }
+form.scan input { flex: 1; min-width: 0; }
+.camera-btn { min-width: 56px; font-size: 1.4rem; }
+.camera-scan { max-width: 520px; width: 100%; display: grid; gap: 10px; }
+.camera-view { width: 100%; max-height: 60vh; border-radius: 10px; background: #000; object-fit: cover; }

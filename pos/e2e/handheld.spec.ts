@@ -44,10 +44,14 @@ test('receives a purchase order by scanning on the handheld', async ({ page }) =
   await page.getByRole('button', { name: 'Receive delivery' }).click()
   await page.getByRole('button', { name: /PO-HQ-000001/ }).click()
   const scan = page.getByLabel('Scan each item (or type quantities below)')
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 2; i++) {
     await scan.fill('2000099')
     await scan.press('Enter')
   }
+  // The third with the cursor out of the box (after tapping the page), as a scanner types it: fast, ending with Tab.
+  await page.locator('body').click({ position: { x: 5, y: 5 } })
+  await page.keyboard.type('2000099', { delay: 5 })
+  await page.keyboard.press('Tab')
   await expect(page.getByLabel('Received now Gino tomato paste 400g')).toHaveValue('3')
   await page.getByLabel('Into bin').selectOption('bin-a1')
   await page.getByRole('button', { name: 'Post receipt' }).click()

@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { cameraScanSupported, listenForScans } from '../scanner'
+import { CameraScan } from './CameraScan'
 import { cachedImage } from '../brand'
 import { isDesktop, readScale } from '../hardware'
 import { api, ApiError } from '../api'
@@ -108,6 +110,14 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   const [detailsPrompt, setDetailsPrompt] = useState<{ message: string } | null>(null)
   const [calcOpen, setCalcOpen] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
+  const findForm = useRef<HTMLFormElement>(null)
+  const [camera, setCamera] = useState(false)
+  /** A code from the camera, or from a scanner while the cursor was elsewhere: treated as if scanned into the box. */
+  const scanned = useCallback((code: string) => {
+    setQuery(code)
+    setTimeout(() => findForm.current?.requestSubmit(), 0) // after the box holds the code
+  }, [])
+  useEffect(() => listenForScans((code) => { if (!document.querySelector('.modal')) scanned(code) }), [scanned]) // never behind the payment or another window
 
   useEffect(() => { // promotions come with the cached catalog
     db.cache.get('catalog').then((c) => {
@@ -572,10 +582,12 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
         </div>
       )}
       <section className="find">
-        <form onSubmit={onScanOrSearch}>
+        <form ref={findForm} onSubmit={onScanOrSearch} className="scan">
           <input ref={searchRef} autoFocus className="big" value={query} onChange={(e) => setQuery(e.target.value)}
             placeholder="Scan a barcode or type a name / SKU (F2)" aria-label="Scan or search" autoComplete="off" />
+          {cameraScanSupported() && <button type="button" className="camera-btn" onClick={() => setCamera(true)} aria-label="Scan with the camera">📷</button>}
         </form>
+        {camera && <CameraScan onScan={(code) => { setCamera(false); scanned(code) }} onClose={() => setCamera(false)} />}
         {message && <p className="error" role="alert">{message}</p>}
         <ul className="results">
           {results.map((p) => (
