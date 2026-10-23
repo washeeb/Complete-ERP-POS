@@ -80,12 +80,16 @@ export function SendReceipt({ sale, channels }: { sale: PostedSale; channels: ('
  * print without its print window, so there it opens (unless Chrome runs with --kiosk-printing, manual 9.7).
  * Show print preview: always the print window, to look at the receipt first.
  */
+/** Sales already printed by themselves on this till (the receipt screen can be drawn more than once). */
+const autoPrinted = new Set<string>()
+
 function PrintButton({ sale, boot }: { sale: PostedSale; boot: Bootstrap }) {
   const [note, setNote] = useState<string | null>(null)
   // The desktop till prints every receipt by itself on its receipt printer (System → Settings → Tills and cash), straight
   // from the till — it does not wait for the server or open a print window.
   useEffect(() => {
-    if (!isDesktop() || boot.auto_print_receipt === false) return
+    if (!isDesktop() || boot.auto_print_receipt === false || autoPrinted.has(sale.id)) return
+    autoPrinted.add(sale.id) // once per sale, even if this screen is shown again
     printReceipt(sale, boot)
       .then((printed) => { if (!printed) setNote('No receipt printer is chosen on this till: Printer and scale set-up.') })
       .catch((e) => setNote(`Printer: ${String(e)}`))
@@ -142,7 +146,9 @@ function DosageLabelsButton({ sale, boot }: { sale: PostedSale; boot: Bootstrap 
     }
   }
   useEffect(() => {
-    if (count > 0 && isDesktop()) void printDosageLabels(sale, boot).catch(() => undefined) // silently, on the receipt printer
+    if (count === 0 || !isDesktop() || autoPrinted.has(`labels:${sale.id}`)) return
+    autoPrinted.add(`labels:${sale.id}`)
+    void printDosageLabels(sale, boot).catch(() => undefined) // silently, on the receipt printer, once per sale
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   if (count === 0) return null
   return <>
