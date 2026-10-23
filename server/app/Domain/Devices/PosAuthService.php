@@ -103,7 +103,7 @@ final class PosAuthService
                 'expires_at' => $token->accessToken->expires_at?->toIso8601String(),
                 'user' => ['id' => $user->id, 'name' => $user->name, 'username' => $user->username],
                 // Lets this person sign in on this till while it cannot reach the server.
-                'offline_grant' => $handheld ? null : $this->grants->issue($user, $device, $pin), // handhelds work against their own (branch) server
+                'offline_grant' => $this->grants->issue($user, $device, $pin), // tills and handhelds keep working, and sign in, while the server is out of reach
             ];
         });
     }

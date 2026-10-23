@@ -22,6 +22,7 @@ export type CacheRecord =
   | { id: 'catalog'; version: string; products: Product[]; promotions?: PromotionRow[]; utc_offset_minutes?: number; grocery?: Grocery | null; pharmacy?: Pharmacy | null; restaurant?: Restaurant | null; electronics?: boolean; fashion?: Fashion | null; services?: Services | null; savedAt: string }
   | { id: 'customers'; version: string; customers: TillCustomer[]; savedAt: string }
   | { id: `brand:${string}`; url: string; dataUrl: string; savedAt: string }
+  | { id: `wms:${string}`; data: unknown; savedAt: string } // warehouse handheld: its lists and scan catalogue, for working offline
 
 export type OfflineGrant = {
   v: number; id: string; device_id: string; user_id: string; user_name: string; username: string; issued_at: string; expires_at: string
@@ -29,10 +30,13 @@ export type OfflineGrant = {
   [k: string]: unknown
 }
 
+/** Warehouse handheld actions, queued like a till's sales (offline handhelds). */
+export type WmsOp = 'wms_receive' | 'wms_putaway' | 'wms_transfer' | 'wms_count_start' | 'wms_count_line' | 'wms_count_submit'
+
 export type QueueItem = {
   seq?: number
   id: string
-  type: 'shift_open' | 'sale' | 'shift_close' | 'clock' | 'visit' | 'order' | 'drawer'
+  type: 'shift_open' | 'sale' | 'shift_close' | 'clock' | 'visit' | 'order' | 'drawer' | WmsOp
   payload: Record<string, unknown>
   grant: OfflineGrant
   status: 'pending' | 'review'
@@ -40,6 +44,7 @@ export type QueueItem = {
   lastError: string | null
   createdAt: string
   receiptNo?: string
+  label?: string // what the person did, shown while it waits (handheld)
 }
 
 class TillDb extends Dexie {

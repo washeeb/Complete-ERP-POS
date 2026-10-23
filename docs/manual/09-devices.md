@@ -151,7 +151,9 @@ Uninstalling the app keeps its settings (the server address, printer and scale),
 2. On the phone: Chrome, do 9.3 if needed, open the till address (9.2), enrol with the code.
 3. Storekeepers sign in with **username and PIN**. They need a warehouse role (Storekeeper, Warehouse Manager…), not till access.
 
-**Note:** the handheld needs its branch's server to be reachable (it does not queue work offline). For warehouses with weak internet, use a branch server (Chapter 10).
+**Working offline:** the handheld keeps working when the Wi-Fi or the server drops, like a till. Receiving deliveries, moving stock between bins, receiving transfers and counting are saved on the handheld and sent by themselves when the server is back (*Working offline* and *N action(s) waiting to be sent* show at the top). Scans are recognised from the handheld's own copy of the products and shelf labels, refreshed every 30 minutes while connected. The person can even sign in offline, as long as they signed in on that handheld while it was connected before. Each action is done once on the server, even if it is sent twice. What the server refuses (e.g. a count already closed in the back office) is listed on the menu under *Refused by the server* with the reason: **Send again** after fixing the cause, or **Discard** what was done again correctly.
+
+**What needs the connection:** the list of what is in a bin (Put away), and products or orders created since the handheld last connected. **Why:** warehouse Wi-Fi is often weakest at the back of the store, where the work is.
 
 4. **Install it as an app:** in Chrome, menu (⋮) → **Add to Home screen** (or **Install app**). It then opens full screen from its own icon. To keep staff in it, use Android's **screen pinning** (Settings → Security → App pinning) or the brand's kiosk launcher (e.g. Zebra Enterprise Home Screen).
 

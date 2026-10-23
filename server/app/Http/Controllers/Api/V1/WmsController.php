@@ -94,6 +94,25 @@ class WmsController extends Controller
         return response()->json(['type' => 'product', 'unit' => $this->unit($unit)]);
     }
 
+    /**
+     * Everything a handheld needs to recognise scans without the server (offline handhelds): each unit of every stocked
+     * product with its barcodes, and the warehouse's bin labels. Cached on the handheld and refreshed while online.
+     */
+    public function catalog(Request $request): JsonResponse
+    {
+        $w = Warehouse::where('branch_id', $this->device($request)->branch_id)->findOrFail((string) $request->query('warehouse_id'));
+        $barcodes = Barcode::query()->get(['product_uom_id', 'code'])->groupBy('product_uom_id');
+        $units = ProductUom::with('product', 'uom')->whereHas('product', fn ($q) => $q->where('is_active', true)->where('track_stock', true))->get();
+
+        return response()->json([
+            'warehouse_id' => $w->id, 'generated_at' => now()->toIso8601String(),
+            'units' => $units->map(fn (ProductUom $u) => ['product_uom_id' => $u->id, 'product_id' => $u->product_id, 'sku' => $u->product->sku, 'name' => $u->product->name,
+                'uom_code' => $u->uom->code, 'factor' => (string) $u->factor, 'decimals' => $u->uom->decimals, 'is_base' => (bool) $u->is_base,
+                'barcodes' => ($barcodes[$u->id] ?? collect())->pluck('code')->values()])->values(),
+            'bins' => $w->use_bins ? Bin::where('warehouse_id', $w->id)->where('is_active', true)->get(['id', 'code', 'name', 'kind']) : [],
+        ]);
+    }
+
     private function unit(ProductUom $u): array
     {
         $u->loadMissing('product', 'uom');

@@ -127,6 +127,7 @@ Route::prefix('v1')->group(function () {
         Route::get('bootstrap', [WmsController::class, 'bootstrap']);
         Route::post('logout', [WmsController::class, 'logout']);
         Route::get('lookup', [WmsController::class, 'lookup']);
+        Route::get('catalog', [WmsController::class, 'catalog']); // scans recognised offline
         Route::get('purchase-orders', [WmsController::class, 'purchaseOrders']);
         Route::post('receipts', [WmsController::class, 'receive']);
         Route::get('bin-stock', [WmsController::class, 'binStock']);

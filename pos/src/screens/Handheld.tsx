@@ -1,21 +1,31 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { v7 as uuidv7 } from 'uuid'
 import { ApiError, wms } from '../api'
+import { getSession } from '../db'
+import { retryRefused } from '../offline'
 import { cameraScanSupported, listenForScans, scanFeedback } from '../scanner'
+import { act, cachedGet, discard, lookupLocal, updateCopy, waiting, type ActResult } from '../wmsOffline'
 import { CameraScan } from './CameraScan'
-import type { WmsBin, WmsBootstrap, WmsCount, WmsOrder, WmsTransfer, WmsUnit, WmsWarehouse } from '../types'
+import type { WmsBin, WmsBootstrap, WmsCatalog, WmsCount, WmsOrder, WmsTransfer, WmsUnit, WmsWarehouse } from '../types'
 
 /**
  * Warehouse handheld (scanner phone): receive purchase orders, put away into bins, receive transfers, count.
- * Works online against its branch's server; every action is checked and recorded there.
- * A hardware scanner types the code and presses Enter (or Tab), so the scan box is an ordinary text field; a scan that
- * arrives while the cursor is elsewhere is caught too, and phones without a scanner use the camera (scanner.ts).
+ * Works with its branch's server, and keeps working without it (offline handhelds, owner request 2026-10-23): lists
+ * and scans come from the handheld's own copy, and every action is queued and sent when the server is back
+ * (wmsOffline.ts). A hardware scanner types the code and presses Enter (or Tab), so the scan box is an ordinary text
+ * field; a scan that arrives while the cursor is elsewhere is caught too, and phones without a scanner use the camera.
  */
 
 type Mode = 'home' | 'receive' | 'putaway' | 'transfers' | 'count'
+type Ctx = { wh: WmsWarehouse; catalog: WmsCatalog | null; online: boolean; refresh: () => void }
 
 const q = (v: string | number) => String(Number(v))
 const msg = (e: unknown) => (e instanceof ApiError || e instanceof Error ? e.message : String(e))
+/** The server only when this person is signed in with it; signed in offline, the handheld's copy. */
+const remote = async <T,>(fn: () => Promise<T>): Promise<T> => ((await getSession())?.token ? fn() : Promise.reject(new ApiError('network', 'Signed in offline.', 0)))
+/** The person's message for an action's outcome. */
+const told = (r: ActResult, done: string) => r.state === 'done' ? done : r.state === 'queued'
+  ? `${done.replace(/\.$/, '')} — saved on this handheld; it is sent when the server is back.` : `Refused: ${r.detail ?? 'see the list on the menu'}`
 
 function ScanBox({ onScan, label = 'Scan or type a code', autoFocus = true }: { onScan: (code: string) => void; label?: string; autoFocus?: boolean }) {
   const [v, setV] = useState('')
@@ -46,21 +56,44 @@ function BinSelect({ bins, value, onChange, label, emptyLabel }: { bins: WmsBin[
   )
 }
 
+/** A scan: on the handheld first (works offline), then the server for anything new since the last copy. */
+async function lookup(ctx: Ctx, code: string) {
+  const local = ctx.catalog ? lookupLocal(ctx.catalog, code) : null
+  if (local) return local
+  if (!ctx.online) throw new Error(`“${code}” is not in this handheld’s copy. It is checked when the server is back.`)
+  return wms.lookup(code, ctx.wh.id)
+}
+
 export function Handheld({ onLogout }: { onLogout: () => void }) {
   const [boot, setBoot] = useState<WmsBootstrap | null>(null)
   const [whId, setWhId] = useState<string>('')
   const [mode, setMode] = useState<Mode>('home')
   const [error, setError] = useState('')
   const [flash, setFlash] = useState('')
+  const [online, setOnline] = useState(true)
+  const [catalog, setCatalog] = useState<WmsCatalog | null>(null)
+  const [queue, setQueue] = useState<Awaited<ReturnType<typeof waiting>>>({ pending: 0, refused: [] })
   const finish = (m: string) => { setFlash(m); setMode('home') }
 
+  const refreshQueue = useCallback(() => { waiting().then(setQueue).catch(() => undefined) }, [])
   useEffect(() => {
-    wms.bootstrap().then((b) => { setBoot(b); setWhId(b.warehouses[0]?.id ?? '') }).catch((e) => setError(msg(e)))
+    cachedGet('bootstrap', () => remote(wms.bootstrap)).then((r) => { setBoot(r.data); setOnline(!r.offline); setWhId((w) => w || r.data.warehouses[0]?.id || '') })
+      .catch((e) => setError(msg(e)))
   }, [])
+  // The scan catalogue for this warehouse, refreshed every 30 minutes while online.
+  useEffect(() => {
+    if (!whId) return
+    const get = () => cachedGet(`catalog:${whId}`, () => remote(() => wms.catalog(whId))).then((r) => { setCatalog(r.data); setOnline(!r.offline) }).catch(() => setCatalog(null))
+    get()
+    const t = window.setInterval(get, 30 * 60_000)
+    return () => window.clearInterval(t)
+  }, [whId])
+  useEffect(() => { refreshQueue(); const t = window.setInterval(refreshQueue, 5000); return () => window.clearInterval(t) }, [refreshQueue, mode])
 
   const wh = boot?.warehouses.find((w) => w.id === whId) ?? null
   if (error && !boot) return <div className="card narrow"><p className="error">{error}</p><button onClick={onLogout}>Sign out</button></div>
   if (!boot) return <p className="center muted">Loading…</p>
+  const ctx: Ctx | null = wh ? { wh, catalog, online, refresh: refreshQueue } : null
 
   return (
     <div className="handheld">
@@ -73,7 +106,23 @@ export function Handheld({ onLogout }: { onLogout: () => void }) {
         {mode !== 'home' && <button onClick={() => setMode('home')}>Menu</button>}
         <button onClick={onLogout}>Sign out</button>
       </header>
+      {(!online || queue.pending > 0) && (
+        <p className={online ? 'banner' : 'banner warn'} role="status">
+          {online ? '' : 'Working offline: everything is saved on this handheld. '}
+          {queue.pending > 0 ? `${queue.pending} action(s) waiting to be sent.` : ''}
+        </p>
+      )}
       {flash && mode === 'home' && <p className="banner" role="status">{flash}</p>}
+      {mode === 'home' && queue.refused.length > 0 && (
+        <section className="card">
+          <h2>Refused by the server</h2>
+          <p className="muted small">Fix the cause (or ask a manager), then send again. Discard only what you have done again correctly.</p>
+          <ul className="hh-list small">{queue.refused.map((r) => (
+            <li key={r.seq}><strong>{r.label}</strong> — {r.error} <button className="link" onClick={() => { discard(r.seq).then(refreshQueue) }}>Discard</button></li>
+          ))}</ul>
+          <button onClick={() => { retryRefused().then(refreshQueue) }}>Send again</button>
+        </section>
+      )}
       {!wh && <p className="error">You are not set up for warehouse work at {boot.branch.name}.</p>}
       {wh && mode === 'home' && (
         <nav className="hh-menu">
@@ -83,15 +132,16 @@ export function Handheld({ onLogout }: { onLogout: () => void }) {
           {wh.can.includes('stock.count') && <button className="primary big" onClick={() => { setFlash(''); setMode('count') }}>Count stock</button>}
         </nav>
       )}
-      {wh && mode === 'receive' && <Receive wh={wh} done={finish} />}
-      {wh && mode === 'putaway' && <PutAway wh={wh} />}
-      {wh && mode === 'transfers' && <Transfers wh={wh} done={finish} />}
-      {wh && mode === 'count' && <Count wh={wh} done={finish} />}
+      {ctx && mode === 'receive' && <Receive ctx={ctx} done={finish} />}
+      {ctx && mode === 'putaway' && <PutAway ctx={ctx} />}
+      {ctx && mode === 'transfers' && <Transfers ctx={ctx} done={finish} />}
+      {ctx && mode === 'count' && <Count ctx={ctx} done={finish} />}
     </div>
   )
 }
 
-function Receive({ wh, done }: { wh: WmsWarehouse; done: (message: string) => void }) {
+function Receive({ ctx, done }: { ctx: Ctx; done: (message: string) => void }) {
+  const { wh } = ctx
   const [orders, setOrders] = useState<WmsOrder[] | null>(null)
   const [po, setPo] = useState<WmsOrder | null>(null)
   const [now, setNow] = useState<Record<string, string>>({})
@@ -103,7 +153,7 @@ function Receive({ wh, done }: { wh: WmsWarehouse; done: (message: string) => vo
   const [busy, setBusy] = useState(false)
   const clientId = useRef(uuidv7()) // one per delivery: a resend never receives twice
 
-  useEffect(() => { wms.purchaseOrders(wh.id).then(setOrders).catch((e) => setNote(msg(e))) }, [wh.id])
+  useEffect(() => { cachedGet(`orders:${wh.id}`, () => remote(() => wms.purchaseOrders(wh.id))).then((r) => setOrders(r.data)).catch((e) => setNote(msg(e))) }, [wh.id])
 
   function scan(code: string) {
     const line = po?.lines.find((l) => l.barcodes.includes(code) || l.sku === code.toUpperCase())
@@ -119,8 +169,12 @@ function Receive({ wh, done }: { wh: WmsWarehouse; done: (message: string) => vo
       const lines = po.lines.filter((l) => Number(now[l.id] ?? 0) > 0).map((l) => ({ purchase_order_line_id: l.id, qty: now[l.id], bin_id: bin,
         ...(l.track_batches ? { batch_no: lots[l.id]?.batch_no ?? '', expires_on: lots[l.id]?.expires_on || null } : {}),
         ...(l.track_serials ? { serials: (sns[l.id] ?? '').split(/[\s,]+/).filter(Boolean) } : {}) }))
-      const r = await wms.receive({ purchase_order_id: po.id, client_id: clientId.current, supplier_ref: ref || undefined, lines })
-      done(r.status === 'held' ? `${r.number}: more than ordered — waiting for a manager. Nothing is in stock yet.` : `${r.number} received into stock.`)
+      const r = await act('wms_receive', { purchase_order_id: po.id, client_id: clientId.current, supplier_ref: ref || undefined, lines }, `Receipt for ${po.number}`, clientId.current)
+      if (r.state === 'refused') return setNote(told(r, ''))
+      // The handheld's copy shows it received, until the server's own list comes back.
+      await updateCopy<WmsOrder[]>(`orders:${wh.id}`, (list) => list.map((o) => o.id !== po.id ? o : { ...o, lines: o.lines.map((l) => ({ ...l, received: q(Number(l.received) + Number(now[l.id] ?? 0)) })) }))
+      ctx.refresh()
+      done(told(r, r.detail?.startsWith('More') ? `${r.number}: more than ordered — waiting for a manager. Nothing is in stock yet.` : `${r.number ?? po.number} received into stock.`))
     } catch (e) {
       setNote(msg(e))
     } finally {
@@ -184,21 +238,23 @@ function Receive({ wh, done }: { wh: WmsWarehouse; done: (message: string) => vo
   )
 }
 
-function PutAway({ wh }: { wh: WmsWarehouse }) {
+function PutAway({ ctx }: { ctx: Ctx }) {
+  const { wh } = ctx
   const receiving = wh.bins.find((b) => b.kind === 'receiving') ?? wh.bins[0]
   const [from, setFrom] = useState<string | null>(receiving?.id ?? null)
   const [to, setTo] = useState<string | null>(null)
   const [unit, setUnit] = useState<WmsUnit | null>(null)
   const [qty, setQty] = useState('1')
-  const [contents, setContents] = useState<{ sku: string; name: string; on_hand: string }[]>([])
+  const [contents, setContents] = useState<{ sku: string; name: string; on_hand: string }[] | null>([])
   const [note, setNote] = useState('')
 
-  const load = useCallback(() => { if (from) wms.binStock(from).then(setContents).catch((e) => setNote(msg(e))) }, [from])
+  // What is in the bin needs the server (it changes all the time); offline the move is still recorded.
+  const load = useCallback(() => { if (from) remote(() => wms.binStock(from)).then(setContents).catch(() => setContents(null)) }, [from])
   useEffect(load, [load])
 
   async function scan(code: string) {
     try {
-      const r = await wms.lookup(code, wh.id)
+      const r = await lookup(ctx, code)
       if (r.type === 'bin') { setTo(r.bin.id); setNote(`To bin ${r.bin.code}`) } else { setUnit(r.unit); setNote(`${r.unit.name} (${r.unit.uom_code})`) }
     } catch (e) { setNote(msg(e)) }
   }
@@ -206,9 +262,11 @@ function PutAway({ wh }: { wh: WmsWarehouse }) {
   async function move() {
     if (!unit || !from || !to) return
     try {
-      await wms.putAway({ warehouse_id: wh.id, product_uom_id: unit.product_uom_id, qty, from_bin_id: from, to_bin_id: to })
-      setNote(`Moved ${qty} ${unit.uom_code} ${unit.name} to ${wh.bins.find((b) => b.id === to)?.code}.`)
-      setUnit(null); setQty('1'); load()
+      const toCode = wh.bins.find((b) => b.id === to)?.code
+      const r = await act('wms_putaway', { warehouse_id: wh.id, product_uom_id: unit.product_uom_id, qty, from_bin_id: from, to_bin_id: to }, `Move ${qty} ${unit.uom_code} ${unit.name} to ${toCode}`)
+      setNote(told(r, `Moved ${qty} ${unit.uom_code} ${unit.name} to ${toCode}.`))
+      if (r.state !== 'refused') { setUnit(null); setQty('1'); load() }
+      ctx.refresh()
     } catch (e) { setNote(msg(e)) }
   }
 
@@ -216,7 +274,8 @@ function PutAway({ wh }: { wh: WmsWarehouse }) {
     <section className="card">
       <h2>Put away / move</h2>
       <BinSelect bins={wh.bins} value={from} onChange={setFrom} label="From bin" />
-      <ul className="hh-list small">{contents.map((c) => <li key={c.sku}>{q(c.on_hand)} × {c.name}</li>)}{contents.length === 0 && <li className="muted">Empty</li>}</ul>
+      {contents === null ? <p className="muted small">Bin contents show when the server can be reached.</p>
+        : <ul className="hh-list small">{contents.map((c) => <li key={c.sku}>{q(c.on_hand)} × {c.name}</li>)}{contents.length === 0 && <li className="muted">Empty</li>}</ul>}
       <ScanBox onScan={scan} label="Scan the product, then the shelf label" />
       {unit && (
         <label>Quantity ({unit.uom_code})
@@ -233,20 +292,24 @@ function PutAway({ wh }: { wh: WmsWarehouse }) {
   )
 }
 
-function Transfers({ wh, done }: { wh: WmsWarehouse; done: (message: string) => void }) {
+function Transfers({ ctx, done }: { ctx: Ctx; done: (message: string) => void }) {
+  const { wh } = ctx
   const [list, setList] = useState<WmsTransfer[] | null>(null)
   const [t, setT] = useState<WmsTransfer | null>(null)
   const [got, setGot] = useState<Record<string, string>>({})
   const [bin, setBin] = useState<string | null>(null)
   const [note, setNote] = useState('')
 
-  useEffect(() => { wms.transfers(wh.id).then(setList).catch((e) => setNote(msg(e))) }, [wh.id])
+  useEffect(() => { cachedGet(`transfers:${wh.id}`, () => remote(() => wms.transfers(wh.id))).then((r) => setList(r.data)).catch((e) => setNote(msg(e))) }, [wh.id])
 
   async function receive() {
     if (!t) return
     try {
-      const r = await wms.receiveTransfer(t.id, Object.fromEntries(t.lines.map((l) => [l.id, got[l.id] ?? q(l.qty)])), bin)
-      done(r.has_discrepancy ? `${r.number} received. The difference has been reported for review.` : `${r.number} received.`)
+      const r = await act('wms_transfer', { transfer_id: t.id, lines: Object.fromEntries(t.lines.map((l) => [l.id, got[l.id] ?? q(l.qty)])), to_bin_id: bin }, `Transfer ${t.number}`)
+      if (r.state === 'refused') return setNote(told(r, ''))
+      await updateCopy<WmsTransfer[]>(`transfers:${wh.id}`, (all) => all.filter((x) => x.id !== t.id))
+      ctx.refresh()
+      done(told(r, r.detail?.startsWith('Received;') ? `${t.number} received. The difference has been reported for review.` : `${t.number} received.`))
     } catch (e) { setNote(msg(e)) }
   }
 
@@ -279,7 +342,8 @@ function Transfers({ wh, done }: { wh: WmsWarehouse; done: (message: string) => 
   )
 }
 
-function Count({ wh, done: finish }: { wh: WmsWarehouse; done: (message: string) => void }) {
+function Count({ ctx, done: finish }: { ctx: Ctx; done: (message: string) => void }) {
+  const { wh } = ctx
   const [counts, setCounts] = useState<WmsCount[] | null>(null)
   const [c, setC] = useState<WmsCount | null>(null)
   const [bin, setBin] = useState<WmsBin | null>(null)
@@ -288,17 +352,26 @@ function Count({ wh, done: finish }: { wh: WmsWarehouse; done: (message: string)
   const [done, setDone] = useState<string[]>([])
   const [note, setNote] = useState('')
   const [confirming, setConfirming] = useState(false)
+  const key = `counts:${wh.id}`
 
-  const load = useCallback(() => { wms.counts(wh.id).then(setCounts).catch((e) => setNote(msg(e))) }, [wh.id])
+  const load = useCallback(() => { cachedGet(key, () => remote(() => wms.counts(wh.id))).then((r) => setCounts(r.data)).catch((e) => setNote(msg(e))) }, [key, wh.id])
   useEffect(load, [load])
 
   async function start() {
-    try { await wms.startCount(wh.id, null); load() } catch (e) { setNote(msg(e)) }
+    try {
+      const id = uuidv7() // the count's own id, so counting can begin before the server has it
+      const r = await act('wms_count_start', { id, warehouse_id: wh.id, bin_id: null }, `New count of ${wh.code}`, id)
+      if (r.state === 'refused') return setNote(told(r, ''))
+      const count: WmsCount = { id, number: r.number ?? 'New count (not sent yet)', bin: null, bin_id: null, blind: true, counted: 0, lines: 0 }
+      await updateCopy<WmsCount[]>(key, (all) => [...all.filter((x) => x.id !== id), count])
+      ctx.refresh()
+      if (r.state === 'done') load(); else setCounts((all) => [...(all ?? []), count])
+    } catch (e) { setNote(msg(e)) }
   }
 
   async function scan(code: string) {
     try {
-      const r = await wms.lookup(code, wh.id)
+      const r = await lookup(ctx, code)
       if (r.type === 'bin') { setBin(r.bin); setNote(`Counting bin ${r.bin.code}`) } else { setUnit(r.unit); setQty(''); setNote('') }
     } catch (e) { setNote(msg(e)) }
   }
@@ -306,16 +379,25 @@ function Count({ wh, done: finish }: { wh: WmsWarehouse; done: (message: string)
   async function save() {
     if (!c || !unit) return
     try {
-      await wms.countLine(c.id, unit.product_uom_id, qty, c.bin_id ?? bin?.id ?? null)
-      setDone([`${q(qty)} ${unit.uom_code} ${unit.name}${bin && !c.bin_id ? ` in ${bin.code}` : ''}`, ...done])
+      const where = bin && !c.bin_id ? ` in ${bin.code}` : ''
+      const r = await act('wms_count_line', { count_id: c.id, product_uom_id: unit.product_uom_id, qty, bin_id: c.bin_id ?? bin?.id ?? null }, `${c.number}: ${q(qty)} ${unit.uom_code} ${unit.name}${where}`)
+      if (r.state === 'refused') return setNote(told(r, ''))
+      setDone([`${q(qty)} ${unit.uom_code} ${unit.name}${where}${r.state === 'queued' ? ' (saved, not sent yet)' : ''}`, ...done])
       setUnit(null); setQty('')
+      ctx.refresh()
     } catch (e) { setNote(msg(e)) }
   }
 
   async function submit() {
     if (!c) return
     if (!confirming) return setConfirming(true) // a second tap confirms
-    try { const r = await wms.submitCount(c.id); finish(`${r.number} submitted for approval.`) } catch (e) { setNote(msg(e)); setConfirming(false) }
+    try {
+      const r = await act('wms_count_submit', { count_id: c.id }, `Submit ${c.number}`)
+      if (r.state === 'refused') { setConfirming(false); return setNote(told(r, '')) }
+      await updateCopy<WmsCount[]>(key, (all) => all.filter((x) => x.id !== c.id))
+      ctx.refresh()
+      finish(told(r, `${r.number ?? c.number} submitted for approval.`))
+    } catch (e) { setNote(msg(e)); setConfirming(false) }
   }
 
   if (!c) {

@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- **Offline handhelds:** receiving, put-away, transfers and counting keep working without the server — saved on the handheld, signed and sent by themselves when it is back, done once on the server even if sent twice; scans recognised from the handheld's own product and bin list (`wms/catalog`); handhelds receive an offline sign-in like tills; counts can be started offline; refused actions listed on the handheld with Send again / Discard. Manual 9.8.
 ### Security
 - **Livewire 4.4.8:** fixes an authorization bypass published on 2026-10-23 (GHSA-mhf7-xp6r-6qrc). Install this release on every server.
 ### Fixed
