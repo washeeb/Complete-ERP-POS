@@ -9,8 +9,8 @@ use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
 use App\Domain\Support\DomainException;
 use App\Models\Tenant;
+use App\Support\PdfOptions;
 use Dompdf\Dompdf;
-use Dompdf\Options;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -141,10 +141,7 @@ final class Exporter
             'company' => Watermark::stamp($tenant?->name ?? ''), 'by' => $actor->name, 'at' => now()->setTimezone($tenant?->timezone ?: 'UTC'),
             'ref' => Watermark::reference(), 'logo' => Branding::logoDataUri($actor->tenantId, svgOk: false), 'powered' => Branding::poweredBy()])->render();
 
-        $options = new Options;
-        $options->setIsRemoteEnabled(false); // never fetch anything from the network while rendering
-        $options->setDefaultFont('DejaVu Sans'); // has ₵ and accented letters
-        $pdf = new Dompdf($options);
+        $pdf = new Dompdf(PdfOptions::make()); // no network, ₵ font, the app's own temp folder
         $pdf->loadHtml($html, 'UTF-8');
         $pdf->setPaper('A4', $orientation);
         $pdf->render();

@@ -50,3 +50,26 @@ input[type='file']:focus-visible { outline: 2px solid var(--primary-500); outlin
 
 /* While a button's request is running (Livewire marks it data-loading), it cannot be clicked again: no double posting. */
 button[data-loading], a[data-loading], [wire\:click][data-loading] { pointer-events: none; opacity: .6; cursor: progress; }
+
+/* Row buttons always in reach (owner request 2026-10-23): in wide lists and line tables the buttons column stays pinned
+   to the right edge while the rest scrolls sideways, so a row near the top no longer needs scrolling down to the
+   scrollbar, across, and back up. Applies to every list (record actions after the cells) and every table repeater. */
+.fi-ta-table td.fi-ta-cell:has(> .fi-ta-actions):last-child,
+.fi-ta-table th.fi-ta-actions-header-cell:last-child,
+.fi-fo-table-repeater td:last-child:has(> .fi-fo-table-repeater-actions),
+.fi-fo-table-repeater th.fi-fo-table-repeater-empty-header-cell:last-child {
+    position: sticky;
+    right: 0;
+    z-index: 2;
+    background: var(--color-white, #fff);
+    box-shadow: -8px 0 8px -8px rgb(0 0 0 / 0.18);
+}
+.dark .fi-ta-table td.fi-ta-cell:has(> .fi-ta-actions):last-child,
+.dark .fi-ta-table th.fi-ta-actions-header-cell:last-child,
+.dark .fi-fo-table-repeater td:last-child:has(> .fi-fo-table-repeater-actions),
+.dark .fi-fo-table-repeater th.fi-fo-table-repeater-empty-header-cell:last-child {
+    background: var(--gray-900, #18181b);
+    box-shadow: -8px 0 8px -8px rgb(0 0 0 / 0.6);
+}
+.fi-ta-table tr:hover td.fi-ta-cell:has(> .fi-ta-actions):last-child { background: var(--gray-50, #fafafa); }
+.dark .fi-ta-table tr:hover td.fi-ta-cell:has(> .fi-ta-actions):last-child { background: var(--gray-800, #27272a); }

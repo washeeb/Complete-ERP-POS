@@ -54,6 +54,19 @@ class DemoCatalogCommand extends Command
         ['SPAG-500', 'Spaghetti 500g', 'Noodles & pasta', null, '13.00', 20, '250.00', null, 'STD', 100],
     ];
 
+    /**
+     * Sample medicines (pharmacy features to try: batches and expiry on the till, dosage labels, refill reminders,
+     * prescription rules). [sku, name, generic, strength, form, schedule, retail, dosage, used a day, opening, months to expiry]
+     * One batch expires within 90 days so the till shows the amber "expires soon".
+     */
+    private const MEDICINES = [
+        ['PARA-500', 'Paracetamol 500mg tablets (strip of 10)', 'PARACETAMOL', '500 mg', 'Tablet', 'otc', '5.00', '2 TABLETS 3 TIMES DAILY AFTER MEALS FOR 3 DAYS', null, 200, 24],
+        ['AMLO-5', 'Amlodipine 5mg tablets (pack of 28)', 'AMLODIPINE', '5 mg', 'Tablet', 'pom', '35.00', '1 TABLET ONCE DAILY', '0.036', 60, 18],
+        ['METF-500', 'Metformin 500mg tablets (pack of 56)', 'METFORMIN', '500 mg', 'Tablet', 'pom', '28.00', '1 TABLET TWICE DAILY WITH MEALS', '0.036', 60, 2],
+        ['AMOX-500', 'Amoxicillin 500mg capsules (pack of 21)', 'AMOXICILLIN', '500 mg', 'Capsule', 'pom', '24.00', '1 CAPSULE 3 TIMES DAILY FOR 7 DAYS', null, 80, 12],
+        ['ORS-SACH', 'Oral rehydration salts sachet', 'ORAL REHYDRATION SALTS', '20.5 g', 'Powder', 'otc', '3.00', 'DISSOLVE 1 SACHET IN 1 LITRE OF CLEAN WATER', null, 150, 30],
+    ];
+
     public function handle(CatalogService $catalog, InventoryService $inventory): int
     {
         $user = User::where('email', strtolower((string) $this->option('as')))->first();
@@ -112,8 +125,42 @@ class DemoCatalogCommand extends Command
             return self::FAILURE;
         }
 
-        $this->info("Added {$n} sample products with prices and opening stock in {$warehouses->count()} warehouse(s).");
+        // Medicines with batches and expiry dates.
+        try {
+            $m = $this->medicines($actor, $catalog, $inventory, $pc, $retail, $warehouses);
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return self::FAILURE;
+        }
+
+        $this->info("Added {$n} sample products and {$m} sample medicines with prices and opening stock in {$warehouses->count()} warehouse(s).");
 
         return self::SUCCESS;
+    }
+
+    private function medicines(Actor $actor, CatalogService $catalog, InventoryService $inventory, Uom $pc, PriceList $retail, $warehouses): int
+    {
+        $category = Category::firstWhere('name', Caps::upper('Medicines')) ?? $catalog->saveSimple($actor, new Category, ['name' => 'Medicines', 'is_active' => true]);
+        $n = 0;
+        foreach (self::MEDICINES as $i => [$sku, $name, $generic, $strength, $form, $schedule, $price, $dosage, $daily, $opening, $months]) {
+            if (Product::where('sku', $sku)->exists()) {
+                continue;
+            }
+            $product = $catalog->saveProduct($actor, new Product, [
+                'sku' => $sku, 'name' => $name, 'category_id' => $category->id, 'base_uom_id' => $pc->id, 'tax_group_id' => TaxGroup::where('code', 'EXEMPT')->value('id'),
+                'track_stock' => true, 'track_batches' => true, 'is_active' => true, 'drug_schedule' => $schedule, 'generic_name' => $generic, 'strength' => $strength,
+                'dosage_form' => $form, 'dosage' => $dosage, 'daily_use' => $daily, 'base_barcodes' => ['2009'.str_pad((string) ($i + 1), 3, '0', STR_PAD_LEFT).'00'],
+                'prices' => [['price_list_id' => $retail->id, 'uom_id' => $pc->id, 'min_qty' => '1', 'amount' => $price]],
+            ], 'Sample data');
+            $base = $product->units->firstWhere('is_base', true);
+            foreach ($warehouses as $wh) { // every store, so any test till can sell them
+                $inventory->adjust($actor, $wh, $product, $base, (string) $opening, 'opening', '', null, null, 'B'.now()->format('ym').'-'.($i + 1),
+                    now()->addMonths($months)->endOfMonth()->toDateString());
+            }
+            $n++;
+        }
+
+        return $n;
     }
 }

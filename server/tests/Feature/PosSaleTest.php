@@ -263,7 +263,9 @@ it('lists customers for the till with their credit snapshot, and answers 304 whe
     $this->withToken($this->token)->getJson('/api/v1/pos/customers', ['If-None-Match' => '"'.$r->json('version').'"'])->assertStatus(304);
 });
 
-it('tells the till whether to show stock left while selling (off until switched on)', function () {
+it('tells the till whether to show stock left while selling (on unless switched off)', function () {
+    $this->withToken($this->token)->getJson('/api/v1/pos/bootstrap')->assertOk()->assertJsonPath('show_stock', true); // on by default
+    app(Settings::class)->set(actorFor($this->owner), 'pos.show_stock', false);
     $this->withToken($this->token)->getJson('/api/v1/pos/bootstrap')->assertOk()->assertJsonPath('show_stock', false);
     app(Settings::class)->set(actorFor($this->owner), 'pos.show_stock', true);
     app('auth')->forgetGuards();

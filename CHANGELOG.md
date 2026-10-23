@@ -1,6 +1,12 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- **Shift reports and other PDFs** could fail with "Path must not be empty" where the system temp folder is not usable (Windows services, locked-down servers): every PDF now uses the app's own `storage/app/pdf-tmp`.
+- **Row buttons in wide lists and line tables** stay pinned to the right edge while the rest scrolls sideways, on every list and table of lines.
+### Changed
+- **Stock left on the till is on for every company** unless switched off (System → Settings → Tills and cash).
+- **Sample data** now includes five medicines with batches and expiry dates (one expiring soon), dosage, schedules and daily use, so pharmacy features can be tried on any test company.
 ### Added
 - **Mobile money through any other provider:** *Other provider (custom gateway)* under System → Mobile money — the gateway's https address and a shared secret; a small service a developer builds to the contract in `docs/momo-custom-gateway.md` connects Flutterwave, ExpressPay, Korba, Theteller, MTN's MoMo API or a bank. Signed callbacks, and the gateway is always asked before a payment counts. Manual 11.6.
 - **Website copiers refused:** HTTrack, WebCopy, Offline Explorer, wget and similar tools get *Copying this site is not allowed* from the web server (Ubuntu and Windows Caddy, Docker nginx) and the application; visitors not signed in are limited to 120 pages a minute; every page says *noindex, nofollow, noarchive* and robots.txt disallows everything. Manual 13.
