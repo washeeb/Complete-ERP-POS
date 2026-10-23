@@ -285,7 +285,7 @@ ${TLS}
 	header X-Robots-Tag "noindex, nofollow, noarchive"
 	# Website copiers (HTTrack, WebCopy, Offline Explorer, wget…) are refused before anything is served; the same list
 	# as BlockSiteCopiers in the app.
-	@copiers header_regexp User-Agent (?i)(httrack|webcopier|webcopy|offline ?explorer|teleport ?pro|sitesucker|webzip|webreaper|website ?downloader|wget|webstripper|websitecopier|getright|a1 website|scrapy|grab-site|archivebox|heritrix|wpull)
+	@copiers header_regexp User-Agent (?i)(httrack|webcopier|webcopy|offline\s?explorer|teleport\s?pro|sitesucker|webzip|webreaper|website\s?downloader|wget|webstripper|websitecopier|getright|a1\swebsite|scrapy|grab-site|archivebox|heritrix|wpull)
 	handle @copiers {
 		respond "Copying this site is not allowed." 403
 	}
