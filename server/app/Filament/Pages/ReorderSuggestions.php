@@ -22,8 +22,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
-use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Set;
+use Filament\Support\Enums\IconPosition;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
@@ -35,8 +35,9 @@ use UnitEnum;
 
 /**
  * What to order now (min/max), and turning it into draft purchase orders — one per supplier. The buyer can change a line's
- * supplier, unit and quantity, and the product's levels for the store, before ordering (owner request 2026-10-22); the
- * changes stay on this page until the orders are made.
+ * supplier, unit, quantity and cost, and the product's levels for the store, before ordering (owner requests 2026-10-22/23):
+ * each changeable value has a pencil beside it and its own small window; the changes stay on this page until the orders
+ * are made, and "Undo my changes" in any of the windows puts the line back.
  */
 class ReorderSuggestions extends Page implements HasTable
 {
@@ -76,63 +77,23 @@ class ReorderSuggestions extends Page implements HasTable
                     ->keyBy('product_id')->map(fn ($s) => $s + ['warehouse_id' => $wh->id, 'key' => $s['product_id'], 'changed' => false]);
             })
             ->columns([
-                TextColumn::make('name')->label('Product')->description(fn (array $record) => $record['sku']),
+                TextColumn::make('name')->label('Product')->description(fn (array $record) => $record['changed'] ? $record['sku'].' · changed by you' : $record['sku']),
                 TextColumn::make('on_hand')->label('On hand')->formatStateUsing(fn ($state) => Fields::qty(Qty::format($state))),
                 TextColumn::make('on_order')->label('On order')->formatStateUsing(fn ($state) => Fields::qty(Qty::format($state))),
                 TextColumn::make('in_transit')->label('In transit')->formatStateUsing(fn ($state) => Fields::qty(Qty::format($state))),
-                TextColumn::make('min')->label('Min / max')->formatStateUsing(fn ($state, array $record) => Fields::qty(Qty::format($state)).' / '.Fields::qty(Qty::format($record['max'])))
-                    ->description(fn (array $record) => ReorderLevels::SOURCES[$record['source']] ?? null),
-                TextColumn::make('supplier')->label('Supplier')->placeholder('none set up')->color(fn ($state) => $state ? null : 'danger')
-                    ->description(fn (array $record) => $record['changed'] ? 'Changed by you' : null),
-                TextColumn::make('suggest_qty')->label('Order')->weight('bold')
-                    ->formatStateUsing(fn ($state, array $record) => Fields::qty(Qty::format($state), $record['uom_code'])),
-                TextColumn::make('unit_cost_minor')->label('Last cost')->placeholder('—')
-                    ->formatStateUsing(fn ($state) => Money::display((int) $state, Tenant::find(Erp::user()->tenant_id)->currency_code)),
+                // What can be changed has a pencil beside it: click the value to change it there (owner request 2026-10-23).
+                self::editable(TextColumn::make('min')->label('Min / max')->formatStateUsing(fn ($state, array $record) => Fields::qty(Qty::format($state)).' / '.Fields::qty(Qty::format($record['max'])))
+                    ->description(fn (array $record) => ReorderLevels::SOURCES[$record['source']] ?? null), $this->levelsAction(), fn (array $record) => self::canSetLevels($record)),
+                self::editable(TextColumn::make('supplier')->label('Supplier')->placeholder('none set up — choose')->color(fn ($state) => $state ? null : 'danger'), $this->supplierAction()),
+                self::editable(TextColumn::make('suggest_qty')->label('Order')->weight('bold')
+                    ->formatStateUsing(fn ($state, array $record) => Fields::qty(Qty::format($state), $record['uom_code'])), $this->quantityAction()),
+                self::editable(TextColumn::make('unit_cost_minor')->label('Cost')->placeholder('— enter')
+                    ->formatStateUsing(fn ($state) => Money::display((int) $state, Tenant::find(Erp::user()->tenant_id)->currency_code)), $this->costAction()),
             ])
             ->filters([
                 SelectFilter::make('warehouse_id')->label('Warehouse')->options(fn () => Fields::warehouses('purchasing.manage')),
                 SelectFilter::make('supplier_id')->label('Supplier')->query(fn ($query) => $query)
                     ->options(fn () => ['none' => 'No supplier set up'] + Supplier::where('is_active', true)->orderBy('name')->pluck('name', 'id')->all()),
-            ])
-            ->recordActions([
-                Action::make('change')->label('Change')->icon(Heroicon::OutlinedPencilSquare)->modalHeading(fn (array $record) => $record['name'])
-                    ->fillForm(fn (array $record) => ['supplier_id' => $record['supplier_id'], 'product_uom_id' => $record['product_uom_id'], 'qty' => Qty::format($record['suggest_qty']), 'cost' => $record['cost'] ?? null,
-                        'min' => Qty::format($record['min']), 'max' => Qty::format($record['max'])])
-                    ->schema(fn (array $record) => [
-                        Select::make('supplier_id')->label('Supplier')->required()->searchable()->options(self::suppliersFor($record['product_id']))
-                            ->live()->afterStateUpdated(function ($state, Set $set) use ($record) {
-                                $unit = SupplierProduct::where('supplier_id', $state)->where('product_id', $record['product_id'])->orderByDesc('is_preferred')->value('product_uom_id');
-                                if ($unit) {
-                                    $set('product_uom_id', $unit);
-                                }
-                            }),
-                        Select::make('product_uom_id')->label('Unit')->required()
-                            ->options(ProductUom::with('uom')->where('product_id', $record['product_id'])->get()->mapWithKeys(fn ($u) => [$u->id => Fields::unitLabel($u)])),
-                        TextInput::make('qty')->label('Order quantity')->numeric()->minValue(0.001)->required(),
-                        TextInput::make('cost')->label('Cost per unit (before tax)')->numeric()->minValue(0)
-                            ->helperText('Leave empty to use this supplier’s last cost. Needed when they have none yet.'),
-                        Section::make('Levels in this store')->description('In the base unit. Saved for the product now, so next time\'s suggestion follows them.')
-                            ->visible(fn () => Erp::can('stock.levels', $wh = Warehouse::find($record['warehouse_id'])) || Erp::can('warehouse.manage', $wh))
-                            ->columns(2)->schema([
-                                TextInput::make('min')->label('Reorder at (minimum)')->numeric()->minValue(0)->required(),
-                                TextInput::make('max')->label('Fill up to (maximum)')->numeric()->minValue(0.001)->required(),
-                            ]),
-                    ])
-                    ->action(function (array $record, array $data) {
-                        $wh = Warehouse::findOrFail($record['warehouse_id']);
-                        $this->changes["{$wh->id}|{$record['product_id']}"] = ['supplier_id' => $data['supplier_id'], 'product_uom_id' => $data['product_uom_id'], 'qty' => (string) $data['qty'],
-                            'cost' => filled($data['cost'] ?? null) ? (string) $data['cost'] : null];
-                        if (isset($data['min'], $data['max']) && (Qty::toMilli((string) $data['min']) !== $record['min'] || Qty::toMilli((string) $data['max']) !== $record['max'])) {
-                            Erp::run(fn ($actor) => app(ReorderService::class)->saveRule($actor, $wh, Product::findOrFail($record['product_id']), (string) $data['min'], (string) $data['max']), 'Levels saved');
-                        }
-                        $this->flushCachedTableRecords();
-                    }),
-                Action::make('undo')->label('Undo change')->icon(Heroicon::OutlinedArrowUturnLeft)->color('gray')
-                    ->visible(fn (array $record) => $record['changed'])
-                    ->action(function (array $record) {
-                        unset($this->changes["{$record['warehouse_id']}|{$record['product_id']}"]);
-                        $this->flushCachedTableRecords();
-                    }),
             ])
             ->toolbarActions([
                 BulkAction::make('order')->label('Create draft purchase orders')->icon(Heroicon::OutlinedDocumentPlus)
@@ -149,6 +110,103 @@ class ReorderSuggestions extends Page implements HasTable
             ])
             ->emptyStateHeading('Nothing to order')
             ->emptyStateDescription('Everything is above its minimum (counting what is already on order or in transit). Products without their own figure use the company default from Settings → Stock.');
+    }
+
+    /** A value with a pencil beside it; clicking it opens its own small window. */
+    private static function editable(TextColumn $column, Action $action, ?\Closure $allowed = null): TextColumn
+    {
+        return $column->icon(fn (array $record) => ! $allowed || $allowed($record) ? Heroicon::OutlinedPencilSquare : null)->iconPosition(IconPosition::After)->iconColor('primary')
+            ->action($allowed ? $action->disabled(fn (array $record) => ! $allowed($record)) : $action)->tooltip(fn (array $record) => ! $allowed || $allowed($record) ? 'Change' : null);
+    }
+
+    private static function canSetLevels(array $record): bool
+    {
+        $wh = Warehouse::find($record['warehouse_id']);
+
+        return Erp::can('stock.levels', $wh) || Erp::can('warehouse.manage', $wh);
+    }
+
+    /** This line's change so far, with the new values on top (kept on the page until the orders are made). */
+    private function remember(array $record, array $over): void
+    {
+        $key = "{$record['warehouse_id']}|{$record['product_id']}";
+        $this->changes[$key] = $over + ($this->changes[$key] ?? []) + ['supplier_id' => $record['supplier_id'], 'product_uom_id' => $record['product_uom_id'],
+            'qty' => Qty::format($record['suggest_qty']), 'cost' => null];
+        $this->flushCachedTableRecords();
+    }
+
+    /** "Undo my changes" in each window, once the line was changed. */
+    private function undo(): Action
+    {
+        return Action::make('undo')->label('Undo my changes')->color('gray')->icon(Heroicon::OutlinedArrowUturnLeft)->cancelParentActions()
+            ->visible(fn (array $record) => $record['changed'])
+            ->action(function (array $record) {
+                unset($this->changes["{$record['warehouse_id']}|{$record['product_id']}"]);
+                $this->flushCachedTableRecords();
+            });
+    }
+
+    private function supplierAction(): Action
+    {
+        return Action::make('supplier')->modalHeading(fn (array $record) => 'Supplier — '.$record['name'])->modalWidth('md')
+            ->fillForm(fn (array $record) => ['supplier_id' => $record['supplier_id'], 'product_uom_id' => $record['product_uom_id']])
+            ->schema(fn (array $record) => [
+                Select::make('supplier_id')->label('Supplier')->required()->searchable()->options(self::suppliersFor($record['product_id']))
+                    ->live()->afterStateUpdated(function ($state, Set $set) use ($record) {
+                        $unit = SupplierProduct::where('supplier_id', $state)->where('product_id', $record['product_id'])->orderByDesc('is_preferred')->value('product_uom_id');
+                        if ($unit) {
+                            $set('product_uom_id', $unit); // the unit this supplier sells it in
+                        }
+                    }),
+                Select::make('product_uom_id')->label('Unit')->required()->options(self::units($record['product_id'])),
+            ])
+            ->extraModalFooterActions([$this->undo()])
+            ->action(fn (array $record, array $data) => $this->remember($record, ['supplier_id' => $data['supplier_id'], 'product_uom_id' => $data['product_uom_id']]));
+    }
+
+    private function quantityAction(): Action
+    {
+        return Action::make('quantity')->modalHeading(fn (array $record) => 'Order quantity — '.$record['name'])->modalWidth('md')
+            ->fillForm(fn (array $record) => ['product_uom_id' => $record['product_uom_id'], 'qty' => Qty::format($record['suggest_qty'])])
+            ->schema(fn (array $record) => [
+                Select::make('product_uom_id')->label('Unit')->required()->options(self::units($record['product_id'])),
+                TextInput::make('qty')->label('Order quantity')->numeric()->minValue(0.001)->required()->autofocus(),
+            ])
+            ->extraModalFooterActions([$this->undo()])
+            ->action(fn (array $record, array $data) => $this->remember($record, ['product_uom_id' => $data['product_uom_id'], 'qty' => (string) $data['qty']]));
+    }
+
+    private function costAction(): Action
+    {
+        return Action::make('cost')->modalHeading(fn (array $record) => 'Cost — '.$record['name'])->modalWidth('md')
+            ->fillForm(fn (array $record) => ['cost' => $record['cost'] ?? null])
+            ->schema([
+                TextInput::make('cost')->label('Cost per unit (before tax)')->numeric()->minValue(0)->autofocus()
+                    ->helperText('Leave empty to use this supplier’s last cost. Needed when they have none yet.'),
+            ])
+            ->extraModalFooterActions([$this->undo()])
+            ->action(fn (array $record, array $data) => $this->remember($record, ['cost' => filled($data['cost'] ?? null) ? (string) $data['cost'] : null]));
+    }
+
+    private function levelsAction(): Action
+    {
+        return Action::make('levels')->modalHeading(fn (array $record) => 'Levels in this store — '.$record['name'])->modalWidth('md')
+            ->modalDescription('In the base unit. Saved for the product now, so the next suggestion follows them.')
+            ->fillForm(fn (array $record) => ['min' => Qty::format($record['min']), 'max' => Qty::format($record['max'])])
+            ->schema([
+                TextInput::make('min')->label('Reorder at (minimum)')->numeric()->minValue(0)->required()->autofocus(),
+                TextInput::make('max')->label('Fill up to (maximum)')->numeric()->minValue(0.001)->required(),
+            ])
+            ->action(function (array $record, array $data) {
+                Erp::run(fn ($actor) => app(ReorderService::class)->saveRule($actor, Warehouse::findOrFail($record['warehouse_id']), Product::findOrFail($record['product_id']),
+                    (string) $data['min'], (string) $data['max']), 'Levels saved');
+                $this->flushCachedTableRecords();
+            });
+    }
+
+    private static function units(string $productId): array
+    {
+        return ProductUom::with('uom')->where('product_id', $productId)->get()->mapWithKeys(fn ($u) => [$u->id => Fields::unitLabel($u)])->all();
     }
 
     /** This product's suppliers first (with their last cost), then every other active supplier. */

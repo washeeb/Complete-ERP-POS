@@ -83,6 +83,14 @@ final class SystemHealth
             $add('GRA E-VAT', $up ? 'ok' : 'fail', $up ? 'GRA’s VSDC answers' : 'GRA’s VSDC does not answer or refuses this server’s key: documents wait and are sent when it does (check GRA_EVAT_URL, GRA_EVAT_COMPANY_REFERENCE, GRA_EVAT_KEY).');
         }
 
+        // Mobile money: payment requests chosen in Settings, but no provider to send them through.
+        $wantsMomo = DB::table('settings')->where('key', 'momo.confirm')->whereRaw("value::text <> '\"manual\"'")->pluck('tenant_id');
+        if ($wantsMomo->isNotEmpty()) {
+            $missing = $wantsMomo->diff(DB::table('momo_gateways')->where('is_active', true)->pluck('tenant_id'));
+            $add('Mobile money requests', $missing->isEmpty() ? 'ok' : 'warning', $missing->isEmpty() ? 'Provider set up'
+                : 'Payment requests are chosen in Settings but no provider is set up (System → Mobile money → Payment provider): tills take typed transaction IDs meanwhile.');
+        }
+
         $stuck = [
             'Messages waiting' => DB::table('messages')->where('status', 'queued')->where('created_at', '<', now()->subHour())->count(),
             'Webhooks given up' => DB::table('webhook_deliveries')->where('status', 'dead')->where('updated_at', '>', now()->subDay())->count(),

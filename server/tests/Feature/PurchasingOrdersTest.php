@@ -133,9 +133,12 @@ it('lets the buyer change the supplier, unit, quantity and levels on What to ord
     Livewire::test(ReorderSuggestions::class)->assertSee('NESTLÉ GHANA')
         ->filterTable('supplier_id', $this->other->id)->assertDontSee('MILO 400G')
         ->resetTableFilters()
-        ->callTableAction('change', $this->milo->id, ['supplier_id' => $this->other->id, 'product_uom_id' => $base->id, 'qty' => '50', 'cost' => '13.75', 'min' => '30', 'max' => '120'])
-        ->assertHasNoTableActionErrors()->assertNotified('Levels saved')
-        ->assertSee('KAMA DISTRIBUTORS')->assertSee('Changed by you')
+        // Each value with a pencil has its own small window.
+        ->callTableAction('supplier', $this->milo->id, ['supplier_id' => $this->other->id, 'product_uom_id' => $base->id])->assertHasNoTableActionErrors()
+        ->callTableAction('quantity', $this->milo->id, ['product_uom_id' => $base->id, 'qty' => '50'])->assertHasNoTableActionErrors()
+        ->callTableAction('cost', $this->milo->id, ['cost' => '13.75'])->assertHasNoTableActionErrors()
+        ->callTableAction('levels', $this->milo->id, ['min' => '30', 'max' => '120'])->assertHasNoTableActionErrors()->assertNotified('Levels saved')
+        ->assertSee('KAMA DISTRIBUTORS')->assertSee('changed by you')
         ->filterTable('supplier_id', $this->other->id)->assertSee('MILO 400G')
         ->callTableBulkAction('order', [$this->milo->id])->assertNotified('1 draft purchase order(s) created');
 

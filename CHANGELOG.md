@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 ### Fixed
+- **Mobile money page** said requests were off when only the provider was missing; it now says exactly what is missing (the provider, or the setting), and System → Health warns when requests are chosen without a provider. The preview script now also adds new permissions (`db:seed`), as every installer does — the *Payment provider* button was hidden on test installs for that reason.
+- **What to order:** no more Change / Undo buttons at the far right — each value that can be changed (min / max, supplier, order quantity, cost) has a pencil beside it and opens its own small window; *Undo my changes* is in those windows.
+- **Till sign-in refused at the wrong till** now says where the person *is* set up (e.g. *You are set up for Till 1 at Head Office, not Till 1 at Branch A*) and what a manager can change.
+- **Faster till updates:** the till's libraries are in their own files, so an update downloads about 60 KB instead of about 200 KB (compressed); the handheld and kitchen screens load only on those devices. Everything is still stored for offline use.
+### Added
+- **First-week check** (`docs/training/12-first-week-check.md` and PDF): the checklist for the visit one week after a client goes live.
 - **Shift reports and other PDFs** could fail with "Path must not be empty" where the system temp folder is not usable (Windows services, locked-down servers): every PDF now uses the app's own `storage/app/pdf-tmp`.
 - **Row buttons in wide lists and line tables** stay pinned to the right edge while the rest scrolls sideways, on every list and table of lines.
 ### Changed

@@ -60,8 +60,10 @@ it('refuses a person with no till access at that branch', function () {
     $hqCashier = staff($this->owner, 'hqc', 2, 'teller', ScopeType::Branch, $this->branches['HQ']->id);
     app(AccessService::class)->setPin(actorFor($this->owner), $hqCashier, '7391');
 
-    $this->withToken($deviceToken)->postJson('/api/v1/pos/login', ['username' => 'hqc', 'pin' => '7391'])
-        ->assertForbidden()->assertJson(['error' => 'scope_denied']);
+    $detail = $this->withToken($deviceToken)->postJson('/api/v1/pos/login', ['username' => 'hqc', 'pin' => '7391'])
+        ->assertForbidden()->assertJson(['error' => 'scope_denied'])->json('detail');
+    // It says where the person may sell, and which till this is, so the manager knows what to change.
+    expect($detail)->toContain('You are set up for')->toContain('not '.$this->till->name.' at '.$this->branches['BA']->name)->toContain('People & access');
 });
 
 it('locks the PIN after repeated wrong attempts', function () {

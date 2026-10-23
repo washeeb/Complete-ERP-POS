@@ -6,6 +6,7 @@ use App\Domain\Payments\MomoCollections;
 use App\Filament\Resources\MomoCharges\MomoChargeResource;
 use App\Filament\Support\Erp;
 use App\Models\MomoGateway;
+use App\Support\Settings;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -22,10 +23,14 @@ class ListMomoCharges extends ListRecords
     public function getSubheading(): ?string
     {
         $g = MomoGateway::first();
+        $wanted = (string) app(Settings::class)->get('momo.confirm', Erp::user()->tenant_id) !== 'manual';
 
-        return $g?->is_active
-            ? 'Payment requests go through '.MomoGateway::PROVIDERS[$g->provider].'. How the till takes mobile money: System → Settings → Mobile money.'
-            : 'Payment requests are off: the cashier types the transaction ID. Set up a provider with “Payment provider”.';
+        return match (true) {
+            $g?->is_active && $wanted => 'Payment requests go through '.MomoGateway::PROVIDERS[$g->provider].'. How the till takes mobile money: System → Settings → Mobile money.',
+            (bool) $g?->is_active => MomoGateway::PROVIDERS[$g->provider].' is set up, but System → Settings → Mobile money still says the cashier types the transaction ID. Change that setting to start payment requests.',
+            $wanted => 'Settings ask for payment requests, but no payment provider is set up yet — until one is, tills keep taking typed transaction IDs. Press “Payment provider” (top right) and enter your Paystack, Hubtel or other gateway account.',
+            default => 'Payment requests are off: the cashier types the transaction ID. To start them, press “Payment provider” (top right), then choose it under System → Settings → Mobile money.',
+        };
     }
 
     protected function getHeaderActions(): array
