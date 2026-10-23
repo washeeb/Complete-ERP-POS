@@ -80,6 +80,6 @@ class VendorLicense extends Model
 
     protected function casts(): array
     {
-        return ['payload' => 'array', 'addons' => 'array', 'starts_on' => 'date', 'expires_on' => 'date', 'revoked_at' => 'datetime', 'last_checkin_at' => 'datetime', 'price_minor' => 'integer'];
+        return ['payload' => 'array', 'addons' => 'array', 'starts_on' => 'date', 'expires_on' => 'date', 'revoked_at' => 'datetime', 'last_checkin_at' => 'datetime', 'price_minor' => 'integer', 'health' => 'array', 'health_at' => 'datetime'];
     }
 }

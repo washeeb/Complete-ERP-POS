@@ -34,7 +34,7 @@ class ListMomoCharges extends ListRecords
         $fields = [];
         foreach (MomoGateway::FIELDS as $provider => $list) {
             foreach ($list as $key => $label) {
-                $secret = $key !== 'pos_sales_id' && $key !== 'client_id';
+                $secret = ! in_array($key, ['pos_sales_id', 'client_id', 'url'], true);
                 $fields[] = TextInput::make("credentials.{$provider}.{$key}")->label($label)->password($secret)->revealable($secret)->autocomplete($secret ? 'new-password' : null)
                     ->placeholder($saved?->provider === $provider && ! empty(($saved->credentials ?? [])[$key]) ? 'Saved — leave empty to keep' : null)
                     ->visible(fn (Get $get) => $get('provider') === $provider);

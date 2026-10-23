@@ -132,3 +132,14 @@ Either one **takes a backup first** with the version still installed. If that ba
 3. Restore it on the new server (12.3).
 4. Point the devices to the new address: if the address changed, open the new till address on each device and enrol it again (System → Devices → New code), after its queue has been sent.
 5. Re-activate the licence within 14 days (Chapter 6.6).
+
+## 12.6 Trying changes on the build PC (preview)
+
+To look at a new version before it goes to a client, on the PC with the source code:
+
+```
+node pos/scripts/preview.mjs
+```
+
+It builds the till into the server, brings the local database up to date, and starts the server: the back office at **http://127.0.0.1:8010/admin** and the till at **http://127.0.0.1:8010/pos/** — one address, nothing else to set up. In the Claude app, the same is the **ERP preview** entry in the browser pane. Stop it with **Ctrl+C**. **Why:** one command shows exactly what the client will get, without the separate development server on port 5173.
+

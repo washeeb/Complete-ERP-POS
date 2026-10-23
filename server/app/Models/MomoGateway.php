@@ -11,12 +11,13 @@ class MomoGateway extends Model
 {
     use BelongsToTenant, HasUuids;
 
-    public const PROVIDERS = ['paystack' => 'Paystack', 'hubtel' => 'Hubtel'];
+    public const PROVIDERS = ['paystack' => 'Paystack', 'hubtel' => 'Hubtel', 'custom' => 'Other provider (custom gateway)'];
 
     /** provider => [field => label] */
     public const FIELDS = [
         'paystack' => ['secret_key' => 'Secret key (sk_live_… or sk_test_…)'],
         'hubtel' => ['client_id' => 'API ID (client ID)', 'client_secret' => 'API key (client secret)', 'pos_sales_id' => 'POS Sales ID (merchant account number)'],
+        'custom' => ['url' => 'Gateway address (https://…)', 'secret' => 'Shared secret'],
     ];
 
     protected $guarded = [];

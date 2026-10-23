@@ -4,6 +4,7 @@ import { api, ApiError } from '../api'
 import { cachedImage } from '../brand'
 import { createPortal } from 'react-dom'
 import { dosageLabels, labelDate } from '../dosage'
+import { sdcLines } from '../evat'
 import { isDesktop, openHardwareSetup, printDosageLabels, printReceipt } from '../hardware'
 import { formatMoney, prettyQty, toMilli } from '../money'
 import type { Bootstrap, PostedSale } from '../types'
@@ -238,6 +239,7 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
         {sale.fiscal?.code && (
           <div className="center gra">
             <p className="small">GRA E-VAT {sale.fiscal.code}</p>
+            {sdcLines(sale.fiscal.sdc).map((l) => <p key={l} className="small mono sdc">{l}</p>)}
             {sale.fiscal.qr && <ReceiptQr text={sale.fiscal.qr} />}
           </div>
         )}

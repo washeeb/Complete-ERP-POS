@@ -25,6 +25,7 @@ class SecurityHeaders
             $h->set('Content-Security-Policy', "frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'");
         }
         $h->set('Cross-Origin-Opener-Policy', 'same-origin');
+        $h->set('X-Robots-Tag', 'noindex, nofollow, noarchive'); // a private business system: never in search engines or web archives
         if ($request->isSecure()) {
             $h->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }

@@ -44,9 +44,17 @@ Booking and appointment messages, digital receipts, invoice e-mails and schedule
 
 ## 11.5 GRA E-VAT (electronic VAT invoicing)
 
-Once GRA has onboarded your business for E-VAT, it gives you the E-VAT address and your API key.
+The system talks to GRA's **VSDC** (Virtual Sales Data Controller) the way GRA's *E-VAT API version 8.2* describes. Once GRA has onboarded your business for E-VAT (apply through GRA's E-VAT team; they first give you **staging** access to test), GRA gives you three things: the VSDC address, your **company reference** (your TIN with a suffix, e.g. `C00XXXXXXXX-001`) and your **security key**.
 
-1. Put them in the server's `.env` (head office): `GRA_EVAT_URL=…`, `GRA_EVAT_KEY=…`, `GRA_EVAT_TIN=<your TIN>`, then `php artisan optimize`. Use GRA's **sandbox** address first.
+1. Put them in the server's `.env` (head office), then `php artisan optimize`:
+   ```
+   GRA_EVAT_URL=https://vsdcstaging.vat-gh.com/vsdc
+   GRA_EVAT_COMPANY_REFERENCE=C00XXXXXXXX-001
+   GRA_EVAT_KEY=<the security key from GRA>
+   GRA_EVAT_TIN=C00XXXXXXXX
+   ```
+   Start with GRA's **staging** address; change to the production address GRA gives you once the tests below pass. **Separate books** (Chapter 8): each company with its own TIN has its own GRA account — add them on one line: `GRA_EVAT_ACCOUNTS={"C00YYYYYYYY": {"reference": "C00YYYYYYYY-001", "key": "…"}}`.
+   **Check:** System → Health shows **GRA E-VAT: GRA's VSDC answers** once a reporting mode is chosen (step 2).
 2. **System → Settings → GRA E-VAT → Report to GRA**, choose one:
 
 | Mode | What happens | Receipts |
@@ -59,7 +67,11 @@ Once GRA has onboarded your business for E-VAT, it gives you the E-VAT address a
 
 **Why:** GRA requires VAT-registered businesses to report invoices electronically. The mode lets you start with invoices only, and move to real-time when your tills are reliably online.
 
-**Note:** test with GRA's sandbox and compare a few documents in Finance → GRA E-VAT with what GRA shows before switching to the production address. `docs/evat.md` describes the fields sent.
+**On the receipt:** with each sale reported as it happens, the receipt prints GRA's signature block — **SDC ID and receipt number, SDC time, internal data, signature, MRC** — and GRA's QR code, which customers can scan to check the receipt with GRA. A sale GRA has not answered within a few seconds prints *GRA E-VAT: being reported* and is sent automatically.
+
+**Returns and credit notes** are reported to GRA as a *partial refund* of the original receipt or invoice. **Levies** go per item: NHIL, GETFund, COVID-19 (none from 1 January 2026), CST and tourism, as GRA requires.
+
+**Note:** test with GRA's staging VSDC first: make a few sales, a return and an invoice, and compare them in Finance → GRA E-VAT with what GRA's portal shows, before switching to the production address. `docs/evat.md` describes the fields sent.
 
 ## 11.6 Mobile money that confirms itself (payment requests)
 
@@ -71,6 +83,7 @@ Without this, the cashier types the transaction ID from the customer's MoMo mess
 |---|---|---|
 | **Paystack** | dashboard.paystack.com → Settings → API Keys & Webhooks | The **secret key** (`sk_live_…`). Never the public key. |
 | **Hubtel** | Hubtel business account → Developers / API keys; Receive Money must be enabled for your account | **API ID**, **API key** and the **POS Sales ID** (merchant account number). Ask Hubtel to allow your server's IP address for the status check. |
+| **Any other provider** (Flutterwave, ExpressPay, Korba, Theteller, MTN's own MoMo API, your bank…) | A developer sets up a small *gateway* service that follows the system's custom gateway contract (`docs/momo-custom-gateway.md`, about a day's work) | Choose **Other provider (custom gateway)**: the gateway's address (https only) and the shared secret agreed with the developer. |
 
 The provider pays the money into your bank account or wallet on its own schedule and charges its fee (about 2 %). **Why a provider:** it is the only way for the system to know, by itself, that a payment really arrived.
 

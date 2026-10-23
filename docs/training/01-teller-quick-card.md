@@ -38,7 +38,7 @@ Where the shop has switched it on, each item shows **how many are left** (e.g. *
 ## Taking payment
 
 - **Cash** — tap the amount handed over (or type it). The change shows and prints.
-- **Mobile money** — choose the network, enter the **transaction ID** from the customer's confirmation message. Accept only after you see the confirmation.
+- **Mobile money** — choose the network. If you see **Send payment request**: type the customer's MoMo number and press it; the customer approves on their phone with their PIN, and the till adds the payment by itself (if they get a code, type it in). Otherwise enter the **transaction ID** from the customer's confirmation message, and accept only after you see the confirmation.
 - **Card** — run the card on the terminal first, then enter the approval code from the slip.
 - **Mixed** — e.g. part MoMo, rest cash. The sale completes when nothing is left to pay.
 

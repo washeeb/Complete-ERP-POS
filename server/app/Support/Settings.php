@@ -22,6 +22,11 @@ use InvalidArgumentException;
 final class Settings
 {
     public const DEFINITIONS = [
+        'support.share_health' => [
+            'type' => 'bool', 'default' => true, 'group' => 'Security',
+            'label' => 'Share system health with SyncLytics support',
+            'help' => 'Every hour this server tells SyncLytics support how it is doing: the checks on System → Health (backups, disk, memory, scheduler…), tills with problems and open problem reports — never sales, customers, prices or stock. Support then sees a problem before you have to call. Off: nothing is sent (the daily licence check stays).',
+        ],
         'security.support_account' => [
             'type' => 'bool', 'default' => true, 'group' => 'Security',
             'label' => 'The SyncLytics support account may sign in',

@@ -14,6 +14,9 @@ use Throwable;
  *   key (HMAC SHA-512), and Verify transaction as the check.
  * - Hubtel: Receive Money (channels mtn-gh / vodafone-gh / tigo-gh) with a callback; the callback is unsigned, so it
  *   only triggers the Transaction Status check, which is the truth.
+ * - Custom gateway: any other provider (Flutterwave, ExpressPay, Korba, Theteller, MTN's own MoMo API, a bank…) behind
+ *   one small HTTPS contract (docs/momo-custom-gateway.md): POST {url}/charges, GET {url}/charges/{reference},
+ *   POST {url}/charges/{reference}/otp, with the shared secret as a Bearer token; callbacks signed HMAC-SHA256 with it.
  *
  * Every answer is reduced to [status, provider transaction id, message]: status is pending, otp, success or failed.
  */
@@ -34,6 +37,12 @@ final class MomoProviders
     {
         $cred = $g->credentials ?? [];
         try {
+            if ($g->provider === 'custom') {
+                $r = $this->custom($cred)->post('/charges', ['reference' => $c->reference, 'amount_minor' => $c->amount_minor, 'amount' => round($c->amount_minor / 100, 2),
+                    'currency' => $c->currency_code, 'network' => $c->network, 'phone' => Phone::international($c->phone), 'callback_url' => $callbackUrl, 'description' => $description]);
+
+                return $r->successful() ? self::customState($r->json() ?? [], $c) : ['failed', null, (string) ($r->json('message') ?? 'The payment gateway refused the request ('.$r->status().').')];
+            }
             if ($g->provider === 'paystack') {
                 $r = Http::withToken($cred['secret_key'] ?? '')->acceptJson()->timeout(30)->post(self::PAYSTACK.'/charge', [
                     'email' => $email, 'amount' => $c->amount_minor, 'currency' => $c->currency_code, 'reference' => $c->reference,
@@ -68,6 +77,11 @@ final class MomoProviders
     {
         $cred = $g->credentials ?? [];
         try {
+            if ($g->provider === 'custom') {
+                $r = $this->custom($cred)->get('/charges/'.rawurlencode($c->reference));
+
+                return $r->successful() ? self::customState($r->json() ?? [], $c) : ['pending', null, null];
+            }
             if ($g->provider === 'paystack') {
                 $r = Http::withToken($cred['secret_key'] ?? '')->acceptJson()->timeout(20)->get(self::PAYSTACK.'/transaction/verify/'.rawurlencode($c->reference));
                 if ($r->status() === 404 || ! $r->successful()) {
@@ -98,10 +112,15 @@ final class MomoProviders
         }
     }
 
-    /** Paystack: the customer's one-time code (some Telecel and AT payments). @return array{0: string, 1: ?string, 2: ?string} */
+    /** Paystack or a custom gateway: the customer's one-time code (some Telecel and AT payments). @return array{0: string, 1: ?string, 2: ?string} */
     public function submitOtp(MomoGateway $g, MomoCharge $c, string $otp): array
     {
         try {
+            if ($g->provider === 'custom') {
+                $r = $this->custom($g->credentials ?? [])->post('/charges/'.rawurlencode($c->reference).'/otp', ['otp' => $otp]);
+
+                return $r->successful() ? self::customState($r->json() ?? [], $c) : ['otp', null, (string) ($r->json('message') ?? 'The code was not accepted.')];
+            }
             $r = Http::withToken(($g->credentials ?? [])['secret_key'] ?? '')->acceptJson()->timeout(30)
                 ->post(self::PAYSTACK.'/charge/submit_otp', ['otp' => $otp, 'reference' => $c->reference]);
 
@@ -119,6 +138,32 @@ final class MomoProviders
         $key = ($g->credentials ?? [])['secret_key'] ?? '';
 
         return $key !== '' && $signature !== null && hash_equals(hash_hmac('sha512', $body, $key), $signature);
+    }
+
+    /** Is this callback from the custom gateway (HMAC-SHA256 of the body with the shared secret, hex, header X-Signature)? */
+    public static function customSigned(MomoGateway $g, string $body, ?string $signature): bool
+    {
+        $secret = ($g->credentials ?? [])['secret'] ?? '';
+
+        return $secret !== '' && $signature !== null && hash_equals(hash_hmac('sha256', $body, $secret), strtolower($signature));
+    }
+
+    private function custom(array $cred)
+    {
+        return Http::baseUrl(rtrim((string) ($cred['url'] ?? ''), '/'))->withToken((string) ($cred['secret'] ?? ''))->acceptJson()->asJson()->timeout(30);
+    }
+
+    /** {status: pending|otp|success|failed, transaction_id, amount_minor?, message?} @return array{0: string, 1: ?string, 2: ?string} */
+    private static function customState(array $d, MomoCharge $c): array
+    {
+        $status = strtolower((string) ($d['status'] ?? 'pending'));
+        $txn = isset($d['transaction_id']) ? (string) $d['transaction_id'] : null;
+        $message = isset($d['message']) ? (string) $d['message'] : null;
+        if ($status === 'success' && isset($d['amount_minor']) && (int) $d['amount_minor'] < $c->amount_minor) {
+            return ['failed', $txn, 'Paid less than asked.'];
+        }
+
+        return [in_array($status, ['pending', 'otp', 'success', 'failed'], true) ? $status : 'pending', $txn, $message];
     }
 
     /** @return array{0: string, 1: ?string, 2: ?string} */

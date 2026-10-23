@@ -3,6 +3,7 @@
 namespace App\Filament\Vendor\Widgets;
 
 use App\Domain\Licensing\Vendor\VendorLicensing;
+use App\Filament\Vendor\Pages\SupportConsole;
 use App\Filament\Vendor\Resources\Licenses\LicenseResource;
 use App\Models\Vendor\VendorLicense;
 use Filament\Tables\Columns\TextColumn;
@@ -30,6 +31,9 @@ class LicenceAttention extends TableWidget
                         $h['over'] ? 'Over the licence: '.implode(', ', $h['over']) : null,
                         ($l->payload['checkin_days'] ?? 30) && $h['days_silent'] !== null && $h['days_silent'] > 7 ? "No check-in for {$h['days_silent']} days" : null,
                         ($l->payload['checkin_days'] ?? 30) && ! $h['last'] && $l->created_at?->lt(now()->subDays(3)) ? 'Never checked in' : null,
+                        // The support console's hourly health reports.
+                        SupportConsole::state($l) === 'fail' ? 'Server health needs attention (Support console)' : null,
+                        SupportConsole::state($l) === 'silent' ? 'No health report since '.$l->health_at?->diffForHumans() : null,
                     ]));
                     if ($why) {
                         $rows[$l->id] = ['id' => $l->id, 'customer' => $l->client?->name ?? ($l->payload['customer'] ?? '?'), 'short' => $l->short(), 'why' => implode(' · ', $why)];

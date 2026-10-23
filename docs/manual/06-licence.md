@@ -31,6 +31,14 @@ Head office contacts the SyncLytics licence server once a day (03:15, by the sch
 - If the server cannot reach the internet for **30 days**, a yellow banner appears; after another **14 days** the software becomes read-only until it checks in.
 - **Branch servers** receive the licence from head office; they do not check in themselves.
 
+### Hourly health report (support console)
+
+Every hour head office also sends SyncLytics support a short **health report**: the checks on **System → Health** (backups, restore check, disk, memory, server load, scheduler, licence…), tills with problems, the numbers of open problem reports, and whether support access is open. **No sales, customers, prices, stock or staff details are sent.**
+
+**Why:** support sees a failed backup, a full disk or a silent till on its console and can call you before it becomes a problem. To stop it: **System → Settings → Security → Share system health with SyncLytics support** → off (the daily licence check-in stays).
+
+**For SyncLytics (licence server):** **Licences → Support console** lists every client, worst first: *Needs attention* (a red check), *Not reporting* (no report for 3 hours: server, internet or scheduler down), *Warning*, *OK*. **Details** shows every check, the tills with problems and the open problem reports; the dashboard's *Needs attention* list includes the same red and silent servers.
+
 ## 6.4 Licence states
 
 | State | When | What works |

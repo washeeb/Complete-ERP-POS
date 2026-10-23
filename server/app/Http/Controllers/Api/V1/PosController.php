@@ -8,6 +8,7 @@ use App\Domain\Customers\CustomerService;
 use App\Domain\Devices\DeviceSignature;
 use App\Domain\Fashion\AlterationService;
 use App\Domain\Fiscal\FiscalService;
+use App\Domain\Fiscal\GraEvatAdapter;
 use App\Domain\Grocery\MarkdownService;
 use App\Domain\Launch\SupportReports;
 use App\Domain\Licensing\LicenseManager;
@@ -530,8 +531,8 @@ class PosController extends Controller
             'kind' => $s->kind, 'discount_minor' => (int) $s->discount_minor, 'points_earned' => (int) $s->points_earned,
             'payments' => $s->payments->map(fn ($p) => ['method' => $p->method, 'provider' => $p->provider, 'amount_minor' => $p->amount_minor,
                 'tendered_minor' => $p->tendered_minor, 'reference' => $p->reference, 'status' => $p->status])->values(),
-            'fiscal' => ($f = FiscalSubmission::where('doc_type', 'sale')->where('doc_id', $s->id)->first(['status', 'gra_reference', 'qr_code', 'mode']))
-                ? ['status' => $f->status, 'code' => $f->gra_reference, 'qr' => $f->qr_code, 'mode' => $f->mode] : null,
+            'fiscal' => ($f = FiscalSubmission::where('doc_type', 'sale')->where('doc_id', $s->id)->first(['status', 'gra_reference', 'qr_code', 'mode', 'response']))
+                ? ['status' => $f->status, 'code' => $f->gra_reference, 'qr' => $f->qr_code, 'mode' => $f->mode, 'sdc' => GraEvatAdapter::signature($f->response)] : null,
         ];
     }
 }

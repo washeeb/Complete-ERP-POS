@@ -282,6 +282,13 @@ ${TLS}
 		max_size 25MB
 	}
 	header -Server
+	header X-Robots-Tag "noindex, nofollow, noarchive"
+	# Website copiers (HTTrack, WebCopy, Offline Explorer, wget…) are refused before anything is served; the same list
+	# as BlockSiteCopiers in the app.
+	@copiers header_regexp User-Agent (?i)(httrack|webcopier|webcopy|offline\s?explorer|teleport\s?pro|sitesucker|webzip|webreaper|website\s?downloader|wget|webstripper|websitecopier|getright|a1\swebsite|scrapy|grab-site|archivebox|heritrix|wpull)
+	handle @copiers {
+		respond "Copying this site is not allowed." 403
+	}
 	# Files whose names or links change with each release (the till's code, the screens' styles and scripts) are kept by
 	# the browser for a year instead of being asked for again on every page.
 	@versioned path /pos/assets/* /build/* /css/* /js/* /fonts/* /vendor/*

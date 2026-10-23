@@ -2,6 +2,7 @@
 
 namespace App\Domain\Support;
 
+use App\Domain\Fiscal\GraEvatAdapter;
 use App\Domain\Licensing\LicenseManager;
 use App\Models\BackupRun;
 use Illuminate\Support\Carbon;
@@ -73,6 +74,13 @@ final class SystemHealth
             $add('Licence', $lic['read_only'] ? 'fail' : (($lic['state'] ?? '') === 'active' ? 'ok' : 'warning'), (string) ($lic['message'] ?: ($lic['state'] ?? '')));
         } catch (Throwable $e) {
             $add('Licence', 'warning', $e->getMessage());
+        }
+
+        // GRA E-VAT: when a company reports, GRA's VSDC must answer its health check (key and company reference right).
+        $reporting = DB::table('settings')->where('key', 'evat.mode')->whereRaw("value::text <> '\"off\"'")->exists();
+        if ($reporting && (string) config('fiscal.gra.url') !== '') {
+            $up = Cache::remember('gra-evat-health', 300, fn () => app(GraEvatAdapter::class)->health()); // at most one call to GRA every 5 minutes
+            $add('GRA E-VAT', $up ? 'ok' : 'fail', $up ? 'GRA’s VSDC answers' : 'GRA’s VSDC does not answer or refuses this server’s key: documents wait and are sent when it does (check GRA_EVAT_URL, GRA_EVAT_COMPANY_REFERENCE, GRA_EVAT_KEY).');
         }
 
         $stuck = [

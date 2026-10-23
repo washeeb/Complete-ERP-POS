@@ -2,6 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "ERP preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["pos/scripts/preview.mjs"],
+      "port": 8010
+    },
+    {
       "name": "server",
       "runtimeExecutable": "php",
       "runtimeArgs": ["server/artisan", "serve", "--host=127.0.0.1", "--port=8010"],

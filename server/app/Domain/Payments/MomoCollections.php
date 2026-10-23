@@ -101,7 +101,7 @@ final class MomoCollections
     public function otp(Device $device, string $id, string $otp): MomoCharge
     {
         $c = MomoCharge::withoutGlobalScopes()->where('tenant_id', $device->tenant_id)->where('device_id', $device->id)->findOrFail($id);
-        if ($c->status !== 'otp' || $c->gateway !== 'paystack') {
+        if ($c->status !== 'otp' || $c->gateway === 'hubtel') {
             throw new DomainException('This payment is not waiting for a code.');
         }
         $g = $this->gateway($c->tenant_id) ?? throw new DomainException('Mobile money payment requests are switched off.');
@@ -124,6 +124,11 @@ final class MomoCollections
                 return false;
             }
             $ref = (string) ($data['data']['reference'] ?? '');
+        } elseif ($g->provider === 'custom') {
+            if (! MomoProviders::customSigned($g, $body, $signature)) {
+                return false;
+            }
+            $ref = (string) ($data['reference'] ?? '');
         } else {
             $ref = (string) ($data['Data']['ClientReference'] ?? $data['data']['clientReference'] ?? '');
         }
@@ -185,6 +190,12 @@ final class MomoCollections
         $active = (bool) ($data['is_active'] ?? false);
         if ($active && in_array('', $cred, true)) {
             throw new DomainException('Fill in '.implode(', ', MomoGateway::FIELDS[$provider]).'.');
+        }
+        if ($provider === 'custom' && $cred['url'] !== '' && ! str_starts_with($cred['url'], 'https://')) {
+            throw new DomainException('The gateway address must start with https:// (payment details never travel unencrypted).');
+        }
+        if ($provider === 'custom' && $cred['secret'] !== '' && mb_strlen($cred['secret']) < 24) {
+            throw new DomainException('The shared secret must be at least 24 characters (agree it with whoever runs the gateway).');
         }
         if ($provider === 'paystack' && $cred['secret_key'] !== '' && ! preg_match('/^sk_(live|test)_[A-Za-z0-9]+$/', $cred['secret_key'])) {
             throw new DomainException('The Paystack secret key starts with sk_live_ (or sk_test_ for trying it out). Never use the public key.');
