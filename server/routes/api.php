@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\ChannelWebhookController;
 use App\Http\Controllers\Api\V1\DeviceAuthController;
 use App\Http\Controllers\Api\V1\ElectronicsController;
 use App\Http\Controllers\Api\V1\FashionController;
+use App\Http\Controllers\Api\V1\MomoController;
 use App\Http\Controllers\Api\V1\PosController;
 use App\Http\Controllers\Api\V1\RestaurantController;
 use App\Http\Controllers\Api\V1\ServicesController;
@@ -28,6 +29,9 @@ Route::prefix('v1')->group(function () {
     // Store webhooks (WooCommerce, Shopify, generic REST): signature checked over the raw body, stored once, processed by the relay.
     Route::post('channels/{channel}/webhooks', ChannelWebhookController::class)->whereUuid('channel')->middleware('throttle:webhooks');
 
+    // Mobile money provider callbacks (Paystack signed; Hubtel answered by a status check). The token names the company.
+    Route::post('momo/webhook/{token}', [MomoController::class, 'webhook'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:webhooks')->name('momo.webhook');
+
     // Node-to-node sync (branch server ⇄ HQ). HMAC-signed with the peer's shared secret.
     Route::prefix('sync')->middleware('throttle:node-sync')->group(function () {
         Route::get('hello', [SyncController::class, 'hello']);
@@ -47,6 +51,9 @@ Route::prefix('v1')->group(function () {
         Route::post('health', [PosController::class, 'health']);
         Route::post('commands/{id}', [PosController::class, 'commandDone'])->whereUuid('id');
         Route::post('sales', [PosController::class, 'postSale']);
+        Route::post('momo', [MomoController::class, 'request'])->middleware('throttle:pos-sync'); // payment request to the customer's phone
+        Route::get('momo/{id}', [MomoController::class, 'show'])->whereUuid('id');
+        Route::post('momo/{id}/otp', [MomoController::class, 'otp'])->whereUuid('id')->middleware('throttle:pos-sync');
         Route::get('sales/{id}', [PosController::class, 'showSale'])->whereUuid('id');
         Route::post('sales/{id}/send', [PosController::class, 'sendReceipt'])->whereUuid('id')->middleware('throttle:pos-sync');
         Route::post('problems', [PosController::class, 'reportProblem'])->middleware('throttle:pos-sync');

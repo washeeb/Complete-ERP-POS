@@ -93,6 +93,7 @@ class ProductsImporter extends Importer
             ['name' => 'dosage_form', 'required' => false, 'help' => 'Medicines: tablet, capsule, syrup, injection…', 'example' => ''],
             ['name' => 'fda_reg_no', 'required' => false, 'help' => 'Medicines: FDA registration number.', 'example' => ''],
             ['name' => 'active_ingredients', 'required' => false, 'help' => 'Medicines: active ingredients separated by | (allergy and interaction warnings), e.g. Amoxicillin|Clavulanic acid.', 'example' => ''],
+            ['name' => 'daily_use', 'required' => false, 'help' => 'Medicines taken every day: how much one patient uses a day, in the base unit (e.g. 1 or 2 tablets), for refill reminders. Empty = none.', 'example' => ''],
             ['name' => 'dosage', 'required' => false, 'help' => 'Usual directions, printed on the dosage label at the till, e.g. 1 tablet 3 times daily after meals for 5 days.', 'example' => ''],
         ];
         foreach (PriceList::where('is_active', true)->orderByDesc('is_default')->orderBy('code')->get() as $list) {
@@ -196,6 +197,10 @@ class ProductsImporter extends Importer
             if (self::has($row, $col)) {
                 $data[$col] = mb_substr(trim((string) $row[$col]), 0, $max);
             }
+        }
+        if (self::has($row, 'daily_use')) {
+            $v = trim((string) $row['daily_use']);
+            $data['daily_use'] = $v === '' ? null : (is_numeric($v) && (float) $v >= 0 && (float) $v <= 1000 ? $v : throw new DomainException('daily_use: a number such as 1 or 2 (tablets a day), or empty.'));
         }
         if (self::has($row, 'active_ingredients')) {
             $data['active_ingredients'] = self::list($row['active_ingredients']);

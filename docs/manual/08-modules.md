@@ -156,6 +156,15 @@ When an industry is first switched on, the system creates its company under **Co
 
 6. **System → Settings → Pharmacy → Selling prescription-only / controlled medicines:** by default a pharmacist approves every such sale with the prescription. If tellers sell them in your pharmacy, choose *Prescription details only*, *Patient only* or *Sell freely* (a branch can differ: Company → Branches → the branch → *Pharmacy rules for this branch*), and how they are checked afterwards (a pharmacist signs them off on Pharmacy → Sales to sign off, or a daily summary). A quantity limit, major warnings and *Controlled drugs always need a pharmacist* keep the riskiest sales with a pharmacist.
 
+7. **Refill reminders** (medicines taken every day — blood pressure, diabetes, asthma…):
+   - On each such medicine, **Used a day (refill reminders)**: how much one patient takes a day in the base unit — *1* for one tablet a day, *2* for twice a day (or the `daily_use` column of the products file).
+   - Sell it to a **named customer** (choose the customer on the till) who agreed to **WhatsApp or SMS** messages (the customer's consent ticks). The quantity sold tells how long it lasts: 30 tablets at 1 a day last 30 days.
+   - **System → Settings → Refill reminders:** switch on; *Days before it runs out* (3) and *Send at* (09:00). A few days before the medicine runs out the customer gets one message listing every medicine due, with the branch's phone number. Buying again replaces the old reminder.
+   - **Pharmacy → Refill reminders** lists what is waiting and what was sent; **Send now** or **Cancel** (patient changed medicine, asked not to be reminded). *No phone or consent* shows customers to ask next time.
+   - It needs an SMS or WhatsApp provider (Chapter 16). The wording is under Messaging → Templates (*Refill reminder*); WhatsApp needs the approved template `refill_reminder`.
+
+   **Why:** patients on long-term medicine who run out often stop taking it, or buy elsewhere. A reminder before it runs out helps them stay on treatment and brings them back to your pharmacy. Only customers who agreed are texted, as the Data Protection Act requires.
+
 **Why:** the Pharmacy Council expects a pharmacist to approve prescription-only and controlled medicines, and the prescription is recorded; controlled drugs go into the Controlled Drug Register. Where a pharmacy works otherwise, the system still records who sold what so a pharmacist can check it.
 
 **Check:** sell a POM medicine on a till: with the default setting the till asks for the patient, the prescription and the pharmacist's PIN.

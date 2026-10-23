@@ -46,6 +46,10 @@ final class Templates
             'sms' => [null, '{company}: we received {amount} ({number}). Balance now {balance}. Thank you.', false, null],
             'email' => ['Payment received — {number}', "Dear {customer},\n\nWe received {amount} ({number}). Your balance is now {balance}.\n\nThank you.\n{company}", false, null],
         ]],
+        'refill_reminder' => ['Refill reminder to a customer', '{customer} {company} {branch} {phone} {medicines} {runs_out}', [
+            'whatsapp' => [null, 'Hello {customer}, your {medicines} from {company} should run out around {runs_out}. We have it ready for you at {branch}. Call {phone} to reserve.', true, 'refill_reminder'],
+            'sms' => [null, '{customer}: your {medicines} runs out around {runs_out}. Refill at {company} {branch}. Tel {phone}', true, null],
+        ]],
         'daily_summary' => ['Daily summary of the business', '{company} {date} {sales} {text}', [
             'email' => ['{company} — {date}', "{text}\n\nThe same summary is on the bell in the back office. Change it under System → Settings → Daily summary.", true, null],
             'whatsapp' => [null, '{company}, {date}: sales {sales}. The full summary is in the back office and your e-mail.', true, 'daily_summary'],

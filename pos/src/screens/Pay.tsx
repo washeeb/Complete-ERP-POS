@@ -5,6 +5,9 @@ import { changeBreakdown } from '../calc'
 import { Calculator } from './TillTools'
 import type { DiningOrder, Payment, Product, TillCustomer, TradeInItem } from '../types'
 import { TradeInDialog } from './Electronics'
+import { MomoRequest } from './MomoRequest'
+import { manualAllowed, paymentFrom, promptAvailable } from '../momo'
+import type { MomoMode } from '../momo'
 
 const LABEL: Record<string, string> = { cash: 'Cash', momo: 'Mobile money', card: 'Card', account: 'On account', points: 'Points', gift_card: 'Gift card', store_credit: 'Store credit',
   deposit: 'Booking deposit', aggregator: 'Delivery app', trade_in: 'Trade-in' }
@@ -18,15 +21,17 @@ const MOMO = [
 
 /**
  * Split tender. Cash may exceed what is owed (change); mobile money and card are entered with
- * the reference from the confirmation message / terminal slip (manual until Paystack/Hubtel are wired in).
+ * the reference from the confirmation message / terminal slip, or — with a provider set up — mobile money by a payment
+ * request to the customer's phone, added only once the provider confirms it (MomoRequest).
  */
 export type PayExtra = { tradeIns: TradeInItem[]; tradeInApproval: { username: string; pin: string } | null }
 
-export function Pay({ total: bill, currency, exponent, busy, error, customer, tips = false, bill: order = null, tradeInProducts = null, onPay, onCancel }: {
+export function Pay({ total: bill, currency, exponent, busy, error, customer, tips = false, bill: order = null, tradeInProducts = null, momoMode = 'manual', online = true, onPay, onCancel }: {
   total: number; currency: string; exponent: number; busy: boolean; error: string; customer?: TillCustomer | null
   tips?: boolean // Restaurant: ask for a tip, paid on top of the bill
   bill?: DiningOrder | null // Restaurant: the bill being paid (its booking deposit, or the delivery app that pays for it)
   tradeInProducts?: Product[] | null // Electronics: used items can be handed in as part-payment
+  momoMode?: MomoMode; online?: boolean // mobile money: typed ID and/or payment request
   onPay: (payments: Payment[], tipMinor: number, extra: PayExtra) => void; onCancel: () => void
 }) {
   const [tradeIns, setTradeIns] = useState<TradeInItem[]>([])
@@ -73,6 +78,15 @@ export function Pay({ total: bill, currency, exponent, busy, error, customer, ti
     const next = [...payments, { method: 'trade_in', amount_minor: item.value_minor, tendered_minor: item.value_minor, reference: item.serial ?? undefined } as Payment]
     setPayments(next)
     if (next.reduce((a, x) => a + x.amount_minor, 0) === total) onPay(next, tip, { tradeIns: list, tradeInApproval: approval ?? tradeInApproval })
+  }
+
+  /** A payment request the provider confirmed as paid. */
+  function addPaid(p: Payment) {
+    const next = [...payments, p]
+    setPayments(next)
+    setAmount('')
+    setPhone('')
+    if (next.reduce((a, x) => a + x.amount_minor, 0) === total) onPay(next, tip, extra())
   }
 
   function add(tenderedOverride?: number) {
@@ -165,6 +179,10 @@ export function Pay({ total: bill, currency, exponent, busy, error, customer, ti
             {method === 'points' && customer && (
               <p className="muted">{customer.name} has {customer.points ?? 0} points, worth {money(customer.points ?? 0)} (100 points = {money(100)}).</p>
             )}
+            {method === 'momo' && promptAvailable(momoMode, online) && (
+              <MomoRequest network={provider} amountMinor={(() => { try { return amount ? Math.min(parseMoney(amount, exponent), due) : due } catch { return due } })()}
+                money={money} disabled={busy} onPaid={(c) => addPaid(paymentFrom(c))} />
+            )}
             {method === 'momo' && (
               <div className="row wrap">
                 {MOMO.map((m) => (
@@ -193,20 +211,22 @@ export function Pay({ total: bill, currency, exponent, busy, error, customer, ti
                 {method === 'cash' ? 'Cash received' : 'Amount'} <span className="muted">(blank = {money(due)})</span>
                 <input autoFocus className="big mono" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
               </label>
-              {(method === 'momo' || method === 'card' || method === 'gift_card' || method === 'store_credit') && (
+              {((method === 'momo' && manualAllowed(momoMode, online)) || method === 'card' || method === 'gift_card' || method === 'store_credit') && (
                 <label>
                   {method === 'momo' ? 'Transaction ID' : method === 'card' ? 'Approval code (optional)' : 'Card code'}
                   <input className="big mono" value={reference} onChange={(e) => setReference(e.target.value)} maxLength={80} />
                 </label>
               )}
-              {method === 'momo' && (
+              {method === 'momo' && manualAllowed(momoMode, online) && (
                 <label>
                   Customer phone (optional)
                   <input inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={20} />
                 </label>
               )}
               <button type="button" onClick={() => setCalcOpen(true)} disabled={busy}>Calculator</button>
-              <button className="primary big" disabled={busy}>Add {method === 'account' ? 'to account' : LABEL[method].toLowerCase()}</button>
+              {(method !== 'momo' || manualAllowed(momoMode, online)) && (
+                <button className="primary big" disabled={busy}>Add {method === 'account' ? 'to account' : method === 'momo' && promptAvailable(momoMode, online) ? 'with transaction ID' : LABEL[method].toLowerCase()}</button>
+              )}
             </form>
           </>
         )}
