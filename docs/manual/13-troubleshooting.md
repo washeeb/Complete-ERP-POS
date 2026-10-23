@@ -97,6 +97,14 @@ The same checks run with `php artisan erp:health` (useful for monitoring tools: 
 | `php artisan license:status` | Licence state, limits and last check-in |
 | `php artisan erp:load-test --force` | Speed: posts test sales and times the heavy reports, searches and the till catalogue on your real data, then undoes everything. Lines over a second are marked *SLOW* |
 
+## Website copiers and robots
+
+The system is a private business system. Tools that try to download a whole website (HTTrack, Cyotek WebCopy, Offline Explorer, wget and similar) are refused with *Copying this site is not allowed* — by the web server and again by the application — and anyone not signed in who asks for more than 120 pages a minute is told to wait a minute. Search engines and web archives are asked not to index or keep any page.
+
+**What a copier could get anyway:** only the sign-in page and the till's screen code, which is compressed and does nothing without your server, an enrolled till and a valid licence. The system's code, the database, passwords and keys never leave the server. **Why:** copying the pages cannot copy the system, and the blocking keeps such tools from loading the server.
+
+If a legitimate tool of yours is refused (for example a monitoring service), give it a normal browser name, or ask SyncLytics support.
+
 ## Getting help from SyncLytics
 
 | | |

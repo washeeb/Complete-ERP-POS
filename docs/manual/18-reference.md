@@ -36,7 +36,8 @@ You can change what a role allows under **People & access → Roles** (you can o
 | `REVERB_*` | Live updates (optional, 4.9 / 5.9) |
 | `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` | Outgoing e-mail (Chapter 16.1). `MAIL_MAILER=log` only writes e-mails to the log |
 | `BACKUP_PASSPHRASE`, `BACKUP_PG_BIN`, `BACKUP_TIME`, `BACKUP_KEEP_LOCAL` | Backups (Chapter 12.2). **Keep a written copy of the passphrase away from the server.** |
-| `GRA_EVAT_URL`, `GRA_EVAT_KEY`, `GRA_EVAT_TIN`, `GRA_EVAT_TIMEOUT` | GRA E-VAT access from GRA (Chapter 11.5) |
+| `GRA_EVAT_URL`, `GRA_EVAT_COMPANY_REFERENCE`, `GRA_EVAT_KEY`, `GRA_EVAT_TIN`, `GRA_EVAT_ACCOUNTS`, `GRA_EVAT_TIMEOUT` | GRA E-VAT access from GRA (Chapter 11.5) |
+| `REMOTE_RELAY_URL` | The remote support relay's address (Chapter 20); empty = no View screen / Take control buttons |
 | `BRAND_NAME`, `BRAND_VENDOR`, `BRAND_WEBSITE` | The product's name, the company that publishes and licenses it (SyncLytics unless a reseller supplies it), and its website (normally left as delivered) |
 | `ERP_SUPPORT_EMAIL` | Where problem reports and the evening pilot report go when the go-live plan names no address (Chapter 17.6); empty = SyncLytics support (info@synclyticsenterprisesystems.com) |
 | `BRAND_SUPPORT_PHONE`, `BRAND_SUPPORT_EMAIL` | The publisher's hotline and e-mail on the Licence page and in licence messages; empty = SyncLytics' own (normally left as delivered) |
