@@ -61,3 +61,31 @@ Once GRA has onboarded your business for E-VAT, it gives you the E-VAT address a
 
 **Note:** test with GRA's sandbox and compare a few documents in Finance → GRA E-VAT with what GRA shows before switching to the production address. `docs/evat.md` describes the fields sent.
 
+## 11.6 Mobile money that confirms itself (payment requests)
+
+Without this, the cashier types the transaction ID from the customer's MoMo message, and a wrong or made-up ID is only found when the wallet is checked at closing. With a **payment request**, the till sends the amount to the customer's phone; the customer approves with their PIN; the sale goes through only once the payment provider confirms the money arrived, and the payment shows as **verified** with the provider's transaction ID.
+
+**What you need:** a merchant account with a payment provider that collects from **MTN MoMo, Telecel Cash and AT Money**:
+
+| Provider | Where | What to copy into the system |
+|---|---|---|
+| **Paystack** | dashboard.paystack.com → Settings → API Keys & Webhooks | The **secret key** (`sk_live_…`). Never the public key. |
+| **Hubtel** | Hubtel business account → Developers / API keys; Receive Money must be enabled for your account | **API ID**, **API key** and the **POS Sales ID** (merchant account number). Ask Hubtel to allow your server's IP address for the status check. |
+
+The provider pays the money into your bank account or wallet on its own schedule and charges its fee (about 2 %). **Why a provider:** it is the only way for the system to know, by itself, that a payment really arrived.
+
+**Set it up (owner or finance manager):**
+
+1. **System → Mobile money → Payment provider:** choose the provider, paste the keys, tick **Send payment requests through this provider**, save. The keys are stored encrypted on this server and never shown again.
+2. Copy the **callback address** shown in the same window into the provider's dashboard (Paystack: *Webhook URL*; Hubtel: the callback is sent with each request, nothing to do). **Why:** the provider then tells the system the moment a customer pays, even after the till stopped waiting.
+3. **System → Settings → Mobile money → How the till takes mobile money:**
+   - *Payment request; typing the ID still allowed* — to start with;
+   - *Payment request only* — once staff are used to it. Typing an ID is then possible only when the till is offline (the sale is still recorded and checked at closing).
+4. Try it with a small amount on your own phone before go-live. With Paystack you can first use the test key (`sk_test_…`).
+
+**At the till:** Pay (F12) → **Mobile money** → choose the network → type the customer's number → **Send payment request**. The customer gets a prompt on their phone and enters their PIN. The till shows *Waiting for the customer…* and adds the payment by itself when it is paid (some Telecel and AT payments send the customer a code first: type it in and **Confirm code**). If the customer does not approve within 3 minutes, send the request again or take another payment.
+
+**System → Mobile money** lists every request: paid, not paid, timed out. **Paid, not on a sale** shows money that arrived after the till stopped waiting — ring up the sale with it, or refund the customer from the provider's dashboard.
+
+**Branch servers:** set the provider up on each server the tills sign in to (the keys are not copied between servers).
+

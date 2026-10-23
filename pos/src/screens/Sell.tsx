@@ -681,6 +681,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       {paying && !approval && !rxPrompt && (
         <Pay total={cart.total} currency={boot.company.currency} exponent={boot.company.exponent} busy={busy} error={payError}
           customer={customer} tips={!!restaurant?.tips && online && payingBill?.kind !== 'delivery'} bill={payingBill}
+          momoMode={boot.momo_confirm} online={online}
           tradeInProducts={electronics && online ? products : null}
           onPay={(p, tip, extra) => complete(p, { tip, tradeIns: extra.tradeIns, tradeInApproval: extra.tradeInApproval })} onCancel={() => setPaying(false)} />
       )}

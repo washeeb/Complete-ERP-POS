@@ -107,6 +107,7 @@ export type Bootstrap = {
   receipt_footer: string
   show_stock?: boolean
   auto_print_receipt?: boolean // the desktop till prints each receipt by itself
+  momo_confirm?: import('./momo').MomoMode // mobile money: typed ID, payment request, or request only
   require_details?: string // none | phone | name | name_phone: what the till asks before payment (branch setting)
   /** The company's brand (Company → Branding); missing on servers older than 0.26. */
   brand?: { color: string; on_color: string; logo_url: string | null; logo_dark_url: string | null; icon_url: string; receipt_logo: boolean; powered_by: string | null; credit?: string[]; product: string }
@@ -126,7 +127,7 @@ export type Bootstrap = {
 
 export type Realtime = { key: string; host: string; port: number; scheme: 'http' | 'https'; channels: (string | null)[] }
 
-export type Payment = { method: 'cash' | 'momo' | 'card' | 'account' | 'points' | 'gift_card' | 'store_credit' | 'deposit' | 'aggregator' | 'trade_in'; provider?: string; amount_minor: number; tendered_minor: number; reference?: string; payer_phone?: string }
+export type Payment = { method: 'cash' | 'momo' | 'card' | 'account' | 'points' | 'gift_card' | 'store_credit' | 'deposit' | 'aggregator' | 'trade_in'; provider?: string; amount_minor: number; tendered_minor: number; reference?: string; payer_phone?: string; momo_charge_id?: string }
 
 export type PostedSale = {
   id: string; receipt_no: string; device_seq: number; status: string; occurred_at: string; cashier: string; currency: string

@@ -78,6 +78,13 @@ final class Settings
             'label' => 'Remote connections to tills and computers',
             'help' => 'Who may connect without someone at the device clicking Accept. Every connection shows a banner on the device and is in the audit log. A branch can choose differently (Company → Branches).',
         ],
+        'momo.confirm' => [
+            'type' => 'choice', 'default' => 'manual', 'group' => 'Mobile money',
+            'options' => ['manual' => 'Cashier types the transaction ID (no provider)', 'prompt' => 'Payment request to the customer’s phone; typing the ID still allowed',
+                'prompt_only' => 'Payment request only (typing the ID only when the till is offline)'],
+            'label' => 'How the till takes mobile money',
+            'help' => 'A payment request needs a provider account (Paystack or Hubtel) under System → Mobile money. The customer approves on their phone with their PIN and the sale shows the payment as verified, so a fake or wrong transaction ID cannot be used.',
+        ],
         'refill.reminders' => [
             'type' => 'bool', 'default' => false, 'group' => 'Refill reminders',
             'label' => 'Remind customers to refill their medicines',

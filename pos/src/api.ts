@@ -100,6 +100,11 @@ export const api = {
   postSale: (payload: unknown, timeoutMs?: number) => call<{ sale: PostedSale; replayed: boolean }>('pos/sales', { method: 'POST', body: JSON.stringify(payload), timeoutMs }),
   lookupReceipt: (receiptNo: string) => call<{ sale: PostedSale; returnable: Returnable; customer_id: string | null }>(`pos/receipts?receipt=${encodeURIComponent(receiptNo)}`),
   postReturn: (payload: unknown) => call<{ sale: PostedSale; store_credit_code: string | null }>('pos/returns', { method: 'POST', body: JSON.stringify(payload) }),
+  /** Mobile money payment request to the customer's phone; the same id again is the same request. */
+  momoRequest: (body: { id: string; network: string; phone: string; amount_minor: number }) =>
+    call<{ charge: import('./momo').MomoCharge }>('pos/momo', { method: 'POST', body: JSON.stringify(body), timeoutMs: 40_000 }),
+  momoStatus: (id: string) => call<{ charge: import('./momo').MomoCharge }>(`pos/momo/${id}`),
+  momoOtp: (id: string, otp: string) => call<{ charge: import('./momo').MomoCharge }>(`pos/momo/${id}/otp`, { method: 'POST', body: JSON.stringify({ otp }), timeoutMs: 40_000 }),
   accountPayment: (body: { customer_id: string; amount_minor: number; method: 'cash' | 'momo' | 'card'; provider?: string; reference?: string }) =>
     call<{ number: string; amount_minor: number; balance_minor: number }>('pos/account-payments', { method: 'POST', body: JSON.stringify(body) }),
 }

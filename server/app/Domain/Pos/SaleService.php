@@ -14,6 +14,7 @@ use App\Domain\Inventory\SerialRegistry;
 use App\Domain\Inventory\StockLedger;
 use App\Domain\Messaging\PaymentAlerts;
 use App\Domain\Modules\ModuleService;
+use App\Domain\Payments\MomoCollections;
 use App\Domain\Pharmacy\PharmacyRules;
 use App\Domain\Pharmacy\PharmacyService;
 use App\Domain\Pricing\PriceResolver;
@@ -331,7 +332,7 @@ final class SaleService
         // Electronics: used items handed in as part-payment (tender "trade_in").
         $tradeIns = $this->electronics->checkTradeIns($device, $user, $p, $branch, $offline, $flags);
 
-        [$payments, $paid, $change] = $this->payments($p['payments'] ?? [], $total + $tip);
+        [$payments, $paid, $change] = $this->payments($p['payments'] ?? [], $total + $tip, $device->tenant_id, $offline);
         $tradeTender = array_sum(array_map(fn ($x) => $x['method'] === 'trade_in' ? $x['amount_minor'] : 0, $payments));
         if ($tradeTender !== $tradeIns['total']) {
             throw new DomainException('The trade-in payment must equal the value of the items handed in.', 'trade_in_invalid');
@@ -402,6 +403,9 @@ final class SaleService
                     ]);
                 }
                 foreach ($payments as $pay) {
+                    if (($pay['momo_charge_id'] ?? null) && ! app(MomoCollections::class)->attach($pay['momo_charge_id'], $sale->id)) {
+                        throw new DomainException('That mobile money payment was already used for another sale.', 'momo_used');
+                    }
                     SalePayment::create(['id' => (string) Str::uuid7(), 'sale_id' => $sale->id, 'approved_by_name' => $pay['method'] === 'account' ? $creditApprovedBy : null] + $pay);
                 }
                 $this->tenders($actor, $sale, $payments, $customer, $offline, $flags, $receiptNo, $occurredAt);
@@ -606,7 +610,7 @@ final class SaleService
     }
 
     /** @return array{0: list<array>, 1: int, 2: int} payments, paid, change */
-    private function payments(array $input, int $total): array
+    private function payments(array $input, int $total, ?string $tenantId = null, bool $offline = false): array
     {
         $paid = $change = 0;
         $payments = [];
@@ -668,6 +672,16 @@ final class SaleService
                 continue;
             }
             $reference = trim((string) ($pay['reference'] ?? ''));
+            if ($method === 'momo' && $tenantId && ! empty($pay['momo_charge_id'])) {
+                // Paid through a payment request: the provider confirmed it, so it is "verified" with its transaction id.
+                $paid += $amount;
+                $payments[] = ['method' => 'momo', 'amount_minor' => $amount, 'tendered_minor' => $amount] + app(MomoCollections::class)->forSale($tenantId, (string) $pay['momo_charge_id'], $amount);
+
+                continue;
+            }
+            if ($method === 'momo' && $tenantId && ! $offline && app(MomoCollections::class)->mode($tenantId) === 'prompt_only') {
+                throw new DomainException('Mobile money is taken with a payment request to the customer’s phone here (System → Settings → Mobile money).', 'momo_request_required');
+            }
             if ($method === 'momo') {
                 if (! array_key_exists($pay['provider'] ?? '', SalePayment::MOMO_PROVIDERS)) {
                     throw new DomainException('Choose the mobile money network.');

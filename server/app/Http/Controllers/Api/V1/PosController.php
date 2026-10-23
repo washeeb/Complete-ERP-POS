@@ -15,6 +15,7 @@ use App\Domain\Licensing\Watermark;
 use App\Domain\Messaging\ReceiptSender;
 use App\Domain\Messaging\Templates;
 use App\Domain\Modules\ModuleService;
+use App\Domain\Payments\MomoCollections;
 use App\Domain\Pharmacy\PharmacyRules;
 use App\Domain\Pos\CashControl;
 use App\Domain\Pos\DrawerService;
@@ -89,6 +90,7 @@ class PosController extends Controller
             'receipt_footer' => $settings->get('receipt.footer', $device->tenant_id),
             'show_stock' => (bool) $settings->get('pos.show_stock', $device->tenant_id),
             'auto_print_receipt' => (bool) $settings->get('pos.auto_print_receipt', $device->tenant_id),
+            'momo_confirm' => app(MomoCollections::class)->mode($device->tenant_id), // manual | prompt | prompt_only
             'require_details' => (string) $settings->forBranch('pos.require_details', $device->branch_id, $device->tenant_id), // name / phone before payment
             // The company's brand (Company → Branding): logo for the screen and the printed receipt, colour, and the product line.
             'brand' => (fn ($b) => ['color' => $b['color'], 'on_color' => $b['on_color'], 'logo_url' => $b['logo_url'], 'logo_dark_url' => $b['logo_dark_url'],
@@ -373,6 +375,7 @@ class PosController extends Controller
             'payments.*.tendered_minor' => ['nullable', 'integer', 'min:0'],
             'payments.*.reference' => ['nullable', 'string', 'max:80'],
             'payments.*.payer_phone' => ['nullable', 'string', 'max:20'],
+            'payments.*.momo_charge_id' => ['nullable', 'uuid'],
         ]);
         $device = $this->device($request);
         $result = $sales->post($device, $request->user(), $request->all());
