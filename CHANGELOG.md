@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Security
+- **Livewire 4.4.8:** fixes an authorization bypass published on 2026-10-23 (GHSA-mhf7-xp6r-6qrc). Install this release on every server.
 ### Fixed
 - **Mobile money page** said requests were off when only the provider was missing; it now says exactly what is missing (the provider, or the setting), and System → Health warns when requests are chosen without a provider. The preview script now also adds new permissions (`db:seed`), as every installer does — the *Payment provider* button was hidden on test installs for that reason.
 - **What to order:** no more Change / Undo buttons at the far right — each value that can be changed (min / max, supplier, order quantity, cost) has a pencil beside it and opens its own small window; *Undo my changes* is in those windows.
