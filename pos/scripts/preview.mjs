@@ -18,6 +18,7 @@ console.log('1/3 Building the till into the server…')
 run('npm', ['run', 'build:server'], pos)
 console.log('2/3 Updating the database…')
 run('php', ['artisan', 'migrate', '--force'], server)
+run('php', ['artisan', 'db:seed', '--force'], server) // new permissions, settings and templates (adds missing rows only), as every installer does
 console.log('3/3 Back office: http://127.0.0.1:8010/admin   Till: http://127.0.0.1:8010/pos/')
 const s = spawn('php', ['artisan', 'serve', '--host=127.0.0.1', '--port=8010'], { cwd: server, stdio: 'inherit', shell: win })
 s.on('exit', (code) => process.exit(code ?? 0))

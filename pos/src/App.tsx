@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { toJpeg } from 'html-to-image'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { api, ApiError, wms } from './api'
 import { connectionState, pingServer, type ConnectionState } from './connection'
 import { db, getDevice, getLocalShift, getSession, queueCounts, type CacheRecord } from './db'
@@ -7,11 +6,13 @@ import { connectLive, type LiveState } from './live'
 import { sendQueue } from './offline'
 import { HEALTH_EVERY_TICKS, reportHealth, type FixHandlers } from './health'
 import { CloseShift, Enroll, Login, OpenShift } from './screens/Setup'
-import { Handheld } from './screens/Handheld'
-import { Kitchen } from './screens/Kitchen'
 import { Receipt } from './screens/Receipt'
 import { Sell } from './screens/Sell'
 import type { Bootstrap, PostedSale, Product } from './types'
+
+// Screens only some devices use load when needed (a till never downloads the kitchen screen at start-up).
+const Handheld = lazy(() => import('./screens/Handheld').then((m) => ({ default: m.Handheld })))
+const Kitchen = lazy(() => import('./screens/Kitchen').then((m) => ({ default: m.Kitchen })))
 import './App.css'
 import { applyTheme, getTheme, THEMES, type ThemeChoice } from './theme'
 import { problemContext } from './problems'
@@ -206,8 +207,8 @@ export default function App() {
           }} />
       )}
       {stage === 'receipt' && boot && receipt && <Receipt sale={receipt} boot={boot} onNew={() => setStage('sell')} />}
-      {stage === 'handheld' && <Handheld onLogout={logout} />}
-      {stage === 'kitchen' && <Kitchen />}
+      {stage === 'handheld' && <Suspense fallback={<p className="muted center">Loading…</p>}><Handheld onLogout={logout} /></Suspense>}
+      {stage === 'kitchen' && <Suspense fallback={<p className="muted center">Loading…</p>}><Kitchen /></Suspense>}
       {stage === 'close-shift' && boot && <CloseShift boot={boot} online={online} onClosed={logout} onCancel={() => setStage('sell')} />}
       {boot && ['sell', 'receipt', 'open-shift', 'close-shift', 'handheld'].includes(stage) && (
         <ReportProblem screen={stage} online={online} queued={queue.pending} />
@@ -240,6 +241,7 @@ async function screenPicture(): Promise<string | null> {
   if (!root) return null
   try {
     const ratio = Math.min(1, 1280 / Math.max(1, root.clientWidth))
+    const { toJpeg } = await import('html-to-image') // only when a problem is reported with a picture
     return await toJpeg(root, { quality: 0.7, pixelRatio: ratio, cacheBust: false, skipFonts: true, backgroundColor: getComputedStyle(document.body).backgroundColor || '#fff' })
   } catch {
     return null

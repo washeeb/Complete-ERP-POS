@@ -6,6 +6,7 @@ use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
+use App\Models\Branch;
 use App\Models\Device;
 use App\Models\Till;
 use App\Models\User;
@@ -86,7 +87,7 @@ final class PosAuthService
         } else {
             $target = $device->till_id ? Till::find($device->till_id) : $device->branch;
             if (! $this->authz->allows($user, 'pos.access', $target)) {
-                throw new AccessDenied('You are not set up to use a till at this branch.');
+                throw new AccessDenied($this->notHere($user, $device, $target));
             }
         }
 
@@ -105,5 +106,22 @@ final class PosAuthService
                 'offline_grant' => $handheld ? null : $this->grants->issue($user, $device, $pin), // handhelds work against their own (branch) server
             ];
         });
+    }
+
+    /**
+     * Why this person cannot sell here, and where they can (owner request 2026-10-23): "You are set up for Till 1 at Head
+     * Office, not Till 1 at Branch A" tells the cashier and the manager what to fix.
+     */
+    private function notHere(User $user, Device $device, $target): string
+    {
+        $here = $target instanceof Till ? $target->name.' at '.(Branch::find($target->branch_id)?->name ?? 'this branch') : ($device->branch?->name ?? 'this branch');
+        $where = Till::where('is_active', true)->get()->filter(fn (Till $t) => $this->authz->allows($user, 'pos.access', $t))
+            ->map(fn (Till $t) => $t->name.' at '.(Branch::find($t->branch_id)?->name ?? '?'))->unique()->values();
+        if ($where->isEmpty()) {
+            return "You are not set up to use any till. A manager can add the Teller role for {$here} (People & access → Users → you).";
+        }
+        $list = $where->count() > 3 ? $where->take(3)->implode(', ').' and '.($where->count() - 3).' more' : $where->implode(', ');
+
+        return "You are set up for {$list}, not {$here}. Use your own till, or ask a manager to add {$here} to your role (People & access → Users → you).";
     }
 }

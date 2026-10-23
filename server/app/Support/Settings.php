@@ -88,7 +88,7 @@ final class Settings
             'options' => ['manual' => 'Cashier types the transaction ID (no provider)', 'prompt' => 'Payment request to the customer’s phone; typing the ID still allowed',
                 'prompt_only' => 'Payment request only (typing the ID only when the till is offline)'],
             'label' => 'How the till takes mobile money',
-            'help' => 'A payment request needs a provider account (Paystack or Hubtel) under System → Mobile money. The customer approves on their phone with their PIN and the sale shows the payment as verified, so a fake or wrong transaction ID cannot be used.',
+            'help' => 'A payment request needs a provider account (Paystack, Hubtel or another gateway), entered under System → Mobile money → Payment provider; until then tills keep taking typed transaction IDs. The customer approves on their phone with their PIN and the sale shows the payment as verified, so a fake or wrong transaction ID cannot be used.',
         ],
         'refill.reminders' => [
             'type' => 'bool', 'default' => false, 'group' => 'Refill reminders',

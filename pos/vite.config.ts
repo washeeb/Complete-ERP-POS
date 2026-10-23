@@ -19,7 +19,24 @@ export default defineConfig(({ mode }) => {
   return {
     base,
     // A release build (release:build --with-pos) writes into its own copy of the server via POS_OUT_DIR.
-    build: mode === 'server' ? { outDir: process.env.POS_OUT_DIR ?? '../server/public/pos', emptyOutDir: true } : {},
+    build: {
+      ...(mode === 'server' ? { outDir: process.env.POS_OUT_DIR ?? '../server/public/pos', emptyOutDir: true } : {}),
+      // Libraries in their own files (owner request 2026-10-23): an update re-downloads only the till's own code, which
+      // changes, not React, the offline store or live updates, which rarely do. All files are still precached, so the
+      // till keeps working offline.
+      rolldownOptions: {
+        output: {
+          codeSplitting: {
+            groups: [
+              { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/ },
+              { name: 'storage', test: /node_modules[\\/](dexie|uuid)[\\/]/ },
+              { name: 'live', test: /node_modules[\\/](pusher-js|laravel-echo)[\\/]/ },
+              { name: 'vendor', test: /node_modules[\\/]/ },
+            ],
+          },
+        },
+      },
+    },
     define: { __BUILD_STAMP__: JSON.stringify(BUILD) },
     plugins: [
       react(),
