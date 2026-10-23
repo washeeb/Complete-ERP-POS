@@ -5,6 +5,7 @@ namespace App\Domain\Pos;
 use App\Domain\Devices\OfflineGrant;
 use App\Domain\Distribution\RouteService;
 use App\Domain\Hr\AttendanceService;
+use App\Domain\Inventory\HandheldOps;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Domain\Sync\ReviewQueue;
@@ -17,13 +18,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
- * Applies a till's queued work (shift opens, sales, shift closes) in the order it happened.
+ * Applies a till's or handheld's queued work (shift opens, sales, shift closes; receipts, moves, counts) in the order it happened.
  * Each event is its own transaction: one bad event does not block the rest (partial batch),
  * and resending a batch is harmless (every event is idempotent on its id).
  */
 final class PosSyncService
 {
-    public const TYPES = ['shift_open', 'sale', 'shift_close', 'drawer', 'clock'];
+    public const TYPES = ['shift_open', 'sale', 'shift_close', 'drawer', 'clock', ...HandheldOps::OPS];
 
     public function __construct(
         private readonly OfflineGrant $grants,
@@ -66,6 +67,11 @@ final class PosSyncService
         $user = User::where('tenant_id', $device->tenant_id)->find($grant['user_id'])
             ?? throw new DomainException('The person on the offline sign-in no longer exists.', 'invalid_grant');
         $p = $e['payload'];
+
+        if (in_array($e['type'], HandheldOps::OPS, true)) {
+            // Warehouse handheld: received, moved, counted while the server could not be reached (or sent at once).
+            return app(HandheldOps::class)->run($device, $user, $e['type'], $e['id'], $p);
+        }
 
         switch ($e['type']) {
             case 'shift_open':

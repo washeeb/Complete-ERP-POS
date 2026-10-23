@@ -9,6 +9,9 @@
 | Manager | Check no till shows a red banner (*refused*) or a long yellow queue | Tills; System → Devices (*Last seen*) |
 | IT / owner | Check **System → Health** is all green (backup made last night, scheduler running) | System → Health |
 | Head office | Check branch servers synced recently (setup E) | System → Sync Center |
+| Owner or branch manager | **Close the day** before leaving | Cash → Close the day |
+
+**Close the day** (Cash → *Close the day*; owner, general manager and branch manager): one screen per branch shows whether the day is wrapped up — ✓ every till closed and counted, the cash counted and any shortage by cashier, cash handed over and banked (when you use cash control), every sale received from the tills, medicine sales signed off (pharmacies), approvals waiting, and last night's backup. Enter the cash **taken to the bank** with the **deposit slip number**, and what was **kept in the safe**, then **Close the day**. A red ✗ (e.g. a till still open) needs a sentence saying why before the day can be closed; amber ! items are reminders. Closing again later (after the till was closed) updates the record. **Recent days** lists the last two weeks: who closed, cash counted, over / short, banked, slip, safe. The daily summary says, per branch, who closed the day or *not yet*. **Why:** one look tells the owner the day is finished and the money is where it should be; a missing deposit or an open till is noticed the same evening, not at the month-end.
 
 **Every month:** verify the audit log (**System → Audit log → Verify chain**), check stock (`php artisan erp:stock-check`), take the USB backup drive home if you use one, and every three months practise a full restore on a spare PC (12.3).
 

@@ -65,11 +65,14 @@ export async function enqueue(item: Omit<QueueItem, 'status' | 'attempts' | 'las
 
 export type SendResult = { sent: number; refused: number; error: string | null }
 
+/** One answer per queued item, as the server gave it (the handheld shows the receipt or count number). */
+export type QueueResult = { id: string; status: string; detail?: string; number?: string }
+
 /**
  * Send queued work in order, in batches. Accepted/duplicate items are removed; refused items stay
  * (status "review") for a supervisor; network failures leave everything for the next attempt.
  */
-export async function sendQueue(): Promise<SendResult> {
+export async function sendQueue(onResult?: (r: QueueResult) => void): Promise<SendResult> {
   const device = await getDevice()
   if (!device) return { sent: 0, refused: 0, error: null }
   let sent = 0
@@ -91,7 +94,8 @@ export async function sendQueue(): Promise<SendResult> {
     if (GATEWAY_DOWN.includes(res.status)) return { sent, refused, error: 'Server not answering — will retry.' }
     const json = await res.json().catch(() => ({}))
     if (!res.ok) return { sent, refused, error: json.detail ?? `Server answered ${res.status}` }
-    for (const r of json.results as { id: string; status: string; detail?: string }[]) {
+    for (const r of json.results as QueueResult[]) {
+      onResult?.(r)
       const item = batch.find((q) => q.id === r.id)
       if (!item?.seq) continue
       if (r.status === 'accepted' || r.status === 'duplicate') {

@@ -1,7 +1,7 @@
 import { clientHeader } from './clientInfo'
 import { db, getDevice, getSession } from './db'
 import type { OfflineGrant } from './db'
-import type { Bootstrap, PostedSale, Product, PromotionRow, Returnable, Shift, TillCustomer, WmsBin, WmsBootstrap, WmsCount, WmsOrder, WmsTransfer, WmsUnit, Grocery, Pharmacy, Restaurant, DiningOrder, Floor, KitchenTicket, Reservation, RepairJob, SerialInfo, Fashion, Alteration, Services, Appointment, ServicePass, StaffMember, VanDay } from './types'
+import type { Bootstrap, PostedSale, Product, PromotionRow, Returnable, Shift, TillCustomer, WmsBin, WmsBootstrap, WmsCatalog, WmsCount, WmsOrder, WmsTransfer, WmsUnit, Grocery, Pharmacy, Restaurant, DiningOrder, Floor, KitchenTicket, Reservation, RepairJob, SerialInfo, Fashion, Alteration, Services, Appointment, ServicePass, StaffMember, VanDay } from './types'
 
 /** Automatic shifts: a manager allows a till to open outside trading hours, or again after its shift was closed. */
 export type ShiftGrant = { username: string; pin: string; reason: string }
@@ -199,6 +199,8 @@ export const wms = {
   logout: () => call<{ ok: boolean }>('wms/logout', { method: 'POST' }),
   lookup: (code: string, warehouseId: string) =>
     call<{ type: 'product'; unit: WmsUnit } | { type: 'bin'; bin: WmsBin }>(`wms/lookup?code=${encodeURIComponent(code)}&warehouse_id=${warehouseId}`),
+  /** Every stocked unit with its barcodes, and the bins: scans recognised without the server. */
+  catalog: (warehouseId: string) => call<WmsCatalog>(`wms/catalog?warehouse_id=${warehouseId}`, { timeoutMs: 60_000 }),
   purchaseOrders: (warehouseId: string) => call<WmsOrder[]>(`wms/purchase-orders?warehouse_id=${warehouseId}`),
   receive: (body: { purchase_order_id: string; client_id: string; supplier_ref?: string; lines: { purchase_order_line_id: string; qty: string; bin_id?: string | null; batch_no?: string; expires_on?: string | null; serials?: string[] }[] }) =>
     call<{ id: string; number: string; status: 'posted' | 'held' }>('wms/receipts', { method: 'POST', body: JSON.stringify(body) }),

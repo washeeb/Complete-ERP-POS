@@ -86,6 +86,26 @@ final class SupplierService
     }
 
     /** The preferred supplier line for a product (else the cheapest known), used to fill purchase orders. */
+    /**
+     * bestFor() for many products in one query (What to order lists hundreds).
+     *
+     * @param  list<string>  $productIds
+     * @return array<string, SupplierProduct> product id => its best supplier line
+     */
+    public static function bestForMany(array $productIds): array
+    {
+        $best = [];
+        foreach (array_chunk($productIds, 1000) as $chunk) {
+            SupplierProduct::with('supplier', 'unit.uom')->whereIn('product_id', $chunk)->whereHas('supplier', fn ($q) => $q->where('is_active', true))
+                ->orderByDesc('is_preferred')->orderByRaw('last_cost_minor IS NULL')->orderBy('last_cost_minor')->get()
+                ->each(function (SupplierProduct $sp) use (&$best) {
+                    $best[$sp->product_id] ??= $sp; // the first in that order wins, as in bestFor()
+                });
+        }
+
+        return $best;
+    }
+
     public static function bestFor(string $productId): ?SupplierProduct
     {
         return SupplierProduct::where('product_id', $productId)->whereHas('supplier', fn ($q) => $q->where('is_active', true))

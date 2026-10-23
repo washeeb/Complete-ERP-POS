@@ -20,6 +20,8 @@ When one of your branches asks a branch of another industry for stock (or the ot
 3. Approve purchase orders, stock adjustments and expense claims that wait for you.
 4. **Sales → Till shifts**: cash and MoMo / card / voucher differences, and the *Drawer* column (paid out, dropped, no-sale opens). **Insights → Loss prevention** now also compares how often each cashier opens the drawer without a sale.
 
+5. **Cash → Close the day** before leaving: fix any red ✗ (or write why), enter the cash taken to the bank with the slip number and what stays in the safe, and press **Close the day**.
+
 **Settings for the drawer** (System → Settings → Tills and cash): *Expenses paid from the till: a supervisor approves above* (default GHS 100) and *Cash limit in a till drawer* (default off; e.g. 200000 = GHS 2,000). Who approves pay-outs and takes cash drops: the permission *Approve till pay-outs above the limit and take cash drops* (supervisors and managers have it).
 
 ## Going live

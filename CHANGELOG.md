@@ -1,6 +1,12 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- **Close the day (Cash → Close the day):** per branch, the checks before leaving — tills closed and counted, cash over / short by cashier, handed over and banked (cash control), sales all received from the tills, medicine sales signed off, approvals waiting, last night's backup — and the close with the cash banked (slip number) or kept in the safe; a red check needs a reason; closing again updates the record; recent days listed; the daily summary says who closed each branch's day. Permission *Close the day* (general manager, branch manager). Manual 12.1.
+### Changed
+- **Long lists a page at a time:** What to order, Suggested levels, Expiry & returns and Sales to sign off show 25 rows per page (50 or 100 to choose); ticks stay when moving between pages and the bulk buttons act on every ticked row of every page. **What to order opens much faster:** the best supplier for each product is found in one query instead of one per product, and per-row checks are done once. Pinned row buttons no longer wrap onto several lines (rows stay their normal height).
+### Added
+- **Offline handhelds:** receiving, put-away, transfers and counting keep working without the server — saved on the handheld, signed and sent by themselves when it is back, done once on the server even if sent twice; scans recognised from the handheld's own product and bin list (`wms/catalog`); handhelds receive an offline sign-in like tills; counts can be started offline; refused actions listed on the handheld with Send again / Discard. Manual 9.8.
 ### Security
 - **Livewire 4.4.8:** fixes an authorization bypass published on 2026-10-23 (GHSA-mhf7-xp6r-6qrc). Install this release on every server.
 ### Fixed

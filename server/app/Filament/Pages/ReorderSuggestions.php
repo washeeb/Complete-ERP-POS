@@ -7,6 +7,7 @@ use App\Domain\Purchasing\ReorderService;
 use App\Filament\Resources\PurchaseOrders\PurchaseOrderResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
+use App\Filament\Support\PagedRecords;
 use App\Models\Product;
 use App\Models\ProductUom;
 use App\Models\Supplier;
@@ -42,6 +43,7 @@ use UnitEnum;
 class ReorderSuggestions extends Page implements HasTable
 {
     use InteractsWithTable;
+    use PagedRecords;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedLightBulb;
 
@@ -63,19 +65,23 @@ class ReorderSuggestions extends Page implements HasTable
         return Erp::canAnywhere('purchasing.manage');
     }
 
+    /** Every line to order for the chosen warehouse and supplier, with the buyer's changes (paged by PagedRecords). */
+    protected function allRows(?array $filters, ?string $search): Collection
+    {
+        $wh = Warehouse::find($filters['warehouse_id']['value'] ?? null) ?? Warehouse::whereIn('id', array_keys(Fields::warehouses('purchasing.manage')))->orderBy('code')->first();
+        $supplier = $filters['supplier_id']['value'] ?? null;
+
+        return collect($wh ? app(ReorderService::class)->suggestions($wh) : [])
+            ->map(fn ($s) => isset($this->changes["{$wh->id}|{$s['product_id']}"]) ? ReorderService::change($s, $this->changes["{$wh->id}|{$s['product_id']}"]) : $s)
+            ->filter(fn ($s) => ! $supplier || ($supplier === 'none' ? $s['supplier_id'] === null : $s['supplier_id'] === $supplier))
+            ->keyBy('product_id')->map(fn ($s) => $s + ['warehouse_id' => $wh->id, 'key' => $s['product_id'], 'changed' => false]);
+    }
+
     public function table(Table $table): Table
     {
-        return $table
-            ->records(function (?array $filters) {
-                $wh = Warehouse::find($filters['warehouse_id']['value'] ?? null) ?? Warehouse::whereIn('id', array_keys(Fields::warehouses('purchasing.manage')))->orderBy('code')->first();
+        $currency = Tenant::find(Erp::user()->tenant_id)->currency_code; // once, not once per row
 
-                $supplier = $filters['supplier_id']['value'] ?? null;
-
-                return collect($wh ? app(ReorderService::class)->suggestions($wh) : [])
-                    ->map(fn ($s) => isset($this->changes["{$wh->id}|{$s['product_id']}"]) ? ReorderService::change($s, $this->changes["{$wh->id}|{$s['product_id']}"]) : $s)
-                    ->filter(fn ($s) => ! $supplier || ($supplier === 'none' ? $s['supplier_id'] === null : $s['supplier_id'] === $supplier))
-                    ->keyBy('product_id')->map(fn ($s) => $s + ['warehouse_id' => $wh->id, 'key' => $s['product_id'], 'changed' => false]);
-            })
+        return $this->paged($table)
             ->columns([
                 TextColumn::make('name')->label('Product')->description(fn (array $record) => $record['changed'] ? $record['sku'].' · changed by you' : $record['sku']),
                 TextColumn::make('on_hand')->label('On hand')->formatStateUsing(fn ($state) => Fields::qty(Qty::format($state))),
@@ -88,7 +94,7 @@ class ReorderSuggestions extends Page implements HasTable
                 self::editable(TextColumn::make('suggest_qty')->label('Order')->weight('bold')
                     ->formatStateUsing(fn ($state, array $record) => Fields::qty(Qty::format($state), $record['uom_code'])), $this->quantityAction()),
                 self::editable(TextColumn::make('unit_cost_minor')->label('Cost')->placeholder('— enter')
-                    ->formatStateUsing(fn ($state) => Money::display((int) $state, Tenant::find(Erp::user()->tenant_id)->currency_code)), $this->costAction()),
+                    ->formatStateUsing(fn ($state) => Money::display((int) $state, $currency)), $this->costAction()),
             ])
             ->filters([
                 SelectFilter::make('warehouse_id')->label('Warehouse')->options(fn () => Fields::warehouses('purchasing.manage')),
@@ -119,11 +125,16 @@ class ReorderSuggestions extends Page implements HasTable
             ->action($allowed ? $action->disabled(fn (array $record) => ! $allowed($record)) : $action)->tooltip(fn (array $record) => ! $allowed || $allowed($record) ? 'Change' : null);
     }
 
+    /** @var array<string, bool> per warehouse, this request (asked for every row) */
+    private static array $levelsAllowed = [];
+
     private static function canSetLevels(array $record): bool
     {
-        $wh = Warehouse::find($record['warehouse_id']);
+        return self::$levelsAllowed[$record['warehouse_id']] ??= (function () use ($record) {
+            $wh = Warehouse::find($record['warehouse_id']);
 
-        return Erp::can('stock.levels', $wh) || Erp::can('warehouse.manage', $wh);
+            return Erp::can('stock.levels', $wh) || Erp::can('warehouse.manage', $wh);
+        })();
     }
 
     /** This line's change so far, with the new values on top (kept on the page until the orders are made). */
@@ -132,7 +143,8 @@ class ReorderSuggestions extends Page implements HasTable
         $key = "{$record['warehouse_id']}|{$record['product_id']}";
         $this->changes[$key] = $over + ($this->changes[$key] ?? []) + ['supplier_id' => $record['supplier_id'], 'product_uom_id' => $record['product_uom_id'],
             'qty' => Qty::format($record['suggest_qty']), 'cost' => null];
-        $this->flushCachedTableRecords();
+        $this->pagedRowsCache = [];
+        $this->flushCachedTableRecords(); // the changed line shows at once
     }
 
     /** "Undo my changes" in each window, once the line was changed. */
@@ -142,7 +154,8 @@ class ReorderSuggestions extends Page implements HasTable
             ->visible(fn (array $record) => $record['changed'])
             ->action(function (array $record) {
                 unset($this->changes["{$record['warehouse_id']}|{$record['product_id']}"]);
-                $this->flushCachedTableRecords();
+                $this->pagedRowsCache = [];
+                $this->flushCachedTableRecords(); // the changed line shows at once
             });
     }
 
@@ -200,7 +213,8 @@ class ReorderSuggestions extends Page implements HasTable
             ->action(function (array $record, array $data) {
                 Erp::run(fn ($actor) => app(ReorderService::class)->saveRule($actor, Warehouse::findOrFail($record['warehouse_id']), Product::findOrFail($record['product_id']),
                     (string) $data['min'], (string) $data['max']), 'Levels saved');
-                $this->flushCachedTableRecords();
+                $this->pagedRowsCache = [];
+                $this->flushCachedTableRecords(); // the changed line shows at once
             });
     }
 

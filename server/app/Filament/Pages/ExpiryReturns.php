@@ -9,6 +9,7 @@ use App\Filament\Resources\SupplierReturns\SupplierReturnResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\PagedRecords;
 use App\Filament\Support\QuickCreate;
 use App\Models\Supplier;
 use App\Models\SupplierReturn;
@@ -41,6 +42,7 @@ use UnitEnum;
 class ExpiryReturns extends Page implements HasTable
 {
     use InteractsWithTable;
+    use PagedRecords;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArchiveBoxXMark;
 
@@ -85,28 +87,32 @@ class ExpiryReturns extends Page implements HasTable
         return (int) app(Settings::class)->get('stock.expiry_alert_days', Erp::user()->tenant_id);
     }
 
+    /** Every batch for the chosen filters and search (shown a page at a time by PagedRecords). */
+    protected function allRows(?array $filters, ?string $search): Collection
+    {
+        $warehouses = array_keys(Fields::warehouses('stock.expiry'));
+        $wh = $filters['warehouse_id']['value'] ?? null;
+        $status = $filters['status']['value'] ?? 'soon';
+        $rows = app(ExpiryService::class)->batches(Erp::user()->tenant_id, [
+            'warehouse_ids' => $wh && in_array($wh, $warehouses, true) ? [$wh] : $warehouses,
+            'expired' => $status === 'expired',
+            'within_days' => match ($status) {
+                'soon' => $this->alertDays(), '30' => 30, default => null
+            },
+            'controlled' => (bool) ($filters['controlled']['isActive'] ?? false),
+            'supplier_id' => $filters['supplier_id']['value'] ?? null,
+            'returnable' => (bool) ($filters['returnable']['isActive'] ?? false),
+        ]);
+        $term = mb_strtolower(trim((string) $search));
+
+        return collect($rows)->when($term !== '', fn ($c) => $c->filter(fn ($r) => str_contains(mb_strtolower("{$r['name']} {$r['sku']} {$r['batch_no']}"), $term)))
+            ->keyBy('key');
+
+    }
+
     public function table(Table $table): Table
     {
-        return $table
-            ->records(function (?array $filters, ?string $search) {
-                $warehouses = array_keys(Fields::warehouses('stock.expiry'));
-                $wh = $filters['warehouse_id']['value'] ?? null;
-                $status = $filters['status']['value'] ?? 'soon';
-                $rows = app(ExpiryService::class)->batches(Erp::user()->tenant_id, [
-                    'warehouse_ids' => $wh && in_array($wh, $warehouses, true) ? [$wh] : $warehouses,
-                    'expired' => $status === 'expired',
-                    'within_days' => match ($status) {
-                        'soon' => $this->alertDays(), '30' => 30, default => null
-                    },
-                    'controlled' => (bool) ($filters['controlled']['isActive'] ?? false),
-                    'supplier_id' => $filters['supplier_id']['value'] ?? null,
-                    'returnable' => (bool) ($filters['returnable']['isActive'] ?? false),
-                ]);
-                $term = mb_strtolower(trim((string) $search));
-
-                return collect($rows)->when($term !== '', fn ($c) => $c->filter(fn ($r) => str_contains(mb_strtolower("{$r['name']} {$r['sku']} {$r['batch_no']}"), $term)))
-                    ->keyBy('key');
-            })
+        return $this->paged($table)
             ->columns([
                 TextColumn::make('name')->label('Product')->searchable()->description(fn (array $record) => $record['sku'].($record['controlled'] ? ' · controlled' : '')),
                 TextColumn::make('batch_no')->label('Batch'),

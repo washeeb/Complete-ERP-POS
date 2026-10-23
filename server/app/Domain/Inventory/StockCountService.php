@@ -34,9 +34,12 @@ final class StockCountService
     ) {}
 
     /** @param list<string>|null $productIds  null = everything with stock in the scope (plus whatever is scanned later) */
-    public function start(Actor $actor, Warehouse $warehouse, ?Bin $bin = null, bool $blind = true, ?array $productIds = null, ?string $note = null): StockCount
+    public function start(Actor $actor, Warehouse $warehouse, ?Bin $bin = null, bool $blind = true, ?array $productIds = null, ?string $note = null, ?string $id = null): StockCount
     {
         $this->require($actor, 'stock.count', $warehouse);
+        if ($id !== null && ($started = StockCount::find($id))) {
+            return $started->load('lines'); // a handheld started it offline and sent it again
+        }
         if ($bin && $bin->warehouse_id !== $warehouse->id) {
             throw new DomainException('That bin is not in this warehouse.');
         }
@@ -45,8 +48,11 @@ final class StockCountService
             throw new DomainException('A count is already open for this area. Finish or cancel it first.');
         }
 
-        return $this->recorder->transaction(function () use ($actor, $warehouse, $bin, $blind, $productIds, $note) {
+        return $this->recorder->transaction(function () use ($actor, $warehouse, $bin, $blind, $productIds, $note, $id) {
             $count = new StockCount;
+            if ($id !== null) {
+                $count->id = $id; // the handheld's own id, so its counts made offline find this count
+            }
             $count->forceFill(['tenant_id' => $actor->tenantId, 'number' => $this->numbers->next($actor->tenantId, 'stock_count'),
                 'branch_id' => $warehouse->branch_id, 'warehouse_id' => $warehouse->id, 'bin_id' => $bin?->id, 'status' => 'counting',
                 'blind' => $blind, 'note' => $note, 'started_at' => now(), 'started_by_name' => $actor->name]);

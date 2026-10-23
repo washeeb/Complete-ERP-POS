@@ -154,6 +154,8 @@ export type WmsUnit = { product_uom_id: string; product_id: string; sku: string;
 export type WmsOrderLine = { id: string; product_uom_id: string; sku: string; name: string; uom_code: string; ordered: string; received: string; barcodes: string[]; track_batches?: boolean; track_serials?: boolean }
 export type WmsOrder = { id: string; number: string; supplier: string; expected_on: string | null; lines: WmsOrderLine[] }
 export type WmsTransfer = { id: string; number: string; from: string; dispatched_at: string | null; lines: { id: string; sku: string; name: string; uom_code: string; qty: string; product_uom_id: string; barcodes: string[] }[] }
+export type WmsCatalogUnit = { product_uom_id: string; product_id: string; sku: string; name: string; uom_code: string; factor: string; decimals: number; is_base: boolean; barcodes: string[] }
+export type WmsCatalog = { warehouse_id: string; generated_at: string; units: WmsCatalogUnit[]; bins: WmsBin[] }
 export type WmsCount = { id: string; number: string; bin: string | null; bin_id: string | null; blind: boolean; counted: number; lines: number }
 
 // Customer lookup at the till (credit figures are a snapshot; the server re-checks online credit sales)
