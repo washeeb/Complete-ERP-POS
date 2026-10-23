@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Added
+- **Handhelds of every brand, and phones:** scan with the **camera** (📷 beside the scan box on the handheld and the till; Chrome on Android) where there is no scanner; a scan typed while the cursor is outside the box is still caught (handheld and till, never behind an open window); scanners ending with Tab as well as Enter; a beep and buzz on each scan. Manual 9.9: which handhelds to buy, and scanner set-up for Zebra (DataWedge), Honeywell, Sunmi, Urovo, Newland, Datalogic and Bluetooth/USB scanners.
 - **The server tells you when it needs attention:** every hour the health checks run, and a failed or late backup, a failed restore check, a missing backup passphrase, a nearly full disk or memory, an overloaded server or a read-only licence is sent to the owner and IT Admin on the bell and by e-mail (once a day per problem). **System → Health** shows server load and memory on Linux.
 - **Daily summary of the business** (System → Settings → Daily summary, off by default): each evening, sales by branch against the same day last week, cash / mobile money / card, cash over or short, low / expired / expiring stock, losses and unusual losses, and approvals waiting — to holders of the new *receive the daily summary* permission (Owner, General Manager), on the bell, by e-mail and optionally a short WhatsApp.
 - **The company can switch the SyncLytics support account off** (System → Settings → Security).

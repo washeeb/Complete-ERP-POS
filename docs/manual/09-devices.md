@@ -136,6 +136,9 @@ Uninstalling the app keeps its settings (the server address, printer and scale),
 
 ## 9.8 Barcode scanner
 
+**Tablets and phones without a scanner** use the camera: the 📷 button beside the till's search box (Chrome on Android). Hold the barcode steady in the frame; the item is added as if scanned.
+
+
 1. Plug it in (USB) or pair it (Bluetooth).
 2. Open Notepad and scan a product: the number appears and the cursor moves to a **new line**.
 3. If it does not move to a new line, scan the **"Add Enter / CR suffix"** setting barcode from the scanner's manual.
@@ -149,6 +152,43 @@ Uninstalling the app keeps its settings (the server address, printer and scale),
 3. Storekeepers sign in with **username and PIN**. They need a warehouse role (Storekeeper, Warehouse Manager…), not till access.
 
 **Note:** the handheld needs its branch's server to be reachable (it does not queue work offline). For warehouses with weak internet, use a branch server (Chapter 10).
+
+4. **Install it as an app:** in Chrome, menu (⋮) → **Add to Home screen** (or **Install app**). It then opens full screen from its own icon. To keep staff in it, use Android's **screen pinning** (Settings → Security → App pinning) or the brand's kiosk launcher (e.g. Zebra Enterprise Home Screen).
+
+### Which handhelds work
+
+Any Android handheld with **Android 10 or later** and **Google Chrome**, and any phone. The system does not need a special app or driver from the maker: the built-in scanner only has to **type the code like a keyboard and finish with Enter** (Tab also works). Phones and tablets without a scanner use the **camera**: the 📷 button beside each scan box (Chrome on Android).
+
+What to look for when buying:
+
+| | Recommended |
+|---|---|
+| Android | 11 or later, with Google Play (so Chrome stays up to date) |
+| Memory | 3 GB or more |
+| Scanner | a **2D imager** (reads shop barcodes, QR codes and codes on screens) |
+| Wi-Fi | dual band (2.4 and 5 GHz) |
+| Battery | a full shift; a spare or swappable battery for long days |
+| Build | drop-rated (1.2 m or more) for warehouses |
+
+Well-known models that fit: **Sunmi** L2s / L2H, **Urovo** DT40 / DT50, **Newland** MT90 / N7 (good value); **Honeywell** EDA52 / CT30 XP, **Zebra** TC22 / TC27 (mid-range); **Zebra** TC58 / MC33, **Honeywell** CT45 / CT60, **Datalogic** Memor 11 (rugged, for large warehouses). A Bluetooth or USB ring / pocket scanner paired with an ordinary phone or tablet also works.
+
+### Setting up the scanner, by brand
+
+On each handheld, open the maker's scanner settings once and set: **output as keyboard (keystrokes)** and **Enter after the code**. Then test in the handheld's scan box: the item should be found and the device beeps.
+
+| Brand | Where | What to set |
+|---|---|---|
+| **Zebra** | **DataWedge** app → Profile0 (or a new profile for Chrome) | *Keystroke output*: on. *Basic data formatting* → *Send ENTER key*: on. *Intent output*: off |
+| **Honeywell** | Settings → Honeywell Settings → Scanning → Internal scanner → Default profile → Data Processing | *Wedge*: on, method *Keyboard*. *Suffix*: `\n` (Enter) |
+| **Sunmi** | Settings → Scanner (or the *Scanner* app) | *Output mode*: simulate keyboard / keyboard input. *Add suffix*: Enter |
+| **Urovo** | Settings → Scanner settings | *Output mode*: keyboard. *Send Enter key* (or suffix Enter): on |
+| **Newland** | Scan Settings (*Quick Setting*) | *Output mode*: simulate keystroke. *Suffix*: CR / Enter |
+| **Datalogic** | Settings → Scanner settings → Wedge | *Keyboard wedge*: on. *Formatting* → *Label suffix*: Enter |
+| Bluetooth / USB scanner | The scanner's own setting barcodes (in its manual) | *HID keyboard* mode, and the *Add Enter / CR suffix* barcode |
+
+**If a scan does nothing:** tap the scan box and scan again; if the code appears but nothing happens, the Enter suffix is missing. The handheld also catches a scan when the cursor is not in the box, so a code is not lost after tapping a button.
+
+**Why keyboard output:** it works the same on every brand and model, with nothing to install or update from the maker; changing brand later needs no change to the system.
 
 ## 9.10 Kitchen screen (Restaurant)
 
