@@ -46,6 +46,10 @@ final class Templates
             'sms' => [null, '{company}: we received {amount} ({number}). Balance now {balance}. Thank you.', false, null],
             'email' => ['Payment received — {number}', "Dear {customer},\n\nWe received {amount} ({number}). Your balance is now {balance}.\n\nThank you.\n{company}", false, null],
         ]],
+        'daily_summary' => ['Daily summary of the business', '{company} {date} {sales} {text}', [
+            'email' => ['{company} — {date}', "{text}\n\nThe same summary is on the bell in the back office. Change it under System → Settings → Daily summary.", true, null],
+            'whatsapp' => [null, '{company}, {date}: sales {sales}. The full summary is in the back office and your e-mail.', true, 'daily_summary'],
+        ]],
         'payment_alert' => ['Payment alert (mobile money / card)', '{company} {method} {amount} {receipt_no} {branch} {till} {cashier} {reference} {time}', [
             'whatsapp' => [null, '{company}: {method} payment of {amount} at {branch} ({till}), receipt {receipt_no}, {time}. Ref {reference}.', true, 'payment_alert'],
             'sms' => [null, '{company}: {method} {amount} at {branch} {till}, receipt {receipt_no}, {time}. Ref {reference}.', true, null],

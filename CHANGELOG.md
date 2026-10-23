@@ -1,6 +1,11 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- **The server tells you when it needs attention:** every hour the health checks run, and a failed or late backup, a failed restore check, a missing backup passphrase, a nearly full disk or memory, an overloaded server or a read-only licence is sent to the owner and IT Admin on the bell and by e-mail (once a day per problem). **System → Health** shows server load and memory on Linux.
+- **Daily summary of the business** (System → Settings → Daily summary, off by default): each evening, sales by branch against the same day last week, cash / mobile money / card, cash over or short, low / expired / expiring stock, losses and unusual losses, and approvals waiting — to holders of the new *receive the daily summary* permission (Owner, General Manager), on the bell, by e-mail and optionally a short WhatsApp.
+- **The company can switch the SyncLytics support account off** (System → Settings → Security).
+
 ### Changed
 - **The till no longer waits for a slow network.** A sale waits at most 4 seconds for the server; then it is kept on the till, the receipt shows and prints at once, and the sale follows from the till's queue (the server ignores a second copy). Sales with a supervisor's PIN still wait for the server. No till call waits longer than 20 seconds.
 - **The desktop till prints each receipt by itself** on its receipt printer the moment the sale is done (setting *Desktop till prints each receipt by itself*, on by default), instead of waiting for **Print receipt**. Asked for by the first client.

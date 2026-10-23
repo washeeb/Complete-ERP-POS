@@ -24,6 +24,7 @@ Schedule::command('erp:appointment-reminders')->everyFiveMinutes()->withoutOverl
 Schedule::command('erp:bill-memberships')->dailyAt('01:30')->withoutOverlapping(60); // head office only
 Schedule::command('erp:insights')->dailyAt('04:30')->withoutOverlapping(120); // forecasts and alerts (no AI model needed)
 Schedule::command('erp:reorder-levels --smart')->weeklyOn(1, '05:00')->withoutOverlapping(120); // smart minimum / maximum from sales (Mondays)
+Schedule::command('erp:daily-summary')->everyFiveMinutes()->withoutOverlapping(10); // the owner's evening summary after its time
 Schedule::command('erp:payment-summary')->everyFiveMinutes()->withoutOverlapping(10); // daily MoMo / card summary after its time
 Schedule::command('erp:pharmacy-signoffs')->dailyAt('19:00')->withoutOverlapping(30); // medicine sales without a pharmacist: reminder or summary
 Schedule::command('vendor:license-reminders')->dailyAt('08:00')->withoutOverlapping(30); // licence server only: renewal reminders
@@ -33,6 +34,7 @@ Schedule::command('erp:backup')->dailyAt(config('backup.time', '02:00'))->withou
 Schedule::command('erp:backup --verify')->weeklyOn(7, '04:00')->withoutOverlapping(240); // weekly restore check
 Schedule::command('erp:evat-batch')->everyFifteenMinutes()->withoutOverlapping(30); // GRA E-VAT daily batch (daily mode)
 Schedule::command('erp:health --beat')->everyMinute(); // heartbeat for System → Health
+Schedule::command('erp:health-watch')->hourly()->withoutOverlapping(30); // tells IT and the owner when a health check turns red
 Schedule::command('erp:pilot-report')->everyFifteenMinutes()->withoutOverlapping(30); // evening pilot report while a pilot runs
 
 // The slow-pages list in System → Health keeps 30 days.
