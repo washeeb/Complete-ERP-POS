@@ -19,6 +19,7 @@ Schedule::command('erp:device-health')->everyFifteenMinutes()->withoutOverlappin
 Schedule::command('erp:expire-balances')->dailyAt('02:30')->withoutOverlapping(60);
 Schedule::command('erp:gl-post')->everyMinute()->withoutOverlapping(30)->runInBackground(); // the books follow sales and stock within a minute
 Schedule::command('license:checkin')->dailyAt('03:15')->withoutOverlapping(30);
+Schedule::command('license:health')->hourlyAt(20)->withoutOverlapping(30); // system health (no business figures) to the support console
 Schedule::command('erp:reservation-reminders')->everyFiveMinutes()->withoutOverlapping(10);
 Schedule::command('erp:appointment-reminders')->everyFiveMinutes()->withoutOverlapping(10);
 Schedule::command('erp:bill-memberships')->dailyAt('01:30')->withoutOverlapping(60); // head office only
