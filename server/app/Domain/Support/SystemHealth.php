@@ -52,6 +52,17 @@ final class SystemHealth
             $pct = $free / $total * 100;
             $add('Disk space', $free < 2 * 1024 ** 3 || $pct < 10 ? 'fail' : ($pct < 20 ? 'warning' : 'ok'), number_format($free / 1024 ** 3, 1).' GB free ('.round($pct).' %)');
         }
+        // Load and memory (Linux servers): a server that is short of either slows every till at peak hours.
+        if (function_exists('sys_getloadavg') && ($load = @sys_getloadavg()) && is_readable('/proc/cpuinfo')) {
+            $cpus = max(1, substr_count((string) @file_get_contents('/proc/cpuinfo'), "\nprocessor") + (str_starts_with((string) @file_get_contents('/proc/cpuinfo'), 'processor') ? 1 : 0));
+            $per = $load[1] / $cpus; // the 5-minute average, per processor
+            $add('Server load', $per > 1.5 ? 'fail' : ($per > 0.8 ? 'warning' : 'ok'), sprintf('%.2f over the last 5 minutes on %d processor(s)', $load[1], $cpus)
+                .($per > 0.8 ? ' — busy: look at Slow pages below, or move to a larger server.' : ''));
+        }
+        if (is_readable('/proc/meminfo') && preg_match('/MemTotal:\s+(\d+).*?MemAvailable:\s+(\d+)/s', (string) @file_get_contents('/proc/meminfo'), $m)) {
+            $pct = (int) $m[2] / max(1, (int) $m[1]) * 100;
+            $add('Memory', $pct < 5 ? 'fail' : ($pct < 15 ? 'warning' : 'ok'), number_format((int) $m[2] / 1024 ** 2, 1).' GB free of '.number_format((int) $m[1] / 1024 ** 2, 1).' GB ('.round($pct).' %)');
+        }
         $add('Live site settings', config('app.debug') ? 'fail' : (config('app.env') !== 'production' ? 'warning' : 'ok'),
             config('app.debug') ? 'APP_DEBUG is true: set it to false (it shows technical details to visitors).' : 'APP_ENV='.config('app.env'));
         $add('HTTPS', str_starts_with((string) config('app.url'), 'https://') ? 'ok' : 'warning', str_starts_with((string) config('app.url'), 'https://')

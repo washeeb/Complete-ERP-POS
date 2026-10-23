@@ -22,6 +22,11 @@ use InvalidArgumentException;
 final class Settings
 {
     public const DEFINITIONS = [
+        'security.support_account' => [
+            'type' => 'bool', 'default' => true, 'group' => 'Security',
+            'label' => 'The SyncLytics support account may sign in',
+            'help' => 'Off: the support account (People & access → Users, "SyncLytics support") cannot sign in until you switch it on again — for example while no support is needed. You are told each time it signs in.',
+        ],
         'security.mfa_from_level' => [
             'type' => 'int', 'default' => 3, 'min' => 1, 'max' => 7, 'group' => 'Security',
             'label' => 'Require two-factor sign-in from security level',
@@ -73,6 +78,14 @@ final class Settings
             'label' => 'Remote connections to tills and computers',
             'help' => 'Who may connect without someone at the device clicking Accept. Every connection shows a banner on the device and is in the audit log. A branch can choose differently (Company → Branches).',
         ],
+        'summary.daily' => [
+            'type' => 'bool', 'default' => false, 'group' => 'Daily summary',
+            'label' => 'Send a daily summary of the business',
+            'help' => 'Each evening: sales by branch against the same day last week, cash / mobile money / card, cash over or short at the till closes, low, expired and expiring stock, losses, and what waits for approval. To everyone with "receive the daily summary" (owner and general manager by default), on the bell and by the channels below.',
+        ],
+        'summary.time' => ['type' => 'string', 'default' => '20:00', 'max' => 5, 'group' => 'Daily summary', 'label' => 'Send it at (HH:MM)', 'help' => 'After the last till usually closes.'],
+        'summary.by_email' => ['type' => 'bool', 'default' => true, 'group' => 'Daily summary', 'label' => 'Also by e-mail', 'help' => 'To the e-mail address on each person’s user account.'],
+        'summary.by_whatsapp' => ['type' => 'bool', 'default' => false, 'group' => 'Daily summary', 'label' => 'Also a short WhatsApp', 'help' => 'Needs a WhatsApp Business provider and the approved template daily_summary; goes to the mobile number on the user account.'],
         'alerts.payments' => [
             'type' => 'choice', 'default' => 'off', 'group' => 'Payment alerts',
             'options' => ['off' => 'Off', 'each' => 'Each payment', 'each_summary' => 'Each payment and a daily summary', 'summary' => 'Daily summary only'],

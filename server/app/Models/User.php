@@ -74,6 +74,11 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
             return VendorLicensing::allowed($this);
         }
 
+        // The company can switch the SyncLytics support account off (System → Settings → Security).
+        if ($this->isSupport() && ! app(Settings::class)->get('security.support_account', $this->tenant_id)) {
+            return false;
+        }
+
         // L0 external users get portals later, never the back office.
         return $this->is_active && $this->security_level >= SecurityLevel::Restricted->value;
     }

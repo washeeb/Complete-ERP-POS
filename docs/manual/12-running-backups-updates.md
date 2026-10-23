@@ -12,6 +12,12 @@
 
 **Every month:** verify the audit log (**System → Audit log → Verify chain**), check stock (`php artisan erp:stock-check`), take the USB backup drive home if you use one, and every three months practise a full restore on a spare PC (12.3).
 
+**You are told when something is wrong.** Every hour the server checks itself; when a check turns red — a backup failed or is more than 26 hours old, the weekly restore check failed, the backup passphrase is missing, the disk or memory is nearly full, the server is overloaded, the licence is read-only — everyone who looks after the system settings (owner, IT Admin) gets a notification on the bell and an e-mail, once a day per problem, until it is fixed. **System → Health** also shows the server's **load** and **memory** (on Linux servers). **Why:** a backup that quietly stopped is only found when it is needed; now it is found the next morning.
+
+**The daily summary** (System → Settings → *Daily summary*, off until you switch it on): each evening at the time you choose (default 20:00), the owner and general manager (anyone with *receive the daily summary*) get the day in one message — sales by branch against the same day last week, cash / mobile money / card, cash over or short at the till closes, low, expired and expiring stock, today's losses and unusual ones, and what is waiting for approval. On the bell, by e-mail (on by default) and, if WhatsApp Business is set up, a short WhatsApp. **Why:** the owner sees the whole business in one minute, wherever they are.
+
+**The SyncLytics support account** can be switched off by the company: **System → Settings → Security → The SyncLytics support account may sign in**. Switch it back on when you want support to look at something.
+
 ### Who did what, and from which computer
 
 **System → Audit log** lists every change and every sign-in: who, when, what changed, and where from.
