@@ -15,8 +15,8 @@ use App\Models\Supplier;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
 use App\Support\Money;
+use App\Support\PdfOptions;
 use Dompdf\Dompdf;
-use Dompdf\Options;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 
@@ -89,10 +89,7 @@ final class OrderSender
     {
         $html = view('print.purchase-order', ['doc' => $po->load('lines'), 'company' => PrintController::companyOf($po->tenant_id, $po->branch_id),
             'supplier' => Supplier::find($po->supplier_id), 'warehouse' => Warehouse::find($po->warehouse_id), 'pdf' => true, 'tenantId' => $po->tenant_id])->render();
-        $options = new Options;
-        $options->setIsRemoteEnabled(false); // never fetch anything from the network while rendering
-        $options->setDefaultFont('DejaVu Sans');
-        $pdf = new Dompdf($options);
+        $pdf = new Dompdf(PdfOptions::make()); // no network, ₵ font, the app's own temp folder
         $pdf->loadHtml($html, 'UTF-8');
         $pdf->setPaper('A4');
         $pdf->render();
