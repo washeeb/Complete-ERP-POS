@@ -54,7 +54,8 @@ final class Labels
         if (strlen($prefix) !== 2) {
             throw new DomainException('Set the in-store barcode prefix (2 digits) under System → Settings → Stock first.');
         }
-        $without = Product::whereIn('id', $productIds)->whereNotExists(fn ($q) => $q->from('barcodes')->whereColumn('barcodes.product_id', 'products.id'))->get();
+        $without = Product::whereIn('id', $productIds)->whereNotExists(fn ($q) => $q->from('barcodes')->whereColumn('barcodes.product_id', 'products.id'))->get()
+            ->sortBy(fn (Product $p) => array_search($p->id, $productIds, true))->values(); // numbered in the order chosen, every time
         $n = 0;
         foreach ($without as $p) {
             $last = DB::table('barcodes')->where('tenant_id', $actor->tenantId)->where('code', 'like', $prefix.'__________%')->whereRaw('length(code) = 13')->max('code');
