@@ -52,6 +52,7 @@ trait ExportsPage
         $revert = Utils::shareWithViews('__livewire', $this);
         app(ExtendBlade::class)->startLivewireRendering($this);
         try {
+            view()->share('_instance', $this); // Filament's own page parts (e.g. the changes-not-saved script) expect the page, as when Livewire draws it
             $html = $this->render()->with(['__livewire' => $this] + Utils::getPublicPropertiesDefinedOnSubclass($this))->render();
         } finally {
             app(ExtendBlade::class)->endLivewireRendering();
