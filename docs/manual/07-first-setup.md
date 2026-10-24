@@ -97,7 +97,7 @@ For each staff member:
 
 ## Step 6 — Settings
 
-**System → Settings** — review each group. The most important:
+**System → Settings** — the page lists the groups (click one to open it), and **Find a setting** at the top shows only the settings with the words you type (e.g. *receipt*, *momo*, *expiry*), whatever group they are in. **Save settings** is at the top and the bottom. Review each group. The most important:
 
 ![System → Settings](img/settings.png)
 

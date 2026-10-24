@@ -1,6 +1,10 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+- **Settings page:** opens as a short list of groups (each closed, with how many settings it holds); **Find a setting** shows only the settings whose name or explanation has the words typed, across every group; **Save settings** also at the top. Saving while searching leaves the hidden settings unchanged.
+- **Every list and table of lines:** scrolls inside its own frame no taller than the window, so the side-to-side scrollbar is always on screen (not only at the bottom of the last page) and the column headings stay visible while scrolling down.
+- **Side menu search** stays pinned at the top while the menu scrolls.
 ### Added
 - **Move before buying:** What to order suggests moving stock another store of the business has above its own maximum (*From another store*), orders only the rest, and **Ask other stores to send** makes one stock request per store. Setting *Suggest moves between stores before buying* (on). Manual 14.
 - **Deposits checked against the bank:** Close the day records the cash banked as money moved from the tills' cash to the chosen bank account (books and bank reconciliation), and shows for each deposit whether it is on the imported bank statement; a deposit missing for more than two days shows on the next close. Manual 12.1.

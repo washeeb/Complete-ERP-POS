@@ -75,3 +75,21 @@ button[data-loading], a[data-loading], [wire\:click][data-loading] { pointer-eve
 .dark .fi-ta-table tr:hover td.fi-ta-cell:has(> .fi-ta-actions):last-child { background: var(--gray-800, #27272a); }
 /* The pinned buttons stay on one line, so rows keep their normal height. */
 .fi-ta-table td.fi-ta-cell:has(> .fi-ta-actions):last-child .fi-ta-actions { flex-wrap: nowrap; white-space: nowrap; }
+
+/* Long lists (owner request 2026-10-24): each list scrolls inside its own frame, no taller than the window, so its
+   side-to-side scrollbar is always on screen (not only at the bottom of the last page) and the column headings stay at
+   the top while scrolling down. Every list and table of lines in the back office. */
+.fi-ta-content-ctn { max-height: calc(100dvh - var(--topbar-height, 4rem) - 9rem); overflow: auto; overscroll-behavior: contain; }
+.fi-ta-content-ctn .fi-ta-table > thead > tr > th { position: sticky; top: 0; z-index: 3; background: var(--gray-50); }
+.dark .fi-ta-content-ctn .fi-ta-table > thead > tr > th { background: var(--gray-900); }
+/* The pinned buttons column's heading sits above both the headings and the rows. */
+.fi-ta-content-ctn .fi-ta-table > thead > tr > th.fi-ta-actions-header-cell:last-child { z-index: 4; }
+/* Tables of lines inside forms (purchase order lines, stock lines…): the same, with their own frame. */
+.fi-fo-table-repeater > table, .fi-fo-table-repeater { max-height: calc(100dvh - 12rem); overflow: auto; }
+.fi-fo-table-repeater thead th { position: sticky; top: 0; z-index: 3; background: var(--gray-50); }
+.dark .fi-fo-table-repeater thead th { background: var(--gray-900); }
+
+/* The side menu's search stays at the top while the menu scrolls. */
+.ses-menu-search { position: sticky; top: calc(var(--spacing, .25rem) * -8); z-index: 5; margin-top: calc(var(--spacing, .25rem) * -8);
+    padding-top: calc(var(--spacing, .25rem) * 8); background: var(--gray-50); }
+.dark .ses-menu-search { background: var(--gray-950); }
