@@ -37,4 +37,5 @@
         .bud .cell { width: 84px; padding: 2px 4px; text-align: right; border: 1px solid color-mix(in srgb, currentColor 15%, transparent); border-radius: 4px; background: transparent; color: inherit; }
         .bud .spread { font-size: .7rem; text-decoration: underline; }
     </style>
+    @include('filament.partials.unsaved-changes', ['watch' => ['amounts', 'annual']])
 </x-filament-panels::page>

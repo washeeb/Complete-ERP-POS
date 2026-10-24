@@ -76,6 +76,7 @@ class Budgets extends Page
         foreach ($this->accounts() as $a) {
             $this->amounts[$a->id] = array_map(fn ($v) => $v ? number_format($v / 100, 2, '.', '') : '', $saved[$a->id] ?? array_fill(0, 12, 0));
         }
+        $this->dispatch('ses-unsaved-reset'); // what is loaded counts as saved
     }
 
     public function accounts()

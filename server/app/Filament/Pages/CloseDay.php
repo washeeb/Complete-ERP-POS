@@ -129,6 +129,7 @@ class CloseDay extends Page
         $this->safe = $fmt($c?->safe_minor);
         $this->bankAccount = (string) ($c?->bank_account_id ?? array_key_first($this->bankAccounts()) ?? '');
         $this->note = (string) ($c?->note ?? '');
+        $this->dispatch('ses-unsaved-reset'); // loaded or just closed: nothing unsaved
     }
 
     /** @return array<string, string> the bank accounts cash can be paid into */

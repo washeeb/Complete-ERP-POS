@@ -46,6 +46,7 @@ class VendorPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Vendor/Pages'), for: 'App\Filament\Vendor\Pages')
             ->discoverWidgets(in: app_path('Filament/Vendor/Widgets'), for: 'App\Filament\Vendor\Widgets')
             ->navigationGroups(['Licences', 'Billing', 'Set-up'])
+            ->unsavedChangesAlerts() // leaving a form with changes not saved asks first (owner request 2026-10-24)
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

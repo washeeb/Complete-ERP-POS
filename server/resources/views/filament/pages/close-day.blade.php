@@ -69,4 +69,5 @@
         .cd-table th, .cd-table td { padding: 6px 8px; border-bottom: 1px solid color-mix(in srgb, currentColor 6%, transparent); text-align: left; white-space: nowrap; }
         .cd-table .num { text-align: right; } .cd-neg { color: var(--danger-600); }
     </style>
+    @include('filament.partials.unsaved-changes', ['watch' => ['banked', 'bankRef', 'safe', 'note', 'bankAccount']])
 </x-filament-panels::page>

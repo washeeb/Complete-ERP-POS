@@ -16,6 +16,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Pages\Concerns\HasUnsavedDataChangesAlert;
 use Filament\Pages\Dashboard;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\EmbeddedSchema;
@@ -37,6 +38,8 @@ use Illuminate\Support\HtmlString;
  */
 class SetupWizard extends Page
 {
+    use HasUnsavedDataChangesAlert;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSparkles;
 
     protected static ?string $title = 'Set up your company';
@@ -79,6 +82,7 @@ class SetupWizard extends Page
                 $branch('C', 'Branch C — Pharmacy', false, 'pharmacy'),
             ],
         ]);
+        $this->rememberData(); // the suggested layout is the starting point, not a change
     }
 
     public function form(Schema $schema): Schema

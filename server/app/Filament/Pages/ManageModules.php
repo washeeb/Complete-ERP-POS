@@ -11,6 +11,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
+use Filament\Pages\Concerns\HasUnsavedDataChangesAlert;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\EmbeddedSchema;
@@ -24,6 +25,8 @@ use UnitEnum;
 /** Settings → Modules: enable, disable or reserve modules for one branch at a time. */
 class ManageModules extends Page
 {
+    use HasUnsavedDataChangesAlert;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPuzzlePiece;
 
     protected static string|UnitEnum|null $navigationGroup = 'System';
@@ -45,6 +48,7 @@ class ManageModules extends Page
     {
         $first = $this->branches()->keys()->first();
         $this->form->fill(['branch_id' => $first] + $this->statusesFor($first));
+        $this->rememberData(); // what is on screen now counts as saved
     }
 
     public function form(Schema $schema): Schema
@@ -68,7 +72,10 @@ class ManageModules extends Page
 
         return $schema->statePath('data')->components([
             Select::make('branch_id')->label('Branch')->options($this->branches())->required()->live()
-                ->afterStateUpdated(fn ($state) => $this->form->fill(['branch_id' => $state] + $this->statusesFor($state))),
+                ->afterStateUpdated(function ($state) {
+                    $this->form->fill(['branch_id' => $state] + $this->statusesFor($state));
+                    $this->rememberData(); // another branch's modules: not a change
+                }),
             Section::make('Core')->description('Company, users, roles, devices, audit, settings — always installed.')->compact(),
             ...$sections,
             TextInput::make('reason')->label('Reason for change')->maxLength(255),
@@ -97,6 +104,7 @@ class ManageModules extends Page
                 app(ModuleService::class)->setStatus($actor, $branch, $key, $status, $data['reason'] ?? null);
             }
         }), $ordered->isEmpty() ? 'Nothing changed' : 'Modules updated');
+        $this->rememberData();
     }
 
     /** @return Collection<string, string> */
