@@ -84,10 +84,11 @@ button[data-loading], a[data-loading], [wire\:click][data-loading] { pointer-eve
 .dark .ses-hscroll { background: color-mix(in srgb, var(--gray-950) 85%, transparent); }
 .ses-hscroll > div { height: 1px; }
 
-/* The side menu's search stays at the top while the menu scrolls, with a gap below the page header (it sits over the
-   menu's own top padding, so the gap is the same before and after scrolling). Only the box itself has a background,
-   so nothing shows around it on any theme; menu items passing behind the gap are blurred. */
-.ses-menu-search { position: sticky; top: 0; z-index: 5; margin-top: calc(var(--spacing, .25rem) * -8);
-    padding: 1rem .25rem .5rem; background: transparent; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+/* The side menu's search stays at the top and only the list below it scrolls, so no menu item ever passes above or
+   behind it, and nothing but the rounded box has a background. */
+.fi-sidebar-nav:has(> .ses-menu-search) { overflow: hidden; padding-bottom: 0; }
+.fi-sidebar-nav:has(> .ses-menu-search) > .fi-sidebar-nav-groups { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+    margin-inline-end: 0; padding-bottom: calc(var(--spacing, .25rem) * 8); scrollbar-gutter: stable; }
+.ses-menu-search { flex: none; margin: calc(var(--spacing, .25rem) * -4) 0 calc(var(--spacing, .25rem) * -3); padding: 0 .25rem; }
 .ses-menu-search .ses-menu-q { background: var(--color-white, #fff); }
 .dark .ses-menu-search .ses-menu-q { background: var(--gray-900); }
