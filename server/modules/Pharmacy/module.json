@@ -5,11 +5,12 @@
   "kind": "industry",
   "stage": "available",
   "phase": 9,
-  "description": "Medicines with mandatory batch/expiry, prescription-only sales approved by a pharmacist, patient profiles with allergies, interaction warnings, controlled-drug register, NHIS claims export.",
+  "description": "Medicines with mandatory batch/expiry, prescription-only sales approved by a pharmacist, patient profiles with allergies, interaction warnings, controlled-drug register, NHIS at the till and NHIS claims.",
   "requires": ["core"],
   "permissions": [
     {"key": "pharmacy.dispense", "label": "Approve and dispense prescription-only and controlled medicines", "min_level": 3},
     {"key": "pharmacy.patients", "label": "Record patient allergies, conditions and NHIS details", "min_level": 2},
-    {"key": "pharmacy.manage", "label": "Manage the interaction table, the controlled-drug register and NHIS claims", "min_level": 4}
+    {"key": "pharmacy.manage", "label": "Manage the interaction table, the controlled-drug register and NHIS claims", "min_level": 4},
+    {"key": "pharmacy.nhis", "label": "Prepare NHIS claims, mark them sent and record what the NHIA paid", "min_level": 4}
   ]
 }

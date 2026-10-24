@@ -1,4 +1,4 @@
-import type { Drug, Interaction, PharmacyRules, Product, RxLevel } from './types'
+import type { Drug, Interaction, PharmacyRules, Product, RxLevel, TillCustomer, Unit } from './types'
 
 /** Pharmacy at the till: which medicines need a prescription, and the allergy / interaction warnings (same rule as the server's PharmacyService). */
 export type Warning = { kind: 'allergy' | 'interaction'; severity: string; message: string }
@@ -65,4 +65,22 @@ export function saleLevel(rules: PharmacyRules | undefined, lines: { product: Pr
   }
   if (level !== null && majorWarning && r.major_needs_pharmacist) level = 'approve'
   return level
+}
+
+/**
+ * What the NHIS pays for a sale (same rule as the server's SaleService::nhis): for a patient whose NHIS card is on record
+ * and not expired, each medicine with an NHIS price at that price per base unit, never more than the line itself.
+ * null: no NHIS here (no valid card, or nothing in the sale is on the NHIS list).
+ */
+export function nhisCover(lines: { product: Product; unit: Unit; qtyMilli: number; total: number }[], customer: TillCustomer | null | undefined, today: string):
+  { amount: number; no: string } | null {
+  if (!customer?.nhis_no || (customer.nhis_expires_on && customer.nhis_expires_on < today)) return null
+  let amount = 0
+  for (const l of lines) {
+    const price = l.product.drug?.nhis_price_minor
+    if (price == null || l.total <= 0) continue
+    const base = Math.round(l.qtyMilli * Number(l.unit.factor))
+    amount += Math.min(l.total, Math.round(base * price / 1000))
+  }
+  return amount > 0 ? { amount, no: customer.nhis_no } : null
 }

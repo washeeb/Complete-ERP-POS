@@ -63,6 +63,7 @@ Route::prefix('print')->middleware(['auth', 'license:output'])->name('print.')->
     Route::get('payroll/{run}/pay-list.csv', [PrintController::class, 'payList'])->name('pay-list')->whereUuid('run');
     Route::get('controlled-register', [PrintController::class, 'controlledRegister'])->name('controlled-register');
     Route::get('nhis-claims.csv', [PrintController::class, 'nhisClaims'])->name('nhis-claims');
+    Route::get('nhis-claim/{claim}.csv', [PrintController::class, 'nhisClaim'])->name('nhis-claim')->whereUuid('claim');
     Route::get('supplier-return/{return}', [PrintController::class, 'supplierReturn'])->name('supplier-return')->whereUuid('return');
     Route::get('disposal/{adjustment}', [PrintController::class, 'disposal'])->name('disposal')->whereUuid('adjustment');
     Route::get('disposal-register', [PrintController::class, 'disposalRegister'])->name('disposal-register');

@@ -137,7 +137,7 @@ When an industry is first switched on, the system creates its company under **Co
 
 1. Products with use-by dates: tick **Batches and expiry dates** (works in any shop, but essential for grocery).
 2. **Weighed items:** give each its **scale code (PLU)** and sell it in **KG** (3 decimals). Set the label scale to print EAN-13 labels: `21` · item code (5 digits) · weight in grams (5 digits) · check digit.
-3. **System → Settings → Grocery:** check the scale label prefixes, and the markdown rules (default 30 % off at 7 days left, 50 % at 3 days).
+3. **System → Settings → Grocery:** check the scale label prefixes. The markdown rules (default 30 % off at 7 days left, 50 % at 3 days) are under **System → Settings → Stock**.
 4. Electronic shelf labels (optional): enter their gateway address in System → Settings → Grocery.
 5. **Grocery → Scale items** lists every weighed product with its scale code, unit and retail price. **Export** it to load the scales, and again after price changes.
 6. **Grocery → Markdowns** (daily): apply the suggested markdowns, print the stickers, and write off what has expired.
@@ -149,7 +149,7 @@ When an industry is first switched on, the system creates its company under **Co
 ### Pharmacy
 
 1. On each medicine (Catalog → Products → **Medicine**): **schedule** (OTC, Prescription only, Controlled), generic name, strength, form, FDA registration number, **active ingredients**. Switch on **Batches and expiry dates** (required for medicines).
-2. **Pharmacy → Drug interactions:** add the interactions you want the till to warn about.
+2. **Pharmacy → Drug interactions → Add the starter list:** about 55 well-known interactions between common medicines (warfarin with painkillers and some antibiotics, methotrexate with co-trimoxazole, sildenafil with nitrates, statins with some antibiotics, antacids and iron with ciprofloxacin or doxycycline, the pill with rifampicin…). Pairs already in your table are left alone. The superintendent pharmacist then reads the list, changes or deletes rows, and adds others. The top of the page says how many medicines have **neither a generic name nor active ingredients**: warnings cannot work for those, so fill them in on the products. **Why:** the till warns only about pairs in this table, and it recognises a medicine by its generic name or active ingredients. The starter list is a beginning, not a complete reference.
 3. **System → Settings → Pharmacy:** the Pharmacy Council premises licence number and the superintendent pharmacist, printed on the controlled-drug register.
 4. Give pharmacists the **Pharmacist** role (and technicians **Pharmacy Technician**) at the branch.
 5. **Dosage:** on each medicine, **Usual dosage (directions)** — e.g. *1 TABLET 3 TIMES DAILY AFTER MEALS FOR 5 DAYS* (or the `dosage` column of the products file). At the till the directions appear under the medicine on the sale and can be changed for that patient. They print on the receipt and on a **dosage label** for each medicine: the pharmacy's name and phone, the patient (from *Details*), the medicine and quantity, the directions in large letters, the date, the receipt number and *Keep out of reach of children*. The desktop till prints the labels by itself on the receipt printer (each one cut); in a browser, **Print dosage labels** on the receipt screen. **Why:** patients take medicines correctly when the directions are on the pack, not only told at the counter.
@@ -165,9 +165,22 @@ When an industry is first switched on, the system creates its company under **Co
 
    **Why:** patients on long-term medicine who run out often stop taking it, or buy elsewhere. A reminder before it runs out helps them stay on treatment and brings them back to your pharmacy. Only customers who agreed are texted, as the Data Protection Act requires.
 
+8. **NHIS at the till** (NHIS-accredited pharmacies):
+   - On each medicine on the NHIS Medicines List, **NHIS price (per base unit)**: what the NHIS pays for one tablet, capsule or bottle (or the `nhis_price` column of the products file, Chapter 14). Empty means the NHIS does not cover it.
+   - The patient's **NHIS membership no.** and **NHIS card expires** on their customer record (Patient details).
+   - **System → Settings → Pharmacy → Take NHIS at the till:** switch on (a branch can differ).
+   - At the till, choose the patient and add the medicines. In **Payment**, **NHIS pays …** shows what the NHIS covers: the NHIS price of each listed medicine, never more than the line. Press it, and the patient pays the rest as usual. Without a valid card (missing or expired) the button does not appear. Keep the NHIS prescription form and the patient's signature as the NHIA requires.
+   - **Pharmacy → NHIS claims → Prepare a claim** (e.g. monthly): the branch, and *Sales up to and including* (the last day of the month). It gathers every NHIS part not claimed yet; returns come off. **Download the list (CSV)** and send it to the NHIA with your claim forms, then **Mark as sent** with the NHIA's reference.
+   - When the NHIA pays: **Record what the NHIA paid** (amount, date, bank or cheque). Whatever it did not pay is written off as *NHIS claims not paid*. A claim not sent yet can be **withdrawn**; its sales go back for the next claim.
+   - Who: the owner, managers, the accountant and the superintendent pharmacist (*NHIS claims* permission).
+
+   **Why:** the NHIS part of a sale is money the NHIA owes you, not cash in the drawer. The books show it as *Due from NHIS* until the NHIA pays, so you can see how much you are owed and how much was cut at vetting.
+
+9. **Near-expiry markdowns:** **Pharmacy → Near-expiry markdowns** (daily or weekly) lists batches close to expiry with a suggested discount (rules under System → Settings → Stock). **Apply**, print the stickers, stick them on the packs; the till sells the sticker at its price from that batch. Expired stock is written off from the same page. Pharmacists can do this; for staff whose role was set up before this release, the owner adds *Mark down near-expiry batches* to their role (People & access → Roles). **Why:** a medicine sold at a discount before it expires is better than a medicine thrown away after.
+
 **Why:** the Pharmacy Council expects a pharmacist to approve prescription-only and controlled medicines, and the prescription is recorded; controlled drugs go into the Controlled Drug Register. Where a pharmacy works otherwise, the system still records who sold what so a pharmacist can check it.
 
-**Check:** sell a POM medicine on a till: with the default setting the till asks for the patient, the prescription and the pharmacist's PIN.
+**Check:** sell a POM medicine on a till: with the default setting the till asks for the patient, the prescription and the pharmacist's PIN. With NHIS on, sell a listed medicine to a patient with a valid card: **NHIS pays …** appears in Payment.
 
 ### Restaurant / Café / Bar
 

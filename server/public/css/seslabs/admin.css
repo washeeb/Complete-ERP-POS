@@ -84,7 +84,8 @@ button[data-loading], a[data-loading], [wire\:click][data-loading] { pointer-eve
 .dark .ses-hscroll { background: color-mix(in srgb, var(--gray-950) 85%, transparent); }
 .ses-hscroll > div { height: 1px; }
 
-/* The side menu's search stays at the top while the menu scrolls. */
-.ses-menu-search { position: sticky; top: calc(var(--spacing, .25rem) * -8); z-index: 5; margin-top: calc(var(--spacing, .25rem) * -8);
-    padding-top: calc(var(--spacing, .25rem) * 8); background: var(--gray-50); }
+/* The side menu's search stays at the top while the menu scrolls, with a gap below the page header (it sits over the
+   menu's own top padding, so the gap is the same before and after scrolling). */
+.ses-menu-search { position: sticky; top: 0; z-index: 5; margin-top: calc(var(--spacing, .25rem) * -8);
+    padding: 1rem .25rem .5rem; background: var(--gray-50); }
 .dark .ses-menu-search { background: var(--gray-950); }

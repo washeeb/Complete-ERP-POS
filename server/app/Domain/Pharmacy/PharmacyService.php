@@ -110,4 +110,35 @@ final class PharmacyService
 
         return $this->recorder->save($actor, $rule, $rule->exists ? 'drug_interaction.updated' : 'drug_interaction.created');
     }
+
+    /** Adds the pairs of the starter list (InteractionStarter) not in the table yet; never changes a pair already there. */
+    public function addStarter(Actor $actor): int
+    {
+        if (! $actor->user || ! $this->authz->allows($actor->user, 'pharmacy.manage')) {
+            throw new AccessDenied;
+        }
+
+        return $this->recorder->transaction(function () use ($actor) {
+            $added = 0;
+            foreach (InteractionStarter::ROWS as [$a, $b, $severity, $note]) {
+                [$a, $b] = $a > $b ? [$b, $a] : [$a, $b];
+                if (DrugInteraction::where('ingredient_a', $a)->where('ingredient_b', $b)->exists()) {
+                    continue;
+                }
+                $rule = (new DrugInteraction)->forceFill(['tenant_id' => $actor->tenantId, 'ingredient_a' => $a, 'ingredient_b' => $b, 'severity' => $severity,
+                    'note' => $note, 'source' => 'starter']);
+                $this->recorder->save($actor, $rule, 'drug_interaction.created', 'Starter list');
+                $added++;
+            }
+
+            return $added;
+        });
+    }
+
+    /** Medicines the warnings cannot check: neither a generic name nor active ingredients. */
+    public static function unchecked(): int
+    {
+        return Product::whereNotNull('drug_schedule')->where('is_active', true)->where(fn ($q) => $q->whereNull('generic_name')->orWhere('generic_name', ''))
+            ->where(fn ($q) => $q->whereNull('active_ingredients')->orWhereRaw("active_ingredients::jsonb = '[]'::jsonb"))->count();
+    }
 }

@@ -182,7 +182,7 @@ final class CatalogService
 
         $data = Caps::keys($data, ['name', 'generic_name', 'strength', 'dosage_form', 'dosage']); // one uniform list
         $product->fill(array_intersect_key($data, array_flip(['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu', 'location',
-            'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'dosage', 'daily_use', 'fda_reg_no', 'station', 'track_serials', 'warranty_months', 'consignor_id', 'consignment_bp',
+            'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'dosage', 'daily_use', 'nhis_price_minor', 'fda_reg_no', 'station', 'track_serials', 'warranty_months', 'consignor_id', 'consignment_bp',
             'service_minutes', 'commission_bp', 'licence_keys',
             'is_container', 'deposit_product_id', 'deposit_per_unit', 'industry_id'])));
         $product->daily_use = $product->daily_use === null || $product->daily_use === '' || (float) $product->daily_use <= 0 ? null : $product->daily_use; // refill reminders

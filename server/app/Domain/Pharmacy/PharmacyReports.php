@@ -48,6 +48,26 @@ final class PharmacyReports
         return $out;
     }
 
+    /**
+     * A claim's sales, one row per item sold, with the patient, the card number taken at the till, the prescription
+     * (where one was recorded), the item's NHIS price, and the NHIS part of the sale.
+     */
+    public static function claimLines(string $claimId)
+    {
+        return DB::table('nhis_claim_lines as cl')
+            ->join('sales as s', 's.id', '=', 'cl.sale_id')
+            ->join('sale_payments as sp', 'sp.id', '=', 'cl.sale_payment_id')
+            ->join('sale_lines as l', 'l.sale_id', '=', 's.id')
+            ->join('products as p', 'p.id', '=', 'l.product_id')
+            ->leftJoin('customers as c', 'c.id', '=', 's.customer_id')
+            ->leftJoin('prescriptions as rx', 'rx.id', '=', 'l.prescription_id')
+            ->where('cl.nhis_claim_id', $claimId)
+            ->orderBy('s.occurred_at')->orderBy('s.id')->orderBy('l.line_no')
+            ->get(['s.id as sale_id', 's.occurred_at', 's.receipt_no', 'c.name as patient', 'sp.reference as nhis_no', 'rx.number', 'rx.prescriber_name', 'rx.prescriber_reg_no',
+                'rx.facility', 'rx.reference', 'p.name as medicine', 'p.generic_name', 'p.strength', 'p.fda_reg_no', 'p.nhis_price_minor', 'l.qty', 'l.uom_code', 'l.factor',
+                'l.line_total_minor', 'cl.amount_minor as nhis_minor']);
+    }
+
     /** Prescription lines dispensed to NHIS members over a period (one row per medicine), for the claims return. */
     public static function nhisClaims(?array $branchIds, string $from, string $to)
     {

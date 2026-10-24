@@ -9,7 +9,7 @@ import { isDesktop, openHardwareSetup, printDosageLabels, printReceipt } from '.
 import { formatMoney, prettyQty, toMilli } from '../money'
 import type { Bootstrap, PostedSale } from '../types'
 
-const METHOD: Record<string, string> = { cash: 'Cash', momo: 'Mobile money', card: 'Card', account: 'On account', points: 'Points', gift_card: 'Gift card', store_credit: 'Store credit' }
+const METHOD: Record<string, string> = { cash: 'Cash', momo: 'Mobile money', card: 'Card', account: 'On account', points: 'Points', gift_card: 'Gift card', store_credit: 'Store credit', nhis: 'NHIS' }
 const NETWORK: Record<string, string> = { mtn: 'MTN', telecel: 'Telecel', at: 'AT' }
 // Units shown after the quantity only when they say something (2 CTN, 1.5 KG — not 3 PC).
 const PLAIN_UNITS = new Set(['PC', 'EA', 'PCS'])

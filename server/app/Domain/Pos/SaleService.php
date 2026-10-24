@@ -33,6 +33,7 @@ use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\Device;
 use App\Models\Markdown;
+use App\Models\PatientProfile;
 use App\Models\Prescription;
 use App\Models\PriceList;
 use App\Models\Product;
@@ -46,6 +47,7 @@ use App\Models\User;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
 use App\Support\Caps;
+use App\Support\Money;
 use App\Support\Qty;
 use App\Support\Settings;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -338,6 +340,11 @@ final class SaleService
             throw new DomainException('The trade-in payment must equal the value of the items handed in.', 'trade_in_invalid');
         }
 
+        // NHIS (Pharmacy): the scheme's part, claimed from the NHIA later.
+        if (in_array('nhis', array_column($payments, 'method'), true)) {
+            $this->nhis($branch, $customer, $lines, $results, $payments, $occurredAt, $offline, $flags);
+        }
+
         // On account (credit sale): within the customer's credit, or approved by a supervisor's PIN (owner decision: hold for approval).
         $onAccount = array_sum(array_map(fn ($x) => $x['method'] === 'account' ? $x['amount_minor'] : 0, $payments));
         $creditApprovedBy = null;
@@ -609,6 +616,48 @@ final class SaleService
         }
     }
 
+    /**
+     * NHIS pays only where the branch takes it, for a patient whose NHIS card is on record and valid on the day, and no
+     * more than the NHIS price of the medicines on its list (each line at most its own total). The card number goes on
+     * the payment for the claim. Offline, a problem is flagged for review instead of refusing a sale already made.
+     */
+    private function nhis(Branch $branch, ?Customer $customer, array $lines, array $results, array &$payments, Carbon $occurredAt, bool $offline, array &$flags): void
+    {
+        $amount = array_sum(array_map(fn ($x) => $x['method'] === 'nhis' ? $x['amount_minor'] : 0, $payments));
+        if (! $this->settings->forBranch('pharmacy.nhis_at_till', $branch, $branch->tenant_id)) {
+            throw new DomainException('NHIS is not taken at this branch (System → Settings → Pharmacy).', 'nhis_refused');
+        }
+        $patient = $customer ? PatientProfile::find($customer->id) : null;
+        if (! $patient?->nhis_no) {
+            throw new DomainException('Choose the patient: NHIS needs their NHIS number on their record.', 'nhis_refused');
+        }
+        $cover = 0;
+        foreach ($lines as $l) {
+            if ($l['product']->nhis_price_minor !== null && $results[$l['key']]['total'] > 0) {
+                $base = Qty::toBaseMilli($l['qty'], Qty::factorMicro((string) $l['unit']->factor));
+                $cover += min($results[$l['key']]['total'], Qty::divRound($base * $l['product']->nhis_price_minor, 1000));
+            }
+        }
+        $problems = [];
+        if ($patient->nhis_expires_on && $patient->nhis_expires_on->lt($occurredAt->copy()->startOfDay())) {
+            $problems[] = "{$customer->name}'s NHIS card expired on {$patient->nhis_expires_on->format('j M Y')}";
+        }
+        if ($amount > $cover) {
+            $problems[] = $cover > 0 ? 'NHIS pays at most '.Money::display($cover, (string) PriceList::where('is_default', true)->value('currency_code')).' for these medicines (their NHIS prices)' : 'none of these medicines has an NHIS price';
+        }
+        if ($problems && ! $offline) {
+            throw new DomainException(ucfirst(implode('; ', $problems)).'.', 'nhis_refused');
+        }
+        if ($problems) {
+            $flags[] = ['nhis_problem', 'NHIS taken offline: '.implode('; ', $problems)];
+        }
+        foreach ($payments as &$pay) {
+            if ($pay['method'] === 'nhis') {
+                $pay['reference'] = $patient->nhis_no;
+            }
+        }
+    }
+
     /** @return array{0: list<array>, 1: int, 2: int} payments, paid, change */
     private function payments(array $input, int $total, ?string $tenantId = null, bool $offline = false): array
     {
@@ -643,6 +692,13 @@ final class SaleService
                 $paid += $amount;
                 $payments[] = ['method' => 'trade_in', 'provider' => null, 'amount_minor' => $amount, 'tendered_minor' => $amount, 'reference' => null, 'payer_phone' => null,
                     'status' => 'received_goods'];
+
+                continue;
+            }
+            if ($method === 'nhis') { // checked against the patient's card and the medicines' NHIS prices (nhis())
+                $paid += $amount;
+                $payments[] = ['method' => 'nhis', 'provider' => null, 'amount_minor' => $amount, 'tendered_minor' => $amount, 'reference' => null, 'payer_phone' => null,
+                    'status' => 'due_from_nhis'];
 
                 continue;
             }

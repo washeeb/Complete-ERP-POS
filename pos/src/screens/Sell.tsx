@@ -9,7 +9,7 @@ import { findMarkdown, parseScaleLabel, productForPlu } from '../scale'
 import { db, nextSeq, type CacheRecord } from '../db'
 import { exportQueueFile, offlineSignIn, retryRefused } from '../offline'
 import { queueMode, signInAgain, submitSale, type RxDetails } from '../till'
-import { generics, needsPrescription, saleLevel, warnings as rxWarnings } from '../pharmacy'
+import { generics, needsPrescription, nhisCover, saleLevel, warnings as rxWarnings } from '../pharmacy'
 import { billLines, groupsFor, kitchenNote } from '../restaurant'
 import { BillView, FloorView, ModifierPicker, type Choice } from './Restaurant'
 import { RepairsScreen, SerialPrompt } from './Electronics'
@@ -684,6 +684,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
         <Pay total={cart.total} currency={boot.company.currency} exponent={boot.company.exponent} busy={busy} error={payError}
           customer={customer} tips={!!restaurant?.tips && online && payingBill?.kind !== 'delivery'} bill={payingBill}
           momoMode={boot.momo_confirm} online={online}
+          nhis={pharmacy?.nhis ? nhisCover(cart.lines, customer, new Date().toLocaleDateString('en-CA')) : null}
           tradeInProducts={electronics && online ? products : null}
           onPay={(p, tip, extra) => complete(p, { tip, tradeIns: extra.tradeIns, tradeInApproval: extra.tradeInApproval })} onCancel={() => setPaying(false)} />
       )}

@@ -5,9 +5,13 @@ use App\Domain\Catalog\CatalogService;
 use App\Domain\Customers\CustomerService;
 use App\Domain\Devices\DeviceService;
 use App\Domain\Devices\OfflineGrant;
+use App\Domain\Finance\AutoPoster;
+use App\Domain\Grocery\MarkdownService;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Modules\ModuleService;
 use App\Domain\Org\OrgService;
+use App\Domain\Pharmacy\InteractionStarter;
+use App\Domain\Pharmacy\NhisClaims;
 use App\Domain\Pharmacy\PharmacyReports;
 use App\Domain\Pharmacy\PharmacyRules;
 use App\Domain\Pharmacy\PharmacyService;
@@ -20,10 +24,14 @@ use App\Domain\Support\AccessDenied;
 use App\Domain\Support\DomainException;
 use App\Filament\Pages\ControlledDrugRegister;
 use App\Filament\Pages\MedicineSignoffs;
+use App\Filament\Pages\PharmacyMarkdowns;
 use App\Filament\Resources\Branches\Pages\EditBranch;
 use App\Filament\Resources\DrugInteractions\DrugInteractionResource;
+use App\Filament\Resources\NhisClaims\NhisClaimResource;
+use App\Filament\Resources\NhisClaims\Pages\ViewNhisClaim;
 use App\Filament\Resources\Prescriptions\PrescriptionResource;
 use App\Filament\Resources\Products\ProductResource;
+use App\Models\Account;
 use App\Models\Customer;
 use App\Models\DrugInteraction;
 use App\Models\Prescription;
@@ -298,4 +306,115 @@ it('shows the sales to sign off and the branch pharmacy rules on screen', functi
         ->assertSee('Pharmacy rules for this branch')->assertSee('Company: Patient only (the teller sells)')
         ->fillForm(['own_pharmacy__pom_rule' => 'free', 'reason' => 'No pharmacist on Sundays'])->call('save')->assertHasNoFormErrors();
     expect($this->hq->fresh()->settings)->toBe(['pharmacy.pom_rule' => 'free']);
+});
+
+/** A till sale the NHIS pays part of (the rest in cash). */
+function nhisSale($t, array $items, int $nhisMinor, array $extra = []): Sale
+{
+    $lines = [];
+    $engine = [];
+    foreach ($items as $i => [$p, $qty]) {
+        $unit = $p->units->first();
+        $price = app(PriceResolver::class)->resolve($t->retail, $p->id, $unit->id, Qty::toMilli($qty), now())->amount_minor;
+        $engine[] = ['key' => (string) $i, 'product_id' => $p->id, 'category_id' => $p->category_id, 'qty_milli' => Qty::toMilli($qty), 'unit_price_minor' => $price,
+            'tax' => $p->taxGroup->rates->map(fn ($r) => ['code' => $r->code, 'name' => $r->name, 'rate_bp' => $r->rate_bp])->values()->all(), 'manual' => null];
+        $lines[] = ['product_id' => $p->id, 'product_uom_id' => $unit->id, 'qty' => $qty, 'unit_price_minor' => $price];
+    }
+    $calc = PromotionEngine::compute(['lines' => $engine, 'inclusive' => true, 'coupon' => null, 'sale_discount_bp' => 0, 'promotions' => []]);
+    foreach ($calc['lines'] as $i => $r) {
+        $lines[$i]['line_total_minor'] = $r['total'];
+    }
+    $total = $calc['total'];
+    $extra += ['totals' => ['net_minor' => $calc['net'], 'tax_minor' => $calc['tax'], 'total_minor' => $total]];
+    $payments = array_values(array_filter([['method' => 'nhis', 'amount_minor' => $nhisMinor, 'tendered_minor' => $nhisMinor],
+        $total > $nhisMinor ? ['method' => 'cash', 'amount_minor' => $total - $nhisMinor, 'tendered_minor' => $total - $nhisMinor] : null]));
+
+    return app(SaleService::class)->post($t->device, $t->cashier, ['id' => (string) Str::uuid7(), 'device_seq' => ++$t->seq, 'occurred_at' => now()->toIso8601String(),
+        'price_list_id' => $t->retail->id, 'shift_id' => $t->shift->id, 'lines' => $lines, 'payments' => $payments] + $extra)['sale'];
+}
+
+it('takes NHIS at the till for a patient with a valid card, up to the NHIS prices, and claims it from the NHIA', function () {
+    app(CatalogService::class)->saveProduct(actorFor($this->owner), $this->para, ['nhis_price_minor' => 400]); // NHIS pays 4.00 a tablet; we sell at 5.00
+    $svc = app(PharmacyService::class);
+    $svc->savePatient(actorFor($this->owner), $this->ama, ['nhis_no' => 'gh-123', 'nhis_expires_on' => now()->addYear()->toDateString()]);
+    $items = [[$this->para->fresh(), '2']];
+
+    expect(fn () => nhisSale($this, $items, 800, ['customer_id' => $this->ama->id]))->toThrow(DomainException::class, 'not taken at this branch');
+    app(Settings::class)->set(actorFor($this->owner), 'pharmacy.nhis_at_till', true);
+    expect(fn () => nhisSale($this, $items, 800))->toThrow(DomainException::class, 'NHIS number')
+        ->and(fn () => nhisSale($this, $items, 900, ['customer_id' => $this->ama->id]))->toThrow(DomainException::class, 'at most');
+
+    $sale = nhisSale($this, $items, 800, ['customer_id' => $this->ama->id]);
+    $pay = $sale->payments->firstWhere('method', 'nhis');
+    expect($sale->total_minor)->toBe(1000)->and($pay->amount_minor)->toBe(800)->and($pay->reference)->toBe('GH-123')->and($pay->status)->toBe('due_from_nhis');
+
+    $svc->savePatient(actorFor($this->owner), $this->ama, ['nhis_no' => 'gh-123', 'nhis_expires_on' => now()->subDay()->toDateString()]);
+    expect(fn () => nhisSale($this, $items, 800, ['customer_id' => $this->ama->id]))->toThrow(DomainException::class, 'expired');
+
+    // The claim: prepared, sent, paid in part; the rest is written off.
+    $claims = app(NhisClaims::class);
+    $accountant = staff($this->owner, 'abena', 4, 'accountant');
+    $nurse = staff($this->owner, 'yaa', 4, 'pharmacist', ScopeType::Branch, $this->hq->id);
+    expect(fn () => $claims->prepare(actorFor($nurse), $this->hq, now()->toDateString()))->toThrow(AccessDenied::class);
+    $claim = $claims->prepare(actorFor($accountant), $this->hq, now()->toDateString());
+    expect($claim->claimed_minor)->toBe(800)->and($claim->number)->toStartWith('NHC-')->and($claim->lines()->count())->toBe(1)
+        ->and(fn () => $claims->prepare(actorFor($accountant), $this->hq, now()->toDateString()))->toThrow(DomainException::class, 'Nothing to claim')
+        ->and(fn () => $claims->settle(actorFor($accountant), $claim, 700, now()->toDateString(), 'bank'))->toThrow(DomainException::class, 'sent');
+    $claims->submit(actorFor($accountant), $claim, 'NHIA/2026/10/55');
+    expect(fn () => $claims->settle(actorFor($accountant), $claim->fresh(), 900, now()->toDateString(), 'bank'))->toThrow(DomainException::class, 'between');
+    $claims->settle(actorFor($accountant), $claim->fresh(), 700, now()->toDateString(), 'bank', 'One line not on the list that month');
+    expect($claim->fresh())->status->toBe('settled')->rejected_minor->toBe(100);
+
+    app(AutoPoster::class)->run($this->tenant->id);
+    $bal = fn (string $key) => (int) DB::table('journal_lines')->where('account_id', Account::where('system_key', $key)->value('id'))->sum('amount_minor');
+    expect($bal('nhis_receivable'))->toBe(0)->and($bal('nhis_rejected'))->toBe(100)->and($bal('bank'))->toBe(700);
+
+    // The back office: list, claim page with its sales, the CSV for the NHIA.
+    $this->actingAs(withMfa($this->owner), 'web');
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
+    $this->get(NhisClaimResource::getUrl('index'))->assertOk()->assertSee($claim->number);
+    Livewire::test(ViewNhisClaim::class, ['record' => $claim->id])->assertOk()->assertSee('NHIA/2026/10/55');
+    $csv = $this->get(route('print.nhis-claim', ['claim' => $claim->id]))->assertOk()->streamedContent();
+    expect($csv)->toContain('GH-123')->toContain('PARACETAMOL')->toContain('8.00');
+});
+
+it('withdraws a claim not sent yet, so its sales are claimed next time', function () {
+    app(CatalogService::class)->saveProduct(actorFor($this->owner), $this->para, ['nhis_price_minor' => 400]);
+    app(PharmacyService::class)->savePatient(actorFor($this->owner), $this->ama, ['nhis_no' => 'GH-9']);
+    app(Settings::class)->set(actorFor($this->owner), 'pharmacy.nhis_at_till', true);
+    nhisSale($this, [[$this->para->fresh(), '1']], 400, ['customer_id' => $this->ama->id]);
+    $claims = app(NhisClaims::class);
+    $first = $claims->prepare(actorFor($this->owner), $this->hq, now()->toDateString());
+    $claims->withdraw(actorFor($this->owner), $first, 'Wrong month');
+    expect($first->fresh()->status)->toBe('withdrawn')
+        ->and($claims->prepare(actorFor($this->owner), $this->hq, now()->toDateString())->claimed_minor)->toBe(400);
+});
+
+it('adds the starter list of interactions once, and warns from it', function () {
+    $svc = app(PharmacyService::class);
+    expect(fn () => $svc->addStarter(actorFor($this->cashier)))->toThrow(AccessDenied::class);
+    DrugInteraction::query()->delete();
+    $n = $svc->addStarter(actorFor($this->owner));
+    expect($n)->toBe(count(InteractionStarter::ROWS))->and($svc->addStarter(actorFor($this->owner)))->toBe(0)
+        ->and(DrugInteraction::where('source', 'starter')->count())->toBe($n);
+    $ibu = makeProduct($this->owner, 'IBU', 'Ibuprofen 400', retail: '6.00');
+    app(CatalogService::class)->saveProduct(actorFor($this->owner), $ibu, ['drug_schedule' => 'otc', 'track_batches' => true, 'generic_name' => 'Ibuprofen']);
+    $w = PharmacyService::warningsFor([$this->warf->id, $ibu->id], null);
+    expect($w)->toHaveCount(1)->and($w[0]['severity'])->toBe('major');
+
+    $this->actingAs(withMfa($this->owner), 'web');
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
+    $nameless = makeProduct($this->owner, 'XYZ', 'Herbal mix', retail: '6.00');
+    app(CatalogService::class)->saveProduct(actorFor($this->owner), $nameless, ['drug_schedule' => 'otc', 'track_batches' => true]);
+    $this->get(DrugInteractionResource::getUrl('index'))->assertOk()->assertSee('1 medicine(s) have neither a generic name nor active ingredients');
+});
+
+it('marks down near-expiry medicines from the Pharmacy menu, and the till gets the sticker', function () {
+    $this->actingAs(withMfa($this->owner), 'web');
+    Filament::setCurrentPanel(Filament::getPanel('admin'));
+    $this->get(PharmacyMarkdowns::getUrl())->assertOk()->assertSee('Near-expiry markdowns');
+    $batch = DB::table('stock_batches')->where('product_id', $this->para->id)->value('id');
+    DB::table('stock_batches')->where('id', $batch)->update(['expires_on' => now()->addDays(5)->toDateString()]);
+    $md = app(MarkdownService::class)->apply(actorFor($this->owner), $this->wh, $batch, 3000);
+    expect(collect(MarkdownService::activeFor($this->hq->id))->pluck('code'))->toContain($md->code);
 });

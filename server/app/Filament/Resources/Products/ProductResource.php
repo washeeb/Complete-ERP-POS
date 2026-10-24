@@ -11,6 +11,7 @@ use App\Filament\Resources\Products\Pages\CreateProduct;
 use App\Filament\Resources\Products\Pages\EditProduct;
 use App\Filament\Resources\Products\Pages\ListProducts;
 use App\Filament\Support\Erp;
+use App\Filament\Support\FinanceUi;
 use App\Filament\Support\GlobalSearch;
 use App\Filament\Support\LabelsAction;
 use App\Filament\Support\QuickCreate;
@@ -150,6 +151,10 @@ class ProductResource extends Resource
                     TextInput::make('dosage')->label('Usual dosage (directions)')->maxLength(255)->caps()->columnSpanFull()
                         ->placeholder('1 TABLET 3 TIMES DAILY AFTER MEALS FOR 5 DAYS')
                         ->helperText('Filled in on the till for each sale (it can be changed there) and printed on the dosage label and the receipt.'),
+                    TextInput::make('nhis_price_minor')->label('NHIS price (per base unit)')->numeric()->minValue(0)
+                        ->formatStateUsing(fn ($state) => $state === null ? null : number_format($state / 10 ** Money::exponent(FinanceUi::currency()), Money::exponent(FinanceUi::currency()), '.', ''))
+                        ->dehydrateStateUsing(fn ($state) => $state === null || $state === '' ? null : Money::toMinor((string) $state, FinanceUi::currency()))
+                        ->helperText('What the NHIS pays for one base unit (e.g. one tablet), from the NHIS Medicines List. Empty = not covered by the NHIS.'),
                     TextInput::make('daily_use')->label('Used a day (refill reminders)')->numeric()->minValue(0)->maxValue(1000)
                         ->helperText('For medicines taken every day (blood pressure, diabetes…): how much one patient uses a day, in the base unit — e.g. 1 tablet, or 2 for twice a day. Customers who buy it get a reminder before it runs out. Empty = no reminder.'),
                 ]),

@@ -94,6 +94,7 @@ class ProductsImporter extends Importer
             ['name' => 'fda_reg_no', 'required' => false, 'help' => 'Medicines: FDA registration number.', 'example' => ''],
             ['name' => 'active_ingredients', 'required' => false, 'help' => 'Medicines: active ingredients separated by | (allergy and interaction warnings), e.g. Amoxicillin|Clavulanic acid.', 'example' => ''],
             ['name' => 'daily_use', 'required' => false, 'help' => 'Medicines taken every day: how much one patient uses a day, in the base unit (e.g. 1 or 2 tablets), for refill reminders. Empty = none.', 'example' => ''],
+            ['name' => 'nhis_price', 'required' => false, 'help' => 'Medicines on the NHIS Medicines List: what the NHIS pays for one base unit (e.g. one tablet), e.g. 0.15. "none" = not covered. Empty: unchanged.', 'example' => ''],
             ['name' => 'dosage', 'required' => false, 'help' => 'Usual directions, printed on the dosage label at the till, e.g. 1 tablet 3 times daily after meals for 5 days.', 'example' => ''],
         ];
         foreach (PriceList::where('is_active', true)->orderByDesc('is_default')->orderBy('code')->get() as $list) {
@@ -202,6 +203,18 @@ class ProductsImporter extends Importer
             $v = trim((string) $row['daily_use']);
             $data['daily_use'] = $v === '' ? null : (is_numeric($v) && (float) $v >= 0 && (float) $v <= 1000 ? $v : throw new DomainException('daily_use: a number such as 1 or 2 (tablets a day), or empty.'));
         }
+        if (self::has($row, 'nhis_price')) {
+            $v = strtolower(trim((string) $row['nhis_price']));
+            try {
+                $data['nhis_price_minor'] = in_array($v, ['none', 'no', '-'], true) ? null
+                    : Money::toMinor($v, (string) PriceList::where('is_default', true)->value('currency_code'));
+            } catch (\Throwable) {
+                throw new DomainException('nhis_price: an amount such as 0.15, or none.');
+            }
+            if ($data['nhis_price_minor'] !== null && $data['nhis_price_minor'] < 0) {
+                throw new DomainException('nhis_price: an amount such as 0.15, or none.');
+            }
+        }
         if (self::has($row, 'active_ingredients')) {
             $data['active_ingredients'] = self::list($row['active_ingredients']);
         }
@@ -244,6 +257,7 @@ class ProductsImporter extends Importer
     public function exportRows(Actor $actor, array $options, ?Model $context): iterable
     {
         $lists = PriceList::where('is_active', true)->orderByDesc('is_default')->orderBy('code')->get();
+        $currency = (string) PriceList::where('is_default', true)->value('currency_code');
         $chosen = (string) ($options['industry'] ?? '');
         $products = Product::with(['category', 'brand', 'taxGroup', 'baseUom', 'units.barcodes', 'prices', 'industry'])
             ->when($chosen === 'shared', fn ($q) => $q->whereNull('industry_id'))
@@ -252,7 +266,8 @@ class ProductsImporter extends Importer
             $base = $p->units->firstWhere('is_base', true);
             $row = [$p->sku, $p->name, $p->description, $p->category?->name, $p->brand?->name, $p->taxGroup?->code, $p->baseUom?->code,
                 $p->track_stock ? 'yes' : 'no', $p->track_batches ? 'yes' : 'no', $p->is_active ? 'yes' : 'no', $p->plu, $p->location, $p->industry?->name ?? 'shared', $base?->barcodes->pluck('code')->implode('|'), ...self::ownLevels($p),
-                $p->drug_schedule, $p->generic_name, $p->strength, $p->dosage_form, $p->fda_reg_no, implode('|', $p->active_ingredients ?? []), $p->dosage];
+                $p->drug_schedule, $p->generic_name, $p->strength, $p->dosage_form, $p->fda_reg_no, implode('|', $p->active_ingredients ?? []),
+                $p->daily_use === null ? '' : rtrim(rtrim((string) $p->daily_use, '0'), '.'), $p->nhis_price_minor === null ? '' : Money::format($p->nhis_price_minor, $currency), $p->dosage];
             foreach ($lists as $list) {
                 $price = $p->prices->first(fn ($x) => $x->price_list_id === $list->id && $x->product_uom_id === $base?->id && (float) $x->min_qty <= 1 && ! $x->starts_at && ! $x->ends_at);
                 $row[] = $price ? Money::format($price->amount_minor, $list->currency_code) : '';

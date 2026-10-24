@@ -5,7 +5,7 @@ import { divRound, prettyQty, toMilli } from '../money'
 import { getLocalShift, nextSeq } from '../db'
 import type { Bootstrap, PostedSale, Returnable } from '../types'
 
-const METHOD: Record<string, string> = { cash: 'Cash', momo: 'Mobile money', card: 'Card', account: 'Customer account', points: 'Points', gift_card: 'Gift card', store_credit: 'Store credit' }
+const METHOD: Record<string, string> = { cash: 'Cash', momo: 'Mobile money', card: 'Card', account: 'Customer account', points: 'Points', gift_card: 'Gift card', store_credit: 'Store credit', nhis: 'NHIS (comes off the next claim)' }
 
 /**
  * Take goods back (owner decision 2026-10-11): against the receipt within the return period, refunded to how the customer

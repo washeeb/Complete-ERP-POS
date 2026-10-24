@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { generics, names, needsPrescription, saleLevel, warnings } from './pharmacy'
-import type { Product } from './types'
+import { generics, names, needsPrescription, nhisCover, saleLevel, warnings } from './pharmacy'
+import type { Product, TillCustomer, Unit } from './types'
 
 const drug = (id: string, name: string, schedule: 'otc' | 'pom' | 'controlled', generic: string, strength = '500 mg', ingredients: string[] = []): Product => ({
   id, sku: id, name, track_stock: true, on_hand: null, tax: [], units: [], prices: [],
@@ -46,5 +46,21 @@ describe('how strictly medicines are sold at this branch', () => {
     expect(saleLevel(relaxed, [{ product: amox, qtyBaseMilli: 1000 }], true)).toBe('approve')
     expect(saleLevel({ ...relaxed, major_needs_pharmacist: false }, [{ product: amox, qtyBaseMilli: 1000 }], true)).toBe('free')
     expect(saleLevel(undefined, [{ product: amox, qtyBaseMilli: 1000 }], false)).toBe('approve') // older server: strict
+  })
+})
+
+describe('NHIS at the till', () => {
+  const tablet: Unit = { id: 't', uom_code: 'TAB', uom_name: 'Tablet', decimals: 0, factor: '1', is_base: true, barcodes: [] }
+  const pack: Unit = { id: 'p', uom_code: 'PK', uom_name: 'Pack of 10', decimals: 0, factor: '10', is_base: false, barcodes: [] }
+  const covered = { ...para, drug: { ...para.drug!, nhis_price_minor: 15 } } // 0.15 a tablet
+  const patient = { id: 'c', name: 'Ama', nhis_no: '12345678', nhis_expires_on: '2026-12-31' } as TillCustomer
+
+  it('pays the NHIS price per base unit, never more than the line, only on a valid card', () => {
+    const lines = [{ product: covered, unit: pack, qtyMilli: 2000, total: 500 }, { product: warf, unit: tablet, qtyMilli: 5000, total: 900 }]
+    expect(nhisCover(lines, patient, '2026-10-24')).toEqual({ amount: 300, no: '12345678' }) // 20 tablets × 0.15; warfarin is not on the list
+    expect(nhisCover([{ product: covered, unit: pack, qtyMilli: 2000, total: 200 }], patient, '2026-10-24')?.amount).toBe(200)
+    expect(nhisCover(lines, patient, '2027-01-01')).toBeNull() // card expired
+    expect(nhisCover(lines, { ...patient, nhis_no: null }, '2026-10-24')).toBeNull()
+    expect(nhisCover([lines[1]], patient, '2026-10-24')).toBeNull()
   })
 })

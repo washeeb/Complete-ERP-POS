@@ -188,7 +188,7 @@ it('moves batches with transfers and batches existing stock when tracking starts
     expect(app(GlCheck::class)->run($this->tenant->id)['ok'])->toBeTrue();
 });
 
-it('gives grocery tills their scale and sticker settings only where the module is on, and sends shelf prices to the ESL gateway', function () {
+it('gives grocery tills their scale settings only where the module is on (stickers everywhere), and sends shelf prices to the ESL gateway', function () {
     app(CatalogService::class)->saveProduct(actorFor($this->owner), $this->yoghurt, ['plu' => '00123']);
     expect(fn () => app(CatalogService::class)->saveProduct(actorFor($this->owner), makeProduct($this->owner, 'BAN', 'Bananas', retail: '8.00'), ['plu' => '00123']))
         ->toThrow(DomainException::class, 'PLU');
@@ -207,7 +207,8 @@ it('gives grocery tills their scale and sticker settings only where the module i
     expect($hq['grocery'])->toMatchArray(['scale_prefixes' => ['21'], 'markdown_prefix' => '29'])
         ->and(collect($hq['products'])->firstWhere('sku', 'YOG')['plu'])->toBe('00123');
     app(ModuleService::class)->setStatus(actorFor($this->owner), $this->branches['BA'], 'grocery', 'disabled');
-    expect($catalog(Till::where('branch_id', $this->branches['BA']->id)->first())['grocery'])->toBeNull(); // module off at branch A
+    // Module off at branch A: no scale labels, but markdown stickers still work (any branch with expiry dates).
+    expect($catalog(Till::where('branch_id', $this->branches['BA']->id)->first())['grocery'])->toMatchArray(['scale_prefixes' => [], 'markdown_prefix' => '29']);
 
     app(Settings::class)->set(actorFor($this->owner), 'grocery.esl_webhook_url', 'https://esl.example/prices');
     Http::fake(['esl.example/*' => Http::response(['ok' => true])]);

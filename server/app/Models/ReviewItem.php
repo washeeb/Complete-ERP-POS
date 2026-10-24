@@ -35,6 +35,7 @@ class ReviewItem extends Model
         'return_no_receipt' => 'Return without a receipt',
         'expired_sold' => 'Expired batch sold offline',
         'pharmacy_unapproved' => 'Prescription medicine sold offline without a valid pharmacist approval',
+        'nhis_problem' => 'NHIS taken offline that the card or the NHIS prices did not allow',
         'details_missing' => 'Sold offline without the customer details the branch requires',
         'dining_conflict' => 'Restaurant bill paid offline that had changed (items voided or already paid)',
         'deposit_overdrawn' => 'Booking deposit used offline beyond what was left of it',
