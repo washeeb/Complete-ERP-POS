@@ -76,18 +76,13 @@ button[data-loading], a[data-loading], [wire\:click][data-loading] { pointer-eve
 /* The pinned buttons stay on one line, so rows keep their normal height. */
 .fi-ta-table td.fi-ta-cell:has(> .fi-ta-actions):last-child .fi-ta-actions { flex-wrap: nowrap; white-space: nowrap; }
 
-/* Long lists (owner request 2026-10-24): each list scrolls inside its own frame, no taller than the window, so its
-   side-to-side scrollbar is always on screen (not only at the bottom of the last page) and the column headings stay at
-   the top while scrolling down. Every list and table of lines in the back office. */
-.fi-ta-content-ctn { max-height: calc(100dvh - var(--topbar-height, 4rem) - 9rem); overflow: auto; overscroll-behavior: contain; }
-.fi-ta-content-ctn .fi-ta-table > thead > tr > th { position: sticky; top: 0; z-index: 3; background: var(--gray-50); }
-.dark .fi-ta-content-ctn .fi-ta-table > thead > tr > th { background: var(--gray-900); }
-/* The pinned buttons column's heading sits above both the headings and the rows. */
-.fi-ta-content-ctn .fi-ta-table > thead > tr > th.fi-ta-actions-header-cell:last-child { z-index: 4; }
-/* Tables of lines inside forms (purchase order lines, stock lines…): the same, with their own frame. */
-.fi-fo-table-repeater > table, .fi-fo-table-repeater { max-height: calc(100dvh - 12rem); overflow: auto; }
-.fi-fo-table-repeater thead th { position: sticky; top: 0; z-index: 3; background: var(--gray-50); }
-.dark .fi-fo-table-repeater thead th { background: var(--gray-900); }
+/* Long lists (owner requests 2026-10-24): one scrollbar up and down — the page's. Wide lists keep their side-to-side
+   scrollbar, and while it is out of sight below the window a copy stays pinned to the bottom of the window
+   (js/seslabs/hscroll.js), so a row at the top can be scrolled sideways without going to the bottom first. */
+.ses-hscroll { position: fixed; bottom: 0; height: 16px; overflow-x: auto; overflow-y: hidden; z-index: 40; display: none;
+    background: color-mix(in srgb, var(--gray-50) 85%, transparent); border-top: 1px solid color-mix(in srgb, currentColor 10%, transparent); }
+.dark .ses-hscroll { background: color-mix(in srgb, var(--gray-950) 85%, transparent); }
+.ses-hscroll > div { height: 1px; }
 
 /* The side menu's search stays at the top while the menu scrolls. */
 .ses-menu-search { position: sticky; top: calc(var(--spacing, .25rem) * -8); z-index: 5; margin-top: calc(var(--spacing, .25rem) * -8);
