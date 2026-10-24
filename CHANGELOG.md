@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- **Search the menu:** the dark band around the box is gone; only the rounded box has a background (menu items passing behind the gap are blurred).
 ### Added
 - **NHIS at the till (Pharmacy):** medicines get an *NHIS price (per base unit)* (form and products file `nhis_price`); with *Take NHIS at the till* on (Settings → Pharmacy, per branch) the till's Payment offers **NHIS pays …** for a patient with a valid NHIS card: each listed medicine at its NHIS price, never more than the line; the server checks the card and the amount. The NHIS part is owed by the NHIA (new account *Due from NHIS*). **Pharmacy → NHIS claims:** prepare a claim per branch up to a day (returns come off), download the list for the NHIA, mark it sent, record what the NHIA paid; the rest is written off (*NHIS claims not paid*). Permission *NHIS claims* (owner, managers, accountant, superintendent pharmacist). Manual 8.
 - **Interaction starter list:** Pharmacy → Drug interactions → **Add the starter list** adds about 55 well-known interactions between common medicines (pairs already there are left alone), for the superintendent pharmacist to review. The page says how many medicines have no generic name or ingredients (warnings cannot check them).

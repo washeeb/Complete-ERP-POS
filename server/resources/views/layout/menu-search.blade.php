@@ -9,7 +9,7 @@
     <p class="ses-menu-none" hidden>No page matches. Try another word, or Ctrl+K to search records.</p>
 </div>
 <style>
-    .ses-menu-q { width: 100%; padding: .45rem .7rem; border-radius: .5rem; font-size: .875rem; background: transparent; color: inherit;
+    .ses-menu-q { width: 100%; padding: .45rem .7rem; border-radius: .5rem; font-size: .875rem; color: inherit;
         border: 1px solid color-mix(in srgb, currentColor 18%, transparent); }
     .ses-menu-q:focus { outline: 2px solid var(--primary-500); outline-offset: 0; }
     .ses-menu-none { font-size: .8rem; opacity: .7; padding: .4rem .2rem 0; }
