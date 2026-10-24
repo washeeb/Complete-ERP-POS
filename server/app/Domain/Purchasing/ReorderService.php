@@ -2,6 +2,7 @@
 
 namespace App\Domain\Purchasing;
 
+use App\Domain\Inventory\StockRequestService;
 use App\Domain\Inventory\TransferService;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
@@ -11,11 +12,13 @@ use App\Models\Product;
 use App\Models\ProductUom;
 use App\Models\PurchaseOrder;
 use App\Models\ReorderRule;
+use App\Models\StockRequest;
 use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
 use App\Support\Qty;
+use App\Support\Settings;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -97,6 +100,9 @@ final class ReorderService
             }
         }
         $suppliers = SupplierService::bestForMany($low); // one query, not one per product
+        $spare = $this->spareElsewhere($warehouse, $low); // stock other stores have above their own maximum
+        $base = DB::table('product_uoms as u')->join('uoms', 'uoms.id', '=', 'u.uom_id')->whereIn('u.product_id', $low)->where('u.is_base', true)
+            ->get(['u.product_id', 'u.id', 'uoms.code'])->keyBy('product_id');
         foreach ($levels as $productId => $level) {
             $have = Qty::toMilli((string) ($onHand[$productId] ?? '0'));
             $coming = Qty::toMilli(number_format((float) ($onOrder[$productId] ?? 0), 3, '.', ''));
@@ -106,18 +112,81 @@ final class ReorderService
                 continue;
             }
             $need = max($max - ($have + $coming + $moving), 1);
+            // Move first, buy the rest (owner request 2026-10-24): whole base units from the store with the most to spare.
+            $from = $spare[$productId] ?? null;
+            $move = $from ? (int) (intdiv(min($from['qty'], $need), 1000) * 1000) : 0;
+            $buy = $need - $move;
             $sp = $suppliers[$productId] ?? null;
             $factor = $sp ? Qty::factorMicro((string) $sp->unit->factor) : 1_000_000;
-            $units = (int) ceil($need * 1_000_000 / $factor / 1000) * 1000; // whole purchase units
-            if ($sp) {
+            $units = $buy > 0 ? (int) ceil($buy * 1_000_000 / $factor / 1000) * 1000 : 0; // whole purchase units
+            if ($sp && $units > 0) {
                 $units = max($units, Qty::toMilli((string) $sp->min_order_qty));
             }
             $out[] = ['product_id' => $productId, 'sku' => $names[$productId]->sku, 'name' => $names[$productId]->name, 'on_hand' => $have, 'on_order' => $coming,
                 'in_transit' => $moving, 'min' => $min, 'max' => $max, 'source' => $level['source'], 'supplier_id' => $sp?->supplier_id, 'supplier' => $sp?->supplier->name,
-                'product_uom_id' => $sp?->product_uom_id, 'uom_code' => $sp?->unit->uom->code, 'suggest_qty' => $units, 'unit_cost_minor' => $sp?->last_cost_minor];
+                'product_uom_id' => $sp?->product_uom_id, 'uom_code' => $sp?->unit->uom->code, 'suggest_qty' => $units, 'unit_cost_minor' => $sp?->last_cost_minor,
+                'move_qty' => $move, 'move_from_id' => $move ? $from['warehouse_id'] : null, 'move_from' => $move ? $from['name'] : null,
+                'base_uom_id' => $base[$productId]->id ?? null, 'base_uom_code' => $base[$productId]->code ?? null];
         }
 
         return $out;
+    }
+
+    /**
+     * For each product, the other store (of the same line of business) with the most stock above its own maximum — what
+     * it can spare without falling short itself. Off with System → Settings → Stock → Suggest moves between stores.
+     *
+     * @param  list<string>  $productIds
+     * @return array<string, array{warehouse_id: string, name: string, qty: int}> qty in base milli-units
+     */
+    public function spareElsewhere(Warehouse $warehouse, array $productIds): array
+    {
+        if ($productIds === [] || ! app(Settings::class)->get('purchasing.suggest_moves', $warehouse->tenant_id)) {
+            return [];
+        }
+        $industry = DB::table('branches')->where('id', $warehouse->branch_id)->value('industry_id');
+        $others = Warehouse::withoutGlobalScopes()->with('branch')->where('tenant_id', $warehouse->tenant_id)->where('is_active', true)->where('id', '!=', $warehouse->id)->get()
+            ->filter(fn (Warehouse $w) => ! $industry || ! $w->branch?->industry_id || $w->branch->industry_id === $industry); // across industries needs two approvals: not suggested
+        $stock = DB::table('stock_levels')->whereIn('warehouse_id', $others->pluck('id'))->whereIn('product_id', $productIds)->where('on_hand', '>', 0)
+            ->get(['warehouse_id', 'product_id', 'on_hand'])->groupBy('warehouse_id');
+        $best = [];
+        foreach ($others as $w) {
+            $rows = $stock[$w->id] ?? collect();
+            if ($rows->isEmpty()) {
+                continue;
+            }
+            $levels = app(ReorderLevels::class)->forWarehouse($w, $rows->pluck('product_id')->all());
+            foreach ($rows as $r) {
+                $max = $levels[$r->product_id]['max'] ?? null;
+                if ($max === null) {
+                    continue; // not in that store's range
+                }
+                $spare = Qty::toMilli((string) $r->on_hand) - $max;
+                if ($spare >= 1000 && $spare > ($best[$r->product_id]['qty'] ?? 0)) {
+                    $best[$r->product_id] = ['warehouse_id' => $w->id, 'name' => $w->name.($w->branch ? ' ('.$w->branch->name.')' : ''), 'qty' => $spare];
+                }
+            }
+        }
+
+        return $best;
+    }
+
+    /**
+     * Ask the stores with stock to spare to send it (one stock request per store), for the chosen lines.
+     *
+     * @return list<StockRequest>
+     */
+    public function requestMoves(Actor $actor, Warehouse $warehouse, array $productIds): array
+    {
+        $chosen = array_filter($this->suggestions($warehouse), fn ($s) => in_array($s['product_id'], $productIds, true) && $s['move_qty'] > 0);
+        if ($chosen === []) {
+            throw new DomainException('No other store has these to spare.');
+        }
+
+        return $this->recorder->transaction(fn () => collect($chosen)->groupBy('move_from_id')->map(fn ($rows, $fromId) => app(StockRequestService::class)->request($actor, [
+            'from_warehouse_id' => $fromId, 'to_warehouse_id' => $warehouse->id, 'note' => 'From What to order: they have more than their maximum.',
+            'lines' => $rows->map(fn ($s) => ['product_uom_id' => $s['base_uom_id'], 'qty' => Qty::format($s['move_qty'])])->values()->all(),
+        ]))->values()->all());
     }
 
     /**
@@ -164,6 +233,10 @@ final class ReorderService
     {
         $chosen = array_map(fn ($s) => isset($changes[$s['product_id']]) ? self::change($s, $changes[$s['product_id']]) : $s,
             array_filter($this->suggestions($warehouse), fn ($s) => in_array($s['product_id'], $productIds, true)));
+        $chosen = array_filter($chosen, fn ($s) => $s['suggest_qty'] > 0); // covered by a move from another store: nothing to buy
+        if ($chosen === []) {
+            throw new DomainException('Everything chosen comes from other stores. Use “Ask other stores to send”.');
+        }
         $missing = array_filter($chosen, fn ($s) => $s['supplier_id'] === null);
         if ($missing) {
             throw new DomainException('No supplier is set up for: '.implode(', ', array_column($missing, 'name')).'. Add them to a supplier first.');
