@@ -14,6 +14,7 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
+use tauri::webview::PageLoadEvent;
 use tauri::{Manager, State, WebviewUrl};
 
 #[derive(Default, Serialize, Deserialize, Clone)]
@@ -188,6 +189,12 @@ pub fn run() {
                 .inner_size(1366.0, 800.0)
                 .min_inner_size(1024.0, 640.0)
                 .maximized(true)
+                .visible(false) // shown once the first page is drawn (below), so it never opens as a white window
+                .on_page_load(|window, payload| {
+                    if payload.event() == PageLoadEvent::Finished {
+                        let _ = window.show();
+                    }
+                })
                 .on_navigation(move |u| {
                     if is_local(u) {
                         return true;
@@ -196,6 +203,14 @@ pub fn run() {
                     server.map(|s| u.as_str().starts_with(&s)).unwrap_or(false)
                 })
                 .build()?;
+            // Never left hidden: shown after a few seconds even if the page has not finished loading.
+            let late = app.handle().clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_secs(4));
+                if let Some(w) = late.get_webview_window("main") {
+                    let _ = w.show();
+                }
+            });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

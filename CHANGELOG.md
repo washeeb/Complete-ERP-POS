@@ -6,6 +6,7 @@
 - **Interaction starter list:** Pharmacy → Drug interactions → **Add the starter list** adds about 55 well-known interactions between common medicines (pairs already there are left alone), for the superintendent pharmacist to review. The page says how many medicines have no generic name or ingredients (warnings cannot check them).
 - **Near-expiry markdowns for pharmacies:** Pharmacy → Near-expiry markdowns, and markdown stickers are recognised by every till, not only grocery ones. The markdown settings moved from Grocery to Stock. Pharmacists get the markdown permission (new installs).
 ### Fixed
+- **Desktop till start-up (app 0.26):** a till already set up no longer opens as a white window and flashes the set-up page: the window appears once its first page is drawn, and shows only *Opening the till…* while it connects (the set-up form appears only on first start, from *Till set-up*, or when the server has never answered). The till page also takes its light or dark colours before anything is drawn. Needs the new SES Labs Till installer on each till PC.
 - **Search the menu:** stays at the top of the side menu and only the list below it scrolls, so no menu item shows above or behind it; only the rounded box has a background.
 - The side menu's **Search the menu** box sat against the page header; it now keeps a gap below it, before and after scrolling.
 - **Clear test trading** also clears NHIS claims.
