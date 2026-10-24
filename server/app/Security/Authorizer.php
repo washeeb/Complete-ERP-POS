@@ -123,6 +123,16 @@ final class Authorizer
             $this->memo = [];
         }
         $this->permissions = [];
+        $this->branches = [];
+    }
+
+    /** @var array<string, ?Branch> */
+    private array $branches = [];
+
+    /** A branch changed (its company or industry): read it again for the next check. */
+    public function forgetBranches(): void
+    {
+        $this->branches = [];
     }
 
     /** @var array<string, ?Permission> */
@@ -138,9 +148,10 @@ final class Authorizer
             return collect(); // the licence does not include this part of the system
         }
         $all = $this->memo[$user->id] ??= $this->loadGrants($user);
-        $perm = array_key_exists($permission, $this->permissions)
-            ? $this->permissions[$permission]
-            : ($this->permissions[$permission] = Permission::find($permission));
+        if (! $this->permissions) {
+            $this->permissions = Permission::all()->keyBy('key')->all(); // all of them in one query (pages ask about dozens)
+        }
+        $perm = $this->permissions[$permission] ?? null;
         if (! $perm || $perm->min_level > $user->security_level) {
             return collect();
         }
@@ -194,7 +205,7 @@ final class Authorizer
     {
         $tenant = ScopeType::Tenant->value.':'.$target->getAttribute('tenant_id');
         $branchPath = function (?string $branchId) use ($tenant): array {
-            $branch = $branchId ? Branch::withoutGlobalScopes()->find($branchId) : null;
+            $branch = $branchId ? ($this->branches[$branchId] ??= Branch::withoutGlobalScopes()->find($branchId)) : null; // once per branch per request
             if (! $branch) {
                 return [$tenant];
             }

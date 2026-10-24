@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Domain\Access\SupportAccount;
+use App\Domain\Modules\EnabledModules;
 use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
 use App\Domain\Sync\Transport\HttpSyncTransport;
@@ -14,6 +15,7 @@ use App\Modules\ModuleRegistry;
 use App\Providers\Filament\VendorPanelProvider;
 use App\Security\Authorizer;
 use App\Support\People;
+use App\Support\RequestMemo;
 use App\Support\Settings;
 use App\Support\TenantContext;
 use Filament\Forms\Components\TextInput;
@@ -46,6 +48,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(TenantContext::class);
         $this->app->scoped(Authorizer::class);
         $this->app->scoped(Settings::class);
+        $this->app->scoped(EnabledModules::class);
+        $this->app->scoped(RequestMemo::class);
         $this->app->bind(SyncTransport::class, HttpSyncTransport::class);
     }
 

@@ -8,6 +8,7 @@ use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
 use App\Filament\Support\GlobalSearch;
 use App\Models\Account;
+use App\Support\RequestMemo;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -92,11 +93,9 @@ class AccountResource extends Resource
 
     public static function table(Table $table): Table
     {
-        $balances = function () {
-            static $b = null;
-
-            return $b ??= DB::table('journal_lines')->groupBy('account_id')->selectRaw('account_id, SUM(amount_minor) AS s')->pluck('s', 'account_id');
-        };
+        // Worked out once per request, not once per row.
+        $balances = fn () => RequestMemo::get('account-balances', fn () => DB::table('journal_lines')->groupBy('account_id')->selectRaw('account_id, SUM(amount_minor) AS s')->pluck('s', 'account_id'));
+        $purposes = fn () => RequestMemo::get('account-purposes', fn () => AccountService::systemKeys(Erp::user()->tenant_id));
 
         return $table
             ->columns([
@@ -105,7 +104,7 @@ class AccountResource extends Resource
                     ->description(fn (Account $record) => $record->control ? 'Kept by: '.Account::CONTROLS[$record->control] : null),
                 TextColumn::make('type')->badge()->formatStateUsing(fn ($state) => Account::TYPES[$state] ?? $state),
                 TextColumn::make('system_key')->label('Automatic posting')->placeholder('—')
-                    ->formatStateUsing(fn ($state) => AccountService::systemKeys(Erp::user()->tenant_id)[$state][0] ?? $state),
+                    ->formatStateUsing(fn ($state) => $purposes()[$state][0] ?? $state),
                 TextColumn::make('balance')->label('Balance (Dr + / Cr −)')->alignEnd()
                     ->state(fn (Account $record) => $record->is_header ? null : (int) ($balances()[$record->id] ?? 0))
                     ->formatStateUsing(fn ($state) => FinanceUi::money((int) $state))->placeholder(''),

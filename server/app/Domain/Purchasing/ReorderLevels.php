@@ -84,11 +84,29 @@ final class ReorderLevels
     /** The buying unit's code and micro-factor for one product (for screens and imports). */
     public static function buyingUnit(string $productId): array
     {
-        $factor = self::buyingFactors([$productId])[$productId] ?? 1_000_000;
-        $code = DB::table('product_uoms as pu')->join('uoms as u', 'u.id', '=', 'pu.uom_id')->where('pu.product_id', $productId)
-            ->orderByRaw('ABS(pu.factor * 1000000 - ?)', [$factor])->orderByDesc('pu.is_base')->value('u.code');
+        return self::buyingUnits([$productId])[$productId];
+    }
 
-        return ['code' => (string) $code, 'factor' => $factor];
+    /**
+     * The same for many products in two queries (a list works out its whole page at once).
+     *
+     * @param  list<string>  $productIds
+     * @return array<string, array{code: string, factor: int}>
+     */
+    public static function buyingUnits(array $productIds): array
+    {
+        $factors = self::buyingFactors($productIds);
+        $units = DB::table('product_uoms as pu')->join('uoms as u', 'u.id', '=', 'pu.uom_id')->whereIn('pu.product_id', $productIds)
+            ->get(['pu.product_id', 'pu.factor', 'pu.is_base', 'u.code'])->groupBy('product_id');
+        $out = [];
+        foreach ($productIds as $id) {
+            $factor = $factors[$id] ?? 1_000_000;
+            $best = collect($units[$id] ?? [])->sortBy([fn ($a, $b) => abs((float) $a->factor * 1_000_000 - $factor) <=> abs((float) $b->factor * 1_000_000 - $factor),
+                fn ($a, $b) => (int) $b->is_base <=> (int) $a->is_base])->first();
+            $out[$id] = ['code' => (string) ($best->code ?? ''), 'factor' => $factor];
+        }
+
+        return $out;
     }
 
     /**

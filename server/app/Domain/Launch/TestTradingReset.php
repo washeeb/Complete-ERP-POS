@@ -25,7 +25,7 @@ final class TestTradingReset
     public const TABLES = [
         // Tills and cash
         'sales', 'sale_lines', 'sale_payments', 'trade_ins', 'shifts', 'shift_count_corrections', 'vault_sessions', 'cash_movements', 'cash_handovers', 'cash_variances', 'till_drawer_events', 'expense_claims',
-        'prescriptions', 'pharmacy_signoffs', 'review_items', 'fiscal_submissions', 'commissions', 'momo_charges', 'refill_reminders',
+        'prescriptions', 'pharmacy_signoffs', 'review_items', 'fiscal_submissions', 'commissions', 'momo_charges', 'refill_reminders', 'whatsapp_orders',
         // Stock
         'stock_movements', 'stock_movement_serials', 'stock_levels', 'stock_batch_levels', 'stock_bin_levels', 'stock_batches', 'serial_numbers', 'stock_reservations',
         'stock_adjustments', 'stock_adjustment_lines', 'stock_counts', 'stock_count_lines', 'stock_transfers', 'stock_transfer_lines', 'stock_requests', 'stock_request_lines', 'markdowns',

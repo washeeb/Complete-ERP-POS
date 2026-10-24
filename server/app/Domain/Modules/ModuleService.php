@@ -115,9 +115,12 @@ final class ModuleService
     {
         $branches = IndustryContext::branchIds(); // the industry chosen at the top: only its modules' screens show
 
-        return app(LicenseManager::class)->allowsModule($moduleKey)
-            && BranchModule::where('module_key', $moduleKey)->where('status', self::ENABLED)
-                ->when($branches !== null, fn ($q) => $q->whereIn('branch_id', $branches))->exists();
+        if (! app(LicenseManager::class)->allowsModule($moduleKey)) {
+            return false;
+        }
+        $on = app(EnabledModules::class)->branches($moduleKey); // read once per request
+
+        return $branches === null ? $on !== [] : array_intersect($on, $branches) !== [];
     }
 
     /**

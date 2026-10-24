@@ -16,7 +16,7 @@ class ReconcileChannelsCommand extends Command
 
     public function handle(Reconciler $reconciler): int
     {
-        foreach (SalesChannel::withoutGlobalScopes()->where('status', 'active')->where('type', '!=', 'storefront')->get() as $channel) {
+        foreach (SalesChannel::withoutGlobalScopes()->where('status', 'active')->whereNotIn('type', ['storefront', 'whatsapp'])->get() as $channel) { // WhatsApp holds no copy of the catalog
             app(TenantContext::class)->set($channel->tenant_id);
             try {
                 $diffs = $reconciler->run($channel);

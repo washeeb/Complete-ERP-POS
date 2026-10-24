@@ -6,6 +6,7 @@ use App\Domain\Launch\GoLiveService;
 use App\Domain\Launch\PilotReport;
 use App\Domain\Launch\PracticeCompany;
 use App\Filament\Support\Erp;
+use App\Filament\Support\FinanceUi;
 use App\Models\BackupRun;
 use App\Models\Branch;
 use App\Models\GoLivePlan;
@@ -74,7 +75,7 @@ class GoLive extends Page
 
     public function money(?int $minor): string
     {
-        return $minor === null ? '—' : Money::format($minor, Tenant::find(Erp::user()->tenant_id)->currency_code);
+        return $minor === null ? '—' : Money::format($minor, FinanceUi::currency()); // the currency read once per request
     }
 
     public function parallelDays()

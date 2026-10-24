@@ -28,7 +28,7 @@ Find the symptom, then try the fixes in order.
 | *This is managed at head office* | You are on a branch server; change master data at head office (Chapter 10). |
 | Everything is read-only, with a red banner | Licence expired, withdrawn or not checked in for 44 days (Chapter 6.4). Renew; nothing is lost. |
 | Passkey button does nothing | Passkeys need HTTPS or `localhost`. Use the authenticator app. |
-| Pages are slow | Open **System → Health**. *PHP code cache* must say *On* (if not, update with the simple way, Chapter 12.4). *Slow pages* lists what was slow, how often and how many database reads it made: send it to SyncLytics support. Run `php artisan erp:load-test --force` outside trading hours for a full speed check (it leaves nothing behind). |
+| Pages are slow | Open **System → Health**. *PHP code cache* must say *On* (if not, update with the simple way, Chapter 12.4). *Slow pages* lists what was slow, how often and how many database reads it made: send it to SyncLytics support. Run `php artisan erp:load-test --force` outside trading hours for a full speed check (it leaves nothing behind). For a page-by-page check, `php artisan erp:page-timings` (in the `server` folder) opens every page as the owner and lists the slowest with their database reads; it changes nothing. Send its output to SyncLytics support. |
 
 ## Tills
 

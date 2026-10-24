@@ -23,7 +23,7 @@ final class Gateways
         'arkesel' => ['api_key' => 'API key'],
         'mnotify' => ['api_key' => 'API key'],
         'webhook' => ['url' => 'Gateway address (https://…)', 'secret' => 'Shared secret (optional, sent as X-Signature)'],
-        'meta' => ['phone_number_id' => 'Phone number ID', 'access_token' => 'Access token'],
+        'meta' => ['phone_number_id' => 'Phone number ID', 'access_token' => 'Access token', 'app_secret' => 'App secret (to receive messages)'],
     ];
 
     /** @return string the provider's message reference */
@@ -64,6 +64,39 @@ final class Gateways
                     'components' => $params ? [['type' => 'body', 'parameters' => array_map(fn ($p) => ['type' => 'text', 'text' => (string) $p], $params)]] : []]]));
 
         return (string) ($res->json('messages.0.id') ?? '');
+    }
+
+    /** A plain WhatsApp reply: allowed by Meta within 24 hours of the customer's last message to the business. */
+    public static function whatsappText(array $cred, string $to, string $body): string
+    {
+        $res = self::call(fn () => Http::withToken($cred['access_token'] ?? '')->acceptJson()->timeout(15)
+            ->post('https://graph.facebook.com/v20.0/'.($cred['phone_number_id'] ?? '').'/messages', ['messaging_product' => 'whatsapp', 'to' => Phone::international($to),
+                'type' => 'text', 'text' => ['body' => mb_substr($body, 0, 4000)]]));
+
+        return (string) ($res->json('messages.0.id') ?? '');
+    }
+
+    /**
+     * A photo or document a customer sent: Meta gives its address, which is fetched with the same token.
+     *
+     * @return array{mime: string, bytes: string}
+     */
+    public static function whatsappMedia(array $cred, string $mediaId, int $maxBytes): array
+    {
+        $info = self::call(fn () => Http::withToken($cred['access_token'] ?? '')->acceptJson()->timeout(15)->get('https://graph.facebook.com/v20.0/'.rawurlencode($mediaId)));
+        if ((int) $info->json('file_size') > $maxBytes) {
+            throw new DomainException('The file is larger than '.round($maxBytes / 1048576).' MB.');
+        }
+        $url = (string) $info->json('url');
+        if (! str_starts_with($url, 'https://')) {
+            throw new DomainException('WhatsApp did not give the file\'s address.');
+        }
+        $file = self::call(fn () => Http::withToken($cred['access_token'] ?? '')->timeout(30)->get($url));
+        if (strlen($file->body()) > $maxBytes) {
+            throw new DomainException('The file is larger than '.round($maxBytes / 1048576).' MB.');
+        }
+
+        return ['mime' => (string) ($info->json('mime_type') ?? $file->header('Content-Type')), 'bytes' => $file->body()];
     }
 
     private static function call(callable $request): Response

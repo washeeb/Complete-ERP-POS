@@ -100,6 +100,13 @@ final class Settings
             'label' => 'Remind customers to refill their medicines',
             'help' => 'For medicines with “Used a day” filled in: a customer who bought one gets a WhatsApp (or SMS) message a few days before it runs out. Only named customers who agreed to WhatsApp or SMS messages (the customer’s consent); one message lists every medicine due. See Customers → Refill reminders.',
         ],
+        'whatsapp.orders' => [
+            'type' => 'bool', 'default' => false, 'group' => 'WhatsApp orders',
+            'label' => 'Take orders by WhatsApp',
+            'help' => 'Customers send a list or a photo of their prescription to your WhatsApp Business number; it appears under Online → WhatsApp orders for staff to turn into an order (stock is held for it) or decline, and the customer is answered on WhatsApp. Needs the WhatsApp Business provider with its app secret, and the address for incoming messages entered at Meta (both under Messaging → Providers).',
+        ],
+        'whatsapp.order_reply' => ['type' => 'string', 'default' => 'Thank you! We have your message and will confirm your order shortly. Your reference is {number}.', 'max' => 300,
+            'group' => 'WhatsApp orders', 'label' => 'Automatic reply', 'help' => 'Sent once when a new order arrives, so the customer knows it was received. {number} is its reference. Leave empty to send nothing.'],
         'refill.days_before' => ['type' => 'int', 'default' => 3, 'min' => 0, 'max' => 14, 'group' => 'Refill reminders', 'label' => 'Days before it runs out', 'help' => 'Time to come back or send someone; 3 days suits most.'],
         'refill.send_at' => ['type' => 'string', 'default' => '09:00', 'max' => 5, 'group' => 'Refill reminders', 'label' => 'Send at (HH:MM)', 'help' => 'Morning, when the pharmacy is open to answer.'],
         'summary.daily' => [

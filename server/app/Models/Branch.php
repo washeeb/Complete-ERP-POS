@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasOriginNode;
+use App\Security\Authorizer;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +12,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Branch extends Model
 {
+    protected static function booted(): void
+    {
+        static::saved(fn () => app(Authorizer::class)->forgetBranches()); // its company / industry, remembered for permission checks
+    }
+
     use BelongsToTenant, HasOriginNode, HasUuids;
 
     protected $fillable = ['legal_entity_id', 'industry_id', 'code', 'name', 'is_hq', 'address', 'phone', 'timezone', 'is_active'];
