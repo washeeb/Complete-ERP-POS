@@ -114,7 +114,9 @@ Receipts then **print by themselves** the moment the sale is done, without a pri
 
 **Note:** the app only opens your SES Labs server — no other website — so the printer and drawer cannot be reached from anywhere else.
 
-**When the till starts:** it opens the server straight away if it answers. If the server has worked on this PC before but cannot be reached now (internet down), the till still opens and sells offline. If the saved address has **never** worked, the set-up page comes back with a message, so a wrong address can always be corrected.
+**When the till starts:** a till already set up shows only *Opening the till…* for a moment, then the till (version 0.26 or later; older versions showed a white window and the set-up page first). It opens the server straight away if it answers. If the server has worked on this PC before but cannot be reached now (internet down), the till still opens and sells offline. If the saved address has **never** worked, the set-up page comes back with a message, so a wrong address can always be corrected.
+
+**Updating the app:** install the new `SES Labs Till_<version>_x64-setup.exe` over the old one. The server address, printer, drawer and scale settings are kept.
 
 #### Starting the desktop till again from scratch
 

@@ -14,10 +14,12 @@
     button { font: inherit; padding: 10px 16px; border-radius: 8px; border: 0; background: var(--accent); color: var(--bg); cursor: pointer; margin-right: 8px; }
     button.secondary { background: transparent; color: var(--fg); border: 1px solid var(--line); } .msg { min-height: 1.5em; } .bad { color: var(--bad); }
     .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; } :focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+    #opening { min-height: 100vh; display: grid; place-items: center; color: var(--muted); margin: 0; } [hidden] { display: none !important; }
   </style>
 </head>
 <body>
-<main>
+<p id="opening" role="status">Opening the till…</p>
+<main id="form" hidden>
   <h1>Till set-up</h1>
   <p id="intro">Connect this till to your business server, and choose the receipt printer, cash drawer and scale.</p>
 
@@ -59,15 +61,20 @@
   }
   const unreachable = (server) => `Could not reach ${server}. Check the address: it is the server's https:// name, for example https://erp.yourshop.com (not its IP address when it has a name). Then click Save again.`;
 
+  // The set-up form shows only when it is needed: first start, "Till set-up" from the till, or a server that never answered.
+  // A till already set up sees just "Opening the till…" while it connects, then the till.
+  const showForm = () => { $('opening').hidden = true; $('form').hidden = false; };
+
   async function load() {
     const cfg = await T.invoke('get_config');
     // Start-up: open the saved server if it answers; if it answered before, open it anyway (the till sells offline).
     if (cfg.server && !params.has('setup') && !params.has('blocked')) {
-      say('msg', 'Connecting to ' + cfg.server + ' …');
+      $('opening').textContent = 'Opening the till…';
       if (await reachable(cfg.server)) return T.invoke('set_server', { server: cfg.server, verified: true });
       if (cfg.verified) return T.invoke('set_server', { server: cfg.server, verified: false });
       say('msg', unreachable(cfg.server), true);
     }
+    showForm();
     $('server').value = cfg.server || '';
     for (const p of await T.invoke('list_printers')) $('printer').append(new Option(p, p));
     for (const p of await T.invoke('list_scale_ports')) $('scale').append(new Option(p, p));
@@ -107,7 +114,7 @@
   $('anyway').onclick = async () => {
     try { await saveHardware(); await T.invoke('set_server', { server: $('server').value, verified: false }); } catch (e) { say('msg', String(e), true); }
   };
-  load().catch((e) => say('msg', String(e), true));
+  load().catch((e) => { showForm(); say('msg', String(e), true); });
 </script>
 </body>
 </html>

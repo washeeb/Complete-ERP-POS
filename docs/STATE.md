@@ -4,6 +4,9 @@
 **Updated:** 2026-10-24 · NHIS at the till and NHIS claims, interaction starter list, near-expiry markdowns for pharmacies on branch `pharmacy-extras` (see the first section).
 
 
+## Desktop till start-up — branch `desktop-till-start`
+- `pos/src-tauri/src/lib.rs`: window `.visible(false)` + `on_page_load` (Finished → show) + 4 s fallback; app 0.26.0. `setup/index.html`: `#opening` status, `#form` hidden until `showForm()`. `pos/index.html`: inline theme script and background. Ship the till installer (Packaging workflow, Run workflow) with the release.
+
 ## Pharmacy extras — branch `pharmacy-extras`
 - **NHIS:** migration `2026_12_05_100001_nhis_claims` (`products.nhis_price_minor`, `nhis_claims`, `nhis_claim_lines`; chart `nhis_receivable` 1245, `nhis_rejected` 6720 via `ChartTemplate::ensure`). Tender `nhis` (`SalePayment::METHODS`, `AutoPoster::TENDER`), checked in `SaleService::nhis()`; till `pharmacy.ts nhisCover`, `Pay` prop `nhis`, boot `pharmacy.nhis` from setting `pharmacy.nhis_at_till`. `App\Domain\Pharmacy\NhisClaims` (prepare, submit, withdraw, settle; permission `pharmacy.nhis`), AutoPoster kind `nhis_claims`, `NhisClaimResource` (+ `LinesRelationManager`), CSV `print.nhis-claim` (`PharmacyReports::claimLines`). Products file column `nhis_price`.
 - **Interactions:** `InteractionStarter::ROWS`, `PharmacyService::addStarter()` and `unchecked()`; header action on `ListDrugInteractions`.

@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- **Desktop till start-up (app 0.26):** a till already set up no longer opens as a white window and flashes the set-up page: the window appears once its first page is drawn, and shows only *Opening the till…* while it connects (the set-up form appears only on first start, from *Till set-up*, or when the server has never answered). The till page also takes its light or dark colours before anything is drawn. Needs the new SES Labs Till installer on each till PC.
 ### Added
 - **NHIS at the till (Pharmacy):** medicines get an *NHIS price (per base unit)* (form and products file `nhis_price`); with *Take NHIS at the till* on (Settings → Pharmacy, per branch) the till's Payment offers **NHIS pays …** for a patient with a valid NHIS card: each listed medicine at its NHIS price, never more than the line; the server checks the card and the amount. The NHIS part is owed by the NHIA (new account *Due from NHIS*). **Pharmacy → NHIS claims:** prepare a claim per branch up to a day (returns come off), download the list for the NHIA, mark it sent, record what the NHIA paid; the rest is written off (*NHIS claims not paid*). Permission *NHIS claims* (owner, managers, accountant, superintendent pharmacist). Manual 8.
 - **Interaction starter list:** Pharmacy → Drug interactions → **Add the starter list** adds about 55 well-known interactions between common medicines (pairs already there are left alone), for the superintendent pharmacist to review. The page says how many medicines have no generic name or ingredients (warnings cannot check them).
