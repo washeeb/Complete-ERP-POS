@@ -21,6 +21,7 @@ use App\Models\Warehouse;
 use App\Security\Authorizer;
 use App\Support\Qty;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -138,8 +139,12 @@ final class OnlineOrderService
             throw new DomainException('Only a confirmed order can be marked ready.');
         }
         $order->status = 'ready';
+        $order = $this->recorder->save($actor, $order, 'sales_order.ready', null, $order->branch_id);
+        if (SalesChannel::whereKey($order->channel_id)->where('type', 'whatsapp')->exists()) {
+            DB::afterCommit(fn () => app(WhatsappOrders::class)->tellReady($order)); // the customer is told on WhatsApp
+        }
 
-        return $this->recorder->save($actor, $order, 'sales_order.ready', null, $order->branch_id);
+        return $order;
     }
 
     /** Goods handed over / shipped: reservation consumed, stock issued from the ledger, payment recorded. */

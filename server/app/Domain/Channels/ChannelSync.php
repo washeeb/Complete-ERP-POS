@@ -42,7 +42,7 @@ final class ChannelSync
     /** Turn new outbox events into jobs for this channel. */
     public function dispatch(SalesChannel $channel): int
     {
-        if (! $channel->isActive() || $channel->type === 'storefront' || ConnectorRegistry::isDelivery($channel->type) || Tenant::isPractice($channel->tenant_id)) {
+        if (! $channel->isActive() || $channel->type === 'storefront' || ConnectorRegistry::ordersOnly($channel->type) || Tenant::isPractice($channel->tenant_id)) {
             return 0; // delivery apps take orders only; a practice company never updates a real online store
         }
 

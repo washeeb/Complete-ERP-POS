@@ -10,6 +10,7 @@ use App\Models\Message;
 use App\Models\MessageProvider;
 use App\Security\Authorizer;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Setting up how SMS and WhatsApp leave this server. Credentials are stored encrypted and never shown again (an empty
@@ -35,7 +36,10 @@ final class ProviderSetup
             $cred[$field] = $value !== '' ? $value : ($old[$field] ?? '');
         }
         $active = (bool) ($data['is_active'] ?? true);
-        $required = array_diff(array_keys(Gateways::FIELDS[$provider]), ['secret']);
+        if ($provider === 'meta') { // Meta's check that the address for incoming messages is ours (set once, shown on the page)
+            $cred['verify_token'] = $old['verify_token'] ?? Str::random(32);
+        }
+        $required = array_diff(array_keys(Gateways::FIELDS[$provider]), ['secret', 'app_secret']); // optional: only to receive
         if ($active && array_filter($required, fn ($f) => $cred[$f] === '')) {
             throw new DomainException('Fill in '.implode(', ', array_map(fn ($f) => Gateways::FIELDS[$provider][$f], $required)).'.');
         }

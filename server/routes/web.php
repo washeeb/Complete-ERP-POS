@@ -10,6 +10,7 @@ use App\Http\Controllers\StockPhotoController;
 use App\Http\Controllers\StorefrontController;
 use App\Http\Controllers\SupportScreenshotController;
 use App\Http\Controllers\WaybillConfirmController;
+use App\Http\Controllers\WhatsappMediaController;
 use App\Models\PurchaseOrder;
 use App\Security\Passkeys\PasskeyLoginController;
 use App\Support\Progress;
@@ -77,6 +78,7 @@ Route::prefix('print')->middleware(['auth', 'license:output'])->name('print.')->
 
 // Receipt photos attached to expense claims (private storage).
 Route::get('remote/connect/{device}/{mode}', RemoteConnectController::class)->middleware(['auth', 'throttle:30,1'])->name('remote.connect')->whereUuid('device')->where('mode', 'view|control');
+Route::get('whatsapp-file/{order}/{index}', WhatsappMediaController::class)->middleware(['auth'])->name('whatsapp.file')->whereUuid('order')->whereNumber('index');
 Route::get('support-screenshot/{report}', SupportScreenshotController::class)->middleware(['auth'])->name('support.screenshot')->whereUuid('report');
 Route::get('expense-receipt/{claim}', ExpenseReceiptController::class)->middleware(['auth', 'license:output'])->name('expense.receipt')->whereUuid('claim');
 

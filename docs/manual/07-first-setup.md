@@ -91,6 +91,10 @@ For each staff member:
 
 **The SyncLytics support account:** the list may show *SyncLytics support (Superadmin)* at level L7. SyncLytics adds it on your server so support can help you; nobody in the company can change it. It always signs in with an authenticator app, it does not count as one of your licensed users, and the owner and general manager get a notification each time it signs in. Everything it does is in the audit log (System → Audit log).
 
+**Check who can do what:** **People & access → Who can do what** lists the risky combinations first — one person who orders from suppliers and also receives the goods, adds suppliers and pays them, collects customer payments and can write debts off, sells and approves till shortages, adds staff and pays wages, or changes what roles allow — with what each risk means, what to do, and who has it where. Below: people switched off or not signed in for 60 days who still have access, temporary access with its end date, and everyone's roles. **Download (CSV)** keeps a copy.
+
+**Why:** most thefts in a small business need one person to hold two jobs that should check each other. In a small team some overlap cannot be avoided; then look at that person's work in **System → Audit log** now and then. Look at this page every few months and after staff changes.
+
 **Warning:** Do not share one account between several people. Every sale, refund and change is recorded under the person who signed in.
 
 **Finding a page:** at the top of the side menu, **Search the menu** — type part of a name (*adjust*, *expiry*, *momo*, *po*) and only the matching pages stay; **Enter** opens the first, **Esc** clears. Press `/` anywhere to jump there. To find a record (a product, a customer, a receipt), use the search at the top (Ctrl+K).

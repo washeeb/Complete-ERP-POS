@@ -56,6 +56,22 @@ WhatsApp messages need a **WhatsApp Business account on Meta's Cloud API**; Meta
 
 When WhatsApp is on and a message has an active WhatsApp template, customers get WhatsApp instead of SMS.
 
+## 16.3a Orders by WhatsApp (optional)
+
+Customers send their list, or a photo of their prescription, to your WhatsApp Business number; staff turn it into an order and the customer is answered on WhatsApp.
+
+1. In Meta's app settings (**App settings → Basic**) copy the **App secret** into **System → Messaging → WhatsApp Business → App secret**, and **Save**. **Why:** messages are accepted only when Meta signs them with this secret, so nobody else can post fake orders to your server.
+2. The page then shows a **callback URL** and a **verify token**. In Meta (**WhatsApp → Configuration → Webhook**) enter both, press **Verify and save**, and subscribe to **messages**. **Why:** this tells Meta where to send your customers' messages.
+3. **System → Settings → WhatsApp orders**: switch on **Take orders by WhatsApp**; change the **Automatic reply** if you like ({number} is the order's reference). **Why:** off by default, so nothing arrives until you are ready to answer.
+4. Send a message from your own phone to the business number. It appears within seconds under **Online → WhatsApp orders** and you get the automatic reply.
+
+**Every day:** open **Online → WhatsApp orders** (the number beside it is how many are waiting). Open one to read the message and see the photos (click a photo to see it full size). Then:
+- **Reply** to ask something (which strength, a price);
+- **Make the order**: the branch that fills it, picked up or delivered (with the address), and the items with quantities. Stock is held for it, the customer gets the items and the total, and it continues under **Online → Online orders** (**Mark ready** tells the customer it is ready; **Hand over** takes the payment);
+- **Decline** with the reason the customer will read (e.g. *out of stock*, *a prescription is needed*).
+
+**Note:** WhatsApp lets you reply freely for 24 hours after the customer's last message; after that, the customer must write again. Prescription medicines still need the pharmacist's check when handed over, as at the counter.
+
 ## 16.4 Which messages are sent, and their wording
 
 **Messages → Templates** lists every message per channel. Edit the text, use the placeholders shown, and switch each one **on or off**.

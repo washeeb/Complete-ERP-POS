@@ -12,6 +12,7 @@ use App\Models\ProductUom;
 use App\Models\ReorderRule;
 use App\Models\Warehouse;
 use App\Support\Qty;
+use App\Support\RequestMemo;
 use App\Support\Settings;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -114,14 +115,27 @@ class ReorderRuleResource extends Resource
     }
 
     /** A level in base units shown in the product's buying unit, with the base figure after it. */
-    public static function inBuyingUnit(string $productId, $state): string
+    public static function inBuyingUnit(string $productId, $state, ?array $u = null): string
     {
-        $u = ReorderLevels::buyingUnit($productId);
+        $u ??= ReorderLevels::buyingUnit($productId);
         if ($u['factor'] === 1_000_000) {
             return Fields::qty((string) $state);
         }
 
         return Fields::qty(Qty::format((int) round(Qty::toMilli((string) $state) * 1_000_000 / $u['factor'])), $u['code']).' ('.Fields::qty((string) $state).')';
+    }
+
+    /** Buying units and stock on hand for the rows on screen, worked out once for the page (not per row). */
+    private static function page($livewire): array
+    {
+        return RequestMemo::get('reorder-rules-page', function () use ($livewire) {
+            $records = $livewire->getTableRecords();
+            $rows = collect(method_exists($records, 'items') ? $records->items() : $records); // a page, or every row when "all" is chosen
+
+            return ['units' => ReorderLevels::buyingUnits($rows->pluck('product_id')->unique()->values()->all()),
+                'on_hand' => DB::table('stock_levels')->whereIn('product_id', $rows->pluck('product_id')->unique())->whereIn('warehouse_id', $rows->pluck('warehouse_id')->unique())
+                    ->get(['warehouse_id', 'product_id', 'on_hand'])->mapWithKeys(fn ($l) => [$l->warehouse_id.'|'.$l->product_id => $l->on_hand])->all()];
+        });
     }
 
     public static function table(Table $table): Table
@@ -132,10 +146,9 @@ class ReorderRuleResource extends Resource
             ->columns([
                 TextColumn::make('product.name')->label('Product')->searchable()->description(fn (ReorderRule $record) => $record->product->sku),
                 TextColumn::make('warehouse.code')->label('Store'),
-                TextColumn::make('on_hand')->label('On hand')->state(fn (ReorderRule $record) => Fields::qty(DB::table('stock_levels')
-                    ->where('warehouse_id', $record->warehouse_id)->where('product_id', $record->product_id)->value('on_hand'))),
-                TextColumn::make('min_qty')->label('Min')->formatStateUsing(fn ($state, ReorderRule $record) => self::inBuyingUnit($record->product_id, $state)),
-                TextColumn::make('max_qty')->label('Max')->formatStateUsing(fn ($state, ReorderRule $record) => self::inBuyingUnit($record->product_id, $state)),
+                TextColumn::make('on_hand')->label('On hand')->state(fn (ReorderRule $record, $livewire) => Fields::qty(self::page($livewire)['on_hand'][$record->warehouse_id.'|'.$record->product_id] ?? null)),
+                TextColumn::make('min_qty')->label('Min')->formatStateUsing(fn ($state, ReorderRule $record, $livewire) => self::inBuyingUnit($record->product_id, $state, self::page($livewire)['units'][$record->product_id] ?? null)),
+                TextColumn::make('max_qty')->label('Max')->formatStateUsing(fn ($state, ReorderRule $record, $livewire) => self::inBuyingUnit($record->product_id, $state, self::page($livewire)['units'][$record->product_id] ?? null)),
                 TextColumn::make('source')->label('Set by')->badge()->formatStateUsing(fn ($state) => ReorderLevels::SOURCES[$state] ?? $state)
                     ->color(fn ($state) => $state === 'smart' ? 'info' : 'gray'),
             ])

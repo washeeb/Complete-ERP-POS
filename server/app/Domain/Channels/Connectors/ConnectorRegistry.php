@@ -19,7 +19,7 @@ final class ConnectorRegistry
         'glovo' => ['label' => 'Glovo (delivery app)', 'class' => DeliveryConnector::class],
         'bolt_food' => ['label' => 'Bolt Food (delivery app)', 'class' => DeliveryConnector::class],
         'chowdeck' => ['label' => 'Chowdeck (delivery app)', 'class' => DeliveryConnector::class],
-        'whatsapp' => ['label' => 'WhatsApp catalog (planned)', 'class' => null],
+        'whatsapp' => ['label' => 'WhatsApp orders', 'class' => WhatsappConnector::class],
     ];
 
     /** Delivery apps: orders in only, turned into kitchen bills (Restaurant). */
@@ -28,6 +28,12 @@ final class ConnectorRegistry
     public static function isDelivery(string $type): bool
     {
         return in_array($type, self::DELIVERY, true);
+    }
+
+    /** Channels that only bring orders in: nothing (products, prices, stock) is sent to them. */
+    public static function ordersOnly(string $type): bool
+    {
+        return self::isDelivery($type) || $type === 'whatsapp';
     }
 
     public function for(string $type): ChannelConnector

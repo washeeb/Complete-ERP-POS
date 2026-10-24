@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\RestaurantController;
 use App\Http\Controllers\Api\V1\ServicesController;
 use App\Http\Controllers\Api\V1\SyncController;
 use App\Http\Controllers\Api\V1\VanController;
+use App\Http\Controllers\Api\V1\WhatsappController;
 use App\Http\Controllers\Api\V1\WmsController;
 use App\Http\Controllers\LicenseServerController;
 use Illuminate\Support\Facades\Broadcast;
@@ -28,6 +29,10 @@ Route::prefix('v1')->group(function () {
 
     // Store webhooks (WooCommerce, Shopify, generic REST): signature checked over the raw body, stored once, processed by the relay.
     Route::post('channels/{channel}/webhooks', ChannelWebhookController::class)->whereUuid('channel')->middleware('throttle:webhooks');
+
+    // WhatsApp orders (Meta Cloud API): Meta's address check, then customers' messages signed with the app secret.
+    Route::get('whatsapp/{provider}', [WhatsappController::class, 'verify'])->whereUuid('provider')->middleware('throttle:webhooks')->name('whatsapp.webhook');
+    Route::post('whatsapp/{provider}', [WhatsappController::class, 'receive'])->whereUuid('provider')->middleware('throttle:webhooks');
 
     // Mobile money provider callbacks (Paystack signed; Hubtel answered by a status check). The token names the company.
     Route::post('momo/webhook/{token}', [MomoController::class, 'webhook'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:webhooks')->name('momo.webhook');

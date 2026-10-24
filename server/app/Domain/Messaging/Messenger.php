@@ -28,6 +28,9 @@ final class Messenger
 
     public const MAX_ATTEMPTS = 8;
 
+    /** Template key of a plain WhatsApp reply (no template: allowed within 24 hours of the customer's message). */
+    public const REPLY = 'whatsapp_reply';
+
     /**
      * Send a message from a template to a customer on the best channel: WhatsApp when it is set up and its template is
      * on, else SMS; plus e-mail when there is an address and the e-mail template is on.
@@ -142,7 +145,7 @@ final class Messenger
         try {
             $ref = match ($m->channel) {
                 'email' => $this->email($m),
-                'whatsapp' => Gateways::whatsapp($provider->credentials ?? [], $m->to, (string) (Templates::find($m->tenant_id, (string) $m->template_key, 'whatsapp')?->whatsapp_template ?? $m->template_key),
+                'whatsapp' => $m->template_key === self::REPLY ? Gateways::whatsappText($provider->credentials ?? [], $m->to, $m->body) : Gateways::whatsapp($provider->credentials ?? [], $m->to, (string) (Templates::find($m->tenant_id, (string) $m->template_key, 'whatsapp')?->whatsapp_template ?? $m->template_key),
                     (string) (Templates::find($m->tenant_id, (string) $m->template_key, 'whatsapp')?->whatsapp_language ?? 'en_US'), $m->params ?? []),
                 default => $provider
                     ? Gateways::sms($provider->provider, $provider->credentials ?? [], $provider->sender_id, $m->to, $m->body, $m->reference)

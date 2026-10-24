@@ -6,13 +6,16 @@ use App\Models\Account;
 use App\Models\Branch;
 use App\Models\Tenant;
 use App\Support\Money;
+use App\Support\RequestMemo;
 
 /** Shared bits for the finance screens. */
 final class FinanceUi
 {
     public static function currency(): string
     {
-        return Tenant::find(Erp::user()->tenant_id)->currency_code;
+        $tenantId = Erp::user()->tenant_id;
+
+        return RequestMemo::get('currency:'.$tenantId, fn () => Tenant::find($tenantId)->currency_code); // once per request, not per row
     }
 
     public static function money(?int $minor): string

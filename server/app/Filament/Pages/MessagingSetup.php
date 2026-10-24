@@ -95,7 +95,14 @@ class MessagingSetup extends Page
                 ->columns(2)->schema([
                     TextInput::make('credentials.phone_number_id')->label('Phone number ID')->placeholder($saved ? 'Saved — leave empty to keep' : null),
                     TextInput::make('credentials.access_token')->label('Access token (permanent system-user token)')->password()->revealable()->autocomplete('new-password')->placeholder($saved ? 'Saved — leave empty to keep' : null),
+                    TextInput::make('credentials.app_secret')->label('App secret (only to receive orders by WhatsApp)')->password()->revealable()->autocomplete('new-password')
+                        ->placeholder(! empty($saved?->credentials['app_secret']) ? 'Saved — leave empty to keep' : null)
+                        ->helperText('Meta app → App settings → Basic. Incoming messages are accepted only when signed with it.'),
                     Toggle::make('is_active')->label('Send WhatsApp messages (preferred over SMS when a template is on)')->inline(false),
+                    Text::make(fn () => $saved && ! empty($saved->credentials['verify_token'])
+                        ? 'To receive orders: at Meta (WhatsApp → Configuration → Webhook) enter the callback URL '.route('whatsapp.webhook', ['provider' => $saved->id])
+                            .' and the verify token '.$saved->credentials['verify_token'].', then subscribe to "messages". Turn on System → Settings → WhatsApp orders.'
+                        : 'Save these settings to get the address Meta sends incoming messages to.')->columnSpanFull(),
                     Text::make(fn () => $saved?->tested_at ? 'Last test: '.$saved->tested_at->format('j M H:i').' — '.$saved->test_result : '')->columnSpanFull(),
                 ]),
         ]);
