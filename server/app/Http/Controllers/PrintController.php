@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Domain\Catalog\Labels;
 use App\Domain\Customers\CustomerLedger;
 use App\Domain\Logistics\WaybillService;
+use App\Domain\Pharmacy\NhisClaims;
 use App\Domain\Pharmacy\PharmacyReports;
 use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
@@ -18,8 +19,10 @@ use App\Models\GoodsReceipt;
 use App\Models\Invoice;
 use App\Models\LegalEntity;
 use App\Models\Markdown;
+use App\Models\NhisClaim;
 use App\Models\PayrollRun;
 use App\Models\Payslip;
+use App\Models\PriceList;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseRequest;
 use App\Models\Sale;
@@ -32,6 +35,7 @@ use App\Models\Tenant;
 use App\Models\Warehouse;
 use App\Models\Waybill;
 use App\Security\Authorizer;
+use App\Support\Money;
 use App\Support\Qr;
 use App\Support\Settings;
 use Illuminate\Http\Request;
@@ -364,6 +368,31 @@ class PrintController extends Controller
             }
             fclose($out);
         }, "nhis-claims-{$from}-to-{$to}.csv", ['Content-Type' => 'text/csv']);
+    }
+
+    /** One NHIS claim's sales (CSV), to send to the NHIA. The NHIS part of each sale is on its first row. */
+    public function nhisClaim(Request $request, string $claim): StreamedResponse
+    {
+        $c = NhisClaim::with('branch')->findOrFail($claim);
+        $this->allow($request, [NhisClaims::PERMISSION], $c->branch_id, $c->tenant_id);
+        $rows = PharmacyReports::claimLines($c->id);
+        $exp = Money::exponent((string) PriceList::where('is_default', true)->value('currency_code'));
+        $amount = fn ($minor) => $minor === null ? '' : number_format($minor / 10 ** $exp, $exp, '.', '');
+
+        return response()->streamDownload(function () use ($rows, $amount) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Date', 'Receipt', 'Patient', 'NHIS no.', 'Prescription', 'Prescriber', 'Prescriber reg. no.', 'Facility', 'Prescription ref.', 'Medicine',
+                'Generic name', 'Strength', 'FDA reg. no.', 'Qty', 'Unit', 'Amount', 'NHIS price per base unit', 'NHIS part of the sale'], ',', '"', '');
+            $seen = [];
+            foreach ($rows as $r) {
+                fputcsv($out, [Carbon::parse($r->occurred_at)->toDateString(), $r->receipt_no, $r->patient, $r->nhis_no, $r->number, $r->prescriber_name, $r->prescriber_reg_no,
+                    $r->facility, $r->reference, $r->medicine, $r->generic_name, $r->strength, $r->fda_reg_no, rtrim(rtrim((string) $r->qty, '0'), '.'), $r->uom_code,
+                    $amount((int) $r->line_total_minor), $amount($r->nhis_price_minor === null ? null : (int) $r->nhis_price_minor),
+                    isset($seen[$r->sale_id]) ? '' : $amount((int) $r->nhis_minor)], ',', '"', '');
+                $seen[$r->sale_id] = true;
+            }
+            fclose($out);
+        }, "nhis-claim-{$c->number}.csv", ['Content-Type' => 'text/csv']);
     }
 
     /** @return array{0: string, 1: string} */

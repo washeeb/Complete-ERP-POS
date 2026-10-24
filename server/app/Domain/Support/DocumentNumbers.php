@@ -13,7 +13,7 @@ final class DocumentNumbers
 {
     public const PREFIXES = ['purchase_order' => 'PO', 'goods_receipt' => 'GRN', 'stock_transfer' => 'TRF', 'stock_count' => 'CNT',
         'customer' => 'CUS', 'supplier' => 'SUP', 'quotation' => 'QT', 'customer_order' => 'SO', 'delivery' => 'DN', 'invoice' => 'INV', 'credit_note' => 'CRN', 'customer_payment' => 'RCT',
-        'journal' => 'JE', 'supplier_bill' => 'BILL', 'supplier_payment' => 'SPAY',
+        'journal' => 'JE', 'nhis_claim' => 'NHC', 'supplier_bill' => 'BILL', 'supplier_payment' => 'SPAY',
         'money_transfer' => 'MT', 'expense_claim' => 'EXP', 'fixed_asset' => 'FA',
         'employee' => 'EMP', 'employee_loan' => 'LN', 'payroll_run' => 'PAYR',
         'prescription' => 'RX', 'dining_order' => 'ORD', 'reservation' => 'RES', 'repair_job' => 'JOB', 'alteration' => 'ALT',

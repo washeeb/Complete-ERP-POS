@@ -316,12 +316,12 @@ final class Settings
             'help' => 'EAN-13 labels from the scales: prefix (2 digits), the product\'s 5-digit scale code (PLU), the weight in grams (5 digits), check digit. Several prefixes: 21,22.',
         ],
         'grocery.markdown_prefix' => [
-            'type' => 'string', 'default' => '29', 'max' => 2, 'group' => 'Grocery',
+            'type' => 'string', 'default' => '29', 'max' => 2, 'group' => 'Stock',
             'label' => 'Markdown stickers start with',
-            'help' => 'First two digits of the barcodes printed on near-expiry markdown stickers. Must differ from the scale prefixes.',
+            'help' => 'First two digits of the barcodes printed on near-expiry markdown stickers. Must differ from the scale label prefixes (Grocery).',
         ],
         'grocery.markdown_rules' => [
-            'type' => 'string', 'default' => '7:30,3:50', 'max' => 60, 'group' => 'Grocery',
+            'type' => 'string', 'default' => '7:30,3:50', 'max' => 60, 'group' => 'Stock',
             'label' => 'Suggested markdowns (days left : % off)',
             'help' => '"7:30,3:50" = 30 % off when 7 days or fewer are left, 50 % at 3 days. A manager applies them.',
         ],
@@ -349,6 +349,11 @@ final class Settings
             'type' => 'int', 'default' => 0, 'min' => 0, 'max' => 100000, 'group' => 'Pharmacy', 'branch' => true,
             'label' => 'A pharmacist must approve more than this many (smallest unit) of one medicine',
             'help' => 'Where tellers may sell prescription-only or controlled medicines, a line above this quantity (in the unit stock is counted in, e.g. tablets) still needs a pharmacist. Stops bulk sales of codeine, tramadol and the like. 0 = no limit.',
+        ],
+        'pharmacy.nhis_at_till' => [
+            'type' => 'bool', 'default' => false, 'group' => 'Pharmacy', 'branch' => true,
+            'label' => 'Take NHIS at the till',
+            'help' => 'For NHIS-accredited pharmacies. When the patient has a valid NHIS card on their record, the till offers "NHIS pays" for the medicines that have an NHIS price; that part is claimed from the NHIA under Pharmacy → NHIS claims.',
         ],
         'pharmacy.major_warning_needs_pharmacist' => [
             'type' => 'bool', 'default' => true, 'group' => 'Pharmacy', 'branch' => true,

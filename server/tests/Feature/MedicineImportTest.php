@@ -18,18 +18,23 @@ beforeEach(function () {
 it('sets the medicine schedule and details from the products file, switching batches on', function () {
     $importer = app(ProductsUpdateImporter::class);
     $importer->apply(actorFor($this->owner), ['sku' => 'AMOX', 'drug_schedule' => 'Prescription only', 'generic_name' => 'Amoxicillin', 'strength' => '500 MG',
-        'dosage_form' => 'Capsule', 'fda_reg_no' => 'FDA/SD.123', 'active_ingredients' => 'Amoxicillin'], [], null);
+        'dosage_form' => 'Capsule', 'fda_reg_no' => 'FDA/SD.123', 'active_ingredients' => 'Amoxicillin', 'daily_use' => '3', 'nhis_price' => '0.15'], [], null);
     $a = $this->amox->fresh();
     expect($a->drug_schedule)->toBe('pom')->and($a->track_batches)->toBeTrue()->and($a->strength)->toBe('500 MG')
-        ->and($a->active_ingredients)->toBe(['amoxicillin'])->and($a->needsPrescription())->toBeTrue();
+        ->and($a->active_ingredients)->toBe(['amoxicillin'])->and($a->needsPrescription())->toBeTrue()->and($a->nhis_price_minor)->toBe(15);
 
     $importer->apply(actorFor($this->owner), ['sku' => 'PETH', 'drug_schedule' => 'CD'], [], null);
     expect($this->peth->fresh()->drug_schedule)->toBe('controlled');
 
     $rows = collect(iterator_to_array($importer->exportRows(actorFor($this->owner), [], null), false));
     $headings = array_column($importer->columns(), 'name');
-    $amox = array_combine(array_slice($headings, 0, count($rows->first())), array_slice($rows->firstWhere(0, 'AMOX'), 0, count($headings)));
-    expect($amox['drug_schedule'])->toBe('pom')->and($amox['generic_name'])->toBe('AMOXICILLIN')->and($amox['active_ingredients'])->toBe('amoxicillin');
+    expect(count($rows->first()))->toBe(count($headings)); // every column in its place, so the file can be uploaded again
+    $amox = array_combine($headings, $rows->firstWhere(0, 'AMOX'));
+    expect($amox['drug_schedule'])->toBe('pom')->and($amox['generic_name'])->toBe('AMOXICILLIN')->and($amox['active_ingredients'])->toBe('amoxicillin')
+        ->and($amox['daily_use'])->toBe('3')->and($amox['nhis_price'])->toBe('0.15')->and($amox['price_retail'])->toBe('2.00');
+    $importer->apply(actorFor($this->owner), ['sku' => 'AMOX', 'nhis_price' => 'none'], [], null);
+    expect($this->amox->fresh()->nhis_price_minor)->toBeNull()
+        ->and(fn () => $importer->apply(actorFor($this->owner), ['sku' => 'AMOX', 'nhis_price' => 'free'], [], null))->toThrow(DomainException::class, 'nhis_price');
 
     expect(fn () => $importer->apply(actorFor($this->owner), ['sku' => 'AMOX', 'drug_schedule' => 'maybe'], [], null))->toThrow(DomainException::class, 'drug_schedule');
     $importer->apply(actorFor($this->owner), ['sku' => 'AMOX', 'drug_schedule' => 'none'], [], null);

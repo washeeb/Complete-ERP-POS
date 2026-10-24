@@ -1,8 +1,14 @@
 # State (resume file)
 
 **Phase:** Separate books per company · **Status:** done on branch `separate-books` (PR to `main`). Industries complete: A (structure), B (stock requests), C (profit centres), D (separate books)
-**Updated:** 2026-10-24 · One scroll, speed sweep, access review (Who can do what) and WhatsApp orders on branch `one-scroll-sweep` (see the first section).
+**Updated:** 2026-10-24 · NHIS at the till and NHIS claims, interaction starter list, near-expiry markdowns for pharmacies on branch `pharmacy-extras` (see the first section).
 
+
+## Pharmacy extras — branch `pharmacy-extras`
+- **NHIS:** migration `2026_12_05_100001_nhis_claims` (`products.nhis_price_minor`, `nhis_claims`, `nhis_claim_lines`; chart `nhis_receivable` 1245, `nhis_rejected` 6720 via `ChartTemplate::ensure`). Tender `nhis` (`SalePayment::METHODS`, `AutoPoster::TENDER`), checked in `SaleService::nhis()`; till `pharmacy.ts nhisCover`, `Pay` prop `nhis`, boot `pharmacy.nhis` from setting `pharmacy.nhis_at_till`. `App\Domain\Pharmacy\NhisClaims` (prepare, submit, withdraw, settle; permission `pharmacy.nhis`), AutoPoster kind `nhis_claims`, `NhisClaimResource` (+ `LinesRelationManager`), CSV `print.nhis-claim` (`PharmacyReports::claimLines`). Products file column `nhis_price`.
+- **Interactions:** `InteractionStarter::ROWS`, `PharmacyService::addStarter()` and `unchecked()`; header action on `ListDrugInteractions`.
+- **Markdowns:** till catalog `grocery` block sent for every branch (scale prefixes only with Grocery); `PharmacyMarkdowns` page (extends `GroceryMarkdowns`, `$module`); markdown settings in group Stock.
+- Tests: `PharmacyTest` (NHIS, claims, starter list, markdowns), `MedicineImportTest` (export columns line up), `GroceryTest`, `pos/src/pharmacy.test.ts`.
 
 ## One scroll, speed, access review, WhatsApp orders — branch `one-scroll-sweep`
 - **One scroll:** admin.css frame removed; `public/js/seslabs/hscroll.js` (BODY_END hook in `AdminPanelProvider`) pins a side-to-side bar for wide `.fi-ta-content-ctn` / `.fi-fo-table-repeater`.

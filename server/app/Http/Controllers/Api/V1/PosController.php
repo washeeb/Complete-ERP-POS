@@ -165,12 +165,14 @@ class PosController extends Controller
             'promotions' => Promotion::where('is_active', true)->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>', $now))->get()
                 ->map(fn (Promotion $p) => $p->toEngine())->values(),
             'utc_offset_minutes' => (int) round(Carbon::now(Branch::find($device->branch_id)?->timezone ?: config('app.timezone'))->utcOffset()),
-            // Grocery: weighted-barcode scale labels and near-expiry markdown stickers this branch's tills recognise.
-            'grocery' => app(ModuleService::class)->isEnabled($device->branch_id, 'grocery') ? [
-                'scale_prefixes' => array_values(array_filter(array_map('trim', explode(',', (string) app(Settings::class)->get('grocery.scale_prefixes', $device->tenant_id))))),
+            // Near-expiry markdown stickers this branch's tills recognise (any branch with expiry dates: grocery, pharmacy…),
+            // and the weighted-barcode scale labels (Grocery only).
+            'grocery' => [
+                'scale_prefixes' => app(ModuleService::class)->isEnabled($device->branch_id, 'grocery')
+                    ? array_values(array_filter(array_map('trim', explode(',', (string) app(Settings::class)->get('grocery.scale_prefixes', $device->tenant_id))))) : [],
                 'markdown_prefix' => (string) app(Settings::class)->get('grocery.markdown_prefix', $device->tenant_id),
                 'markdowns' => MarkdownService::activeFor($device->branch_id),
-            ] : null,
+            ],
             'electronics' => app(ModuleService::class)->isEnabled($device->branch_id, 'electronics'), // trade-ins and repairs at this till
             // Fashion: styles for the size × colour picker, and the alteration product (null when the module is off here).
             'fashion' => app(ModuleService::class)->isEnabled($device->branch_id, 'fashion') ? [
@@ -195,6 +197,7 @@ class PosController extends Controller
             'pharmacy' => app(ModuleService::class)->isEnabled($device->branch_id, 'pharmacy') ? [
                 'interactions' => DrugInteraction::orderBy('ingredient_a')->get(['ingredient_a', 'ingredient_b', 'severity', 'note'])->toArray(),
                 'rules' => app(PharmacyRules::class)->forBranch($branch), // how strictly POM and controlled medicines are sold here
+                'nhis' => (bool) app(Settings::class)->forBranch('pharmacy.nhis_at_till', $branch, $device->tenant_id), // the "NHIS pays" tender
             ] : null,
             'products' => $products->map(fn (Product $p) => [
                 'id' => $p->id, 'sku' => $p->sku, 'name' => $p->name, 'category_id' => $p->category_id, 'track_stock' => $p->track_stock, 'plu' => $p->plu, 'location' => $p->location, 'dosage' => $p->dosage,
@@ -203,7 +206,7 @@ class PosController extends Controller
                 'service_minutes' => $p->service_minutes, 'is_pack' => $p->pack !== null, 'licence_keys' => $p->licence_keys,
                 'is_container' => $p->is_container, 'deposit_product_id' => $p->deposit_product_id, 'deposit_per_unit' => $p->deposit_per_unit === null ? null : (string) $p->deposit_per_unit,
                 'drug' => $p->drug_schedule ? ['schedule' => $p->drug_schedule, 'generic_name' => $p->generic_name, 'strength' => $p->strength,
-                    'dosage_form' => $p->dosage_form, 'active_ingredients' => $p->active_ingredients ?? []] : null,
+                    'dosage_form' => $p->dosage_form, 'active_ingredients' => $p->active_ingredients ?? [], 'nhis_price_minor' => $p->nhis_price_minor] : null,
                 'on_hand' => $p->track_stock ? (string) ($stock[$p->id] ?? '0.000') : null,
                 'expires_on' => $p->track_batches && isset($expiry[$p->id]) ? substr((string) $expiry[$p->id], 0, 10) : null,
                 'min_qty' => isset($minimums[$p->id]) ? Qty::format($minimums[$p->id]['min']) : null,

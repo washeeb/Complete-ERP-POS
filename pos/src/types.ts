@@ -4,12 +4,12 @@ export type Unit = { id: string; uom_code: string; uom_name: string; decimals: n
 export type Price = { price_list_id: string; product_uom_id: string; min_qty: string; amount_minor: number; starts_at: string | null; ends_at: string | null }
 export type Markdown = { id: string; code: string; product_id: string; product_uom_id: string; price_minor: number; percent_bp: number; valid_until: string }
 export type Grocery = { scale_prefixes: string[]; markdown_prefix: string; markdowns: Markdown[] }
-export type Drug = { schedule: 'otc' | 'pom' | 'controlled'; generic_name: string | null; strength: string | null; dosage_form: string | null; active_ingredients: string[] }
+export type Drug = { schedule: 'otc' | 'pom' | 'controlled'; generic_name: string | null; strength: string | null; dosage_form: string | null; active_ingredients: string[]; nhis_price_minor?: number | null }
 export type Interaction = { ingredient_a: string; ingredient_b: string; severity: 'minor' | 'moderate' | 'major'; note: string }
 export type RxLevel = 'approve' | 'details' | 'patient' | 'free'
 /** How strictly prescription-only and controlled medicines are sold at this branch (server: PharmacyRules). max_qty in base units × 1000. */
 export type PharmacyRules = { pom: RxLevel; controlled: RxLevel; max_qty: number; major_needs_pharmacist: boolean; after: string }
-export type Pharmacy = { interactions: Interaction[]; rules?: PharmacyRules }
+export type Pharmacy = { interactions: Interaction[]; rules?: PharmacyRules; nhis?: boolean }
 // Restaurant
 export type ModifierGroup = { id: string; name: string; min: number; max: number; options: { id: string; name: string; product_id: string | null }[] }
 export type Restaurant = { modifier_groups: ModifierGroup[]; service_charge: { product_id: string; bp: number } | null; tips: boolean }
@@ -127,7 +127,7 @@ export type Bootstrap = {
 
 export type Realtime = { key: string; host: string; port: number; scheme: 'http' | 'https'; channels: (string | null)[] }
 
-export type Payment = { method: 'cash' | 'momo' | 'card' | 'account' | 'points' | 'gift_card' | 'store_credit' | 'deposit' | 'aggregator' | 'trade_in'; provider?: string; amount_minor: number; tendered_minor: number; reference?: string; payer_phone?: string; momo_charge_id?: string }
+export type Payment = { method: 'cash' | 'momo' | 'card' | 'account' | 'points' | 'gift_card' | 'store_credit' | 'deposit' | 'aggregator' | 'trade_in' | 'nhis'; provider?: string; amount_minor: number; tendered_minor: number; reference?: string; payer_phone?: string; momo_charge_id?: string }
 
 /** GRA E-VAT signature block (VSDC), printed on the receipt. */
 export type SdcSignature = { sdc_id: string; receipt: string; internal: string; signature: string; mrc: string; time: string }

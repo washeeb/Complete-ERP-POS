@@ -30,6 +30,7 @@ final class AutoPoster
         'money_transfers' => 'Money moved between accounts', 'expense_claims' => 'Expense claims paid', 'depreciation' => 'Depreciation', 'asset_disposals' => 'Assets disposed of',
         'staff_loans' => 'Staff loans and advances paid out', 'payroll' => 'Payroll (approved)', 'payroll_payments' => 'Payroll paid',
         'deposits' => 'Booking deposits (restaurant)', 'production' => 'Production labour and cost differences',
+        'nhis_claims' => 'NHIS claims settled',
     ];
 
     /** How each kind of stock movement is balanced against the stock account. */
@@ -48,7 +49,7 @@ final class AutoPoster
     /** Till tenders → the account the money (or claim) sits in. */
     public const TENDER = ['cash' => 'cash_till', 'momo' => 'momo', 'card' => 'card_clearing', 'account' => 'receivables',
         'points' => 'loyalty', 'gift_card' => 'stored_value', 'store_credit' => 'stored_value',
-        'deposit' => 'customer_deposits', 'aggregator' => 'aggregator_receivable', 'trade_in' => 'trade_in_clearing'];
+        'deposit' => 'customer_deposits', 'aggregator' => 'aggregator_receivable', 'trade_in' => 'trade_in_clearing', 'nhis' => 'nhis_receivable'];
 
     /** Money received or paid elsewhere (back office, online). */
     public const METHOD = ['cash' => 'cash_office', 'momo' => 'momo', 'card' => 'card_clearing', 'bank' => 'bank', 'cheque' => 'bank',
@@ -145,6 +146,7 @@ final class AutoPoster
             'payroll_payments' => [$this->unpostedQuery('payroll_runs', 'payroll_payment', $tenantId)->where('s.status', 'paid'), 's.paid_on'],
             'deposits' => [$this->unpostedQuery('deposit_movements', 'deposit_movement', $tenantId), $d('s.occurred_at')],
             'production' => [$this->unpostedQuery('work_order_costs', 'work_order_cost', $tenantId), $d('s.occurred_at')],
+            'nhis_claims' => [$this->unpostedQuery('nhis_claims', 'nhis_claim', $tenantId)->where('s.status', 'settled'), 's.paid_on'],
         ];
     }
 
@@ -530,6 +532,21 @@ final class AutoPoster
                 ['account' => Account::withoutGlobalScopes()->findOrFail($t->to_account_id), 'amount' => (int) $t->amount_minor, 'branch_id' => $t->to_branch_id],
                 ['account' => Account::withoutGlobalScopes()->findOrFail($t->from_account_id), 'amount' => -(int) $t->amount_minor, 'branch_id' => $t->branch_id],
             ], [['money_transfer', $t->id]], 'money_transfers', late: true);
+        }
+
+        return count($rows);
+    }
+
+    /** What the NHIA paid on a claim comes in; what it did not pay is written off. */
+    private function nhis_claims(Actor $actor, int $batch): int
+    {
+        $rows = $this->rows('nhis_claims', $actor->tenantId, $batch, ['s.id', 's.number', 's.branch_id', 's.claimed_minor', 's.paid_minor', 's.rejected_minor', 's.paid_method']);
+        foreach ($rows as $c) {
+            $this->gl->post($actor, $c->d, 'auto', "NHIS claim {$c->number}", array_values(array_filter([
+                (int) $c->paid_minor ? ['account' => self::METHOD[$c->paid_method] ?? 'bank', 'amount' => (int) $c->paid_minor, 'branch_id' => $c->branch_id] : null,
+                (int) $c->rejected_minor ? ['account' => 'nhis_rejected', 'amount' => (int) $c->rejected_minor, 'branch_id' => $c->branch_id] : null,
+                ['account' => 'nhis_receivable', 'amount' => -(int) $c->claimed_minor, 'branch_id' => $c->branch_id],
+            ])), [['nhis_claim', $c->id]], 'nhis_claims', late: true);
         }
 
         return count($rows);

@@ -25,7 +25,7 @@ final class TestTradingReset
     public const TABLES = [
         // Tills and cash
         'sales', 'sale_lines', 'sale_payments', 'trade_ins', 'shifts', 'shift_count_corrections', 'vault_sessions', 'cash_movements', 'cash_handovers', 'cash_variances', 'till_drawer_events', 'expense_claims',
-        'prescriptions', 'pharmacy_signoffs', 'review_items', 'fiscal_submissions', 'commissions', 'momo_charges', 'refill_reminders', 'whatsapp_orders',
+        'prescriptions', 'pharmacy_signoffs', 'review_items', 'fiscal_submissions', 'commissions', 'momo_charges', 'refill_reminders', 'whatsapp_orders', 'nhis_claim_lines', 'nhis_claims',
         // Stock
         'stock_movements', 'stock_movement_serials', 'stock_levels', 'stock_batch_levels', 'stock_bin_levels', 'stock_batches', 'serial_numbers', 'stock_reservations',
         'stock_adjustments', 'stock_adjustment_lines', 'stock_counts', 'stock_count_lines', 'stock_transfers', 'stock_transfer_lines', 'stock_requests', 'stock_request_lines', 'markdowns',
@@ -51,6 +51,9 @@ final class TestTradingReset
     /** Document numbers that start again (customers, staff, assets and the like keep counting: those records stay). */
     public const RESTART_NUMBERS = ['PO', 'GRN', 'TRF', 'CNT', 'QT', 'SO', 'DN', 'INV', 'CRN', 'RCT', 'JE', 'BILL', 'SPAY', 'MT', 'RX', 'ORD', 'RES', 'JOB', 'ALT',
         'APT', 'PASS', 'ADJ', 'RTS', 'WB', 'VS', 'WO', 'QC', 'CH', 'SRQ', 'EXP', 'PRQ'];
+
+    /** The database's foreign keys, read once per run (not static: a later run or test sees the schema it has). */
+    private ?array $links = null;
 
     public function __construct(private readonly AuditLog $audit) {}
 
@@ -185,9 +188,7 @@ final class TestTradingReset
 
     private function links(): array
     {
-        static $links = null;
-
-        return $links ??= DB::select(<<<'SQL'
+        return $this->links ??= DB::select(<<<'SQL'
             SELECT c.conrelid::regclass::text AS tbl, a.attname AS col, c.confrelid::regclass::text AS target, a.attnotnull AS notnull
             FROM pg_constraint c JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = ANY (c.conkey)
             WHERE c.contype = 'f'

@@ -34,6 +34,7 @@ final class ChartTemplate
         ['1220', 'Staff advances and loans', 'asset', '1200', false, null, 'staff_loans'],
         ['1230', 'Other receivables', 'asset', '1200', false, null, null],
         ['1240', 'Due from delivery apps', 'asset', '1200', false, null, 'aggregator_receivable'],
+        ['1245', 'Due from NHIS (claims)', 'asset', '1200', false, null, 'nhis_receivable'],
         ['1250', 'Due from / to group companies', 'asset', '1200', false, 'intercompany', 'intercompany'], // posted automatically between legal entities
         ['1300', 'Inventory', 'asset', '1000', true, null, null],
         ['1310', 'Stock – goods for resale', 'asset', '1300', false, 'inventory', 'inventory'],
@@ -110,6 +111,7 @@ final class ChartTemplate
         ['6600', 'Repairs and maintenance', 'expense', '6000', false, null, null],
         ['6700', 'Marketing and advertising', 'expense', '6000', false, null, 'marketing'],
         ['6710', 'Loyalty rewards', 'expense', '6000', false, null, 'loyalty_expense'],
+        ['6720', 'NHIS claims not paid', 'expense', '6000', false, null, 'nhis_rejected'],
         ['6800', 'Bank and MoMo charges', 'expense', '6000', false, null, 'bank_charges'],
         ['6810', 'Cash over and short', 'expense', '6000', false, null, 'cash_over_short'],
         ['6900', 'Depreciation', 'expense', '6000', false, null, 'depreciation'],

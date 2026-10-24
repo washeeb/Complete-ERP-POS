@@ -10,7 +10,7 @@ import { manualAllowed, paymentFrom, promptAvailable } from '../momo'
 import type { MomoMode } from '../momo'
 
 const LABEL: Record<string, string> = { cash: 'Cash', momo: 'Mobile money', card: 'Card', account: 'On account', points: 'Points', gift_card: 'Gift card', store_credit: 'Store credit',
-  deposit: 'Booking deposit', aggregator: 'Delivery app', trade_in: 'Trade-in' }
+  deposit: 'Booking deposit', aggregator: 'Delivery app', trade_in: 'Trade-in', nhis: 'NHIS' }
 const PLATFORM: Record<string, string> = { bolt_food: 'Bolt Food', glovo: 'Glovo', chowdeck: 'Chowdeck' }
 
 const MOMO = [
@@ -26,12 +26,13 @@ const MOMO = [
  */
 export type PayExtra = { tradeIns: TradeInItem[]; tradeInApproval: { username: string; pin: string } | null }
 
-export function Pay({ total: bill, currency, exponent, busy, error, customer, tips = false, bill: order = null, tradeInProducts = null, momoMode = 'manual', online = true, onPay, onCancel }: {
+export function Pay({ total: bill, currency, exponent, busy, error, customer, tips = false, bill: order = null, tradeInProducts = null, momoMode = 'manual', online = true, nhis = null, onPay, onCancel }: {
   total: number; currency: string; exponent: number; busy: boolean; error: string; customer?: TillCustomer | null
   tips?: boolean // Restaurant: ask for a tip, paid on top of the bill
   bill?: DiningOrder | null // Restaurant: the bill being paid (its booking deposit, or the delivery app that pays for it)
   tradeInProducts?: Product[] | null // Electronics: used items can be handed in as part-payment
   momoMode?: MomoMode; online?: boolean // mobile money: typed ID and/or payment request
+  nhis?: { amount: number; no: string } | null // Pharmacy: what the NHIS pays for this sale (the patient's card)
   onPay: (payments: Payment[], tipMinor: number, extra: PayExtra) => void; onCancel: () => void
 }) {
   const [tradeIns, setTradeIns] = useState<TradeInItem[]>([])
@@ -199,6 +200,10 @@ export function Pay({ total: bill, currency, exponent, busy, error, customer, ti
             {order?.kind === 'delivery' && order.platform && (
               <button type="button" className="big primary" disabled={busy} onClick={() => quickPay({ method: 'aggregator', provider: order.platform!, reference: order.external_ref ?? '' }, due)}>
                 Paid by {PLATFORM[order.platform] ?? order.platform} ({money(due)})</button>
+            )}
+            {nhis && !payments.some((p) => p.method === 'nhis') && (
+              <button type="button" className="big" disabled={busy} onClick={() => quickPay({ method: 'nhis', reference: nhis.no }, Math.min(nhis.amount, due))}>
+                NHIS pays {money(Math.min(nhis.amount, due))} (card {nhis.no})</button>
             )}
             {tradeInProducts && <button type="button" disabled={busy} onClick={() => setTradingIn(true)}>Trade-in</button>}
             <div className="row wrap split">
