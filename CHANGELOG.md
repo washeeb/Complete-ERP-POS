@@ -6,6 +6,7 @@
 - **Interaction starter list:** Pharmacy → Drug interactions → **Add the starter list** adds about 55 well-known interactions between common medicines (pairs already there are left alone), for the superintendent pharmacist to review. The page says how many medicines have no generic name or ingredients (warnings cannot check them).
 - **Near-expiry markdowns for pharmacies:** Pharmacy → Near-expiry markdowns, and markdown stickers are recognised by every till, not only grocery ones. The markdown settings moved from Grocery to Stock. Pharmacists get the markdown permission (new installs).
 ### Fixed
+- **Search the menu:** stays at the top of the side menu and only the list below it scrolls, so no menu item shows above or behind it; only the rounded box has a background.
 - The side menu's **Search the menu** box sat against the page header; it now keeps a gap below it, before and after scrolling.
 - **Clear test trading** also clears NHIS claims.
 - Products **Download current data** left out the `daily_use` column, so the directions and prices after it were one column out and the file could not be uploaded again.
