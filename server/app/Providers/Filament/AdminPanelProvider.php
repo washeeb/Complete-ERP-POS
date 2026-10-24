@@ -99,6 +99,8 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => new HtmlString(Watermark::meta()))
             // Where am I (current menu item, group and tab stand out) and file pickers that look like buttons.
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => new HtmlString('<link rel="stylesheet" href="'.asset('css/seslabs/admin.css').'?v='.@filemtime(public_path('css/seslabs/admin.css')).'">'))
+            // "Add to Home screen" on a phone opens Today (the owner's phone view) like an app.
+            ->renderHook(PanelsRenderHook::HEAD_END, fn () => new HtmlString('<link rel="manifest" href="'.asset('admin.webmanifest').'"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="apple-touch-icon" href="'.asset('pos/icon-192.png').'">'))
             ->middleware([TrackComputer::class], isPersistent: true) // which computer: System → Computers, the audit log
             ->authMiddleware([
                 Authenticate::class,

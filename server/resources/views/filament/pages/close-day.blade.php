@@ -28,6 +28,12 @@
         <form wire:submit="closeDay" class="cd-form">
             <label>Taken to the bank <x-filament::input.wrapper><x-filament::input type="text" inputmode="decimal" wire:model="banked" placeholder="0.00" /></x-filament::input.wrapper></label>
             <label>Deposit slip no. <x-filament::input.wrapper><x-filament::input type="text" wire:model="bankRef" maxlength="60" /></x-filament::input.wrapper></label>
+            @if ($this->depositsHere() && ! $closed?->deposit_transfer_id)
+                <label>Into bank account <x-filament::input.wrapper><x-filament::input.select wire:model="bankAccount">
+                    <option value="">— choose —</option>
+                    @foreach ($this->bankAccounts() as $id => $name)<option value="{{ $id }}">{{ $name }}</option>@endforeach
+                </x-filament::input.select></x-filament::input.wrapper></label>
+            @endif
             <label>Kept in the safe <x-filament::input.wrapper><x-filament::input type="text" inputmode="decimal" wire:model="safe" placeholder="0.00" /></x-filament::input.wrapper></label>
             <label class="cd-wide">{{ $problems ? 'Why the day is closed with '.$problems.' problem(s) (required)' : 'Note (optional)' }}
                 <x-filament::input.wrapper><x-filament::input type="text" wire:model="note" maxlength="500" /></x-filament::input.wrapper></label>
@@ -39,11 +45,11 @@
     @if ($recent->isNotEmpty())
         <x-filament::section heading="Recent days">
             <div class="cd-scroll"><table class="cd-table">
-                <thead><tr><th>Day</th><th>Closed by</th><th class="num">Cash counted</th><th class="num">Over / short</th><th class="num">Banked</th><th>Slip</th><th class="num">Safe</th><th>Problems</th></tr></thead>
+                <thead><tr><th>Day</th><th>Closed by</th><th class="num">Cash counted</th><th class="num">Over / short</th><th class="num">Banked</th><th>Slip</th><th>Bank statement</th><th class="num">Safe</th><th>Problems</th></tr></thead>
                 <tbody>@foreach ($recent as $r)
                     <tr><td>{{ $r->business_date->format('D j M') }}</td><td>{{ $r->closed_by_name }}</td><td class="num">{{ $money($r->cash_counted_minor) }}</td>
                         <td class="num {{ $r->over_short_minor < 0 ? 'cd-neg' : '' }}">{{ $money($r->over_short_minor) }}</td>
-                        <td class="num">{{ $r->banked_minor !== null ? $money($r->banked_minor) : '—' }}</td><td>{{ $r->bank_ref ?? '—' }}</td>
+                        <td class="num">{{ $r->banked_minor !== null ? $money($r->banked_minor) : '—' }}</td><td>{{ $r->bank_ref ?? '—' }}</td><td>{{ \App\Domain\Pos\DayCloseService::depositStatus($r)['text'] }}</td>
                         <td class="num">{{ $r->safe_minor !== null ? $money($r->safe_minor) : '—' }}</td><td>{{ $r->problems ? $r->problems.': '.$r->note : '—' }}</td></tr>
                 @endforeach</tbody>
             </table></div>

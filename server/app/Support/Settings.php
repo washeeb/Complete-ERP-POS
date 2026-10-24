@@ -83,6 +83,11 @@ final class Settings
             'label' => 'Remote connections to tills and computers',
             'help' => 'Who may connect without someone at the device clicking Accept. Every connection shows a banner on the device and is in the audit log. A branch can choose differently (Company → Branches).',
         ],
+        'purchasing.suggest_moves' => [
+            'type' => 'bool', 'default' => true, 'group' => 'Stock',
+            'label' => 'Suggest moves between stores before buying',
+            'help' => 'On What to order: when another store of the same business has more than its own maximum of an item you are short of, the page suggests moving it first and orders only the rest. Moves between different industries (which need two approvals) are not suggested.',
+        ],
         'momo.confirm' => [
             'type' => 'choice', 'default' => 'manual', 'group' => 'Mobile money',
             'options' => ['manual' => 'Cashier types the transaction ID (no provider)', 'prompt' => 'Payment request to the customer’s phone; typing the ID still allowed',

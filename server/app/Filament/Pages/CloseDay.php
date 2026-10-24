@@ -2,8 +2,10 @@
 
 namespace App\Filament\Pages;
 
+use App\Domain\Pos\CashControl;
 use App\Domain\Pos\DayCloseService;
 use App\Filament\Support\Erp;
+use App\Models\BankAccount;
 use App\Models\Branch;
 use App\Models\DayClose;
 use App\Models\Tenant;
@@ -47,6 +49,8 @@ class CloseDay extends Page
     public string $bankRef = '';
 
     public string $safe = '';
+
+    public string $bankAccount = '';
 
     public string $note = '';
 
@@ -110,7 +114,7 @@ class CloseDay extends Page
     {
         $b = Branch::whereIn('id', array_keys($this->branches()))->findOrFail($this->branch); // only a branch this person may close
         $done = Erp::run(fn ($actor) => app(DayCloseService::class)->close($actor, $b, $this->date,
-            ['banked' => $this->banked, 'bank_ref' => $this->bankRef, 'safe' => $this->safe, 'note' => $this->note]), 'Day closed');
+            ['banked' => $this->banked, 'bank_ref' => $this->bankRef, 'bank_account_id' => $this->bankAccount ?: null, 'safe' => $this->safe, 'note' => $this->note]), 'Day closed');
         if ($done) {
             $this->fillFromClose();
         }
@@ -123,7 +127,20 @@ class CloseDay extends Page
         $this->banked = $fmt($c?->banked_minor);
         $this->bankRef = (string) ($c?->bank_ref ?? '');
         $this->safe = $fmt($c?->safe_minor);
+        $this->bankAccount = (string) ($c?->bank_account_id ?? array_key_first($this->bankAccounts()) ?? '');
         $this->note = (string) ($c?->note ?? '');
+    }
+
+    /** @return array<string, string> the bank accounts cash can be paid into */
+    public function bankAccounts(): array
+    {
+        return BankAccount::where('is_active', true)->where('kind', 'bank')->orderBy('name')->get()->mapWithKeys(fn (BankAccount $b) => [$b->id => $b->name.($b->number ? ' · '.$b->number : '')])->all();
+    }
+
+    /** Whether the deposits are recorded here (no cash control: handovers record their own deposits). */
+    public function depositsHere(): bool
+    {
+        return ! app(CashControl::class)->enabled(Erp::user()->tenant_id);
     }
 
     /** The branch's own clock, for "today" and the times shown. */

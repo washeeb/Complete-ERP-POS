@@ -24,10 +24,12 @@ use App\Models\Bin;
 use App\Models\GoodsReceipt;
 use App\Models\PurchaseOrder;
 use App\Models\StockCount;
+use App\Models\StockRequest;
 use App\Models\StockTransfer;
 use App\Models\Supplier;
 use App\Models\Warehouse;
 use App\Security\ScopeType;
+use App\Support\Settings;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
@@ -149,6 +151,29 @@ it('shows a long What to order list a page at a time, keeping ticks from earlier
     // Milo ticked on page 1 and the last item on page 2: both are ordered.
     $page->callTableBulkAction('order', [$this->milo->id, $last->id])->assertNotified('1 draft purchase order(s) created');
     expect(PurchaseOrder::sole()->lines)->toHaveCount(2); // one supplier, both lines
+});
+
+it('suggests moving what another store can spare before buying, and asks that store to send it', function () {
+    app(SupplierService::class)->save(actorFor($this->owner), new Supplier, ['code' => 'NESTLE', 'name' => 'NESTLÉ GHANA',
+        'products' => [['product_uom_id' => $this->ctn->id, 'last_cost' => '240', 'is_preferred' => true]]]);
+    app(ReorderService::class)->saveRule(actorFor($this->owner), $this->hq, $this->milo, '24', '96'); // HQ has none: needs 96
+    app(ReorderService::class)->saveRule(actorFor($this->owner), $this->ba, $this->milo, '12', '24');
+    $pc = $this->milo->units->firstWhere('is_base', true);
+    app(InventoryService::class)->adjust(actorFor($this->owner), $this->ba, $this->milo, $pc, '60', 'opening', '', null, '12.00'); // 36 above its maximum
+
+    $s = collect(app(ReorderService::class)->suggestions($this->hq))->firstWhere('product_id', $this->milo->id);
+    expect($s['move_qty'])->toBe(36000)->and($s['move_from_id'])->toBe($this->ba->id)
+        ->and($s['suggest_qty'])->toBe(3000); // the other 60 to buy: 3 cartons of 24
+
+    $this->actingAs(withMfa($this->owner));
+    Livewire::test(ReorderSuggestions::class)->filterTable('warehouse_id', $this->hq->id)->assertSee('36 PC from')->callTableBulkAction('move', [$this->milo->id])->assertNotified('1 stock request(s) sent');
+    $request = StockRequest::with('lines')->sole();
+    expect($request->from_warehouse_id)->toBe($this->ba->id)->and($request->to_warehouse_id)->toBe($this->hq->id)
+        ->and((string) $request->lines[0]->qty)->toBe('36.000');
+
+    // Off in Settings: nothing is suggested.
+    app(Settings::class)->set(actorFor($this->owner), 'purchasing.suggest_moves', false);
+    expect(collect(app(ReorderService::class)->suggestions($this->hq))->firstWhere('product_id', $this->milo->id)['move_qty'])->toBe(0);
 });
 
 it('hides purchasing from people without access', function () {

@@ -90,9 +90,13 @@ class ReorderSuggestions extends Page implements HasTable
                 // What can be changed has a pencil beside it: click the value to change it there (owner request 2026-10-23).
                 self::editable(TextColumn::make('min')->label('Min / max')->formatStateUsing(fn ($state, array $record) => Fields::qty(Qty::format($state)).' / '.Fields::qty(Qty::format($record['max'])))
                     ->description(fn (array $record) => ReorderLevels::SOURCES[$record['source']] ?? null), $this->levelsAction(), fn (array $record) => self::canSetLevels($record)),
+                // Move first, buy the rest: another store of the business has more than its own maximum.
+                TextColumn::make('move_qty')->label('From another store')->placeholder('—')->wrap()
+                    ->formatStateUsing(fn ($state, array $record) => $state ? Fields::qty(Qty::format($state), $record['base_uom_code']).' from '.$record['move_from'] : null)
+                    ->color('success'),
                 self::editable(TextColumn::make('supplier')->label('Supplier')->placeholder('none set up — choose')->color(fn ($state) => $state ? null : 'danger'), $this->supplierAction()),
                 self::editable(TextColumn::make('suggest_qty')->label('Order')->weight('bold')
-                    ->formatStateUsing(fn ($state, array $record) => Fields::qty(Qty::format($state), $record['uom_code'])), $this->quantityAction()),
+                    ->formatStateUsing(fn ($state, array $record) => $state ? Fields::qty(Qty::format($state), $record['uom_code']) : 'nothing — moved instead'), $this->quantityAction()),
                 self::editable(TextColumn::make('unit_cost_minor')->label('Cost')->placeholder('— enter')
                     ->formatStateUsing(fn ($state) => Money::display((int) $state, $currency)), $this->costAction()),
             ])
@@ -102,6 +106,18 @@ class ReorderSuggestions extends Page implements HasTable
                     ->options(fn () => ['none' => 'No supplier set up'] + Supplier::where('is_active', true)->orderBy('name')->pluck('name', 'id')->all()),
             ])
             ->toolbarActions([
+                BulkAction::make('move')->label('Ask other stores to send')->icon(Heroicon::OutlinedArrowsRightLeft)->color('success')
+                    ->modalDescription('One stock request to each store with stock to spare, for the ticked lines that show “From another store”. That store sends it as a transfer.')
+                    ->requiresConfirmation()
+                    ->action(function (Collection $records) {
+                        $first = $records->first();
+                        $requests = Erp::run(fn ($actor) => app(ReorderService::class)->requestMoves($actor, Warehouse::findOrFail($first['warehouse_id']), $records->pluck('product_id')->all()));
+                        if ($requests) {
+                            Notification::make()->success()->title(count($requests).' stock request(s) sent')->body(collect($requests)->pluck('number')->implode(', '))->send();
+                            $this->pagedRowsCache = [];
+                            $this->flushCachedTableRecords();
+                        }
+                    }),
                 BulkAction::make('order')->label('Create draft purchase orders')->icon(Heroicon::OutlinedDocumentPlus)
                     ->action(function (Collection $records) {
                         $first = $records->first();
