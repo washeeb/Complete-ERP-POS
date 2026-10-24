@@ -4,6 +4,7 @@ import { ApiError, wms } from '../api'
 import { getSession } from '../db'
 import { retryRefused } from '../offline'
 import { cameraScanSupported, listenForScans, scanFeedback } from '../scanner'
+import { confirmLeave, useLeaveWarning } from '../unsaved'
 import { act, cachedGet, discard, lookupLocal, updateCopy, waiting, type ActResult } from '../wmsOffline'
 import { CameraScan } from './CameraScan'
 import type { WmsBin, WmsBootstrap, WmsCatalog, WmsCount, WmsOrder, WmsTransfer, WmsUnit, WmsWarehouse } from '../types'
@@ -17,7 +18,7 @@ import type { WmsBin, WmsBootstrap, WmsCatalog, WmsCount, WmsOrder, WmsTransfer,
  */
 
 type Mode = 'home' | 'receive' | 'putaway' | 'transfers' | 'count'
-type Ctx = { wh: WmsWarehouse; catalog: WmsCatalog | null; online: boolean; refresh: () => void }
+type Ctx = { wh: WmsWarehouse; catalog: WmsCatalog | null; online: boolean; refresh: () => void; dirty: (on: boolean) => void }
 
 const q = (v: string | number) => String(Number(v))
 const msg = (e: unknown) => (e instanceof ApiError || e instanceof Error ? e.message : String(e))
@@ -73,7 +74,10 @@ export function Handheld({ onLogout }: { onLogout: () => void }) {
   const [online, setOnline] = useState(true)
   const [catalog, setCatalog] = useState<WmsCatalog | null>(null)
   const [queue, setQueue] = useState<Awaited<ReturnType<typeof waiting>>>({ pending: 0, refused: [] })
-  const finish = (m: string) => { setFlash(m); setMode('home') }
+  const [unsaved, setUnsaved] = useState(false) // a delivery, transfer or count typed but not posted yet
+  useLeaveWarning(unsaved)
+  const finish = (m: string) => { setUnsaved(false); setFlash(m); setMode('home') }
+  const leave = (then: () => void) => { if (confirmLeave(unsaved, 'what you scanned or typed')) { setUnsaved(false); then() } }
 
   const refreshQueue = useCallback(() => { waiting().then(setQueue).catch(() => undefined) }, [])
   useEffect(() => {
@@ -93,18 +97,18 @@ export function Handheld({ onLogout }: { onLogout: () => void }) {
   const wh = boot?.warehouses.find((w) => w.id === whId) ?? null
   if (error && !boot) return <div className="card narrow"><p className="error">{error}</p><button onClick={onLogout}>Sign out</button></div>
   if (!boot) return <p className="center muted">Loading…</p>
-  const ctx: Ctx | null = wh ? { wh, catalog, online, refresh: refreshQueue } : null
+  const ctx: Ctx | null = wh ? { wh, catalog, online, refresh: refreshQueue, dirty: setUnsaved } : null
 
   return (
     <div className="handheld">
       <header className="row wrap hh-head">
         <strong>{boot.branch.code}</strong>
-        <select aria-label="Warehouse" value={whId} onChange={(e) => { setWhId(e.target.value); setMode('home') }}>
+        <select aria-label="Warehouse" value={whId} onChange={(e) => { const v = e.target.value; leave(() => { setWhId(v); setMode('home') }) }}>
           {boot.warehouses.map((w) => <option key={w.id} value={w.id}>{w.code} · {w.name}</option>)}
         </select>
         <span className="muted small">{boot.user.name}</span>
-        {mode !== 'home' && <button onClick={() => setMode('home')}>Menu</button>}
-        <button onClick={onLogout}>Sign out</button>
+        {mode !== 'home' && <button onClick={() => leave(() => setMode('home'))}>Menu</button>}
+        <button onClick={() => leave(onLogout)}>Sign out</button>
       </header>
       {(!online || queue.pending > 0) && (
         <p className={online ? 'banner' : 'banner warn'} role="status">
@@ -152,6 +156,8 @@ function Receive({ ctx, done }: { ctx: Ctx; done: (message: string) => void }) {
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
   const clientId = useRef(uuidv7()) // one per delivery: a resend never receives twice
+  const typed = Object.values(now).some((v) => Number(v) > 0)
+  useEffect(() => ctx.dirty(typed), [typed, ctx])
 
   useEffect(() => { cachedGet(`orders:${wh.id}`, () => remote(() => wms.purchaseOrders(wh.id))).then((r) => setOrders(r.data)).catch((e) => setNote(msg(e))) }, [wh.id])
 
@@ -231,7 +237,7 @@ function Receive({ ctx, done }: { ctx: Ctx; done: (message: string) => void }) {
       <label>Supplier delivery note no.<input value={ref} onChange={(e) => setRef(e.target.value)} /></label>
       {note && <p className="muted">{note}</p>}
       <div className="row">
-        <button onClick={() => setPo(null)}>Back</button>
+        <button onClick={() => { if (confirmLeave(typed, 'the quantities typed')) { setNow({}); setPo(null) } }}>Back</button>
         <button className="primary big" disabled={busy || !Object.values(now).some((v) => Number(v) > 0)} onClick={post}>{busy ? 'Saving…' : 'Post receipt'}</button>
       </div>
     </section>
@@ -300,6 +306,8 @@ function Transfers({ ctx, done }: { ctx: Ctx; done: (message: string) => void })
   const [bin, setBin] = useState<string | null>(null)
   const [note, setNote] = useState('')
 
+  const changed = Object.keys(got).length > 0
+  useEffect(() => ctx.dirty(changed), [changed, ctx])
   useEffect(() => { cachedGet(`transfers:${wh.id}`, () => remote(() => wms.transfers(wh.id))).then((r) => setList(r.data)).catch((e) => setNote(msg(e))) }, [wh.id])
 
   async function receive() {
@@ -337,7 +345,7 @@ function Transfers({ ctx, done }: { ctx: Ctx; done: (message: string) => void })
       </table>
       {wh.use_bins && <BinSelect bins={wh.bins} value={bin} onChange={setBin} label="Into bin" emptyLabel="Receiving dock" />}
       {note && <p className="error">{note}</p>}
-      <div className="row"><button onClick={() => setT(null)}>Back</button><button className="primary big" onClick={receive}>Confirm receipt</button></div>
+      <div className="row"><button onClick={() => { if (confirmLeave(changed, 'the quantities typed')) { setGot({}); setT(null) } }}>Back</button><button className="primary big" onClick={receive}>Confirm receipt</button></div>
     </section>
   )
 }
@@ -353,6 +361,8 @@ function Count({ ctx, done: finish }: { ctx: Ctx; done: (message: string) => voi
   const [note, setNote] = useState('')
   const [confirming, setConfirming] = useState(false)
   const key = `counts:${wh.id}`
+  const typing = !!unit && qty !== ''
+  useEffect(() => ctx.dirty(typing), [typing, ctx])
 
   const load = useCallback(() => { cachedGet(key, () => remote(() => wms.counts(wh.id))).then((r) => setCounts(r.data)).catch((e) => setNote(msg(e))) }, [key, wh.id])
   useEffect(load, [load])

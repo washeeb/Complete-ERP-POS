@@ -33,6 +33,7 @@ import { DrawerScreen } from './Drawer'
 import { SlipScreen } from './Slip'
 import type { DrawerSlip } from '../slip'
 import { checkCashLimit } from '../drawer'
+import { confirmLeave, useLeaveWarning } from '../unsaved'
 import { cachedCustomers, refreshCustomers } from '../customers'
 import { CustomerPicker } from './CustomerPicker'
 import { Pay } from './Pay'
@@ -50,6 +51,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   const [query, setQuery] = useState('')
   const [message, setMessage] = useState('')
   const [paying, setPaying] = useState(false)
+  useLeaveWarning(lines.length > 0) // a sale being rung up is only on screen until it is paid
   // The drawer: pay-out, pay-in, cash drop, open without a sale; the cash-limit warning; a short confirmation.
   const [drawerTab, setDrawerTab] = useState<null | 'payout' | 'payin' | 'drop' | 'no_sale'>(null)
   const [cashHigh, setCashHigh] = useState(false)
@@ -554,8 +556,8 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
             <button type="button" className="link" onClick={() => { setPayingBill(null); setLines([]) }} aria-label="Stop paying this bill">✕</button></span>}
           {online && <button type="button" onClick={() => setReturning(true)}>Return (F8)</button>}
           <button type="button" onClick={() => setDrawerTab('payout')}>Drawer</button>
-          <button type="button" onClick={onCloseShift}>Close shift</button>
-          <button type="button" onClick={onLogout}>Sign out</button>
+          <button type="button" onClick={() => { if (confirmLeave(lines.length > 0, 'the sale on screen')) onCloseShift() }}>Close shift</button>
+          <button type="button" onClick={() => { if (confirmLeave(lines.length > 0, 'the sale on screen')) onLogout() }}>Sign out</button>
         </div>
       </header>
 

@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- **Changes not saved:** leaving a page with changes not saved asks first — every create and edit form in the back office and the licence generator, Settings, Modules, the set-up wizard, Messaging, Budgets and Close the day (reload, closing the tab or a menu link: "Leave site?"). On the till, a sale on screen; on the handheld, a delivery, transfer or count typed but not posted: the browser asks before reloading or closing, and **Sign out**, **Close shift**, **Menu**, **Back** and changing warehouse ask before throwing it away.
 ### Changed
 - **Settings page:** opens as a short list of groups (each closed, with how many settings it holds); **Find a setting** shows only the settings whose name or explanation has the words typed, across every group; **Save settings** also at the top. Saving while searching leaves the hidden settings unchanged.
 - **Every list and table of lines:** scrolls inside its own frame no taller than the window, so the side-to-side scrollbar is always on screen (not only at the bottom of the last page) and the column headings stay visible while scrolling down.

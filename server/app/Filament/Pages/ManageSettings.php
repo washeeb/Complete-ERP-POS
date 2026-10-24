@@ -11,6 +11,7 @@ use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Pages\Concerns\HasUnsavedDataChangesAlert;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\EmbeddedSchema;
@@ -28,6 +29,8 @@ use UnitEnum;
  */
 class ManageSettings extends Page
 {
+    use HasUnsavedDataChangesAlert;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
     protected static string|UnitEnum|null $navigationGroup = 'System';
@@ -56,6 +59,7 @@ class ManageSettings extends Page
             $values[self::field($key)] = $settings->get($key, Erp::user()->tenant_id);
         }
         $this->form->fill($values);
+        $this->rememberData(); // what is on screen now counts as saved
     }
 
     public function form(Schema $schema): Schema
@@ -128,6 +132,7 @@ class ManageSettings extends Page
                 }
             }
         }), 'Settings saved');
+        $this->rememberData();
     }
 
     /** Dots in keys would nest the form state; keep each setting a flat field. */

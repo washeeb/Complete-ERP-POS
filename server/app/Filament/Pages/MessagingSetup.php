@@ -20,6 +20,7 @@ use Filament\Schemas\Components\Form;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Text;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use UnitEnum;
@@ -103,6 +104,7 @@ class MessagingSetup extends Page
     public function content(Schema $schema): Schema
     {
         return $schema->components([
+            View::make('filament.partials.unsaved-changes')->viewData(['watch' => ['sms', 'whatsapp']]),
             Form::make([EmbeddedSchema::make('smsForm')])->id('sms')->livewireSubmitHandler('saveSms')->footer([Actions::make([
                 Action::make('saveSms')->label('Save SMS settings')->submit('saveSms'),
                 Action::make('testSms')->label('Send a test SMS')->color('gray')->schema([TextInput::make('to')->label('Phone number')->required()->tel()])
