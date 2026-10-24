@@ -14,7 +14,7 @@ class Branch extends Model
 {
     protected static function booted(): void
     {
-        static::saved(fn () => app(Authorizer::class)->forget()); // its company / industry, remembered for permission checks
+        static::saved(fn () => app(Authorizer::class)->forgetBranches()); // its company / industry, remembered for permission checks
     }
 
     use BelongsToTenant, HasOriginNode, HasUuids;

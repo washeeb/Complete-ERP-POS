@@ -129,6 +129,12 @@ final class Authorizer
     /** @var array<string, ?Branch> */
     private array $branches = [];
 
+    /** A branch changed (its company or industry): read it again for the next check. */
+    public function forgetBranches(): void
+    {
+        $this->branches = [];
+    }
+
     /** @var array<string, ?Permission> */
     private array $permissions = [];
 
