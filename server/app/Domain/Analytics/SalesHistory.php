@@ -18,6 +18,8 @@ final class SalesHistory
         $day = "(s.occurred_at AT TIME ZONE 'UTC' AT TIME ZONE ".DB::getPdo()->quote($tz).')::date';
         $rows = DB::table('sale_lines as l')->join('sales as s', 's.id', '=', 'l.sale_id')
             ->whereIn('s.warehouse_id', $warehouseIds)->where('s.status', 'posted')
+            // A plain range a day wider each side lets the index narrow the sales; the local-day test below is exact.
+            ->where('s.occurred_at', '>=', $from->subDay()->toDateString())->where('s.occurred_at', '<', $to->addDays(2)->toDateString())
             ->whereRaw("{$day} BETWEEN ? AND ?", [$from->toDateString(), $to->toDateString()])
             ->when($productIds !== null, fn ($q) => $q->whereIn('l.product_id', $productIds))
             ->groupBy('l.product_id', DB::raw($day))

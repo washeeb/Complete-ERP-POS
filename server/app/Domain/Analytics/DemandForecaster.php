@@ -19,6 +19,9 @@ final class DemandForecaster
 {
     public const HISTORY_DAYS = 84;
 
+    /** @var array<string, list<array{0: string, 1: int, 2: bool, 3: bool, 4: bool}>> calendars already worked out, by start and length */
+    private static array $calendars = [];
+
     /**
      * @param  list<string>|null  $productIds  null = every product sold at the warehouse in the history window
      * @return list<array<string, mixed>> one row per product, sorted by days of cover (shortest first)
@@ -49,10 +52,7 @@ final class DemandForecaster
                 continue;
             }
             $f = self::model($days, $from, self::HISTORY_DAYS);
-            $daily = [];
-            for ($i = 0; $i < $horizon; $i++) {
-                $daily[] = self::predict($f, $today->addDays($i));
-            }
+            $daily = array_map(fn (array $day) => self::predictOn($f, $day), self::calendar($today, $horizon));
             $onHand = (float) ($levels[$productId]->on_hand ?? 0);
             $incoming = (float) ($onOrder[$productId] ?? 0);
             $leadDays = (int) ($lead[$productId] ?? 7) ?: 7;
@@ -82,9 +82,10 @@ final class DemandForecaster
      */
     public static function model(array $days, CarbonImmutable $from, int $n): array
     {
+        $calendar = self::calendar($from, $n);
         $q = [];
-        for ($i = 0; $i < $n; $i++) {
-            $q[] = (float) ($days[$from->addDays($i)->toDateString()] ?? 0);
+        foreach ($calendar as [$date]) {
+            $q[] = (float) ($days[$date] ?? 0);
         }
         $mean = array_sum($q) / max(1, $n);
         // Recent level: the last four weeks, weights 4-3-2-1 from the most recent.
@@ -104,20 +105,20 @@ final class DemandForecaster
         $hol = [0.0, 0];
         $eve = [0.0, 0];
         foreach ($q as $i => $v) {
-            $d = $from->addDays($i);
-            $byWd[$d->dayOfWeekIso][0] += $v;
-            $byWd[$d->dayOfWeekIso][1]++;
-            if (self::isPayday($d)) {
+            [, $wd, $isPayday, $isHoliday, $isEve] = $calendar[$i];
+            $byWd[$wd][0] += $v;
+            $byWd[$wd][1]++;
+            if ($isPayday) {
                 $pay[0] += $v;
                 $pay[1]++;
             } else {
                 $other[0] += $v;
                 $other[1]++;
             }
-            if (GhanaHolidays::is($d)) {
+            if ($isHoliday) {
                 $hol[0] += $v;
                 $hol[1]++;
-            } elseif (GhanaHolidays::is($d->addDay())) {
+            } elseif ($isEve) {
                 $eve[0] += $v;
                 $eve[1]++;
             }
@@ -137,17 +138,49 @@ final class DemandForecaster
 
     public static function predict(array $f, CarbonImmutable $day): float
     {
-        $v = $f['recent'] * $f['weekday'][$day->dayOfWeekIso];
-        if (self::isPayday($day)) {
+        return self::predictOn($f, self::calendar($day, 1)[0]);
+    }
+
+    /** @param  array{0: string, 1: int, 2: bool, 3: bool, 4: bool}  $day  one day of calendar() */
+    private static function predictOn(array $f, array $day): float
+    {
+        [, $wd, $isPayday, $isHoliday, $isEve] = $day;
+        $v = $f['recent'] * $f['weekday'][$wd];
+        if ($isPayday) {
             $v *= $f['payday'];
         }
-        if (GhanaHolidays::is($day)) {
+        if ($isHoliday) {
             $v *= $f['holiday'];
-        } elseif (GhanaHolidays::is($day->addDay())) {
+        } elseif ($isEve) {
             $v *= $f['eve'];
         }
 
         return max(0.0, $v);
+    }
+
+    /**
+     * The days from $from: date, ISO weekday, payday, public holiday, eve of a public holiday. Worked out once and shared
+     * by every product, since date arithmetic per product per day made the forecast take seconds for a full shop.
+     *
+     * @return list<array{0: string, 1: int, 2: bool, 3: bool, 4: bool}>
+     */
+    private static function calendar(CarbonImmutable $from, int $n): array
+    {
+        $key = $from->toDateString().'/'.$n;
+        if (! isset(self::$calendars[$key])) {
+            if (count(self::$calendars) > 50) { // long-running workers move on from day to day
+                self::$calendars = [];
+            }
+            $days = [];
+            for ($i = 0; $i < $n; $i++) {
+                $d = $from->addDays($i);
+                $holiday = GhanaHolidays::is($d);
+                $days[] = [$d->toDateString(), $d->dayOfWeekIso, self::isPayday($d), $holiday, ! $holiday && GhanaHolidays::is($d->addDay())];
+            }
+            self::$calendars[$key] = $days;
+        }
+
+        return self::$calendars[$key];
     }
 
     public static function isPayday(CarbonImmutable $d): bool

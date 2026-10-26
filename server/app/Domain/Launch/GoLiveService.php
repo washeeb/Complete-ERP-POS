@@ -109,7 +109,8 @@ final class GoLiveService
      *
      * @return list<array{key: string, title: string, why: string, done: bool, auto: bool, skipped: bool, optional: bool, by: ?string, at: ?string, link: ?string}>
      */
-    public function steps(GoLivePlan $plan): array
+    /** @param  array|null  $figures  reconciliation() when the caller already has it (it is the slowest part) */
+    public function steps(GoLivePlan $plan, ?array $figures = null): array
     {
         $fresh = $plan->sources === ['fresh'];
         $imported = DataImport::where('status', 'imported')->pluck('type')->unique()->flip();
@@ -137,7 +138,7 @@ final class GoLiveService
             ['loyalty_points', 'Loyalty points', 'Points customers already earned.', true, fn () => $hasImport('loyalty_points'), $import('loyalty_points')],
             ['gift_cards', 'Gift cards and store credit', 'Unspent cards customers still hold.', true, fn () => $hasImport('gift_cards'), $import('gift_cards')],
             ['reconcile', 'Figures match the old system', 'Counts and balances agree with the old system on the go-live date.', false,
-                fn () => $this->reconciliation($plan)['ok'], null],
+                fn () => ($figures ?? $this->reconciliation($plan))['ok'], null],
             ['devices', 'Every till ready', 'Enrolled, a test sale printed, the drawer opens, an offline sale syncs.', false,
                 fn () => false, '/admin/devices'],
             ['training', 'Staff trained', 'Cashiers have the quick card; supervisors and managers have their guide.', false, fn () => false, null],
@@ -212,7 +213,7 @@ final class GoLiveService
                 $problems[] = "{$label} differs from the old system.";
             }
         }
-        $gl = $this->glCheck->run($tenantId);
+        $gl = $this->glCheck->run($tenantId, $sub);
         $unposted = array_sum($this->poster->unposted($tenantId));
         if ($unposted > 0) {
             $problems[] = "{$unposted} record(s) are not posted to the accounts yet (press “Post and check again”).";

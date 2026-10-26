@@ -4,6 +4,9 @@
 **Updated:** 2026-10-24 · NHIS at the till and NHIS claims, interaction starter list, near-expiry markdowns for pharmacies on branch `pharmacy-extras` (see the first section).
 
 
+## Page speed — branch `page-speed`
+- From the client's `erp:page-timings` output: `DemandForecaster::calendar()` shared per run (1,500 products 5.1 s → 0.47 s, same results); `SalesHistory::daily` index-friendly range; `SystemHealth::unsynced()` (HQ peers' `last_pushed_seq`, test in `HealthHeartbeatTest`); GoLive plan/figures memo per render, `GoLiveService::steps($plan, $figures)`, `GlCheck::run($tenant, $subLedgers)`.
+
 ## Desktop till start-up — branch `desktop-till-start`
 - `pos/src-tauri/src/lib.rs`: window `.visible(false)` + `on_page_load` (Finished → show) + 4 s fallback; app 0.26.0. `setup/index.html`: `#opening` status, `#form` hidden until `showForm()`. `pos/index.html`: inline theme script and background. Ship the till installer (Packaging workflow, Run workflow) with the release.
 

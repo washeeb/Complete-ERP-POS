@@ -28,7 +28,7 @@ final class GlCheck
     /**
      * @return array{ok: bool, ties: list<array{control: string, label: string, ledger: int, sub_ledger: int, difference: int}>, problems: list<string>, opening_left: int}
      */
-    public function run(string $tenantId): array
+    public function run(string $tenantId, ?array $subLedgers = null): array
     {
         $problems = [];
         foreach (DB::select('SELECT e.number, SUM(l.amount_minor) AS s FROM journal_entries e JOIN journal_lines l ON l.journal_entry_id = e.id
@@ -54,7 +54,7 @@ final class GlCheck
         $gl = collect(DB::select('SELECT a.control, COALESCE(SUM(l.amount_minor), 0) AS s FROM accounts a LEFT JOIN journal_lines l ON l.account_id = a.id
             WHERE a.tenant_id = ? AND a.control IS NOT NULL GROUP BY a.control', [$tenantId]))->pluck('s', 'control');
         $ties = [];
-        foreach (self::subLedgers($tenantId) as $control => [$label, $sub]) {
+        foreach ($subLedgers ?? self::subLedgers($tenantId) as $control => [$label, $sub]) {
             $ledger = (int) ($gl[$control] ?? 0);
             $ties[] = ['control' => $control, 'label' => $label, 'ledger' => $ledger, 'sub_ledger' => $sub, 'difference' => $ledger - $sub];
             if ($ledger !== $sub) {

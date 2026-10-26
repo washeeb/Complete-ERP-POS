@@ -58,19 +58,34 @@ class GoLive extends Page
         return Erp::can('golive.manage') && ! Tenant::isPractice(Erp::user()?->tenant_id);
     }
 
+    /** Worked out once per drawing of the page (the view asks several times); cleared before each drawing, after any action. */
+    private ?GoLivePlan $planMemo = null;
+
+    private ?array $figuresMemo = null;
+
+    public function rendering(): void
+    {
+        $this->forget();
+    }
+
     public function plan(): GoLivePlan
     {
-        return app(GoLiveService::class)->plan(Erp::user()->tenant_id);
+        return $this->planMemo ??= app(GoLiveService::class)->plan(Erp::user()->tenant_id);
     }
 
     public function steps(): array
     {
-        return app(GoLiveService::class)->steps($this->plan());
+        return app(GoLiveService::class)->steps($this->plan(), $this->figures());
     }
 
     public function figures(): array
     {
-        return app(GoLiveService::class)->reconciliation($this->plan());
+        return $this->figuresMemo ??= app(GoLiveService::class)->reconciliation($this->plan());
+    }
+
+    private function forget(): void
+    {
+        $this->planMemo = $this->figuresMemo = null;
     }
 
     public function money(?int $minor): string

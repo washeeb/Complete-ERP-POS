@@ -5,6 +5,8 @@ namespace App\Domain\Support;
 use App\Domain\Fiscal\GraEvatAdapter;
 use App\Domain\Licensing\LicenseManager;
 use App\Models\BackupRun;
+use App\Models\OutboxEvent;
+use App\Models\SyncPeer;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -96,7 +98,7 @@ final class SystemHealth
             'Webhooks given up' => DB::table('webhook_deliveries')->where('status', 'dead')->where('updated_at', '>', now()->subDay())->count(),
             'GRA E-VAT waiting over a day' => DB::table('fiscal_submissions')->where('status', 'pending')->where('created_at', '<', now()->subDay())->count(),
             'GRA E-VAT refused' => DB::table('fiscal_submissions')->where('status', 'rejected')->count(),
-            'Changes not yet synced' => DB::table('outbox_events')->whereNull('published_at')->where('occurred_at', '<', now()->subMinutes(30))->count(),
+            'Changes not yet synced' => $this->unsynced(),
         ];
         foreach ($stuck as $what => $n) {
             $add($what, $n ? 'warning' : 'ok', (string) $n);
@@ -112,6 +114,18 @@ final class SystemHealth
         $add('Slow pages (last 24 hours)', $slow > 50 ? 'warning' : 'ok', $slow ? "{$slow} took over ".number_format((int) config('erp.slow_request_ms', 1000) / 1000, 1).' s; see below' : 'None');
 
         return $out;
+    }
+
+    /**
+     * Changes made here that head office has not received after half an hour. Sync reads the outbox by sequence number
+     * (nothing marks an event as sent), so this counts past each head-office link's last pushed number; a head office or
+     * a single server has no such link and nothing waiting.
+     */
+    private function unsynced(): int
+    {
+        return (int) SyncPeer::withoutGlobalScopes()->where('is_active', true)->where('role', 'hq')->get()
+            ->sum(fn (SyncPeer $p) => OutboxEvent::withoutGlobalScopes()->where('tenant_id', $p->tenant_id)->where('origin_node', (string) config('erp.node.id'))
+                ->whereIn('sync_group', $p->groupsWeSend())->where('seq', '>', (int) $p->last_pushed_seq)->where('occurred_at', '<', now()->subMinutes(30))->count());
     }
 
     /** Stored as a plain timestamp: Laravel refuses to rebuild objects from a file or database cache (serializable_classes). */
