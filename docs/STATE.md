@@ -1,28 +1,27 @@
 # State (resume file)
 
-**Phase:** Separate books per company · **Status:** done on branch `separate-books` (PR to `main`). Industries complete: A (structure), B (stock requests), C (profit centres), D (separate books)
-**Updated:** 2026-10-24 · NHIS at the till and NHIS claims, interaction starter list, near-expiry markdowns for pharmacies on branch `pharmacy-extras` (see the first section).
+**Phase:** all phases of the master plan built; first client (a pharmacy) live since 2026-10-19 on an Ubuntu server, with releases delivered by `release:build` and the Ubuntu installer.
+**Updated:** 2026-10-26 · Page speed (PR #104) checked on the client's server: Insights 2.7 s → 0.5 s, Today 1.1 s → 0.6 s. Every section below is merged to `main`.
 
-
-## Page speed — branch `page-speed`
+## Page speed — merged (PR #104)
 - From the client's `erp:page-timings` output: `DemandForecaster::calendar()` shared per run (1,500 products 5.1 s → 0.47 s, same results); `SalesHistory::daily` index-friendly range; `SystemHealth::unsynced()` (HQ peers' `last_pushed_seq`, test in `HealthHeartbeatTest`); GoLive plan/figures memo per render, `GoLiveService::steps($plan, $figures)`, `GlCheck::run($tenant, $subLedgers)`.
 
-## Desktop till start-up — branch `desktop-till-start`
+## Desktop till start-up — merged (PR #103)
 - `pos/src-tauri/src/lib.rs`: window `.visible(false)` + `on_page_load` (Finished → show) + 4 s fallback; app 0.26.0. `setup/index.html`: `#opening` status, `#form` hidden until `showForm()`. `pos/index.html`: inline theme script and background. Ship the till installer (Packaging workflow, Run workflow) with the release.
 
-## Pharmacy extras — branch `pharmacy-extras`
+## Pharmacy extras — merged (PR #101)
 - **NHIS:** migration `2026_12_05_100001_nhis_claims` (`products.nhis_price_minor`, `nhis_claims`, `nhis_claim_lines`; chart `nhis_receivable` 1245, `nhis_rejected` 6720 via `ChartTemplate::ensure`). Tender `nhis` (`SalePayment::METHODS`, `AutoPoster::TENDER`), checked in `SaleService::nhis()`; till `pharmacy.ts nhisCover`, `Pay` prop `nhis`, boot `pharmacy.nhis` from setting `pharmacy.nhis_at_till`. `App\Domain\Pharmacy\NhisClaims` (prepare, submit, withdraw, settle; permission `pharmacy.nhis`), AutoPoster kind `nhis_claims`, `NhisClaimResource` (+ `LinesRelationManager`), CSV `print.nhis-claim` (`PharmacyReports::claimLines`). Products file column `nhis_price`.
 - **Interactions:** `InteractionStarter::ROWS`, `PharmacyService::addStarter()` and `unchecked()`; header action on `ListDrugInteractions`.
 - **Markdowns:** till catalog `grocery` block sent for every branch (scale prefixes only with Grocery); `PharmacyMarkdowns` page (extends `GroceryMarkdowns`, `$module`); markdown settings in group Stock.
 - Tests: `PharmacyTest` (NHIS, claims, starter list, markdowns), `MedicineImportTest` (export columns line up), `GroceryTest`, `pos/src/pharmacy.test.ts`.
 
-## One scroll, speed, access review, WhatsApp orders — branch `one-scroll-sweep`
+## One scroll, speed, access review, WhatsApp orders — merged (PR #100)
 - **One scroll:** admin.css frame removed; `public/js/seslabs/hscroll.js` (BODY_END hook in `AdminPanelProvider`) pins a side-to-side bar for wide `.fi-ta-content-ctn` / `.fi-fo-table-repeater`.
 - **Speed:** `erp:page-timings {--as=} {--deep} {--top=} {--page=}`, `erp:demo-scale {--as=} {--products=1500} {--sales=2000} {--days=60}` (not in production). `Authorizer` (all permissions in one query, branch memo, `Branch::saved` forgets), `App\Domain\Modules\EnabledModules` (scoped; `BranchModule` saved/deleted forget), `App\Support\RequestMemo` (scoped; `Tenant::saved` forgets) used by `FinanceUi::currency`, `AccountResource`, `ReorderRuleResource::page()`; `ReorderLevels::buyingUnits()` (bulk). Dev data after demo-scale: dashboard 43 queries (was 159), accounts 47 (154), reorder rules 61 (94); median 266 ms.
 - **Access review:** `App\Domain\Access\AccessReview` (RULES, `build`, `risksFor`, `rows`), page `AccessReviewPage` (`/admin/access-review`, People & access, `audit.view`), view `filament/pages/access-review`. Test `AccessReviewTest`.
 - **WhatsApp orders:** migration `2026_12_04_100001` (`whatsapp_orders`, number `WA`); `App\Domain\Channels\WhatsappOrders` (verify, receive, fetchMedia, fetchPending, makeOrder, decline, reply, tellReady), `WhatsappConnector` (type `whatsapp`, `ConnectorRegistry::ordersOnly`), `Api\V1\WhatsappController` (`GET|POST api/v1/whatsapp/{provider}`), `WhatsappMediaController` (`whatsapp-file/{order}/{index}`), `WhatsappOrderResource` (Online), `erp:whatsapp-media` every minute; `Gateways::whatsappText/whatsappMedia`, `Messenger::REPLY`; meta credentials + `app_secret`, generated `verify_token`; settings `whatsapp.orders`, `whatsapp.order_reply`; `OnlineOrderService::markReady` tells WhatsApp customers. Test `WhatsappOrdersTest`.
 
-## Till extras and waybills — branch `till-extras-waybills`
+## Till extras and waybills — merged (PR #68)
 - **Database:** migration `2026_11_15_100001`: `sales.comment`, `comment_on_receipt`, `walk_in_name`, `walk_in_phone`, `extras`; `waybills` (number `WB`).
 - **Sales:** `App\Domain\Pos\SaleDetails::from` (validation, extras whitelist, `pos.require_details` per branch; offline → review item `details_missing`); `saleJson` returns comment (if printed) and walk-in; receipt copy and ESC/POS print them; Sale view shows them with *Save as customer*.
 - **Till:** `src/calc.ts` (calculator, change breakdown), `src/screens/TillTools.tsx` (Calculator, SaleDetailsDialog, detailsMissing, detailsPayload); Sell: Details button, F1, require check; Pay: change in notes and coins, calculator.
@@ -31,7 +30,7 @@
 - **Tests:** `SaleDetailsWaybillTest` (3), `calc.test.ts`, `saleDetails.test.ts`. · Top search across 37 lists with details (SKU for products), product pickers show the SKU (branch `global-search`) · Licence generator `/vendor` (branch `licence-generator`) · Pharmacy sale rules (PR #65) · Medicine schedule in the products file and a bulk action on the list (branch `medicine-import`) · Repo private
 
 
-## Licence generator — branch `licence-generator`
+## Licence generator — merged (PR #66)
 - **Database:** migration `2026_11_14_100001`: `vendor_customers`, `vendor_plans`, `vendor_addons`, `vendor_invoices`, `vendor_payments`, `vendor_reminders`; `vendor_licenses` + customer_id, plan_id, addons, kind, site, starts_on, expires_on, price, replaces, request_code, notes, revoked_by, last_checkin_at (dates backfilled from payloads).
 - **Rules:** `VendorLicensing` (`allowed`, `modules`, `package`, `issue`, `renew`, `revoke`, `health`), `VendorBilling` (`invoice`, `invoiceForLicense`, `pay`, `void`, `figures`); `LicenseIssuer` accepts an installation for renewals; `CheckinServer` records last seen.
 - **Panel:** `VendorPanelProvider` (`/vendor`, registered only with `LICENSE_SERVER=true`, MFA required): Dashboard (LicenceFigures, LicenceAttention), Licences (list, issue, view: renew / change / e-mail / certificate / revoke), Customers, Plans, Add-ons, Invoices (payments, print, void), Check-ins. Prints in `routes/vendor.php` + `VendorPrintController` (certificate, invoice, CSV).
@@ -39,7 +38,7 @@
 - **Builds:** `release:build` removes the panel, screens, prints and routes. `phpunit.xml` sets `LICENSE_SERVER=true` so the panel is tested.
 - **Tests:** `VendorLicensingTest` (7); LicensingTest checks the build leaves the generator out.
 
-## Pharmacy sale rules — branch `pharmacy-sale-rules`
+## Pharmacy sale rules — merged (PR #65)
 - **Database:** migration `2026_11_13_100001`: `branches.settings` (jsonb, branch overrides), `pharmacy_signoffs` (one per sale).
 - **Settings:** `pharmacy.pom_rule`, `pharmacy.controlled_rule` (approve | details | patient | free), `pharmacy.controlled_always_strict`, `pharmacy.max_qty_without_pharmacist`, `pharmacy.major_warning_needs_pharmacist`, `pharmacy.after_sale_check` (signoff | summary | none), all `'branch' => true`. `Settings::forBranch`, `branchKeys`, `valid`; `OrgService::updateBranch` takes `settings`.
 - **Rules:** `App\Domain\Pharmacy\PharmacyRules` (`forBranch`, `saleLevel`, `unapproved`), `PharmacySignoffs::sign`; `SaleService::prescription` follows the level.
@@ -68,7 +67,7 @@
 - **Tests:** `ExpiryReturnsTest` (7).
 - **Docs:** manual 14.5; pharmacy guide; storekeeper guide; CHANGELOG; DECISIONS.
 
-## Separate books — done on branch `separate-books`
+## Separate books — merged (PR #38)
 - **Database:** migration `2026_11_05_100001`:
   - `legal_entities.is_primary`, `address` and `is_active` (the earliest entity becomes primary);
   - `journal_lines.legal_entity_id`, backfilled from the branch, else the primary;
@@ -152,7 +151,7 @@
   - e2e `cash-vault.spec.ts` (with axe).
 - **Docs:** manual 7 (Step 14), 17.7, 18.2; training 01 (Teller quick card) and new 07; user-manual cashier; pentest environment; CHANGELOG 0.30.0; DECISIONS.
 
-## Ubuntu server: Caddy + HTTPS — done on branch `ubuntu-https`
+## Ubuntu server: Caddy + HTTPS — merged (PR #30)
 - **Script:** `installer/ubuntu/install.sh` (10 steps).
   - Caddy from its apt repository; nginx and certbot retired.
   - `/etc/caddy/Caddyfile` is generated: sites are `--domain` (Let's Encrypt) or `<ip>, <hostname>` with `tls internal` plus an http block serving `/ca.crt`; CI uses localhost with `default_bind 127.0.0.1`.
@@ -167,7 +166,7 @@
 - **Not changed:** Docker (nginx in the container; HTTPS from the host's proxy).
 - **Company contacts (same branch):** `config/brand.php` `website`, `support_phone`, `support_email` (SyncLytics defaults unless `BRAND_VENDOR`); `erp.support_email` defaults to info@synclyticsenterprisesystems.com; `Branding::vendorContact()` used in licence/module messages; Licence page contact line; manual About/6/13/18. Client pack (git-ignored `client-pack/`, generator in the session scratchpad) carries address, phones, hotline, e-mail, website; registration no. and TIN still blank.
 
-## Windows server: Caddy + HTTPS — branch `windows-https` (PR #29)
+## Windows server: Caddy + HTTPS — merged (PR #29)
 - **Installer:** `installer/windows/install.ps1`.
   - New step 4/10, Caddy: `-CaddyVersion` (2.10.0, SHA-512 verified), `-Domain`, `-Email`, `-Workers` (4). It writes `C:\SESLabs\Caddyfile` and `php-worker.cmd`.
   - Tasks: `<Brand> Web` (Caddy), `<Brand> PHP 1..N`, Scheduler, Live (Reverb on 127.0.0.1:8080).
@@ -402,7 +401,8 @@
 - Signed activation keys, expiry with grace then read-only, daily check-in, tamper detection, watermarks — see docs/licensing.md. Dev licence valid to 2027-12-31 (dev key in `.local-secrets/license-dev.json`). Before the first customer release: production key (`license:keygen`), its public key in `config/license.php`, a licence server.
 
 ## Next
-- All phases of the master plan are built. Before the first real pilot: third-party penetration test; GRA E-VAT sandbox verification with real credentials; record the training videos (scripts in docs/training); run the internal dry run in the practice company; then follow System → Go-live with the pilot shop.
+- *Suggested levels* is the slowest page on the client's data (318 reads, 1.3 s): repeated reads per product.
+- Before a second client: third-party penetration test (pack in `docs/pentest`); GRA E-VAT verified with real credentials; training videos recorded (scripts in `docs/training`).
 
 ## Owner decisions pending
 - Accountant check of the Ghana tax set-up (VAT/NHIL/GETFund rates and the payroll PAYE bands / SSNIT rates — Payroll → Tax and SSNIT rules) before go-live.
@@ -430,4 +430,4 @@
   - in tests, `flushSession()` before switching users.
 
 ## Blockers
-- Merge PR `phase-10e-distribution` → `main` (asked in chat).
+- None.
