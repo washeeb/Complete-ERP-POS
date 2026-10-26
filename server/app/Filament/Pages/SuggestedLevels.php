@@ -83,8 +83,10 @@ class SuggestedLevels extends Page implements HasTable
             $current[$whId] = app(ReorderLevels::class)->forWarehouse(Warehouse::find($whId), $list->pluck('product_id')->all());
         }
 
-        return $rows->mapWithKeys(fn ($r) => [$r->id => (array) $r + ['key' => $r->id, 'now' => $current[$r->warehouse_id][$r->product_id] ?? null]]);
+        $units = ReorderLevels::buyingUnits($rows->pluck('product_id')->unique()->values()->all()); // once for the list, not per row and column
 
+        return $rows->mapWithKeys(fn ($r) => [$r->id => (array) $r + ['key' => $r->id, 'now' => $current[$r->warehouse_id][$r->product_id] ?? null,
+            'unit' => $units[$r->product_id] ?? null]]);
     }
 
     public function table(Table $table): Table
@@ -96,13 +98,13 @@ class SuggestedLevels extends Page implements HasTable
                 TextColumn::make('avg_daily')->label('Sells a day')->formatStateUsing(fn ($state) => Fields::qty((string) $state)),
                 TextColumn::make('lead_days')->label('Delivery (days)'),
                 TextColumn::make('now')->label('Now (min / max)')->state(fn (array $record) => $record['now']
-                    ? ReorderRuleResource::inBuyingUnit($record['product_id'], Qty::format($record['now']['min'])).' / '
-                        .ReorderRuleResource::inBuyingUnit($record['product_id'], Qty::format($record['now']['max']))
+                    ? ReorderRuleResource::inBuyingUnit($record['product_id'], Qty::format($record['now']['min']), $record['unit']).' / '
+                        .ReorderRuleResource::inBuyingUnit($record['product_id'], Qty::format($record['now']['max']), $record['unit'])
                     : 'none')
                     ->description(fn (array $record) => $record['now'] ? ReorderLevels::SOURCES[$record['now']['source']] : null),
                 TextColumn::make('min_qty')->label('Suggested min / max')->weight('bold')
-                    ->formatStateUsing(fn ($state, array $record) => ReorderRuleResource::inBuyingUnit($record['product_id'], $state).' / '
-                        .ReorderRuleResource::inBuyingUnit($record['product_id'], $record['max_qty'])),
+                    ->formatStateUsing(fn ($state, array $record) => ReorderRuleResource::inBuyingUnit($record['product_id'], $state, $record['unit']).' / '
+                        .ReorderRuleResource::inBuyingUnit($record['product_id'], $record['max_qty'], $record['unit'])),
             ])
             ->filters([SelectFilter::make('warehouse_id')->label('Store')->options(fn () => Fields::warehouses(['warehouse.manage', 'stock.levels']))])
             ->toolbarActions([

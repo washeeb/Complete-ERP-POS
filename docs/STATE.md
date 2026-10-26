@@ -3,6 +3,9 @@
 **Phase:** all phases of the master plan built; first client (a pharmacy) live since 2026-10-19 on an Ubuntu server, with releases delivered by `release:build` and the Ubuntu installer.
 **Updated:** 2026-10-26 · Page speed (PR #104) checked on the client's server: Insights 2.7 s → 0.5 s, Today 1.1 s → 0.6 s. Every section below is merged to `main`.
 
+## Suggested levels speed — branch `suggested-levels-speed`
+- `SuggestedLevels::allRows` adds each row's buying unit (`ReorderLevels::buyingUnits`, once per list); columns pass `$record['unit']` to `inBuyingUnit()`. Locally 353 → 56 reads with 469 suggestions.
+
 ## Page speed — merged (PR #104)
 - From the client's `erp:page-timings` output: `DemandForecaster::calendar()` shared per run (1,500 products 5.1 s → 0.47 s, same results); `SalesHistory::daily` index-friendly range; `SystemHealth::unsynced()` (HQ peers' `last_pushed_seq`, test in `HealthHeartbeatTest`); GoLive plan/figures memo per render, `GoLiveService::steps($plan, $figures)`, `GlCheck::run($tenant, $subLedgers)`.
 
@@ -401,7 +404,6 @@
 - Signed activation keys, expiry with grace then read-only, daily check-in, tamper detection, watermarks — see docs/licensing.md. Dev licence valid to 2027-12-31 (dev key in `.local-secrets/license-dev.json`). Before the first customer release: production key (`license:keygen`), its public key in `config/license.php`, a licence server.
 
 ## Next
-- *Suggested levels* is the slowest page on the client's data (318 reads, 1.3 s): repeated reads per product.
 - Before a second client: third-party penetration test (pack in `docs/pentest`); GRA E-VAT verified with real credentials; training videos recorded (scripts in `docs/training`).
 
 ## Owner decisions pending
