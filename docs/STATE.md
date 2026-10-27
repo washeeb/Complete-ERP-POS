@@ -3,7 +3,10 @@
 **Phase:** all phases of the master plan built; first client (a pharmacy) live since 2026-10-19 on an Ubuntu server, with releases delivered by `release:build` and the Ubuntu installer.
 **Updated:** 2026-10-26 · Page speed (PR #104) checked on the client's server: Insights 2.7 s → 0.5 s, Today 1.1 s → 0.6 s. Every section below is merged to `main`.
 
-## Suggested levels speed — branch `suggested-levels-speed`
+## MFA reset and licensed users — branch `mfa-reset-user-limit`
+- `AccessService::resetMfa`, `EditUser` action `resetMfa`, command `erp:mfa-reset` (`MfaResetCommand`), test `MfaResetTest`. `User::licensedCount()` used by `AccessService` (create/reactivate), `LicensePage`, `LicenseService::report`; test in `LicensingTest`.
+
+## Suggested levels speed — merged (PR #106)
 - `SuggestedLevels::allRows` adds each row's buying unit (`ReorderLevels::buyingUnits`, once per list); columns pass `$record['unit']` to `inBuyingUnit()`. Locally 353 → 56 reads with 469 suggestions.
 
 ## Page speed — merged (PR #104)

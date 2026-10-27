@@ -3,6 +3,7 @@
 use App\Domain\Access\AccessService;
 use App\Domain\Customers\CustomerService;
 use App\Domain\Devices\DeviceService;
+use App\Domain\Launch\PracticeCompany;
 use App\Domain\Licensing\LicenseException;
 use App\Domain\Licensing\LicenseManager;
 use App\Domain\Licensing\LicenseService;
@@ -21,6 +22,7 @@ use App\Models\Customer;
 use App\Models\License;
 use App\Models\Role;
 use App\Models\Till;
+use App\Models\User;
 use App\Security\Authorizer;
 use App\Security\ScopeType;
 use Filament\Facades\Filament;
@@ -274,4 +276,14 @@ it('lets the owner grant roles on a licence without HR, without granting what th
     app(Authorizer::class)->forget();
     expect(fn () => $access->grant(actorFor($itAdmin), staff($this->owner, 'yaw', 4), Role::where('key', 'hr_manager')->first(), ScopeType::Tenant, $this->tenant->id))
         ->toThrow(AccessDenied::class, 'hold all of its permissions');
+});
+
+it('does not count the practice company\'s logins against the licensed users', function () {
+    $u1 = staff($this->owner, 'u1', 2);
+    app(PracticeCompany::class)->create(actorFor($this->owner), [$u1->id], false); // practice copies of the owner and u1
+    expect(DB::table('users')->where('is_active', true)->count())->toBe(4)->and(User::licensedCount())->toBe(2);
+
+    relicense(['users' => 3]);
+    staff($this->owner, 'u2', 2); // the owner, u1 and u2: 3
+    expect(fn () => staff($this->owner, 'u3', 2))->toThrow(LicenseException::class, 'allows 3 active users');
 });
