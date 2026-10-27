@@ -7,6 +7,7 @@ use App\Domain\Licensing\LicenseManager;
 use App\Domain\Licensing\LicenseService;
 use App\Filament\Support\Erp;
 use App\Models\License;
+use App\Models\User;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
@@ -61,7 +62,7 @@ class LicensePage extends Page
     public function usage(): array
     {
         return ['branches' => DB::table('branches')->count(), 'devices' => DB::table('devices')->where('status', '<>', 'revoked')->count(),
-            'users' => DB::table('users')->where('is_active', true)->count()];
+            'users' => User::licensedCount()];
     }
 
     public function lastCheckin(): ?License

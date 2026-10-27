@@ -45,6 +45,14 @@ class EditUser extends EditRecord
                 ])
                 ->action(fn (array $data) => Erp::run(fn ($actor) => app(AccessService::class)
                     ->setPin($actor, $this->record, $data['pin']), 'PIN set')),
+            // A lost or deleted authenticator app: cleared here, set up again by the person at their next sign-in.
+            Action::make('resetMfa')->label('Reset two-step sign-in')->icon(Heroicon::OutlinedShieldExclamation)->color('danger')
+                ->visible(fn () => $this->record->app_authentication_secret !== null && $this->record->id !== Erp::user()->id)
+                ->modalDescription('For someone who lost their phone or deleted the app. Their authenticator and recovery codes are cleared and they are signed out; '
+                    .'at their next sign-in (username and password) they scan a new code. Check it is really them first, by phone or in person.')
+                ->schema([TextInput::make('reason')->label('Why (kept in the audit log)')->required()->maxLength(255)])
+                ->action(fn (array $data) => Erp::run(fn ($actor) => app(AccessService::class)
+                    ->resetMfa($actor, $this->record, $data['reason']) ?? true, 'Two-step sign-in reset')),
         ];
     }
 }

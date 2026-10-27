@@ -8,6 +8,7 @@ use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
 use App\Domain\Support\Outbox;
 use App\Models\License;
+use App\Models\User;
 use App\Security\Authorizer;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -89,7 +90,7 @@ final class LicenseService
             'fingerprint' => MachineFingerprint::get(),
             'build_id' => $m['build_id'], 'tampered' => ! $m['ok'], 'problems' => array_slice($m['problems'], 0, 20),
             'counts' => ['branches' => DB::table('branches')->count(), 'devices' => DB::table('devices')->where('status', 'active')->count(),
-                'users' => DB::table('users')->where('is_active', true)->count()],
+                'users' => User::licensedCount()],
             'version' => (string) config('app.version', 'dev'), 'nonce' => Str::random(24), 'sent_at' => now()->toIso8601String(),
         ];
     }

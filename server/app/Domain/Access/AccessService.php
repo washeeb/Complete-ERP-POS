@@ -23,6 +23,7 @@ use App\Security\ScopeType;
 use App\Security\SecurityLevel;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 /** Users, roles and grants. Every rule here exists to stop privilege escalation. */
@@ -35,7 +36,7 @@ final class AccessService
         $this->require($actor, 'admin.users.manage');
         $level = (int) $data['security_level'];
         $this->assertLevelGrantable($actor, $level);
-        app(LicenseManager::class)->assertWithin('users', User::where('is_active', true)->where('security_level', '<', SecurityLevel::Platform->value)->count(), 'active users');
+        app(LicenseManager::class)->assertWithin('users', User::licensedCount(), 'active users');
 
         $user = new User;
         $user->forceFill([
@@ -74,7 +75,7 @@ final class AccessService
         }
 
         if (! empty($data['is_active']) && ! $user->is_active) {
-            app(LicenseManager::class)->assertWithin('users', User::where('is_active', true)->where('security_level', '<', SecurityLevel::Platform->value)->count(), 'active users');
+            app(LicenseManager::class)->assertWithin('users', User::licensedCount(), 'active users');
         }
         $user->fill(array_intersect_key($data, array_flip(['name', 'username', 'email', 'security_level', 'is_active'])));
         $user->forceFill(array_intersect_key($data, array_flip(['phone', 'signin_method'])));
@@ -125,6 +126,31 @@ final class AccessService
         $user->pin_failed_attempts = 0;
         $user->pin_locked_until = null;
         $this->recorder->save($actor, $user, 'user.pin_set');
+    }
+
+    /**
+     * Clear someone's authenticator app (lost or deleted phone app): at the next sign-in they set it up again. A manager
+     * may do this for someone at or below their own level, never for themselves; the owner, with nobody above, is reset
+     * on the server (erp:mfa-reset), where the actor is the server itself. Their open sessions end.
+     */
+    public function resetMfa(Actor $actor, User $user, string $reason): void
+    {
+        if ($actor->id !== null) {
+            $this->require($actor, 'admin.users.manage');
+            $this->assertSameTenant($actor, $user);
+            if ($user->id === $actor->id) {
+                throw new DomainException('You cannot reset your own two-step sign-in. Ask a manager, or SyncLytics support.');
+            }
+            $this->assertLevelGrantable($actor, $user->security_level);
+        }
+        if (trim($reason) === '') {
+            throw new DomainException('Say why (for the audit log).');
+        }
+        $user->forceFill(['app_authentication_secret' => null, 'app_authentication_recovery_codes' => null, 'remember_token' => null]);
+        $this->recorder->transaction(function () use ($actor, $user, $reason) {
+            $this->recorder->save($actor, $user, 'user.mfa_reset', mb_substr(trim($reason), 0, 255));
+            DB::table('sessions')->where('user_id', $user->id)->delete();
+        });
     }
 
     /** @param list<string> $permissionKeys */
