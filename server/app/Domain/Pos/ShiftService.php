@@ -200,6 +200,30 @@ final class ShiftService
         });
     }
 
+    /**
+     * The shift's sales by how they were paid (returns netted: refunds are negative payments), every method including
+     * those that never reach the drawer (mobile money per network, card, vouchers, NHIS, on account…), and the total.
+     * Not the float, pay-ins or customer-account payments: only what the shift sold.
+     *
+     * @return array{lines: list<array{label: string, amount_minor: int}>, total_minor: int}
+     */
+    public function takings(Shift $shift): array
+    {
+        $rows = SalePayment::whereIn('sale_id', $shift->sales()->where('status', 'posted')->select('id'))
+            ->groupBy('method', 'provider')->selectRaw('method, provider, SUM(amount_minor) AS amount')->toBase()->get();
+        $lines = [];
+        foreach ($rows as $r) {
+            $label = $r->method === 'momo' ? (SalePayment::MOMO_PROVIDERS[$r->provider ?: 'mtn'] ?? 'Mobile money') : (SalePayment::METHODS[$r->method] ?? $r->method);
+            $lines[$label] = ($lines[$label] ?? 0) + (int) $r->amount;
+        }
+        $lines = array_filter($lines, fn ($v) => $v !== 0);
+        $order = array_flip(array_values(array_unique(array_merge(['Cash'], array_values(SalePayment::MOMO_PROVIDERS), array_values(SalePayment::METHODS)))));
+        uksort($lines, fn ($a, $b) => ($order[$a] ?? 99) <=> ($order[$b] ?? 99));
+
+        return ['lines' => array_map(fn ($label, $amount) => ['label' => $label, 'amount_minor' => $amount], array_keys($lines), $lines),
+            'total_minor' => array_sum($lines)];
+    }
+
     private function requireManager(Actor $actor, Shift $shift): void
     {
         if (! $actor->user || ! $this->authz->allows($actor->user, 'cash.setup', $shift->branch)) {

@@ -5,11 +5,13 @@ namespace App\Filament\Resources\Shifts;
 use App\Domain\Pos\ShiftService;
 use App\Filament\Resources\Shifts\Pages\ListShifts;
 use App\Filament\Support\Erp;
+use App\Filament\Support\FinanceUi;
 use App\Models\SalePayment;
 use App\Models\Shift;
 use App\Models\TillDrawerEvent;
 use App\Support\Exports\Exporter;
 use App\Support\Money;
+use App\Support\RequestMemo;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
@@ -94,6 +96,8 @@ class ShiftResource extends Resource
                     ->description(fn (Shift $r) => self::leftOpen($r) ? 'left open since '.self::leftOpen($r).': close it on the till' : null)
                     ->color(fn (Shift $r) => self::leftOpen($r) ? 'danger' : null),
                 TextColumn::make('sales_count')->label('Sales'),
+                TextColumn::make('takings')->label('Sales total')->state(fn (Shift $r) => self::takings($r)['total'])
+                    ->description(fn (Shift $r) => self::takings($r)['lines'])->wrap(),
                 TextColumn::make('opening_float_minor')->label('Float')->formatStateUsing($m),
                 TextColumn::make('expected_cash_minor')->label('Expected cash')->formatStateUsing($m),
                 // A corrected count shows the corrected figure, with the original and the reason on hover.
@@ -145,6 +149,15 @@ class ShiftResource extends Resource
     }
 
     /** "Balanced", "not checked", or each check with a difference ("MTN MoMo short GH₵ 20.00"). */
+    /** What the shift sold by every payment method, and the total (cash, mobile money, card, NHIS, on account…). */
+    public static function takings(Shift $r): array
+    {
+        $t = RequestMemo::get("shift-takings:{$r->id}", fn () => app(ShiftService::class)->takings($r));
+        $m = fn (int $v) => FinanceUi::money($v);
+
+        return ['total' => $m($t['total_minor']), 'lines' => collect($t['lines'])->map(fn ($l) => "{$l['label']} {$m($l['amount_minor'])}")->implode(' · ') ?: null];
+    }
+
     public static function otherSummary(Shift $r): string
     {
         $checks = $r->otherChecks();

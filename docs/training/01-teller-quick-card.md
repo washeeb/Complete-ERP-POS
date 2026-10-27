@@ -71,7 +71,7 @@ The bottom right says **"Server not answering — working offline"** or **"No ne
 
 ## End of the shift
 
-**Close shift** → count **all** the cash in the drawer (float included), note by note and coin by coin. Under **Mobile money, card, vouchers and coupons**, type what the MoMo merchant phone shows for your shift for each network (MTN, Telecel, AT), the card terminal's total, the value of the gift vouchers and credit notes you took, and how many paper coupons you collected; leave a box empty if you do not take it → **Close shift**. Only then do you see over/short, for the cash and for each of these. Add a note if there is a difference. Sign out.
+**Close shift** → count **all** the cash in the drawer (float included), note by note and coin by coin. Under **Mobile money, card, vouchers and coupons**, type what the MoMo merchant phone shows for your shift for each network (MTN, Telecel, AT), the card terminal's total, the value of the gift vouchers and credit notes you took, and how many paper coupons you collected; leave a box empty if you do not take it → **Close shift**. Only then do you see over/short, for the cash and for each of these, and **Sales this shift**: what you sold by each way of paying (cash, each MoMo network, card, NHIS, on account…) and the **total sales**. The cash figure is only what should be in the drawer; the total is everything sold. Add a note if there is a difference. Sign out.
 
 **With vaults:** you do not see the expected figure. Close the tray and hand it to the Cashier, who counts it again.
 

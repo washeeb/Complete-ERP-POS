@@ -472,6 +472,8 @@ class PosController extends Controller
             'over_short_minor' => $reveal ? $shift->over_short_minor : null,
             // Mobile money and card are not in the tray: once closed, their check is shown even on a vault.
             'other' => $shift->status === 'closed' ? $shift->otherChecks() : [],
+            // Once closed: what the shift sold, by every payment method, with the total (cash is only one part of it).
+            'takings' => $reveal && $shift->status === 'closed' ? $shifts->takings($shift) : null, // not on a blind (vault) count: it gives the cash away
         ];
     }
 
