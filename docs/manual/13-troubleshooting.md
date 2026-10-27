@@ -22,7 +22,8 @@ Find the symptom, then try the fixes in order.
 
 | Symptom | Cause and fix |
 |---|---|
-| Lost the authenticator phone | Use a **recovery code**. If those are lost too, another owner/IT Admin resets the person's two-factor sign-in. |
+| Lost the authenticator phone, or deleted the app | Use a **recovery code**: type it where the 6-digit code is asked for. If those are lost too, someone who manages users (an owner or the IT Admin) opens **Users**, picks the person and presses **Reset two-step sign-in**, after checking by phone or in person that it is really them. **Why:** whoever can reset it can take over the account. Nobody can reset themselves, nor anyone above their own level. |
+| The owner is locked out (no app, no recovery code) | Nobody in the company is above the owner, so SyncLytics support does it on the server after checking it is really the owner: `sudo -u www-data php artisan erp:mfa-reset --email=owner@example.com` (in the `server` folder). The owner then signs in with username and password and scans a new code. **Why on the server:** only the people who run the server can type it, and it is kept in the audit log. Afterwards, save the new recovery codes away from the phone. |
 | A menu is missing | The module is off for your branches (Chapter 8), your licence does not include it (Chapter 6), or your role does not allow it (ask the owner). Type part of the page's name in **Search the menu** (top of the side menu, or press `/`) to check. |
 | *You can't open this page* | The page says **why** (for example *it needs the permission "View users and their access"*) and **who can give access**. Press **Ask for access**: they get a notification with the page and your message, and decide. A link you cannot use should not show at all; if you find one, tell SyncLytics support. |
 | *This is managed at head office* | You are on a branch server; change master data at head office (Chapter 10). |

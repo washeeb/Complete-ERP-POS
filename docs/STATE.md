@@ -6,6 +6,9 @@
 ## No-sale drawer approval — branch `drawer-no-sale-approval`
 - Permission `pos.no_sale` (Core module.json; general_manager, branch_manager), setting `pos.no_sale_approval` (default on), boot `drawer.no_sale_approval`, `DrawerService` (verify with `pos.no_sale`; offline replay flags `drawer_unapproved`), till `Drawer.tsx` (Manager fieldset). Tests in `TillDrawerTest`.
 
+## MFA reset and licensed users — merged (PR #107)
+- `AccessService::resetMfa`, `EditUser` action `resetMfa`, command `erp:mfa-reset` (`MfaResetCommand`), test `MfaResetTest`. `User::licensedCount()` used by `AccessService` (create/reactivate), `LicensePage`, `LicenseService::report`; test in `LicensingTest`.
+
 ## Suggested levels speed — merged (PR #106)
 - `SuggestedLevels::allRows` adds each row's buying unit (`ReorderLevels::buyingUnits`, once per list); columns pass `$record['unit']` to `inBuyingUnit()`. Locally 353 → 56 reads with 469 suggestions.
 

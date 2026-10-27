@@ -4,7 +4,7 @@ Every installation needs a **licence key from SyncLytics** (hotline 024 563 6889
 
 ## 6.1 What the licence controls
 
-- How many **branches**, **tills and devices** and **active users** you may have.
+- How many **branches**, **tills and devices** and **active users** you may have. Logins in the practice company (copies of your staff, for training) and the SyncLytics support account do not count.
 - Which **industry modules** you may switch on (Grocery, Pharmacy, Restaurant, Electronics, Fashion, Services…).
 - Whether **Finance** (accounts) and **HR & payroll** are included.
 - Until when it is valid.

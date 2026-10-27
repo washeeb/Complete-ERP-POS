@@ -100,6 +100,16 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
     }
 
     /** A second step at sign-in is needed: always for SyncLytics support; else as the administrator chose; else the company rule. */
+    /**
+     * Active people the licence counts: every real company on this server, without SyncLytics' own platform accounts
+     * and without the practice company (its logins are copies of real staff for training, not extra people).
+     */
+    public static function licensedCount(): int
+    {
+        return static::where('is_active', true)->where('security_level', '<', SecurityLevel::Platform->value)
+            ->whereNotIn('tenant_id', fn ($q) => $q->select('id')->from('tenants')->where('is_practice', true))->count();
+    }
+
     public function requiresMfa(): bool
     {
         if ($this->isSupport()) {
