@@ -57,6 +57,7 @@
     {"key": "promotions.manage", "label": "Set up promotions and coupons", "min_level": 3},
     {"key": "pos.discount", "label": "Give discounts and change prices at the till, up to your limit (or approve them by PIN)", "min_level": 3},
     {"key": "pos.drawer", "label": "Approve till pay-outs above the limit and take cash drops from tills (by PIN)", "min_level": 3},
+    {"key": "pos.no_sale", "label": "Approve opening a till drawer without a sale (by PIN)", "min_level": 4},
     {"key": "pos.return.no_receipt", "label": "Approve returns without a receipt or after the return period (store credit only)", "min_level": 3},
     {"key": "giftcards.manage", "label": "Sell, look up and void gift cards and store credit", "min_level": 3},
     {"key": "finance.view", "label": "View the chart of accounts, journals and financial reports", "min_level": 1},

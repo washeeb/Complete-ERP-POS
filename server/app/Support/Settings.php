@@ -67,6 +67,11 @@ final class Settings
             'label' => 'Before payment, the till asks for',
             'help' => 'Nothing: walk-ins buy without details (they can still be typed under Details). A name and/or phone: the cashier enters them, or picks a customer, before payment; useful for deliveries, credit or follow-up calls. Offline sales are never refused; a missing detail goes to the review list. A branch can choose differently (Company → Branches).',
         ],
+        'pos.no_sale_approval' => [
+            'type' => 'bool', 'default' => true, 'group' => 'Tills and cash',
+            'label' => 'Opening the drawer without a sale needs a manager',
+            'help' => 'On: "Open drawer (no sale)" on the till asks for the username and PIN of someone allowed to approve it (managers, unless you change the roles); offline, the PIN is checked on the till and anything the person was not allowed to approve goes to the review list. Off: the cashier opens it with a reason only. On for every company unless switched off.',
+        ],
         'pos.payout_approval_minor' => [
             'type' => 'int', 'default' => 10000, 'min' => 0, 'max' => 100000000, 'group' => 'Tills and cash',
             'label' => 'Expenses paid from the till: a supervisor approves above (pesewas)',

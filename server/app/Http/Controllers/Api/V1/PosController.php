@@ -102,6 +102,7 @@ class PosController extends Controller
             // The drawer: pay-out categories and the limit above which a supervisor approves; the cash limit (0 = off).
             'drawer' => [
                 'payout_approval_minor' => (int) $settings->get('pos.payout_approval_minor', $device->tenant_id),
+                'no_sale_approval' => (bool) $settings->get('pos.no_sale_approval', $device->tenant_id),
                 'cash_limit_minor' => (int) $settings->get('pos.drawer_cash_limit_minor', $device->tenant_id),
                 'categories' => collect(DrawerService::payoutAccounts())->map(fn ($name, $id) => ['id' => $id, 'name' => $name])->values(),
             ],

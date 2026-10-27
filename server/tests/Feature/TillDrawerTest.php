@@ -4,16 +4,19 @@ use App\Domain\Access\AccessService;
 use App\Domain\Analytics\LossPrevention;
 use App\Domain\Devices\DeviceService;
 use App\Domain\Finance\AutoPoster;
+use App\Domain\Pos\DrawerService;
 use App\Domain\Pos\ShiftService;
 use App\Filament\Resources\Shifts\Pages\ListShifts;
 use App\Filament\Resources\TillDrawerEvents\Pages\ListTillDrawerEvents;
 use App\Models\Account;
 use App\Models\CashMovement;
 use App\Models\ExpenseClaim;
+use App\Models\ReviewItem;
 use App\Models\Shift;
 use App\Models\Till;
 use App\Models\TillDrawerEvent;
 use App\Security\ScopeType;
+use App\Support\Settings;
 use Carbon\CarbonImmutable;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\DB;
@@ -32,6 +35,8 @@ beforeEach(function () {
     $this->supervisor = staff($this->owner, 'kojo', 3, 'supervisor', ScopeType::Branch, $this->branches['HQ']->id);
     app(AccessService::class)->setPin(actorFor($this->owner), $this->cashier, '4826');
     app(AccessService::class)->setPin(actorFor($this->owner), $this->supervisor, '7391');
+    $this->manager = staff($this->owner, 'ama', 4, 'branch_manager', ScopeType::Branch, $this->branches['HQ']->id);
+    app(AccessService::class)->setPin(actorFor($this->owner), $this->manager, '5602');
     $this->token = $this->withToken($deviceToken)->postJson('/api/v1/pos/login', ['username' => 'esi', 'pin' => '4826'])->assertOk()->json('token');
     app('auth')->forgetGuards();
     $this->shiftId = $this->withToken($this->token)->postJson('/api/v1/pos/shifts/open', ['opening_float_minor' => 50000])->assertCreated()->json('shift.id');
@@ -75,7 +80,7 @@ it('needs a supervisor above the pay-out limit and for every cash drop, never th
     ($this->drawer)(['kind' => 'drop', 'amount_minor' => 20000, 'approval' => ['username' => 'kojo', 'pin' => '7391']])->assertCreated();
     ($this->drawer)(['kind' => 'payin', 'amount_minor' => 5000])->assertStatus(422); // a reason is needed
     ($this->drawer)(['kind' => 'payin', 'amount_minor' => 5000, 'reason' => 'Change from the safe'])->assertCreated();
-    ($this->drawer)(['kind' => 'no_sale', 'reason' => 'Change for a customer'])->assertCreated();
+    ($this->drawer)(['kind' => 'no_sale', 'reason' => 'Change for a customer', 'approval' => ['username' => 'ama', 'pin' => '5602']])->assertCreated();
 
     expect(CashMovement::orderBy('created_at')->get(['kind', 'from_account', 'to_account', 'amount_minor'])->map->only('kind', 'from_account', 'to_account', 'amount_minor')->all())->toBe([
         ['kind' => 'till_drop', 'from_account' => 'cash_till', 'to_account' => 'cash_office', 'amount_minor' => 20000],
@@ -124,4 +129,24 @@ it('records drawer events made offline, once', function () {
         ->and(TillDrawerEvent::where('offline', true)->count())->toBe(2)
         ->and(TillDrawerEvent::where('kind', 'drop')->value('approved_by_name'))->toBe($this->supervisor->name)
         ->and(Shift::find($t->shiftId)->expected_cash_minor)->toBe(2000)->and(Shift::find($t->shiftId)->over_short_minor)->toBe(0);
+});
+
+it('needs a manager to open the drawer without a sale, unless switched off; offline mistakes go to the review list', function () {
+    $noSale = ['kind' => 'no_sale', 'reason' => 'Change for a customer'];
+    expect($this->withToken($this->token)->getJson('/api/v1/pos/bootstrap')->json('drawer.no_sale_approval'))->toBeTrue();
+    ($this->drawer)($noSale)->assertStatus(422)->assertJson(['error' => 'drawer_approval_needed']);
+    ($this->drawer)($noSale + ['approval' => ['username' => 'kojo', 'pin' => '7391']])->assertStatus(422)->assertJson(['error' => 'over_limit']); // a supervisor is not enough
+    ($this->drawer)($noSale + ['approval' => ['username' => 'ama', 'pin' => '5602']])->assertCreated()->assertJsonPath('event.approved_by', $this->manager->name);
+
+    // Offline: the PIN was checked on the till; the server checks the permission and flags what it does not allow.
+    app('auth')->forgetGuards();
+    $record = fn (?string $approvedBy) => app(DrawerService::class)->record($this->device, $this->cashier,
+        ['id' => (string) Str::uuid7(), 'approved_by' => $approvedBy, 'shift_id' => $this->shiftId] + $noSale, offline: true);
+    $record($this->manager->id);
+    $flagged = $record($this->supervisor->id);
+    expect(ReviewItem::where('type', 'drawer_unapproved')->pluck('subject_id')->all())->toBe([$flagged->id]);
+
+    app(Settings::class)->set(actorFor($this->owner), 'pos.no_sale_approval', false);
+    ($this->drawer)($noSale)->assertCreated();
+    expect(TillDrawerEvent::where('kind', 'no_sale')->count())->toBe(4);
 });

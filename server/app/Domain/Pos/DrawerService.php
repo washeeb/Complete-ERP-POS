@@ -8,6 +8,7 @@ use App\Domain\Support\Actor;
 use App\Domain\Support\DocumentNumbers;
 use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
+use App\Domain\Sync\ReviewQueue;
 use App\Models\Account;
 use App\Models\CashMovement;
 use App\Models\Device;
@@ -16,6 +17,7 @@ use App\Models\Shift;
 use App\Models\Till;
 use App\Models\TillDrawerEvent;
 use App\Models\User;
+use App\Security\Authorizer;
 use App\Support\Settings;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -93,25 +95,35 @@ final class DrawerService
             }
         }
 
-        // Approval: a cash drop always (someone else takes the cash), a pay-out above the limit.
+        // Approval: a cash drop always (someone else takes the cash), a pay-out above the limit, opening the drawer without
+        // a sale (a manager, unless the company switched it off).
         $limit = (int) $this->settings->get('pos.payout_approval_minor', $device->tenant_id);
-        $needs = $kind === 'drop' || ($kind === 'payout' && $amount > $limit);
+        $noSale = $kind === 'no_sale' && (bool) $this->settings->get('pos.no_sale_approval', $device->tenant_id);
+        $needs = $kind === 'drop' || ($kind === 'payout' && $amount > $limit) || $noSale;
+        $permission = $noSale ? 'pos.no_sale' : 'pos.drawer';
         $approver = null;
+        $unapproved = null; // offline: what the server found wrong with the approval given on the till
         if ($needs) {
             if ($offline) {
                 $approver = ($p['approved_by'] ?? null) ? User::find($p['approved_by']) : null; // checked on the till against their offline sign-in
+                if ($noSale && (! $approver || $approver->id === $user->id || ! app(Authorizer::class)->allows($approver, 'pos.no_sale', $till))) {
+                    $unapproved = $approver ? "{$approver->name} may not approve opening the drawer without a sale" : 'nobody approved it';
+                }
             } elseif (! empty($p['approval'])) {
-                $approver = $this->approvals->verify($device, $p['approval'], 'pos.drawer', $till, null, 0, $user->id);
+                $approver = $this->approvals->verify($device, $p['approval'], $permission, $till, null, 0, $user->id);
             } else {
-                throw new DomainException($kind === 'drop' ? 'A supervisor takes the cash: their username and PIN.'
-                    : 'Above '.number_format($limit / 100, 2).' a supervisor approves the pay-out with their PIN.', 'drawer_approval_needed');
+                throw new DomainException(match (true) {
+                    $noSale => 'A manager opens the drawer without a sale: their username and PIN.',
+                    $kind === 'drop' => 'A supervisor takes the cash: their username and PIN.',
+                    default => 'Above '.number_format($limit / 100, 2).' a supervisor approves the pay-out with their PIN.',
+                }, 'drawer_approval_needed');
             }
         }
 
         $occurredAt = ($p['occurred_at'] ?? null) ? Carbon::parse($p['occurred_at']) : now();
         $actor = Actor::user($user, 'pos', $device->id);
 
-        return $this->recorder->transaction(function () use ($device, $user, $p, $kind, $amount, $reason, $account, $approver, $offline, $occurredAt, $shift, $actor, $till) {
+        return $this->recorder->transaction(function () use ($device, $user, $p, $kind, $amount, $reason, $account, $approver, $offline, $occurredAt, $shift, $actor, $till, $unapproved) {
             $event = new TillDrawerEvent;
             $event->id = $p['id'];
             $event->forceFill([
@@ -136,6 +148,10 @@ final class DrawerService
                 $event->cash_movement_id = $m->id;
             }
             $this->recorder->save($actor, $event, "drawer.{$kind}", $reason !== '' ? $reason : null, $shift->branch_id);
+            if ($unapproved !== null) { // it happened (the drawer is open): recorded, and a person looks at it
+                app(ReviewQueue::class)->add($actor, 'drawer_unapproved', 'till_drawer_events', $event->id,
+                    "{$user->name} opened the drawer at {$till->code} offline without a sale: {$unapproved}", ['reason' => $reason], $shift->branch_id);
+            }
             if ($kind === 'limit_alert') {
                 $this->notifier->toPermission($device->tenant_id, 'pos.drawer', $shift->branch_id, "Cash drop needed at {$till->code}",
                     "{$user->name}'s drawer holds about ".number_format($amount / 100, 2).', above the cash limit.', exceptUserIds: [$user->id]);

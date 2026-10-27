@@ -69,7 +69,7 @@ export type Shift = {
   /** Mobile money per network and the card terminal at the close (empty while open, or offline until synced). */
   other?: OtherCheck[]
 }
-export type DrawerInfo = { payout_approval_minor: number; cash_limit_minor: number; categories: { id: string; name: string }[] }
+export type DrawerInfo = { payout_approval_minor: number; no_sale_approval?: boolean; cash_limit_minor: number; categories: { id: string; name: string }[] }
 export type DrawerKind = 'payout' | 'payin' | 'drop' | 'no_sale' | 'limit_alert'
 export type OtherCheck = { key: string; label: string; expected: number; counted: number | null; diff: number | null; pieces?: boolean }
 
