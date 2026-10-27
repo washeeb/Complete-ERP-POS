@@ -15,7 +15,8 @@ const TABS: { key: Tab; label: string }[] = [
 /**
  * The drawer besides sales. Pay out: an expense paid from the drawer (what it was spent on, who was paid, why, the
  * receipt number and an optional photo); above the till's limit a supervisor approves with their PIN. Pay in: cash
- * added, with the reason. Cash drop: a supervisor takes cash to the safe (their PIN). Open drawer: no sale, with the reason.
+ * added, with the reason. Cash drop: a supervisor takes cash to the safe (their PIN). Open drawer: no sale, with the reason and,
+ * unless the company switched it off, a manager's PIN.
  */
 export function DrawerScreen({ boot, online, initial = 'payout', onDone, onCancel }: {
   boot: Bootstrap; online: boolean; initial?: Tab; onDone: (message: string, slip: DrawerSlip | null) => void; onCancel: () => void
@@ -34,7 +35,9 @@ export function DrawerScreen({ boot, online, initial = 'payout', onDone, onCance
   const money = (m: number) => formatMoney(m, boot.company.currency, boot.company.exponent)
   const drawer = boot.drawer ?? { payout_approval_minor: 0, cash_limit_minor: 0, categories: [] }
   const minor = amount.trim() ? parseMoney(amount, boot.company.exponent) : 0
-  const needsSupervisor = tab === 'drop' || (tab === 'payout' && minor > drawer.payout_approval_minor)
+  const noSaleApproval = tab === 'no_sale' && drawer.no_sale_approval !== false
+  const needsSupervisor = tab === 'drop' || (tab === 'payout' && minor > drawer.payout_approval_minor) || noSaleApproval
+  const approver = noSaleApproval ? 'Manager' : 'Supervisor'
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -126,11 +129,12 @@ export function DrawerScreen({ boot, online, initial = 'payout', onDone, onCance
           </>
         )}
         {tab === 'drop' && <p className="muted small">The supervisor counts the cash in front of you and takes it to the safe.</p>}
+        {noSaleApproval && <p className="muted small">A manager approves opening the drawer without a sale.</p>}
         {needsSupervisor && (
           <fieldset className="supervisor">
-            <legend>Supervisor</legend>
-            <label>Supervisor username<input value={supUser} onChange={(e) => setSupUser(e.target.value)} autoCapitalize="none" /></label>
-            <label>Supervisor PIN<input type="password" inputMode="numeric" value={supPin} onChange={(e) => setSupPin(e.target.value.replace(/\D/g, '').slice(0, 8))} /></label>
+            <legend>{approver}</legend>
+            <label>{approver} username<input value={supUser} onChange={(e) => setSupUser(e.target.value)} autoCapitalize="none" /></label>
+            <label>{approver} PIN<input type="password" inputMode="numeric" value={supPin} onChange={(e) => setSupPin(e.target.value.replace(/\D/g, '').slice(0, 8))} /></label>
           </fieldset>
         )}
         {error && <p className="error" role="alert">{error}</p>}

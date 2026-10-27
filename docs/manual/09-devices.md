@@ -215,6 +215,8 @@ Set the scale to print **EAN-13** labels starting with `21` (see Chapter 8, Groc
 
 - **Lost or stolen:** **System → Devices → Revoke** at once. Its access and every sign-in on it end immediately.
 - **Replacing a till that still has unsent sales:** on the old till press **Export unsent sales** (in the yellow banner). In the back office: **System → Sync Center → Import till file**. Then register and enrol the new device.
+- **Automatic copy (desktop till 0.27 or later):** while any sales are waiting, the desktop till saves the same file by itself every 15 minutes in **Documents → SES Labs Till → Unsent sales** on that PC, keeping the newest 48 (12 hours). **Why:** if the till PC breaks or its data is wiped before the sales reach the server, the newest file there is loaded with *Import till file*, even if nobody pressed the button. Loading a file twice is safe: sales already received are skipped.
+- **A shift left open overnight:** the till shows *This shift was opened on … and not closed*, and **Sales → Shifts** marks it *left open since …* in red. Close it on the till (count the cash) and open a new shift. **Why:** otherwise today's sales and cash run into yesterday's shift, and neither day balances on its own.
 - **Re-installing the same device:** register it as a new device (it gets the next receipt series letter, so receipt numbers never repeat).
 
 ## 9.14 Device health and remote fixes

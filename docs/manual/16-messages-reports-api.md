@@ -103,7 +103,7 @@ After a sale, under the receipt: choose **SMS**, **WhatsApp** or **E-mail**, typ
 
 1. **Data**: till sales (items, receipts or payments), stock on hand, stock movements, customer invoices, supplier bills or the general ledger.
 2. **Period** and **Branch**; optionally a **Filter** (e.g. Category contains "drinks").
-3. **Group by** (branch, day, month, cashier, category, product, customer…) and **Figures** (units, sales, tax, discounts, receipts, value…). With no figures you get the rows themselves, each with an **Open** link to the document.
+3. **Group by** (branch, day, month, cashier, category, product, customer…) and **Figures** (units, sales, tax, discounts, receipts, value…). With no figures you get the rows themselves, each with an **Open** link to the document. For till sales, **Sales including tax** is what customers paid; **Sales excluding tax** is that amount with the tax (VAT, NHIL, GETFund…) taken off, the shop's own takings; **Tax** is the difference.
 4. **Run**. Click any line to see the rows behind it (**Back to the summary** returns).
 5. **Export** as Excel, CSV or PDF, or **Save report**.
 

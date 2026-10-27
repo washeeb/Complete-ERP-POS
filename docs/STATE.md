@@ -3,7 +3,13 @@
 **Phase:** all phases of the master plan built; first client (a pharmacy) live since 2026-10-19 on an Ubuntu server, with releases delivered by `release:build` and the Ubuntu installer.
 **Updated:** 2026-10-26 · Page speed (PR #104) checked on the client's server: Insights 2.7 s → 0.5 s, Today 1.1 s → 0.6 s. Every section below is merged to `main`.
 
-## MFA reset and licensed users — branch `mfa-reset-user-limit`
+## Till and back-office fixes — branch `drawer-no-sale-approval` (with the no-sale approval)
+- Desktop till 0.27: `save_unsent` (lib.rs), `saveUnsentBackup` (hardware.ts), App.tsx every 15 min while items wait. `shift.ts staleShiftSince` + banner in Sell.tsx; `ShiftResource::leftOpen`. `menu-search.blade.php sesMenuToActive`. ReportEngine measure labels.
+
+## No-sale drawer approval — branch `drawer-no-sale-approval`
+- Permission `pos.no_sale` (Core module.json; general_manager, branch_manager), setting `pos.no_sale_approval` (default on), boot `drawer.no_sale_approval`, `DrawerService` (verify with `pos.no_sale`; offline replay flags `drawer_unapproved`), till `Drawer.tsx` (Manager fieldset). Tests in `TillDrawerTest`.
+
+## MFA reset and licensed users — merged (PR #107)
 - `AccessService::resetMfa`, `EditUser` action `resetMfa`, command `erp:mfa-reset` (`MfaResetCommand`), test `MfaResetTest`. `User::licensedCount()` used by `AccessService` (create/reactivate), `LicensePage`, `LicenseService::report`; test in `LicensingTest`.
 
 ## Suggested levels speed — merged (PR #106)

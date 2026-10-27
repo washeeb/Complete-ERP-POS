@@ -58,6 +58,13 @@ class AdminPanelProvider extends PanelProvider
             ->darkMode()
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->databaseNotifications()->databaseNotificationsPolling('30s')
+            // Pages refresh parts of themselves in the background, so a dropped connection or an idle sign-out shows up
+            // even when nobody is clicking: say which it was and what to do, instead of Filament's "Error while loading page".
+            ->registerErrorNotification('Could not reach the server', 'The connection to the server dropped for a moment (internet or network). '
+                .'The page carries on when it is back; if this keeps happening, check the internet connection, or tell SyncLytics support.')
+            ->registerErrorNotification('You were signed out', 'After some time without use you are signed out, for safety. Reload the page (F5) to sign in again.', 419)
+            ->registerErrorNotification('The server is being updated', 'Try again in a minute.', 503)
+            ->registerErrorNotification('Something went wrong on the server', 'It has been noted in the server log. Try again; if it happens again, tell SyncLytics support what you were doing.', 500)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([Dashboard::class])

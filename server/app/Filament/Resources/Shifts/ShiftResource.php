@@ -63,6 +63,21 @@ class ShiftResource extends Resource
             ->when($ids !== null, fn ($q) => $q->whereIn('branch_id', $ids));
     }
 
+    /**
+     * The day an open shift began, when it was left open overnight (began on an earlier day in the branch's time zone, over
+     * 12 hours ago, so a night shift past midnight is not flagged); null otherwise.
+     */
+    public static function leftOpen(Shift $r): ?string
+    {
+        if ($r->status !== 'open' || ! $r->opened_at || $r->opened_at->gt(now()->subHours(12))) {
+            return null;
+        }
+        $tz = $r->branch?->timezone ?: config('app.timezone');
+        $opened = $r->opened_at->copy()->setTimezone($tz);
+
+        return $opened->toDateString() < now($tz)->toDateString() ? $opened->format('D j M') : null;
+    }
+
     public static function table(Table $table): Table
     {
         $m = fn ($state, Shift $r) => $state === null ? '—' : Money::display((int) $state, $r->currency_code);
@@ -74,7 +89,10 @@ class ShiftResource extends Resource
                 TextColumn::make('opened_at')->label('Opened')->dateTime()->sortable(),
                 TextColumn::make('shift_name')->label('Shift')->placeholder('—')->toggleable()
                     ->description(fn ($record) => $record->granted_by_name ? "Allowed by {$record->granted_by_name}: {$record->grant_reason}" : null),
-                TextColumn::make('closed_at')->label('Closed')->dateTime()->placeholder('still open'),
+                TextColumn::make('closed_at')->label('Closed')->dateTime()->placeholder('still open')
+                    // Left open overnight: today's sales are going into an earlier day's shift until it is closed on the till.
+                    ->description(fn (Shift $r) => self::leftOpen($r) ? 'left open since '.self::leftOpen($r).': close it on the till' : null)
+                    ->color(fn (Shift $r) => self::leftOpen($r) ? 'danger' : null),
                 TextColumn::make('sales_count')->label('Sales'),
                 TextColumn::make('opening_float_minor')->label('Float')->formatStateUsing($m),
                 TextColumn::make('expected_cash_minor')->label('Expected cash')->formatStateUsing($m),

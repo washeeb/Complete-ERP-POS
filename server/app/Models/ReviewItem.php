@@ -43,6 +43,7 @@ class ReviewItem extends Model
         'trade_in_unapproved' => 'Trade-in taken offline without a supervisor',
         'repair_conflict' => 'Repair job paid offline that was no longer open',
         'alteration_conflict' => 'Alteration paid offline that was no longer open',
+        'drawer_unapproved' => 'Drawer opened offline without a manager’s approval',
     ];
 
     protected $guarded = [];
