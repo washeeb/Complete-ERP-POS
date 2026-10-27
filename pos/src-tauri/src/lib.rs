@@ -141,6 +141,35 @@ fn open_drawer(state: State<AppState>) -> Result<(), String> {
     printer::send(&target, printer::DRAWER_KICK)
 }
 
+/// Unsent sales kept on the till, newest last: 48 files is 12 hours at one every 15 minutes.
+const UNSENT_KEEP: usize = 48;
+
+/// A copy of the till's unsent sales (the same signed file as "Export unsent sales"), saved by the till itself every
+/// 15 minutes while any are waiting, in Documents\SES Labs Till\Unsent sales. If the PC or the browser data is lost
+/// before the sales reach the server, the newest file is loaded in the back office. Returns the file's path.
+#[tauri::command]
+fn save_unsent(app: tauri::AppHandle, data: String) -> Result<String, String> {
+    if data.len() > 64 * 1024 * 1024 || !data.starts_with('{') {
+        return Err("Not a till export.".into());
+    }
+    let dir = app.path().document_dir().map_err(|e| e.to_string())?.join("SES Labs Till").join("Unsent sales");
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_err(|e| e.to_string())?.as_millis();
+    let path = dir.join(format!("unsent-{ms}.json"));
+    fs::write(&path, data).map_err(|e| e.to_string())?;
+    let mut old: Vec<PathBuf> = fs::read_dir(&dir).map_err(|e| e.to_string())?
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| p.file_name().and_then(|n| n.to_str()).is_some_and(|n| n.starts_with("unsent-") && n.ends_with(".json")))
+        .collect();
+    old.sort(); // unsent-<milliseconds>.json: same length for centuries, so name order is time order
+    if old.len() > UNSENT_KEEP {
+        for p in &old[..old.len() - UNSENT_KEEP] {
+            let _ = fs::remove_file(p);
+        }
+    }
+    Ok(path.to_string_lossy().into_owned())
+}
+
 #[tauri::command]
 fn list_scale_ports() -> Vec<String> {
     scale::ports()
@@ -214,7 +243,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            get_config, set_server, open_setup, open_back_office, set_hardware, client_info, list_printers, print_raw, open_drawer, list_scale_ports, read_scale
+            get_config, set_server, open_setup, open_back_office, set_hardware, client_info, list_printers, print_raw, open_drawer, save_unsent, list_scale_ports, read_scale
         ])
         .run(tauri::generate_context!())
         .expect("error while running the till");

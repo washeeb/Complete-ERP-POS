@@ -22,6 +22,7 @@ import { recordVisit } from '../visits'
 import { achieved, withDeposits } from '../distribution'
 import { submitRoadEvent } from '../till'
 import { v7 as uuidv7 } from 'uuid'
+import { staleShiftSince } from '../shift'
 import { formatMoney, prettyQty, toMilli } from '../money'
 import { isLow, leftMilli, queuedLines, takenMilli, type QueuedLine } from '../stock'
 import { expiryNote } from '../expiry'
@@ -55,6 +56,8 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   // The drawer: pay-out, pay-in, cash drop, open without a sale; the cash-limit warning; a short confirmation.
   const [drawerTab, setDrawerTab] = useState<null | 'payout' | 'payin' | 'drop' | 'no_sale'>(null)
   const [cashHigh, setCashHigh] = useState(false)
+  // A shift left open overnight (opened on an earlier day, over 12 hours ago, so a night shift past midnight is fine).
+  const staleShift = staleShiftSince(boot.shift?.opened_at, new Date())
   const [drawerNote, setDrawerNote] = useState('')
   const [slip, setSlip] = useState<{ slip: DrawerSlip; message: string } | null>(null)
   // The cash limit is checked again whenever this screen opens (e.g. after a receipt), so the warning stays until a drop.
@@ -565,6 +568,13 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
         <div className="banner warn" role="status">
           <span><strong>Cash in the drawer is above {formatMoney(boot.drawer?.cash_limit_minor ?? 0, boot.company.currency, boot.company.exponent)}.</strong> Ask a supervisor for a cash drop.</span>
           <button type="button" onClick={() => setDrawerTab('drop')}>Cash drop</button>
+        </div>
+      )}
+      {staleShift && (
+        <div className="banner warn" role="status">
+          <span><strong>This shift was opened on {new Date(boot.shift!.opened_at).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })} and
+            not closed.</strong> Close it (count the cash) and open a new shift, so each day's cash balances on its own.</span>
+          <button type="button" onClick={() => { if (confirmLeave(lines.length > 0, 'the sale on screen')) onCloseShift() }}>Close shift</button>
         </div>
       )}
       {drawerNote && <div className="banner ok" role="status"><span>{drawerNote}</span><button type="button" className="link" onClick={() => setDrawerNote('')} aria-label="Dismiss">✕</button></div>}

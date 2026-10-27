@@ -265,7 +265,7 @@ it('builds reports with drill-down, keeps them within the person’s access, and
     Mail::assertSent(PlainMessage::class, fn ($e) => $e->hasTo('boss@example.test') && str_ends_with((string) $e->attachmentName, '.xlsx'));
     $file = Storage::disk('local')->allFiles('report-runs')[0];
     $read = SheetFile::xlsx(Storage::disk('local')->path($file));
-    expect($read['headings'])->toBe(['product', 'units', 'sales_before_tax'])->and($read['rows'][0]['values']['product'])->toBe('MILO MILO 400G')
+    expect($read['headings'])->toBe(['product', 'units', 'sales_excluding_tax'])->and($read['rows'][0]['values']['product'])->toBe('MILO MILO 400G')
         ->and($this->owner->fresh()->notifications()->count())->toBe(1);
 });
 

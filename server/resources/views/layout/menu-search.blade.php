@@ -51,8 +51,22 @@
         if (none) none.hidden = words.length === 0 || hits > 0;
         if (open && first && words.length) first.click();
     };
+    // The page you are on stays in view: the list under the search box is what scrolls (admin.css), so Filament's own
+    // scroll-to-active (which moves the whole menu) has no effect; centre the active item in the list instead.
+    window.sesMenuToActive = function () {
+        const list = document.querySelector('.fi-main-sidebar .fi-sidebar-nav-groups');
+        let active = document.querySelector('.fi-main-sidebar .fi-sidebar-item.fi-active');
+        if (!active || active.offsetParent === null) active = document.querySelector('.fi-main-sidebar .fi-sidebar-group.fi-active');
+        if (!list || !active || active.offsetParent === null) return;
+        const a = active.getBoundingClientRect();
+        const l = list.getBoundingClientRect();
+        if (a.top >= l.top && a.bottom <= l.bottom) return; // already visible: leave the menu where the person put it
+        list.scrollTop += a.top - l.top - (l.height - a.height) / 2;
+    };
+    document.addEventListener('DOMContentLoaded', () => setTimeout(window.sesMenuToActive, 20));
     document.addEventListener('livewire:navigated', () => {
         const q = document.getElementById('ses-menu-q');
         if (q?.value) window.sesMenuSearch(q.value);
+        setTimeout(window.sesMenuToActive, 20);
     });
 </script>

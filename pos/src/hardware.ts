@@ -15,6 +15,12 @@ export const isDesktop = (): boolean => tauri() !== null
 
 type Config = { printer: string | null; drawer: boolean; scale_port: string | null }
 
+/** The desktop till keeps its own copy of unsent sales on the PC (Documents\SES Labs Till\Unsent sales); null in a browser. */
+export async function saveUnsentBackup(file: Blob): Promise<string | null> {
+  const t = tauri()
+  return t ? t.core.invoke<string>('save_unsent', { data: await file.text() }) : null
+}
+
 export async function hardware(): Promise<Config | null> {
   const t = tauri()
   return t ? t.core.invoke<Config>('get_config') : null

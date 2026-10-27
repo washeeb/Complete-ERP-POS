@@ -3,7 +3,8 @@ import { api, ApiError, wms } from './api'
 import { connectionState, pingServer, type ConnectionState } from './connection'
 import { db, getDevice, getLocalShift, getSession, queueCounts, type CacheRecord } from './db'
 import { connectLive, type LiveState } from './live'
-import { sendQueue } from './offline'
+import { saveUnsentBackup } from './hardware'
+import { exportQueueFile, sendQueue } from './offline'
 import { HEALTH_EVERY_TICKS, reportHealth, type FixHandlers } from './health'
 import { CloseShift, Enroll, Login, OpenShift } from './screens/Setup'
 import { Receipt } from './screens/Receipt'
@@ -25,6 +26,9 @@ const LABELS: Record<ConnectionState, string> = {
   'server-down': 'Server not answering — working offline',
   offline: 'No network — working offline',
 }
+
+/** How often the desktop till saves its own copy of unsent sales while any are waiting. */
+const BACKUP_EVERY_MS = 15 * 60_000
 
 export default function App() {
   const [stage, setStage] = useState<Stage>('loading')
@@ -124,12 +128,18 @@ export default function App() {
   useEffect(() => {
     let alive = true
     let ticks = 0
+    let backedUpAt = 0
     const tick = async () => {
       const ok = navigator.onLine && (await pingServer())
       if (!alive) return
       setConn(connectionState(navigator.onLine, ok))
       const counts = await queueCounts()
       setQueue((q) => ({ ...q, pending: counts.pending, review: counts.review }))
+      // The desktop till saves a copy of what is waiting on the PC every 15 minutes (the "Export unsent sales" file).
+      if (counts.pending + counts.review > 0 && Date.now() - backedUpAt >= BACKUP_EVERY_MS) {
+        backedUpAt = Date.now()
+        await saveUnsentBackup(await exportQueueFile()).catch(() => undefined)
+      }
       if (ok && counts.pending > 0) await flush()
       // Health every 5 minutes (and at start) while signed in: the answer may carry a fix queued in the back office.
       if (ok && ticks++ % HEALTH_EVERY_TICKS === 0 && (await getSession())?.token && fixes.current) {
