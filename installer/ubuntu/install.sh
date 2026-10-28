@@ -218,7 +218,11 @@ GLOBAL="	admin off
 [ -n "$DOMAIN" ] && [ -n "$EMAIL" ] && GLOBAL="${GLOBAL}
 	email ${EMAIL}"
 TLS="	tls internal"; [ -n "$DOMAIN" ] && [ "$CI_MODE" = 0 ] && TLS=""
-# Each copy's own PHP workers, running as its own user (shared server); the standard copy uses PHP's default workers.
+# PHP workers from the memory (about 80 MB each, half the memory left for the database): 8 to 32. Too few (PHP's own
+# default is 5), and a slow page (a till downloading its catalog) makes the next sale, and its receipt, wait for a worker.
+MEM_MB=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)
+FPM_CHILDREN=$(( MEM_MB / 2 / 80 )); [ "$FPM_CHILDREN" -lt 8 ] && FPM_CHILDREN=8; [ "$FPM_CHILDREN" -gt 32 ] && FPM_CHILDREN=32
+# Each copy's own PHP workers, running as its own user (shared server); the standard copy uses PHP's default pool, sized here.
 if [ -n "$INSTANCE" ]; then
   cat > "/etc/php/${PHP_V}/fpm/pool.d/${SLUG}.conf" <<POOL
 ; Written by install.sh for the shared-server copy ${INSTANCE}.
@@ -231,10 +235,15 @@ listen.group = caddy
 listen.mode = 0660
 ; Workers start when needed and stop when idle, so a quiet client uses little memory.
 pm = ondemand
-pm.max_children = 6
+pm.max_children = ${FPM_CHILDREN}
 pm.process_idle_timeout = 30s
 pm.max_requests = 500
 POOL
+else
+  WWW="/etc/php/${PHP_V}/fpm/pool.d/www.conf"
+  sed -i -e "s|^;\?pm.max_children = .*|pm.max_children = ${FPM_CHILDREN}|" -e 's|^;\?pm.start_servers = .*|pm.start_servers = 4|' \
+    -e 's|^;\?pm.min_spare_servers = .*|pm.min_spare_servers = 2|' -e 's|^;\?pm.max_spare_servers = .*|pm.max_spare_servers = 8|' \
+    -e 's|^;\?pm.max_requests = .*|pm.max_requests = 500|' "$WWW"
 fi
 mkdir -p /etc/caddy/sites
 cat > /etc/caddy/Caddyfile <<CADDY

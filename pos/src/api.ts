@@ -52,6 +52,8 @@ async function call<T>(path: string, init: RequestInit & { auth?: 'device' | 'se
   return body as T
 }
 
+export type StockFigures = { on_hand: string; expires_on: string | null; min_qty: string | null }
+
 export const api = {
   enroll: (code: string, publicKey: string) =>
     call<{ device_id: string; token: string; kind: string }>('devices/enroll', { method: 'POST', auth: 'none', body: JSON.stringify({ code, public_key: publicKey }) }),
@@ -80,6 +82,14 @@ export const api = {
     const body = await res.json().catch(() => ({}))
     if (!res.ok) throw new ApiError(body.error ?? 'server', body.detail ?? `Server error (${res.status})`, res.status)
     return body as { version: string; generated_at: string; products: Product[]; promotions?: PromotionRow[]; utc_offset_minutes?: number; grocery?: Grocery | null; pharmacy?: Pharmacy | null; restaurant?: Restaurant | null; electronics?: boolean; fashion?: Fashion | null; services?: Services | null }
+  },
+  /** Stock left, next expiry and low-stock minimum per product at this till's store (ETag); null = unchanged. */
+  stock: async (version?: string | null) => {
+    const headers: Record<string, string> = { Accept: 'application/json', Authorization: `Bearer ${(await getSession())?.token ?? ''}` }
+    if (version) headers['If-None-Match'] = `"${version}"`
+    const res = await fetch('/api/v1/pos/stock', { headers }).catch(() => null)
+    if (!res || res.status === 304 || !res.ok) return null
+    return (await res.json()) as { version: string; products: Record<string, StockFigures> }
   },
   /** Customers for lookup (ETag); null = unchanged. */
   customers: async (version?: string | null) => {

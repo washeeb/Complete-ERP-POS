@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { shiftClosedOnServer } from './shift'
 import { api, ApiError, wms } from './api'
 import { connectionState, pingServer, type ConnectionState } from './connection'
 import { db, getDevice, getLocalShift, getSession, queueCounts, type CacheRecord } from './db'
@@ -77,7 +78,14 @@ export default function App() {
     if (device.kind === 'handheld') return setStage('handheld') // warehouse scanner: no till, no shift
     try {
       const { b, products: p, version, live } = await fetchOrCache()
-      const local = await getLocalShift()
+      let local = await getLocalShift()
+      // The server answers and has no open shift for this till, and the till is not still sending one it opened offline:
+      // the shift was closed (on this till, another one, or in the back office). Forget it, so Open shift appears
+      // instead of a till whose every sale the server refuses ("Open a shift on this till before selling").
+      if (shiftClosedOnServer(live, !!b.shift, local?.shiftId, (await db.queue.filter((q) => q.type === 'shift_open').toArray()).map((q) => q.id))) {
+        await db.kv.delete('shift')
+        local = undefined
+      }
       // Offline (or shift opened offline and not yet synced): the till's own record of the open shift counts.
       const shift = (live ? b.shift : null) ?? (local ? { ...(b.shift ?? {}), id: local.shiftId, status: 'open' as const, opened_at: local.openedAt,
         opened_by: session.userName, opening_float_minor: local.floatMinor, expected_cash_minor: null, counted_cash_minor: null, over_short_minor: null } : null)
@@ -172,10 +180,20 @@ export default function App() {
     setProducts(r.products)
     setCatalogVersion(r.version)
   }, [fetchOrCache])
+  // Stock only (a few kilobytes): after each sale and when stock changes. The catalog itself is asked for only when
+  // products, prices or promotions change, so a sale no longer makes every till download it all again.
+  const refreshStock = useCallback(async () => {
+    const cat = (await db.cache.get('catalog')) as Extract<CacheRecord, { id: 'catalog' }> | undefined
+    const fresh = await api.stock(cat?.stockVersion)
+    if (!fresh) return
+    const apply = (list: Product[]) => list.map((p) => (fresh.products[p.id] ? { ...p, ...fresh.products[p.id] } : p))
+    setProducts(apply)
+    if (cat) await db.cache.put({ ...cat, products: apply(cat.products), stockVersion: fresh.version })
+  }, [])
   useEffect(() => {
     stageRef.current = stage
-    fixes.current = { syncNow: async () => { await flush() }, refreshCatalog: async () => { await refreshCatalog() } }
-  }, [stage, flush, refreshCatalog])
+    fixes.current = { syncNow: async () => { await flush() }, refreshCatalog: async () => { await refreshCatalog(); await refreshStock() } }
+  }, [stage, flush, refreshCatalog, refreshStock])
 
   // Live price/stock changes while selling; polling (cheap with ETag) covers a missing or dropped socket.
   const selling = stage === 'sell' || stage === 'receipt'
@@ -183,13 +201,13 @@ export default function App() {
   const rtKey = rt ? JSON.stringify(rt) : ''
   useEffect(() => {
     if (!selling || !online || !rtKey) return
-    return connectLive(JSON.parse(rtKey), refreshCatalog, setLive)
-  }, [selling, online, rtKey, refreshCatalog])
+    return connectLive(JSON.parse(rtKey), refreshCatalog, refreshStock, setLive)
+  }, [selling, online, rtKey, refreshCatalog, refreshStock])
   useEffect(() => {
     if (!selling || !online || live === 'live') return
-    const id = setInterval(refreshCatalog, 60_000)
+    const id = setInterval(() => { refreshCatalog().then(refreshStock) }, 60_000) // both cheap when nothing changed (ETag)
     return () => clearInterval(id)
-  }, [selling, online, live, refreshCatalog])
+  }, [selling, online, live, refreshCatalog, refreshStock])
 
   return (
     <div className="app">
@@ -212,7 +230,7 @@ export default function App() {
             setReceipt(s)
             setStage('receipt')
             setQueue({ ...queue, ...(await queueCounts()) })
-            if (s.status !== 'queued') refreshCatalog() // updated stock figures for the next sale
+            if (s.status !== 'queued') refreshStock() // updated stock figures for the next sale (not the whole catalog)
             else if (online) flush()
           }} />
       )}

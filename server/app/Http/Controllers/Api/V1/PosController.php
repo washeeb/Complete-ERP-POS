@@ -63,6 +63,7 @@ use App\Support\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /** Endpoints a signed-in till uses. Device + staff session are checked by the device.token:pos middleware. */
@@ -153,11 +154,7 @@ class PosController extends Controller
                 'units.uom', 'units.barcodes',
                 'prices' => fn ($q) => $q->whereIn('price_list_id', $lists)->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>', $now))])
             ->orderBy('name')->limit(20000)->get();
-        $stock = $till ? StockLevel::where('warehouse_id', $till->warehouse_id)->pluck('on_hand', 'product_id') : collect();
-        // The expiry the cashier sees: the batch sold next (earliest expiry with stock at this till's store).
-        $expiry = $till ? DB::table('stock_batch_levels as l')->join('stock_batches as b', 'b.id', '=', 'l.batch_id')->where('l.warehouse_id', $till->warehouse_id)
-            ->where('l.on_hand', '>', 0)->whereNotNull('b.expires_on')->groupBy('l.product_id')->selectRaw('l.product_id, MIN(b.expires_on) AS e')->pluck('e', 'product_id') : collect();
-        $minimums = $till && ($w = Warehouse::find($till->warehouse_id)) ? app(ReorderLevels::class)->forWarehouse($w) : []; // the till marks low stock
+        [$stock, $expiry, $minimums] = $this->stockFigures($till);
 
         return response()->json([
             'version' => $version,
@@ -266,6 +263,58 @@ class PosController extends Controller
         return ['allergies' => $p?->allergies ?? [], 'nhis_no' => $p?->nhis_no, 'nhis_expires_on' => $p?->nhis_expires_on?->toDateString()];
     }
 
+    /**
+     * Stock left at the till's store, the expiry of the batch sold next (earliest with stock) and the low-stock minimum,
+     * per product. Sent with the catalog and, on their own, by stock(): they change with every sale, the catalog does not.
+     *
+     * @return array{0: Collection, 1: Collection, 2: array}
+     */
+    private function stockFigures(?Till $till): array
+    {
+        if (! $till) {
+            return [collect(), collect(), []];
+        }
+        $stock = StockLevel::where('warehouse_id', $till->warehouse_id)->pluck('on_hand', 'product_id');
+        $expiry = DB::table('stock_batch_levels as l')->join('stock_batches as b', 'b.id', '=', 'l.batch_id')->where('l.warehouse_id', $till->warehouse_id)
+            ->where('l.on_hand', '>', 0)->whereNotNull('b.expires_on')->groupBy('l.product_id')->selectRaw('l.product_id, MIN(b.expires_on) AS e')->pluck('e', 'product_id');
+        $minimums = ($w = Warehouse::find($till->warehouse_id)) ? app(ReorderLevels::class)->forWarehouse($w) : [];
+
+        return [$stock, $expiry, $minimums];
+    }
+
+    /**
+     * Only the stock figures of the till's store (a few kilobytes), asked after each sale and when stock changes. The
+     * catalog no longer changes version with every sale, so tills stop downloading the whole catalog after each one,
+     * which kept the server's workers busy and held up the next sale (and its receipt).
+     */
+    public function stock(Request $request): JsonResponse
+    {
+        $device = $this->device($request);
+        $till = Till::find($device->till_id);
+        $wh = $till?->warehouse_id;
+        $parts = [];
+        // The quantities themselves count too: two sales within the same second leave the latest time unchanged.
+        foreach (['stock_levels' => 'sum(on_hand)', 'stock_batch_levels' => 'sum(on_hand)', 'reorder_rules' => 'sum(min_qty)'] as $t => $sum) {
+            $row = DB::table($t)->where('warehouse_id', $wh)->selectRaw("count(*) AS c, max(updated_at) AS u, {$sum} AS s")->first();
+            $parts[] = "{$t}:{$row->c}:{$row->u}:{$row->s}";
+        }
+        $version = substr(hash('sha256', implode('|', $parts)), 0, 32);
+        if ($request->header('If-None-Match') === '"'.$version.'"') {
+            return response()->json(null, 304)->setEtag($version);
+        }
+        [$stock, $expiry, $minimums] = $this->stockFigures($till);
+        $tracked = Product::where('is_active', true)->where('track_stock', true)->get(['id', 'track_batches']);
+
+        return response()->json([
+            'version' => $version,
+            'products' => $tracked->mapWithKeys(fn (Product $p) => [$p->id => [
+                'on_hand' => (string) ($stock[$p->id] ?? '0.000'),
+                'expires_on' => $p->track_batches && isset($expiry[$p->id]) ? substr((string) $expiry[$p->id], 0, 10) : null,
+                'min_qty' => isset($minimums[$p->id]) ? Qty::format($minimums[$p->id]['min']) : null,
+            ]]),
+        ])->setEtag($version);
+    }
+
     private function catalogVersion(?string $industryId = null): string
     {
         $tenant = app(TenantContext::class)->id();
@@ -275,7 +324,8 @@ class PosController extends Controller
             $parts[] = $t.':'.$row->c.':'.$row->u;
         }
         $parts[] = 'tax_group_rates:'.DB::table('tax_group_rates')->count();
-        $parts[] = 'stock:'.DB::table('stock_levels')->where('tenant_id', $tenant)->max('updated_at');
+        // Not stock: it changes with every sale and travels on its own (stock()), so a sale no longer makes every till
+        // download the whole catalog again.
         $parts[] = 'industry:'.$industryId; // each industry's tills cache their own catalogue
 
         return substr(hash('sha256', implode('|', $parts)), 0, 32);
