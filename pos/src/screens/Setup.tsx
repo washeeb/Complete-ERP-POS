@@ -6,7 +6,7 @@ import { createDeviceKey } from '../deviceKey'
 import { formatMoney, parseMoney } from '../money'
 import { offlineSignIn, saveGrant } from '../offline'
 import { closeShift, openShift } from '../till'
-import { CLOSE_CHECKS, type Bootstrap, type OtherCheck } from '../types'
+import { CLOSE_CHECKS, type Bootstrap, type OtherCheck, type Shift } from '../types'
 
 /** First run on a new till: enter the one-time code an administrator got when registering this device. */
 export function Enroll({ onDone }: { onDone: () => void }) {
@@ -226,7 +226,8 @@ export function CloseShift({ boot, online, onClosed, onCancel }: { boot: Bootstr
   const [note, setNote] = useState('')
   const [other, setOther] = useState<Record<string, string>>({})
   const [error, setError] = useState('')
-  const [result, setResult] = useState<null | { expected: number | null; counted: number; diff: number | null; provisional: boolean; other: OtherCheck[]; otherSent: boolean }>(null)
+  const [result, setResult] = useState<null | { expected: number | null; counted: number; diff: number | null; provisional: boolean; other: OtherCheck[]; otherSent: boolean
+    takings: Shift['takings'] }>(null)
   const money = (m: number) => formatMoney(m, boot.company.currency, boot.company.exponent)
   const denominations = boot.cash?.denominations ?? []
   const byNotes = denominations.length > 0
@@ -242,7 +243,7 @@ export function CloseShift({ boot, online, onClosed, onCancel }: { boot: Bootstr
         .map((c) => [c.key, c.pieces ? parseInt(other[c.key], 10) || 0 : parseMoney(other[c.key], boot.company.exponent)]))
       const { shift, provisional } = await closeShift(amount, note, online, denoms, Object.keys(read).length ? read : null)
       setResult({ expected: shift.expected_cash_minor, counted: shift.counted_cash_minor ?? amount, diff: shift.over_short_minor, provisional,
-        other: shift.other ?? [], otherSent: Object.keys(read).length > 0 })
+        other: shift.other ?? [], otherSent: Object.keys(read).length > 0, takings: shift.takings ?? null })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not close the shift.')
     }
@@ -287,6 +288,17 @@ export function CloseShift({ boot, online, onClosed, onCancel }: { boot: Bootstr
           </>
         )}
         {result.provisional && result.otherSent && <p className="muted">Mobile money and card are checked when the till reconnects.</p>}
+        {result.takings && result.takings.lines.length > 0 && (
+          <>
+            <h2>Sales this shift</h2>
+            <dl className="totals">
+              {result.takings.lines.map((l) => <Fragment key={l.label}><dt>{l.label}</dt><dd>{money(l.amount_minor)}</dd></Fragment>)}
+              <dt><strong>Total sales</strong></dt><dd><strong>{money(result.takings.total_minor)}</strong></dd>
+            </dl>
+            <p className="muted small">Cash above is what should be in the {boot.cash?.vaults ? 'tray' : 'drawer'} (with the float); the total is everything sold, however it was paid.</p>
+          </>
+        )}
+        {result.provisional && <p className="muted">The sales by payment method show on Till shifts when the till reconnects.</p>}
         <button className="primary big" onClick={onClosed}>Done</button>
       </div>
     )

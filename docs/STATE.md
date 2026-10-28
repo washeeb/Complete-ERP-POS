@@ -3,6 +3,9 @@
 **Phase:** all phases of the master plan built; first client (a pharmacy) live since 2026-10-19 on an Ubuntu server, with releases delivered by `release:build` and the Ubuntu installer.
 **Updated:** 2026-10-26 · Page speed (PR #104) checked on the client's server: Insights 2.7 s → 0.5 s, Today 1.1 s → 0.6 s. Every section below is merged to `main`.
 
+
+## Shift takings — branch `shift-takings`
+- `ShiftService::takings`, `PosController::shiftJson` `takings` (when revealed), till `CloseShift` (Setup.tsx) *Sales this shift*, `ShiftResource` *Sales total* column. Test in `PosSaleTest`.
 ## Till and back-office fixes — branch `drawer-no-sale-approval` (with the no-sale approval)
 - Desktop till 0.27: `save_unsent` (lib.rs), `saveUnsentBackup` (hardware.ts), App.tsx every 15 min while items wait. `shift.ts staleShiftSince` + banner in Sell.tsx; `ShiftResource::leftOpen`. `menu-search.blade.php sesMenuToActive`. ReportEngine measure labels.
 

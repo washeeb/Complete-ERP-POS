@@ -290,13 +290,17 @@ it('checks mobile money per network and the card terminal at the close, and show
         ->and(collect($closed['other'])->keyBy('key')->map(fn ($c) => [$c['expected'], $c['counted'], $c['diff']])->all())->toBe([
             'momo:mtn' => [7400, 3700, -3700], 'momo:telecel' => [3700, 3700, 0], 'card' => [2000, null, null],
         ]);
+    // Everything the shift sold, however it was paid, with the total (cash is only one part).
+    expect($closed['takings'])->toBe(['lines' => [['label' => 'Cash', 'amount_minor' => 1700], ['label' => 'MTN MoMo', 'amount_minor' => 7400],
+        ['label' => 'Telecel Cash', 'amount_minor' => 3700], ['label' => 'Card (standalone terminal)', 'amount_minor' => 2000]], 'total_minor' => 14800]);
 
     $shift = Shift::find($this->shiftId);
     expect(ShiftResource::otherSummary($shift))->toBe('MTN MoMo short GH₵ 37.00');
     Filament\Facades\Filament::setCurrentPanel(Filament\Facades\Filament::getPanel('admin'));
     app('auth')->forgetGuards(); // the till's token, not the back-office user
     $this->actingAs(withMfa($this->owner), 'web');
-    Livewire\Livewire::test(ListShifts::class)->assertSee('MTN MoMo short')
+    expect(ShiftResource::takings($shift)['total'])->toBe('GH₵ 148.00');
+    Livewire\Livewire::test(ListShifts::class)->assertSee('MTN MoMo short')->assertSee('GH₵ 148.00')
         ->callTableAction('report', $shift->id)->assertFileDownloaded();
     app('auth')->forgetGuards();
 

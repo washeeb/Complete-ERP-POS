@@ -65,6 +65,8 @@ export type PriceList = { id: string; code: string; name: string; prices_include
 
 export type Shift = {
   id: string; status: 'open' | 'closed'; opened_at: string; opened_by: string; opening_float_minor: number
+  /** Once closed: the shift's sales by payment method, and the total. */
+  takings?: { lines: { label: string; amount_minor: number }[]; total_minor: number } | null
   expected_cash_minor: number | null; counted_cash_minor: number | null; over_short_minor: number | null
   /** Mobile money per network and the card terminal at the close (empty while open, or offline until synced). */
   other?: OtherCheck[]
