@@ -201,27 +201,36 @@ final class ShiftService
     }
 
     /**
-     * The shift's sales by how they were paid (returns netted: refunds are negative payments), every method including
-     * those that never reach the drawer (mobile money per network, card, vouchers, NHIS, on account…), and the total.
+     * The shift's sales by how they were paid, every method including those that never reach the drawer (mobile money
+     * per network, card, vouchers, NHIS, on account…); the returns refunded, by how the money went back, so a refund the
+     * customer never received shows at once as the reason the drawer is over; and the total (sales less refunds).
      * Not the float, pay-ins or customer-account payments: only what the shift sold.
      *
-     * @return array{lines: list<array{label: string, amount_minor: int}>, total_minor: int}
+     * @return array{lines: list<array{label: string, amount_minor: int}>, refunds: list<array{label: string, amount_minor: int}>, total_minor: int}
      */
     public function takings(Shift $shift): array
     {
-        $rows = SalePayment::whereIn('sale_id', $shift->sales()->where('status', 'posted')->select('id'))
-            ->groupBy('method', 'provider')->selectRaw('method, provider, SUM(amount_minor) AS amount')->toBase()->get();
-        $lines = [];
+        $rows = SalePayment::query()->join('sales as s', 's.id', '=', 'sale_payments.sale_id')->where('s.shift_id', $shift->id)->where('s.status', 'posted')
+            ->groupBy('s.kind', 'sale_payments.method', 'sale_payments.provider')
+            ->selectRaw('s.kind, sale_payments.method, sale_payments.provider, SUM(sale_payments.amount_minor) AS amount')->toBase()->get();
+        $sold = $refunded = [];
         foreach ($rows as $r) {
             $label = $r->method === 'momo' ? (SalePayment::MOMO_PROVIDERS[$r->provider ?: 'mtn'] ?? 'Mobile money') : (SalePayment::METHODS[$r->method] ?? $r->method);
-            $lines[$label] = ($lines[$label] ?? 0) + (int) $r->amount;
+            if ($r->kind === 'return') {
+                $refunded[$label] = ($refunded[$label] ?? 0) - (int) $r->amount; // refunds are negative payments
+            } else {
+                $sold[$label] = ($sold[$label] ?? 0) + (int) $r->amount;
+            }
         }
-        $lines = array_filter($lines, fn ($v) => $v !== 0);
         $order = array_flip(array_values(array_unique(array_merge(['Cash'], array_values(SalePayment::MOMO_PROVIDERS), array_values(SalePayment::METHODS)))));
-        uksort($lines, fn ($a, $b) => ($order[$a] ?? 99) <=> ($order[$b] ?? 99));
+        $list = function (array $by) use ($order): array {
+            $by = array_filter($by, fn ($v) => $v !== 0);
+            uksort($by, fn ($a, $b) => ($order[$a] ?? 99) <=> ($order[$b] ?? 99));
 
-        return ['lines' => array_map(fn ($label, $amount) => ['label' => $label, 'amount_minor' => $amount], array_keys($lines), $lines),
-            'total_minor' => array_sum($lines)];
+            return array_map(fn ($label, $amount) => ['label' => $label, 'amount_minor' => $amount], array_keys($by), $by);
+        };
+
+        return ['lines' => $list($sold), 'refunds' => $list($refunded), 'total_minor' => array_sum($sold) - array_sum($refunded)];
     }
 
     private function requireManager(Actor $actor, Shift $shift): void

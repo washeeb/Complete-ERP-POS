@@ -5,6 +5,7 @@ use App\Domain\Customers\CustomerService;
 use App\Domain\Devices\DeviceService;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Inventory\StockLedger;
+use App\Domain\Pos\ReturnService;
 use App\Domain\Pricing\PriceResolver;
 use App\Domain\Pricing\TaxCalculator;
 use App\Filament\Resources\Devices\DeviceResource;
@@ -292,7 +293,7 @@ it('checks mobile money per network and the card terminal at the close, and show
         ]);
     // Everything the shift sold, however it was paid, with the total (cash is only one part).
     expect($closed['takings'])->toBe(['lines' => [['label' => 'Cash', 'amount_minor' => 1700], ['label' => 'MTN MoMo', 'amount_minor' => 7400],
-        ['label' => 'Telecel Cash', 'amount_minor' => 3700], ['label' => 'Card (standalone terminal)', 'amount_minor' => 2000]], 'total_minor' => 14800]);
+        ['label' => 'Telecel Cash', 'amount_minor' => 3700], ['label' => 'Card (standalone terminal)', 'amount_minor' => 2000]], 'refunds' => [], 'total_minor' => 14800]);
 
     $shift = Shift::find($this->shiftId);
     expect(ShiftResource::otherSummary($shift))->toBe('MTN MoMo short GH₵ 37.00');
@@ -306,4 +307,26 @@ it('checks mobile money per network and the card terminal at the close, and show
 
     $this->withToken($this->token)->postJson('/api/v1/pos/shifts/open', ['opening_float_minor' => 0])->assertCreated();
     $this->withToken($this->token)->postJson('/api/v1/pos/shifts/close', ['counted_cash_minor' => 0, 'other' => ['bitcoin' => 5]])->assertStatus(422);
+});
+
+it('shows returns refunded at the close, so a refund the customer never got explains the drawer being over', function () {
+    $pay = function (array $payments) {
+        $sale = cart($this, [[$this->bread, true, '2']]); // 37.00
+        $sale['payments'] = $payments;
+
+        return Sale::find($this->withToken($this->token)->postJson('/api/v1/pos/sales', $sale)->assertCreated()->json('sale.id'));
+    };
+    $pay([['method' => 'cash', 'amount_minor' => 3700, 'tendered_minor' => 3700]]);
+    $momo = $pay([['method' => 'momo', 'provider' => 'mtn', 'amount_minor' => 3700, 'reference' => 'MTN0009']]);
+    $ret = app(ReturnService::class);
+    $line = $ret->returnable($momo->fresh('lines', 'payments'))['lines'][0];
+    $ret->post($this->device, $this->cashier, ['id' => (string) Str::uuid7(), 'device_seq' => 99, 'occurred_at' => now()->toIso8601String(),
+        'shift_id' => $this->shiftId, 'original_sale_id' => $momo->id, 'reason' => 'Wrong item', 'lines' => [['original_line_id' => $line['id'], 'qty' => '2']],
+        'refunds' => [['method' => 'momo', 'provider' => 'mtn', 'amount_minor' => 3700, 'reference' => 'MTNR01']]]);
+
+    // The MoMo was never sent back: the phone still shows 37.00, over by the refund, and the close says why.
+    $closed = $this->withToken($this->token)->postJson('/api/v1/pos/shifts/close', ['counted_cash_minor' => 23700, 'other' => ['momo:mtn' => 3700]])
+        ->assertOk()->json('shift');
+    expect($closed['takings'])->toBe(['lines' => [['label' => 'Cash', 'amount_minor' => 3700], ['label' => 'MTN MoMo', 'amount_minor' => 3700]],
+        'refunds' => [['label' => 'MTN MoMo', 'amount_minor' => 3700]], 'total_minor' => 3700]);
 });
