@@ -293,9 +293,10 @@ class PosController extends Controller
         $till = Till::find($device->till_id);
         $wh = $till?->warehouse_id;
         $parts = [];
-        foreach (['stock_levels', 'stock_batch_levels', 'reorder_rules'] as $t) {
-            $row = DB::table($t)->where('warehouse_id', $wh)->selectRaw('count(*) AS c, max(updated_at) AS u')->first();
-            $parts[] = "{$t}:{$row->c}:{$row->u}";
+        // The quantities themselves count too: two sales within the same second leave the latest time unchanged.
+        foreach (['stock_levels' => 'sum(on_hand)', 'stock_batch_levels' => 'sum(on_hand)', 'reorder_rules' => 'sum(min_qty)'] as $t => $sum) {
+            $row = DB::table($t)->where('warehouse_id', $wh)->selectRaw("count(*) AS c, max(updated_at) AS u, {$sum} AS s")->first();
+            $parts[] = "{$t}:{$row->c}:{$row->u}:{$row->s}";
         }
         $version = substr(hash('sha256', implode('|', $parts)), 0, 32);
         if ($request->header('If-None-Match') === '"'.$version.'"') {
