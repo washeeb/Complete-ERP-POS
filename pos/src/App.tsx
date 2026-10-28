@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { shiftClosedOnServer } from './shift'
 import { api, ApiError, wms } from './api'
 import { connectionState, pingServer, type ConnectionState } from './connection'
 import { db, getDevice, getLocalShift, getSession, queueCounts, type CacheRecord } from './db'
@@ -77,7 +78,14 @@ export default function App() {
     if (device.kind === 'handheld') return setStage('handheld') // warehouse scanner: no till, no shift
     try {
       const { b, products: p, version, live } = await fetchOrCache()
-      const local = await getLocalShift()
+      let local = await getLocalShift()
+      // The server answers and has no open shift for this till, and the till is not still sending one it opened offline:
+      // the shift was closed (on this till, another one, or in the back office). Forget it, so Open shift appears
+      // instead of a till whose every sale the server refuses ("Open a shift on this till before selling").
+      if (shiftClosedOnServer(live, !!b.shift, local?.shiftId, (await db.queue.filter((q) => q.type === 'shift_open').toArray()).map((q) => q.id))) {
+        await db.kv.delete('shift')
+        local = undefined
+      }
       // Offline (or shift opened offline and not yet synced): the till's own record of the open shift counts.
       const shift = (live ? b.shift : null) ?? (local ? { ...(b.shift ?? {}), id: local.shiftId, status: 'open' as const, opened_at: local.openedAt,
         opened_by: session.userName, opening_float_minor: local.floatMinor, expected_cash_minor: null, counted_cash_minor: null, over_short_minor: null } : null)

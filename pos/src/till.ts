@@ -1,4 +1,5 @@
 import { v7 as uuidv7 } from 'uuid'
+import { shiftClosedOnServer } from './shift'
 import { warrantyUntil } from './electronics'
 import { api, ApiError, SIGNED_OUT, van as vanApi, type OrderBody, type VisitBody, type ShiftGrant } from './api'
 import { db, getLocalShift, getSession, type OfflineGrant } from './db'
@@ -190,6 +191,11 @@ export async function submitSale(args: {
       await recordCash()
       return sale
     } catch (e) {
+      // The shift was closed elsewhere (in the back office, or by mistake): forget it here, so signing in again opens a new one.
+      if (e instanceof ApiError && e.code === 'no_shift' && shiftClosedOnServer(true, false, local?.shiftId, (await db.queue.filter((q) => q.type === 'shift_open').toArray()).map((q) => q.id))) {
+        await db.kv.delete('shift')
+        throw new ApiError('no_shift', 'This till’s shift has been closed. Sign out and sign in again to open a new shift (the sale on screen was not recorded).', e.status)
+      }
       if (!isNetwork(e)) throw e // refused by the server: nothing was recorded, the cashier can fix and retry
     }
   }
