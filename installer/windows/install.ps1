@@ -16,7 +16,7 @@ param(
   [string]$Dir = "C:\$Slug",
   [string]$Domain = '',                                        # internet name (e.g. shop.example.com): a free Let's Encrypt certificate
   [string]$Email = '',                                         # for Let's Encrypt expiry notices (with -Domain)
-  [int]$Workers = 4,                                           # PHP worker processes (each serves one request at a time)
+  [int]$Workers = 8,                                           # PHP worker processes (each serves one request at a time; too few and a sale waits)
   [string]$CaddyVersion = '2.10.0',                            # Caddy web server build from GitHub (checksum-verified)
   [string]$PhpDir = 'C:\php',
   [string]$PgVersion = '17.6-1',                               # PostgreSQL build from get.enterprisedb.com (binaries ZIP)

@@ -5,7 +5,10 @@
 
 
 
-## Refunds at the close — branch `shift-refunds`
+
+## Stock apart from the catalog — branch `till-stock-light`
+- `PosController::stock` (route `pos/stock`), `stockFigures()` shared with `catalog`; catalog version without stock. Till: `api.stock`, `App.tsx refreshStock` (after sale, poll), `live.ts` stock events → stock only; cache `stockVersion`. Installers: Ubuntu FPM workers from memory (www pool too), Windows 8 workers. Test in `PosSaleTest`.
+## Refunds at the close — merged (PR #110)
 - `ShiftService::takings` returns `refunds` (returns' refunds by method); till `CloseShift` red *Returns refunded* lines; `ShiftResource::takings` adds them. Test in `PosSaleTest`.
 ## Shift takings — merged (PR #109)
 - `ShiftService::takings`, `PosController::shiftJson` `takings` (when revealed), till `CloseShift` (Setup.tsx) *Sales this shift*, `ShiftResource` *Sales total* column. Test in `PosSaleTest`.

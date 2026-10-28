@@ -330,3 +330,19 @@ it('shows returns refunded at the close, so a refund the customer never got expl
     expect($closed['takings'])->toBe(['lines' => [['label' => 'Cash', 'amount_minor' => 3700], ['label' => 'MTN MoMo', 'amount_minor' => 3700]],
         'refunds' => [['label' => 'MTN MoMo', 'amount_minor' => 3700]], 'total_minor' => 3700]);
 });
+
+it('keeps the catalog version through sales and sends the stock figures on their own', function () {
+    $catalog = $this->withToken($this->token)->getJson('/api/v1/pos/catalog')->assertOk();
+    $stock = $this->withToken($this->token)->getJson('/api/v1/pos/stock')->assertOk();
+    expect($stock->json("products.{$this->bread->id}.on_hand"))->toBe('20.000');
+
+    $sale = cart($this, [[$this->bread, true, '2']]);
+    $sale['payments'] = [['method' => 'cash', 'amount_minor' => 3700, 'tendered_minor' => 3700]];
+    $this->withToken($this->token)->postJson('/api/v1/pos/sales', $sale)->assertCreated();
+
+    // A sale changes stock, not the catalog: the till keeps its catalog (304) and asks only for the stock.
+    $this->withToken($this->token)->getJson('/api/v1/pos/catalog', ['If-None-Match' => '"'.$catalog->json('version').'"'])->assertStatus(304);
+    $after = $this->withToken($this->token)->getJson('/api/v1/pos/stock', ['If-None-Match' => '"'.$stock->json('version').'"'])->assertOk();
+    expect($after->json("products.{$this->bread->id}.on_hand"))->toBe('18.000');
+    $this->withToken($this->token)->getJson('/api/v1/pos/stock', ['If-None-Match' => '"'.$after->json('version').'"'])->assertStatus(304);
+});

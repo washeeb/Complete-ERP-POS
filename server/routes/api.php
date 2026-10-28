@@ -49,6 +49,7 @@ Route::prefix('v1')->group(function () {
         Route::post('logout', [DeviceAuthController::class, 'logout']);
         Route::get('bootstrap', [PosController::class, 'bootstrap']);
         Route::get('catalog', [PosController::class, 'catalog']);
+        Route::get('stock', [PosController::class, 'stock']); // stock figures only, after each sale
         Route::get('customers', [PosController::class, 'customers']);
         Route::post('shifts/open', [PosController::class, 'openShift']);
         Route::post('shifts/close', [PosController::class, 'closeShift']);

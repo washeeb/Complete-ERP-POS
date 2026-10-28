@@ -10,11 +10,17 @@ export type LiveState = 'off' | 'connecting' | 'live'
  * catalog through the normal permission-checked API (cheap: ETag). If the socket is down the till keeps
  * working and falls back to polling — live updates are a convenience, never a dependency.
  */
-export function connectLive(rt: Realtime, onChange: () => void, onState: (s: LiveState) => void): () => void {
+export function connectLive(rt: Realtime, onChange: () => void, onStock: () => void, onState: (s: LiveState) => void): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined
+  let stockTimer: ReturnType<typeof setTimeout> | undefined
   const changed = () => {
     clearTimeout(timer)
     timer = setTimeout(onChange, 300) // a price change and its stock event arrive together: refresh once
+  }
+  // Stock moves with every sale on every till: only the stock figures are asked for, at most once a second.
+  const stockChanged = () => {
+    clearTimeout(stockTimer)
+    stockTimer = setTimeout(onStock, 1000)
   }
   const echo = new Echo<'reverb'>({
     broadcaster: 'reverb',
@@ -43,12 +49,13 @@ export function connectLive(rt: Realtime, onChange: () => void, onState: (s: Liv
   pusher.connection.bind('state_change', (s: { current: string }) => onState(s.current === 'connected' ? 'live' : 'connecting'))
 
   for (const name of rt.channels.filter((c): c is string => !!c)) {
-    echo.private(name).listen('.catalog.changed', changed).listen('.stock.changed', changed)
+    echo.private(name).listen('.catalog.changed', changed).listen('.stock.changed', stockChanged)
       .listen('.dining.changed', () => window.dispatchEvent(new CustomEvent('dining-changed'))) // tables and bills re-read themselves
   }
 
   return () => {
     clearTimeout(timer)
+    clearTimeout(stockTimer)
     echo.disconnect()
     onState('off')
   }
