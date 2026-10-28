@@ -288,13 +288,20 @@ export function CloseShift({ boot, online, onClosed, onCancel }: { boot: Bootstr
           </>
         )}
         {result.provisional && result.otherSent && <p className="muted">Mobile money and card are checked when the till reconnects.</p>}
-        {result.takings && result.takings.lines.length > 0 && (
+        {result.takings && (result.takings.lines.length > 0 || (result.takings.refunds ?? []).length > 0) && (
           <>
             <h2>Sales this shift</h2>
             <dl className="totals">
               {result.takings.lines.map((l) => <Fragment key={l.label}><dt>{l.label}</dt><dd>{money(l.amount_minor)}</dd></Fragment>)}
+              {(result.takings.refunds ?? []).map((l) => (
+                <Fragment key={`r-${l.label}`}><dt>Returns refunded · {l.label}</dt><dd className="error">−{money(l.amount_minor)}</dd></Fragment>
+              ))}
               <dt><strong>Total sales</strong></dt><dd><strong>{money(result.takings.total_minor)}</strong></dd>
             </dl>
+            {(result.takings.refunds ?? []).length > 0 && (
+              <p className="muted small">Returns refunded are taken off what should be in the {boot.cash?.vaults ? 'tray' : 'drawer'} and on the MoMo phone. If a customer did not
+                get that money back, it explains an amount over: tell a manager.</p>
+            )}
             <p className="muted small">Cash above is what should be in the {boot.cash?.vaults ? 'tray' : 'drawer'} (with the float); the total is everything sold, however it was paid.</p>
           </>
         )}

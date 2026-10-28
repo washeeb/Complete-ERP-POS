@@ -155,7 +155,10 @@ class ShiftResource extends Resource
         $t = RequestMemo::get("shift-takings:{$r->id}", fn () => app(ShiftService::class)->takings($r));
         $m = fn (int $v) => FinanceUi::money($v);
 
-        return ['total' => $m($t['total_minor']), 'lines' => collect($t['lines'])->map(fn ($l) => "{$l['label']} {$m($l['amount_minor'])}")->implode(' · ') ?: null];
+        $refunds = collect($t['refunds'])->map(fn ($l) => "{$l['label']} {$m($l['amount_minor'])}")->implode(' · ');
+
+        return ['total' => $m($t['total_minor']), 'lines' => trim(collect($t['lines'])->map(fn ($l) => "{$l['label']} {$m($l['amount_minor'])}")->implode(' · ')
+            .($refunds !== '' ? " · returns refunded: {$refunds}" : '')) ?: null];
     }
 
     public static function otherSummary(Shift $r): string
