@@ -205,6 +205,16 @@ Every product that keeps stock has a **minimum** in each store. When stock (plus
 
 **Tip:** set the supplier's *delivery lead time* (Purchasing → Suppliers) and their unit and cost on the supplier's products list — smart levels and what-to-order use them.
 
+### Buying in packs, selling in units
+
+Medicines are bought by the box (or carton) and sold by the tablet or strip. Stock is always kept in the **base unit** (e.g. TAB); each pack says how many base units it holds.
+
+1. **The product** (Catalog → Products): under **Barcodes and units**, add each pack: *Strip* × 10, *Box* × 100, *Carton* × 1200, with its barcode. Mark each **Sold**, **Bought** or both (a carton only *Bought*; a tablet only *Sold*). **Usually bought in:** *Box*. **Why:** purchase orders then offer the box first, and never the tablet.
+2. **The supplier** (Purchasing → Suppliers → Products supplied): their **pack** (one supplier may sell a box of 100, another a box of 50: add each supplier's own pack), their code, the **cost per pack**, the **minimum order** and **in multiples of** (e.g. 5 boxes at a time; 0 = any). **Why:** the order says exactly what the supplier sells, and the cost is per pack, as on their invoice.
+3. **Purchase orders** offer only units that are bought, the usual one first, each with what it holds: *PARA500 · Paracetamol 500 mg — BOX × 100 (= 100 TAB) · usual buying unit*. Under the quantity: *Supplier sells at least 5, in multiples of 5*. An order below the minimum or off the multiple is refused, with the next right quantity (e.g. *in multiples of 5 BOX (e.g. 10)*).
+4. **What to order** suggests whole packs, at least the minimum, rounded up to the supplier's multiple (e.g. 300 tablets needed, boxes of 24, multiples of 5 → 15 boxes).
+5. **Receiving** is in the ordered pack (*Received now: 15 BOX*); stock goes up by 1 500 TAB. For medicines with batches, **Scan the pack code**: the square GS1 code on the box fills in the **batch number and expiry** (check them against the box). **Why:** no typing, and no expiry dates typed wrongly.
+
 ## 14.6 Purchase orders from a file, ordering again and sending to the supplier
 
 **From a file:** **Purchasing → Purchase orders → Order from a file**.

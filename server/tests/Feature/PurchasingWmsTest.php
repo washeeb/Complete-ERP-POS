@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Catalog\CatalogService;
 use App\Domain\Inventory\BinService;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Inventory\StockCountService;
@@ -17,9 +18,11 @@ use App\Models\PurchaseOrder;
 use App\Models\ReviewItem;
 use App\Models\StockTransfer;
 use App\Models\Supplier;
+use App\Models\Uom;
 use App\Models\Warehouse;
 use App\Security\AccessCatalogSync;
 use App\Security\ScopeType;
+use App\Support\Gs1;
 use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
@@ -175,7 +178,7 @@ it('takes till sales from shelves in pick order in a bin warehouse, and never le
     $a1 = app(BinService::class)->saveBin(actorFor($this->owner), new Bin, ['warehouse_id' => $this->hq->id, 'code' => 'A-01', 'pick_order' => 1]);
     $b1 = app(BinService::class)->saveBin(actorFor($this->owner), new Bin, ['warehouse_id' => $this->hq->id, 'code' => 'B-01', 'pick_order' => 2]);
     $recv = BinService::receivingBin($this->hq->fresh());
-    $po = approvedPo($this, '1');
+    $po = approvedPo($this, '5'); // Nestlé's minimum; one carton comes first
     $this->grn->receive(actorFor($this->keeper), $po, ['lines' => [['purchase_order_line_id' => $po->lines[0]->id, 'qty' => '1']]]); // 24 pc
     app(BinService::class)->putAway(actorFor($this->keeper), $this->hq->fresh(), $this->milo, $this->pc, '5', $recv->id, $a1->id);
     app(BinService::class)->putAway(actorFor($this->keeper), $this->hq->fresh(), $this->milo, $this->pc, '10', $recv->id, $b1->id);
@@ -209,4 +212,39 @@ it('places existing stock in the receiving bin when bins are switched on, withou
     expect(whQty($this->hq, $this->milo->id))->toBe('30.000')
         ->and(inBin(BinService::receivingBin($this->hq->fresh()), $this->milo->id))->toBe('30.000')
         ->and(app(StockLedger::class)->check())->toBe([]);
+});
+
+it('buys in packs: buying units only, the supplier\'s minimum and multiple, suggestions in whole steps', function () {
+    $order = fn (string $unitId, string $qty) => $this->po->saveDraft(actorFor($this->officer), new PurchaseOrder, ['supplier_id' => $this->supplier->id,
+        'warehouse_id' => $this->hq->id, 'lines' => [['product_uom_id' => $unitId, 'qty' => $qty, 'unit_cost' => '240.00']]]);
+
+    // The piece is sold, not bought: a purchase order is in cartons.
+    app(CatalogService::class)->saveProduct(actorFor($this->owner), $this->milo, ['units' => [['uom_id' => $this->ctn->uom_id, 'factor' => '24', 'is_sellable' => false, 'is_purchasable' => true]],
+        'buying_uom_id' => $this->ctn->uom_id]);
+    DB::table('product_uoms')->where('id', $this->pc->id)->update(['is_purchasable' => false]);
+    expect(fn () => $order($this->pc->id, '24'))->toThrow(DomainException::class, 'not bought in')
+        ->and($this->milo->fresh()->buying_uom_id)->toBe($this->ctn->uom_id)
+        // a carton bought but not sold stays one of the product's units when it is saved again
+        ->and(collect(CatalogService::inputOf($this->milo->fresh())['units'])->pluck('uom_id')->all())->toBe([$this->ctn->uom_id]);
+
+    // Nestlé: at least 5 cartons, in steps of 5.
+    app(SupplierService::class)->save(actorFor($this->owner), $this->supplier, ['code' => 'nestle', 'name' => 'Nestlé Ghana',
+        'products' => [['product_uom_id' => $this->ctn->id, 'last_cost' => '240.00', 'min_order_qty' => '5', 'order_multiple' => '5', 'is_preferred' => true]]]);
+    expect(fn () => $order($this->ctn->id, '3'))->toThrow(DomainException::class, 'at least 5.000 CTN')
+        ->and(fn () => $order($this->ctn->id, '7'))->toThrow(DomainException::class, 'multiples of 5.000 CTN (e.g. 10.000)');
+    // Reorder (nothing on order yet): 300 pieces needed = 12.5 cartons → 13 whole cartons → 15, Nestlé's next step of 5.
+    app(ReorderService::class)->saveRule(actorFor($this->manager), $this->hq, $this->milo, '24', '300');
+    expect(collect(app(ReorderService::class)->suggestions($this->hq))->firstWhere('product_id', $this->milo->id)['suggest_qty'])->toBe(15000);
+
+    expect($order($this->ctn->id, '10')->lines()->sole()->qty)->toBe('10.000');
+
+    expect(fn () => app(CatalogService::class)->saveProduct(actorFor($this->owner), $this->milo->fresh(), ['buying_uom_id' => Uom::where('code', 'KG')->value('id')]))
+        ->toThrow(DomainException::class, 'usual buying unit');
+});
+
+it('reads the GS1 code on a medicine pack: product, batch, expiry and serial', function () {
+    expect(Gs1::parse("0106001234567890172812311024A1B2\x1D21SN0001"))->toBe(['gtin' => '06001234567890', 'batch' => '24A1B2', 'expires_on' => '2028-12-31', 'serial' => 'SN0001'])
+        ->and(Gs1::parse('(01)06001234567890(17)270600(10)LOT 7'))->toBe(['gtin' => '06001234567890', 'batch' => 'LOT 7', 'expires_on' => '2027-06-30', 'serial' => null])
+        ->and(Gs1::parse(']d2010600123456789017271015'))->toMatchArray(['expires_on' => '2027-10-15', 'batch' => null])
+        ->and(Gs1::parse('6001234567890'))->toBeNull();
 });

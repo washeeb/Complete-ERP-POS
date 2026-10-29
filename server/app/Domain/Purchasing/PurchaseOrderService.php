@@ -178,6 +178,19 @@ final class PurchaseOrderService
             if ($qty <= 0) {
                 throw new DomainException("{$product->name}: enter a quantity above zero.");
             }
+            if (! $unit->is_purchasable) {
+                throw new DomainException("{$product->name} is not bought in {$unit->uom->code}: choose its buying unit (e.g. the box).");
+            }
+            // The supplier's pack rules: at least their minimum, in their steps (e.g. 5 boxes at a time).
+            $sp = SupplierProduct::where('supplier_id', $supplier->id)->where('product_uom_id', $unit->id)->first();
+            $min = $sp ? Qty::toMilli((string) $sp->min_order_qty) : 0;
+            $step = $sp ? Qty::toMilli((string) $sp->order_multiple) : 0;
+            if ($min > 0 && $qty < $min) {
+                throw new DomainException("{$product->name}: {$supplier->name} sells at least ".Qty::format($min)." {$unit->uom->code}.");
+            }
+            if ($step > 0 && $qty % $step !== 0) {
+                throw new DomainException("{$product->name}: {$supplier->name} sells in multiples of ".Qty::format($step)." {$unit->uom->code} (e.g. ".Qty::format((intdiv($qty, $step) + 1) * $step).').');
+            }
             $cost = isset($r['unit_cost']) && $r['unit_cost'] !== '' && $r['unit_cost'] !== null
                 ? Money::toMinor((string) $r['unit_cost'], $currency)
                 : SupplierProduct::where('supplier_id', $supplier->id)->where('product_uom_id', $unit->id)->value('last_cost_minor');

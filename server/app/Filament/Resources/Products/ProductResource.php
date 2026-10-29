@@ -130,6 +130,8 @@ class ProductResource extends Resource
                     ->default(fn () => Uom::where('code', 'PC')->value('id'))
                     ->disabled(fn (?Product $record) => (bool) $record?->hasMoved())
                     ->helperText(fn (?Product $record) => $record?->hasMoved() ? 'Stock has moved: use Correct the unit (top of the page) if it is wrong.' : null), 'uom'),
+                Select::make('buying_uom_id')->label('Usually bought in')->options($uoms)->placeholder('The largest unit bought')
+                    ->helperText('e.g. Box: purchase orders offer it first. Add the box (with how many base units it holds) under Barcodes and units, marked Bought.'),
                 Toggle::make('track_stock')->label('Track stock')->default(true)->inline(false),
                 Toggle::make('is_active')->label('For sale')->default(true)->inline(false),
                 Toggle::make('track_batches')->label('Batches and expiry dates')->inline(false)
@@ -218,7 +220,7 @@ class ProductResource extends Resource
                             TextInput::make('qty')->label('Quantity')->required()->numeric()->minValue(0.001),
                         ]),
                 ]),
-            Section::make('Barcodes and selling units')->description('Scanning a barcode adds that unit to the till. Buy in cartons, sell in pieces: add the carton with how many base units it holds.')
+            Section::make('Barcodes and units')->description('Scanning a barcode adds that unit to the till. Buy in boxes or cartons, sell in tablets, strips or pieces: add each pack with how many base units it holds, and mark whether it is Sold, Bought, or both (e.g. a carton only Bought).')
                 ->schema([
                     TagsInput::make('base_barcodes')->label('Barcodes for the base unit')->placeholder('Scan or type, then Enter'),
                     Repeater::make('units')->label('Other units')->defaultItems(0)->columns(5)->reorderable(false)

@@ -77,6 +77,7 @@ final class SupplierService
             SupplierProduct::updateOrCreate(['supplier_id' => $supplier->id, 'product_uom_id' => $unit->id], [
                 'product_id' => $unit->product_id, 'supplier_sku' => $r['supplier_sku'] ?? null, 'last_cost_minor' => $cost,
                 'min_order_qty' => Qty::format(Qty::toMilli((string) ($r['min_order_qty'] ?? '0') ?: '0')), 'is_preferred' => (bool) ($r['is_preferred'] ?? false),
+                'order_multiple' => Qty::format(Qty::toMilli((string) ($r['order_multiple'] ?? '0') ?: '0')),
             ]);
             $keep[] = $unit->id;
         }

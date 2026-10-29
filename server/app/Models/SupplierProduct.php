@@ -13,11 +13,11 @@ class SupplierProduct extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['supplier_id', 'product_id', 'product_uom_id', 'supplier_sku', 'last_cost_minor', 'min_order_qty', 'is_preferred'];
+    protected $fillable = ['supplier_id', 'product_id', 'product_uom_id', 'supplier_sku', 'last_cost_minor', 'min_order_qty', 'order_multiple', 'is_preferred'];
 
     protected function casts(): array
     {
-        return ['last_cost_minor' => 'integer', 'min_order_qty' => 'decimal:3', 'is_preferred' => 'boolean'];
+        return ['last_cost_minor' => 'integer', 'min_order_qty' => 'decimal:3', 'order_multiple' => 'decimal:3', 'is_preferred' => 'boolean'];
     }
 
     public function supplier(): BelongsTo

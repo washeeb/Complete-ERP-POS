@@ -121,6 +121,10 @@ final class ReorderService
             $units = $buy > 0 ? (int) ceil($buy * 1_000_000 / $factor / 1000) * 1000 : 0; // whole purchase units
             if ($sp && $units > 0) {
                 $units = max($units, Qty::toMilli((string) $sp->min_order_qty));
+                $step = Qty::toMilli((string) $sp->order_multiple);
+                if ($step > 0 && $units % $step !== 0) {
+                    $units = (intdiv($units, $step) + 1) * $step;
+                }
             }
             $out[] = ['product_id' => $productId, 'sku' => $names[$productId]->sku, 'name' => $names[$productId]->name, 'on_hand' => $have, 'on_order' => $coming,
                 'in_transit' => $moving, 'min' => $min, 'max' => $max, 'source' => $level['source'], 'supplier_id' => $sp?->supplier_id, 'supplier' => $sp?->supplier->name,

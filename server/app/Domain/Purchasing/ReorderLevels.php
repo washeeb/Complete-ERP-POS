@@ -69,6 +69,11 @@ final class ReorderLevels
             foreach (DB::table('product_uoms')->whereIn('product_id', $chunk)->where('is_purchasable', true)->orderBy('factor')->get(['product_id', 'factor']) as $u) {
                 $out[$u->product_id] = Qty::factorMicro((string) $u->factor); // biggest wins (ordered by factor)
             }
+            // The product's usual buying unit, when set, before that; a supplier's pack still comes first (below).
+            foreach (DB::table('products as p')->join('product_uoms as u', fn ($j) => $j->on('u.product_id', '=', 'p.id')->on('u.uom_id', '=', 'p.buying_uom_id'))
+                ->whereIn('p.id', $chunk)->get(['p.id', 'u.factor']) as $u) {
+                $out[$u->id] = Qty::factorMicro((string) $u->factor);
+            }
             $supplied = DB::table('supplier_products as sp')->join('suppliers as s', 's.id', '=', 'sp.supplier_id')->join('product_uoms as u', 'u.id', '=', 'sp.product_uom_id')
                 ->whereIn('sp.product_id', $chunk)->where('s.is_active', true)
                 ->orderBy('sp.product_id')->orderByDesc('sp.is_preferred')->orderByRaw('sp.last_cost_minor IS NULL')->orderBy('sp.last_cost_minor')
