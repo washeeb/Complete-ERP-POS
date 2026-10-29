@@ -54,6 +54,7 @@ Route::prefix('v1')->group(function () {
         Route::post('shifts/open', [PosController::class, 'openShift']);
         Route::post('shifts/close', [PosController::class, 'closeShift']);
         Route::post('drawer', [PosController::class, 'drawer']);
+        Route::post('settings', [PosController::class, 'settings']); // the till's own printer and screen settings, by a manager's PIN
         Route::post('health', [PosController::class, 'health']);
         Route::post('commands/{id}', [PosController::class, 'commandDone'])->whereUuid('id');
         Route::post('sales', [PosController::class, 'postSale']);

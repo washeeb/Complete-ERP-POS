@@ -8,6 +8,7 @@ import { saveUnsentBackup } from './hardware'
 import { exportQueueFile, sendQueue } from './offline'
 import { HEALTH_EVERY_TICKS, reportHealth, type FixHandlers } from './health'
 import { CloseShift, Enroll, Handover, Login, OpenShift } from './screens/Setup'
+import { TillSettings } from './screens/TillSettings'
 import { Receipt } from './screens/Receipt'
 import { Sell } from './screens/Sell'
 import type { Bootstrap, PostedSale, Product } from './types'
@@ -20,7 +21,7 @@ import { applyTheme, getTheme, THEMES, type ThemeChoice } from './theme'
 import { problemContext } from './problems'
 import { applyBrand } from './brand'
 
-type Stage = 'loading' | 'enroll' | 'login' | 'open-shift' | 'handover' | 'sell' | 'receipt' | 'close-shift' | 'handheld' | 'kitchen' | 'error'
+type Stage = 'loading' | 'enroll' | 'login' | 'open-shift' | 'handover' | 'sell' | 'receipt' | 'close-shift' | 'settings' | 'handheld' | 'kitchen' | 'error'
 
 const LABELS: Record<ConnectionState, string> = {
   online: 'Connected',
@@ -229,7 +230,7 @@ export default function App() {
       {stage === 'open-shift' && boot && <OpenShift boot={boot} online={online} onDone={load} />}
       {stage === 'sell' && boot && (
         <Sell boot={boot} products={products} online={online} catalogVersion={catalogVersion} queue={queue}
-          onRefresh={refreshCatalog} onLogout={logout} onCloseShift={() => setStage('close-shift')} onSendNow={flush}
+          onRefresh={refreshCatalog} onLogout={logout} onCloseShift={() => setStage('close-shift')} onSettings={() => setStage('settings')} onSendNow={flush}
           onPosted={async (s) => {
             setReceipt(s)
             setStage('receipt')
@@ -241,6 +242,7 @@ export default function App() {
       {stage === 'receipt' && boot && receipt && <Receipt sale={receipt} boot={boot} onNew={() => setStage('sell')} />}
       {stage === 'handheld' && <Suspense fallback={<p className="muted center">Loading…</p>}><Handheld onLogout={logout} /></Suspense>}
       {stage === 'kitchen' && <Suspense fallback={<p className="muted center">Loading…</p>}><Kitchen /></Suspense>}
+      {stage === 'settings' && boot && <TillSettings boot={boot} online={online} onClose={() => setStage('sell')} />}
       {stage === 'handover' && boot?.shift && <Handover boot={boot} onClose={() => setStage('close-shift')} onLogout={logout} />}
       {stage === 'close-shift' && boot && (
         // At a handover the next person stays signed in and opens their own shift once the other one is closed.

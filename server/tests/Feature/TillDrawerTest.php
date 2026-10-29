@@ -150,3 +150,13 @@ it('needs a manager to open the drawer without a sale, unless switched off; offl
     ($this->drawer)($noSale)->assertCreated();
     expect(TillDrawerEvent::where('kind', 'no_sale')->count())->toBe(4);
 });
+
+it('changes a till\'s own settings only with a manager\'s PIN, and records what changed', function () {
+    $body = fn (string $user, string $pin) => ['approval' => ['username' => $user, 'pin' => $pin], 'changes' => ['paper_mm' => ['80', '58'], 'printer' => ['', 'EPSON TM-T20III Receipt']]];
+    $this->withToken($this->token)->postJson('/api/v1/pos/settings', $body('kojo', '7391'))->assertStatus(422)->assertJson(['error' => 'over_limit']); // a supervisor
+    $this->withToken($this->token)->postJson('/api/v1/pos/settings', $body('ama', '5602'))->assertOk()->assertJsonPath('approved_by', $this->manager->name);
+
+    $row = DB::table('audit_events')->where('action', 'device.settings_changed')->sole();
+    expect($row->subject_id)->toBe($this->device->id)->and($row->actor_id)->toBe($this->manager->id)
+        ->and(json_decode($row->changes, true))->toEqualCanonicalizing(['paper_mm' => ['80', '58'], 'printer' => ['', 'EPSON TM-T20III Receipt']]);
+});

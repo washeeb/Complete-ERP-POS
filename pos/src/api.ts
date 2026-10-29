@@ -103,6 +103,9 @@ export const api = {
     call<{ shift: Shift }>('pos/shifts/open', { method: 'POST', body: JSON.stringify({ opening_float_minor: floatMinor, id, vault_session_id: vaultSessionId ?? null, grant: grant ?? null }) }),
   closeShift: (countedMinor: number, note: string, denoms?: Record<string, number> | null, other?: Record<string, number> | null) =>
     call<{ shift: Shift }>('pos/shifts/close', { method: 'POST', body: JSON.stringify({ counted_cash_minor: countedMinor, note: note || null, denoms: denoms ?? null, other: other ?? null }) }),
+  /** A change to this till's own settings, approved by a manager's PIN and recorded in the audit log. */
+  tillSettings: (approval: { username: string; pin: string }, changes: Record<string, [string, string]>) =>
+    call<{ approved_by: string }>('pos/settings', { method: 'POST', body: JSON.stringify({ approval, changes }) }),
   drawer: (body: unknown) => call<{ event: { id: string; kind: string; amount_minor: number; approved_by: string | null } }>('pos/drawer', { method: 'POST', body: JSON.stringify(body) }),
   /** Device health (every few minutes); the answer carries fixes queued for this till in the back office. */
   health: (snapshot: unknown) => call<{ commands: import('./health').RemoteCommand[] }>('pos/health', { method: 'POST', body: JSON.stringify(snapshot) }),

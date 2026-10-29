@@ -70,6 +70,10 @@ Medicines and other batch items show the expiry of the pack you should sell next
 
 The bottom right says **"Server not answering — working offline"** or **"No network"**. **Keep selling.** Sales are kept on the till and sent on their own when the server is back. A yellow bar counts what is waiting. **Never ring a sale up twice.** A red bar means the server refused something: call your supervisor.
 
+## Till settings
+
+**⚙ Settings** (top of the till): printer, drawer, scale, scanner check and screen. You can look and print a test receipt; to change anything, a manager approves with their username and PIN. If receipts open a "Save as" window, the wrong printer is chosen: ask a manager to pick the receipt printer here.
+
 ## End of the shift
 
 **Close shift** → count **all** the cash in the drawer (float included), note by note and coin by coin. Under **Mobile money, card, vouchers and coupons**, type what the MoMo merchant phone shows for your shift for each network (MTN, Telecel, AT), the card terminal's total, the value of the gift vouchers and credit notes you took, and how many paper coupons you collected; leave a box empty if you do not take it → **Close shift**. Only then do you see over/short, for the cash and for each of these, and **Sales this shift**: what you sold by each way of paying (cash, each MoMo network, card, NHIS, on account…), the **returns refunded** (red) and the **total sales**. A refund is taken off what should be in your drawer or on the MoMo phone: if a customer did not actually get that money back, your count is over by that amount, so tell your supervisor. The cash figure is only what should be in the drawer; the total is everything sold. Add a note if there is a difference. Sign out.

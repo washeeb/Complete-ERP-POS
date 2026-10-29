@@ -20,6 +20,14 @@ describe('ESC/POS receipts', () => {
     expect(text).toContain('GHS')
   })
 
+  it('fits 58 mm paper: 32 characters a line', () => {
+    const p = new EscPos(32).columns('Paracetamol 500mg strip of 10', 'GHS 12.00').rule()
+    const lines = ascii(p.toBytes().slice(5)).split('\n').filter(Boolean)
+    expect(p.width).toBe(32)
+    expect(lines.every((l) => l.length === 32)).toBe(true)
+    expect(lines[0].endsWith('GHS 12.00')).toBe(true)
+  })
+
   it('stores and prints a QR code with the right length bytes', () => {
     const b = Array.from(new EscPos().qr('HQ-T01A-000001').toBytes())
     const store = b.findIndex((_, i) => b[i] === 0x1d && b[i + 1] === 0x28 && b[i + 2] === 0x6b && b[i + 5] === 0x31 && b[i + 6] === 0x50)

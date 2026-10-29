@@ -3,6 +3,7 @@ import { cameraScanSupported, listenForScans } from '../scanner'
 import { CameraScan } from './CameraScan'
 import { cachedImage } from '../brand'
 import { isDesktop, readScale } from '../hardware'
+import { beep } from '../prefs'
 import { api, ApiError } from '../api'
 import { addMarkdown, addToCart, addWeighed, findByBarcode, priceCart, qtyAllowed, resolvePrice, search, setManual, setQty, type CartLine } from '../cart'
 import { findMarkdown, parseScaleLabel, productForPlu } from '../scale'
@@ -40,11 +41,11 @@ import { CustomerPicker } from './CustomerPicker'
 import { Pay } from './Pay'
 import { Calculator, detailsMissing, detailsPayload, emptyDetails, SaleDetailsDialog, type SaleDetailsState } from './TillTools'
 
-export function Sell({ boot, products, online, catalogVersion, queue, onPosted, onRefresh, onSendNow, onCloseShift, onLogout }: {
+export function Sell({ boot, products, online, catalogVersion, queue, onPosted, onRefresh, onSendNow, onCloseShift, onSettings, onLogout }: {
   boot: Bootstrap; products: Product[]; online: boolean; catalogVersion: string | null
   queue: { pending: number; review: number; sending: boolean; lastError: string | null }
   onPosted: (s: PostedSale) => void; onRefresh: () => Promise<void>; onSendNow: () => void
-  onCloseShift: () => void; onLogout: () => void
+  onCloseShift: () => void; onSettings: () => void; onLogout: () => void
 }) {
   const defaultList = boot.price_lists.find((l) => l.is_default) ?? boot.price_lists[0]
   const [listId, setListId] = useState(defaultList?.id ?? '')
@@ -349,9 +350,15 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       return setMessage('')
     }
     const hit = findByBarcode(products, query)
-    if (hit) return add(hit.product, hit.unit)
+    if (hit) {
+      beep(true)
+      return add(hit.product, hit.unit)
+    }
     if (results.length === 1) return add(results[0])
-    if (query.trim() && !results.length) setMessage(`Nothing matches “${query.trim()}”.`)
+    if (query.trim() && !results.length) {
+      beep(false)
+      setMessage(`Nothing matches “${query.trim()}”.`)
+    }
   }
 
   function changeQty(line: CartLine, value: string) {
@@ -560,6 +567,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
           {online && <button type="button" onClick={() => setReturning(true)}>Return (F8)</button>}
           <button type="button" onClick={() => setDrawerTab('payout')}>Drawer</button>
           <button type="button" onClick={() => { if (confirmLeave(lines.length > 0, 'the sale on screen')) onCloseShift() }}>Close shift</button>
+          <button type="button" onClick={() => { if (confirmLeave(lines.length > 0, 'the sale on screen')) onSettings() }} aria-label="Till settings" title="Till settings: printer, drawer, scale, screen">⚙ Settings</button>
           <button type="button" onClick={() => { if (confirmLeave(lines.length > 0, 'the sale on screen')) onLogout() }}>Sign out</button>
         </div>
       </header>
