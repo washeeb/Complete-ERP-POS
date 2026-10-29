@@ -4,7 +4,7 @@ import type { Bootstrap, PostedSale } from './types'
 import { sdcLines } from './evat'
 
 /**
- * ESC/POS receipts for 80 mm thermal printers (48 characters a line in font A), used by the desktop till for silent
+ * ESC/POS receipts for 80 mm thermal printers (48 characters a line in font A; 32 on 58 mm), used by the desktop till for silent
  * printing. Text is sent as code page PC858 (Latin-1 + €): characters outside it become "?", and GH₵ is written "GHS".
  */
 const ESC = 0x1b
@@ -13,6 +13,13 @@ export const WIDTH = 48
 
 export class EscPos {
   private bytes: number[] = [ESC, 0x40, ESC, 0x74, 19] // initialise; code page 19 = PC858
+
+  /** Characters a line: 48 on 80 mm paper, 32 on 58 mm (till Settings). */
+  readonly width: number
+
+  constructor(width = WIDTH) {
+    this.width = width
+  }
 
   text(s: string): this {
     for (const ch of s.replace(/GH₵/g, 'GHS').replace(/₵/g, 'GHS').normalize('NFC')) {
@@ -29,13 +36,13 @@ export class EscPos {
   double(on: boolean): this { this.bytes.push(GS, 0x21, on ? 0x11 : 0); return this }
 
   /** Two columns on one line: left text, right text (left is cut if needed). */
-  columns(left: string, right: string, width = WIDTH): this {
+  columns(left: string, right: string, width = this.width): this {
     const room = Math.max(1, width - right.length - 1)
     const l = left.length > room ? left.slice(0, room) : left
     return this.line(l + ' '.repeat(width - l.length - right.length) + right)
   }
 
-  rule(): this { return this.line('-'.repeat(WIDTH)) }
+  rule(): this { return this.line('-'.repeat(this.width)) }
 
   /** QR code (model 2, error correction M), drawn by the printer. */
   qr(data: string, size = 6): this {
@@ -76,10 +83,10 @@ const PC858: Record<string, number> = {
 const PLAIN_UNITS = new Set(['PC', 'EA', 'PCS'])
 
 /** The receipt as the printed (browser) one, in ESC/POS. */
-export function receiptEscPos(sale: PostedSale, boot: Bootstrap, logo: Raster | null = null): EscPos {
+export function receiptEscPos(sale: PostedSale, boot: Bootstrap, logo: Raster | null = null, width = WIDTH): EscPos {
   const m = (v: number) => formatMoney(v, sale.currency, boot.company.exponent)
   const when = new Date(sale.occurred_at).toLocaleString('en-GB', { timeZone: boot.company.timezone, dateStyle: 'medium', timeStyle: 'short' })
-  const p = new EscPos().align('center')
+  const p = new EscPos(width).align('center')
   if (logo) p.image(logo).feed()
   p.bold(true).double(true).line(boot.company.name).double(false).bold(false)
   p.line(boot.branch.name + (boot.branch.phone ? ` · Tel ${boot.branch.phone}` : ''))

@@ -106,7 +106,19 @@ For a Windows till PC with a receipt printer, a cash drawer or a weighing scale,
 
 The app also tells the server **which computer it is** (its name, network card and address on the shop network), so the audit log and **System → Devices** (*Last used from*) show which till did what (12.1). **Open the back office** on its set-up page opens the back office in the app, so changes made there are recorded with the computer's details too.
 
-Receipts then **print by themselves** the moment the sale is done, without a print window, the drawer opens after cash sales, and items sold by weight show a **Weigh** button. **Printer and scale set-up** on the receipt screen opens these settings again. To print only when the cashier presses **Print receipt**: **System → Settings → Tills and cash → Desktop till prints each receipt by itself** (on by default).
+Receipts then **print by themselves** the moment the sale is done, without a print window, the drawer opens after cash sales, and items sold by weight show a **Weigh** button. **Printer and scale set-up** on the receipt screen opens these settings again.
+
+**Till settings (desktop till 0.28 or later):** the **⚙ Settings** button at the top of the till. Anyone can look and press the test buttons; **Save** needs a manager's username and PIN (permission *Change a till's printer, drawer, scale and screen settings*; general manager, branch manager, IT Admin), and the change is recorded in the audit log against that till.
+- **Receipt printer:** the receipt printer is picked for you (e.g. *EPSON TM-T20III Receipt*). Printers that only save files (*Microsoft Print to PDF*, *XPS*, *OneNote*, fax) cannot be chosen. **Why:** a receipt sent to them makes Windows open a "Save as" window after every sale. **Print a test receipt** prints a ruler across the paper: check it fits and the paper is cut.
+- **Paper** 80 mm (48 characters a line) or 58 mm (32); **copies** of each receipt (2 when the shop keeps one); **company logo** on or off.
+- **Dosage labels** on their own label printer, or on the receipt printer.
+- **Cash drawer:** open after cash sales; **Open the drawer (test)** needs a manager's PIN, like opening it without a sale.
+- **Weighing scale:** port and speed, and **Read the scale**.
+- **Barcode scanner:** scan into the box to see exactly what the scanner sends; a **beep** after each scan (high: found, low: not found).
+- **Screen:** light, dark or like the computer; text size normal, larger or largest.
+Saving needs the server (so the change is approved and recorded). Printer, drawer and scale are kept on the till computer itself.
+
+**Starting the till (0.28 or later):** a till already set up opens straight on the till: the window stays hidden until the till is drawn, so there is no white window and no set-up page in between. The set-up page appears only on first start, from *Till set-up*, or when the server never answered. To print only when the cashier presses **Print receipt**: **System → Settings → Tills and cash → Desktop till prints each receipt by itself** (on by default).
 
 **Slow network:** every till (desktop or browser) waits at most a few seconds for the server to accept a sale. If it has not answered by then, the sale is kept on the till, the receipt shows and prints at once (marked *Recorded on this till while offline*), and the sale is sent from the till's queue moments later; the server never records it twice. No other call to the server waits longer than 20 seconds. **Why:** a customer should never wait for the network; the receipt number and the sale are the same either way.
 

@@ -24,6 +24,7 @@ use App\Domain\Pos\PosSyncService;
 use App\Domain\Pos\ReturnService;
 use App\Domain\Pos\SaleService;
 use App\Domain\Pos\ShiftService;
+use App\Domain\Pos\SupervisorApproval;
 use App\Domain\Purchasing\ReorderLevels;
 use App\Domain\Remote\DeviceHealth;
 use App\Domain\Restaurant\DiningSales;
@@ -32,6 +33,7 @@ use App\Domain\Services\AppointmentService;
 use App\Domain\Services\LicenceKeyService;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
+use App\Domain\Support\Recorder;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Customer;
@@ -365,6 +367,29 @@ class PosController extends Controller
     }
 
     /** Pay-out, pay-in, cash drop, drawer opened without a sale, or the cash-limit warning (DrawerService). */
+    /**
+     * A change to this till's own settings (printer, paper, drawer, scale, screen), made on the till itself. The settings
+     * live on the till computer; this checks the manager's PIN (permission pos.settings) and records what changed in
+     * the audit log, against the device. Needs the server: a till cannot change its settings offline.
+     */
+    public function settings(Request $request, SupervisorApproval $approvals, Recorder $recorder): JsonResponse
+    {
+        $data = $request->validate([
+            'approval' => ['required', 'array'], 'approval.username' => ['required', 'string', 'max:60'], 'approval.pin' => ['required', 'string', 'max:8'],
+            'changes' => ['required', 'array', 'max:40'], 'changes.*' => ['nullable'],
+        ]);
+        $device = $this->device($request);
+        $till = Till::find($device->till_id) ?? throw new DomainException('This device is not assigned to a till.', 'no_till');
+        $manager = $approvals->verify($device, $data['approval'], 'pos.settings', $till, null, 0, '');
+        // Only short plain values: [old, new] per setting, never anything else from the till.
+        $changes = collect($data['changes'])->filter(fn ($v, $k) => is_string($k) && strlen($k) <= 40)
+            ->map(fn ($v) => array_map(fn ($x) => is_scalar($x) || $x === null ? mb_substr((string) $x, 0, 120) : null, array_values(array_slice((array) $v, 0, 2))))->all();
+        $recorder->transaction(fn () => $recorder->audit->record(Actor::user($manager, 'pos', $device->id), 'device.settings_changed', $device, $changes,
+            'Till settings changed at the till', $device->branch_id));
+
+        return response()->json(['approved_by' => $manager->name]);
+    }
+
     public function drawer(Request $request, DrawerService $drawer): JsonResponse
     {
         $data = $request->validate([

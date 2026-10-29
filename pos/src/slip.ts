@@ -1,4 +1,4 @@
-import { EscPos } from './escpos'
+import { EscPos, WIDTH } from './escpos'
 import { formatMoney } from './money'
 import type { Bootstrap } from './types'
 
@@ -39,12 +39,12 @@ export function slipRows(s: DrawerSlip, boot: Bootstrap): [string, string][] {
   return rows
 }
 
-export function slipEscPos(s: DrawerSlip, boot: Bootstrap): EscPos {
-  const p = new EscPos().align('center').bold(true).line(boot.company.name).bold(false).line(boot.branch.name)
+export function slipEscPos(s: DrawerSlip, boot: Bootstrap, width = WIDTH): EscPos {
+  const p = new EscPos(width).align('center').bold(true).line(boot.company.name).bold(false).line(boot.branch.name)
   p.feed().bold(true).double(true).line(SLIP_TITLES[s.kind]).line(formatMoney(s.amountMinor, boot.company.currency, boot.company.exponent)).double(false).bold(false)
   p.align('left').rule()
   for (const [label, value] of slipRows(s, boot)) {
-    if (label.length + value.length + 1 > 48) p.line(`${label}:`).line(`  ${value}`) // long text on its own line
+    if (label.length + value.length + 1 > p.width) p.line(`${label}:`).line(`  ${value}`) // long text on its own line
     else p.columns(label, value)
   }
   if (s.queued) p.line('Saved on the till offline; sent when the server is back.')

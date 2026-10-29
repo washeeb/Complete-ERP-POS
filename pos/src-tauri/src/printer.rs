@@ -23,6 +23,21 @@ pub fn list() -> Vec<String> {
     spooler::list()
 }
 
+/// Windows printers that only save a file (or send a fax): printing a receipt to them opens a "Save as" window.
+pub fn usable(name: &str) -> Result<(), String> {
+    let n = name.to_lowercase();
+    if ["pdf", "xps", "onenote", "fax", "send to", "snagit"].iter().any(|w| n.contains(w)) {
+        return Err(format!("\"{name}\" only saves files: choose the receipt printer (e.g. EPSON TM-T20III Receipt) in the till's Settings."));
+    }
+    Ok(())
+}
+
+/// A name that looks like a receipt printer (to pick by itself when none is chosen yet).
+pub fn looks_like_receipt(name: &str) -> bool {
+    let n = name.to_lowercase();
+    usable(name).is_ok() && ["receipt", "tm-", "pos", "thermal", "80mm", "58mm", "xprinter", "star", "bixolon", "citizen"].iter().any(|w| n.contains(w))
+}
+
 #[cfg(windows)]
 mod spooler {
     use windows::core::{PCWSTR, PWSTR};
