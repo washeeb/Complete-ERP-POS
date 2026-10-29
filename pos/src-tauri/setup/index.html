@@ -63,7 +63,8 @@
 
   // The set-up form shows only when it is needed: first start, "Till set-up" from the till, or a server that never answered.
   // A till already set up sees just "Opening the till…" while it connects, then the till.
-  const showForm = () => { $('opening').hidden = true; $('form').hidden = false; };
+  // The window stays hidden until the till is drawn; only when the form is needed does this page show it.
+  const showForm = () => { $('opening').hidden = true; $('form').hidden = false; T.invoke('show_window').catch(() => {}); };
 
   async function load() {
     const cfg = await T.invoke('get_config');
@@ -76,7 +77,14 @@
     }
     showForm();
     $('server').value = cfg.server || '';
-    for (const p of await T.invoke('list_printers')) $('printer').append(new Option(p, p));
+    // Printers that only save files (PDF, XPS, OneNote, fax) cannot be chosen: receipts would open a "Save as" window.
+    const printers = await T.invoke('printers_info');
+    for (const p of printers) {
+      const o = new Option(p.saves_files ? `${p.name} (only saves files)` : p.name, p.name);
+      o.disabled = p.saves_files;
+      $('printer').append(o);
+    }
+    if (!cfg.printer) cfg.printer = (printers.find((p) => p.receipt) || {}).name || null; // the receipt printer, picked for you
     for (const p of await T.invoke('list_scale_ports')) $('scale').append(new Option(p, p));
     if (cfg.printer && cfg.printer.startsWith('tcp://')) $('netprinter').value = cfg.printer; else $('printer').value = cfg.printer || '';
     $('drawer').checked = !!cfg.drawer;
