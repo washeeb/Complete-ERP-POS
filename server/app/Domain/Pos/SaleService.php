@@ -133,6 +133,9 @@ final class SaleService
             if (! $shift || ($shift->closed_at && $shift->closed_at->lt($occurredAt))) {
                 throw new DomainException('The shift for this offline sale was not received.', 'no_shift');
             }
+            if ($shift->opened_by !== $user->id && (bool) $this->settings->get('pos.shift_per_person', $device->tenant_id)) {
+                $flags[] = ['shift_other_person', "{$user->name} sold offline in {$shift->opened_by_name}'s shift"];
+            }
         } else {
             if (! $user || ! $this->authz->allows($user, 'pos.access', $till)) {
                 throw new AccessDenied('You are not set up to sell on this till.');
@@ -140,6 +143,10 @@ final class SaleService
             $shift = $this->shifts->current($device);
             if (! $shift || $shift->id !== ($p['shift_id'] ?? null)) {
                 throw new DomainException('Open a shift on this till before selling.', 'no_shift');
+            }
+            // One shift per person: someone else's sales and cash never end up in the shift (and the count) of the person who opened it.
+            if ($shift->opened_by !== $user->id && (bool) $this->settings->get('pos.shift_per_person', $device->tenant_id)) {
+                throw new DomainException("{$shift->opened_by_name}'s shift is open on this till. Sign out and in again: close it (count the drawer) and open your own before you sell.", 'shift_other_person');
             }
             if ($occurredAt->isAfter(now()->addMinutes(10))) {
                 throw new DomainException('The till clock is ahead of the server. Fix the device time and try again.', 'clock_skew');

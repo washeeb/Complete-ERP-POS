@@ -81,7 +81,8 @@ export async function openShift(floatMinor: number, online: boolean, vaultSessio
     await enqueue({ id, type: 'shift_open', grant: await currentGrant(),
       payload: { id, opening_float_minor: floatMinor, opened_at: openedAt, vault_session_id: vaultSessionId } })
   }
-  await db.kv.put({ id: 'shift', shiftId: id, openedAt, floatMinor, cashMinor: 0, queued, vault: vaultSessionId !== null })
+  const me = await getSession()
+  await db.kv.put({ id: 'shift', shiftId: id, openedAt, floatMinor, cashMinor: 0, queued, vault: vaultSessionId !== null, openedById: me?.userId, openedByName: me?.userName })
 }
 
 /**

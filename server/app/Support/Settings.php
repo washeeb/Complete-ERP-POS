@@ -147,6 +147,11 @@ final class Settings
             'label' => 'Daily summary time (HH:MM)',
             'help' => 'The day’s mobile money and card totals per branch and network are sent once, after this time.',
         ],
+        'pos.shift_per_person' => [
+            'type' => 'bool', 'default' => true, 'group' => 'Tills and cash',
+            'label' => 'One shift per person on a till',
+            'help' => 'On: a cashier sells only in a shift they opened. When someone signs in on a till where another person\'s shift is still open, the till asks them to close it (count the drawer) and open their own, so each person\'s sales and cash stay apart. Off: everyone who signs in on a till sells in the shift that is open there (e.g. waiters sharing one till). On for every company unless switched off.',
+        ],
         'pos.auto_print_receipt' => [
             'type' => 'bool', 'default' => true, 'group' => 'Tills and cash',
             'label' => 'Desktop till prints each receipt by itself',

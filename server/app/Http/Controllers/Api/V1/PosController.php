@@ -92,6 +92,7 @@ class PosController extends Controller
             'receipt_footer' => $settings->get('receipt.footer', $device->tenant_id),
             'show_stock' => (bool) $settings->get('pos.show_stock', $device->tenant_id),
             'auto_print_receipt' => (bool) $settings->get('pos.auto_print_receipt', $device->tenant_id),
+            'shift_per_person' => (bool) $settings->get('pos.shift_per_person', $device->tenant_id), // another person's open shift: close it first
             'momo_confirm' => app(MomoCollections::class)->mode($device->tenant_id), // manual | prompt | prompt_only
             'require_details' => (string) $settings->forBranch('pos.require_details', $device->branch_id, $device->tenant_id), // name / phone before payment
             // The company's brand (Company → Branding): logo for the screen and the printed receipt, colour, and the product line.
@@ -515,7 +516,7 @@ class PosController extends Controller
 
         return [
             'id' => $shift->id, 'status' => $shift->status, 'opened_at' => $shift->opened_at->toIso8601String(), 'shift_name' => $shift->shift_name,
-            'opened_by' => $shift->opened_by_name, 'opening_float_minor' => $shift->opening_float_minor,
+            'opened_by' => $shift->opened_by_name, 'opened_by_id' => $shift->opened_by, 'opening_float_minor' => $shift->opening_float_minor,
             // Blind count: expected cash is only revealed after the count is submitted.
             'expected_cash_minor' => $reveal ? $shift->expected_cash_minor : null,
             'counted_cash_minor' => $reveal ? $shift->counted_cash_minor : null,

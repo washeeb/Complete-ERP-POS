@@ -87,7 +87,9 @@ class ShiftResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('where')->label('Till')->state(fn (Shift $r) => "{$r->branch->code} · {$r->till->code}"),
-                TextColumn::make('opened_by_name')->asPerson('opened_by')->label('Opened by'),
+                TextColumn::make('opened_by_name')->asPerson('opened_by')->label('Opened by')
+                    // Someone else sold in this shift: their sales and cash were counted under the person who opened it.
+                    ->description(fn (Shift $r) => self::sellers($r))->wrap(),
                 TextColumn::make('opened_at')->label('Opened')->dateTime()->sortable(),
                 TextColumn::make('shift_name')->label('Shift')->placeholder('—')->toggleable()
                     ->description(fn ($record) => $record->granted_by_name ? "Allowed by {$record->granted_by_name}: {$record->grant_reason}" : null),
@@ -149,6 +151,18 @@ class ShiftResource extends Resource
     }
 
     /** "Balanced", "not checked", or each check with a difference ("MTN MoMo short GH₵ 20.00"). */
+    /** "Sold by Ama (12), Kofi (3)" when more than one person sold in the shift; null when only the person who opened it did. */
+    public static function sellers(Shift $r): ?string
+    {
+        $who = RequestMemo::get("shift-sellers:{$r->id}", fn () => $r->sales()->where('status', 'posted')->groupBy('cashier_id', 'cashier_name')
+            ->selectRaw('cashier_id, cashier_name, COUNT(*) AS n')->orderByDesc('n')->orderBy('cashier_name')->get());
+        if ($who->isEmpty() || ($who->count() === 1 && $who[0]->cashier_id === $r->opened_by)) {
+            return null;
+        }
+
+        return 'Sold by '.$who->map(fn ($s) => "{$s->cashier_name} ({$s->n})")->implode(', ');
+    }
+
     /** What the shift sold by every payment method, and the total (cash, mobile money, card, NHIS, on account…). */
     public static function takings(Shift $r): array
     {

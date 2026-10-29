@@ -134,6 +134,28 @@ export function Login({ onDone, deviceName }: { onDone: () => void; deviceName?:
   )
 }
 
+/**
+ * One shift per person: someone signs in on a till where another person's shift is still open. That shift is closed
+ * first (the drawer counted), so each person's sales and cash stay apart; then they open their own.
+ */
+export function Handover({ boot, onClose, onLogout }: { boot: Bootstrap; onClose: () => void; onLogout: () => void }) {
+  const s = boot.shift!
+  const since = new Date(s.opened_at).toLocaleString(undefined, { weekday: 'short', hour: '2-digit', minute: '2-digit' })
+  return (
+    <div className="card narrow">
+      <h1>{s.opened_by}’s shift is still open</h1>
+      <p>{s.opened_by} opened a shift on this till ({since}) and it was not closed. You sell in your own shift, so your sales and cash
+        are not counted as {s.opened_by}’s.</p>
+      <p><strong>Close {s.opened_by}’s shift:</strong> count all the cash in the drawer now, then open your own shift with the cash you start with.
+        If {s.opened_by} is still here, they can sign in and close it themselves instead.</p>
+      <div className="row">
+        <button type="button" onClick={onLogout}>Sign out</button>
+        <button className="primary big" onClick={onClose}>Close {s.opened_by}’s shift</button>
+      </div>
+    </div>
+  )
+}
+
 export function OpenShift({ boot, online, onDone }: { boot: Bootstrap; online: boolean; onDone: () => void }) {
   const [float, setFloat] = useState('')
   const [error, setError] = useState('')

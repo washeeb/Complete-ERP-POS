@@ -64,7 +64,7 @@ export type Product = { id: string; sku: string; name: string; category_id?: str
 export type PriceList = { id: string; code: string; name: string; prices_include_tax: boolean; is_default: boolean }
 
 export type Shift = {
-  id: string; status: 'open' | 'closed'; opened_at: string; opened_by: string; opening_float_minor: number
+  id: string; status: 'open' | 'closed'; opened_at: string; opened_by: string; opened_by_id?: string; opening_float_minor: number
   /** Once closed: the shift's sales by payment method, and the total. */
   takings?: { lines: { label: string; amount_minor: number }[]; refunds?: { label: string; amount_minor: number }[]; total_minor: number } | null
   expected_cash_minor: number | null; counted_cash_minor: number | null; over_short_minor: number | null
@@ -109,6 +109,7 @@ export type Bootstrap = {
   receipt_footer: string
   show_stock?: boolean
   auto_print_receipt?: boolean // the desktop till prints each receipt by itself
+  shift_per_person?: boolean // someone else's shift open on this till: close it before selling (default on)
   momo_confirm?: import('./momo').MomoMode // mobile money: typed ID, payment request, or request only
   require_details?: string // none | phone | name | name_phone: what the till asks before payment (branch setting)
   /** The company's brand (Company → Branding); missing on servers older than 0.26. */
