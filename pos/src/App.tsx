@@ -7,7 +7,7 @@ import { connectLive, type LiveState } from './live'
 import { saveUnsentBackup } from './hardware'
 import { exportQueueFile, sendQueue } from './offline'
 import { HEALTH_EVERY_TICKS, reportHealth, type FixHandlers } from './health'
-import { CloseShift, Enroll, Login, OpenShift } from './screens/Setup'
+import { CloseShift, Enroll, Handover, Login, OpenShift } from './screens/Setup'
 import { Receipt } from './screens/Receipt'
 import { Sell } from './screens/Sell'
 import type { Bootstrap, PostedSale, Product } from './types'
@@ -20,7 +20,7 @@ import { applyTheme, getTheme, THEMES, type ThemeChoice } from './theme'
 import { problemContext } from './problems'
 import { applyBrand } from './brand'
 
-type Stage = 'loading' | 'enroll' | 'login' | 'open-shift' | 'sell' | 'receipt' | 'close-shift' | 'handheld' | 'kitchen' | 'error'
+type Stage = 'loading' | 'enroll' | 'login' | 'open-shift' | 'handover' | 'sell' | 'receipt' | 'close-shift' | 'handheld' | 'kitchen' | 'error'
 
 const LABELS: Record<ConnectionState, string> = {
   online: 'Connected',
@@ -88,9 +88,10 @@ export default function App() {
       }
       // Offline (or shift opened offline and not yet synced): the till's own record of the open shift counts.
       const shift = (live ? b.shift : null) ?? (local ? { ...(b.shift ?? {}), id: local.shiftId, status: 'open' as const, opened_at: local.openedAt,
-        opened_by: session.userName, opening_float_minor: local.floatMinor, expected_cash_minor: null, counted_cash_minor: null, over_short_minor: null } : null)
+        opened_by: local.openedByName ?? session.userName, opened_by_id: local.openedById, opening_float_minor: local.floatMinor, expected_cash_minor: null, counted_cash_minor: null, over_short_minor: null } : null)
       if (live && b.shift && (!local || local.shiftId !== b.shift.id)) {
-        await db.kv.put({ id: 'shift', shiftId: b.shift.id, openedAt: b.shift.opened_at, floatMinor: b.shift.opening_float_minor, cashMinor: local?.cashMinor ?? 0, queued: false })
+        await db.kv.put({ id: 'shift', shiftId: b.shift.id, openedAt: b.shift.opened_at, floatMinor: b.shift.opening_float_minor, cashMinor: local?.cashMinor ?? 0, queued: false,
+          openedById: b.shift.opened_by_id, openedByName: b.shift.opened_by })
       }
       setBoot({ ...b, user: { id: session.userId, name: session.userName }, shift })
       setProducts(p)
@@ -99,7 +100,8 @@ export default function App() {
         setError('This device is not assigned to a till. Ask an administrator to assign it under System → Devices.')
         return setStage('error')
       }
-      setStage(shift ? 'sell' : 'open-shift')
+      // One shift per person: another person's shift still open here is closed (counted) before this person opens their own.
+      setStage(!shift ? 'open-shift' : b.shift_per_person !== false && shift.opened_by_id && shift.opened_by_id !== session.userId ? 'handover' : 'sell')
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
         if (e.code === 'device_revoked' && !(await getSession())?.token) {
@@ -209,6 +211,8 @@ export default function App() {
     return () => clearInterval(id)
   }, [selling, online, live, refreshCatalog, refreshStock])
 
+  const handingOver = !!boot?.shift && !!boot.shift.opened_by_id && boot.shift.opened_by_id !== boot.user.id
+
   return (
     <div className="app">
       <ThemePicker />
@@ -237,7 +241,11 @@ export default function App() {
       {stage === 'receipt' && boot && receipt && <Receipt sale={receipt} boot={boot} onNew={() => setStage('sell')} />}
       {stage === 'handheld' && <Suspense fallback={<p className="muted center">Loading…</p>}><Handheld onLogout={logout} /></Suspense>}
       {stage === 'kitchen' && <Suspense fallback={<p className="muted center">Loading…</p>}><Kitchen /></Suspense>}
-      {stage === 'close-shift' && boot && <CloseShift boot={boot} online={online} onClosed={logout} onCancel={() => setStage('sell')} />}
+      {stage === 'handover' && boot?.shift && <Handover boot={boot} onClose={() => setStage('close-shift')} onLogout={logout} />}
+      {stage === 'close-shift' && boot && (
+        // At a handover the next person stays signed in and opens their own shift once the other one is closed.
+        <CloseShift boot={boot} online={online} onClosed={handingOver ? load : logout} onCancel={() => setStage(handingOver ? 'handover' : 'sell')} />
+      )}
       {boot && ['sell', 'receipt', 'open-shift', 'close-shift', 'handheld'].includes(stage) && (
         <ReportProblem screen={stage} online={online} queued={queue.pending} />
       )}

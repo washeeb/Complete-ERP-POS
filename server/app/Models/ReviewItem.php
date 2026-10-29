@@ -44,6 +44,7 @@ class ReviewItem extends Model
         'repair_conflict' => 'Repair job paid offline that was no longer open',
         'alteration_conflict' => 'Alteration paid offline that was no longer open',
         'drawer_unapproved' => 'Drawer opened offline without a manager’s approval',
+        'shift_other_person' => 'Sold offline in another person’s shift',
     ];
 
     protected $guarded = [];

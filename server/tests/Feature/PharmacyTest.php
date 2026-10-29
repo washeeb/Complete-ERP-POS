@@ -117,6 +117,7 @@ it('keeps medicines batch-tracked and their ingredients normalised', function ()
 });
 
 it('needs the patient, the prescription and a pharmacist before selling a prescription-only medicine', function () {
+    app(Settings::class)->set(actorFor($this->owner), 'pos.shift_per_person', false); // the pharmacist also sells on the cashier's till here
     $items = [[$this->amox, '1'], [$this->para, '2']];
     expect(fn () => rxSale($this, $items))->toThrow(DomainException::class, 'choose the patient')
         ->and(fn () => rxSale($this, $items, ['customer_id' => $this->ama->id]))->toThrow(DomainException::class, 'prescriber')

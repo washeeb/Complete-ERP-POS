@@ -8,6 +8,7 @@ Keep this card at the till. Practise first in the **practice company** (a purple
 1. **Sign in** — your username and PIN. Five wrong PINs lock you out for 15 minutes; a supervisor can reset it.
 2. **Open shift** — count the cash in the drawer and type it in as the opening float.
    **Outside opening hours, or again after your shift was closed** (where the shop uses automatic shifts): the till asks for a **manager's username, PIN and the reason** — call your manager.
+   **Someone else's shift is still open on this till:** the till says so and offers **Close their shift**. Count all the cash in the drawer and close it, then open your own shift. **Why:** you never sell in another person's shift, so your sales and your cash count are yours alone. (If the other person is still there, they can sign in and close it themselves.)
    **With vaults** (your shop uses a Cashier): take the tray the Cashier gives you, count the float in it, choose your vault on the till, tick *I have counted the float* and open. If the float is wrong, do not open: give the tray back.
 
 ## Selling

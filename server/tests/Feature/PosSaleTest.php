@@ -50,7 +50,7 @@ beforeEach(function () {
     [$device, $code] = app(DeviceService::class)->register(actorFor($this->owner),
         ['branch_id' => $this->branches['HQ']->id, 'till_id' => $this->till->id, 'name' => 'Till PC', 'kind' => 'pos']);
     $this->device = $device;
-    $deviceToken = $this->postJson('/api/v1/devices/enroll', ['code' => $code, 'public_key' => str_repeat('k', 64)])->assertCreated()->json('token');
+    $this->deviceToken = $deviceToken = $this->postJson('/api/v1/devices/enroll', ['code' => $code, 'public_key' => str_repeat('k', 64)])->assertCreated()->json('token');
     $this->cashier = staff($this->owner, 'esi', 2, 'teller', ScopeType::Till, $this->till->id);
     app(AccessService::class)->setPin(actorFor($this->owner), $this->cashier, '4826');
     $this->token = $this->withToken($deviceToken)->postJson('/api/v1/pos/login', ['username' => 'esi', 'pin' => '4826'])->assertOk()->json('token');
@@ -345,4 +345,37 @@ it('keeps the catalog version through sales and sends the stock figures on their
     $after = $this->withToken($this->token)->getJson('/api/v1/pos/stock', ['If-None-Match' => '"'.$stock->json('version').'"'])->assertOk();
     expect($after->json("products.{$this->bread->id}.on_hand"))->toBe('18.000');
     $this->withToken($this->token)->getJson('/api/v1/pos/stock', ['If-None-Match' => '"'.$after->json('version').'"'])->assertStatus(304);
+});
+
+it('keeps one shift per person: another person closes the open shift and opens their own before selling', function () {
+    $sale = function () {
+        $s = cart($this, [[$this->bread, true, '1']]);
+        $s['payments'] = [['method' => 'cash', 'amount_minor' => 1850, 'tendered_minor' => 1850]];
+
+        return $s;
+    };
+    $this->withToken($this->token)->postJson('/api/v1/pos/sales', $sale())->assertCreated();
+
+    // A second cashier signs in on the same till while the first one's shift is still open.
+    $kofi = staff($this->owner, 'kofi', 2, 'teller', ScopeType::Till, $this->till->id);
+    app(AccessService::class)->setPin(actorFor($this->owner), $kofi, '7395');
+    app('auth')->forgetGuards();
+    $kofiToken = $this->withToken($this->deviceToken)->postJson('/api/v1/pos/login', ['username' => 'kofi', 'pin' => '7395'])->assertOk()->json('token');
+    app('auth')->forgetGuards();
+    $boot = $this->withToken($kofiToken)->getJson('/api/v1/pos/bootstrap')->assertOk();
+    expect($boot->json('shift.opened_by_id'))->toBe($this->cashier->id)->and($boot->json('shift_per_person'))->toBeTrue();
+    $this->withToken($kofiToken)->postJson('/api/v1/pos/sales', $sale())->assertStatus(422)->assertJson(['error' => 'shift_other_person']);
+
+    // Kofi closes Esi's shift (counting the drawer) and opens his own; then he sells.
+    $this->withToken($kofiToken)->postJson('/api/v1/pos/shifts/close', ['counted_cash_minor' => 21850])->assertOk()->assertJsonPath('shift.over_short_minor', 0);
+    $mine = $this->withToken($kofiToken)->postJson('/api/v1/pos/shifts/open', ['opening_float_minor' => 21850])->assertCreated()->json('shift.id');
+    $this->shiftId = $mine;
+    $this->withToken($kofiToken)->postJson('/api/v1/pos/sales', $sale())->assertCreated();
+    expect(Shift::find($mine)->opened_by)->toBe($kofi->id);
+
+    // Where people share a till on purpose, it can be switched off; the shift list then says who sold in it.
+    app(Settings::class)->set(actorFor($this->owner), 'pos.shift_per_person', false);
+    app('auth')->forgetGuards();
+    $this->withToken($this->token)->postJson('/api/v1/pos/sales', $sale())->assertCreated();
+    expect(ShiftResource::sellers(Shift::find($mine)))->toBe('Sold by Esi (1), Kofi (1)');
 });
