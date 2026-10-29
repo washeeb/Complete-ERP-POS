@@ -1,10 +1,11 @@
 import { clock } from '../clock'
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { api, ApiError, type ShiftGrant } from '../api'
 import { db } from '../db'
 import { createDeviceKey } from '../deviceKey'
 import { formatMoney, parseMoney } from '../money'
 import { offlineSignIn, saveGrant } from '../offline'
+import { applyUpdateIfWaiting, UPDATE_READY } from '../swUpdate'
 import { closeShift, openShift } from '../till'
 import { CLOSE_CHECKS, type Bootstrap, type OtherCheck, type Shift } from '../types'
 
@@ -53,6 +54,15 @@ export function Login({ onDone, deviceName }: { onDone: () => void; deviceName?:
   const [pin, setPin] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+
+  // A new till version waiting: switch to it here, where nobody is in the middle of a sale (not while someone types).
+  const typing = username !== '' || pin !== ''
+  useEffect(() => {
+    if (!typing) applyUpdateIfWaiting()
+    const ready = () => { if (!typing) applyUpdateIfWaiting() }
+    window.addEventListener(UPDATE_READY, ready)
+    return () => window.removeEventListener(UPDATE_READY, ready)
+  }, [typing])
 
   async function submit(e?: React.FormEvent) {
     e?.preventDefault()

@@ -43,6 +43,7 @@ export default defineConfig(({ mode }) => {
       { name: 'product-name', transformIndexHtml: (html: string) => html.replace(/%PRODUCT_NAME%/g, PRODUCT.name) },
       VitePWA({
         registerType: 'prompt',
+        injectRegister: false, // registered by swUpdate.ts, which switches to a new version at the sign-in screen
         manifest: {
           name: `${PRODUCT.name} Till`,
           short_name: 'Till',

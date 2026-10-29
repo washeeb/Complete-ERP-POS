@@ -122,7 +122,7 @@ Either one **takes a backup first** with the version still installed. If that ba
    (Ubuntu: then `sudo chown -R www-data:www-data storage bootstrap/cache`.)
    If you install from source code, also rebuild the till: in `pos`, `npm install` and `npm run build:server`.
 5. Start the server again (Windows — *Run* both tasks; Ubuntu — `sudo systemctl start caddy` and `sudo systemctl restart php8.4-fpm`).
-6. **Tills** download the new version by themselves. It takes effect when the till app has been **closed completely and opened again** (do this at the end of the day; sometimes it needs two restarts).
+6. **Tills** download the new version by themselves (they look every 30 minutes) and switch to it at the **sign-in screen**: the next time someone signs out or the cashier changes, the till reloads once and shows the sign-in screen again. **Why:** nobody is in the middle of a sale there, so nothing is interrupted. Tills from before 29 October 2026 need one last full close and reopen of the till app (twice) to get this.
 
 **Updating to 0.34.2 or later from an older version:** use the simple way above. It switches on PHP's code cache (OPcache) and other speed settings, which older Windows installations did not have, and pages then open several times faster. *System → Health* shows *PHP code cache: On* afterwards. The first update to 0.34.2 also adds database indexes; on a large database this takes a few minutes, so let it finish.
 

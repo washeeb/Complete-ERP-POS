@@ -7,7 +7,10 @@
 
 
 
-## One shift per person — branch `shift-per-person`
+
+## Till updates at sign-in — branch `till-auto-update`
+- `pos/src/swUpdate.ts` (registerSW, 30-min update check, `applyUpdateIfWaiting`), `main.tsx startUpdates()`, `Login` applies a waiting version when not typing; `vite.config.ts injectRegister: false`; tsconfig types `vite-plugin-pwa/client`.
+## One shift per person — merged (PR #112)
 - Setting `pos.shift_per_person` (default on); `SaleService` online refuse / offline flag `shift_other_person`; `shiftJson` `opened_by_id`, bootstrap `shift_per_person`; `ShiftResource::sellers`. Till: `Handover` (Setup.tsx), App stage `handover`, close then `load`; LocalShift `openedById/openedByName`. Test in `PosSaleTest`.
 ## Stock apart from the catalog — merged (PR #111)
 - `PosController::stock` (route `pos/stock`), `stockFigures()` shared with `catalog`; catalog version without stock. Till: `api.stock`, `App.tsx refreshStock` (after sale, poll), `live.ts` stock events → stock only; cache `stockVersion`. Installers: Ubuntu FPM workers from memory (www pool too), Windows 8 workers. Test in `PosSaleTest`.
