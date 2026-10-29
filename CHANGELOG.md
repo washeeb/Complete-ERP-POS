@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+### Security
+- **symfony/mime 8.1.10** (was 8.1.7): CVE-2026-45070, e-mail header injection through unusual characters in MIME parameter names.
+
 ### Added
 - **Desktop till saves unsent sales by itself (app 0.27):** while any sales wait to reach the server, the desktop till saves the *Export unsent sales* file every 15 minutes in Documents → SES Labs Till → Unsent sales (newest 48 kept). Needs the new SES Labs Till installer. Manual 9.
 - **Shift left open overnight:** the till shows a banner with a *Close shift* button, and Sales → Shifts marks the shift *left open since …* in red (a night shift past midnight is not flagged). Manual 9.
