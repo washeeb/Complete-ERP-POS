@@ -65,13 +65,14 @@ export async function signInAgain(userId: string, username: string, pin: string)
 const isNetwork = (e: unknown) => e instanceof ApiError && e.code === 'network'
 
 /** Open the till. With cash control, on the vault the cashier issued to this teller (its float is the vault's). */
-export async function openShift(floatMinor: number, online: boolean, vaultSessionId: string | null = null, grant: ShiftGrant | null = null): Promise<void> {
+export async function openShift(floatMinor: number, online: boolean, vaultSessionId: string | null = null, grant: ShiftGrant | null = null,
+  own: { id: string; name: string } | null = null): Promise<void> {
   const id = uuidv7()
   const openedAt = new Date().toISOString()
   let queued = await queueMode(online)
   if (!queued) {
     try {
-      await api.openShift(floatMinor, id, vaultSessionId, grant)
+      await api.openShift(floatMinor, id, vaultSessionId, grant, own?.id ?? null)
     } catch (e) {
       if (!isNetwork(e)) throw e
       queued = true
@@ -79,10 +80,10 @@ export async function openShift(floatMinor: number, online: boolean, vaultSessio
   }
   if (queued) {
     await enqueue({ id, type: 'shift_open', grant: await currentGrant(),
-      payload: { id, opening_float_minor: floatMinor, opened_at: openedAt, vault_session_id: vaultSessionId } })
+      payload: { id, opening_float_minor: floatMinor, opened_at: openedAt, vault_session_id: vaultSessionId, vault_id: own?.id ?? null } })
   }
   const me = await getSession()
-  await db.kv.put({ id: 'shift', shiftId: id, openedAt, floatMinor, cashMinor: 0, queued, vault: vaultSessionId !== null, openedById: me?.userId, openedByName: me?.userName })
+  await db.kv.put({ id: 'shift', shiftId: id, openedAt, floatMinor, cashMinor: 0, queued, vault: vaultSessionId !== null, openedById: me?.userId, openedByName: me?.userName, vaultName: own?.name ?? null })
 }
 
 /**

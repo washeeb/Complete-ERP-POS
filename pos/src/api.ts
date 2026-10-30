@@ -99,8 +99,11 @@ export const api = {
     if (!res || res.status === 304 || !res.ok) return null
     return (await res.json()) as { version: string; customers: TillCustomer[] }
   },
-  openShift: (floatMinor: number, id: string, vaultSessionId?: string | null, grant?: ShiftGrant | null) =>
-    call<{ shift: Shift }>('pos/shifts/open', { method: 'POST', body: JSON.stringify({ opening_float_minor: floatMinor, id, vault_session_id: vaultSessionId ?? null, grant: grant ?? null }) }),
+  openShift: (floatMinor: number, id: string, vaultSessionId?: string | null, grant?: ShiftGrant | null, vaultId?: string | null) =>
+    call<{ shift: Shift }>('pos/shifts/open', { method: 'POST', body: JSON.stringify({ opening_float_minor: floatMinor, id, vault_session_id: vaultSessionId ?? null, grant: grant ?? null, vault_id: vaultId ?? null }) }),
+  /** A manager lends a vault to the person signed in, for today, with their username and PIN. */
+  lendVault: (vaultId: string, reason: string, approval: { username: string; pin: string }) =>
+    call<{ lent_by: string }>('pos/vaults/lend', { method: 'POST', body: JSON.stringify({ vault_id: vaultId, reason, approval }) }),
   closeShift: (countedMinor: number, note: string, denoms?: Record<string, number> | null, other?: Record<string, number> | null) =>
     call<{ shift: Shift }>('pos/shifts/close', { method: 'POST', body: JSON.stringify({ counted_cash_minor: countedMinor, note: note || null, denoms: denoms ?? null, other: other ?? null }) }),
   /** A change to this till's own settings, approved by a manager's PIN and recorded in the audit log. */

@@ -18,6 +18,8 @@
     {"key": "cash.control", "label": "Receive cashiers' handovers, count them blind and reconcile the day (Income Controller)", "min_level": 4},
     {"key": "cash.variance.approve", "label": "Decide cash differences: over/short, or charged to the staff member (not your own)", "min_level": 4},
     {"key": "cash.deposit", "label": "Record bank deposits of office cash", "min_level": 4},
+    {"key": "cash.vault.check", "label": "Recount tellers' own vaults blind after they close (personal vaults)", "min_level": 4},
+    {"key": "cash.vault.lend", "label": "Lend a teller's vault to someone else for a day, by PIN at the till or in the back office", "min_level": 4},
     {"key": "catalog.view", "label": "View products, units, barcodes and prices", "min_level": 1},
     {"key": "catalog.manage", "label": "Create and edit products, units, barcodes, categories and brands", "min_level": 3},
     {"key": "pricing.manage", "label": "Change prices, price lists and tax set-up", "min_level": 4},

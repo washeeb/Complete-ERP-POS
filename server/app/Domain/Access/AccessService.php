@@ -153,6 +153,47 @@ final class AccessService
         });
     }
 
+    /** The prefix of a staff card's code, so a till can tell a scanned card from a typed username. */
+    public const BADGE_PREFIX = 'SLB1-';
+
+    /**
+     * A new staff card for till sign-in: the person scans it instead of typing her username, then types her PIN (the card
+     * alone never signs anyone in). Only a hash is kept, so the code is shown once, to print; a new card replaces the old.
+     */
+    public function issueBadge(Actor $actor, User $user): string
+    {
+        $this->require($actor, 'admin.users.manage');
+        $this->assertSameTenant($actor, $user);
+        if ($user->id !== $actor->id) {
+            $this->assertLevelGrantable($actor, $user->security_level);
+        }
+        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O or 1/I: a code read out loud is not mistaken
+        $code = self::BADGE_PREFIX.implode('', array_map(fn () => $alphabet[random_int(0, 31)], range(1, 20)));
+        $user->forceFill(['badge_hash' => self::badgeHash($code), 'badge_issued_at' => now()]);
+        $this->recorder->transaction(fn () => $this->recorder->save($actor, $user, $user->getOriginal('badge_hash') ? 'user.badge_replaced' : 'user.badge_issued'));
+
+        return $code;
+    }
+
+    /** A lost card: it stops working at once. */
+    public function revokeBadge(Actor $actor, User $user): void
+    {
+        $this->require($actor, 'admin.users.manage');
+        $this->assertSameTenant($actor, $user);
+        $user->forceFill(['badge_hash' => null, 'badge_issued_at' => null]);
+        $this->recorder->transaction(fn () => $this->recorder->save($actor, $user, 'user.badge_revoked'));
+    }
+
+    public static function isBadge(string $text): bool
+    {
+        return str_starts_with(strtoupper(trim($text)), self::BADGE_PREFIX);
+    }
+
+    public static function badgeHash(string $code): string
+    {
+        return hash('sha256', strtoupper(trim($code)));
+    }
+
     /** @param list<string> $permissionKeys */
     public function saveRole(Actor $actor, Role $role, array $attributes, array $permissionKeys, ?string $reason = null): Role
     {

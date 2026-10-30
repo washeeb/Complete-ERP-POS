@@ -35,7 +35,7 @@ final class ShiftService
     }
 
     /** $id/$openedAt come from the till (offline shifts are opened without us); $offline skips the live access check (reviewed via the grant instead). */
-    public function open(Device $device, User $user, int $floatMinor, ?string $id = null, ?CarbonInterface $openedAt = null, bool $offline = false, ?string $vaultSessionId = null, ?array $grant = null): Shift
+    public function open(Device $device, User $user, int $floatMinor, ?string $id = null, ?CarbonInterface $openedAt = null, bool $offline = false, ?string $vaultSessionId = null, ?array $grant = null, ?string $vaultId = null): Shift
     {
         if ($id && ($existing = Shift::find($id))) {
             if ($existing->device_id !== $device->id) {
@@ -68,6 +68,11 @@ final class ShiftService
                 $floatMinor = $vault->float_minor; // the float is what the cashier issued, not what the till typed
             }
         }
+        // Personal vaults: the shift opens on the teller's own vault (or one lent to her today), with its standard float.
+        $own = app(TellerVaults::class)->forOpen($user, $till, $vaultId, $offline);
+        if ($own && ! $offline) {
+            $floatMinor = (int) $own->standard_float_minor;
+        }
         $shift = new Shift;
         if ($id) {
             $shift->id = $id;
@@ -75,7 +80,7 @@ final class ShiftService
         $shift->forceFill([
             'tenant_id' => $till->tenant_id, 'branch_id' => $till->branch_id, 'till_id' => $till->id, 'device_id' => $device->id,
             'opened_by' => $user->id, 'opened_by_name' => $user->name, 'currency_code' => $user->tenant->currency_code,
-            'opening_float_minor' => $floatMinor, 'opened_at' => $openedAt ?? now(), 'status' => 'open',
+            'opening_float_minor' => $floatMinor, 'opened_at' => $openedAt ?? now(), 'status' => 'open', 'vault_id' => $own?->id,
         ] + $named);
 
         return $this->recorder->transaction(function () use ($actor, $shift, $till, $vault, $user, $offline) {
@@ -123,6 +128,9 @@ final class ShiftService
             'over_short_minor' => $countedMinor - $expected, 'close_note' => $note,
         ]);
         $shift->shift_name = app(AutoShifts::class)->nameAtClose($shift, Carbon::instance($shift->closed_at));
+        if ($shift->vault_id && app(TellerVaults::class)->flow($shift->tenant_id) !== 'manager') {
+            $shift->forceFill(['checked_count_minor' => $countedMinor, 'checked_by' => $user->id, 'checked_by_name' => $user->name, 'checked_at' => $shift->closed_at]);
+        }
 
         return $this->recorder->transaction(function () use ($device, $user, $shift, $note, $countedMinor, $denoms, $expected) {
             $this->recorder->save(Actor::user($user, 'pos', $device->id), $shift, 'shift.closed', $note, $shift->branch_id);
@@ -158,6 +166,9 @@ final class ShiftService
             'expected_cash_minor' => $expected, 'counted_cash_minor' => $countedMinor, 'over_short_minor' => $countedMinor - $expected,
             'close_note' => mb_substr('Closed in the back office: '.trim($reason), 0, 255),
         ]);
+        if ($shift->vault_id) {
+            $shift->forceFill(['checked_count_minor' => $countedMinor, 'checked_by' => $actor->id, 'checked_by_name' => $actor->name, 'checked_at' => now()]);
+        }
 
         return $this->recorder->transaction(fn () => $this->recorder->save($actor, $shift, 'shift.closed_in_office', $reason, $shift->branch_id));
     }
@@ -175,10 +186,13 @@ final class ShiftService
         if ($shift->vault_session_id) {
             throw new DomainException('This shift is on a cash-control vault: its count is decided at Cash → Shifts and vaults.');
         }
+        if ($shift->vault_id && ! $shift->checked_at) {
+            throw new DomainException('Count the vault first (Count the vault): that count is the shift\'s.');
+        }
         if ($countedMinor < 0 || trim($reason) === '') {
             throw new DomainException('Give the right count (0 or more) and the reason.');
         }
-        $before = $shift->latestCorrection?->counted_after_minor ?? (int) $shift->counted_cash_minor;
+        $before = $shift->latestCorrection?->counted_after_minor ?? (int) ($shift->checked_count_minor ?? $shift->counted_cash_minor);
         if ($countedMinor === $before) {
             throw new DomainException('That is the count already recorded.');
         }

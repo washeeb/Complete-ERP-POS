@@ -3,7 +3,9 @@
 namespace App\Filament\Resources\Shifts;
 
 use App\Domain\Pos\ShiftService;
+use App\Domain\Pos\TellerVaults;
 use App\Filament\Resources\Shifts\Pages\ListShifts;
+use App\Filament\Support\CashCountForm;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
 use App\Models\SalePayment;
@@ -15,9 +17,11 @@ use App\Support\RequestMemo;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -61,7 +65,7 @@ class ShiftResource extends Resource
     {
         $ids = Erp::branchIds('sales.view');
 
-        return parent::getEloquentQuery()->with('branch', 'till', 'latestCorrection', 'drawerEvents')->withCount('sales')
+        return parent::getEloquentQuery()->with('branch', 'till', 'vault', 'latestCorrection', 'drawerEvents')->withCount('sales')
             ->when($ids !== null, fn ($q) => $q->whereIn('branch_id', $ids));
     }
 
@@ -97,6 +101,10 @@ class ShiftResource extends Resource
                     // Left open overnight: today's sales are going into an earlier day's shift until it is closed on the till.
                     ->description(fn (Shift $r) => self::leftOpen($r) ? 'left open since '.self::leftOpen($r).': close it on the till' : null)
                     ->color(fn (Shift $r) => self::leftOpen($r) ? 'danger' : null),
+                // Personal vaults: whose tray it was, and whether the manager has counted it yet (light flow).
+                TextColumn::make('vault.name')->label('Vault')->placeholder('—')->toggleable()
+                    ->description(fn (Shift $r) => $r->vault_id && ! $r->isOpen() ? ($r->checked_at ? "Counted by {$r->checked_by_name}" : 'Waiting for the manager\'s count') : null)
+                    ->color(fn (Shift $r) => $r->vault_id && ! $r->isOpen() && ! $r->checked_at ? 'warning' : null),
                 TextColumn::make('sales_count')->label('Sales'),
                 TextColumn::make('takings')->label('Sales total')->state(fn (Shift $r) => self::takings($r)['total'])
                     ->description(fn (Shift $r) => self::takings($r)['lines'])->wrap(),
@@ -104,7 +112,9 @@ class ShiftResource extends Resource
                 TextColumn::make('expected_cash_minor')->label('Expected cash')->formatStateUsing($m),
                 // A corrected count shows the corrected figure, with the original and the reason on hover.
                 TextColumn::make('counted_cash_minor')->label('Counted')
-                    ->state(fn (Shift $r) => $r->latestCorrection?->counted_after_minor ?? $r->counted_cash_minor)->formatStateUsing($m)
+                    ->state(fn (Shift $r) => $r->latestCorrection?->counted_after_minor ?? $r->checked_count_minor ?? $r->counted_cash_minor)->formatStateUsing($m)
+                    ->description(fn (Shift $r) => $r->checked_at && $r->checked_by !== $r->closed_by && $r->checked_count_minor !== $r->counted_cash_minor
+                        ? 'Teller counted '.Money::display((int) $r->counted_cash_minor, $r->currency_code) : null)
                     ->icon(fn (Shift $r) => $r->latestCorrection ? 'heroicon-m-pencil-square' : null)->iconPosition('after')
                     ->tooltip(fn (Shift $r) => $r->latestCorrection ? 'Corrected from '.Money::display($r->latestCorrection->counted_before_minor, $r->currency_code)
                         ." by {$r->latestCorrection->corrected_by_name}: {$r->latestCorrection->reason}" : null),
@@ -120,10 +130,27 @@ class ShiftResource extends Resource
                         .', '.($c['counted'] === null ? 'not checked' : 'entered '.self::amount($c, $c['counted'], $r)))->implode(' · ') ?: null),
                 TextColumn::make('close_note')->label('Note')->limit(40)->toggleable(),
             ])
-            ->filters([SelectFilter::make('status')->options(['open' => 'Open', 'closed' => 'Closed'])])
+            ->filters([SelectFilter::make('status')->options(['open' => 'Open', 'closed' => 'Closed']),
+                Filter::make('vault_waiting')->label('Vaults waiting for the manager\'s count')
+                    ->query(fn (Builder $q) => $q->whereNotNull('vault_id')->where('status', 'closed')->whereNull('checked_at'))])
             ->recordActions([
                 Action::make('report')->label('Shift report')->icon(Heroicon::OutlinedPrinter)->color('gray')
                     ->visible(fn (Shift $r) => ! $r->isOpen())->action(fn (Shift $r) => self::report($r)),
+                // Personal vaults, light flow: the manager counts the tray blind; the second count stands when the two differ.
+                Action::make('checkVault')->label('Count the vault')->icon(Heroicon::OutlinedBanknotes)->color('warning')
+                    ->visible(fn (Shift $r) => $r->vault_id && ! $r->isOpen() && ! $r->checked_at && Erp::can('cash.vault.check', $r->branch))
+                    ->modalHeading(fn (Shift $r) => 'Count the vault: '.($r->vault?->name ?? '').' ('.$r->opened_by_name.')')
+                    ->modalDescription('Count everything in the tray, float included, before looking at anything else. Your count is compared with the teller\'s afterwards; it is the one booked.')
+                    ->schema(fn (Shift $r) => CashCountForm::schema($r->currency_code))
+                    ->action(function (Shift $r, array $data) {
+                        [$denoms, $amount] = CashCountForm::read($data, $r->currency_code);
+                        $res = Erp::run(fn ($actor) => app(TellerVaults::class)->check($actor, $r, $denoms, $amount));
+                        if (($res['status'] ?? null) === 'recount') {
+                            Notification::make()->title('Your count does not match the teller\'s')->body('Count the tray again from the start and enter it once more. The second count stands.')->warning()->persistent()->send();
+                        } elseif (($res['status'] ?? null) === 'checked') {
+                            Notification::make()->title('Vault counted')->success()->send();
+                        }
+                    }),
                 // A shift no till can close any more (till reinstalled or replaced, or left open).
                 Action::make('closeShift')->label('Close shift')->icon(Heroicon::OutlinedLockClosed)->color('warning')
                     ->visible(fn (Shift $r) => $r->isOpen() && ! $r->vault_session_id && Erp::can('cash.setup', $r->branch))

@@ -13,6 +13,7 @@ import { Receipt } from './screens/Receipt'
 import { Sell } from './screens/Sell'
 import type { Bootstrap, PostedSale, Product } from './types'
 import { setSignedInName } from './screens/SignedIn'
+import { IdleLock } from './screens/IdleLock'
 
 // Screens only some devices use load when needed (a till never downloads the kitchen screen at start-up).
 const Handheld = lazy(() => import('./screens/Handheld').then((m) => ({ default: m.Handheld })))
@@ -90,7 +91,7 @@ export default function App() {
       }
       // Offline (or shift opened offline and not yet synced): the till's own record of the open shift counts.
       const shift = (live ? b.shift : null) ?? (local ? { ...(b.shift ?? {}), id: local.shiftId, status: 'open' as const, opened_at: local.openedAt,
-        opened_by: local.openedByName ?? session.userName, opened_by_id: local.openedById, opening_float_minor: local.floatMinor, expected_cash_minor: null, counted_cash_minor: null, over_short_minor: null } : null)
+        opened_by: local.openedByName ?? session.userName, opened_by_id: local.openedById, vault: local.vaultName ?? null, opening_float_minor: local.floatMinor, expected_cash_minor: null, counted_cash_minor: null, over_short_minor: null } : null)
       if (live && b.shift && (!local || local.shiftId !== b.shift.id)) {
         await db.kv.put({ id: 'shift', shiftId: b.shift.id, openedAt: b.shift.opened_at, floatMinor: b.shift.opening_float_minor, cashMinor: local?.cashMinor ?? 0, queued: false,
           openedById: b.shift.opened_by_id, openedByName: b.shift.opened_by })
@@ -226,6 +227,9 @@ export default function App() {
       )}
       {boot?.license?.message && (
         <div className={`banner no-print ${boot.license.read_only ? 'bad' : 'warn'}`} role="alert">{boot.license.read_only ? 'Read-only: ' : ''}{boot.license.message}</div>
+      )}
+      {boot && !['loading', 'enroll', 'login', 'kitchen', 'handheld', 'error'].includes(stage) && (
+        <IdleLock key={boot.user.id} minutes={boot.idle_lock_minutes ?? 0} user={boot.user} onSignOut={logout} />
       )}
       {stage === 'loading' && <p className="center muted">Loading…</p>}
       {stage === 'enroll' && <Enroll onDone={load} />}

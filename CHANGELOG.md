@@ -1,6 +1,12 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- **Each teller sells from her own vault:** new setting *Each teller sells from her own vault* (Tills and cash; off until switched on). Each teller is given her own vault (**Cash → Shifts and vaults → Add a vault**); at *Open shift* the till shows only her vault, so nobody sells in someone else's name. A manager can lend a vault for the day (on the till by PIN, or in the back office), recorded with the reason. Light flow (default when on): a manager recounts each closed vault blind in **Sales → Shifts → Count the vault** (one recount when the counts differ) before its over/short is booked; or the teller's own count stands. How cash is kept: own removable tray (default), own till each, or one shared drawer. Two drawers on one till comes later. Manual 7 (Step 13b).
+- **Till locks when left idle** (default 5 minutes; *Lock the till after this many idle minutes*): the till shows the person's name and only her PIN unlocks it (checked on the till, so offline too); the sale on screen stays; *Not you? Sign out*; five wrong PINs sign her out.
+- **Name band in each person's colour** at the top of the till, with her vault.
+- **Staff cards:** **Users → Staff card** prints a card with a QR code; the teller scans it at sign-in instead of typing her username, then her PIN (works offline once she has signed in with it online). **Card lost** stops it at once; only a hash of the code is kept.
+
 ### Fixed
 - **Wrong teller's name after signing in:** the till's sign-in and every manager's PIN box were ordinary password boxes, so the browser inside the till offered to *save* them and could fill in the last saved person's username and PIN on a shared till. PINs are now masked boxes that browsers never save or fill, and username boxes are never filled in. Who is signed in now shows on *Open shift* (with *Sign out* if it is not you) and above every manager's PIN.
 - **Manager's PIN asked for a new teller's shift:** with automatic shifts on, a till opened only once per shift, so after one teller closed the Morning shift, the next teller taking over in the morning needed a manager. Now only the *same* person reopening their closed shift (or opening outside trading hours) needs a manager. Manual 7.

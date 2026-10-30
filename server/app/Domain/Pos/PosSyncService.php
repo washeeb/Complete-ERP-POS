@@ -80,7 +80,7 @@ final class PosSyncService
                 }
                 $existed = Shift::whereKey($p['id'])->exists();
                 $shift = $this->shifts->open($device, $user, (int) $p['opening_float_minor'], $p['id'],
-                    Carbon::parse($p['opened_at']), offline: true, vaultSessionId: $p['vault_session_id'] ?? null);
+                    Carbon::parse($p['opened_at']), offline: true, vaultSessionId: $p['vault_session_id'] ?? null, vaultId: $p['vault_id'] ?? null);
                 if (! $existed) {
                     $this->flagGrant($device, $grant, $user, Carbon::parse($p['opened_at']), 'shift', $shift->id, 'Shift opened');
                 }

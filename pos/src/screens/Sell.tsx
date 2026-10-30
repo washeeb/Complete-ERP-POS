@@ -41,6 +41,7 @@ import { CustomerPicker } from './CustomerPicker'
 import { Pay } from './Pay'
 import { Calculator, detailsMissing, detailsPayload, emptyDetails, SaleDetailsDialog, type SaleDetailsState } from './TillTools'
 import { SignedIn } from './SignedIn'
+import { personColor } from '../person'
 
 export function Sell({ boot, products, online, catalogVersion, queue, onPosted, onRefresh, onSendNow, onCloseShift, onSettings, onLogout }: {
   boot: Bootstrap; products: Product[]; online: boolean; catalogVersion: string | null
@@ -537,7 +538,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   return (
     <div className="sell">
       <header className="topbar">
-        <div><BrandIcon boot={boot} /><strong>{boot.branch.code} · {boot.till?.name}</strong> <span className="muted">{boot.user.name}</span></div>
+        <div><BrandIcon boot={boot} /><strong>{boot.branch.code} · {boot.till?.name}</strong> <span className="who-band" style={{ background: personColor(boot.user.id) }}>{boot.user.name}{boot.shift?.vault ? ` · ${boot.shift.vault}` : ''}</span></div>
         <label className="inline">
           Price list
           <select value={listId} onChange={(e) => setListId(e.target.value)} aria-label="Price list">

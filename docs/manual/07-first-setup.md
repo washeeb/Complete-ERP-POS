@@ -115,6 +115,8 @@ For each staff member:
 | Show stock left on the till while selling | On by default (switch off if cashiers should not see stock). On: each item in the sale, and in the till's search list, shows how many are left at that till's store (e.g. *14 TAB left*), counting what is already in the sale. Useful where cashiers should tell customers what is available. Tills pick it up at their next sign-in. |
 | Message at the bottom of receipts | Your returns policy or a thank-you line. |
 | Returns accepted within (days, with receipt) | How long after a sale a return with the receipt is accepted. |
+| Each teller sells from her own vault / How each teller's cash is kept | Off by default. On: each teller has her own vault (cash tray) and a till opens only on hers (Step 13b). **Why:** nobody can sell in someone else's name. |
+| Lock the till after this many idle minutes | Default 5; 0 = never. **Why:** a till left signed in cannot be used by the next person: it locks with the name on it, and only that person's PIN unlocks it (the sale on screen stays). |
 | Cash control with vaults | Off: whoever closes a till counts the drawer. On: tellers, a Cashier and an Income Controller check the cash at every step (Step 14). |
 | Automatic shifts / Till trading hours / Straight day from (hours) | Off by default. On: each till session is named by the shift it opens in (Morning, Afternoon… from **Cash → Shifts and vaults**; by default Morning 07:00–15:00 and Afternoon 14:00–23:00, shifts may overlap by at most 1 hour), and one of 10 hours or more is a **Straight day**. A till opens only within the trading hours (default 07:00–23:00) and once per shift per person: outside the hours, or when the same person opens again after closing their shift, a manager (Branch Manager or above) types their username, PIN and the reason on the till. Another teller taking over the till (a handover) opens their own shift without a manager. The till shows who is signed in on the *Open shift* screen and above every manager's PIN, with a *Sign out* link, so the manager sees whose shift they allow. Closing and counting are always allowed. A branch can choose differently. **Why:** every session is in the right shift for the reports, and nobody sells after closing time or reopens a counted till without a manager knowing, while a normal handover between tellers needs nobody's PIN. |
 | Payment alerts (group) | Off by default. *Each payment*, *each payment and a daily summary* or *the summary only*, for mobile money and/or card; single alerts only from an amount you choose; also by e-mail, SMS or WhatsApp (to each person's e-mail and **Mobile (WhatsApp) number**); the summary time (default 21:00). Who gets them: anyone with *receive payment alerts* — the Owner, General Manager, Finance Manager and Accountant by default. Alerts show on the bell in the back office. **Why:** the owner sees MoMo and card money arrive without asking the till, and the evening summary is checked against the MoMo statement. |
@@ -174,6 +176,23 @@ Module settings (Grocery, Pharmacy, Restaurant, Fashion, Services) are explained
 ## Step 13 — Set up the devices
 
 Register and enrol the tills, handhelds and kitchen screens: **Chapter 9**.
+
+## Step 13b — Each teller's own vault (recommended with several tellers)
+
+**Why:** with one shared drawer, a teller who signs in on a till left open by a colleague can sell under the colleague's name, and nobody can say whose cash is short. With her own vault, each teller only ever sees and opens her own.
+
+1. **Switch it on:** **System → Settings → Tills and cash → Each teller sells from her own vault**:
+   - *a manager recounts each closed vault* (recommended): after the teller closes and counts, a manager counts the tray again without seeing her figure; the manager's count is the one booked.
+   - *the teller's own count stands*: no second count.
+2. **How the cash is kept** (same page): *own removable cash tray* (default: each teller has a tray she puts in the drawer, on any till of the branch), *own till and drawer each*, or *one shared drawer* (the vault is then a record of whose cash is whose).
+3. **Give each teller her vault:** **Cash → Shifts and vaults → Add a vault**: a name (*Vault 1*), the teller who holds it, the till (only for *own till*), and the standard float. One vault per person.
+4. **On the till:** at *Open shift* the teller sees only her own vault, confirms she counted its float, and sells. Her name and vault show in her own colour at the top of the till.
+5. **Someone away?** A manager lends her vault to the person covering, for today only: on the till (*Covering for someone?*, the manager's username and PIN) or in **Cash → Shifts and vaults → Lend for today**. **Why:** the cover is recorded with the manager's name and reason, and ends at midnight.
+6. **Closing:** the teller counts blind and is signed out. With *a manager recounts*, the shift shows *Waiting for the manager's count* in **Sales → Shifts**; the manager presses **Count the vault** and counts the tray (one recount if the two counts differ). Only then is the over/short booked.
+
+**Staff cards (optional, faster sign-in).** **System → Users → (person) → Staff card** prints a card with a QR code. At the till the teller scans it instead of typing her username, then types her PIN. **Why:** no shared or mistyped usernames; a lost card alone cannot sign anyone in (the PIN is still needed); **Card lost** stops it at once.
+
+**Check:** sign in as one teller: only her vault is offered; open, sell, close; as a manager, **Count the vault** in Sales → Shifts.
 
 ## Step 14 — Cash control: vaults, Cashier and Income Controller (optional)
 
