@@ -9,7 +9,10 @@
 
 
 
-## Till settings and start-up — branch `till-settings`
+
+## Buying in packs — branch `buying-in-packs`
+- Migration `2026_12_06_100001_buying_units` (`products.buying_uom_id`, `supplier_products.order_multiple`, backfill). `Fields::productUnit(buying: true)`, `PurchaseOrderResource::packRule`, `PurchaseOrderService::priceLines` checks, `ReorderService` multiple, `ReorderLevels::buyingFactors` usual unit, `CatalogService` (buying unit check, `inputOf` keeps buy-only units), `App\Support\Gs1` + receive form *Scan the pack code*. Tests in `PurchasingWmsTest`.
+## Till settings and start-up — merged (PR #114)
 - Till: `screens/TillSettings.tsx`, `prefs.ts` (text size, beep), `hardware.ts` (Config, printersInfo, saveHardware, testPrint, width), `escpos.ts`/`slip.ts` width, ⚙ Settings in `Sell.tsx`, stage `settings`. Desktop 0.28: `set_settings`, `printers_info`, `print_raw(kind, printer)`, `show_window`, `printer::usable/looks_like_receipt`, window shown on non-local load. Server: permission `pos.settings`, `PosController::settings` (route `pos/settings`). Test in `TillDrawerTest`, `escpos.test.ts`. Next: buying in packs (purchase units per supplier, MOQ/multiples, receive by pack, GS1 DataMatrix).
 ## Till updates at sign-in — merged (PR #113)
 - `pos/src/swUpdate.ts` (registerSW, 30-min update check, `applyUpdateIfWaiting`), `main.tsx startUpdates()`, `Login` applies a waiting version when not typing; `vite.config.ts injectRegister: false`; tsconfig types `vite-plugin-pwa/client`.

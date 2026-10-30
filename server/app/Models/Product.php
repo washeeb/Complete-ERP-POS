@@ -14,7 +14,7 @@ class Product extends Model
 {
     use BelongsToTenant, HasOriginNode, HasUuids;
 
-    protected $fillable = ['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu', 'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'fda_reg_no', 'active_ingredients', 'station', 'modifier_group_ids', 'track_serials', 'warranty_months', 'style_id', 'size', 'colour', 'consignor_id', 'consignment_bp', 'service_minutes', 'commission_bp', 'pack', 'licence_keys', 'is_container', 'deposit_product_id', 'deposit_per_unit', 'industry_id', 'location', 'dosage', 'daily_use', 'nhis_price_minor'];
+    protected $fillable = ['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'buying_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu', 'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'fda_reg_no', 'active_ingredients', 'station', 'modifier_group_ids', 'track_serials', 'warranty_months', 'style_id', 'size', 'colour', 'consignor_id', 'consignment_bp', 'service_minutes', 'commission_bp', 'pack', 'licence_keys', 'is_container', 'deposit_product_id', 'deposit_per_unit', 'industry_id', 'location', 'dosage', 'daily_use', 'nhis_price_minor'];
 
     protected function casts(): array
     {

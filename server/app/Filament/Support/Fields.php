@@ -23,11 +23,14 @@ use Illuminate\Support\Facades\DB;
 /** Form fields shared by the purchasing and warehouse screens. */
 final class Fields
 {
-    public static function unitLabel(ProductUom $u): string
+    public static function unitLabel(ProductUom $u, bool $buying = false): string
     {
         $u->loadMissing('product', 'uom');
+        $holds = rtrim(rtrim((string) $u->factor, '0'), '.');
+        $base = $buying && ! $u->is_base ? ' (= '.$holds.' '.(ProductUom::with('uom')->where('product_id', $u->product_id)->where('is_base', true)->first()?->uom->code ?? '').')' : '';
+        $usual = $buying && $u->product->buying_uom_id === $u->uom_id ? ' · usual buying unit' : '';
 
-        return "{$u->product->sku} · {$u->product->name} — {$u->uom->code}".($u->is_base ? '' : ' × '.rtrim(rtrim((string) $u->factor, '0'), '.'));
+        return "{$u->product->sku} · {$u->product->name} — {$u->uom->code}".($u->is_base ? '' : ' × '.$holds).$base.$usual;
     }
 
     /**
@@ -140,16 +143,22 @@ final class Fields
         return $productUomId !== null && (bool) ProductUom::with('product')->find($productUomId)?->product?->track_serials;
     }
 
-    /** Search products by name, SKU or barcode; the value is the product unit (e.g. "Milo — CTN × 24"). */
-    public static function productUnit(string $name = 'product_uom_id'): Select
+    /**
+     * Search products by name, SKU or barcode; the value is the product unit (e.g. "Milo — CTN × 24"). $buying: only the
+     * units the product is bought in, the usual buying unit first, each with what it holds ("BOX × 100 (= 100 TAB)").
+     */
+    public static function productUnit(string $name = 'product_uom_id', bool $buying = false): Select
     {
         return Select::make($name)->label('Product and unit')->required()->searchable()
             ->getSearchResultsUsing(fn (string $search) => ProductUom::with('product', 'uom')
-                ->whereHas('product', fn (Builder $q) => $q->where('is_active', true)->where(fn ($q) => $q->where('name', 'ilike', "%{$search}%")
+                ->where(fn ($w) => $w->whereHas('product', fn (Builder $q) => $q->where('is_active', true)->where(fn ($q) => $q->where('name', 'ilike', "%{$search}%")
                     ->orWhere('sku', 'ilike', "%{$search}%")))
-                ->orWhereHas('barcodes', fn ($q) => $q->where('code', $search))
-                ->limit(30)->get()->mapWithKeys(fn ($u) => [$u->id => self::unitLabel($u)]))
-            ->getOptionLabelUsing(fn ($value) => ($u = ProductUom::find($value)) ? self::unitLabel($u) : null);
+                    ->orWhereHas('barcodes', fn ($q) => $q->where('code', $search)))
+                ->when($buying, fn ($q) => $q->where('is_purchasable', true))
+                ->limit(30)->get()
+                ->sortBy(fn ($u) => [$u->product->name, $buying && $u->product->buying_uom_id === $u->uom_id ? 0 : 1, -(float) $u->factor])
+                ->mapWithKeys(fn ($u) => [$u->id => self::unitLabel($u, $buying)]))
+            ->getOptionLabelUsing(fn ($value) => ($u = ProductUom::find($value)) ? self::unitLabel($u, $buying) : null);
     }
 
     /** Warehouses where the signed-in person holds the permission. */

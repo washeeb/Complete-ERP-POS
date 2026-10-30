@@ -17,7 +17,9 @@ use App\Filament\Support\QuickCreate;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
+use App\Models\SupplierProduct;
 use App\Models\Warehouse;
+use App\Support\Gs1;
 use App\Support\Money;
 use App\Support\Qty;
 use BackedEnum;
@@ -136,14 +138,26 @@ class PurchaseOrderResource extends Resource
             ]),
             Section::make('Lines')->description('Costs are before tax. Leave the cost blank to use the supplier’s last cost.')->schema([
                 Repeater::make('lines')->hiddenLabel()->itemNumbers()->columns(6)->minItems(1)->addActionLabel('Add line')->schema([
-                    Fields::productUnit()->live()->columnSpan(3),
-                    TextInput::make('qty')->label('Quantity')->required()->numeric()->minValue(0.001),
+                    Fields::productUnit(buying: true)->live()->columnSpan(3),
+                    TextInput::make('qty')->label('Quantity')->required()->numeric()->minValue(0.001)
+                        ->helperText(fn (Get $get) => self::packRule($get('../../supplier_id'), $get('product_uom_id'))),
                     TextInput::make('unit_cost')->label('Cost per unit')->numeric()->minValue(0),
                     Fields::available('../../warehouse_id')->label('In stock there'),
                     Fields::duplicateWarning(),
                 ]),
             ]),
         ]);
+    }
+
+    /** "Supplier sells at least 2, in multiples of 5" for the chosen supplier and pack; null when they set no rule. */
+    public static function packRule(?string $supplierId, ?string $productUomId): ?string
+    {
+        $sp = $supplierId && $productUomId ? SupplierProduct::where('supplier_id', $supplierId)->where('product_uom_id', $productUomId)->first() : null;
+        $min = $sp ? (float) $sp->min_order_qty : 0;
+        $step = $sp ? (float) $sp->order_multiple : 0;
+
+        return $min > 0 || $step > 0 ? 'Supplier sells '.implode(', ', array_filter([$min > 0 ? 'at least '.Fields::qty($sp->min_order_qty) : null,
+            $step > 0 ? 'in multiples of '.Fields::qty($sp->order_multiple) : null])) : null;
     }
 
     public static function infolist(Schema $schema): Schema
@@ -241,6 +255,19 @@ class PurchaseOrderResource extends Resource
                         TextInput::make('qty')->label('Received now')->numeric()->minValue(0)->required(),
                         Select::make('bin_id')->label('Into bin')->options(Fields::bins($record->warehouse_id))
                             ->visible($record->warehouse->use_bins)->placeholder('Receiving dock'),
+                        // The square GS1 code on medicine packs carries the batch and expiry: one scan fills both.
+                        TextInput::make('pack_code')->label('Scan the pack code (optional)')->placeholder('GS1 DataMatrix on the box')->dehydrated(false)
+                            ->visible(fn (Get $get) => (bool) $get('batched'))->live(onBlur: true)
+                            ->afterStateUpdated(function (?string $state, Set $set) {
+                                $code = $state ? Gs1::parse($state) : null;
+                                if ($code && $code['batch']) {
+                                    $set('batch_no', $code['batch']);
+                                }
+                                if ($code && $code['expires_on']) {
+                                    $set('expires_on', $code['expires_on']);
+                                }
+                            })
+                            ->helperText('Fills in the batch and expiry from the code; check them against the box.'),
                         TextInput::make('batch_no')->label('Batch no.')->maxLength(60)->visible(fn (Get $get) => (bool) $get('batched'))->required(fn (Get $get) => (bool) $get('batched')),
                         DatePicker::make('expires_on')->label('Expiry')->visible(fn (Get $get) => (bool) $get('batched')),
                         TagsInput::make('serials')->label('Serial / IMEI numbers (scan each)')->columnSpanFull()->visible(fn (Get $get) => (bool) $get('serialised')),

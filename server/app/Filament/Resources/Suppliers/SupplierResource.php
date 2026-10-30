@@ -79,7 +79,7 @@ class SupplierResource extends Resource
     public static function toFormData(Supplier $s): array
     {
         return ['products' => $s->products()->get()->map(fn ($p) => [
-            'product_uom_id' => $p->product_uom_id, 'supplier_sku' => $p->supplier_sku, 'min_order_qty' => Fields::qty($p->min_order_qty),
+            'product_uom_id' => $p->product_uom_id, 'supplier_sku' => $p->supplier_sku, 'min_order_qty' => Fields::qty($p->min_order_qty), 'order_multiple' => Fields::qty($p->order_multiple),
             'last_cost' => $p->last_cost_minor === null ? null : Money::format($p->last_cost_minor, $s->currency_code), 'is_preferred' => $p->is_preferred,
         ])->all()];
     }
@@ -102,13 +102,14 @@ class SupplierResource extends Resource
                 Toggle::make('is_active')->label('Active')->default(true)->inline(false),
                 Textarea::make('notes')->columnSpanFull(),
             ]),
-            Section::make('Products supplied')->description('The unit you buy in (e.g. a carton of 24), their code and your last cost before tax. Purchase orders fill in from here.')
+            Section::make('Products supplied')->description('The pack they sell (e.g. a box of 100 or a carton of 24), their code, your last cost before tax, the least they accept and the steps they sell in (e.g. 5 boxes at a time; 0 = any). Purchase orders fill in from here.')
                 ->schema([
-                    Repeater::make('products')->hiddenLabel()->columns(6)->defaultItems(0)->addActionLabel('Add product')->schema([
-                        Fields::productUnit()->columnSpan(2),
+                    Repeater::make('products')->hiddenLabel()->columns(7)->defaultItems(0)->addActionLabel('Add product')->schema([
+                        Fields::productUnit(buying: true)->label('Product and their pack')->columnSpan(2),
                         TextInput::make('supplier_sku')->label('Their code')->maxLength(60),
-                        TextInput::make('last_cost')->label('Cost per unit')->numeric()->minValue(0),
+                        TextInput::make('last_cost')->label('Cost per pack')->numeric()->minValue(0),
                         TextInput::make('min_order_qty')->label('Minimum order')->numeric()->minValue(0)->default('0'),
+                        TextInput::make('order_multiple')->label('In multiples of')->numeric()->minValue(0)->default('0'),
                         Toggle::make('is_preferred')->label('Preferred')->inline(false),
                     ]),
                 ]),

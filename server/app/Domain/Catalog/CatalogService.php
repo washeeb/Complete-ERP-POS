@@ -92,7 +92,7 @@ final class CatalogService
 
         return [
             'base_barcodes' => $base?->barcodes->pluck('code')->all() ?? [],
-            'units' => $p->units->where('is_base', false)->where('is_sellable', true)->values()->map(fn ($u) => [
+            'units' => $p->units->where('is_base', false)->filter(fn ($u) => $u->is_sellable || $u->is_purchasable)->values()->map(fn ($u) => [
                 'uom_id' => $u->uom_id, 'factor' => rtrim(rtrim((string) $u->factor, '0'), '.'), 'is_sellable' => $u->is_sellable,
                 'is_purchasable' => $u->is_purchasable, 'barcodes' => $u->barcodes->pluck('code')->all(),
             ])->all(),
@@ -181,10 +181,11 @@ final class CatalogService
         }
 
         $data = Caps::keys($data, ['name', 'generic_name', 'strength', 'dosage_form', 'dosage']); // one uniform list
-        $product->fill(array_intersect_key($data, array_flip(['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu', 'location',
+        $product->fill(array_intersect_key($data, array_flip(['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'buying_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu', 'location',
             'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'dosage', 'daily_use', 'nhis_price_minor', 'fda_reg_no', 'station', 'track_serials', 'warranty_months', 'consignor_id', 'consignment_bp',
             'service_minutes', 'commission_bp', 'licence_keys',
             'is_container', 'deposit_product_id', 'deposit_per_unit', 'industry_id'])));
+        $product->buying_uom_id = $product->buying_uom_id ?: null;
         $product->daily_use = $product->daily_use === null || $product->daily_use === '' || (float) $product->daily_use <= 0 ? null : $product->daily_use; // refill reminders
         if ($product->daily_use !== null && (float) $product->daily_use > 1000) {
             throw new DomainException('Used a day: the amount one patient takes a day, in the base unit (e.g. 1 or 2 tablets).');
@@ -324,6 +325,10 @@ final class CatalogService
                     ['product_id' => $product->id] + array_filter($summary));
             }
 
+            // The usual buying unit is one of the product's units that is bought (none = the largest such unit, as before).
+            if ($product->buying_uom_id && ! $product->units()->where('uom_id', $product->buying_uom_id)->where('is_purchasable', true)->exists()) {
+                throw new DomainException('The usual buying unit must be one of this product’s units, marked Bought (add it under Barcodes and units first).');
+            }
             ZeroStock::ensure($actor->tenantId, [$product->id]); // on Stock on hand from the start, in each store of its industry
 
             return $product->fresh(['units.uom', 'barcodes', 'prices']);
