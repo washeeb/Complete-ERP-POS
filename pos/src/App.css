@@ -46,7 +46,9 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
 .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .keypad button { font-size: 1.4rem; min-height: 60px; }
 .pin { letter-spacing: .4em; }
-
+/* PINs are masked text, not password fields: browsers then never offer to save or fill them on a shared till. */
+.pin-mask { -webkit-text-security: disc; }
+.signed-in { margin: .25rem 0 .5rem; }
 .sell { display: grid; grid-template-columns: minmax(280px, 2fr) 3fr; grid-template-rows: auto auto 1fr; gap: 12px; height: calc(100vh - 24px); }
 .topbar { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .sell > .banner { grid-column: 1 / -1; }

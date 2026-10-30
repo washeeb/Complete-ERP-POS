@@ -6,6 +6,7 @@ import { prettyQty, toMilli } from '../money'
 import { describeChoices, groupsFor, heldCourses, kitchenNote, minutesSince, modifierError, tableBooking, unpaid } from '../restaurant'
 import { BookingsPanel, DeliveryDialog, WasteDialog } from './RestaurantExtras'
 import type { DiningItem, DiningOrder, DiningTable, Floor as FloorData, Product, Restaurant } from '../types'
+import { SignedIn } from './SignedIn'
 
 const COURSES = ['Now', 'Starter', 'Main', 'Dessert'] as const
 const STATUS: Record<DiningItem['status'], string> = { held: 'Waiting', fired: 'In kitchen', ready: 'Ready', served: 'Served', void: 'Voided' }
@@ -355,8 +356,9 @@ function VoidDialog({ message, needsApproval, busy, onVoid, onCancel }: {
         <label>Reason<input autoFocus value={reason} onChange={(e) => setReason(e.target.value)} maxLength={200} placeholder="e.g. customer changed order, spilled" /></label>
         {needsApproval && (
           <div className="row">
-            <label>Supervisor username<input value={username} onChange={(e) => setUsername(e.target.value)} autoCapitalize="none" /></label>
-            <label>Supervisor PIN<input type="password" inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))} /></label>
+            <SignedIn />
+            <label>Supervisor username<input autoComplete="off" value={username} onChange={(e) => setUsername(e.target.value)} autoCapitalize="none" /></label>
+            <label>Supervisor PIN<input type="text" className="pin-mask" autoComplete="off" inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))} /></label>
           </div>
         )}
         <div className="row"><button type="button" onClick={onCancel} disabled={busy}>Back</button><button className="primary big" disabled={busy || !reason.trim()}>Void</button></div>

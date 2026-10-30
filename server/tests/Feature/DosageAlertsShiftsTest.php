@@ -120,3 +120,17 @@ it('names each till session by shift, needs a manager outside trading hours or t
     expect(fn () => app(CashControl::class)->saveTemplate($this->a, new ShiftTemplate, ['name' => 'Evening', 'starts_at' => '20:00', 'ends_at' => '23:00']))
         ->toThrow(DomainException::class, 'overlaps Afternoon by 3 h');
 });
+
+it('lets another teller take over the till in the same shift without a manager', function () {
+    app(Settings::class)->set($this->a, 'pos.auto_shifts', true);
+    $this->withToken($this->token)->postJson('/api/v1/pos/shifts/open', ['opening_float_minor' => 0])->assertCreated()->assertJsonPath('shift.shift_name', 'Morning');
+    $this->withToken($this->token)->postJson('/api/v1/pos/shifts/close', ['counted_cash_minor' => 0])->assertOk();
+
+    $other = staff($this->owner, 'ama', 2, 'teller', ScopeType::Till, $this->till->id);
+    app(AccessService::class)->setPin($this->a, $other, '5173');
+    app('auth')->forgetGuards();
+    $ama = $this->withToken($this->deviceToken)->postJson('/api/v1/pos/login', ['username' => 'ama', 'pin' => '5173'])->assertOk()->json('token');
+    app('auth')->forgetGuards();
+    $this->withToken($ama)->postJson('/api/v1/pos/shifts/open', ['opening_float_minor' => 0])->assertCreated()->assertJsonPath('shift.shift_name', 'Morning');
+    expect(Shift::where('status', 'open')->sole())->opened_by->toBe($other->id)->granted_by_name->toBeNull();
+});

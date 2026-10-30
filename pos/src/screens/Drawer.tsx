@@ -6,6 +6,7 @@ import { formatMoney, parseMoney } from '../money'
 import { offlineSignIn } from '../offline'
 import type { DrawerSlip } from '../slip'
 import type { Bootstrap } from '../types'
+import { SignedIn } from './SignedIn'
 
 type Tab = 'payout' | 'payin' | 'drop' | 'no_sale'
 const TABS: { key: Tab; label: string }[] = [
@@ -133,8 +134,9 @@ export function DrawerScreen({ boot, online, initial = 'payout', onDone, onCance
         {needsSupervisor && (
           <fieldset className="supervisor">
             <legend>{approver}</legend>
-            <label>{approver} username<input value={supUser} onChange={(e) => setSupUser(e.target.value)} autoCapitalize="none" /></label>
-            <label>{approver} PIN<input type="password" inputMode="numeric" value={supPin} onChange={(e) => setSupPin(e.target.value.replace(/\D/g, '').slice(0, 8))} /></label>
+            <SignedIn />
+            <label>{approver} username<input autoComplete="off" value={supUser} onChange={(e) => setSupUser(e.target.value)} autoCapitalize="none" /></label>
+            <label>{approver} PIN<input type="text" className="pin-mask" autoComplete="off" inputMode="numeric" value={supPin} onChange={(e) => setSupPin(e.target.value.replace(/\D/g, '').slice(0, 8))} /></label>
           </fieldset>
         )}
         {error && <p className="error" role="alert">{error}</p>}

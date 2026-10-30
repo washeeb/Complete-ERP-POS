@@ -12,6 +12,7 @@ import { TillSettings } from './screens/TillSettings'
 import { Receipt } from './screens/Receipt'
 import { Sell } from './screens/Sell'
 import type { Bootstrap, PostedSale, Product } from './types'
+import { setSignedInName } from './screens/SignedIn'
 
 // Screens only some devices use load when needed (a till never downloads the kitchen screen at start-up).
 const Handheld = lazy(() => import('./screens/Handheld').then((m) => ({ default: m.Handheld })))
@@ -95,6 +96,7 @@ export default function App() {
           openedById: b.shift.opened_by_id, openedByName: b.shift.opened_by })
       }
       setBoot({ ...b, user: { id: session.userId, name: session.userName }, shift })
+      setSignedInName(session.userName)
       setProducts(p)
       setCatalogVersion(version)
       if (!b.till) {
@@ -173,6 +175,7 @@ export default function App() {
     const handheld = (await getDevice())?.kind === 'handheld'
     if ((await getSession())?.token) await (handheld ? wms.logout() : api.logout()).catch(() => undefined)
     await db.kv.delete('session')
+    setSignedInName('')
     setStage('login')
   }
 
@@ -227,7 +230,7 @@ export default function App() {
       {stage === 'loading' && <p className="center muted">Loading…</p>}
       {stage === 'enroll' && <Enroll onDone={load} />}
       {stage === 'login' && <Login onDone={load} />}
-      {stage === 'open-shift' && boot && <OpenShift boot={boot} online={online} onDone={load} />}
+      {stage === 'open-shift' && boot && <OpenShift boot={boot} online={online} onDone={load} onLogout={logout} />}
       {stage === 'sell' && boot && (
         <Sell boot={boot} products={products} online={online} catalogVersion={catalogVersion} queue={queue}
           onRefresh={refreshCatalog} onLogout={logout} onCloseShift={() => setStage('close-shift')} onSettings={() => setStage('settings')} onSendNow={flush}

@@ -4,6 +4,7 @@ import { search } from '../cart'
 import { addSerial } from '../electronics'
 import { formatMoney, parseMoney } from '../money'
 import type { Product, RepairJob, SerialInfo, TradeInItem } from '../types'
+import { SignedIn } from './SignedIn'
 
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e))
 
@@ -83,8 +84,9 @@ export function TradeInDialog({ products, currency, exponent, due, onAdd, onCanc
         <label>Value given<input className="big mono" inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} /></label>
         <p className="muted small">A supervisor approves unless you may accept trade-ins yourself.</p>
         <div className="row">
-          <label>Supervisor username<input value={who.username} onChange={(e) => setWho({ ...who, username: e.target.value })} autoCapitalize="none" /></label>
-          <label>Supervisor PIN<input type="password" inputMode="numeric" value={who.pin} onChange={(e) => setWho({ ...who, pin: e.target.value.replace(/\D/g, '').slice(0, 8) })} /></label>
+          <SignedIn />
+          <label>Supervisor username<input autoComplete="off" value={who.username} onChange={(e) => setWho({ ...who, username: e.target.value })} autoCapitalize="none" /></label>
+          <label>Supervisor PIN<input type="text" className="pin-mask" autoComplete="off" inputMode="numeric" value={who.pin} onChange={(e) => setWho({ ...who, pin: e.target.value.replace(/\D/g, '').slice(0, 8) })} /></label>
         </div>
         <div className="row"><button type="button" onClick={onCancel}>Back</button><button className="primary big">Add trade-in</button></div>
       </form>

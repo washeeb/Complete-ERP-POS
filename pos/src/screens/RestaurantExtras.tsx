@@ -3,6 +3,7 @@ import { v7 as uuidv7 } from 'uuid'
 import { ApiError, dining, type WasteBody, type WasteProduct, type WasteResult } from '../api'
 import { formatMoney, parseMoney } from '../money'
 import type { DiningOrder, DiningTable, Reservation } from '../types'
+import { SignedIn } from './SignedIn'
 
 const PLATFORMS = [['bolt_food', 'Bolt Food'], ['glovo', 'Glovo'], ['chowdeck', 'Chowdeck']] as const
 const NETWORKS = [['mtn', 'MTN MoMo'], ['telecel', 'Telecel Cash'], ['at', 'AT Money']] as const
@@ -145,8 +146,9 @@ function DepositDialog({ r, refund, money, onDone, onCancel }: { r: Reservation;
         {method !== 'cash' && <label>{method === 'momo' ? 'Transaction ID' : 'Reference (optional)'}<input value={reference} onChange={(e) => setReference(e.target.value)} maxLength={80} /></label>}
         {approval && (
           <div className="row">
-            <label>Supervisor username<input value={approval.username} onChange={(e) => setApproval({ ...approval, username: e.target.value })} autoCapitalize="none" /></label>
-            <label>Supervisor PIN<input type="password" inputMode="numeric" value={approval.pin} onChange={(e) => setApproval({ ...approval, pin: e.target.value.replace(/\D/g, '').slice(0, 8) })} /></label>
+            <SignedIn />
+            <label>Supervisor username<input autoComplete="off" value={approval.username} onChange={(e) => setApproval({ ...approval, username: e.target.value })} autoCapitalize="none" /></label>
+            <label>Supervisor PIN<input type="text" className="pin-mask" autoComplete="off" inputMode="numeric" value={approval.pin} onChange={(e) => setApproval({ ...approval, pin: e.target.value.replace(/\D/g, '').slice(0, 8) })} /></label>
           </div>
         )}
         <div className="row"><button type="button" onClick={onCancel}>Back</button><button className="primary big">{refund ? 'Refund' : 'Take deposit'}</button></div>
@@ -245,14 +247,15 @@ export function WasteDialog({ products, identify, money, onSave, onCancel }: {
         <label>What happened<input value={reason} onChange={(e) => setReason(e.target.value)} maxLength={120} placeholder="burnt, dropped, past its date…" /></label>
         {identify && (
           <div className="row">
-            <label>Your username<input value={who.username} onChange={(e) => setWho({ ...who, username: e.target.value })} autoCapitalize="none" /></label>
-            <label>Your PIN<input type="password" inputMode="numeric" value={who.pin} onChange={(e) => setWho({ ...who, pin: e.target.value.replace(/\D/g, '').slice(0, 8) })} /></label>
+            <label>Your username<input autoComplete="off" value={who.username} onChange={(e) => setWho({ ...who, username: e.target.value })} autoCapitalize="none" /></label>
+            <label>Your PIN<input type="text" className="pin-mask" autoComplete="off" inputMode="numeric" value={who.pin} onChange={(e) => setWho({ ...who, pin: e.target.value.replace(/\D/g, '').slice(0, 8) })} /></label>
           </div>
         )}
         {approval && (
           <div className="row">
-            <label>Manager username<input value={approval.username} onChange={(e) => setApproval({ ...approval, username: e.target.value })} autoCapitalize="none" /></label>
-            <label>Manager PIN<input type="password" inputMode="numeric" value={approval.pin} onChange={(e) => setApproval({ ...approval, pin: e.target.value.replace(/\D/g, '').slice(0, 8) })} /></label>
+            <SignedIn />
+            <label>Manager username<input autoComplete="off" value={approval.username} onChange={(e) => setApproval({ ...approval, username: e.target.value })} autoCapitalize="none" /></label>
+            <label>Manager PIN<input type="text" className="pin-mask" autoComplete="off" inputMode="numeric" value={approval.pin} onChange={(e) => setApproval({ ...approval, pin: e.target.value.replace(/\D/g, '').slice(0, 8) })} /></label>
           </div>
         )}
         <div className="row"><button type="button" onClick={onCancel}>Back</button><button className="primary big">Record waste</button></div>

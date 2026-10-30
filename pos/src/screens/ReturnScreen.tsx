@@ -4,6 +4,7 @@ import { api, ApiError } from '../api'
 import { divRound, prettyQty, toMilli } from '../money'
 import { getLocalShift, nextSeq } from '../db'
 import type { Bootstrap, PostedSale, Returnable } from '../types'
+import { SignedIn } from './SignedIn'
 
 const METHOD: Record<string, string> = { cash: 'Cash', momo: 'Mobile money', card: 'Card', account: 'Customer account', points: 'Points', gift_card: 'Gift card', store_credit: 'Store credit', nhis: 'NHIS (comes off the next claim)' }
 
@@ -117,8 +118,9 @@ export function ReturnScreen({ boot, money, onDone }: { boot: Bootstrap; money: 
         <label>Reason<input aria-label="Return reason" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={255} /></label>
         {needsApproval && (
           <div className="grid2">
-            <label>Supervisor username<input value={supervisor.username} onChange={(e) => setSupervisor({ ...supervisor, username: e.target.value })} autoCapitalize="none" /></label>
-            <label>Supervisor PIN<input type="password" inputMode="numeric" value={supervisor.pin} onChange={(e) => setSupervisor({ ...supervisor, pin: e.target.value.replace(/\D/g, '') })} /></label>
+            <SignedIn />
+            <label>Supervisor username<input autoComplete="off" value={supervisor.username} onChange={(e) => setSupervisor({ ...supervisor, username: e.target.value })} autoCapitalize="none" /></label>
+            <label>Supervisor PIN<input type="text" className="pin-mask" autoComplete="off" inputMode="numeric" value={supervisor.pin} onChange={(e) => setSupervisor({ ...supervisor, pin: e.target.value.replace(/\D/g, '') })} /></label>
           </div>
         )}
         {error && <p className="error" role="alert">{error}</p>}
