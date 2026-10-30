@@ -52,6 +52,7 @@ Route::prefix('v1')->group(function () {
         Route::get('stock', [PosController::class, 'stock']); // stock figures only, after each sale
         Route::get('customers', [PosController::class, 'customers']);
         Route::post('shifts/open', [PosController::class, 'openShift']);
+        Route::post('vaults/lend', [PosController::class, 'lendVault']); // a manager lends a vault to the person signed in, by PIN
         Route::post('shifts/close', [PosController::class, 'closeShift']);
         Route::post('drawer', [PosController::class, 'drawer']);
         Route::post('settings', [PosController::class, 'settings']); // the till's own printer and screen settings, by a manager's PIN

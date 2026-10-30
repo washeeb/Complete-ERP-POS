@@ -7,11 +7,13 @@ use App\Filament\Resources\Users\UserResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\MiniTable;
 use App\Support\People;
+use App\Support\StaffCard;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\HtmlString;
 
 class EditUser extends EditRecord
 {
@@ -45,6 +47,23 @@ class EditUser extends EditRecord
                 ])
                 ->action(fn (array $data) => Erp::run(fn ($actor) => app(AccessService::class)
                     ->setPin($actor, $this->record, $data['pin']), 'PIN set')),
+            // Staff card: scanned at the till instead of typing the username (the PIN is still needed). Shown once, to print.
+            Action::make('staffCard')->label(fn () => $this->record->badge_hash ? 'New staff card' : 'Staff card')->icon(Heroicon::OutlinedIdentification)->color('gray')
+                ->requiresConfirmation()
+                ->modalDescription(fn () => ($this->record->badge_hash ? 'Their current card stops working at once. ' : '')
+                    .'The card is scanned on the till instead of typing the username; the PIN is still needed, so a lost card alone cannot sign anyone in.')
+                ->action(function () {
+                    $code = Erp::run(fn ($actor) => app(AccessService::class)->issueBadge($actor, $this->record));
+                    if (is_string($code)) {
+                        $this->replaceMountedAction('printCard', ['code' => $code]);
+                    }
+                }),
+            Action::make('printCard')->hidden()->modalHeading('Print the staff card')->modalSubmitAction(false)->modalCancelActionLabel('Done')
+                ->modalContent(fn (array $arguments) => new HtmlString(StaffCard::html($this->record, (string) ($arguments['code'] ?? '')))),
+            Action::make('revokeCard')->label('Card lost')->icon(Heroicon::OutlinedNoSymbol)->color('danger')
+                ->visible(fn () => (bool) $this->record->badge_hash)->requiresConfirmation()
+                ->modalDescription('The card stops working at once. The person signs in with their username and PIN until a new card is printed.')
+                ->action(fn () => Erp::run(fn ($actor) => app(AccessService::class)->revokeBadge($actor, $this->record) ?? true, 'Card stopped')),
             // A lost or deleted authenticator app: cleared here, set up again by the person at their next sign-in.
             Action::make('resetMfa')->label('Reset two-step sign-in')->icon(Heroicon::OutlinedShieldExclamation)->color('danger')
                 ->visible(fn () => $this->record->app_authentication_secret !== null && $this->record->id !== Erp::user()->id)

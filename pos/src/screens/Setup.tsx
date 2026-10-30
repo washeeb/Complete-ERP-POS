@@ -1,5 +1,5 @@
 import { clock } from '../clock'
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { api, ApiError, type ShiftGrant } from '../api'
 import { db } from '../db'
 import { createDeviceKey } from '../deviceKey'
@@ -7,6 +7,7 @@ import { formatMoney, parseMoney } from '../money'
 import { offlineSignIn, saveGrant } from '../offline'
 import { applyUpdateIfWaiting, UPDATE_READY } from '../swUpdate'
 import { closeShift, openShift } from '../till'
+import { isStaffCard, personColor } from '../person'
 import { CLOSE_CHECKS, type Bootstrap, type OtherCheck, type Shift } from '../types'
 import { SignedIn } from './SignedIn'
 
@@ -55,6 +56,8 @@ export function Login({ onDone, deviceName }: { onDone: () => void; deviceName?:
   const [pin, setPin] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const pinRef = useRef<HTMLInputElement>(null)
+  const card = isStaffCard(username) // a scanned staff card stands in for the username; the PIN is still needed
 
   // A new till version waiting: switch to it here, where nobody is in the middle of a sale (not while someone types).
   const typing = username !== '' || pin !== ''
@@ -67,13 +70,14 @@ export function Login({ onDone, deviceName }: { onDone: () => void; deviceName?:
 
   async function submit(e?: React.FormEvent) {
     e?.preventDefault()
+    if (card && pin.length < 4) return pinRef.current?.focus() // the scanner's Enter after the card: now the PIN
     if (!username || pin.length < 4) return
     setBusy(true)
     setError('')
     try {
       try {
         const r = await api.login(username.trim(), pin)
-        if (r.offline_grant) await saveGrant(r.offline_grant) // lets this person keep selling here if the server goes away (tills only)
+        if (r.offline_grant) await saveGrant(r.offline_grant, card ? username : null) // lets this person keep selling here if the server goes away (tills only)
         await db.kv.put({ id: 'session', token: r.token, userId: r.user.id, userName: r.user.name, expiresAt: r.expires_at })
       } catch (err) {
         if (!(err instanceof ApiError && err.code === 'network')) throw err
@@ -119,13 +123,20 @@ export function Login({ onDone, deviceName }: { onDone: () => void; deviceName?:
     <form className="card narrow" onSubmit={submit}>
       <h1>Sign in</h1>
       {deviceName && <p className="muted">{deviceName}</p>}
-      <label>
-        Username
-        <input autoFocus className="big" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="off" autoCapitalize="none" spellCheck={false} required />
-      </label>
+      {card ? (
+        <div className="card-scanned" role="status">
+          <span>Staff card scanned. Type your PIN.</span>
+          <button type="button" onClick={() => { setUsername(''); setPin('') }}>Not my card</button>
+        </div>
+      ) : (
+        <label>
+          Username, or scan your staff card
+          <input autoFocus className="big" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="off" autoCapitalize="none" spellCheck={false} required />
+        </label>
+      )}
       <label>
         PIN
-        <input className="big mono pin pin-mask" type="text" inputMode="numeric" value={pin} autoComplete="off"
+        <input ref={pinRef} className="big mono pin pin-mask" type="text" inputMode="numeric" value={pin} autoComplete="off"
           onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))} />
       </label>
       <div className="keypad" aria-label="PIN keypad">
@@ -174,6 +185,11 @@ export function OpenShift({ boot, online, onDone, onLogout }: { boot: Bootstrap;
   const issued = (boot.cash?.sessions ?? []).filter((v) => v.status === 'issued')
   const [vaultId, setVaultId] = useState<string>(issued[0]?.id ?? '')
   const [checked, setChecked] = useState(false)
+  // Personal vaults: she opens only on her own vault (or one lent to her today); without one, a manager lends one by PIN.
+  const personal = boot.personal_vaults ?? null
+  const mine = personal?.mine ?? []
+  const [ownId, setOwnId] = useState<string>(mine.find((v) => !v.in_use)?.id ?? '')
+  const [lending, setLending] = useState(false)
   // Automatic shifts: outside trading hours, or again after this till's shift was closed, a manager allows it.
   const [needsGrant, setNeedsGrant] = useState(false)
   const [grant, setGrant] = useState<ShiftGrant>({ username: '', pin: '', reason: '' })
@@ -183,7 +199,11 @@ export function OpenShift({ boot, online, onDone, onLogout }: { boot: Bootstrap;
     e.preventDefault()
     const allowed = needsGrant ? grant : null
     try {
-      if (vaults) {
+      if (personal) {
+        const v = mine.find((x) => x.id === ownId)
+        if (!v) throw new Error('Choose your vault.')
+        await openShift(v.float_minor, online, null, allowed, { id: v.id, name: v.name })
+      } else if (vaults) {
         const v = issued.find((x) => x.id === vaultId)
         if (!v) throw new Error('Choose your vault.')
         await openShift(v.float_minor, online, v.id, allowed)
@@ -195,6 +215,10 @@ export function OpenShift({ boot, online, onDone, onLogout }: { boot: Bootstrap;
       if (err instanceof ApiError && (err.code === 'outside_hours' || err.code === 'till_closed')) setNeedsGrant(true)
       setError(err instanceof Error ? err.message : 'Could not open the shift.')
     }
+  }
+
+  if (personal && (mine.length === 0 || lending)) {
+    return <LendVault boot={boot} online={online} onLent={onDone} onBack={mine.length ? () => setLending(false) : null} onLogout={onLogout} />
   }
 
   if (vaults && issued.length === 0) {
@@ -213,7 +237,25 @@ export function OpenShift({ boot, online, onDone, onLogout }: { boot: Bootstrap;
       <h1>Open shift</h1>
       <p className="muted">{boot.branch.name} · {boot.till?.name}. Count the cash before you start.</p>
       <p className="signed-in">This shift will be <strong>{boot.user.name}</strong>’s. Not you? <button type="button" className="link" onClick={onLogout}>Sign out</button></p>
-      {vaults ? (
+      {personal ? (
+        <>
+          <fieldset className="vaults">
+            <legend>Your vault</legend>
+            {mine.map((v) => (
+              <label key={v.id} className={`vault-choice ${v.in_use ? 'taken' : ''}`}>
+                <input type="radio" name="vault" value={v.id} checked={ownId === v.id} disabled={!!v.in_use} onChange={() => setOwnId(v.id)} />
+                <span><strong>{v.name}</strong> · float {money(v.float_minor)}{v.lent_by ? ` · lent to you today by ${v.lent_by}` : ''}{v.in_use ? ` · open on ${v.in_use}` : ''}</span>
+              </label>
+            ))}
+          </fieldset>
+          <label className="check">
+            <input type="checkbox" checked={checked} onChange={(e) => setChecked(e.target.checked)} required />
+            {personal.trays === 'shared' ? 'I have counted the cash in the drawer' : personal.trays === 'till' ? 'I have counted the float in my drawer' : 'My own tray is in the drawer and I have counted its float'}: {money(mine.find((x) => x.id === ownId)?.float_minor ?? 0)}
+          </label>
+          <p className="muted small">Only your vault is shown, so your sales and cash are never counted under someone else.{' '}
+            <button type="button" className="link" onClick={() => setLending(true)}>Covering for someone? A manager lends you their vault</button></p>
+        </>
+      ) : vaults ? (
         <>
           <fieldset className="vaults">
             <legend>Your vault</legend>
@@ -247,6 +289,57 @@ export function OpenShift({ boot, online, onDone, onLogout }: { boot: Bootstrap;
       )}
       {error && <p className="error" role="alert">{error}</p>}
       <button className="primary big">{needsGrant ? 'Open shift (manager allows)' : 'Open shift'}</button>
+    </form>
+  )
+}
+
+/** No vault of her own here today: a manager lends her one (theirs is away, or she covers) with their username and PIN. */
+function LendVault({ boot, online, onLent, onBack, onLogout }: { boot: Bootstrap; online: boolean; onLent: () => void; onBack: (() => void) | null; onLogout: () => void }) {
+  const others = (boot.personal_vaults?.branch ?? []).filter((v) => !(boot.personal_vaults?.mine ?? []).some((m) => m.id === v.id))
+  const [vaultId, setVaultId] = useState(others[0]?.id ?? '')
+  const [approval, setApproval] = useState({ username: '', pin: '' })
+  const [reason, setReason] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  async function lend(e: React.FormEvent) {
+    e.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      await api.lendVault(vaultId, reason, approval)
+      onLent()
+    } catch (err) {
+      setApproval({ ...approval, pin: '' })
+      setError(err instanceof Error ? err.message : 'Could not lend the vault.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form className="card narrow" onSubmit={lend}>
+      <h1>Open shift</h1>
+      <p className="who-band" style={{ background: personColor(boot.user.id) }}>{boot.user.name}</p>
+      {!onBack && <p>You have no vault on {boot.till?.name ?? 'this till'} today. Each person sells only from her own vault.</p>}
+      <p className="muted">A manager can lend you another person's vault for today (they are away, or you cover their shift). Otherwise ask for a vault of your own (Cash → Shifts and vaults).</p>
+      {!online && <p className="error">Lending a vault needs the server. Try again when the till is online.</p>}
+      {others.length === 0 ? <p className="muted">There is no other vault at this branch.</p> : (
+        <>
+          <label>Vault<select value={vaultId} onChange={(e) => setVaultId(e.target.value)}>
+            {others.map((v) => <option key={v.id} value={v.id}>{v.name}{v.holder ? ` (${v.holder})` : ''}</option>)}
+          </select></label>
+          <SignedIn />
+          <label>Manager's username<input autoComplete="off" autoCapitalize="none" value={approval.username} onChange={(e) => setApproval({ ...approval, username: e.target.value })} required /></label>
+          <label>Manager's PIN<input type="text" className="pin-mask" inputMode="numeric" autoComplete="off" value={approval.pin} onChange={(e) => setApproval({ ...approval, pin: e.target.value.replace(/\D/g, '').slice(0, 8) })} required /></label>
+          <label>Reason<input maxLength={255} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Ama is on leave" required /></label>
+        </>
+      )}
+      {error && <p className="error" role="alert">{error}</p>}
+      <div className="row">
+        {onBack ? <button type="button" onClick={onBack}>Back</button> : <button type="button" onClick={onLogout}>Sign out</button>}
+        <button className="primary big" disabled={busy || !online || others.length === 0 || approval.pin.length < 4}>{busy ? 'Checking…' : 'Lend it to me for today'}</button>
+      </div>
     </form>
   )
 }

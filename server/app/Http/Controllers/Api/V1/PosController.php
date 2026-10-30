@@ -25,6 +25,7 @@ use App\Domain\Pos\ReturnService;
 use App\Domain\Pos\SaleService;
 use App\Domain\Pos\ShiftService;
 use App\Domain\Pos\SupervisorApproval;
+use App\Domain\Pos\TellerVaults;
 use App\Domain\Purchasing\ReorderLevels;
 use App\Domain\Remote\DeviceHealth;
 use App\Domain\Restaurant\DiningSales;
@@ -55,6 +56,8 @@ use App\Models\StockLevel;
 use App\Models\Style;
 use App\Models\Tenant;
 use App\Models\Till;
+use App\Models\User;
+use App\Models\Vault;
 use App\Models\VaultSession;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
@@ -95,6 +98,9 @@ class PosController extends Controller
             'show_stock' => (bool) $settings->get('pos.show_stock', $device->tenant_id),
             'auto_print_receipt' => (bool) $settings->get('pos.auto_print_receipt', $device->tenant_id),
             'shift_per_person' => (bool) $settings->get('pos.shift_per_person', $device->tenant_id), // another person's open shift: close it first
+            'idle_lock_minutes' => (int) $settings->get('pos.idle_lock_minutes', $device->tenant_id), // lock the till after this long untouched (0 = never)
+            // Personal vaults: the vaults this person may open on here, and the branch's vaults a manager can lend (names only).
+            'personal_vaults' => $till ? $this->personalVaults($request->user(), $till) : null,
             'momo_confirm' => app(MomoCollections::class)->mode($device->tenant_id), // manual | prompt | prompt_only
             'require_details' => (string) $settings->forBranch('pos.require_details', $device->branch_id, $device->tenant_id), // name / phone before payment
             // The company's brand (Company → Branding): logo for the screen and the printed receipt, colour, and the product line.
@@ -340,11 +346,12 @@ class PosController extends Controller
             'opening_float_minor' => ['required', 'integer', 'min:0', 'max:100000000000'],
             'id' => ['nullable', 'uuid'], // till-generated, so the same shift can later be referenced offline
             'vault_session_id' => ['nullable', 'uuid'], // cash control: the vault the cashier issued to this teller
+            'vault_id' => ['nullable', 'uuid'], // personal vaults: the teller's own vault (or one lent to her today)
             'grant' => ['nullable', 'array'], // automatic shifts: a manager allows opening outside hours or again after closing
             'grant.username' => ['nullable', 'string', 'max:60'], 'grant.pin' => ['nullable', 'string', 'max:8'], 'grant.reason' => ['nullable', 'string', 'max:255'],
         ]);
         $shift = $shifts->open($this->device($request), $request->user(), (int) $data['opening_float_minor'], $data['id'] ?? null,
-            vaultSessionId: $data['vault_session_id'] ?? null, grant: $data['grant'] ?? null);
+            vaultSessionId: $data['vault_session_id'] ?? null, grant: $data['grant'] ?? null, vaultId: $data['vault_id'] ?? null);
 
         return response()->json(['shift' => $this->shiftJson($shift, $shifts)], 201);
     }
@@ -533,6 +540,35 @@ class PosController extends Controller
             ->orderByDesc('is_default')->orderBy('name')->get();
     }
 
+    /** @return array{flow: string, trays: string, mine: list<array>, branch: list<array>}|null */
+    private function personalVaults(User $user, Till $till): ?array
+    {
+        $vaults = app(TellerVaults::class);
+        if (! $vaults->enabled($till->tenant_id)) {
+            return null;
+        }
+
+        return [
+            'flow' => $vaults->flow($till->tenant_id), 'trays' => $vaults->trays($till->tenant_id),
+            'mine' => $vaults->availableFor($user, $till)->map(fn (array $r) => ['id' => $r['vault']->id, 'name' => $r['vault']->name,
+                'float_minor' => (int) $r['vault']->standard_float_minor, 'lent_by' => $r['lent_by'], 'in_use' => $r['in_use']])->all(),
+            'branch' => $vaults->ofBranch($till->branch_id)->where('is_active', true)->map(fn (Vault $v) => ['id' => $v->id, 'name' => $v->name,
+                'holder' => $v->holder?->name])->values()->all(),
+        ];
+    }
+
+    /** A manager lends a vault to the person signed in, for today (her own is away, or she covers someone). */
+    public function lendVault(Request $request, TellerVaults $vaults): JsonResponse
+    {
+        $data = $request->validate([
+            'vault_id' => ['required', 'uuid'], 'reason' => ['required', 'string', 'max:255'],
+            'approval' => ['required', 'array'], 'approval.username' => ['required', 'string', 'max:60'], 'approval.pin' => ['required', 'string', 'max:8'],
+        ]);
+        $cover = $vaults->lendByPin($this->device($request), $request->user(), Vault::findOrFail($data['vault_id']), $data['approval'], $data['reason']);
+
+        return response()->json(['lent_by' => $cover->granted_by_name]);
+    }
+
     private function shiftJson(?Shift $shift, ShiftService $shifts, bool $reveal = false): ?array
     {
         if (! $shift) {
@@ -542,6 +578,7 @@ class PosController extends Controller
         return [
             'id' => $shift->id, 'status' => $shift->status, 'opened_at' => $shift->opened_at->toIso8601String(), 'shift_name' => $shift->shift_name,
             'opened_by' => $shift->opened_by_name, 'opened_by_id' => $shift->opened_by, 'opening_float_minor' => $shift->opening_float_minor,
+            'vault' => $shift->vault_id ? $shift->vault?->name : null,
             // Blind count: expected cash is only revealed after the count is submitted.
             'expected_cash_minor' => $reveal ? $shift->expected_cash_minor : null,
             'counted_cash_minor' => $reveal ? $shift->counted_cash_minor : null,

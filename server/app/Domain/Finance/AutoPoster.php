@@ -124,7 +124,9 @@ final class AutoPoster
             'customer_openings' => [$this->unpostedQuery('customer_ledger', 'customer_ledger', $tenantId)->where('s.type', 'opening'), $d('s.occurred_at')],
             'online_orders' => [$this->unpostedQuery('sales_orders', 'sales_order', $tenantId)->where('s.status', 'fulfilled'), $d('s.fulfilled_at')],
             // A shift on a vault is settled by the cash chain (kind "cash"): the cashier's count, not the teller's, decides.
-            'shifts' => [$this->unpostedQuery('shifts', 'shift', $tenantId)->where('s.status', 'closed')->where('s.over_short_minor', '<>', 0)->whereNull('s.vault_session_id'), $d('s.closed_at')],
+            // On a teller's own vault (light flow) it waits for the manager's recount, which sets the over/short.
+            'shifts' => [$this->unpostedQuery('shifts', 'shift', $tenantId)->where('s.status', 'closed')->where('s.over_short_minor', '<>', 0)->whereNull('s.vault_session_id')
+                ->where(fn ($q) => $q->whereNull('s.vault_id')->orWhereNotNull('s.checked_at')), $d('s.closed_at')],
             'cash' => [$this->unpostedQuery('cash_movements', 'cash_movement', $tenantId), $d('s.occurred_at')],
             'loyalty' => [$this->unpostedQuery('loyalty_ledger', 'loyalty_ledger', $tenantId)->whereIn('s.type', ['earn', 'reverse', 'expire', 'opening']), $d('s.occurred_at')],
             'stored_value' => [$this->unpostedQuery('stored_value_ledger', 'stored_value_ledger', $tenantId)

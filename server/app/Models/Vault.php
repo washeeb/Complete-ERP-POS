@@ -8,7 +8,10 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/** A cash tray of one till for one shift (e.g. "T01 · Morning"), with its standard opening float. */
+/**
+ * A cash tray with its standard opening float: of one till for one shift (e.g. "T01 · Morning", the cashier chain), or a
+ * teller's own vault (holder set, no shift; of the branch or of one till).
+ */
 class Vault extends Model
 {
     use BelongsToTenant, HasOriginNode, HasUuids;
@@ -33,5 +36,10 @@ class Vault extends Model
     public function shiftTemplate(): BelongsTo
     {
         return $this->belongsTo(ShiftTemplate::class);
+    }
+
+    public function holder(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'holder_id');
     }
 }

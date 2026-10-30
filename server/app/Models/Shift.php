@@ -19,7 +19,8 @@ class Shift extends Model
     protected function casts(): array
     {
         return ['opened_at' => 'datetime', 'closed_at' => 'datetime', 'opening_float_minor' => 'integer', 'expected_cash_minor' => 'integer', 'counted_cash_minor' => 'integer', 'over_short_minor' => 'integer', 'counted_denoms' => 'array',
-            'expected_other' => 'array', 'counted_other' => 'array'];
+            'expected_other' => 'array', 'counted_other' => 'array', 'checked_count_minor' => 'integer', 'checked_denoms' => 'array', 'check_recounts' => 'integer',
+            'checked_at' => 'datetime'];
     }
 
     /**
@@ -59,6 +60,12 @@ class Shift extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    /** The teller's own vault the shift was opened on (personal vaults). */
+    public function vault(): BelongsTo
+    {
+        return $this->belongsTo(Vault::class);
     }
 
     public function sales(): HasMany

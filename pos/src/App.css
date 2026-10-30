@@ -49,6 +49,11 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
 /* PINs are masked text, not password fields: browsers then never offer to save or fill them on a shared till. */
 .pin-mask { -webkit-text-security: disc; }
 .signed-in { margin: .25rem 0 .5rem; }
+/* The signed-in person's name in her own colour (and her vault): another person's name on the till stands out. */
+.who-band { display: inline-block; color: #fff; font-weight: 700; padding: 4px 12px; border-radius: 999px; margin-left: 8px; font-size: 1.05rem; }
+.idle-lock .who-band { display: block; text-align: center; margin: 0 0 8px; font-size: 1.4rem; padding: 10px; border-radius: 8px; }
+.vault-choice.taken { opacity: .55; }
+.card-scanned { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--accent); border-radius: 8px; }
 .sell { display: grid; grid-template-columns: minmax(280px, 2fr) 3fr; grid-template-rows: auto auto 1fr; gap: 12px; height: calc(100vh - 24px); }
 .topbar { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .sell > .banner { grid-column: 1 / -1; }

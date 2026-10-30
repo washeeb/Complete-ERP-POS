@@ -2,6 +2,7 @@
 
 namespace App\Domain\Devices;
 
+use App\Domain\Access\AccessService;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
@@ -45,7 +46,10 @@ final class PosAuthService
             throw new DomainException('This device is not enrolled or has been revoked.', 'device_revoked');
         }
         $failed = new DomainException('Wrong username or PIN.', 'invalid_credentials');
-        $user = User::where('tenant_id', $device->tenant_id)->where('username', strtolower($username))->first();
+        // A scanned staff card stands in for the username; the PIN is still needed.
+        $user = AccessService::isBadge($username)
+            ? User::where('tenant_id', $device->tenant_id)->where('badge_hash', AccessService::badgeHash($username))->first()
+            : User::where('tenant_id', $device->tenant_id)->where('username', strtolower($username))->first();
         $deviceActor = new Actor(id: null, name: "Device {$device->name}", source: 'pos', tenantId: $device->tenant_id,
             deviceId: $device->id, ip: request()->ip());
 

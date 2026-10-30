@@ -65,6 +65,7 @@ export type PriceList = { id: string; code: string; name: string; prices_include
 
 export type Shift = {
   id: string; status: 'open' | 'closed'; opened_at: string; opened_by: string; opened_by_id?: string; opening_float_minor: number
+  vault?: string | null // personal vaults: the vault the shift is on
   /** Once closed: the shift's sales by payment method, and the total. */
   takings?: { lines: { label: string; amount_minor: number }[]; refunds?: { label: string; amount_minor: number }[]; total_minor: number } | null
   expected_cash_minor: number | null; counted_cash_minor: number | null; over_short_minor: number | null
@@ -99,6 +100,10 @@ export type VaultIssue = { id: string; vault: string; float_minor: number; statu
 
 export type CashInfo = { vaults: boolean; sessions: VaultIssue[]; denominations: Denomination[] }
 
+/** Personal vaults: the vaults this person may open on here (her own, or lent to her today), and the branch's for a manager to lend. */
+export type OwnVault = { id: string; name: string; float_minor: number; lent_by: string | null; in_use: string | null }
+export type PersonalVaults = { flow: 'manager' | 'teller'; trays: 'tray' | 'till' | 'shared'; mine: OwnVault[]; branch: { id: string; name: string; holder: string | null }[] }
+
 export type Bootstrap = {
   company: { name: string; group_name?: string; currency: string; exponent: number; timezone: string; legal_name: string | null; tin: string | null; vat_no: string | null; practice?: boolean }
   branch: { id: string; code: string; name: string; address: string | null; phone: string | null }
@@ -110,6 +115,8 @@ export type Bootstrap = {
   show_stock?: boolean
   auto_print_receipt?: boolean // the desktop till prints each receipt by itself
   shift_per_person?: boolean // someone else's shift open on this till: close it before selling (default on)
+  idle_lock_minutes?: number // lock the till after this long untouched (0 = never)
+  personal_vaults?: PersonalVaults | null // each teller sells from her own vault
   momo_confirm?: import('./momo').MomoMode // mobile money: typed ID, payment request, or request only
   require_details?: string // none | phone | name | name_phone: what the till asks before payment (branch setting)
   /** The company's brand (Company → Branding); missing on servers older than 0.26. */

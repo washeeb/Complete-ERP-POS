@@ -1,5 +1,6 @@
 import { GATEWAY_DOWN } from './api'
 import { db, getDevice, type OfflineGrant, type QueueItem } from './db'
+import { cardKey, isStaffCard } from './person'
 
 const b64 = (bytes: ArrayBuffer | Uint8Array) => {
   let s = ''
@@ -21,13 +22,20 @@ export async function pinMatches(grant: OfflineGrant, pin: string): Promise<bool
   return diff === 0
 }
 
-export async function saveGrant(grant: OfflineGrant) {
-  await db.grants.put({ ...grant, usernameKey: grant.username.toLowerCase() })
+/** Keep this person's grant; signed in by staff card, the card's hash too (a later sign-in by username keeps it). */
+export async function saveGrant(grant: OfflineGrant, card: string | null = null) {
+  const key = grant.username.toLowerCase()
+  const badgeKey = card ? await cardKey(card) : (await db.grants.get(key))?.badgeKey
+  await db.grants.put({ ...grant, usernameKey: key, ...(badgeKey ? { badgeKey } : {}) })
 }
 
 /** Offline sign-in: the PIN unlocks this person's grant for this till, until it expires. */
 export async function offlineSignIn(username: string, pin: string): Promise<OfflineGrant> {
-  const grant = asSigned(await db.grants.get(username.trim().toLowerCase()))
+  const cardKeyOf = isStaffCard(username) ? await cardKey(username) : ''
+  const rec = isStaffCard(username)
+    ? await db.grants.filter((g) => g.badgeKey === cardKeyOf).first()
+    : await db.grants.get(username.trim().toLowerCase())
+  const grant = asSigned(rec)
   const device = await getDevice()
   if (!grant || grant.device_id !== device?.deviceId) {
     throw new Error('You have not signed in on this till while it was online. Sign in once with the server available.')
@@ -40,10 +48,11 @@ export async function offlineSignIn(username: string, pin: string): Promise<Offl
 }
 
 /** The grant exactly as the server signed it (our local lookup key removed — any extra field breaks the signature). */
-export function asSigned(rec: (OfflineGrant & { usernameKey?: string }) | undefined): OfflineGrant | undefined {
+export function asSigned(rec: (OfflineGrant & { usernameKey?: string; badgeKey?: string }) | undefined): OfflineGrant | undefined {
   if (!rec) return undefined
-  const { usernameKey: _ignored, ...grant } = rec
+  const { usernameKey: _ignored, badgeKey: _card, ...grant } = rec
   void _ignored
+  void _card
   return grant as OfflineGrant
 }
 
