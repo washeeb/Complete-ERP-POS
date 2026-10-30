@@ -1,6 +1,10 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- **Wrong teller's name after signing in:** the till's sign-in and every manager's PIN box were ordinary password boxes, so the browser inside the till offered to *save* them and could fill in the last saved person's username and PIN on a shared till. PINs are now masked boxes that browsers never save or fill, and username boxes are never filled in. Who is signed in now shows on *Open shift* (with *Sign out* if it is not you) and above every manager's PIN.
+- **Manager's PIN asked for a new teller's shift:** with automatic shifts on, a till opened only once per shift, so after one teller closed the Morning shift, the next teller taking over in the morning needed a manager. Now only the *same* person reopening their closed shift (or opening outside trading hours) needs a manager. Manual 7.
+
 ### Security
 - **symfony/mime 8.1.10** (was 8.1.7): CVE-2026-45070, e-mail header injection through unusual characters in MIME parameter names.
 

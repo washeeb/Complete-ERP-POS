@@ -8,6 +8,7 @@ import { offlineSignIn, saveGrant } from '../offline'
 import { applyUpdateIfWaiting, UPDATE_READY } from '../swUpdate'
 import { closeShift, openShift } from '../till'
 import { CLOSE_CHECKS, type Bootstrap, type OtherCheck, type Shift } from '../types'
+import { SignedIn } from './SignedIn'
 
 /** First run on a new till: enter the one-time code an administrator got when registering this device. */
 export function Enroll({ onDone }: { onDone: () => void }) {
@@ -120,11 +121,11 @@ export function Login({ onDone, deviceName }: { onDone: () => void; deviceName?:
       {deviceName && <p className="muted">{deviceName}</p>}
       <label>
         Username
-        <input autoFocus className="big" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoCapitalize="none" required />
+        <input autoFocus className="big" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="off" autoCapitalize="none" spellCheck={false} required />
       </label>
       <label>
         PIN
-        <input className="big mono pin" type="password" inputMode="numeric" value={pin} autoComplete="off"
+        <input className="big mono pin pin-mask" type="text" inputMode="numeric" value={pin} autoComplete="off"
           onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))} />
       </label>
       <div className="keypad" aria-label="PIN keypad">
@@ -166,7 +167,7 @@ export function Handover({ boot, onClose, onLogout }: { boot: Bootstrap; onClose
   )
 }
 
-export function OpenShift({ boot, online, onDone }: { boot: Bootstrap; online: boolean; onDone: () => void }) {
+export function OpenShift({ boot, online, onDone, onLogout }: { boot: Bootstrap; online: boolean; onDone: () => void; onLogout: () => void }) {
   const [float, setFloat] = useState('')
   const [error, setError] = useState('')
   const vaults = boot.cash?.vaults === true
@@ -211,6 +212,7 @@ export function OpenShift({ boot, online, onDone }: { boot: Bootstrap; online: b
     <form className="card narrow" onSubmit={submit}>
       <h1>Open shift</h1>
       <p className="muted">{boot.branch.name} · {boot.till?.name}. Count the cash before you start.</p>
+      <p className="signed-in">This shift will be <strong>{boot.user.name}</strong>’s. Not you? <button type="button" className="link" onClick={onLogout}>Sign out</button></p>
       {vaults ? (
         <>
           <fieldset className="vaults">
@@ -236,9 +238,10 @@ export function OpenShift({ boot, online, onDone }: { boot: Bootstrap; online: b
       )}
       {needsGrant && (
         <fieldset className="grant">
-          <legend>A manager allows it</legend>
+          <legend>A manager allows {boot.user.name} to open a shift</legend>
+          <SignedIn />
           <label>Manager's username<input autoComplete="off" value={grant.username} onChange={(e) => setGrant({ ...grant, username: e.target.value })} required /></label>
-          <label>Manager's PIN<input type="password" inputMode="numeric" autoComplete="off" maxLength={8} value={grant.pin} onChange={(e) => setGrant({ ...grant, pin: e.target.value })} required /></label>
+          <label>Manager's PIN<input type="text" className="pin-mask" inputMode="numeric" autoComplete="off" maxLength={8} value={grant.pin} onChange={(e) => setGrant({ ...grant, pin: e.target.value })} required /></label>
           <label>Reason<input maxLength={255} value={grant.reason} onChange={(e) => setGrant({ ...grant, reason: e.target.value })} placeholder="e.g. late delivery to sell, cover for the afternoon" required /></label>
         </fieldset>
       )}

@@ -4,6 +4,7 @@ import { hardware, isDesktop, openDrawer, printersInfo, readScale, saveHardware,
 import { getPrefs, savePrefs, type Prefs } from '../prefs'
 import { applyTheme, getTheme, type ThemeChoice } from '../theme'
 import type { Bootstrap } from '../types'
+import { SignedIn } from './SignedIn'
 
 type Approval = { username: string; pin: string }
 
@@ -215,8 +216,9 @@ export function TillSettings({ boot, online, onClose }: { boot: Bootstrap; onlin
           <form className="card pay" onSubmit={confirm}>
             <h2>{asking === 'drawer' ? 'Open the drawer (test)' : 'Save the till settings'}</h2>
             <p className="muted small">A manager approves with their username and PIN. It is recorded in the audit log.</p>
-            <label>Manager’s username<input autoFocus autoCapitalize="none" value={approval.username} onChange={(e) => setApproval({ ...approval, username: e.target.value })} required /></label>
-            <label>Manager’s PIN<input type="password" inputMode="numeric" value={approval.pin} onChange={(e) => setApproval({ ...approval, pin: e.target.value.replace(/\D/g, '').slice(0, 8) })} required /></label>
+            <SignedIn />
+            <label>Manager’s username<input autoComplete="off" autoFocus autoCapitalize="none" value={approval.username} onChange={(e) => setApproval({ ...approval, username: e.target.value })} required /></label>
+            <label>Manager’s PIN<input type="text" className="pin-mask" autoComplete="off" inputMode="numeric" value={approval.pin} onChange={(e) => setApproval({ ...approval, pin: e.target.value.replace(/\D/g, '').slice(0, 8) })} required /></label>
             <div className="row">
               <button type="button" onClick={() => { setAsking(null); setApproval({ username: '', pin: '' }) }} disabled={busy}>Cancel</button>
               <button className="primary" disabled={busy || !approval.username || approval.pin.length < 4}>{busy ? 'Checking…' : 'Approve'}</button>

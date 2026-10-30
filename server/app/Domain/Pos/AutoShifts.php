@@ -16,8 +16,9 @@ use Illuminate\Support\Carbon;
 /**
  * Automatic shifts (owner request 2026-10-22), per branch (Settings → Tills and cash): a till session is named after the
  * shift whose hours it opens in (Cash → Shifts and vaults: Morning 07:00–15:00, Afternoon 14:00–23:00 by default); one that
- * lasts the straight-day length or more is a Straight day. A till opens only within the trading hours, and only once
- * per shift: outside the hours, or again after its shift was closed, a manager allows it with their PIN and a reason.
+ * lasts the straight-day length or more is a Straight day. A till opens only within the trading hours, and once per
+ * shift per person: outside the hours, or when the same person opens again after closing that shift, a manager allows it
+ * with their PIN and a reason. Another person taking over the till (a handover) opens without a manager.
  * Closing and counting are always allowed. Shifts opened offline are named but not blocked (the server cannot ask).
  */
 final class AutoShifts
@@ -74,8 +75,8 @@ final class AutoShifts
         if ($from && ! self::within($local->format('H:i:s'), $from, $until)) {
             $why = ['outside_hours', "Tills open from {$from} to {$until}. A manager can allow it with their PIN and a reason."];
         } elseif ($out['shift_name'] && Shift::where('till_id', $till->id)->where('status', 'closed')->where('shift_name', $out['shift_name'])
-            ->where('opened_at', '>=', $local->copy()->startOfDay()->utc())->exists()) {
-            $why = ['till_closed', "This till's {$out['shift_name']} shift was already closed today. A manager can allow it to open again with their PIN and a reason."];
+            ->where('opened_by', $user->id)->where('opened_at', '>=', $local->copy()->startOfDay()->utc())->exists()) {
+            $why = ['till_closed', "You already closed your {$out['shift_name']} shift on this till today. A manager can allow it to open again with their PIN and a reason."];
         }
         if (! $why) {
             return $out;

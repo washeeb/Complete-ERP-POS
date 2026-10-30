@@ -40,6 +40,7 @@ import { cachedCustomers, refreshCustomers } from '../customers'
 import { CustomerPicker } from './CustomerPicker'
 import { Pay } from './Pay'
 import { Calculator, detailsMissing, detailsPayload, emptyDetails, SaleDetailsDialog, type SaleDetailsState } from './TillTools'
+import { SignedIn } from './SignedIn'
 
 export function Sell({ boot, products, online, catalogVersion, queue, onPosted, onRefresh, onSendNow, onCloseShift, onSettings, onLogout }: {
   boot: Bootstrap; products: Product[]; online: boolean; catalogVersion: string | null
@@ -826,8 +827,9 @@ function PrescriptionForm({ message, level, initial, lines, products, customer, 
           <p className="muted small">A pharmacist may approve now (optional){offline ? ', checked on this till while offline' : ''}; otherwise the sale {pharmacy.rules?.after === 'signoff' ? 'waits for a pharmacist to sign it off' : 'is recorded as sold without a pharmacist'}.</p>
         )}
         <div className="row">
-          <label>Pharmacist username<input value={username} onChange={(e) => setUsername(e.target.value)} autoCapitalize="none" /></label>
-          <label>Pharmacist PIN<input type="password" inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))} /></label>
+          <SignedIn />
+          <label>Pharmacist username<input autoComplete="off" value={username} onChange={(e) => setUsername(e.target.value)} autoCapitalize="none" /></label>
+          <label>Pharmacist PIN<input type="text" className="pin-mask" autoComplete="off" inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))} /></label>
         </div>
         <div className="row">
           <button type="button" onClick={onCancel} disabled={busy}>Back</button>
@@ -850,8 +852,9 @@ function CreditApproval({ title, message, busy, onApprove, onCancel, self = fals
       <form className="card pay" onSubmit={(e) => { e.preventDefault(); if (username && pin) onApprove({ username, pin }) }}>
         <h2>{title}</h2>
         <p className="error">{message}</p>
-        <label>{who} username<input autoFocus value={username} onChange={(e) => setUsername(e.target.value)} autoCapitalize="none" /></label>
-        <label>{who} PIN<input type="password" inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))} /></label>
+        <SignedIn />
+        <label>{who} username<input autoComplete="off" autoFocus value={username} onChange={(e) => setUsername(e.target.value)} autoCapitalize="none" /></label>
+        <label>{who} PIN<input type="text" className="pin-mask" autoComplete="off" inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))} /></label>
         <div className="row">
           <button type="button" onClick={onCancel} disabled={busy}>Back</button>
           <button className="primary big" disabled={busy || !username || pin.length < 4}>{busy ? 'Checking…' : self ? 'Sign in and complete the sale' : 'Approve'}</button>
