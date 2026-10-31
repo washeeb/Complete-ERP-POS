@@ -536,9 +536,9 @@ final class Settings
             'help' => 'Only when an SMS gateway is set and the appointment has a phone number.',
         ],
         'receipt.footer' => [
-            'type' => 'string', 'default' => 'Thank you for shopping with us.', 'max' => 200, 'group' => 'Receipts',
+            'type' => 'string', 'default' => 'Thank you for shopping with us.', 'max' => 200, 'group' => 'Receipts', 'rows' => 3,
             'label' => 'Message at the bottom of receipts',
-            'help' => 'Printed on every till receipt, e.g. returns policy or a thank-you line.',
+            'help' => 'Printed on every till receipt, e.g. a thank-you line and the returns policy. Each line here, and each sentence, prints on its own line.',
         ],
         'security.device_enrollment_hours' => [
             'type' => 'int', 'default' => 24, 'min' => 1, 'max' => 168, 'group' => 'Devices',

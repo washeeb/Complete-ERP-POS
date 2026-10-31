@@ -12,9 +12,12 @@
 
 
 
-## Personal vaults, idle lock, staff cards — branch `teller-vaults`
+
+## Receipt footer lines, bold maker credit — branch `receipt-footer-lines`
+- `pos/src/footer.ts` (+ test) used by `Receipt.tsx` and `escpos.ts`; `.receipt-credit` bold; ESC/POS credit lines bold; `print/receipt.blade.php` same split and bold; `receipt.footer` setting `'rows' => 3` → Textarea in `ManageSettings`.
+## Personal vaults, idle lock, staff cards — merged (PR #117)
 - Migration `2026_12_07_100001_teller_vaults`; `App\Domain\Pos\TellerVaults` (flow, trays, save, availableFor, forOpen, lend, lendByPin, check, canSellAt); `ShiftService::open(vaultId)`; settings `cash.personal_vaults`, `cash.vault_trays`, `pos.idle_lock_minutes`; permissions `cash.vault.check`, `cash.vault.lend`; `POST pos/vaults/lend`; bootstrap `personal_vaults`, `idle_lock_minutes`; CashSetup personal section; ShiftResource *Count the vault*; `AccessService::issueBadge/revokeBadge`, `StaffCard`, EditUser *Staff card*. Till: `person.ts`, `IdleLock.tsx`, OpenShift vault picker + `LendVault`, card sign-in. Tests `TellerVaultsTest`, `person.test.ts`.
-- Next: two cash drawers on one till (two open shifts per device).
+- Two cash drawers on one till: owner said not needed now (2026-10-31).
 ## Handover without a PIN, no saved PINs — merged (PR #116)
 - `AutoShifts::beforeOpen` `till_closed` only for the same `opened_by`. Till: every PIN box masked text (`.pin-mask`), usernames `autoComplete="off"`; `screens/SignedIn.tsx` (`setSignedInName` from App) above each manager PIN; Open shift shows the person and *Sign out*. Test in `DosageAlertsShiftsTest`.
 ## Buying in packs — merged (PR #115)

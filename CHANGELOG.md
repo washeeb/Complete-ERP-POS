@@ -1,6 +1,10 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+- **Receipt message on separate lines:** the message at the bottom of receipts prints each sentence, and each line typed, on its own line (e.g. *Thank you for shopping with us.* / *Goods sold are not returnable.*), on the till, the printed receipt and the back-office reprint. The setting is now a box of several lines. Manual 7.
+- **Software maker's details in bold** at the foot of the receipt (screen, thermal paper and reprint), so they read clearly.
+
 ### Added
 - **Each teller sells from her own vault:** new setting *Each teller sells from her own vault* (Tills and cash; off until switched on). Each teller is given her own vault (**Cash → Shifts and vaults → Add a vault**); at *Open shift* the till shows only her vault, so nobody sells in someone else's name. A manager can lend a vault for the day (on the till by PIN, or in the back office), recorded with the reason. Light flow (default when on): a manager recounts each closed vault blind in **Sales → Shifts → Count the vault** (one recount when the counts differ) before its over/short is booked; or the teller's own count stands. How cash is kept: own removable tray (default), own till each, or one shared drawer. Two drawers on one till comes later. Manual 7 (Step 13b).
 - **Till locks when left idle** (default 5 minutes; *Lock the till after this many idle minutes*): the till shows the person's name and only her PIN unlocks it (checked on the till, so offline too); the sale on screen stays; *Not you? Sign out*; five wrong PINs sign her out.
