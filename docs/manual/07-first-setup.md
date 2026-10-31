@@ -113,7 +113,7 @@ For each staff member:
 | Offline till sign-in lasts (hours) | How long a cashier can sign in on a till without the server (default 72). Shorter is safer, longer helps during long outages. |
 | Stop sales when the system shows no stock | Off by default (tills can sell items the system thinks are out of stock, and you count them later). |
 | Show stock left on the till while selling | On by default (switch off if cashiers should not see stock). On: each item in the sale, and in the till's search list, shows how many are left at that till's store (e.g. *14 TAB left*), counting what is already in the sale. Useful where cashiers should tell customers what is available. Tills pick it up at their next sign-in. |
-| Message at the bottom of receipts | Your returns policy or a thank-you line. |
+| Message at the bottom of receipts | A thank-you line and your returns policy. Each line you type, and each sentence, prints on its own line (*Thank you for shopping with us.* then *Goods sold are not returnable.*). **Why:** short separate lines read easily on narrow receipt paper. |
 | Returns accepted within (days, with receipt) | How long after a sale a return with the receipt is accepted. |
 | Each teller sells from her own vault / How each teller's cash is kept | Off by default. On: each teller has her own vault (cash tray) and a till opens only on hers (Step 13b). **Why:** nobody can sell in someone else's name. |
 | Lock the till after this many idle minutes | Default 5; 0 = never. **Why:** a till left signed in cannot be used by the next person: it locks with the name on it, and only that person's PIN unlocks it (the sale on screen stays). |

@@ -9,6 +9,7 @@ use App\Support\Settings;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Pages\Concerns\HasUnsavedDataChangesAlert;
@@ -69,7 +70,9 @@ class ManageSettings extends Page
         foreach (Settings::DEFINITIONS as $key => $def) {
             $field = match ($def['type']) {
                 'bool' => Toggle::make(self::field($key))->label($def['label'])->helperText($def['help']),
-                'string' => TextInput::make(self::field($key))->label($def['label'])->helperText($def['help'])->maxLength($def['max']),
+                'string' => isset($def['rows'])
+                    ? Textarea::make(self::field($key))->label($def['label'])->helperText($def['help'])->maxLength($def['max'])->rows($def['rows'])
+                    : TextInput::make(self::field($key))->label($def['label'])->helperText($def['help'])->maxLength($def['max']),
                 'choice' => Select::make(self::field($key))->label($def['label'])->helperText($def['help'])->options($def['options'])->required()->selectablePlaceholder(false),
                 default => TextInput::make(self::field($key))->label($def['label'])->helperText($def['help'])
                     ->numeric()->integer()->required()->minValue($def['min'])->maxValue($def['max']),

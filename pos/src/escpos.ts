@@ -2,6 +2,7 @@ import { formatMoney, prettyQty, toMilli } from './money'
 import type { Raster } from './brand'
 import type { Bootstrap, PostedSale } from './types'
 import { sdcLines } from './evat'
+import { footerLines } from './footer'
 
 /**
  * ESC/POS receipts for 80 mm thermal printers (48 characters a line in font A; 32 on 58 mm), used by the desktop till for silent
@@ -119,9 +120,13 @@ export function receiptEscPos(sale: PostedSale, boot: Bootstrap, logo: Raster | 
     for (const l of sdcLines(sale.fiscal.sdc)) p.line(l)
     if (sale.fiscal.qr) p.qr(sale.fiscal.qr, 5).feed()
   }
-  p.feed().qr(sale.receipt_no).feed().line(boot.receipt_footer)
+  p.feed().qr(sale.receipt_no).feed()
+  for (const line of footerLines(boot.receipt_footer)) p.line(line) // each message on its own line
   if (boot.license?.ref) p.line(`Ref ${boot.license.ref}`)
+  // The software maker's name and contact, in bold so they read clearly on thermal paper.
+  p.bold(true)
   if (boot.brand?.powered_by) p.line(boot.brand.powered_by)
-  for (const line of boot.brand?.credit ?? []) p.line(line) // the software maker's contact
+  for (const line of boot.brand?.credit ?? []) p.line(line)
+  p.bold(false)
   return p.cut()
 }

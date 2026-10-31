@@ -71,10 +71,12 @@
     </table>
     <div class="rule"></div>
     <div class="center small">
-        <p>{{ $footer }}</p>
+        {{-- Each typed line, and each sentence, on its own line (as on the till). --}}
+        @foreach (preg_split('/\R|(?<=[.!?])\s+(?=[A-Z])/u', (string) $footer, -1, PREG_SPLIT_NO_EMPTY) as $line)<p style="margin:2px 0">{{ trim($line) }}</p>@endforeach
         <p class="muted">Ref {{ \App\Domain\Licensing\Watermark::reference() }}</p>
-        @if ($brand['powered_by'])<p class="muted">{{ $brand['powered_by'] }}</p>@endif
-        @foreach ($brand['credit'] ?? [] as $line)<div class="muted">{{ $line }}</div>@endforeach
+        {{-- The software maker: bold and black, so it reads clearly. --}}
+        @if ($brand['powered_by'])<p style="font-weight:700;color:#000">{{ $brand['powered_by'] }}</p>@endif
+        @foreach ($brand['credit'] ?? [] as $line)<div style="font-weight:700;color:#000">{{ $line }}</div>@endforeach
     </div>
 </div>
 @if ($autoPrint)<script>addEventListener('load', () => setTimeout(() => window.print(), 300))</script>@endif

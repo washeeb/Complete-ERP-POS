@@ -1,5 +1,6 @@
 import qrcode from 'qrcode-generator'
 import { useEffect, useState } from 'react'
+import { footerLines } from '../footer'
 import { api, ApiError } from '../api'
 import { cachedImage } from '../brand'
 import { createPortal } from 'react-dom'
@@ -246,10 +247,10 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
         {sale.fiscal && !sale.fiscal.code && sale.fiscal.mode === 'realtime' && <p className="small center">GRA E-VAT: being reported.</p>}
         <footer className="center">
           <ReceiptQr text={sale.receipt_no} />
-          <p>{boot.receipt_footer}</p>
+          {footerLines(boot.receipt_footer).map((line) => <p key={line} className="receipt-footer">{line}</p>)}
           {boot.license?.ref && <p className="receipt-ref">Ref {boot.license.ref}</p>}
-          {boot.brand?.powered_by && <p className="receipt-ref">{boot.brand.powered_by}</p>}
-          {(boot.brand?.credit ?? []).map((line) => <p key={line} className="receipt-ref">{line}</p>)}
+          {boot.brand?.powered_by && <p className="receipt-credit">{boot.brand.powered_by}</p>}
+          {(boot.brand?.credit ?? []).map((line) => <p key={line} className="receipt-credit">{line}</p>)}
         </footer>
       </div>
       {sale.status === 'queued' && (sale.kitchen?.length ?? 0) > 0 && (

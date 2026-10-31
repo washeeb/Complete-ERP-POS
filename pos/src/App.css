@@ -139,6 +139,9 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
 /* Licence */
 .banner.warn { background: var(--warn-bg); color: var(--warn-text); padding: 6px 12px; }
 .receipt .receipt-ref { font-size: 8px; color: #595959; letter-spacing: .5px; margin-top: 4px; } /* 7:1 on white (WCAG AA) */
+.receipt .receipt-footer { margin: 2px 0; }
+/* The software maker's name and contact: bold and black, so it reads clearly on the screen and on paper. */
+.receipt .receipt-credit { font-size: 11px; font-weight: 700; color: #000; margin-top: 4px; }
 .hh-lot { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 4px; }
 /* Pharmacy: prescription before payment */
 .rx-meds { list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 6px; }
