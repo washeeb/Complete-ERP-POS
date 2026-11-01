@@ -1,4 +1,4 @@
-# The business server (SES Labs) — server image for cloud / head-office servers (setups C and D).
+# The business server (ZionEX) — server image for cloud / head-office servers (setups C and D).
 # Build from the folder that holds `server/` (and `pos/` for source checkouts):
 #   docker build -f installer/docker/Dockerfile -t seslabs .
 # A release ZIP already contains the built till app in server/public/pos; a source checkout builds it here.

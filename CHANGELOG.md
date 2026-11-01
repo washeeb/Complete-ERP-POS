@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 ### Changed
+- **The product is now ZionEX** — *The central intelligence of business* (was SES Labs). New logo and icons; the name shows on the sign-in page (with the tagline), "Powered by ZionEX" in the back office and on receipts, the till, licence messages and certificates, installers and the guides. Servers update in place: an older `.env` naming SES Labs shows ZionEX. Not renamed, so nothing has to be moved or reinstalled: server folders, services and scheduled tasks, local certificate names, and the desktop till's Windows name (*SES Labs Till*) and identity (its data and unsent sales stay). See branding/README.md.
+
+### Changed
 - **Receipt message on separate lines:** the message at the bottom of receipts prints each sentence, and each line typed, on its own line (e.g. *Thank you for shopping with us.* / *Goods sold are not returnable.*), on the till, the printed receipt and the back-office reprint. The setting is now a box of several lines. Manual 7.
 - **Software maker's details in bold** at the foot of the receipt (screen, thermal paper and reprint), so they read clearly.
 

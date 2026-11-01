@@ -67,10 +67,13 @@ copyFileSync(join(src, 'logo.svg'), join(out.docs, 'product-logo.svg'))
 
 // Desktop till: its name and publisher come from brand.json (window title, Start menu, installer). The publisher is
 // the company (as Windows shows "Publisher" in Apps & features), the product name stays on everything else.
+// Its Windows identity (install name, identifier) can be pinned in brand.json: a new identifier is a new app to Windows
+// (the till starts empty and sales waiting in the old one are stranded), so a renamed product keeps the old ones.
 const slug = brand.name.toLowerCase().replace(/[^a-z0-9]+/g, '')
 const confPath = join(out.tauri, 'tauri.conf.json')
 const conf = JSON.parse(readFileSync(confPath, 'utf8'))
-Object.assign(conf, { productName: `${brand.name} Till`, identifier: `app.${slug}.till` })
+Object.assign(conf, { productName: brand.tillProductName ?? `${brand.name} Till`, identifier: brand.tillIdentifier ?? `app.${slug}.till` })
+for (const w of conf.app?.windows ?? []) w.title = brand.tillTitle ?? `${brand.name} Till`
 const company = brand.company ?? brand.name
 Object.assign(conf.bundle, { publisher: company, copyright: `Copyright © ${company}`, shortDescription: `${brand.name} till`,
   longDescription: `The ${brand.name} till with silent receipt printing (ESC/POS), cash drawer and scale support. It opens the till from your business server.` })

@@ -150,7 +150,7 @@ fn machine(version: &str) -> serde_json::Value {
     let computer = std::env::var("COMPUTERNAME").or_else(|_| std::env::var("HOSTNAME")).unwrap_or_default();
     let mac = mac_address::get_mac_address().ok().flatten().map(|m| m.to_string()).unwrap_or_default();
     let local_ip = local_ip_address::local_ip().map(|ip| ip.to_string()).unwrap_or_default();
-    serde_json::json!({ "computer": computer, "mac": mac, "local_ip": local_ip, "app": format!("SES Labs Till {version}") })
+    serde_json::json!({ "computer": computer, "mac": mac, "local_ip": local_ip, "app": format!("ZionEX Till {version}") })
 }
 
 /// Open the business server's back office in this window (it then also knows which computer this is).

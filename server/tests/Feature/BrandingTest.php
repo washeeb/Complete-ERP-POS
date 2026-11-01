@@ -35,9 +35,9 @@ function brandPng(string $path, int $w, int $h, array $rgb = [200, 30, 40]): str
 }
 
 it('shows the product brand before sign-in, with a small "Powered by" line', function () {
-    expect(config('brand.name'))->toBe('SES Labs')->and(config('brand.vendor'))->toBe('SyncLytics')
+    expect(config('brand.name'))->toBe('ZionEX')->and(config('brand.vendor'))->toBe('SyncLytics')
         ->and(Branding::vendorContact())->toBe('SyncLytics (hotline 024 563 6889, info@synclyticsenterprisesystems.com)');
-    $this->get('/admin/login')->assertOk()->assertSee('/brand/logo.svg', false)->assertSee('/brand/logo-dark.svg', false)->assertSee('Powered by SES Labs')->assertDontSee('Synclytics');
+    $this->get('/admin/login')->assertOk()->assertSee('/brand/logo.svg', false)->assertSee('/brand/logo-dark.svg', false)->assertSee('Powered by ZionEX')->assertDontSee('Synclytics');
     expect(file_exists(public_path('brand/logo.svg')))->toBeTrue()->and(file_exists(public_path('brand/icon-512.png')))->toBeTrue();
 });
 
@@ -54,7 +54,7 @@ it('takes a company logo, resizes and cleans it, suggests the colour, and serves
     $b = Branding::forTenant($this->tenant->fresh());
     expect($b['has_logo'])->toBeTrue()->and($b['logo_url'])->toContain("/brand/{$this->tenant->slug}/logo?v=")
         ->and($b['icon_url'])->toContain('/monogram.svg') // no icon yet: initials
-        ->and($b['powered_by'])->toBe('Powered by SES Labs');
+        ->and($b['powered_by'])->toBe('Powered by ZionEX');
     $res = $this->get(parse_url($b['logo_url'], PHP_URL_PATH).'?'.parse_url($b['logo_url'], PHP_URL_QUERY));
     $res->assertOk()->assertHeader('Content-Type', 'image/png')->assertHeader('X-Content-Type-Options', 'nosniff');
     expect($res->headers->get('Cache-Control'))->toContain('immutable')->and($res->headers->get('Content-Security-Policy'))->toContain("default-src 'none'");
@@ -104,7 +104,7 @@ it('brands the back office, the till, printed documents and PDFs — and white-l
     $logoUrl = Branding::forTenant($this->tenant->fresh())['logo_url'];
 
     $this->actingAs(withMfa($this->owner));
-    $this->get('/admin')->assertOk()->assertSee(e($logoUrl), false)->assertSee('Powered by SES Labs');
+    $this->get('/admin')->assertOk()->assertSee(e($logoUrl), false)->assertSee('Powered by ZionEX');
     $this->get(BrandingPage::getUrl())->assertOk()->assertSee('Your brand')->assertSee('#7C3AED');
     Livewire::test(BrandingPage::class)->set('files.icon', UploadedFile::fake()->image('icon.png', 256, 256))->assertHasNoErrors();
     expect(BrandAsset::where('kind', 'icon')->value('bytes'))->toBeGreaterThan(0);
@@ -115,7 +115,7 @@ it('brands the back office, the till, printed documents and PDFs — and white-l
     $pdf->sendContent();
     expect(ob_get_clean())->toStartWith('%PDF');
     expect(view('exports.table', ['title' => 'T', 'sheets' => [], 'filters' => [], 'truncated' => false, 'company' => 'Demo', 'by' => 'x', 'at' => now(), 'ref' => 'R',
-        'logo' => Branding::logoDataUri($this->tenant->id, false), 'powered' => Branding::poweredBy()])->render())->toContain('data:image/png;base64,')->toContain('Powered by SES Labs');
+        'logo' => Branding::logoDataUri($this->tenant->id, false), 'powered' => Branding::poweredBy()])->render())->toContain('data:image/png;base64,')->toContain('Powered by ZionEX');
 
     // The till gets the brand at start-up.
     $this->flushSession();
@@ -129,7 +129,7 @@ it('brands the back office, the till, printed documents and PDFs — and white-l
     app('auth')->forgetGuards();
     $this->withToken($login['token'])->getJson('/api/v1/pos/bootstrap')->assertOk()
         ->assertJsonPath('brand.color', '#7C3AED')->assertJsonPath('brand.receipt_logo', true)->assertJsonPath('brand.logo_url', $logoUrl)
-        ->assertJsonPath('brand.powered_by', 'Powered by SES Labs')->assertJsonPath('brand.product', 'SES Labs')
+        ->assertJsonPath('brand.powered_by', 'Powered by ZionEX')->assertJsonPath('brand.product', 'ZionEX')
         ->assertJsonPath('brand.credit', ['Software by SyncLytics: 024 563 6889', 'synclyticsenterprisesystems.com']);
 
     // A white-label licence names the feature: "Powered by" goes everywhere.

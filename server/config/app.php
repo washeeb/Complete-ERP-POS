@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => (($n = env('APP_NAME')) && $n !== 'SES Labs') ? $n : 'ZionEX', // SES Labs: the earlier product name, in older .env files
 
     /*
     |--------------------------------------------------------------------------

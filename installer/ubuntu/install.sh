@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The business server (SES Labs) — one-command installation on a plain Ubuntu 24.04 server (setups B, C, D and branch servers),
+# The business server (ZionEX) — one-command installation on a plain Ubuntu 24.04 server (setups B, C, D and branch servers),
 # doing what Chapter 5 of the installation guide describes by hand.
 #
 #   sudo bash install.sh --zip ~/ses-labs-<customer>-<build>.zip [--domain erp.example.com --email you@example.com]

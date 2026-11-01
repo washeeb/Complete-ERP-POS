@@ -6,9 +6,10 @@
  * the product name is this file (or BRAND_NAME in .env) plus new artwork.
  */
 return [
-    'name' => env('BRAND_NAME') ?: 'SES Labs',
+    // "SES Labs" was the product's earlier name: servers installed before 2026-11 have it in .env and now show ZionEX.
+    'name' => (($n = env('BRAND_NAME')) && $n !== 'SES Labs') ? $n : 'ZionEX',
 
-    'tagline' => 'Engineering Solutions. Empowering Businesses.',
+    'tagline' => 'The central intelligence of business',
 
     // The company that makes, licenses and supports the product (the publisher), as opposed to the product name:
     // licence messages, copyright and installer "Publisher". A reseller under white-label sets BRAND_VENDOR.

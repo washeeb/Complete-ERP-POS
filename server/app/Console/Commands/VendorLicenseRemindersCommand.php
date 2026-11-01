@@ -46,16 +46,17 @@ class VendorLicenseRemindersCommand extends Command
             }
             $who = $lic->client?->name ?? $lic->payload['customer'] ?? 'Customer';
             $when = $lic->expires_on->format('j M Y');
+            $product = config('brand.name');
             $text = $days < 0
-                ? "Dear {$who}, your SES Labs licence ({$lic->short()}) ended on {$when}. The system will become read-only after the grace period. Please contact SyncLytics to renew."
-                : "Dear {$who}, your SES Labs licence ({$lic->short()}) ends on {$when} ({$days} days). Please contact SyncLytics to renew so your system keeps working without interruption.";
+                ? "Dear {$who}, your {$product} licence ({$lic->short()}) ended on {$when}. The system will become read-only after the grace period. Please contact SyncLytics to renew."
+                : "Dear {$who}, your {$product} licence ({$lic->short()}) ends on {$when} ({$days} days). Please contact SyncLytics to renew so your system keeps working without interruption.";
             $channels = [];
             foreach (['email' => $lic->client?->email, 'whatsapp' => $lic->client?->whatsapp] as $channel => $to) {
                 if (! $to) {
                     continue;
                 }
                 try {
-                    $messenger->send($tenant->id, $channel, $to, $text, 'SES Labs licence renewal', 'licence '.$lic->short(), 'Licence reminders');
+                    $messenger->send($tenant->id, $channel, $to, $text, "{$product} licence renewal", 'licence '.$lic->short(), 'Licence reminders');
                     $channels[] = $channel;
                 } catch (DomainException $e) {
                     $this->warn("{$who}: {$e->getMessage()}");

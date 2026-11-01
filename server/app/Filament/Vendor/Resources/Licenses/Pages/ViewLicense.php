@@ -47,8 +47,8 @@ class ViewLicense extends ViewRecord
                 ->visible(fn (VendorLicense $record) => $current($record) && $record->client?->email)
                 ->requiresConfirmation()->modalDescription(fn (VendorLicense $record) => "To {$record->client->email}.")
                 ->action(fn (VendorLicense $record) => VendorUi::run(fn ($actor) => app(Messenger::class)->send(Tenant::orderBy('created_at')->value('id'), 'email',
-                    $record->client->email, "Dear {$record->client->name},\n\nYour SES Labs licence key ({$record->short()}, valid until {$record->expires_on?->format('j M Y')}):\n\n"
-                    .$record->license_key."\n\nSign in as the owner, open Settings → Licence, click Enter licence key and paste it.\n\nSyncLytics", 'Your SES Labs licence key',
+                    $record->client->email, "Dear {$record->client->name},\n\nYour ".config('brand.name')." licence key ({$record->short()}, valid until {$record->expires_on?->format('j M Y')}):\n\n"
+                    .$record->license_key."\n\nSign in as the owner, open Settings → Licence, click Enter licence key and paste it.\n\nSyncLytics", 'Your '.config('brand.name').' licence key',
                     'licence '.$record->short(), $actor->name), 'Sent')),
             ActionGroup::make([
                 Action::make('certificate')->label('Licence certificate')->icon(Heroicon::OutlinedDocumentText)

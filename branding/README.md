@@ -4,14 +4,29 @@ Two brands meet on every screen:
 
 | | Whose | Where it is set | Where it shows |
 |---|---|---|---|
-| **Product brand** | The software (currently **SES Labs**) | `branding/product/` + `server/config/brand.php` (`BRAND_NAME`, `BRAND_VENDOR`, `BRAND_WEBSITE`) | Sign-in page of a multi-company server, "Powered by …", favicons and app icons, the desktop till app, installers, the guide covers, licence messages |
+| **Product brand** | The software (currently **ZionEX**) | `branding/product/` + `server/config/brand.php` (`BRAND_NAME`, `BRAND_VENDOR`, `BRAND_WEBSITE`) | Sign-in page of a multi-company server, "Powered by …", favicons and app icons, the desktop till app, installers, the guide covers, licence messages |
 | **Client brand** | Each company using it | Back office → **Company → Branding**, or the setup wizard's "Your brand" step | Back office (logo, icon, colour), tills (top-bar icon, accent, receipt logo — printed as dithered black-and-white on thermal printers), invoices/statements/prints, PDF exports, online shop |
 
 The client's brand leads; a small "Powered by <product>" stays unless the licence names the `white_label` feature (`php artisan license:issue … --features=finance,hr,white_label`).
 
-## The SES Labs logo
+## The ZionEX logo
 
-`product/ses-lettermark.svg` is the SES lettermark (SES Labs), **traced as vector shapes** from the owner's logo (navy `#031E4C`, teal `#06AAAA`). `product/compose.py` builds `logo.svg` (light backgrounds), `logo-dark.svg` (navy turned light, for dark backgrounds) and `mark.svg` (the full SES on a white rounded tile — the app icon) from it. The owner's original artwork is the master copy: `product/original/SES Connected Accent Logo.png` (2000 × 2000, transparent background — some viewers draw the transparent areas black). The trace was checked against it on 2026-10-09: overlaid at the same scale, the outlines match to within a few pixels, so the vector files are used everywhere (they stay sharp at every size and have a dark-theme version). Trace again from this file if the logo ever changes.
+The product is **ZionEX** — *The central intelligence of business* (renamed from SES Labs on 2026-11-01). The logo is a
+first wordmark made in-house; a designer's version can replace it by the steps below.
+
+- `product/mark.svg` — the icon: a white **Z** on a navy rounded tile (`#031E4C`), its stroke running through a teal
+  node (`#06AAAA`) at the centre, with teal nodes at two corners: the business's central intelligence, linked like a
+  network. Readable at 16 px.
+- `product/logo.svg` — the mark and the name, drawn as strokes (no font needed): *Zion* in navy, *EX* in teal.
+- `product/logo-dark.svg` — the same for dark backgrounds (*Zion* light, the tile edged in light teal).
+- `product/original/` — the earlier SES Labs artwork, kept for the record only.
+
+**Names that did not change with the rename, on purpose** (changing them would need every server moved and every
+desktop till reinstalled): the Ubuntu folder and services (`/var/www/seslabs`, `seslabs-*`), the Windows folder,
+scheduled tasks and firewall rule (`C:\SESLabs`, *SES Labs Web/PHP/Scheduler/Live*), the local HTTPS certificate names,
+the desktop till's Windows name and identifier (*SES Labs Till*, `app.seslabs.till`, pinned in `brand.json` as
+`tillProductName` / `tillIdentifier`; its window and everything inside it say ZionEX), its *Documents\SES Labs Till*
+folder of unsent sales, and the release file names. An older server's `.env` with `BRAND_NAME="SES Labs"` shows ZionEX.
 
 ## Changing the product's logo or name
 

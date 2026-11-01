@@ -9,7 +9,7 @@
     <div class="small">{{ \App\Models\Vendor\VendorLicense::STATUSES[$l->status()] }}</div>
 @endsection
 @section('content')
-    <p>This certifies that the customer below is licensed to use <strong>SES Labs ERP &amp; POS</strong> on the installation named here, within the limits and for the period shown, under the SyncLytics licence agreement.</p>
+    <p>This certifies that the customer below is licensed to use <strong>{{ config('brand.name') }}</strong> on the installation named here, within the limits and for the period shown, under the SyncLytics licence agreement.</p>
     <h2>Licensee</h2>
     <table>
         <tr><th>Customer</th><td>{{ $l->client?->legal_name ?: ($l->client?->name ?? $p['customer']) }}</td></tr>

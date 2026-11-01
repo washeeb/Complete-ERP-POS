@@ -13,7 +13,11 @@
 
 
 
-## Receipt footer lines, bold maker credit — branch `receipt-footer-lines`
+
+## ZionEX (stage 1 of the owner's 2026-11-01 request) — branch `zionex-name`
+- Visible rename only (see DECISIONS). New artwork in `branding/product/` (mark, logo, logo-dark), `npm run brand` output, `config/brand.php` legacy-name rule, tagline on the sign-in page, licence texts via `config('brand.name')`, guides.
+- Next stages (owner's order): 2 supplier onboarding + scorecards, withholding tax, landed costs · 3 RFQ / compare / award + supplier portal · 4 contracts + blanket orders, budget check, non-stock and service buying · 5 AI invoice capture, spend analytics.
+## Receipt footer lines, bold maker credit — merged (PR #118)
 - `pos/src/footer.ts` (+ test) used by `Receipt.tsx` and `escpos.ts`; `.receipt-credit` bold; ESC/POS credit lines bold; `print/receipt.blade.php` same split and bold; `receipt.footer` setting `'rows' => 3` → Textarea in `ManageSettings`.
 ## Personal vaults, idle lock, staff cards — merged (PR #117)
 - Migration `2026_12_07_100001_teller_vaults`; `App\Domain\Pos\TellerVaults` (flow, trays, save, availableFor, forOpen, lend, lendByPin, check, canSellAt); `ShiftService::open(vaultId)`; settings `cash.personal_vaults`, `cash.vault_trays`, `pos.idle_lock_minutes`; permissions `cash.vault.check`, `cash.vault.lend`; `POST pos/vaults/lend`; bootstrap `personal_vaults`, `idle_lock_minutes`; CashSetup personal section; ShiftResource *Count the vault*; `AccessService::issueBadge/revokeBadge`, `StaffCard`, EditUser *Staff card*. Till: `person.ts`, `IdleLock.tsx`, OpenShift vault picker + `LendVault`, card sign-in. Tests `TellerVaultsTest`, `person.test.ts`.

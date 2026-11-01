@@ -6,7 +6,7 @@ In this chapter the software goes in `C:\SESLabs` and PHP in `C:\php`. If you ch
 
 ## 4.0 The quick way: the installer (recommended)
 
-SES Labs gives you **`SESLabs-server-setup-<version>.exe`** with your release. It does everything in 4.2–4.9 for you.
+SyncLytics gives you **`SESLabs-server-setup-<version>.exe`** with your release. It does everything in 4.2–4.9 for you.
 
 1. Do 4.1 (prepare the computer) first.
 2. Double-click the setup file, click **Yes** when Windows asks for permission (it must install a database and services).
@@ -112,7 +112,7 @@ sys_temp_dir = "C:\SESLabs\tmp"
 
 ## 4.5 Put the software in place
 
-SES Labs gives you the software as a ZIP file named like `ses-labs-<your-company>-<build>.zip`.
+SyncLytics gives you the software as a ZIP file named like `ses-labs-<your-company>-<build>.zip`.
 
 1. Create the folder `C:\SESLabs`.
 2. Extract the ZIP into it, so that `C:\SESLabs\server\artisan` exists.
@@ -133,7 +133,7 @@ cd C:\SESLabs\server
    composer install --no-dev --optimize-autoloader
    ```
 
-   **Why:** the release contains only SES Labs' own code; this downloads the open-source libraries it builds on, at the exact versions it was tested with. `--no-dev` leaves out testing tools.
+   **Why:** the release contains only ZionEX's own code; this downloads the open-source libraries it builds on, at the exact versions it was tested with. `--no-dev` leaves out testing tools.
 
 2. **Create the settings file** from the example:
 
@@ -224,7 +224,7 @@ npm run build:server
 The server needs these programs running all the time:
 
 - the **web server (Caddy)**: the only program the tills and browsers talk to. It serves everything over **https**, so passwords, PINs and sales cannot be read by anyone else on the network;
-- **PHP workers**: they run SES Labs itself, behind the web server. Each one serves one request at a time, so there are four;
+- **PHP workers**: they run ZionEX itself, behind the web server. Each one serves one request at a time, so there are four;
 - the **scheduler**: it runs the routine jobs every minute (sending to online stores, syncing branches, posting to the accounts, reminders, the daily licence check-in, the nightly insights and alerts);
 - **live updates (Reverb)**: they tell tills about price and stock changes within seconds. They are reached through the web server, so no extra port is open.
 

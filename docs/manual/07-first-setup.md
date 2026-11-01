@@ -62,7 +62,7 @@ The wizard opens by itself the first time.
 
 **Why:** customers trust a receipt or invoice that carries the shop's own logo, and staff recognise their own system. The images are checked and made smaller when you upload them, and they reach branch servers and backups like the rest of your data.
 
-**Note:** a small line *“Powered by SES Labs”* stays at the bottom of the back office, receipts and documents. A **white-label licence** removes it (ask SyncLytics).
+**Note:** a small line *“Powered by ZionEX”* stays at the bottom of the back office, receipts and documents. A **white-label licence** removes it (ask SyncLytics).
 
 ## Step 4b — Industries (if you run more than one kind of business)
 
