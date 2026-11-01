@@ -10,10 +10,14 @@ use App\Models\Industry;
 use App\Models\JournalEntry;
 use App\Support\Settings;
 use Filament\Facades\Filament;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
+afterEach(fn () => Carbon::setTestNow());
+
 beforeEach(function () {
+    Carbon::setTestNow(Carbon::parse('2026-10-20 10:00')); // the 10th of the month, booked below, is in the past
     [$this->tenant, $this->owner] = installCompany();
     $this->b = setUpBranches($this->owner, [
         ['code' => 'HQ', 'name' => 'Head Office', 'is_hq' => true, 'tills' => 0, 'modules' => []],

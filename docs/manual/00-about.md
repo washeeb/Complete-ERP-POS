@@ -4,7 +4,7 @@ This guide takes you from an empty computer to a working shop, restaurant, pharm
 
 ## Who to contact
 
-ZionEX is made, licensed and supported by **SyncLytics**:
+ZionEX is built by **SES Labs**, the product division of **SyncLytics**, which licenses and supports it (receipts read *ZionEX · Powered by SES Labs*):
 
 | | |
 |---|---|

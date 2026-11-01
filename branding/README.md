@@ -11,7 +11,7 @@ The client's brand leads; a small "Powered by <product>" stays unless the licenc
 
 ## The ZionEX logo
 
-The product is **ZionEX** — *The central intelligence of business* (renamed from SES Labs on 2026-11-01). The logo is a
+The product is **ZionEX** — *The central intelligence of business* — **powered by SES Labs**, the SyncLytics division that builds it (`brand.division`; renamed from SES Labs on 2026-11-01). Receipts and prints say *ZionEX · Powered by SES Labs*; beside the logo it is *Powered by SES Labs*. The logo is a
 first wordmark made in-house; a designer's version can replace it by the steps below.
 
 - `product/mark.svg` — the icon: a white **Z** on a navy rounded tile (`#031E4C`), its stroke running through a teal

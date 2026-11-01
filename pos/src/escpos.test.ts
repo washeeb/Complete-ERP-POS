@@ -37,7 +37,7 @@ describe('ESC/POS receipts', () => {
   it('prints a sale like the screen receipt, with the GRA code when there is one', () => {
     const boot = { company: { name: 'Demo Ltd', exponent: 2, timezone: 'Africa/Accra', tin: 'C0001', vat_no: null, legal_name: null }, branch: { name: 'Head Office', address: null, phone: '0302000000' },
       receipt_footer: 'Thank you', license: { ref: 'L-1' },
-      brand: { powered_by: 'Powered by ZionEX', credit: ['Software by SyncLytics: 024 563 6889', 'synclyticsenterprisesystems.com'] } } as unknown as Bootstrap
+      brand: { powered_by: 'ZionEX · Powered by SES Labs', credit: ['Software by SyncLytics: 024 563 6889', 'synclyticsenterprisesystems.com'] } } as unknown as Bootstrap
     const sale = { id: 's', receipt_no: 'HQ-T01A-000001', occurred_at: '2026-10-09T10:00:00Z', cashier: 'Efua', currency: 'GHS', prices_include_tax: true, net_minor: 9667,
       tax_minor: 1933, total_minor: 11600, paid_minor: 11600, change_minor: 400, tax_breakdown: [{ code: 'VAT', name: 'VAT', rate_bp: 1500, amount_minor: 1450 }],
       lines: [{ line_no: 1, sku: 'MILO', name: 'Milo 400g', uom: 'PC', qty: '2.000', unit_price_minor: 5800, line_total_minor: 11600 }],

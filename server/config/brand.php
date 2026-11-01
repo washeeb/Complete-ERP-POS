@@ -11,6 +11,10 @@ return [
 
     'tagline' => 'The central intelligence of business',
 
+    // The SyncLytics division that builds the product: "ZionEX · Powered by SES Labs". A reseller (BRAND_VENDOR) has none
+    // unless it sets BRAND_DIVISION; then the line reads "Powered by <product>".
+    'division' => env('BRAND_DIVISION') ?: (env('BRAND_VENDOR') ? null : 'SES Labs'),
+
     // The company that makes, licenses and supports the product (the publisher), as opposed to the product name:
     // licence messages, copyright and installer "Publisher". A reseller under white-label sets BRAND_VENDOR.
     'vendor' => env('BRAND_VENDOR') ?: 'SyncLytics',

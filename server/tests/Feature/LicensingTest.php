@@ -251,7 +251,7 @@ it('builds a stamped, signed release whose manifest matches the delivered files'
             ->and(Watermark::reveal(file_get_contents("{$root}/app/Models/Customer.php")))->toBe(["{$build->id}|Kofi Stores"])
             ->and(file_exists("{$root}/.env"))->toBeFalse()
             ->and(is_dir("{$root}/app/Filament/Vendor"))->toBeFalse()->and(file_exists("{$root}/routes/vendor.php"))->toBeFalse() // the licence generator stays with SyncLytics
-            ->and(glob("{$out}/ses-labs-kofi-stores-{$build->id}.zip"))->toHaveCount(1);
+            ->and(glob("{$out}/zionex-kofi-stores-{$build->id}.zip"))->toHaveCount(1);
     } finally {
         @unlink($keyFile);
         File::deleteDirectory($out);
