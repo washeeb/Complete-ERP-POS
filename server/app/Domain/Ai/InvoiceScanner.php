@@ -19,10 +19,12 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
- * Supplier invoice → draft bill. The AI reads the photo (or PDF, cloud model only) into supplier, number, dates and
- * lines; the lines are matched to goods received from that supplier and still to bill (by SKU, then by name); the rest
- * become expense lines. The result only pre-fills the bill form: a person checks every line and enters the bill, which
- * then goes through the normal price-matching and approval rules. Nothing is posted by the AI.
+ * Supplier invoice → draft bill. The AI reads the photo (or PDF, cloud model only) into supplier, number, dates, the
+ * order number quoted and lines; the lines are matched to goods received from that supplier and still to bill (by SKU,
+ * then by name; deliveries on the quoted order first), then to services confirmed on their orders and not yet billed;
+ * the rest become expense lines. Checks are shown with the form: the total printed against the lines read, an invoice
+ * number already entered, a supplier not found. The result only pre-fills the bill form: a person checks every line
+ * and enters the bill, which then goes through the normal price-matching and approval rules. Nothing is posted by the AI.
  */
 final class InvoiceScanner
 {
@@ -31,7 +33,8 @@ final class InvoiceScanner
     public function __construct(private readonly AiGateway $gateway, private readonly Authorizer $authz) {}
 
     /** $path: a file on the local (private) disk, already uploaded. */
-    public function scan(Actor $actor, Branch $branch, string $path, string $fileName): AiDocument
+    /** @param ?Supplier $supplier known already (an invoice sent on the supplier portal): not guessed from the paper */
+    public function scan(Actor $actor, Branch $branch, string $path, string $fileName, ?Supplier $supplier = null, ?string $supplierInvoiceId = null): AiDocument
     {
         if (! $actor->user || ! $this->authz->allows($actor->user, 'payables.manage', $branch)) {
             throw new AccessDenied;
@@ -56,7 +59,8 @@ final class InvoiceScanner
 
             throw $e;
         }
-        $doc->forceFill(['status' => 'read', 'extracted' => $data, 'form' => $this->form($actor, $branch, $data)])->save();
+        $form = $this->form($actor, $branch, $data, $supplier) + ($supplierInvoiceId ? ['supplier_invoice_id' => $supplierInvoiceId] : []);
+        $doc->forceFill(['status' => 'read', 'extracted' => $data, 'form' => $form])->save();
 
         return $doc;
     }
@@ -70,7 +74,7 @@ final class InvoiceScanner
     private function prompt(): string
     {
         return 'You read supplier invoices for a business in Ghana. Return only JSON with these keys: supplier_name, supplier_tax_no (TIN, or null), '
-            .'invoice_number, invoice_date (YYYY-MM-DD), due_date (YYYY-MM-DD or null), currency (e.g. GHS), lines (a list of {description, sku (or null), '
+            .'invoice_number, order_number (the customer\'s purchase order number quoted on it, e.g. PO-HQ-000123, or null), invoice_date (YYYY-MM-DD), due_date (YYYY-MM-DD or null), currency (e.g. GHS), lines (a list of {description, sku (or null), '
             .'qty (number), unit_price (number, before tax), line_total (number, before tax)}), subtotal, tax_total, total. Use numbers without currency '
             .'symbols or thousands separators. Copy text exactly as printed; use null for anything you cannot read. Do not add lines that are not on the invoice.';
     }
@@ -87,20 +91,29 @@ final class InvoiceScanner
     }
 
     /** The supplier bill form, pre-filled and matched. */
-    private function form(Actor $actor, Branch $branch, array $d): array
+    private function form(Actor $actor, Branch $branch, array $d, ?Supplier $known = null): array
     {
         $currency = Money::exponent(DB::table('tenants')->where('id', $actor->tenantId)->value('currency_code') ?? 'GHS');
-        $supplier = self::matchSupplier($d);
+        $supplier = $known ?? self::matchSupplier($d);
         $date = self::date($d['invoice_date'] ?? null);
         $form = ['supplier_id' => $supplier?->id, 'supplier_invoice_no' => mb_substr(trim((string) ($d['invoice_number'] ?? '')), 0, 60), 'branch_id' => $branch->id,
             'bill_date' => $date && $date <= now()->toDateString() ? $date : now()->toDateString(), 'due_on' => self::date($d['due_date'] ?? null),
-            'note' => 'Read from a scanned invoice — check every line against the paper.', 'stock_lines' => [], 'expense_lines' => []];
-        $open = $supplier ? $this->openLines($supplier) : [];
+            'note' => 'Read from a scanned invoice — check every line against the paper.', 'stock_lines' => [], 'order_lines' => [], 'expense_lines' => []];
+        $order = $supplier ? self::orderOf($supplier, (string) ($d['order_number'] ?? '')) : null;
+        $open = $supplier ? $this->openLines($supplier, $order) : [];
+        $services = $supplier ? collect(app(BillService::class)->billableOrderLines($supplier))
+            ->sortBy(fn ($l) => $order && $l['order'] === $order ? 0 : 1)->keyBy('purchase_order_line_id')->all() : [];
         foreach ((array) ($d['lines'] ?? []) as $l) {
             $qty = (float) ($l['qty'] ?? 0) ?: 1.0;
             $price = (float) ($l['unit_price'] ?? 0) ?: ((float) ($l['line_total'] ?? 0) / $qty);
             $match = $this->match($open, (string) ($l['sku'] ?? ''), (string) ($l['description'] ?? ''));
-            if ($match) {
+            $service = $match ? null : $this->match(array_map(fn ($x) => $x + ['sku' => null, 'supplier_sku' => null], $services), '', (string) ($l['description'] ?? ''));
+            if ($service) {
+                $take = min($qty, (float) $services[$service]['open_qty']);
+                $services[$service]['open_qty'] = (string) ((float) $services[$service]['open_qty'] - $take);
+                $form['order_lines'][] = ['purchase_order_line_id' => $service, 'qty' => rtrim(rtrim(number_format($take, 3, '.', ''), '0'), '.'),
+                    'unit_cost' => number_format($price, $currency, '.', '')];
+            } elseif ($match) {
                 $take = min($qty, (float) $open[$match]['open_qty']);
                 $open[$match]['open_qty'] = (string) ((float) $open[$match]['open_qty'] - $take);
                 $form['stock_lines'][] = ['goods_receipt_line_id' => $match, 'qty' => rtrim(rtrim(number_format($take, 3, '.', ''), '0'), '.'),
@@ -112,6 +125,57 @@ final class InvoiceScanner
         }
 
         return $form;
+    }
+
+    /** The supplier's order quoted on the invoice (PO-HQ-000123, or just 123 / 000123), if it is one of theirs. */
+    public static function orderOf(Supplier $supplier, string $quoted): ?string
+    {
+        $quoted = strtoupper(trim($quoted));
+        if ($quoted === '') {
+            return null;
+        }
+        $orders = DB::table('purchase_orders')->where('supplier_id', $supplier->id)->whereNotIn('status', ['draft', 'cancelled'])->pluck('number');
+        $digits = ltrim(preg_replace('/\D/', '', $quoted), '0');
+
+        return $orders->first(fn ($n) => strtoupper($n) === $quoted) ?? ($digits !== '' ? $orders->first(fn ($n) => ltrim(preg_replace('/\D/', '', $n), '0') === $digits) : null);
+    }
+
+    /**
+     * What a person should look at before entering the bill: the supplier not found, the invoice already entered, the
+     * total printed against the lines read, prices above the order.
+     *
+     * @return list<string>
+     */
+    public static function checks(AiDocument $doc): array
+    {
+        $d = $doc->extracted ?? [];
+        $f = $doc->form ?? [];
+        $out = [];
+        $supplier = ($f['supplier_id'] ?? null) ? Supplier::find($f['supplier_id']) : null;
+        if (! $supplier) {
+            $out[] = 'The supplier "'.($d['supplier_name'] ?? '?').'" was not found: choose it, or add it first.';
+        }
+        $no = trim((string) ($f['supplier_invoice_no'] ?? ''));
+        if ($supplier && $no !== '' && ($dup = DB::table('supplier_bills')->where('supplier_id', $supplier->id)->whereRaw('lower(supplier_invoice_no) = ?', [mb_strtolower($no)])->value('number'))) {
+            $out[] = "Invoice {$no} from {$supplier->name} is already entered as {$dup}.";
+        }
+        $lines = array_sum(array_map(fn ($l) => (float) ($l['line_total'] ?? ((float) ($l['qty'] ?? 1) * (float) ($l['unit_price'] ?? 0))), (array) ($d['lines'] ?? [])));
+        $subtotal = isset($d['subtotal']) && is_numeric($d['subtotal']) ? (float) $d['subtotal'] : null;
+        if ($subtotal !== null && abs($subtotal - $lines) > max(1, 0.005 * $subtotal)) {
+            $out[] = 'The lines read add up to '.number_format($lines, 2).' but the invoice says '.number_format($subtotal, 2).' before tax: a line may be missing or misread.';
+        }
+        if (isset($d['total'], $d['tax_total']) && is_numeric($d['total']) && is_numeric($d['tax_total']) && $subtotal !== null
+            && abs($subtotal + (float) $d['tax_total'] - (float) $d['total']) > 1) {
+            $out[] = 'The invoice\'s own figures do not add up (before tax + tax ≠ total): check the paper.';
+        }
+        if (($d['order_number'] ?? null) && $supplier && ! self::orderOf($supplier, (string) $d['order_number'])) {
+            $out[] = "The invoice quotes order {$d['order_number']}, which is not an order to {$supplier->name}.";
+        }
+        if (($f['expense_lines'] ?? []) !== [] && $supplier) {
+            $out[] = count($f['expense_lines']).' line(s) matched nothing received or ordered: they are under Other charges; choose the account, or receive the goods first.';
+        }
+
+        return $out;
     }
 
     /** The supplier named on a document: by TIN, else by the closest name (at least 60% alike). */
@@ -141,10 +205,13 @@ final class InvoiceScanner
     }
 
     /** Goods received from the supplier and not yet billed: [grn line id => line + sku + supplier sku]. */
-    private function openLines(Supplier $supplier): array
+    private function openLines(Supplier $supplier, ?string $order = null): array
     {
         $out = [];
-        foreach (GoodsReceipt::where('supplier_id', $supplier->id)->where('status', 'posted')->orderBy('number')->get() as $grn) {
+        $orderId = $order ? DB::table('purchase_orders')->where('supplier_id', $supplier->id)->where('number', $order)->value('id') : null;
+        $grns = GoodsReceipt::where('supplier_id', $supplier->id)->where('status', 'posted')->orderBy('number')->get()
+            ->sortBy(fn ($g) => $orderId && $g->purchase_order_id === $orderId ? 0 : 1); // the quoted order's deliveries first
+        foreach ($grns as $grn) {
             foreach (app(BillService::class)->billable($grn) as $l) {
                 if (Qty::toMilli((string) $l['open_qty']) > 0) {
                     $pid = DB::table('goods_receipt_lines')->where('id', $l['goods_receipt_line_id'])->value('product_id');

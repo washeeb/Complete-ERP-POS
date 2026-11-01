@@ -35,7 +35,22 @@ The **Insights** menu works on every installation, offline too. It is ordinary a
 The owner chose **no cloud AI for now**, so the AI assistant is **off**. Three features need it:
 
 - **Ask your business** (the copilot): questions in plain language, answered from your reports.
-- **Scan an invoice** on Supplier bills: a photo of a supplier invoice fills in the bill form.
+- **Scan an invoice** on Supplier bills: a photo or PDF of a supplier invoice fills in the bill form. The AI also
+  reads the order number on the invoice. It then matches each line to goods received (that order's deliveries first)
+  or to a service confirmed on an order, and puts what matches nothing under *Other charges*. Above the form it lists
+  what to look at:
+  - the lines read do not add up to the invoice's total;
+  - the invoice is already entered;
+  - the supplier was not found;
+  - the order number is not theirs;
+  - some lines matched nothing.
+
+  **Why:** a missed or misread line is caught before the bill is entered, not at month end. Nothing is entered until
+  a person presses *Create*.
+- **Read with AI** on *Purchasing → Invoices from suppliers* (invoices sent on the supplier portal): the same, using the
+  file the supplier sent. **Enter as bill** opens the bill form with the supplier, invoice number and date filled in,
+  for when the AI is off. Either way, creating the bill marks the supplier's invoice *entered*, and the supplier sees
+  this on their page.
 - **Write description (AI)** on a product: a draft text for the online shop.
 
 ![Ask your business, with the assistant off](img/copilot.png)

@@ -383,6 +383,27 @@ ordering more than was agreed.
 5. The buyers get a notice on the bell before it ends (30 days by default: the same setting as supplier documents) and
    when it has ended. **Close** it when it is finished.
 
+## 14.5h Spend analytics
+
+**Why:** knowing where the money goes is the first step to spending less. It shows which suppliers to negotiate with,
+which categories cost most, and whether people buy without approval.
+
+**Purchasing → Spend analytics** (for people who see supplier bills or approve orders). Choose the dates and, if you
+want, a branch. It counts posted supplier bills before VAT, by bill date:
+- **Spend**, the number of bills and the number of suppliers.
+- **Bought on an approved order**, in %. Spend without an order skipped approval. Rent and utilities usually have none.
+  Goods received without an order are worth asking about.
+- **Under contracts**, in %: the spend at agreed prices (14.5g).
+- **Biggest supplier / biggest five**, as a share of spend. One supplier taking most of it is a risk if they let you
+  down; many tiny ones waste effort.
+- **Billed above order prices**, and how many bills needed approval for it.
+- **Saved by asking for quotes**: for each item awarded on a request for quotation (14.5c), the average of the other
+  prices quoted minus the price chosen. Also how many quotes each request got, and how many suppliers answered.
+- Tables **by month** (the last twelve), **by supplier**, **by category** (the product's category for goods, the
+  account for services and charges), **how it was bought**, and **services and charges by department**.
+
+**Export** gives every table as Excel, CSV or PDF.
+
 ## 14.6 Purchase orders from a file, ordering again and sending to the supplier
 
 **From a file:** **Purchasing → Purchase orders → Order from a file**.
