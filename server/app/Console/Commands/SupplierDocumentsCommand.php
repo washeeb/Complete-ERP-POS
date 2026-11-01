@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Domain\Purchasing\AgreementService;
 use App\Domain\Purchasing\SupplierOnboarding;
 use App\Models\Tenant;
 use App\Support\TenantContext;
@@ -23,7 +24,7 @@ class SupplierDocumentsCommand extends Command
         }
         foreach (Tenant::all() as $tenant) {
             app(TenantContext::class)->set($tenant->id);
-            $this->info("{$tenant->name}: ".$onboarding->expiryAlerts($tenant->id).' alert(s).');
+            $this->info("{$tenant->name}: ".$onboarding->expiryAlerts($tenant->id).' document alert(s), '.app(AgreementService::class)->endAlerts($tenant->id).' agreement alert(s).');
         }
 
         return self::SUCCESS;

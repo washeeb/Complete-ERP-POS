@@ -130,7 +130,7 @@ class WmsController extends Controller
         return response()->json(PurchaseOrder::with('supplier', 'lines')->where('warehouse_id', $w->id)
             ->whereIn('status', ['approved', 'partially_received'])->orderBy('expected_on')->orderBy('number')->limit(100)->get()
             ->map(fn ($po) => ['id' => $po->id, 'number' => $po->number, 'supplier' => $po->supplier->name, 'expected_on' => $po->expected_on?->toDateString(),
-                'lines' => $po->lines->map(fn ($l) => ['id' => $l->id, 'product_uom_id' => $l->product_uom_id, 'sku' => $l->sku, 'name' => $l->name,
+                'lines' => $po->lines->reject->isNonStock()->map(fn ($l) => ['id' => $l->id, 'product_uom_id' => $l->product_uom_id, 'sku' => $l->sku, 'name' => $l->name,
                     'track_batches' => (bool) Product::find($l->product_id)?->track_batches, 'track_serials' => (bool) Product::find($l->product_id)?->track_serials,
                     'uom_code' => $l->uom_code, 'ordered' => (string) $l->qty, 'received' => (string) $l->received_qty,
                     'barcodes' => Barcode::where('product_uom_id', $l->product_uom_id)->pluck('code')])->values()]));

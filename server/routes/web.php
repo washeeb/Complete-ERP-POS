@@ -13,7 +13,9 @@ use App\Http\Controllers\SupplierPortalController;
 use App\Http\Controllers\SupportScreenshotController;
 use App\Http\Controllers\WaybillConfirmController;
 use App\Http\Controllers\WhatsappMediaController;
+use App\Models\PurchaseAgreement;
 use App\Models\PurchaseOrder;
+use App\Security\Authorizer;
 use App\Security\Passkeys\PasskeyLoginController;
 use App\Support\Progress;
 use Illuminate\Support\Facades\Route;
@@ -114,6 +116,13 @@ Route::prefix('s/{token}')->middleware('throttle:30,1')->group(function () {
     Route::post('invoice', [SupplierPortalController::class, 'invoice'])->name('supplier.portal.invoice')->middleware('throttle:10,1');
     Route::get('wht/{payment}', [SupplierPortalController::class, 'wht'])->name('supplier.portal.wht')->whereUuid('payment');
 });
+Route::get('agreement-file/{agreement}', function (PurchaseAgreement $agreement, Authorizer $authz) {
+    $u = request()->user();
+    abort_unless($u && $u->tenant_id === $agreement->tenant_id && collect(['purchasing.view', 'purchasing.manage', 'purchasing.approve'])->contains(fn ($p) => $authz->allowsAnywhere($u, $p)), 403);
+    abort_unless($agreement->file_path && Storage::disk('local')->exists($agreement->file_path), 404);
+
+    return Storage::disk('local')->response($agreement->file_path, $agreement->file_name);
+})->middleware(['auth'])->name('agreement.file')->whereUuid('agreement');
 Route::get('supplier-invoice/{invoice}', [SupplierPortalController::class, 'file'])->middleware(['auth'])->name('supplier-invoice.file')->whereUuid('invoice');
 
 // The photo on a stock adjustment line: for people who may see that store's stock.

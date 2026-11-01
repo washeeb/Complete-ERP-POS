@@ -3,12 +3,15 @@
 namespace App\Filament\Support;
 
 use App\Models\Bin;
+use App\Models\Department;
 use App\Models\ProductUom;
 use App\Models\Warehouse;
 use App\Support\Qty;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\Component;
@@ -159,6 +162,31 @@ final class Fields
                 ->sortBy(fn ($u) => [$u->product->name, $buying && $u->product->buying_uom_id === $u->uom_id ? 0 : 1, -(float) $u->factor])
                 ->mapWithKeys(fn ($u) => [$u->id => self::unitLabel($u, $buying)]))
             ->getOptionLabelUsing(fn ($value) => ($u = ProductUom::find($value)) ? self::unitLabel($u, $buying) : null);
+    }
+
+    /**
+     * The first fields of a buying line that is either a product or a service / non-stock item (an expense or asset
+     * account, a description and its unit), with the department (cost centre). The product field is the usual one.
+     */
+    public static function spendLine(): array
+    {
+        $service = fn (Get $get) => $get('kind') === 'service';
+
+        return [
+            ToggleButtons::make('kind')->hiddenLabel()->inline()->grouped()->live()->default('stock')->dehydrated(false)->columnSpanFull()
+                ->options(['stock' => 'Product', 'service' => 'Service or non-stock item']),
+            self::productUnit(buying: true)->live()->columnSpan(3)->required(fn (Get $get) => ! $service($get))->visible(fn (Get $get) => ! $service($get)),
+            TextInput::make('description')->label('What')->placeholder('e.g. Servicing of the generator')->maxLength(160)->columnSpan(2)
+                ->required($service)->visible($service),
+            Select::make('account_id')->label('Kind of spending')->searchable()->options(fn () => FinanceUi::accounts(false, ['expense', 'asset']))
+                ->required($service)->visible($service),
+            TextInput::make('uom_code')->label('Unit')->default('EA')->maxLength(10)->visible($service)->helperText('EA, JOB, HOUR, MONTH…'),
+        ];
+    }
+
+    public static function departmentField(string $name = 'department_id'): Select
+    {
+        return Select::make($name)->label('Department (cost centre)')->placeholder('—')->options(fn () => Department::orderBy('name')->pluck('name', 'id'));
     }
 
     /** Warehouses where the signed-in person holds the permission. */

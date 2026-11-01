@@ -43,6 +43,7 @@
     {"key": "stock.levels", "label": "Set minimum and maximum stock (reorder levels) and accept suggested levels", "min_level": 2},
     {"key": "stock.bins", "label": "Create and edit bins and shelf locations in a store", "min_level": 2},
     {"key": "suppliers.approve", "label": "Approve, block and unblock suppliers; check their documents and bank details (not ones you entered)", "min_level": 4},
+    {"key": "purchasing.approve_over_budget", "label": "Approve purchase orders that are over budget (when the budget check asks for it)", "min_level": 5},
     {"key": "purchasing.request", "label": "Ask the buyers to order stock (purchase requests)", "min_level": 2},
     {"key": "stock.count", "label": "Start stock counts and enter counted quantities", "min_level": 2},
     {"key": "stock.count.approve", "label": "Approve and post stock counts (not your own)", "min_level": 3},

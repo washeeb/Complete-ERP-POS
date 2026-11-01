@@ -85,6 +85,9 @@ final class GoodsReceiptService
             $poLine = null;
             if (! empty($r['purchase_order_line_id'])) {
                 $poLine = $poLines[$r['purchase_order_line_id']] ?? throw new DomainException('That line is not on this purchase order.');
+                if ($poLine->isNonStock()) {
+                    throw new DomainException("{$poLine->name} is a service or non-stock item: confirm it as delivered on the order instead.");
+                }
                 $unit = ProductUom::with('uom')->findOrFail($poLine->product_uom_id);
             } else {
                 $unit = ProductUom::with('uom')->find($r['product_uom_id'] ?? null) ?? throw new DomainException('Choose the product and unit received.');

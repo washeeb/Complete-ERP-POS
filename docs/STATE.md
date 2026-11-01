@@ -1,7 +1,7 @@
 # State (resume file)
 
 **Phase:** all phases of the master plan built; first client (a pharmacy) live since 2026-10-19 on an Ubuntu server, with releases delivered by `release:build` and the Ubuntu installer.
-**Updated:** 2026-11-01 · Procurement stage 3 (requests for quotation, supplier portal) on branch `procurement-rfq`; every other section below is merged to `main`.
+**Updated:** 2026-11-01 · Procurement stage 4 (services, budget check, contracts) on branch `procurement-stage4`; every other section below is merged to `main`.
 
 
 
@@ -16,9 +16,11 @@
 
 
 
-## Procurement stage 3: requests for quotation + supplier portal — branch `procurement-rfq`
+## Procurement stage 4: services and non-stock buying, budget check, contracts and blanket orders — branch `procurement-stage4`
+- Migration `2026_12_10_100001_procurement_stage4` (`purchase_agreements` + lines; nullable product on request / order lines + `account_id`, `department_id`, `agreement_line_id`, `est_unit_cost_minor`; `purchase_orders.agreement_id|department_id|over_budget|budget_note`; `supplier_bill_lines.purchase_order_line_id|department_id`; `journal_lines.department_id`). `Purchasing\AgreementService`, `Purchasing\BudgetCheck`, `PurchaseOrderService::confirmDelivered` + budget at submit / approve + agreement pricing in `priceLines`, `BillService::billableOrderLines` + order-line bills, `PurchaseRequestService::budget`, GL `department_id`. UI: `Fields::spendLine` / `departmentField` on requests, orders and agreements; PO *Confirm delivered*, department, agreement, over-budget note; bill *Services and non-stock items on orders*; `PurchaseAgreementResource` (Put in force, Order against it, Close; file route `agreement.file`). Setting `purchasing.budget_check` (off), permission `purchasing.approve_over_budget` (GM, Finance Manager), numbers `AGR-`. Test `ProcurementStage4Test` (4).
+- Next: stage 5 AI invoice capture (photo / PDF → draft bill matched to the order and delivery) + spend analytics.
+## Procurement stage 3: requests for quotation + supplier portal — merged (PR #121)
 - Migration `2026_12_09_100001_rfqs_and_supplier_portal` (`rfqs`, `rfq_lines`, `rfq_suppliers`, `rfq_quote_lines`, `supplier_invoices`; `purchase_orders.rfq_id` + supplier confirmation / dispatch columns; `suppliers.portal_token|portal_sent_at`). `Purchasing\RfqService` (create, fromRequest, invite, send, quote, decline, close, cancel, compare, award), `Purchasing\SupplierPortal` (link, send, confirm, dispatch, submitInvoice, markEntered, reject, statement), `Purchasing\SupplierMessages` (shared e-mail / WhatsApp sending). Public `RfqQuoteController` (`/q/{token}`), `SupplierPortalController` (`/s/{token}/…`, staff file `supplier-invoice/{id}`), views `portal/*`. UI: `RfqResource` (sealed view, comparison, Send / Supplier links / Ask another / Enter a quote / Close and compare / Award / Cancel), `SupplierInvoiceResource`, *Ask for quotes* on purchase requests (status `quoting`), *Portal link* on suppliers, PO *Supplier confirmed* / *On the way*. Setting `purchasing.supplier_portal` (off), templates `rfq_invite`, `supplier_portal`, numbers `RFQ-`. Tests `RfqTest` (6), `SupplierPortalTest` (2).
-- Next: stage 4 contracts and blanket orders, budget check at requisition, non-stock / service buying with cost centres; then stage 5 AI invoice capture + spend analytics.
 ## Procurement stage 2b + 2c: withholding tax, landed costs — merged (PR #120, with 2a)
 - Migration `2026_12_08_100002_withholding_tax` (supplier_payments wht columns; account 2240 → `wht_payable`). `Payables\WithholdingTax`, `SupplierPaymentService::pay(withhold, whtMinor)`, AutoPoster split, `DocumentNumbers` `wht_certificate` (WHT-), settings `payables.wht*`, `print.wht` certificate, page `WithholdingTaxReturn` (Finance), pay form preview. Test `WithholdingTaxTest`.
 - 2c: migration `2026_12_08_100003_landed_costs`, `Purchasing\LandedCostService` (post, spread), `LandedCostResource` (Purchasing), AutoPoster `landed_costs`, account 1360 `landed_clearing`, numbers `LC-`. Test `LandedCostTest`.

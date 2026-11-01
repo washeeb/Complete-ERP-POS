@@ -327,6 +327,62 @@ The portal is **off** until you switch it on: **System → Settings → Purchasi
 Everything a supplier does on the portal is recorded under their name: for example, *Kofi (Kofi Wholesale, supplier
 portal)*.
 
+## 14.5e Buying services and non-stock items, with departments
+
+**Why:** a business also buys things it does not sell: repairs, servicing, cleaning, stationery and equipment. Ordering
+them the same way as stock means someone approves the spending first, and the bill is checked against what was really
+delivered. The **department** (cost centre) shows who spent the money.
+
+1. On a **purchase request** or **purchase order** line, choose **Service or non-stock item** instead of *Product*.
+   Then describe it (e.g. *Servicing of the generator*), choose the **kind of spending** (the expense account, e.g.
+   repairs), the unit (JOB, HOUR, MONTH…) and, if you want, the **department**. On a request, give an **estimated
+   price**. It is used for the budget check, and the buyer later puts in the real price.
+2. The order is submitted and approved as usual.
+3. When the work is done or the items are handed over, press **Confirm delivered** on the order. Nothing goes into
+   stock, and goods received and the handheld do not show these lines.
+4. **Finance → Supplier bills → Services and non-stock items on orders:** bill what was confirmed. You cannot bill more
+   than was confirmed, and the price is checked against the order like stock. The cost goes to the order line's
+   account and department in the books. *Other charges* can also carry a department.
+
+**Departments** are the ones under HR → Departments.
+
+## 14.5f Budget check before buying
+
+**Why:** the budget you set under Finance → Budgets is only useful if people see it *before* they spend.
+
+**System → Settings → Purchasing → Budget check on service and non-stock buying.** It is **off** until you choose:
+- **Warn and record:** a request shows a **Budget** box: the year's budget for the branch and kind of spending, what is
+  already spent, what is already ordered and not yet billed, this request, and what is left. An order that goes over
+  is marked **Over budget** when it is submitted, with the figures, and this is recorded.
+- **Over budget needs a second approval:** the same, and an order over budget is approved only by someone with
+  **Approve orders over budget** (General Manager, Finance Manager).
+
+Only service and non-stock lines are checked; stock is not spending until it is sold. A kind of spending with no
+budget counts as over, so set budgets first.
+
+## 14.5g Contracts and blanket orders
+
+**Why:** prices agreed for the year are only worth having if every order uses them. A blanket order also stops buyers
+ordering more than was agreed.
+
+1. **Purchasing → Contracts and blanket orders → New agreement:**
+   - the supplier;
+   - **Contract** (agreed prices) or **Blanket order** (agreed prices plus how much may be ordered);
+   - the dates;
+   - optionally, the most that may be ordered in total;
+   - the terms, and a scan of the signed agreement;
+   - each item (a product, or a service) with its **agreed price before VAT**. On a blanket order, add the most of
+     each item that may be ordered.
+2. **Put in force:** someone with *Approve purchase orders*, other than the person who made it.
+3. From then until its end date:
+   - an order to that supplier with no price typed **takes the agreed price**;
+   - a higher price is **refused** (a lower one is fine);
+   - each order counts against the limits, and an order that would pass them is refused with what is left.
+4. **Order against it** (on the agreement): enter the quantities now. A draft purchase order is made at the agreed
+   prices, and you submit it as usual. The agreement shows **Ordered so far** and what is **Left** of each item.
+5. The buyers get a notice on the bell before it ends (30 days by default: the same setting as supplier documents) and
+   when it has ended. **Close** it when it is finished.
+
 ## 14.6 Purchase orders from a file, ordering again and sending to the supplier
 
 **From a file:** **Purchasing → Purchase orders → Order from a file**.

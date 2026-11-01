@@ -23,7 +23,7 @@ class PurchaseOrder extends Model
     protected function casts(): array
     {
         return ['expected_on' => 'date', 'submitted_at' => 'datetime', 'approved_at' => 'datetime', 'closed_at' => 'datetime', 'sent_at' => 'datetime', 'supplier_confirmed_at' => 'datetime', 'supplier_promised_on' => 'date', 'dispatched_at' => 'datetime',
-            'net_minor' => 'integer', 'tax_minor' => 'integer', 'total_minor' => 'integer'];
+            'net_minor' => 'integer', 'tax_minor' => 'integer', 'total_minor' => 'integer', 'over_budget' => 'boolean'];
     }
 
     public function lines(): HasMany
@@ -44,6 +44,16 @@ class PurchaseOrder extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function agreement(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseAgreement::class, 'agreement_id');
     }
 
     public function warehouse(): BelongsTo

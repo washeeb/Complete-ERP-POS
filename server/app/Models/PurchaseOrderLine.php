@@ -30,6 +30,17 @@ class PurchaseOrderLine extends Model
         return $this->belongsTo(Product::class);
     }
 
+    /** A service or non-stock item (an account, no product): confirmed as delivered on the order, never received into stock. */
+    public function isNonStock(): bool
+    {
+        return $this->product_id === null;
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
     public function unit(): BelongsTo
     {
         return $this->belongsTo(ProductUom::class, 'product_uom_id');

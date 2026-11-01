@@ -90,6 +90,9 @@ final class RfqService
         if ($r->status !== 'requested') {
             throw new DomainException("{$r->number} is ".strtolower(PurchaseRequest::STATUSES[$r->status] ?? $r->status).'.');
         }
+        if ($r->lines->contains(fn ($l) => ! $l->product_uom_id)) {
+            throw new DomainException('Quotes are asked for products. Order services and non-stock items from the request directly.');
+        }
 
         return $this->recorder->transaction(function () use ($actor, $r, $supplierIds, $closesAt, $terms) {
             $rfq = $this->create($actor, ['title' => "Purchase request {$r->number}", 'warehouse_id' => $r->warehouse_id, 'closes_at' => $closesAt,

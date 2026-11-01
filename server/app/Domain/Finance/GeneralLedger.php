@@ -37,8 +37,8 @@ final class GeneralLedger
     /**
      * Post an entry.
      *
-     * @param  list<array{account: Account|string, amount: int, branch_id?: ?string, industry_id?: ?string, party_type?: ?string, party_id?: ?string, memo?: ?string}>  $lines  + debit, − credit;
-     *                                                                                                                                                                          industry_id defaults to the branch's industry (profit centre), legal_entity_id to the branch's legal entity (books)
+     * @param  list<array{account: Account|string, amount: int, branch_id?: ?string, department_id?: ?string, industry_id?: ?string, party_type?: ?string, party_id?: ?string, memo?: ?string}>  $lines  + debit, − credit;
+     *                                                                                                                                                                                                   industry_id defaults to the branch's industry (profit centre), legal_entity_id to the branch's legal entity (books)
      * @param  list<array{0: string, 1: string}>  $sources  [source type, source id] rows this entry posts (exactly once)
      * @param  bool  $late  allow a closed month: post on the first day of the next open month instead (automatic posting)
      * @return JournalEntry|null null when every line is zero (the sources are still marked as posted)
@@ -55,8 +55,8 @@ final class GeneralLedger
             }
             $industry = array_key_exists('industry_id', $l) ? $l['industry_id'] : $this->industryOf($l['branch_id'] ?? null);
             $entity = ($l['legal_entity_id'] ?? null) ?: $this->entityOf($tenantId, $l['branch_id'] ?? null);
-            $key = implode('|', [$account->id, $l['branch_id'] ?? '', $industry ?? '', $entity ?? '', $l['party_type'] ?? '', $l['party_id'] ?? '', $l['memo'] ?? '']);
-            $merged[$key] ??= ['account_id' => $account->id, 'branch_id' => $l['branch_id'] ?? null, 'industry_id' => $industry, 'legal_entity_id' => $entity,
+            $key = implode('|', [$account->id, $l['branch_id'] ?? '', $l['department_id'] ?? '', $industry ?? '', $entity ?? '', $l['party_type'] ?? '', $l['party_id'] ?? '', $l['memo'] ?? '']);
+            $merged[$key] ??= ['account_id' => $account->id, 'branch_id' => $l['branch_id'] ?? null, 'department_id' => $l['department_id'] ?? null, 'industry_id' => $industry, 'legal_entity_id' => $entity,
                 'party_type' => $l['party_type'] ?? null,
                 'party_id' => $l['party_id'] ?? null, 'memo' => isset($l['memo']) ? mb_substr($l['memo'], 0, 255) : null, 'amount_minor' => 0];
             $merged[$key]['amount_minor'] += (int) $l['amount'];
@@ -125,7 +125,7 @@ final class GeneralLedger
                     continue;
                 }
                 $x = min($dn, $cn);
-                $line = fn (string $entity, int $amount, string $party) => ['account_id' => $account->id, 'branch_id' => null, 'industry_id' => null,
+                $line = fn (string $entity, int $amount, string $party) => ['account_id' => $account->id, 'branch_id' => null, 'department_id' => null, 'industry_id' => null,
                     'legal_entity_id' => $entity, 'party_type' => 'legal_entity', 'party_id' => $party, 'memo' => null, 'amount_minor' => $amount];
                 $lines[] = $line($d, -$x, $c); // d owes c, or c no longer owes d
                 $lines[] = $line($c, $x, $d);
