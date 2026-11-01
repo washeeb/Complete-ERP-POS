@@ -46,13 +46,28 @@ final class SupplierService
 
         return $this->recorder->transaction(function () use ($actor, $supplier, $data, $code, $currency) {
             $supplier->fill(array_intersect_key($data, array_flip(['name', 'contact_name', 'phone', 'email', 'tax_no', 'address',
-                'payment_terms_days', 'lead_time_days', 'return_days_before_expiry', 'is_active', 'notes'])));
+                'payment_terms_days', 'lead_time_days', 'return_days_before_expiry', 'is_active', 'notes', 'supply_kind', ...Supplier::BANK_FIELDS])));
+            if (! array_key_exists($supplier->supply_kind ?? 'goods', Supplier::SUPPLY_KINDS)) {
+                throw new DomainException('Choose what they supply: goods, services or works.');
+            }
             $supplier->code = $code;
             $supplier->currency_code ??= $currency;
             if (! $supplier->exists) {
                 $supplier->tenant_id = $actor->tenantId;
+                $supplier->created_by = $actor->id;
+                // A new supplier is approved by someone else before anyone orders from it (when the company asks for that).
+                $supplier->status = app(SupplierOnboarding::class)->approvalOn($actor->tenantId) ? 'pending' : 'approved';
+            }
+            // New or changed bank / MoMo details wait for a second person to verify them before money goes there.
+            $bankChanged = collect(Supplier::BANK_FIELDS)->contains(fn ($f) => $supplier->isDirty($f) && (filled($supplier->{$f}) || filled($supplier->getOriginal($f))));
+            if ($bankChanged) {
+                $supplier->forceFill(['bank_verified_by' => null, 'bank_verified_by_name' => null, 'bank_verified_at' => null]);
             }
             $this->recorder->save($actor, $supplier, $supplier->exists ? 'supplier.updated' : 'supplier.created');
+            if ($bankChanged) {
+                $this->recorder->audit->record($actor, 'supplier.bank_changed', $supplier, ['bank_account_no' => [null, $supplier->bank_account_no ? '…'.substr($supplier->bank_account_no, -4) : null],
+                    'momo_number' => [null, $supplier->momo_number ? '…'.substr($supplier->momo_number, -4) : null]]);
+            }
             if (array_key_exists('products', $data) && $this->syncProducts($supplier, $data['products'] ?? [], $currency)) {
                 $this->recorder->audit->record($actor, 'supplier.products_changed', $supplier, ['products' => [null, count($data['products'] ?? [])]]);
                 $this->recorder->outbox->publish($actor, $supplier->fresh(), 'supplier.products_changed');

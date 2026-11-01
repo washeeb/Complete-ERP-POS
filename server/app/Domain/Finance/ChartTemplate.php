@@ -42,6 +42,7 @@ final class ChartTemplate
         ['1330', 'Returnable containers with customers', 'asset', '1300', false, null, 'containers_out'],
         ['1340', 'Work in progress (production)', 'asset', '1300', false, null, 'wip'],
         ['1350', 'Goods returned to suppliers (awaiting credit)', 'asset', '1300', false, null, 'supplier_returns'],
+        ['1360', 'Freight, duty and clearing to spread (landed costs)', 'asset', '1300', false, null, 'landed_clearing'], // bills for freight / duty go here; a landed cost moves them into stock
         ['1400', 'Tax assets', 'asset', '1000', true, null, null],
         ['1410', 'Input VAT', 'asset', '1400', false, null, 'input_tax:VAT'],
         ['1411', 'Input NHIL', 'asset', '1400', false, null, 'input_tax:NHIL'],
@@ -68,7 +69,7 @@ final class ChartTemplate
         ['2231', 'Tier 2 pension payable', 'liability', '2200', false, null, 'tier2'],
         ['2232', 'Provident fund (Tier 3) payable', 'liability', '2200', false, null, 'tier3'],
         ['2233', 'Staff welfare dues payable', 'liability', '2200', false, null, 'welfare'],
-        ['2240', 'Withholding tax payable', 'liability', '2200', false, null, null],
+        ['2240', 'Withholding tax payable', 'liability', '2200', false, null, 'wht_payable'],
         ['2300', 'Owed to customers', 'liability', '2000', true, null, null],
         ['2310', 'Gift cards and store credit', 'liability', '2300', false, 'stored_value', 'stored_value'],
         ['2320', 'Loyalty points', 'liability', '2300', false, 'loyalty', 'loyalty'],

@@ -23,6 +23,7 @@ Schedule::command('license:health')->hourlyAt(20)->withoutOverlapping(30); // sy
 Schedule::command('erp:reservation-reminders')->everyFiveMinutes()->withoutOverlapping(10);
 Schedule::command('erp:appointment-reminders')->everyFiveMinutes()->withoutOverlapping(10);
 Schedule::command('erp:bill-memberships')->dailyAt('01:30')->withoutOverlapping(60); // head office only
+Schedule::command('erp:supplier-documents')->dailyAt('06:15')->withoutOverlapping(30); // supplier documents expiring or expired: buyers told once
 Schedule::command('erp:insights')->dailyAt('04:30')->withoutOverlapping(120); // forecasts and alerts (no AI model needed)
 Schedule::command('erp:reorder-levels --smart')->weeklyOn(1, '05:00')->withoutOverlapping(120); // smart minimum / maximum from sales (Mondays)
 Schedule::command('erp:whatsapp-media')->everyMinute()->withoutOverlapping(10); // WhatsApp orders: photos not fetched when they came

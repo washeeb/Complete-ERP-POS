@@ -171,6 +171,11 @@ Module settings (Grocery, Pharmacy, Restaurant, Fashion, Services) are explained
 
 - **Finance → Chart of accounts:** the Ghana SME template is already installed. Your accountant can rename and add accounts.
 - **Opening balances** on the go-live date: customers and suppliers (step 11), stock (step 10), and everything else (bank, cash, MoMo, assets, loans, capital) under **Finance → Journals → Opening balances**. The account *Opening balances (to clear)* must end at zero.
+- **Withholding tax on supplier payments** (System → Settings → *Withholding tax*): off until you switch it on. **Why:** Ghana's Income Tax Act makes a business keep back part of what it pays suppliers (by default 3 % for goods, 7.5 % for services, 5 % for works, on the amount before VAT, nothing below GHS 2,000) and pay it to GRA by the 15th of the next month. Have your accountant confirm the rates and the threshold there. Then:
+  1. On each supplier, set **They supply** to goods, services or works, and enter their **TIN**.
+  2. A supplier with a GRA exemption adds it as a document (*Withholding tax exemption certificate*, with its expiry); nothing is kept back while it is in date.
+  3. **Pay a supplier:** type the amount to settle; the form shows the tax kept back and what to pay them. The bill is settled in full; the bank goes down by what you paid; the tax waits in *Withholding tax payable*. Press **WHT certificate** on the payment and give it to the supplier.
+  4. **Finance → Withholding tax:** last month's list with every supplier's TIN, the base, the rate and the tax, and the total to pay GRA. **Download for GRA (CSV)** for the return. Pay GRA from the bank against the *Withholding tax payable* account.
 - **HR & payroll → Employees:** add staff with their pay and link each to their sign-in. Check **Payroll profile** (PAYE and SSNIT rules) with your accountant.
 
 ## Step 13 — Set up the devices

@@ -14,7 +14,16 @@
 
 
 
-## ZionEX (stage 1 of the owner's 2026-11-01 request) — branch `zionex-name`
+
+
+## Procurement stage 2b + 2c: withholding tax, landed costs — branch `procurement-wht` (PR #120, with 2a)
+- Migration `2026_12_08_100002_withholding_tax` (supplier_payments wht columns; account 2240 → `wht_payable`). `Payables\WithholdingTax`, `SupplierPaymentService::pay(withhold, whtMinor)`, AutoPoster split, `DocumentNumbers` `wht_certificate` (WHT-), settings `payables.wht*`, `print.wht` certificate, page `WithholdingTaxReturn` (Finance), pay form preview. Test `WithholdingTaxTest`.
+- 2c: migration `2026_12_08_100003_landed_costs`, `Purchasing\LandedCostService` (post, spread), `LandedCostResource` (Purchasing), AutoPoster `landed_costs`, account 1360 `landed_clearing`, numbers `LC-`. Test `LandedCostTest`.
+- Next: stage 3 RFQ / compare / award + supplier portal.
+## Procurement stage 2a: supplier onboarding + scorecards — branch `procurement-suppliers-wht`
+- Migration `2026_12_08_100001_supplier_onboarding` (supplier status / approval / bank fields / supply_kind; `supplier_documents`). `SupplierOnboarding`, `SupplierScorecard`, `SupplierDocument`, `erp:supplier-documents` (daily 06:15), settings `purchasing.supplier_approval|supplier_documents|document_warning_days`, permission `suppliers.approve`. Checks in `PurchaseOrderService` (saveDraft, submit, approve) and `SupplierPaymentService::pay`. UI: supplier form *How they are paid*, list status / score / Approve / Block / Verify bank / Scorecard, `DocumentsRelationManager`. Test `SupplierOnboardingTest`.
+- Next: 2b withholding tax (supplier_payments wht, account 2240 `wht_payable`, certificate, monthly GRA schedule), 2c landed costs.
+## ZionEX (stage 1 of the owner's 2026-11-01 request) — merged (PR #119)
 - Visible rename only (see DECISIONS). New artwork in `branding/product/` (mark, logo, logo-dark), `npm run brand` output, `config/brand.php` legacy-name rule, tagline on the sign-in page, licence texts via `config('brand.name')`, guides.
 - Next stages (owner's order): 2 supplier onboarding + scorecards, withholding tax, landed costs · 3 RFQ / compare / award + supplier portal · 4 contracts + blanket orders, budget check, non-stock and service buying · 5 AI invoice capture, spend analytics.
 ## Receipt footer lines, bold maker credit — merged (PR #118)

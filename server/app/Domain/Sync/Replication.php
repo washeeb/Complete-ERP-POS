@@ -66,7 +66,7 @@ final class Replication
         'reviews' => ['label' => 'Items needing review and pharmacist sign-offs', 'direction' => 'up', 'tables' => ['review_item' => 'review_items', 'pharmacy_signoff' => 'pharmacy_signoffs']],
         'attendance' => ['label' => 'Clock-in and clock-out', 'direction' => 'up', 'tables' => ['attendance_batch' => null]],
         'purchasing' => ['label' => 'Suppliers, purchase orders and goods received', 'direction' => 'both',
-            'tables' => ['supplier' => 'suppliers', 'purchase_order' => 'purchase_orders', 'goods_receipt' => 'goods_receipts', 'purchase_request' => 'purchase_requests']],
+            'tables' => ['supplier' => 'suppliers', 'supplier_document' => 'supplier_documents', 'landed_cost' => 'landed_costs', 'purchase_order' => 'purchase_orders', 'goods_receipt' => 'goods_receipts', 'purchase_request' => 'purchase_requests']],
         'warehouse' => ['label' => 'Bins, transfers, stock requests, counts and reorder levels', 'direction' => 'both',
             'tables' => ['bin' => 'bins', 'stock_transfer' => 'stock_transfers', 'stock_request' => 'stock_requests', 'stock_count' => 'stock_counts', 'reorder_rule' => 'reorder_rules',
                 'stock_adjustment' => 'stock_adjustments', 'supplier_return' => 'supplier_returns', 'waybill' => 'waybills', 'van_settlement' => 'van_settlements']],

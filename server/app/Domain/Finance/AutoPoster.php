@@ -25,7 +25,7 @@ final class AutoPoster
         'sales' => 'Till sales and returns', 'stock' => 'Stock movements (at cost)', 'invoices' => 'Customer invoices', 'credit_notes' => 'Credit notes',
         'customer_payments' => 'Customer payments', 'customer_openings' => 'Customer opening balances', 'online_orders' => 'Online orders',
         'shifts' => 'Till cash over / short', 'cash' => 'Till vaults, cash handovers and cash differences', 'loyalty' => 'Loyalty points', 'stored_value' => 'Gift cards and store credit',
-        'supplier_bills' => 'Supplier bills', 'supplier_payments' => 'Supplier payments', 'supplier_openings' => 'Supplier opening balances',
+        'supplier_bills' => 'Supplier bills', 'supplier_payments' => 'Supplier payments', 'landed_costs' => 'Landed costs (freight, duty)', 'supplier_openings' => 'Supplier opening balances',
         'supplier_returns' => 'Returns to suppliers', 'supplier_refunds' => 'Refunds from suppliers for returns',
         'money_transfers' => 'Money moved between accounts', 'expense_claims' => 'Expense claims paid', 'depreciation' => 'Depreciation', 'asset_disposals' => 'Assets disposed of',
         'staff_loans' => 'Staff loans and advances paid out', 'payroll' => 'Payroll (approved)', 'payroll_payments' => 'Payroll paid',
@@ -134,6 +134,7 @@ final class AutoPoster
                     ->whereIn('s.doc_type', ['gift_card_sale', 'gift_card_opening', 'store_credit_opening']))), $d('s.occurred_at')],
             'supplier_bills' => [$this->unpostedQuery('supplier_bills', 'supplier_bill', $tenantId)->where('s.status', 'posted'), 's.bill_date'],
             'supplier_payments' => [$this->unpostedQuery('supplier_payments', 'supplier_payment', $tenantId), 's.paid_on'],
+            'landed_costs' => [$this->unpostedQuery('landed_costs', 'landed_cost', $tenantId), $d('s.posted_at')],
             'supplier_openings' => [$this->unpostedQuery('supplier_ledger', 'supplier_ledger', $tenantId)->where('s.type', 'opening'), $d('s.occurred_at')],
             // A refund return is booked when the money comes in (supplier_refunds); the others when the goods leave.
             'supplier_returns' => [$this->unpostedQuery('supplier_returns', 'supplier_return', $tenantId)->where('s.status', 'posted')->where('s.settlement', '<>', 'refund'), $d('s.posted_at')],
@@ -466,14 +467,32 @@ final class AutoPoster
         return count($rows);
     }
 
+    /** Freight and duty spread: out of "to spread", into stock (still on hand) and cost of sales (already sold). */
+    private function landed_costs(Actor $actor, int $batch): int
+    {
+        $rows = $this->rows('landed_costs', $actor->tenantId, $batch, ['s.id', 's.number', 's.branch_id', 's.total_minor', 's.to_stock_minor', 's.to_cogs_minor']);
+        foreach ($rows as $l) {
+            $this->gl->post($actor, $l->d, 'auto', "Landed cost {$l->number}", array_values(array_filter([
+                (int) $l->to_stock_minor !== 0 ? ['account' => 'inventory', 'amount' => (int) $l->to_stock_minor, 'branch_id' => $l->branch_id] : null,
+                (int) $l->to_cogs_minor !== 0 ? ['account' => 'cogs', 'amount' => (int) $l->to_cogs_minor, 'branch_id' => $l->branch_id] : null,
+                ['account' => 'landed_clearing', 'amount' => -(int) $l->total_minor, 'branch_id' => $l->branch_id],
+            ])), [['landed_cost', $l->id]], 'landed_costs', late: true);
+        }
+
+        return count($rows);
+    }
+
     private function supplier_payments(Actor $actor, int $batch): int
     {
-        $rows = $this->rows('supplier_payments', $actor->tenantId, $batch, ['s.id', 's.number', 's.supplier_id', 's.branch_id', 's.account_id', 's.amount_minor']);
+        $rows = $this->rows('supplier_payments', $actor->tenantId, $batch, ['s.id', 's.number', 's.supplier_id', 's.branch_id', 's.account_id', 's.amount_minor', 's.wht_minor']);
         foreach ($rows as $p) {
-            $this->gl->post($actor, $p->d, 'auto', "Supplier payment {$p->number}", [
+            // The supplier's account goes down by the full amount; the bank by what was paid; the rest is owed to GRA.
+            $wht = (int) $p->wht_minor;
+            $this->gl->post($actor, $p->d, 'auto', "Supplier payment {$p->number}", array_values(array_filter([
                 ['account' => 'payables', 'amount' => (int) $p->amount_minor, 'branch_id' => $p->branch_id, 'party_type' => 'supplier', 'party_id' => $p->supplier_id],
-                ['account' => Account::withoutGlobalScopes()->findOrFail($p->account_id), 'amount' => -(int) $p->amount_minor, 'branch_id' => $p->branch_id],
-            ], [['supplier_payment', $p->id]], 'supplier_payments', late: true);
+                ['account' => Account::withoutGlobalScopes()->findOrFail($p->account_id), 'amount' => -((int) $p->amount_minor - $wht), 'branch_id' => $p->branch_id],
+                $wht > 0 ? ['account' => 'wht_payable', 'amount' => -$wht, 'branch_id' => $p->branch_id] : null,
+            ])), [['supplier_payment', $p->id]], 'supplier_payments', late: true);
         }
 
         return count($rows);
