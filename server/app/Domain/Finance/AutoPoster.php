@@ -454,8 +454,8 @@ final class AutoPoster
                 if ($l->goods_receipt_line_id) {
                     $lines[] = ['account' => 'grni', 'amount' => (int) $l->received_value_minor, 'branch_id' => $b->branch_id];
                     $lines[] = ['account' => $costAccount, 'amount' => (int) $l->net_minor - (int) $l->received_value_minor, 'branch_id' => $b->branch_id];
-                } else {
-                    $lines[] = ['account' => $costAccount, 'amount' => (int) $l->net_minor, 'branch_id' => $b->branch_id];
+                } else { // an expense line, or a service on an order: charged to the department (cost centre) when given
+                    $lines[] = ['account' => $costAccount, 'amount' => (int) $l->net_minor, 'branch_id' => $b->branch_id, 'department_id' => $l->department_id];
                 }
                 foreach (json_decode($l->tax_breakdown, true) ?? [] as $t) {
                     $lines[] = ['account' => ($recoverable[$t['code']] ?? true) ? "input_tax:{$t['code']}" : $costAccount, 'amount' => (int) $t['amount_minor'], 'branch_id' => $b->branch_id];

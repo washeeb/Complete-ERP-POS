@@ -6,6 +6,7 @@ use App\Domain\Purchasing\GoodsReceiptService;
 use App\Domain\Purchasing\OrderSender;
 use App\Domain\Purchasing\PurchaseOrderService;
 use App\Filament\Resources\GoodsReceipts\GoodsReceiptResource;
+use App\Filament\Resources\PurchaseAgreements\PurchaseAgreementResource;
 use App\Filament\Resources\PurchaseOrders\Pages\CreatePurchaseOrder;
 use App\Filament\Resources\PurchaseOrders\Pages\EditPurchaseOrder;
 use App\Filament\Resources\PurchaseOrders\Pages\ListPurchaseOrders;
@@ -122,8 +123,9 @@ class PurchaseOrderResource extends Resource
 
     public static function toFormData(PurchaseOrder $po): array
     {
-        return ['lines' => $po->lines()->get()->map(fn ($l) => ['product_uom_id' => $l->product_uom_id, 'qty' => Fields::qty($l->qty),
-            'unit_cost' => Money::format($l->unit_cost_minor, $po->currency_code)])->all()];
+        return ['lines' => $po->lines()->get()->map(fn ($l) => ['kind' => $l->isNonStock() ? 'service' : 'stock', 'product_uom_id' => $l->product_uom_id,
+            'account_id' => $l->account_id, 'description' => $l->isNonStock() ? $l->name : null, 'uom_code' => $l->uom_code, 'department_id' => $l->department_id,
+            'agreement_line_id' => $l->agreement_line_id, 'qty' => Fields::qty($l->qty), 'unit_cost' => Money::format($l->unit_cost_minor, $po->currency_code)])->all()];
     }
 
     public static function form(Schema $schema): Schema
@@ -134,18 +136,22 @@ class PurchaseOrderResource extends Resource
                     ->options(fn () => Supplier::where('is_active', true)->orderBy('name')->pluck('name', 'id')), 'supplier'),
                 Select::make('warehouse_id')->label('Deliver to')->required()->options(fn () => Fields::warehouses('purchasing.manage')),
                 DatePicker::make('expected_on')->label('Expected delivery'),
+                Fields::departmentField(),
                 Textarea::make('note')->columnSpanFull(),
             ]),
-            Section::make('Lines')->description('Costs are before tax. Leave the cost blank to use the supplier’s last cost.')->schema([
-                Repeater::make('lines')->hiddenLabel()->itemNumbers()->columns(6)->minItems(1)->addActionLabel('Add line')->schema([
-                    Fields::productUnit(buying: true)->live()->columnSpan(3),
-                    TextInput::make('qty')->label('Quantity')->required()->numeric()->minValue(0.001)
-                        ->helperText(fn (Get $get) => self::packRule($get('../../supplier_id'), $get('product_uom_id'))),
-                    TextInput::make('unit_cost')->label('Cost per unit')->numeric()->minValue(0),
-                    Fields::available('../../warehouse_id')->label('In stock there'),
-                    Fields::duplicateWarning(),
+            Section::make('Lines')->description('Costs are before tax. Leave the cost blank to use the agreed price (contract) or the supplier’s last cost. '
+                .'A service or non-stock item is confirmed as delivered on the order instead of being received into stock.')->schema([
+                    Repeater::make('lines')->hiddenLabel()->itemNumbers()->columns(6)->minItems(1)->addActionLabel('Add line')->schema([
+                        ...Fields::spendLine(),
+                        TextInput::make('qty')->label('Quantity')->required()->numeric()->minValue(0.001)
+                            ->helperText(fn (Get $get) => self::packRule($get('../../supplier_id'), $get('product_uom_id'))),
+                        TextInput::make('unit_cost')->label('Cost per unit')->numeric()->minValue(0),
+                        Fields::available('../../warehouse_id')->label('In stock there')->visible(fn (Get $get) => $get('kind') !== 'service'),
+                        Fields::departmentField()->visible(fn (Get $get) => $get('kind') === 'service'),
+                        Hidden::make('agreement_line_id'),
+                        Fields::duplicateWarning(),
+                    ]),
                 ]),
-            ]),
         ]);
     }
 
@@ -186,11 +192,16 @@ class PurchaseOrderResource extends Resource
                     ->belowContent(fn (PurchaseOrder $record) => $record->supplier_reply),
                 TextEntry::make('dispatched_at')->label('On the way')->visible(fn (PurchaseOrder $record) => (bool) $record->dispatched_at)
                     ->formatStateUsing(fn (PurchaseOrder $record) => $record->dispatched_at->format('j M Y H:i').' · '.$record->dispatch_ref),
+                TextEntry::make('department.name')->label('Department')->visible(fn (PurchaseOrder $record) => (bool) $record->department_id),
+                TextEntry::make('agreement.number')->label('Against agreement')->visible(fn (PurchaseOrder $record) => (bool) $record->agreement_id)
+                    ->url(fn (PurchaseOrder $record) => $record->agreement_id ? PurchaseAgreementResource::getUrl('view', ['record' => $record->agreement_id]) : null),
+                TextEntry::make('budget_note')->label('Over budget')->color('danger')->columnSpanFull()->visible(fn (PurchaseOrder $record) => $record->over_budget),
                 TextEntry::make('note')->placeholder('—')->columnSpanFull(),
             ]),
             Section::make('Lines')->schema([
                 RepeatableEntry::make('lines')->hiddenLabel()->columns(6)->schema([
-                    TextEntry::make('name')->columnSpan(2)->formatStateUsing(fn ($state, $record) => "{$record->sku} · {$state}"),
+                    TextEntry::make('name')->columnSpan(2)->formatStateUsing(fn ($state, $record) => $record->sku ? "{$record->sku} · {$state}" : $state)
+                        ->belowContent(fn ($record) => $record->isNonStock() ? 'Service / non-stock'.($record->department ? " · {$record->department->name}" : '') : null),
                     TextEntry::make('qty')->label('Ordered')->formatStateUsing(fn ($state, $record) => Fields::qty($state, $record->uom_code)),
                     TextEntry::make('received_qty')->label('Received')->formatStateUsing(fn ($state, $record) => Fields::qty($state, $record->uom_code)),
                     TextEntry::make('unit_cost_minor')->label('Cost')->formatStateUsing(fn ($state, $livewire) => self::money($state, $livewire->getRecord())),
@@ -247,10 +258,27 @@ class PurchaseOrderResource extends Resource
                     Notification::make()->success()->title("{$po->number} created")->body('Check the quantities, then submit it for approval.')->send();
                     $livewire->redirect(self::getUrl('edit', ['record' => $po]));
                 }),
+            Action::make('confirmDelivered')->label('Confirm delivered')->icon(Heroicon::OutlinedClipboardDocumentCheck)->color('success')
+                ->visible(fn (PurchaseOrder $record) => $record->isReceivable() && $record->lines()->whereNull('product_id')->whereColumn('received_qty', '<', 'qty')->exists()
+                    && (Erp::can('stock.receive', $record->warehouse) || Erp::can('purchasing.manage', $record->warehouse)))
+                ->modalDescription('For services done and non-stock items handed over: nothing goes into stock. The bill is then matched to what you confirm here.')
+                ->fillForm(fn (PurchaseOrder $record) => ['lines' => $record->lines()->whereNull('product_id')->get()->map(fn ($l) => ['id' => $l->id,
+                    'item' => "{$l->name} ({$l->uom_code}), ordered ".Fields::qty($l->qty).', delivered so far '.Fields::qty($l->received_qty),
+                    'qty' => Fields::qty(Qty::format(max(0, Qty::toMilli((string) $l->qty) - Qty::toMilli((string) $l->received_qty))))])->all()])
+                ->schema([
+                    Repeater::make('lines')->addable(false)->deletable(false)->reorderable(false)->columns(3)->schema([
+                        TextInput::make('item')->disabled()->dehydrated(false)->columnSpan(2),
+                        TextInput::make('qty')->label('Delivered now')->numeric()->minValue(0),
+                        Hidden::make('id'),
+                    ]),
+                    TextInput::make('note')->label('Note (e.g. job card number)')->maxLength(255),
+                ])
+                ->action(fn (PurchaseOrder $record, array $data) => Erp::run(fn ($actor) => $svc()->confirmDelivered($actor, $record,
+                    collect($data['lines'])->mapWithKeys(fn ($l) => [$l['id'] => (string) ($l['qty'] ?? '')])->all(), $data['note'] ?? null), 'Delivery confirmed')),
             Action::make('receive')->label('Receive goods')->icon(Heroicon::OutlinedInboxArrowDown)->color('success')
-                ->visible(fn (PurchaseOrder $record) => $record->isReceivable() && Erp::can('stock.receive', $record->warehouse))
+                ->visible(fn (PurchaseOrder $record) => $record->isReceivable() && $record->lines()->whereNotNull('product_id')->exists() && Erp::can('stock.receive', $record->warehouse))
                 ->modalWidth('4xl')
-                ->fillForm(fn (PurchaseOrder $record) => ['lines' => $record->lines()->get()->map(fn ($l) => [
+                ->fillForm(fn (PurchaseOrder $record) => ['lines' => $record->lines()->whereNotNull('product_id')->get()->map(fn ($l) => [
                     'purchase_order_line_id' => $l->id, 'item' => "{$l->sku} · {$l->name} ({$l->uom_code})", 'batched' => (bool) Product::find($l->product_id)?->track_batches, 'serialised' => (bool) Product::find($l->product_id)?->track_serials,
                     'qty' => Fields::qty(Qty::format(max(0, Qty::toMilli((string) $l->qty) - Qty::toMilli((string) $l->received_qty)))),
                 ])->all()])

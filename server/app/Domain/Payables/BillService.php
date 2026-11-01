@@ -11,6 +11,7 @@ use App\Domain\Support\Recorder;
 use App\Models\Account;
 use App\Models\Branch;
 use App\Models\GoodsReceipt;
+use App\Models\PurchaseOrder;
 use App\Models\Supplier;
 use App\Models\SupplierBill;
 use App\Models\SupplierBillLine;
@@ -125,6 +126,33 @@ final class BillService
                         'qty' => Qty::format($qty), 'unit_cost_minor' => $cost, 'order_cost_minor' => $line['order_cost_minor'],
                         'received_value_minor' => Qty::divRound($qty * (int) $l->unit_cost_minor, 1000), 'net_minor' => $t['net'], 'tax_minor' => $t['tax'],
                         'total_minor' => $t['gross'], 'tax_breakdown' => $t['breakdown']];
+                } elseif (! empty($in['purchase_order_line_id'])) {
+                    // A service or non-stock item on an order: never more than was confirmed delivered and not yet billed,
+                    // priced against the order like stock (2-way match), charged to the order line's account and department.
+                    $pl = DB::table('purchase_order_lines')->where('id', $in['purchase_order_line_id'])->lockForUpdate()->first()
+                        ?? throw new DomainException('That order line does not exist.');
+                    $po = PurchaseOrder::findOrFail($pl->purchase_order_id);
+                    if ($po->supplier_id !== $supplier->id || $pl->product_id !== null || ! in_array($po->status, ['approved', 'partially_received', 'received', 'closed'], true)) {
+                        throw new DomainException("{$pl->name} on {$po->number} cannot be billed to {$supplier->name}.");
+                    }
+                    $qty = Qty::toMilli((string) ($in['qty'] ?? '0'));
+                    $open = Qty::toMilli((string) $pl->received_qty) - $this->billedOnOrderMilli($pl->id);
+                    if ($qty <= 0 || $qty > $open) {
+                        throw new DomainException("{$pl->name}: only ".Qty::format(max(0, $open))." {$pl->uom_code} on {$po->number} is confirmed delivered and not yet billed.");
+                    }
+                    $cost = (int) ($in['unit_cost_minor'] ?? $pl->unit_cost_minor);
+                    if ($cost < 0) {
+                        throw new DomainException("{$pl->name}: the price cannot be negative.");
+                    }
+                    $rates = array_map(fn ($b) => ['code' => $b['code'], 'name' => $b['name'], 'rate_bp' => (int) $b['rate_bp']], json_decode($pl->tax_breakdown, true) ?? []);
+                    $net = Qty::divRound($qty * $cost, 1000);
+                    $ordered = Qty::divRound($qty * (int) $pl->unit_cost_minor, 1000);
+                    $t = TaxCalculator::line($net, $rates, false);
+                    $variance += $net - $ordered;
+                    $orderValue += $ordered;
+                    $lines[] = ['line_no' => $i + 1, 'purchase_order_line_id' => $pl->id, 'account_id' => $pl->account_id, 'department_id' => $pl->department_id,
+                        'description' => mb_substr("{$po->number} {$pl->name}", 0, 255), 'qty' => Qty::format($qty), 'unit_cost_minor' => $cost,
+                        'order_cost_minor' => (int) $pl->unit_cost_minor, 'net_minor' => $t['net'], 'tax_minor' => $t['tax'], 'total_minor' => $t['gross'], 'tax_breakdown' => $t['breakdown']];
                 } else {
                     $account = Account::find($in['account_id'] ?? null) ?? throw new DomainException('Choose the account for each expense line.');
                     if ($account->is_header || $account->control || ! $account->is_active || ! in_array($account->type, ['expense', 'asset'], true)) {
@@ -139,7 +167,7 @@ final class BillService
                     $t = TaxCalculator::line($amount, $rates, false);
                     $lines[] = ['line_no' => $i + 1, 'account_id' => $account->id, 'description' => mb_substr(trim((string) ($in['description'] ?? '')) ?: $account->name, 0, 255),
                         'qty' => '1.000', 'unit_cost_minor' => $amount, 'net_minor' => $t['net'], 'tax_minor' => $t['tax'], 'total_minor' => $t['gross'],
-                        'tax_breakdown' => $t['breakdown']];
+                        'tax_breakdown' => $t['breakdown'], 'department_id' => ($in['department_id'] ?? null) ?: null];
                 }
             }
 
@@ -166,6 +194,34 @@ final class BillService
 
             return $bill->fresh('lines');
         });
+    }
+
+    /**
+     * Service and non-stock lines on this supplier's orders, confirmed delivered and not yet billed.
+     *
+     * @return list<array{purchase_order_line_id: string, order: string, name: string, uom: string, open_qty: string, order_cost_minor: int}>
+     */
+    public function billableOrderLines(Supplier $supplier): array
+    {
+        $out = [];
+        $rows = DB::table('purchase_order_lines as l')->join('purchase_orders as o', 'o.id', '=', 'l.purchase_order_id')->where('o.supplier_id', $supplier->id)
+            ->whereNull('l.product_id')->whereIn('o.status', ['approved', 'partially_received', 'received', 'closed'])->orderBy('o.number')->orderBy('l.line_no')
+            ->get(['l.id', 'l.name', 'l.uom_code', 'l.received_qty', 'l.unit_cost_minor', 'o.number']);
+        foreach ($rows as $l) {
+            $open = Qty::toMilli((string) $l->received_qty) - $this->billedOnOrderMilli($l->id);
+            if ($open > 0) {
+                $out[] = ['purchase_order_line_id' => $l->id, 'order' => $l->number, 'name' => $l->name, 'uom' => $l->uom_code, 'open_qty' => Qty::format($open),
+                    'order_cost_minor' => (int) $l->unit_cost_minor];
+            }
+        }
+
+        return $out;
+    }
+
+    private function billedOnOrderMilli(string $orderLineId): int
+    {
+        return (int) DB::table('supplier_bill_lines as l')->join('supplier_bills as b', 'b.id', '=', 'l.supplier_bill_id')
+            ->where('l.purchase_order_line_id', $orderLineId)->where('b.status', '!=', 'rejected')->get(['l.qty'])->sum(fn ($r) => Qty::toMilli((string) $r->qty));
     }
 
     /** Accept a bill whose prices differ from the order by more than the tolerance. */

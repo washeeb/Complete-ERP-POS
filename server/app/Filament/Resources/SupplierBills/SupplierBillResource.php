@@ -123,6 +123,14 @@ class SupplierBillResource extends Resource
         return $out;
     }
 
+    /** @return array<string, array<string, mixed>> order line id => what can still be billed */
+    public static function billableOrderLines(?string $supplierId): array
+    {
+        $s = $supplierId ? Supplier::find($supplierId) : null;
+
+        return $s ? collect(app(BillService::class)->billableOrderLines($s))->keyBy('purchase_order_line_id')->all() : [];
+    }
+
     public static function form(Schema $schema): Schema
     {
         $currency = fn () => FinanceUi::currency();
@@ -157,12 +165,30 @@ class SupplierBillResource extends Resource
                     TextInput::make('unit_cost')->label('Price per unit (before tax)')->required()->numeric()->minValue(0),
                 ]),
             ]),
+            Section::make('Services and non-stock items on orders')->description('Confirmed as delivered on a purchase order and not yet billed. The order price is filled in.')
+                ->collapsed()->schema([
+                    Repeater::make('order_lines')->itemNumbers()->hiddenLabel()->columns(4)->addActionLabel('Add an order line')->defaultItems(0)->schema([
+                        Select::make('purchase_order_line_id')->label('On order')->required()->columnSpan(2)->live()
+                            ->options(fn (Get $get) => collect(self::billableOrderLines($get('../../supplier_id')))->map(fn ($l) => "{$l['order']} · {$l['name']} — "
+                                .Fields::qty($l['open_qty'], $l['uom']).' to bill')->all())
+                            ->afterStateUpdated(function ($state, Get $get, Set $set) use ($currency) {
+                                $l = self::billableOrderLines($get('../../supplier_id'))[$state] ?? null;
+                                if ($l) {
+                                    $set('qty', Fields::qty($l['open_qty']));
+                                    $set('unit_cost', Money::format($l['order_cost_minor'], $currency()));
+                                }
+                            }),
+                        TextInput::make('qty')->label('Quantity')->required()->numeric()->minValue(0.001),
+                        TextInput::make('unit_cost')->label('Price per unit (before tax)')->required()->numeric()->minValue(0),
+                    ]),
+                ]),
             Section::make('Other charges')->description('Rent, electricity, transport… charged straight to an expense account.')->collapsed()->schema([
                 Repeater::make('expense_lines')->itemNumbers()->hiddenLabel()->columns(4)->addActionLabel('Add a charge')->defaultItems(0)->schema([
                     Select::make('account_id')->label('Account')->required()->searchable()->options(fn () => FinanceUi::accounts(withControl: false, types: ['expense', 'asset'])),
                     TextInput::make('description')->maxLength(255),
                     TextInput::make('amount')->label('Amount (before tax)')->required()->numeric()->minValue(0.01),
                     Select::make('tax_group_id')->label('Tax')->options(fn () => TaxGroup::orderBy('code')->pluck('name', 'id'))->placeholder('No tax'),
+                    Fields::departmentField(),
                 ]),
             ]),
             Hidden::make('grns_seen'),
@@ -175,9 +201,12 @@ class SupplierBillResource extends Resource
         foreach ($data['stock_lines'] ?? [] as $l) {
             $lines[] = ['goods_receipt_line_id' => $l['goods_receipt_line_id'], 'qty' => (string) $l['qty'], 'unit_cost_minor' => FinanceUi::toMinor($l['unit_cost'])];
         }
+        foreach ($data['order_lines'] ?? [] as $l) {
+            $lines[] = ['purchase_order_line_id' => $l['purchase_order_line_id'], 'qty' => (string) $l['qty'], 'unit_cost_minor' => FinanceUi::toMinor($l['unit_cost'])];
+        }
         foreach ($data['expense_lines'] ?? [] as $l) {
             $lines[] = ['account_id' => $l['account_id'], 'description' => $l['description'] ?? null, 'amount_minor' => FinanceUi::toMinor($l['amount']),
-                'tax_group_id' => $l['tax_group_id'] ?? null];
+                'tax_group_id' => $l['tax_group_id'] ?? null, 'department_id' => $l['department_id'] ?? null];
         }
 
         return ['supplier_invoice_no' => $data['supplier_invoice_no'], 'bill_date' => $data['bill_date'], 'due_on' => $data['due_on'] ?? null,

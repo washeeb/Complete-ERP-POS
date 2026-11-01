@@ -11,6 +11,8 @@ use App\Filament\Resources\PurchaseRequests\Pages\ViewPurchaseRequest;
 use App\Filament\Resources\Rfqs\RfqResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
+use App\Filament\Support\FinanceUi;
+use App\Filament\Support\MiniTable;
 use App\Models\PurchaseRequest;
 use App\Models\Supplier;
 use BackedEnum;
@@ -26,6 +28,7 @@ use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -89,13 +92,16 @@ class PurchaseRequestResource extends Resource
             Section::make()->columns(3)->schema([
                 Select::make('warehouse_id')->label('For the store')->required()->live()->options(fn () => Fields::warehouses('purchasing.request')),
                 DatePicker::make('needed_by')->label('Needed by (optional)')->minDate(today()),
+                Fields::departmentField(),
                 Textarea::make('note')->rows(2)->columnSpanFull(),
             ]),
             Section::make('What to order')->schema([
                 Repeater::make('lines')->hiddenLabel()->itemNumbers()->columns(7)->minItems(1)->addActionLabel('Add line')->schema([
-                    Fields::productUnit()->live()->columnSpan(3),
+                    ...Fields::spendLine(),
                     TextInput::make('qty')->label('Quantity')->required()->numeric()->minValue(0.001),
-                    Fields::available('../../warehouse_id')->label('In stock now'),
+                    TextInput::make('est_unit_cost')->label('Estimated price per unit')->numeric()->minValue(0)->visible(fn (Get $get) => $get('kind') === 'service')
+                        ->helperText('For the budget check; the buyer gets the real price.'),
+                    Fields::available('../../warehouse_id')->label('In stock now')->visible(fn (Get $get) => $get('kind') !== 'service'),
                     TextInput::make('note')->label('Note (optional)')->maxLength(255)->columnSpan(2),
                     Fields::duplicateWarning(),
                 ]),
@@ -118,6 +124,11 @@ class PurchaseRequestResource extends Resource
                 TextEntry::make('closed_reason')->label('Reason')->placeholder('—'),
                 TextEntry::make('note')->columnSpanFull()->placeholder('—'),
             ]),
+            Section::make('Budget')->visible(fn (PurchaseRequest $record) => app(PurchaseRequestService::class)->budget($record) !== [])
+                ->description('The year\'s budget for this branch, what is spent and already ordered, and this request at its estimated prices.')
+                ->schema([TextEntry::make('budget')->hiddenLabel()->state(fn (PurchaseRequest $record) => MiniTable::html(['Kind of spending', 'Budget', 'Spent', 'Ordered', 'This request', 'Left'],
+                    array_map(fn ($r) => [$r['account']->label(), FinanceUi::money($r['budget']), FinanceUi::money($r['spent']), FinanceUi::money($r['committed']),
+                        FinanceUi::money($r['this']), ($r['left'] < 0 ? 'Over by ' : '').FinanceUi::money(abs($r['left']))], app(PurchaseRequestService::class)->budget($record)), [1, 2, 3, 4, 5]))]),
             RepeatableEntry::make('lines')->columns(4)->schema([
                 TextEntry::make('line_no')->label('#'),
                 TextEntry::make('name')->label('Product')->formatStateUsing(fn ($state, $record) => "{$record->sku} · {$state}"),
@@ -143,7 +154,8 @@ class PurchaseRequestResource extends Resource
                     $action->redirect(PurchaseOrderResource::getUrl('edit', ['record' => $po]));
                 }),
             Action::make('quotes')->label('Ask for quotes')->icon(Heroicon::OutlinedScale)->color('gray')
-                ->visible(fn (PurchaseRequest $record) => $record->status === 'requested' && Erp::can('purchasing.manage', $record->warehouse))
+                ->visible(fn (PurchaseRequest $record) => $record->status === 'requested' && Erp::can('purchasing.manage', $record->warehouse)
+                    && $record->lines->every(fn ($l) => (bool) $l->product_uom_id))
                 ->modalDescription('Ask several suppliers for prices on these lines first. Their prices stay sealed until the closing time; then compare and award.')
                 ->schema([
                     Select::make('supplier_ids')->label('Suppliers to ask')->multiple()->required()->searchable()->options(fn () => RfqResource::supplierOptions())

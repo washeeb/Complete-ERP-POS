@@ -175,6 +175,11 @@ final class Settings
             'label' => 'Warn this many days before a supplier document expires',
             'help' => 'The people who approve suppliers or buy get a notice on the bell once when a document is about to expire, and again when it has expired.',
         ],
+        'purchasing.budget_check' => [
+            'type' => 'choice', 'default' => 'off', 'options' => ['off' => 'Off', 'warn' => 'Warn and record', 'approval' => 'Over budget needs a second approval'],
+            'group' => 'Purchasing', 'label' => 'Budget check on service and non-stock buying',
+            'help' => 'For lines that are services or non-stock items (charged to an expense account, not stock): the year\'s budget for the branch and account (Finance → Budgets) against what is already spent, what is already ordered and not yet billed, and this order. Warn: the request and the order show it, and an order over budget is marked and recorded when submitted. Over budget needs a second approval: such an order is also approved only by someone with "Approve orders over budget" (General Manager, Finance Manager). An account with no budget counts as over. Stock purchases are not checked.',
+        ],
         'purchasing.supplier_portal' => [
             'type' => 'bool', 'default' => false, 'group' => 'Purchasing',
             'label' => 'Supplier portal',
