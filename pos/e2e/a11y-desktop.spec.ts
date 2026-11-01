@@ -115,7 +115,7 @@ test('the desktop till prints the receipt by itself, silently, on the receipt pr
   expect(call.openDrawer).toBe(true)
   expect(text).toContain('Receipt HQ-T01A-000001')
   expect(text).toContain('GRA E-VAT GRA-77')
-  expect(text).toContain('ZionEX · Powered by SES Labs')
+  expect(text).toContain('ZionEX \u00fa Powered by SES Labs') // the middle dot is 0xFA in the printer's code page (PC858), read here as Latin-1
   const bytes = Buffer.from(call.data, 'base64')
   const at = bytes.indexOf(Buffer.from([0x1d, 0x76, 0x30, 0x00])) // the logo as a raster image, before the company name
   expect(at).toBeGreaterThan(0)

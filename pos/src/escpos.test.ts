@@ -20,6 +20,12 @@ describe('ESC/POS receipts', () => {
     expect(text).toContain('GHS')
   })
 
+  it('prints the middle dot, not a question mark', () => {
+    const b = Array.from(new EscPos().text('ZionEX · Powered by SES Labs').toBytes().slice(5))
+    expect(b).toContain(0xfa) // · in PC858
+    expect(b).not.toContain(0x3f) // no "?"
+  })
+
   it('fits 58 mm paper: 32 characters a line', () => {
     const p = new EscPos(32).columns('Paracetamol 500mg strip of 10', 'GHS 12.00').rule()
     const lines = ascii(p.toBytes().slice(5)).split('\n').filter(Boolean)

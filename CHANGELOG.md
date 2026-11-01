@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- **Printed receipts showed "?" for the middle dot** (e.g. *1 Nov 2026, 15:51 ? Efua*): the receipt printer's code page has it at another place; it now prints as "·".
+
 ### Changed
 - **The product is now ZionEX** — *The central intelligence of business* (was SES Labs). New logo and icons; the name shows on the sign-in page (with the tagline), "Powered by SES Labs" beside the ZionEX logo in the back office, and "ZionEX · Powered by SES Labs" on receipts and printed documents, the till, licence messages and certificates, installers and the guides. Servers update in place: an older `.env` naming SES Labs shows ZionEX. Not renamed, so nothing has to be moved or reinstalled: server folders, services and scheduled tasks, local certificate names, and the desktop till's Windows name (*SES Labs Till*) and identity (its data and unsent sales stay). See branding/README.md.
 
