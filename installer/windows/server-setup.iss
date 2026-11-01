@@ -1,11 +1,14 @@
 ; The business server's Windows installer (setup.exe). Build with Inno Setup 6:
 ;   iscc /DReleaseZip=C:\path\ses-labs-<customer>-<build>.zip /DAppVersion=0.34.3 installer\windows\server-setup.iss
-; The product name comes from /DBrand (default SES Labs) and /DSlug (no spaces: folder and service); the icon is app.ico (npm run brand).
+; Task names come from /DBrand (default SES Labs, the earlier product name, kept so updates replace them), the shown name from /DDisplay (default ZionEX) and /DSlug (no spaces: folder and service); the icon is app.ico (npm run brand).
 ; The installer copies the release and install.ps1, asks a few questions, then runs install.ps1 in a visible window
 ; (it downloads PostgreSQL, PHP and Composer from their official sites, so the PC needs internet during installation).
 
 #ifndef Slug
   #define Slug "SESLabs"
+#endif
+#ifndef Display
+  #define Display "ZionEX"
 #endif
 #ifndef Brand
   #define Brand "SES Labs"
@@ -22,12 +25,12 @@
 
 [Setup]
 AppId={{6B1C4E5A-3C7D-4F51-9A0B-5E2D7C9A1F33}
-AppName={#Brand} server
+AppName={#Display} server
 AppVersion={#AppVersion}
 AppPublisher={#Publisher}
 AppCopyright=Copyright (C) {#Publisher}
 VersionInfoCompany={#Publisher}
-VersionInfoProductName={#Brand}
+VersionInfoProductName={#Display}
 DefaultDirName=C:\{#Slug}
 DisableDirPage=yes
 DisableProgramGroupPage=yes

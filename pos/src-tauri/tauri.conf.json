@@ -27,8 +27,8 @@
       "icons/icon.ico"
     ],
     "publisher": "SyncLytics",
-    "shortDescription": "SES Labs till",
-    "longDescription": "The SES Labs till with silent receipt printing (ESC/POS), cash drawer and scale support. It opens the till from your business server.",
+    "shortDescription": "ZionEX till",
+    "longDescription": "The ZionEX till with silent receipt printing (ESC/POS), cash drawer and scale support. It opens the till from your business server.",
     "windows": {
       "nsis": {
         "installMode": "perMachine"

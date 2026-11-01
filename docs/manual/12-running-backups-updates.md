@@ -93,7 +93,7 @@ Use this after a disaster, or to practise on a spare PC.
 
 ## 12.4 Updating the software
 
-SES Labs sends you a new release. Update outside trading hours.
+SyncLytics sends you a new release. Update outside trading hours.
 
 **The simple way (recommended):**
 - **Windows:** run the new `SESLabs-server-setup-<version>.exe` on the server and choose the same folder.

@@ -96,6 +96,8 @@ Every till, handheld and kitchen screen has a **Theme** switch at the bottom lef
 
 ### The desktop till app (silent printing, cash drawer, scale)
 
+**Name:** the desktop till shows *ZionEX Till*, but Windows lists it as **SES Labs Till** (its name before the product became ZionEX). It is kept so that tills already installed update in place, with their sales and settings. Both names mean the same app.
+
 For a Windows till PC with a receipt printer, a cash drawer or a weighing scale, install **SES Labs Till** (`SES Labs Till_<version>_x64-setup.exe`, from SyncLytics) instead of using the browser:
 
 1. Install the receipt printer's Windows driver (or note the IP address of a network receipt printer).
@@ -124,7 +126,7 @@ Saving needs the server (so the change is approved and recorded). Printer, drawe
 
 **Why:** the app sends the receipt to the printer in the printer's own language (ESC/POS), which is faster and more reliable than a browser print window, and can talk to the drawer and scale, which a browser cannot.
 
-**Note:** the app only opens your SES Labs server — no other website — so the printer and drawer cannot be reached from anywhere else.
+**Note:** the app only opens your ZionEX server — no other website — so the printer and drawer cannot be reached from anywhere else.
 
 **When the till starts:** a till already set up shows only *Opening the till…* for a moment, then the till (version 0.26 or later; older versions showed a white window and the set-up page first). It opens the server straight away if it answers. If the server has worked on this PC before but cannot be reached now (internet down), the till still opens and sells offline. If the saved address has **never** worked, the set-up page comes back with a message, so a wrong address can always be corrected.
 

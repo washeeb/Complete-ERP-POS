@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Domain\Branding\Branding;
 use App\Domain\Licensing\Watermark;
 use App\Filament\Auth\EditProfile;
 use App\Filament\Auth\Login;
@@ -89,6 +90,9 @@ class AdminPanelProvider extends PanelProvider
                 '<script src="'.asset('vendor/simplewebauthn/browser-13.3.0.umd.min.js').'"></script>'
                 .'<script>window.startRegistration=SimpleWebAuthnBrowser.startRegistration;'
                 .'window.startAuthentication=SimpleWebAuthnBrowser.startAuthentication;</script>'))
+            // The product's tagline on the sign-in page (not with a white-label licence).
+            ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_BEFORE, fn () => Branding::poweredBy() ? new HtmlString('<p style="text-align:center;font-size:.85rem;opacity:.7;margin:-.5rem 0 .5rem">'
+                .e(config('brand.tagline')).'</p>') : '')
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn () => Blade::render(
                 '<x-authenticate-passkey><x-filament::button color="gray" icon="heroicon-o-finger-print" class="w-full mt-2">Sign in with a passkey</x-filament::button></x-authenticate-passkey>'))
             ->renderHook(PanelsRenderHook::PAGE_END, fn () => Blade::render('@livewire(\'passkeys\')'), scopes: EditProfile::class)

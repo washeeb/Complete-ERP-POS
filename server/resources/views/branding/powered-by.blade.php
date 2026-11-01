@@ -1,4 +1,4 @@
-@if ($text = \App\Domain\Branding\Branding::poweredBy())
+@if ($text = \App\Domain\Branding\Branding::poweredByShort())
     {{-- The product's lettermark: the normal one on light themes, the light-lettered one on dark themes (Filament puts .dark on <html>). --}}
     <style>
         .erp-pb-dark { display: none; }

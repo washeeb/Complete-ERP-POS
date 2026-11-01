@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-  Installs the business server (SES Labs) on a Windows PC (setup A: one PC; setup B: shop server; branch servers),
+  Installs the business server (ZionEX) on a Windows PC (setup A: one PC; setup B: shop server; branch servers),
   doing what Chapter 4 of the installation guide describes by hand. Run as administrator. Safe to run again (update).
 
 .EXAMPLE
@@ -11,7 +11,7 @@ param(
   [ValidateSet('A', 'B')][string]$Setup = 'B',                 # A: only this PC uses it; B: tills on the network use it
   [ValidateSet('hq', 'branch')][string]$Role = 'hq',
   [string]$NodeId = 'HQ',
-  [string]$Brand = 'SES Labs',                                 # the product name, as people see it (task and firewall names)
+  [string]$Brand = 'SES Labs',                                 # task, firewall and certificate names (ZionEX's earlier name; kept so updates replace them)
   [string]$Slug = 'SESLabs',                                   # the same without spaces (folder and Windows service)
   [string]$Dir = "C:\$Slug",
   [string]$Domain = '',                                        # internet name (e.g. shop.example.com): a free Let's Encrypt certificate

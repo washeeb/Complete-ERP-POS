@@ -1,6 +1,6 @@
 # Licensing and anti-piracy
 
-Every installation needs a **licence key from SyncLytics**. Keys are signed with SyncLytics' private key (Ed25519) and checked by the software **offline**. Head office also **checks in** with the SES Labs licence server every day.
+Every installation needs a **licence key from SyncLytics**. Keys are signed with SyncLytics' private key (Ed25519) and checked by the software **offline**. Head office also **checks in** with the ZionEX licence server every day.
 
 ## What the customer sees
 
@@ -17,12 +17,12 @@ The licence also limits the number of **branches**, **tills and devices**, **act
 ## Activating (customer)
 
 1. Sign in as the owner or general manager: you are taken to **Settings → Licence**.
-2. Send SES Labs the **installation code** shown there (it starts with `SYNREQ-`).
+2. Send ZionEX the **installation code** shown there (it starts with `SYNREQ-`).
 3. Paste the key you receive (it starts with `SYN1-`) with **Enter licence key**.
 
-To renew, SES Labs issues a new key. It reaches head office by itself at the next daily check-in, or you can paste it the same way. Branch servers receive the licence from head office.
+To renew, ZionEX issues a new key. It reaches head office by itself at the next daily check-in, or you can paste it the same way. Branch servers receive the licence from head office.
 
-## Issuing (SES Labs only)
+## Issuing (ZionEX only)
 
 One-time set-up:
 

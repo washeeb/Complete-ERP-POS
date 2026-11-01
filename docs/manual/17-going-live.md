@@ -1,6 +1,6 @@
 # 17. Going live
 
-This chapter takes a business from its old way of working (another till system, QuickBooks, Excel sheets or paper) to running on SES Labs, safely. Everything here is on one page in the back office: **System → Go-live** (owner and general manager).
+This chapter takes a business from its old way of working (another till system, QuickBooks, Excel sheets or paper) to running on ZionEX, safely. Everything here is on one page in the back office: **System → Go-live** (owner and general manager).
 
 **Why a plan:** going live touches money, stock and every member of staff on the same day. A written plan, a checked set of figures and a way back make it a calm day instead of a risky one.
 
@@ -172,9 +172,9 @@ Decide in advance **who** may decide to go back (normally the owner), and keep t
 
 ## 17.9 The independent security test
 
-Before the first customer's server is reachable from the internet, SyncLytics has an outside security firm try to break into a test copy of SES Labs: a *penetration test*. The full pack is in `docs/pentest/`, with the request for quote, the rules for the testers, how to build the test machine and how findings are handled.
+Before the first customer's server is reachable from the internet, SyncLytics has an outside security firm try to break into a test copy of ZionEX: a *penetration test*. The full pack is in `docs/pentest/`, with the request for quote, the rules for the testers, how to build the test machine and how findings are handled.
 
-**Why:** your sales, stock, payroll and accounts are in SES Labs. An independent firm finds what the people who built the software are used to not seeing. A bank, an insurer or a large customer may also ask for the firm's report.
+**Why:** your sales, stock, payroll and accounts are in ZionEX. An independent firm finds what the people who built the software are used to not seeing. A bank, an insurer or a large customer may also ask for the firm's report.
 
 **For the technician building the test machine:** use a spare PC or a virtual machine on a network of its own, never a server with real data. After installing, run `php artisan erp:pentest-setup` as described in `docs/pentest/03-test-environment.md`. It fills the empty installation with made-up companies and one sign-in per role, and writes the sign-ins to a private file instead of the screen. It refuses to run where a company already exists.
 

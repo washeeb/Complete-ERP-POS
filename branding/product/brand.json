@@ -1,9 +1,12 @@
 {
-  "name": "SES Labs",
-  "slug": "SESLabs",
-  "tagline": "Engineering Solutions. Empowering Businesses.",
+  "name": "ZionEX",
+  "slug": "ZionEX",
+  "tagline": "The central intelligence of business",
   "company": "SyncLytics",
   "color": "#031E4C",
   "accent": "#06AAAA",
-  "tile": "#031E4C"
+  "tile": "#031E4C",
+  "tillProductName": "SES Labs Till",
+  "tillIdentifier": "app.seslabs.till",
+  "tillTitle": "ZionEX Till"
 }

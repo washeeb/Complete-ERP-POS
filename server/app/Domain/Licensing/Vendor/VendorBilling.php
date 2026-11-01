@@ -57,7 +57,7 @@ final class VendorBilling
             $lines[] = ['description' => "{$a['name']} ({$period})", 'qty' => $a['qty'], 'unit_minor' => (int) $a['price_minor']];
             $addonTotal += $a['qty'] * (int) $a['price_minor'];
         }
-        array_unshift($lines, ['description' => 'SES Labs licence'.($lic->plan ? " — {$lic->plan->name}" : '').($lic->site ? " ({$lic->site})" : '')." {$period}",
+        array_unshift($lines, ['description' => config('brand.name').' licence'.($lic->plan ? " — {$lic->plan->name}" : '').($lic->site ? " ({$lic->site})" : '')." {$period}",
             'qty' => 1, 'unit_minor' => max(0, (int) $lic->price_minor - $addonTotal)]);
 
         return $this->invoice($actor, $lic->client, array_values(array_filter($lines, fn ($l) => $l['unit_minor'] > 0 || $l === $lines[0])), $lic->currency ?? 'GHS',

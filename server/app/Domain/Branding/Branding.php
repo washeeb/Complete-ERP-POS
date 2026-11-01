@@ -64,7 +64,21 @@ final class Branding
 
     public static function poweredBy(): ?string
     {
-        return self::whiteLabel() ? null : 'Powered by '.config('brand.name');
+        if (self::whiteLabel()) {
+            return null;
+        }
+
+        return ($division = config('brand.division')) ? config('brand.name')." · Powered by {$division}" : 'Powered by '.config('brand.name');
+    }
+
+    /** Beside the product's logo, which already names it: "Powered by SES Labs". */
+    public static function poweredByShort(): ?string
+    {
+        if (self::whiteLabel()) {
+            return null;
+        }
+
+        return 'Powered by '.(config('brand.division') ?: config('brand.name'));
     }
 
     /**
