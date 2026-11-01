@@ -6,8 +6,10 @@ use App\Http\Controllers\BrandAssetController;
 use App\Http\Controllers\ExpenseReceiptController;
 use App\Http\Controllers\PrintController;
 use App\Http\Controllers\RemoteConnectController;
+use App\Http\Controllers\RfqQuoteController;
 use App\Http\Controllers\StockPhotoController;
 use App\Http\Controllers\StorefrontController;
+use App\Http\Controllers\SupplierPortalController;
 use App\Http\Controllers\SupportScreenshotController;
 use App\Http\Controllers\WaybillConfirmController;
 use App\Http\Controllers\WhatsappMediaController;
@@ -98,6 +100,21 @@ Route::get('po/{po}', function (string $po) {
 
     return Storage::disk('local')->download($path, PurchaseOrder::withoutGlobalScopes()->whereKey($po)->value('number').'.pdf');
 })->name('purchase-order.pdf')->whereUuid('po')->middleware(['signed', 'throttle:30,1']);
+
+// A supplier quotes on a request for quotation from the link sent to them: no sign-in, that request only.
+Route::get('q/{token}', [RfqQuoteController::class, 'show'])->name('rfq.quote')->middleware('throttle:30,1');
+Route::post('q/{token}', [RfqQuoteController::class, 'quote'])->middleware('throttle:10,1');
+
+// The supplier portal: the supplier's own page from their secret link (orders, invoices, payments). 404 while it is off.
+Route::prefix('s/{token}')->middleware('throttle:30,1')->group(function () {
+    Route::get('/', [SupplierPortalController::class, 'home'])->name('supplier.portal');
+    Route::get('order/{po}', [SupplierPortalController::class, 'order'])->name('supplier.portal.order')->whereUuid('po');
+    Route::get('order/{po}/pdf', [SupplierPortalController::class, 'orderPdf'])->name('supplier.portal.order-pdf')->whereUuid('po');
+    Route::post('order/{po}', [SupplierPortalController::class, 'act'])->whereUuid('po')->middleware('throttle:10,1');
+    Route::post('invoice', [SupplierPortalController::class, 'invoice'])->name('supplier.portal.invoice')->middleware('throttle:10,1');
+    Route::get('wht/{payment}', [SupplierPortalController::class, 'wht'])->name('supplier.portal.wht')->whereUuid('payment');
+});
+Route::get('supplier-invoice/{invoice}', [SupplierPortalController::class, 'file'])->middleware(['auth'])->name('supplier-invoice.file')->whereUuid('invoice');
 
 // The photo on a stock adjustment line: for people who may see that store's stock.
 Route::get('stock-photo/{line}', StockPhotoController::class)->middleware(['auth'])->name('stock-photo')->whereUuid('line');

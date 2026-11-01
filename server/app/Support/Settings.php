@@ -175,6 +175,11 @@ final class Settings
             'label' => 'Warn this many days before a supplier document expires',
             'help' => 'The people who approve suppliers or buy get a notice on the bell once when a document is about to expire, and again when it has expired.',
         ],
+        'purchasing.supplier_portal' => [
+            'type' => 'bool', 'default' => false, 'group' => 'Purchasing',
+            'label' => 'Supplier portal',
+            'help' => 'On: each supplier can be given their own secret link (Suppliers → Portal link) to confirm your purchase orders with a delivery date, say when goods are on the way, send invoices, and see what is still owed and what was paid (with withholding tax certificates). No password: anyone with the link sees that supplier\'s page, so send it only to the supplier\'s own e-mail or WhatsApp; a new link stops the old one. Requests for quotation work with or without the portal.',
+        ],
         'pos.shift_per_person' => [
             'type' => 'bool', 'default' => true, 'group' => 'Tills and cash',
             'label' => 'One shift per person on a till',

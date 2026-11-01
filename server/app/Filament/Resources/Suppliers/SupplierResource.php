@@ -3,7 +3,9 @@
 namespace App\Filament\Resources\Suppliers;
 
 use App\Domain\Payables\SupplierPaymentService;
+use App\Domain\Purchasing\SupplierMessages;
 use App\Domain\Purchasing\SupplierOnboarding;
+use App\Domain\Purchasing\SupplierPortal;
 use App\Domain\Purchasing\SupplierScorecard;
 use App\Filament\Resources\Suppliers\Pages\CreateSupplier;
 use App\Filament\Resources\Suppliers\Pages\EditSupplier;
@@ -18,15 +20,20 @@ use App\Support\Money;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Checkbox;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -181,6 +188,27 @@ class SupplierResource extends Resource
                         .collect([$r->bank_name, $r->bank_branch, $r->bank_account_name, $r->bank_account_no, $r->momo_number ? "MoMo {$r->momo_number}" : null])->filter()->implode(' · '))
                     ->schema([TextInput::make('how')->label('How you confirmed them')->required()->maxLength(255)->placeholder('e.g. Called Mr Mensah on 024… (number from our first order)')])
                     ->action(fn (Supplier $r, array $data) => Erp::run(fn ($actor) => app(SupplierOnboarding::class)->verifyBank($actor, $r, $data['how']), 'Bank details verified')),
+                Action::make('portal')->label('Portal link')->icon(Heroicon::OutlinedGlobeAlt)->color('gray')
+                    ->visible(fn (Supplier $r) => $r->status !== 'blocked' && Erp::canAnywhere('purchasing.manage') && app(SupplierPortal::class)->enabled($r->tenant_id))
+                    ->modalHeading(fn (Supplier $r) => "Supplier portal: {$r->name}")
+                    ->modalDescription('Their own page: quotes, orders to confirm, goods on the way, invoices, and what is owed and paid. No password: send it only to their own e-mail or WhatsApp.')
+                    ->fillForm(fn (Supplier $r) => ['channel' => 'email', 'to' => $r->email ?: $r->phone])
+                    ->schema(fn (Supplier $r) => [
+                        Radio::make('channel')->label('Send it by')->required()->live()->options(app(SupplierMessages::class)->channels($r->tenant_id) + ['none' => 'Do not send; just show me the link'])
+                            ->afterStateUpdated(fn ($state, Set $set) => $set('to', $state === 'email' ? $r->email : $r->phone)),
+                        TextInput::make('to')->label(fn (Get $get) => $get('channel') === 'email' ? 'E-mail address' : 'WhatsApp number')->maxLength(160)
+                            ->required(fn (Get $get) => $get('channel') !== 'none')->visible(fn (Get $get) => $get('channel') !== 'none'),
+                        Checkbox::make('renew')->label('Make a new link (the old one stops working)')->visible((bool) $r->portal_token),
+                    ])
+                    ->action(function (Supplier $r, array $data) {
+                        $portal = app(SupplierPortal::class);
+                        $link = Erp::run(fn ($actor) => $portal->link($actor, $r, (bool) ($data['renew'] ?? false)));
+                        $open = $data['channel'] === 'none' ? null : Erp::run(fn ($actor) => $portal->send($actor, $r->fresh(), $data['channel'], $data['to']));
+                        $n = Notification::make()->success()->persistent();
+                        $open
+                            ? $n->title('Ready in WhatsApp')->body('Open WhatsApp and press send.')->actions([Action::make('open')->label('Open WhatsApp')->button()->url($open, shouldOpenInNewTab: true)])->send()
+                            : $n->title($data['channel'] === 'none' ? 'Their link' : 'Sent')->body($link)->send();
+                    }),
                 Action::make('scorecard')->label('Scorecard')->icon(Heroicon::OutlinedChartBar)->color('gray')
                     ->modalHeading(fn (Supplier $r) => "Scorecard: {$r->name} (last 12 months)")->modalSubmitAction(false)->modalCancelActionLabel('Close')
                     ->modalContent(fn (Supplier $r) => new HtmlString(self::scorecardHtml(SupplierScorecard::for($r)))),

@@ -264,6 +264,69 @@ freight, your stock looks cheaper than it is and your margins look better than t
 
 A posted landed cost is never edited. A mistake is corrected with another one with a **negative** amount.
 
+## 14.5c Requests for quotation: asking several suppliers for prices
+
+**Why:** asking three suppliers for the same list, and comparing their answers fairly, usually saves more than any
+discount you could ask one supplier for. Quotes are **sealed**: nobody in the company sees a price before the closing
+time. That way no supplier can be told what to beat.
+
+1. **Purchasing → Requests for quotation → Ask for quotes.** Give a title, the store to deliver to, the closing time,
+   the suppliers to ask (three or more is fairest), what you want to tell them (delivery place, minimum expiry, payment
+   terms) and the items with quantities. You can also open a **purchase request** and press **Ask for quotes**. The
+   request then shows *Asking suppliers for prices*.
+2. **Send to a supplier** (on the request): by e-mail, by WhatsApp from this computer, or by WhatsApp sent by the
+   system. Each supplier gets **their own link**, with no password. *Supplier links* shows every link, so you can send
+   them another way. *Seen* tells you when a supplier opened it.
+3. On their link the supplier enters, for each item, a **price before VAT** and how much they can supply. They also
+   give their delivery time, credit days and how long the prices hold. They can change their offer until the closing
+   time, or decline. If a supplier answers on paper or by phone, enter it with **Enter a quote**. It shows *Entered by*
+   your name.
+4. At the closing time the prices open. You can open them earlier with **Close and compare**. Suppliers can then no
+   longer change anything, and the early opening is recorded. The **Comparison** shows each item's price from each
+   supplier, with ★ for the cheapest. It also gives a **score out of 100** for each supplier:
+   - price: 50 points;
+   - delivery time: 20 points;
+   - credit days: 10 points;
+   - past performance: 20 points, from the supplier's scorecard (a new supplier gets half).
+5. **Award:** choose who supplies each item. It may be one supplier for everything, or different suppliers for
+   different items. Choose *Do not buy now* to leave an item out. If an item does not go to the cheapest price, or a
+   supplier's prices have expired, **write the reason**: it stays on the record. Each supplier chosen gets a **draft
+   purchase order** at their prices, expected after their delivery time. The order then goes for approval as usual.
+
+**Cancel** gives a purchase request back to the buyers. Suppliers who did not win see "not awarded this time" on
+their link.
+
+## 14.5d The supplier portal: suppliers confirm orders, send invoices and see payments
+
+**Why:** it saves phone calls. The supplier tells you the delivery date before the day and warns the store when goods
+are on the way. Invoices arrive as files instead of paper that gets lost, and suppliers stop calling to ask whether
+they have been paid.
+
+The portal is **off** until you switch it on: **System → Settings → Purchasing → Supplier portal**.
+
+1. **Purchasing → Suppliers → Portal link** on the supplier. Send it by e-mail or WhatsApp, or choose *just show me the
+   link*. The link is the supplier's own page, with no password. Send it **only to the supplier's own e-mail or
+   number**. Tick *Make a new link* if it reached the wrong person: the old link stops working at once. A blocked
+   supplier's link stops working too.
+2. **What the supplier sees and does on their page:**
+   - **Requests for quotation:** your open requests to them, with a link to quote.
+   - **Orders:** your approved orders from the last six months, each with a PDF.
+     - **Confirm the order** with the date they will deliver. The buyers get a notice, and the order shows *Supplier
+       confirmed*.
+     - **Goods on the way:** their delivery note or waybill number. The store gets a notice to expect the goods, and
+       the order shows *On the way*.
+   - **Their account with you:** what you owe them, bill by bill, and payments from the last 12 months. Each payment
+     shows the tax kept back and a link to its **withholding tax certificate**.
+   - **Send an invoice:** the invoice number, date, total with VAT, the order it is for, and the PDF or photo. The same
+     invoice number cannot be sent twice.
+3. **Purchasing → Invoices from suppliers** (for accounts) lists what came in. **Open the invoice**, enter it under
+   **Finance → Supplier bills** as usual (matched to the goods received), then press **Mark entered** and choose the
+   bill. If something is wrong, press **Turn back** with the reason, for example "prices differ from the order". The
+   supplier sees the reason on their page.
+
+Everything a supplier does on the portal is recorded under their name: for example, *Kofi (Kofi Wholesale, supplier
+portal)*.
+
 ## 14.6 Purchase orders from a file, ordering again and sending to the supplier
 
 **From a file:** **Purchasing → Purchase orders → Order from a file**.
