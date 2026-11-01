@@ -215,6 +215,38 @@ Medicines are bought by the box (or carton) and sold by the tablet or strip. Sto
 4. **What to order** suggests whole packs, at least the minimum, rounded up to the supplier's multiple (e.g. 300 tablets needed, boxes of 24, multiples of 5 → 15 boxes).
 5. **Receiving** is in the ordered pack (*Received now: 15 BOX*); stock goes up by 1 500 TAB. For medicines with batches, **Scan the pack code**: the square GS1 code on the box fills in the **batch number and expiry** (check them against the box). **Why:** no typing, and no expiry dates typed wrongly.
 
+## 14.5a Suppliers: approval, documents, bank checks and scorecards
+
+**Why:** buying only from suppliers you have checked keeps fake medicines and unlicensed sellers out, and a second person
+checking bank details stops the commonest supplier fraud (a message asking you to pay into a "new account").
+
+**Supplier controls** (System → Settings → Purchasing → *Supplier controls: approval, documents and bank checks*) are
+**off** until you switch them on, so a one-person business can keep ordering straight away. Switch them on once two or
+more people buy and pay. Suppliers you already had stay approved.
+
+With the controls on:
+1. **Adding a supplier** (Purchasing → Suppliers → New): fill in the TIN, what they supply (goods, services or works —
+   it sets withholding tax later) and how they are paid. The supplier shows *Waiting for approval*.
+2. **Documents** (open the supplier → *Documents* → *Add a document*): a scan or photo and its expiry date. Which ones
+   every supplier needs is set under *Documents every supplier must have on file* (default: TIN certificate and business
+   registration; a pharmacy adds `fda_licence` and `pharmacy_council`). Someone else presses *Checked against the
+   original*.
+3. **Approve**: someone with *Approve suppliers* (General Manager, Finance Manager) — never the person who added it —
+   presses **Approve** on the supplier list. Only then can purchase orders go to it.
+4. **Expiry:** the buyers get a notice on the bell before a document expires (30 days by default) and when it has
+   expired. A supplier whose required document has expired gets no orders until a new one is added.
+5. **Bank details:** a new or changed account or MoMo number shows *Not yet* checked. Someone else calls the supplier
+   **on a number you already had** (never one from the message announcing the change), then presses **Verify bank
+   details**. Until then no transfer or MoMo payment can be recorded to that supplier.
+
+**Block** a supplier (with the reason buyers will see) to stop new orders, whatever the setting; **Unblock** when settled.
+
+**Scorecard** (on the supplier list: the *Score* column and the *Scorecard* button): worked out from the last 12 months,
+nobody types a rating — on time (40 %), fill rate (30 %), goods sent back for faults (20 %; expiry returns are not the
+supplier's fault and are left out), and price changes on bills (10 %), with the average lead time. **A** from 85, **B**
+from 70, **C** from 50, else **D**. **Why:** it shows which supplier to order from first, and gives you facts when you
+negotiate.
+
 ## 14.6 Purchase orders from a file, ordering again and sending to the supplier
 
 **From a file:** **Purchasing → Purchase orders → Order from a file**.

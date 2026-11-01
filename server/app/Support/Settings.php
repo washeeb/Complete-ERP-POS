@@ -147,6 +147,21 @@ final class Settings
             'label' => 'Daily summary time (HH:MM)',
             'help' => 'The day’s mobile money and card totals per branch and network are sent once, after this time.',
         ],
+        'purchasing.supplier_approval' => [
+            'type' => 'bool', 'default' => false, 'group' => 'Purchasing',
+            'label' => 'Supplier controls: approval, documents and bank checks',
+            'help' => 'On (recommended with two or more people buying and paying): a supplier someone adds waits until another person (with "Approve suppliers") approves it, with its TIN and the documents below on file; orders go to approved suppliers only and stop when a required document expires; and new or changed bank / MoMo details are verified by a second person before money is sent there. Off: suppliers can be ordered from as soon as they are added (one-person businesses). Blocked suppliers get no orders either way.',
+        ],
+        'purchasing.supplier_documents' => [
+            'type' => 'string', 'default' => 'tin_certificate,business_registration', 'max' => 255, 'group' => 'Purchasing',
+            'label' => 'Documents every supplier must have on file',
+            'help' => 'Separated by commas, from: tin_certificate, vat_certificate, business_registration, fda_licence, pharmacy_council, wht_exemption, bank_letter, ssnit_clearance, tax_clearance. A pharmacy usually adds fda_licence and pharmacy_council. Empty = none required.',
+        ],
+        'purchasing.document_warning_days' => [
+            'type' => 'int', 'default' => 30, 'min' => 1, 'max' => 180, 'group' => 'Purchasing',
+            'label' => 'Warn this many days before a supplier document expires',
+            'help' => 'The people who approve suppliers or buy get a notice on the bell once when a document is about to expire, and again when it has expired.',
+        ],
         'pos.shift_per_person' => [
             'type' => 'bool', 'default' => true, 'group' => 'Tills and cash',
             'label' => 'One shift per person on a till',

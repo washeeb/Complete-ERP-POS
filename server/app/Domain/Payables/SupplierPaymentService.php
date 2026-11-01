@@ -2,6 +2,7 @@
 
 namespace App\Domain\Payables;
 
+use App\Domain\Purchasing\SupplierOnboarding;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DocumentNumbers;
@@ -46,6 +47,7 @@ final class SupplierPaymentService
         if ($from->type !== 'asset' || $from->is_header || $from->control || ! $from->is_active) {
             throw new DomainException("Pay from a cash, bank or mobile money account, not {$from->label()}.");
         }
+        app(SupplierOnboarding::class)->assertBankVerified($supplier, $method);
         if (in_array($method, ['bank', 'momo', 'cheque'], true) && trim((string) $reference) === '') {
             throw new DomainException('Enter the transfer, MoMo or cheque reference.');
         }

@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- **Supplier onboarding and scorecards** (procurement stage 2a): supplier documents (TIN, VAT, business registration, FDA, Pharmacy Council, bank letter…) with scans, expiry and a second person's check; bell notices before and at expiry. Optional **supplier controls** (Settings → Purchasing, off until switched on): a new supplier is approved by someone other than who added it, with its TIN and the required documents; orders go to approved suppliers only and stop when a required document expires; new or changed bank / MoMo details are verified by a second person before any transfer or MoMo payment. **Block / Unblock** a supplier. **Scorecard** from the last 12 months: on time, fill rate, faults sent back, price changes, lead time, graded A–D. What a supplier supplies (goods / services / works) is recorded for withholding tax. New permission *Approve suppliers* (General Manager, Finance Manager). Manual 14.5a.
+
 ### Fixed
 - **Printed receipts showed "?" for the middle dot** (e.g. *1 Nov 2026, 15:51 ? Efua*): the receipt printer's code page has it at another place; it now prints as "·".
 

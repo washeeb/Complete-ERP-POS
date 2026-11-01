@@ -12,15 +12,35 @@ class Supplier extends Model
 {
     use BelongsToTenant, HasOriginNode, HasUuids;
 
-    protected $fillable = ['code', 'name', 'contact_name', 'phone', 'email', 'tax_no', 'address', 'payment_terms_days', 'currency_code', 'lead_time_days', 'return_days_before_expiry', 'is_active', 'notes'];
+    protected $fillable = ['code', 'name', 'contact_name', 'phone', 'email', 'tax_no', 'address', 'payment_terms_days', 'currency_code', 'lead_time_days', 'return_days_before_expiry', 'is_active', 'notes',
+        'supply_kind', 'bank_name', 'bank_branch', 'bank_account_name', 'bank_account_no', 'momo_number'];
+
+    public const STATUSES = ['pending' => 'Waiting for approval', 'approved' => 'Approved', 'blocked' => 'Blocked'];
+
+    /** What they supply: sets the withholding tax rate on payments to them. */
+    public const SUPPLY_KINDS = ['goods' => 'Goods', 'services' => 'Services', 'works' => 'Works (construction)'];
+
+    /** The fields whose change sends the bank details back for verification. */
+    public const BANK_FIELDS = ['bank_name', 'bank_branch', 'bank_account_name', 'bank_account_no', 'momo_number'];
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean', 'payment_terms_days' => 'integer', 'lead_time_days' => 'integer', 'return_days_before_expiry' => 'integer'];
+        return ['is_active' => 'boolean', 'payment_terms_days' => 'integer', 'lead_time_days' => 'integer', 'return_days_before_expiry' => 'integer',
+            'approved_at' => 'datetime', 'bank_verified_at' => 'datetime'];
     }
 
     public function products(): HasMany
     {
         return $this->hasMany(SupplierProduct::class);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(SupplierDocument::class);
+    }
+
+    public function hasBankDetails(): bool
+    {
+        return collect(self::BANK_FIELDS)->contains(fn ($f) => filled($this->{$f}));
     }
 }

@@ -47,6 +47,7 @@ final class PurchaseOrderService
         if (! $supplier->is_active) {
             throw new DomainException("{$supplier->name} is inactive.");
         }
+        app(SupplierOnboarding::class)->assertCanOrder($supplier); // approved, not blocked, documents in date
         $currency = Tenant::find($actor->tenantId)->currency_code;
         $lines = array_key_exists('lines', $data) ? $this->priceLines($supplier, $data['lines'] ?? [], $currency) : null;
 
@@ -103,6 +104,7 @@ final class PurchaseOrderService
         if ($po->lines()->count() === 0) {
             throw new DomainException('Add at least one line before submitting.');
         }
+        app(SupplierOnboarding::class)->assertCanOrder($po->supplier()->firstOrFail());
         $po->forceFill(['status' => 'pending_approval', 'submitted_at' => now(), 'rejected_reason' => null]);
 
         return $this->recorder->save($actor, $po, 'purchase_order.submitted');
@@ -116,6 +118,7 @@ final class PurchaseOrderService
         if ($po->created_by && $po->created_by === $actor->id) {
             throw new DomainException('You created this purchase order, so someone else must approve it.', 'own_document');
         }
+        app(SupplierOnboarding::class)->assertCanOrder($po->supplier()->firstOrFail()); // documents may have expired since it was sent
         if (! $this->authz->allowsAmount($actor->user, 'purchasing.approve', $po->warehouse, 'po_approve_minor', $po->total_minor)) {
             $limit = $this->authz->limit($actor->user, 'purchasing.approve', $po->warehouse, 'po_approve_minor') ?? 0;
             throw new DomainException('This order ('.Money::display($po->total_minor, $po->currency_code).') is above your approval limit ('
