@@ -247,6 +247,23 @@ supplier's fault and are left out), and price changes on bills (10 %), with the 
 from 70, **C** from 50, else **D**. **Why:** it shows which supplier to order from first, and gives you facts when you
 negotiate.
 
+## 14.5b Landed costs: freight, duty and clearing on what you buy
+
+**Why:** a carton bought for GHS 240 that cost GHS 48 to bring to the shop really cost GHS 288. Without spreading the
+freight, your stock looks cheaper than it is and your margins look better than they are.
+
+1. **Enter the charge as a supplier bill** (the transport company, the clearing agent or customs): an expense line to
+   the account **Freight, duty and clearing to spread** (1360). It waits there.
+2. **Purchasing → Landed costs → Spread freight and duty:** choose the deliveries (goods received) it belongs to, how to
+   spread it — **by value** (usual: a dearer item carries more) or **by quantity** (bulky goods of similar size) — and
+   the charges (kind, description, amount before VAT). **Post.**
+3. What it does, to the pesewa: each delivery line gets its share. The part for goods **still in the warehouse** raises
+   their cost (the average cost per piece goes up); the part for goods **already sold** goes to cost of sales, since
+   it is too late to put it in stock. The books move the total out of *to spread*, which comes back to zero.
+4. **Per product** on a landed cost shows each product's share and its cost per unit before and after.
+
+A posted landed cost is never edited. A mistake is corrected with another one with a **negative** amount.
+
 ## 14.6 Purchase orders from a file, ordering again and sending to the supplier
 
 **From a file:** **Purchasing → Purchase orders → Order from a file**.

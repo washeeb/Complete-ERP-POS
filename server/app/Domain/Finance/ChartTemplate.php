@@ -42,6 +42,7 @@ final class ChartTemplate
         ['1330', 'Returnable containers with customers', 'asset', '1300', false, null, 'containers_out'],
         ['1340', 'Work in progress (production)', 'asset', '1300', false, null, 'wip'],
         ['1350', 'Goods returned to suppliers (awaiting credit)', 'asset', '1300', false, null, 'supplier_returns'],
+        ['1360', 'Freight, duty and clearing to spread (landed costs)', 'asset', '1300', false, null, 'landed_clearing'], // bills for freight / duty go here; a landed cost moves them into stock
         ['1400', 'Tax assets', 'asset', '1000', true, null, null],
         ['1410', 'Input VAT', 'asset', '1400', false, null, 'input_tax:VAT'],
         ['1411', 'Input NHIL', 'asset', '1400', false, null, 'input_tax:NHIL'],
