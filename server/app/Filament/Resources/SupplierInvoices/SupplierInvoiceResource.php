@@ -2,9 +2,13 @@
 
 namespace App\Filament\Resources\SupplierInvoices;
 
+use App\Domain\Ai\AiGateway;
+use App\Domain\Ai\InvoiceScanner;
 use App\Domain\Purchasing\SupplierPortal;
+use App\Filament\Resources\SupplierBills\SupplierBillResource;
 use App\Filament\Resources\SupplierInvoices\Pages\ListSupplierInvoices;
 use App\Filament\Support\Erp;
+use App\Models\Branch;
 use App\Models\SupplierBill;
 use App\Models\SupplierInvoice;
 use App\Support\Money;
@@ -88,8 +92,20 @@ class SupplierInvoiceResource extends Resource
             ->recordActions([
                 Action::make('open')->label('Open the invoice')->icon(Heroicon::OutlinedDocumentText)->color('gray')
                     ->visible(fn (SupplierInvoice $r) => (bool) $r->file_path)->url(fn (SupplierInvoice $r) => route('supplier-invoice.file', $r), shouldOpenInNewTab: true),
+                Action::make('read')->label('Read with AI')->icon(Heroicon::OutlinedSparkles)->color('primary')
+                    ->visible(fn (SupplierInvoice $r) => $waiting($r) && $r->file_path && app(AiGateway::class)->unavailableReason($r->tenant_id, 'vision') === null)
+                    ->requiresConfirmation()->modalDescription('The AI reads the invoice into a draft bill, matched to what was received or confirmed on their orders. You check every line before creating it.')
+                    ->action(function (SupplierInvoice $r, $livewire) {
+                        $branch = Branch::find($r->purchaseOrder?->branch_id) ?? Branch::where('is_hq', true)->first();
+                        $doc = Erp::run(fn ($actor) => app(InvoiceScanner::class)->scan($actor, $branch, $r->file_path, (string) ($r->file_name ?? 'invoice'), $r->supplier, $r->id));
+                        if ($doc) {
+                            $livewire->redirect(SupplierBillResource::getUrl('create', ['scan' => $doc->id]));
+                        }
+                    }),
+                Action::make('enter')->label('Enter as bill')->icon(Heroicon::OutlinedPencilSquare)->color('gray')->visible($waiting)
+                    ->url(fn (SupplierInvoice $r) => SupplierBillResource::getUrl('create', ['invoice' => $r->id])),
                 Action::make('entered')->label('Mark entered')->icon(Heroicon::OutlinedCheck)->color('success')->visible($waiting)
-                    ->modalDescription('First enter it under Finance → Supplier bills (matched to the goods received). Then choose that bill here; the supplier sees it is entered.')
+                    ->modalDescription('For an invoice already entered another way: choose its bill. (Enter as bill and Read with AI mark it entered by themselves.)')
                     ->schema(fn (SupplierInvoice $r) => [Select::make('bill')->label('The supplier bill')->searchable()
                         ->options(SupplierBill::where('supplier_id', $r->supplier_id)->orderByDesc('created_at')->limit(50)->get()
                             ->mapWithKeys(fn (SupplierBill $b) => [$b->id => "{$b->number} · {$b->supplier_invoice_no} · ".Money::display((int) $b->total_minor, $b->currency_code)]))])
