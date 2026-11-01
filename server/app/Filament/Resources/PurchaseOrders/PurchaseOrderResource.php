@@ -180,6 +180,12 @@ class PurchaseOrderResource extends Resource
                     ->formatStateUsing(fn (PurchaseOrder $record) => $record->sent_at->format('j M Y H:i').' · '.(OrderSender::CHANNELS[$record->sent_via] ?? $record->sent_via).' to '.$record->sent_to)
                     ->belowContent(fn (PurchaseOrder $record) => $record->sent_by_name ? "by {$record->sent_by_name}" : null)
                     ->visible(fn (PurchaseOrder $record) => in_array($record->status, ['approved', 'partially_received', 'received', 'closed'], true)),
+                TextEntry::make('supplier_confirmed_at')->label('Supplier confirmed')->placeholder('Not yet')
+                    ->visible(fn (PurchaseOrder $record) => in_array($record->status, ['approved', 'partially_received', 'received', 'closed'], true))
+                    ->formatStateUsing(fn (PurchaseOrder $record) => 'Delivery on '.$record->supplier_promised_on?->format('j M Y').' (confirmed '.$record->supplier_confirmed_at->format('j M H:i').')')
+                    ->belowContent(fn (PurchaseOrder $record) => $record->supplier_reply),
+                TextEntry::make('dispatched_at')->label('On the way')->visible(fn (PurchaseOrder $record) => (bool) $record->dispatched_at)
+                    ->formatStateUsing(fn (PurchaseOrder $record) => $record->dispatched_at->format('j M Y H:i').' · '.$record->dispatch_ref),
                 TextEntry::make('note')->placeholder('—')->columnSpanFull(),
             ]),
             Section::make('Lines')->schema([

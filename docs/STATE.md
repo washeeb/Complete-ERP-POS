@@ -1,7 +1,7 @@
 # State (resume file)
 
 **Phase:** all phases of the master plan built; first client (a pharmacy) live since 2026-10-19 on an Ubuntu server, with releases delivered by `release:build` and the Ubuntu installer.
-**Updated:** 2026-10-26 · Page speed (PR #104) checked on the client's server: Insights 2.7 s → 0.5 s, Today 1.1 s → 0.6 s. Every section below is merged to `main`.
+**Updated:** 2026-11-01 · Procurement stage 3 (requests for quotation, supplier portal) on branch `procurement-rfq`; every other section below is merged to `main`.
 
 
 
@@ -16,11 +16,13 @@
 
 
 
-## Procurement stage 2b + 2c: withholding tax, landed costs — branch `procurement-wht` (PR #120, with 2a)
+## Procurement stage 3: requests for quotation + supplier portal — branch `procurement-rfq`
+- Migration `2026_12_09_100001_rfqs_and_supplier_portal` (`rfqs`, `rfq_lines`, `rfq_suppliers`, `rfq_quote_lines`, `supplier_invoices`; `purchase_orders.rfq_id` + supplier confirmation / dispatch columns; `suppliers.portal_token|portal_sent_at`). `Purchasing\RfqService` (create, fromRequest, invite, send, quote, decline, close, cancel, compare, award), `Purchasing\SupplierPortal` (link, send, confirm, dispatch, submitInvoice, markEntered, reject, statement), `Purchasing\SupplierMessages` (shared e-mail / WhatsApp sending). Public `RfqQuoteController` (`/q/{token}`), `SupplierPortalController` (`/s/{token}/…`, staff file `supplier-invoice/{id}`), views `portal/*`. UI: `RfqResource` (sealed view, comparison, Send / Supplier links / Ask another / Enter a quote / Close and compare / Award / Cancel), `SupplierInvoiceResource`, *Ask for quotes* on purchase requests (status `quoting`), *Portal link* on suppliers, PO *Supplier confirmed* / *On the way*. Setting `purchasing.supplier_portal` (off), templates `rfq_invite`, `supplier_portal`, numbers `RFQ-`. Tests `RfqTest` (6), `SupplierPortalTest` (2).
+- Next: stage 4 contracts and blanket orders, budget check at requisition, non-stock / service buying with cost centres; then stage 5 AI invoice capture + spend analytics.
+## Procurement stage 2b + 2c: withholding tax, landed costs — merged (PR #120, with 2a)
 - Migration `2026_12_08_100002_withholding_tax` (supplier_payments wht columns; account 2240 → `wht_payable`). `Payables\WithholdingTax`, `SupplierPaymentService::pay(withhold, whtMinor)`, AutoPoster split, `DocumentNumbers` `wht_certificate` (WHT-), settings `payables.wht*`, `print.wht` certificate, page `WithholdingTaxReturn` (Finance), pay form preview. Test `WithholdingTaxTest`.
 - 2c: migration `2026_12_08_100003_landed_costs`, `Purchasing\LandedCostService` (post, spread), `LandedCostResource` (Purchasing), AutoPoster `landed_costs`, account 1360 `landed_clearing`, numbers `LC-`. Test `LandedCostTest`.
-- Next: stage 3 RFQ / compare / award + supplier portal.
-## Procurement stage 2a: supplier onboarding + scorecards — branch `procurement-suppliers-wht`
+## Procurement stage 2a: supplier onboarding + scorecards — merged (PR #120)
 - Migration `2026_12_08_100001_supplier_onboarding` (supplier status / approval / bank fields / supply_kind; `supplier_documents`). `SupplierOnboarding`, `SupplierScorecard`, `SupplierDocument`, `erp:supplier-documents` (daily 06:15), settings `purchasing.supplier_approval|supplier_documents|document_warning_days`, permission `suppliers.approve`. Checks in `PurchaseOrderService` (saveDraft, submit, approve) and `SupplierPaymentService::pay`. UI: supplier form *How they are paid*, list status / score / Approve / Block / Verify bank / Scorecard, `DocumentsRelationManager`. Test `SupplierOnboardingTest`.
 - Next: 2b withholding tax (supplier_payments wht, account 2240 `wht_payable`, certificate, monthly GRA schedule), 2c landed costs.
 ## ZionEX (stage 1 of the owner's 2026-11-01 request) — merged (PR #119)

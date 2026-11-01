@@ -23,10 +23,12 @@ class Supplier extends Model
     /** The fields whose change sends the bank details back for verification. */
     public const BANK_FIELDS = ['bank_name', 'bank_branch', 'bank_account_name', 'bank_account_no', 'momo_number'];
 
+    protected $hidden = ['portal_token']; // the supplier's secret portal link stays out of logs and snapshots
+
     protected function casts(): array
     {
         return ['is_active' => 'boolean', 'payment_terms_days' => 'integer', 'lead_time_days' => 'integer', 'return_days_before_expiry' => 'integer',
-            'approved_at' => 'datetime', 'bank_verified_at' => 'datetime'];
+            'approved_at' => 'datetime', 'bank_verified_at' => 'datetime', 'portal_sent_at' => 'datetime'];
     }
 
     public function products(): HasMany

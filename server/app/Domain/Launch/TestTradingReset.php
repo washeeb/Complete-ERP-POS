@@ -33,6 +33,7 @@ final class TestTradingReset
         // Purchasing and suppliers' accounts
         'purchase_orders', 'purchase_order_lines', 'purchase_requests', 'purchase_request_lines', 'goods_receipts', 'goods_receipt_lines', 'supplier_bills', 'supplier_bill_lines', 'supplier_payments', 'supplier_ledger',
         'supplier_balances', 'payable_allocations', 'consignment_sales', 'landed_costs', 'landed_cost_charges', 'landed_cost_lines',
+        'rfqs', 'rfq_lines', 'rfq_suppliers', 'rfq_quote_lines', 'supplier_invoices',
         // Selling on account, orders and online orders
         'customer_orders', 'customer_order_lines', 'deliveries', 'delivery_lines', 'invoices', 'invoice_lines', 'credit_notes', 'customer_payments', 'customer_ledger',
         'customer_balances', 'receivable_allocations', 'sales_orders', 'sales_order_lines',
@@ -134,6 +135,11 @@ final class TestTradingReset
         foreach ($this->links() as $l) {
             if ($l->tbl === $table && $l->target !== $table && Schema::hasColumn($l->target, 'tenant_id') && in_array($l->target, self::TABLES, true)) {
                 return DB::table($table)->whereIn($l->col, DB::table($l->target)->where('tenant_id', $tenantId)->select('id'));
+            }
+        }
+        foreach ($this->links() as $l) { // lines of lines (a quote's lines → the quote → its request for quotation)
+            if ($l->tbl === $table && $l->target !== $table && $l->notnull && in_array($l->target, self::TABLES, true)) {
+                return DB::table($table)->whereIn($l->col, $this->scoped($l->target, $tenantId)->select('id'));
             }
         }
         throw new DomainException("Cannot tell which company the rows of {$table} belong to.");

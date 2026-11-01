@@ -72,6 +72,14 @@ final class Templates
             'email' => ['Purchase order {number} from {company}', "Dear {supplier},\n\nPlease find attached our purchase order {number} for {total}.{deliver_by}\n\n{note}\n\nPlease quote {number} on your delivery note and invoice, and deliver only the items and quantities on the order.\n\nThank you.\n{company}", true, null],
             'whatsapp' => [null, '{company}: purchase order {number} for {total}. Download it here: {link}', true, 'purchase_order'],
         ]],
+        'rfq_invite' => ['Request for quotation to a supplier', '{company} {supplier} {number} {title} {lines} {closes} {note} {link}', [
+            'email' => ['Request for quotation {number} from {company}', "Dear {supplier},\n\nPlease quote your best prices for {title} ({lines} item(s)), before VAT, with your delivery time and credit terms.\n\nOpen this link to see the list and enter your prices: {link}\n\nQuotes close on {closes}. Quotes are sealed: no one sees them before then.\n\n{note}\n\nThank you.\n{company}", true, null],
+            'whatsapp' => [null, '{company}: request for quotation {number}, {title} ({lines} item(s)). Enter your prices here before {closes}: {link}', true, 'rfq_invite'],
+        ]],
+        'supplier_portal' => ['Supplier portal link', '{company} {supplier} {link}', [
+            'email' => ['Your supplier page at {company}', "Dear {supplier},\n\nThis is your own page at {company}: {link}\n\nOn it you can quote on our requests, confirm our purchase orders with a delivery date, tell us when goods are on the way, send invoices, and see what is due and what we have paid.\n\nKeep the link private: anyone who has it can see your page.\n\n{company}", true, null],
+            'whatsapp' => [null, '{company}: your supplier page (orders, invoices, payments). Keep this link private: {link}', true, 'supplier_portal'],
+        ]],
         'scheduled_report' => ['Scheduled report', '{company} {report} {period} {rows}', [
             'email' => ['{report} — {period}', "Attached: {report} for {period} ({rows} row(s)).\n\nSent automatically by {company}'s business system. Change the schedule under Reports.", true, null],
             'whatsapp' => [null, '{company}: {report} for {period} is ready ({rows} row(s)). It was e-mailed to the recipients.', true, 'report_ready'],

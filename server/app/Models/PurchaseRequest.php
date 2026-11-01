@@ -14,7 +14,7 @@ class PurchaseRequest extends Model
 {
     use BelongsToTenant, HasOriginNode, HasUuids;
 
-    public const STATUSES = ['requested' => 'Waiting for a buyer', 'ordered' => 'Ordered', 'rejected' => 'Rejected', 'cancelled' => 'Cancelled'];
+    public const STATUSES = ['requested' => 'Waiting for a buyer', 'quoting' => 'Asking suppliers for prices', 'ordered' => 'Ordered', 'rejected' => 'Rejected', 'cancelled' => 'Cancelled'];
 
     protected $guarded = [];
 

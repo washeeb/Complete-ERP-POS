@@ -3,10 +3,12 @@
 namespace App\Filament\Resources\PurchaseRequests;
 
 use App\Domain\Purchasing\PurchaseRequestService;
+use App\Domain\Purchasing\RfqService;
 use App\Filament\Resources\PurchaseOrders\PurchaseOrderResource;
 use App\Filament\Resources\PurchaseRequests\Pages\CreatePurchaseRequest;
 use App\Filament\Resources\PurchaseRequests\Pages\ListPurchaseRequests;
 use App\Filament\Resources\PurchaseRequests\Pages\ViewPurchaseRequest;
+use App\Filament\Resources\Rfqs\RfqResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Models\PurchaseRequest;
@@ -15,6 +17,7 @@ use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -139,6 +142,19 @@ class PurchaseRequestResource extends Resource
                     $po = Erp::run(fn ($actor) => $svc()->order($actor, $record, Supplier::findOrFail($data['supplier_id'])), 'Draft purchase order made');
                     $action->redirect(PurchaseOrderResource::getUrl('edit', ['record' => $po]));
                 }),
+            Action::make('quotes')->label('Ask for quotes')->icon(Heroicon::OutlinedScale)->color('gray')
+                ->visible(fn (PurchaseRequest $record) => $record->status === 'requested' && Erp::can('purchasing.manage', $record->warehouse))
+                ->modalDescription('Ask several suppliers for prices on these lines first. Their prices stay sealed until the closing time; then compare and award.')
+                ->schema([
+                    Select::make('supplier_ids')->label('Suppliers to ask')->multiple()->required()->searchable()->options(fn () => RfqResource::supplierOptions())
+                        ->helperText('Three or more give a fair comparison.'),
+                    DateTimePicker::make('closes_at')->label('Quotes close')->required()->seconds(false)->default(now()->addDays(3)->setTime(17, 0))->minDate(now()),
+                    Textarea::make('terms')->label('What the suppliers are told (optional)')->rows(2)->maxLength(2000),
+                ])
+                ->action(function (PurchaseRequest $record, array $data, Action $action) {
+                    $rfq = Erp::run(fn ($actor) => app(RfqService::class)->fromRequest($actor, $record, $data['supplier_ids'], $data['closes_at'], $data['terms'] ?? null), 'Request for quotation made: now send it to each supplier');
+                    $action->redirect(RfqResource::getUrl('view', ['record' => $rfq]));
+                }),
             Action::make('reject')->label('Reject')->icon(Heroicon::OutlinedXCircle)->color('danger')
                 ->visible(fn (PurchaseRequest $record) => $record->status === 'requested' && Erp::can('purchasing.manage', $record->warehouse))
                 ->schema([TextInput::make('reason')->label('Why (the person who asked sees it)')->required()->maxLength(200)])
@@ -162,7 +178,7 @@ class PurchaseRequestResource extends Resource
                 TextColumn::make('requested_by_name')->label('Asked by'),
                 TextColumn::make('status')->badge()->formatStateUsing(fn ($state) => PurchaseRequest::STATUSES[$state] ?? $state)
                     ->color(fn ($state) => match ($state) {
-                        'requested' => 'warning', 'ordered' => 'success', 'rejected' => 'danger', default => 'gray',
+                        'requested' => 'warning', 'quoting' => 'info', 'ordered' => 'success', 'rejected' => 'danger', default => 'gray',
                     }),
             ])
             ->filters([SelectFilter::make('status')->options(PurchaseRequest::STATUSES)])
