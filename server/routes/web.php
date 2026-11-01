@@ -56,6 +56,7 @@ Route::prefix('print')->middleware(['auth', 'license:output'])->name('print.')->
     Route::get('order/{order}', [PrintController::class, 'order'])->name('order')->whereUuid('order');
     Route::get('statement/{customer}', [PrintController::class, 'statement'])->name('statement')->whereUuid('customer');
     Route::get('payment/{payment}', [PrintController::class, 'payment'])->name('payment')->whereUuid('payment');
+    Route::get('wht/{payment}', [PrintController::class, 'whtCertificate'])->name('wht')->whereUuid('payment'); // withholding tax credit certificate
     Route::get('markdown-labels', [PrintController::class, 'markdownLabels'])->name('markdown-labels');
     Route::get('payslip/{payslip}', [PrintController::class, 'payslip'])->name('payslip')->whereUuid('payslip');
     Route::get('payroll/{run}/payslips', [PrintController::class, 'payslips'])->name('payslips')->whereUuid('run');

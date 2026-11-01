@@ -15,6 +15,9 @@
 
 
 
+
+## Procurement stage 2b: withholding tax — branch `procurement-wht` (on top of 2a)
+- Migration `2026_12_08_100002_withholding_tax` (supplier_payments wht columns; account 2240 → `wht_payable`). `Payables\WithholdingTax`, `SupplierPaymentService::pay(withhold, whtMinor)`, AutoPoster split, `DocumentNumbers` `wht_certificate` (WHT-), settings `payables.wht*`, `print.wht` certificate, page `WithholdingTaxReturn` (Finance), pay form preview. Test `WithholdingTaxTest`. Next: 2c landed costs.
 ## Procurement stage 2a: supplier onboarding + scorecards — branch `procurement-suppliers-wht`
 - Migration `2026_12_08_100001_supplier_onboarding` (supplier status / approval / bank fields / supply_kind; `supplier_documents`). `SupplierOnboarding`, `SupplierScorecard`, `SupplierDocument`, `erp:supplier-documents` (daily 06:15), settings `purchasing.supplier_approval|supplier_documents|document_warning_days`, permission `suppliers.approve`. Checks in `PurchaseOrderService` (saveDraft, submit, approve) and `SupplierPaymentService::pay`. UI: supplier form *How they are paid*, list status / score / Approve / Block / Verify bank / Scorecard, `DocumentsRelationManager`. Test `SupplierOnboardingTest`.
 - Next: 2b withholding tax (supplier_payments wht, account 2240 `wht_payable`, certificate, monthly GRA schedule), 2c landed costs.

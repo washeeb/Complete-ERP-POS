@@ -468,12 +468,15 @@ final class AutoPoster
 
     private function supplier_payments(Actor $actor, int $batch): int
     {
-        $rows = $this->rows('supplier_payments', $actor->tenantId, $batch, ['s.id', 's.number', 's.supplier_id', 's.branch_id', 's.account_id', 's.amount_minor']);
+        $rows = $this->rows('supplier_payments', $actor->tenantId, $batch, ['s.id', 's.number', 's.supplier_id', 's.branch_id', 's.account_id', 's.amount_minor', 's.wht_minor']);
         foreach ($rows as $p) {
-            $this->gl->post($actor, $p->d, 'auto', "Supplier payment {$p->number}", [
+            // The supplier's account goes down by the full amount; the bank by what was paid; the rest is owed to GRA.
+            $wht = (int) $p->wht_minor;
+            $this->gl->post($actor, $p->d, 'auto', "Supplier payment {$p->number}", array_values(array_filter([
                 ['account' => 'payables', 'amount' => (int) $p->amount_minor, 'branch_id' => $p->branch_id, 'party_type' => 'supplier', 'party_id' => $p->supplier_id],
-                ['account' => Account::withoutGlobalScopes()->findOrFail($p->account_id), 'amount' => -(int) $p->amount_minor, 'branch_id' => $p->branch_id],
-            ], [['supplier_payment', $p->id]], 'supplier_payments', late: true);
+                ['account' => Account::withoutGlobalScopes()->findOrFail($p->account_id), 'amount' => -((int) $p->amount_minor - $wht), 'branch_id' => $p->branch_id],
+                $wht > 0 ? ['account' => 'wht_payable', 'amount' => -$wht, 'branch_id' => $p->branch_id] : null,
+            ])), [['supplier_payment', $p->id]], 'supplier_payments', late: true);
         }
 
         return count($rows);

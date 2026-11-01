@@ -30,6 +30,7 @@ use App\Models\StockAdjustment;
 use App\Models\StockRequest;
 use App\Models\StockTransfer;
 use App\Models\Supplier;
+use App\Models\SupplierPayment;
 use App\Models\SupplierReturn;
 use App\Models\Tenant;
 use App\Models\Warehouse;
@@ -196,6 +197,15 @@ class PrintController extends Controller
             'allocations' => DB::table('receivable_allocations')->where('from_type', 'customer_payment')->where('from_id', $payment->id)
                 ->leftJoin('customer_ledger', fn ($j) => $j->on('customer_ledger.doc_id', '=', 'receivable_allocations.to_id')->whereIn('customer_ledger.type', ['invoice', 'pos_sale', 'opening']))
                 ->get(['customer_ledger.doc_number', 'receivable_allocations.amount_minor'])]);
+    }
+
+    /** The withholding tax credit certificate the supplier keeps (one per payment that kept tax back). */
+    public function whtCertificate(Request $request, SupplierPayment $payment): View
+    {
+        $this->allow($request, ['payables.view', 'payables.pay'], $payment->branch_id, $payment->tenant_id);
+        abort_unless($payment->wht_minor > 0, 404);
+
+        return view('print.wht-certificate', ['doc' => $payment, 'company' => $this->company($payment->branch_id), 'supplier' => Supplier::find($payment->supplier_id)]);
     }
 
     private function allowPayroll(Request $request, string $tenantId, ?string $ownerUserId = null): void

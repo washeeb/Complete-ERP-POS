@@ -68,7 +68,7 @@ final class ChartTemplate
         ['2231', 'Tier 2 pension payable', 'liability', '2200', false, null, 'tier2'],
         ['2232', 'Provident fund (Tier 3) payable', 'liability', '2200', false, null, 'tier3'],
         ['2233', 'Staff welfare dues payable', 'liability', '2200', false, null, 'welfare'],
-        ['2240', 'Withholding tax payable', 'liability', '2200', false, null, null],
+        ['2240', 'Withholding tax payable', 'liability', '2200', false, null, 'wht_payable'],
         ['2300', 'Owed to customers', 'liability', '2000', true, null, null],
         ['2310', 'Gift cards and store credit', 'liability', '2300', false, 'stored_value', 'stored_value'],
         ['2320', 'Loyalty points', 'liability', '2300', false, 'loyalty', 'loyalty'],

@@ -19,7 +19,13 @@ class SupplierPayment extends Model
 
     protected function casts(): array
     {
-        return ['paid_on' => 'date', 'amount_minor' => 'integer'];
+        return ['paid_on' => 'date', 'amount_minor' => 'integer', 'wht_minor' => 'integer', 'wht_rate_bp' => 'integer', 'wht_base_minor' => 'integer'];
+    }
+
+    /** What actually left the bank or till: the amount less the withholding tax kept back. */
+    public function cashMinor(): int
+    {
+        return $this->amount_minor - (int) $this->wht_minor;
     }
 
     public function supplier(): BelongsTo

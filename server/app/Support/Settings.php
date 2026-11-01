@@ -147,6 +147,19 @@ final class Settings
             'label' => 'Daily summary time (HH:MM)',
             'help' => 'The day’s mobile money and card totals per branch and network are sent once, after this time.',
         ],
+        'payables.wht' => [
+            'type' => 'bool', 'default' => false, 'group' => 'Withholding tax',
+            'label' => 'Keep back withholding tax from supplier payments',
+            'help' => 'On: each payment to a supplier keeps back the withholding tax for what they supply (goods, services or works, set on the supplier), on the amount before VAT; the supplier gets a certificate, and Finance → Withholding tax lists what to pay GRA by the 15th of the next month. Suppliers with a withholding tax exemption certificate in date (a supplier document) are left out. Have your accountant confirm the rates below.',
+        ],
+        'payables.wht_goods_bp' => ['type' => 'int', 'default' => 300, 'min' => 0, 'max' => 3000, 'group' => 'Withholding tax', 'label' => 'Rate for goods (basis points)', 'help' => '300 = 3 %.'],
+        'payables.wht_services_bp' => ['type' => 'int', 'default' => 750, 'min' => 0, 'max' => 3000, 'group' => 'Withholding tax', 'label' => 'Rate for services (basis points)', 'help' => '750 = 7.5 %.'],
+        'payables.wht_works_bp' => ['type' => 'int', 'default' => 500, 'min' => 0, 'max' => 3000, 'group' => 'Withholding tax', 'label' => 'Rate for works / construction (basis points)', 'help' => '500 = 5 %.'],
+        'payables.wht_threshold_minor' => [
+            'type' => 'int', 'default' => 200000, 'min' => 0, 'max' => 100000000, 'group' => 'Withholding tax',
+            'label' => 'No withholding tax below (pesewas, before VAT)',
+            'help' => '200000 = GHS 2,000. A payment whose amount before VAT is below this has nothing kept back.',
+        ],
         'purchasing.supplier_approval' => [
             'type' => 'bool', 'default' => false, 'group' => 'Purchasing',
             'label' => 'Supplier controls: approval, documents and bank checks',
