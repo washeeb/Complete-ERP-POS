@@ -146,5 +146,5 @@ it('shows the request for quotation screens, sealed and then side by side', func
     $this->svc->close(actorFor($this->buyer), $this->rfq->fresh());
     $this->get($view)->assertOk()->assertSee('Comparison')->assertSee('GH₵ 300.00 ★')->assertSee('Score');
     $pos = $this->svc->award(actorFor($this->buyer), $this->rfq->fresh(), [$this->milo1 => ($this->inv)($this->a)->id]);
-    $this->get(PurchaseOrderResource::getUrl('view', ['record' => $pos[0]]))->assertOk()->assertSee('Supplier confirmed');
+    $this->get(PurchaseOrderResource::getUrl('view', ['record' => $pos[0]]))->assertOk()->assertSee($this->rfq->number);
 });
