@@ -24,7 +24,7 @@ final class TestTradingReset
     /** The trading tables (with their lines). The order of deleting is worked out from the foreign keys. */
     public const TABLES = [
         // Tills and cash
-        'sales', 'sale_lines', 'sale_payments', 'trade_ins', 'shifts', 'shift_count_corrections', 'vault_sessions', 'cash_movements', 'cash_handovers', 'cash_variances', 'till_drawer_events', 'expense_claims',
+        'sales', 'sale_lines', 'sale_payments', 'trade_ins', 'shifts', 'shift_count_corrections', 'vault_sessions', 'vault_covers', 'cash_movements', 'cash_handovers', 'cash_variances', 'till_drawer_events', 'expense_claims',
         'prescriptions', 'pharmacy_signoffs', 'review_items', 'fiscal_submissions', 'commissions', 'momo_charges', 'refill_reminders', 'whatsapp_orders', 'nhis_claim_lines', 'nhis_claims',
         // Stock
         'stock_movements', 'stock_movement_serials', 'stock_levels', 'stock_batch_levels', 'stock_bin_levels', 'stock_batches', 'serial_numbers', 'stock_reservations',
@@ -32,7 +32,7 @@ final class TestTradingReset
         'supplier_returns', 'supplier_return_lines', 'waybills',
         // Purchasing and suppliers' accounts
         'purchase_orders', 'purchase_order_lines', 'purchase_requests', 'purchase_request_lines', 'goods_receipts', 'goods_receipt_lines', 'supplier_bills', 'supplier_bill_lines', 'supplier_payments', 'supplier_ledger',
-        'supplier_balances', 'payable_allocations', 'consignment_sales',
+        'supplier_balances', 'payable_allocations', 'consignment_sales', 'landed_costs', 'landed_cost_charges', 'landed_cost_lines',
         // Selling on account, orders and online orders
         'customer_orders', 'customer_order_lines', 'deliveries', 'delivery_lines', 'invoices', 'invoice_lines', 'credit_notes', 'customer_payments', 'customer_ledger',
         'customer_balances', 'receivable_allocations', 'sales_orders', 'sales_order_lines',
