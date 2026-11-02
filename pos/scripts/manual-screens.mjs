@@ -113,10 +113,10 @@ const shot = (page, name) => page.screenshot({ path: resolve(out, `${name}.png`)
 
   // The looks. The tabs are the default; the side menu is switched on for this account on its profile page,
   // pictured, then put back to the company's choice.
-  const chooseLook = async (label) => {
+  const chooseLook = async (value) => { // '' = the company's choice
     await page.goto(`${base}/admin/profile`)
     await page.waitForLoadState('networkidle')
-    await page.getByRole('radio', { name: label }).last().check() // last: "As the company chose: …" repeats a look's name
+    await page.locator(`input[type=radio][value="${value}"]`).check()
     await page.getByRole('button', { name: 'Save changes' }).click()
     await page.waitForLoadState('networkidle')
     await page.waitForTimeout(800)
@@ -135,11 +135,11 @@ const shot = (page, name) => page.screenshot({ path: resolve(out, `${name}.png`)
   await page.waitForTimeout(400)
   await shot(page, 'look-finder')
   await page.keyboard.press('Escape')
-  await chooseLook('New look: side menu')
+  await chooseLook('side')
   await page.goto(`${base}/admin/purchase-orders`)
   await page.waitForLoadState('networkidle')
   await shot(page, 'look-side')
-  await chooseLook('As the company chose')
+  await chooseLook('')
   await page.close()
 }
 await browser.close()

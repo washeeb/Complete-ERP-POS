@@ -3,7 +3,10 @@
 ## [Unreleased]
 ### Added
 - **The new look** (interface stage 1a; free), laid out like NetSuite and now the standard look: a white header with a wide **Search**, **+ New** (create any record the person may create) and the person's name and role; a steel-blue band with **Recent** (the page finder, also on **/**), **Favourites** (up to 20 pages, kept per person on the server) and **Home** icons, then the tabs, each opening a panel of its pages on hover. Denser lists and forms, matching dark mode. Also offered: **New look: side menu** — a dark navigation rail that folds to icons — and **Classic**. Chosen per person under **Profile**, or for everyone under **System → Settings → Appearance**; phones keep the side menu.
-- **Profile page** laid out in titled sections (You, Look, Password, Two-factor sign-in, Passkeys), each explained on the left with its fields in a panel on the right.
+- **Colours from the client's brand:** the menu band, side menu and page banners take a dark shade of the brand colour (which can come from the logo), or the company's own **Menu colour** (Company → Branding, optional).
+- **Page banners and cards** (new look): each page opens with a banner in the menu colour (its icon or the person's photo, title, buttons); sections are white cards with a tinted icon; pill-shaped search.
+- **Side menu look redesigned:** full height, the company's logo at the top, one row per area (Dashboard, Insights, Sales…) opening to its pages; folds to icons.
+- **Profile page** redesigned: its parts listed on the left (with support contacts), a card for each on the right — photo and details, the look as picture cards in the company's colours, password with a strength meter, two-factor sign-in, passkeys.
 - **Profile photos** (free): on the Profile page, with a round crop; shown in the top bar and the list of users. The server keeps only a cleaned 256-pixel square copy (location and camera details removed), visible only to people signed in to the same company.
 
 ### Fixed

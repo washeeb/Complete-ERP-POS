@@ -32,7 +32,8 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 - Views `layout/look-head` (HEAD_END), `layout/tabbar` (TOPBAR_AFTER, top only: Recent/Favourites/Home + tabs), `layout/look-actions` (GLOBAL_SEARCH_BEFORE: + New, and Find a page in the side look), `layout/who` (USER_MENU_BEFORE); passkeys view restyled; CSS `public/css/seslabs/new-look.css` (+ `.zx-pk-*` in admin.css).
 - `ProfilePhoto`, `AccessService::updateOwnProfile` (ui_look, photo; `PHOTO_UPLOADS`), `EditProfile` form, `User::getFilamentAvatarUrl`, route `user.photo`, `LocalAvatars` (both panels), users list photo column.
 - Dev: `ServeCommand::$passthroughVariables` gains TMP/TEMP (Windows uploads under `artisan serve`). Guide: chapter 7 step 6b (where each menu section sits in the tabs); pictures `look-tabs`, `look-finder`, `look-side`, `profile-look` (the script switches the dev account to the side look and back); every other guide picture now shows the tabs.
-- Tests: `NewLookTest` (7).
+- Brand-driven colours (`tenants.brand_menu_color`, Branding page *Menu colour*), page banners, cards, side look redesign (`layout/sidenav`, `layout/sidebar-brand`, `layout/page-icon`), profile redesign (`filament/profile/{nav,look-picker,password-strength}`); New/Edit buttons authorised app-wide (`AppServiceProvider`).
+- Tests: `NewLookTest` (9), `AccessAndMenuTest` (+2).
 
 ## Guide screenshots and fixes found with them — merged (PR #124, release BJN1N5YGS)
 - `pos/scripts/manual-screens.mjs`: sign-in by `autocomplete=username`; installation code hidden by content; 15 new pages (cash setup, channels, GRA E-VAT, stock counts, what to order, supplier, landed costs, RFQ, supplier invoices, purchase request, budgets, agreement, spend analytics, purchase order, expiry returns) placed in chapters 7, 9, 11 and 14 (`devices.png` now used in 9).

@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\Tenant;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Filament\Navigation\NavigationGroup;
@@ -99,6 +100,44 @@ final class Look
     {
         // Built once per page: the tab band and the page finder both use it.
         return app(RequestMemo::class)->remember('look.tabs.'.auth()->id(), fn () => self::buildTabs());
+    }
+
+    /** The icon of each top-level group in the side menu (the tabs' names; an industry tab takes the shop icon). */
+    public const TAB_ICONS = ['Home' => 'heroicon-o-home', 'Insights' => 'heroicon-o-chart-bar', 'Sales' => 'heroicon-o-shopping-bag',
+        'Purchasing' => 'heroicon-o-shopping-cart', 'Stock' => 'heroicon-o-archive-box', 'Finance' => 'heroicon-o-banknotes',
+        'People' => 'heroicon-o-user-group', 'Setup' => 'heroicon-o-cog-6-tooth', 'More' => 'heroicon-o-squares-2x2'];
+
+    public static function tabIcon(string $tab): string
+    {
+        return self::TAB_ICONS[$tab] ?? 'heroicon-o-building-storefront';
+    }
+
+    /** The icon of the page being shown (from the menu), for the page's banner; null when the page is not in the menu. */
+    public static function pageIcon(): mixed
+    {
+        foreach (self::tabs() as $tab) {
+            foreach ($tab['sections'] as $section) {
+                foreach ($section['items'] as $item) {
+                    if ($item['active'] && $item['icon']) {
+                        return $item['icon'];
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /** The company's own menu colour (Company → Branding), or null for a dark shade of its brand colour. */
+    public static function menuColor(): ?string
+    {
+        $user = auth()->user();
+        if (! $user instanceof User) {
+            return null;
+        }
+        $color = app(RequestMemo::class)->remember('look.menu.'.$user->tenant_id, fn () => Tenant::whereKey($user->tenant_id)->value('brand_menu_color'));
+
+        return is_string($color) && preg_match('/^#[0-9A-F]{6}$/i', $color) ? $color : null;
     }
 
     /** The home page (the house icon on the band). */

@@ -101,7 +101,6 @@ class AdminPanelProvider extends PanelProvider
                 .e(config('brand.tagline')).'</p>') : '')
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn () => Blade::render(
                 '<x-authenticate-passkey><x-filament::button color="gray" icon="heroicon-o-finger-print" class="w-full mt-2">Sign in with a passkey</x-filament::button></x-authenticate-passkey>'))
-            ->renderHook(PanelsRenderHook::PAGE_END, fn () => Blade::render('@livewire(\'passkeys\')'), scopes: EditProfile::class)
             ->renderHook(PanelsRenderHook::BODY_START, fn () => view('license.banner'))
             ->renderHook(PanelsRenderHook::BODY_START, fn () => view('launch.practice-banner'))
             ->renderHook(PanelsRenderHook::BODY_START, fn () => view('remote.support-banner'))
@@ -110,6 +109,9 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::TOPBAR_AFTER, fn () => Look::hasTopTabs() ? view('layout.tabbar', ['tabs' => Look::tabs()]) : '')
             ->renderHook(PanelsRenderHook::BODY_END, fn () => view('layout.sidebar-focus')) // the current menu section at the top
             ->renderHook(PanelsRenderHook::SIDEBAR_NAV_START, fn () => view('layout.menu-search')) // type to find a page in the menu
+            ->renderHook(PanelsRenderHook::SIDEBAR_START, fn () => Look::current() === 'side' ? view('layout.sidebar-brand') : '') // side look: the company at the top of the dark menu
+            ->renderHook(PanelsRenderHook::SIDEBAR_NAV_START, fn () => Look::current() === 'side' ? view('layout.sidenav') : '') // side look: areas that open to their pages
+            ->renderHook(PanelsRenderHook::PAGE_HEADER_HEADING_BEFORE, fn () => Look::isNew() ? view('layout.page-icon') : '') // new look: the round icon on each page's banner
             ->renderHook(PanelsRenderHook::FOOTER, fn () => view('branding.powered-by'))
             // "Report a problem" for everyone signed in (pilot support, Phase 14).
             ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => Blade::render('@livewire(\'report-problem\')'))

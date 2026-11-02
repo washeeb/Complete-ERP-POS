@@ -54,6 +54,16 @@
             @endif
         </div>
         @if ($note = $this->contrastNote())<p class="br-warn">{{ $note }}</p>@endif
+        <div class="br-row">
+            <label class="br-field">Menu colour (optional)
+                <span class="br-colour">
+                    <input type="color" wire:model.live="menuColor" value="{{ $menuColor ?: '#1C2A3A' }}" aria-label="Pick the menu colour">
+                    <x-filament::input.wrapper><x-filament::input type="text" wire:model.live.debounce.400ms="menuColor" placeholder="Automatic" maxlength="7" /></x-filament::input.wrapper>
+                </span>
+            </label>
+            @if ($menuColor !== '')<x-filament::button color="gray" size="sm" wire:click="$set('menuColor', '')">Automatic (from the brand colour)</x-filament::button>@endif
+        </div>
+        <p class="br-hint">The band of tabs and the side menu. Left empty, they take a dark shade of your brand colour, so they always go with your logo. White text must read clearly on it: choose a dark colour.</p>
         <label class="br-check"><input type="checkbox" wire:model="receiptLogo"> Print the logo at the top of till receipts (thermal printers print it in black and white)</label>
         <div style="margin-top:12px"><x-filament::button wire:click="saveSettings">Save colour and receipts</x-filament::button></div>
     </x-filament::section>

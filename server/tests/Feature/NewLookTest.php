@@ -2,6 +2,7 @@
 
 use App\Domain\Access\AccessService;
 use App\Domain\Access\ProfilePhoto;
+use App\Domain\Branding\Branding;
 use App\Domain\Support\DomainException;
 use App\Filament\Support\LocalAvatars;
 use App\Support\Look;
@@ -114,4 +115,27 @@ it('draws initials here instead of sending names to ui-avatars.com', function ()
     $this->actingAs(withMfa($this->owner));
     $this->get('/admin/sales')->assertOk()->assertDontSee('ui-avatars.com', false);
     $this->get('/admin/profile')->assertOk()->assertSee('How the back office looks for you');
+});
+
+it('colours the menu with the company\'s own menu colour, or a shade of its brand colour', function () {
+    $branding = app(Branding::class);
+    $this->actingAs(withMfa($this->owner));
+    $this->get('/admin/sales')->assertOk()->assertDontSee('--zx-menu: #', false); // automatic: from the brand colour
+
+    expect(fn () => $branding->saveSettings(actorFor($this->owner), null, true, 'teal'))->toThrow(DomainException::class, '#RRGGBB');
+    $branding->saveSettings(actorFor($this->owner), '#0f766e', true, '#0e4d64');
+    expect($this->tenant->fresh()->brand_menu_color)->toBe('#0E4D64');
+    $branding->saveSettings(actorFor($this->owner), '#0f766e', false); // the set-up wizard leaves the menu colour as it is
+    expect($this->tenant->fresh()->brand_menu_color)->toBe('#0E4D64');
+    $this->get('/admin/sales')->assertOk()->assertSee('--zx-menu: #0E4D64', false);
+
+    $branding->saveSettings(actorFor($this->owner), '#0f766e', true, null); // back to automatic
+    expect($this->tenant->fresh()->brand_menu_color)->toBeNull();
+});
+
+it('lays the profile page out in parts, with the look as picture cards', function () {
+    $this->actingAs(withMfa($this->owner));
+    $this->get('/admin/profile')->assertOk()
+        ->assertSee('Personal information')->assertSee('Two-factor sign-in')->assertSee('Passkeys')->assertSee('Need help?')
+        ->assertSee('value="side"', false)->assertSee('zx-hero-ic', false);
 });

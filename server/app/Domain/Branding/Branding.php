@@ -103,14 +103,14 @@ final class Branding
     /**
      * Everything a screen, receipt or document needs to show the company's brand.
      *
-     * @return array{company: string, color: string, on_color: string, custom_color: bool, logo_url: ?string, logo_dark_url: ?string, icon_url: string,
+     * @return array{company: string, color: string, on_color: string, custom_color: bool, menu_color: ?string, logo_url: ?string, logo_dark_url: ?string, icon_url: string,
      *               has_logo: bool, receipt_logo: bool, powered_by: ?string, credit: list<string>, monogram: string}
      */
     public static function forTenant(?Tenant $tenant): array
     {
         $product = self::product();
         if (! $tenant) {
-            return ['company' => $product['name'], 'color' => $product['color'], 'on_color' => self::onColor($product['color']), 'custom_color' => false,
+            return ['company' => $product['name'], 'color' => $product['color'], 'on_color' => self::onColor($product['color']), 'custom_color' => false, 'menu_color' => null,
                 'logo_url' => $product['logo'], 'logo_dark_url' => $product['logo_dark'], 'icon_url' => $product['favicon'], 'has_logo' => false,
                 'receipt_logo' => false, 'powered_by' => null, 'credit' => [], 'monogram' => self::monogram($product['name'], $product['color'])];
         }
@@ -119,7 +119,7 @@ final class Branding
         $url = fn (string $kind) => isset($assets[$kind]) ? url("/brand/{$tenant->slug}/{$kind}?v=".substr($assets[$kind]->sha256, 0, 12)) : null;
         $logo = $url('logo');
 
-        return ['company' => $tenant->name, 'color' => $color, 'on_color' => self::onColor($color), 'custom_color' => (bool) $tenant->brand_color,
+        return ['company' => $tenant->name, 'color' => $color, 'on_color' => self::onColor($color), 'custom_color' => (bool) $tenant->brand_color, 'menu_color' => $tenant->brand_menu_color,
             'logo_url' => $logo, 'logo_dark_url' => $url('logo_dark') ?? $logo, 'icon_url' => $url('icon') ?? url("/brand/{$tenant->slug}/monogram.svg?v=".substr(md5($tenant->name.$color), 0, 8)),
             'has_logo' => $logo !== null, 'receipt_logo' => $logo !== null && (bool) $tenant->brand_receipt_logo, 'powered_by' => self::poweredBy(), 'credit' => self::receiptCredit(),
             'monogram' => self::monogram($tenant->name, $color)];
@@ -190,16 +190,27 @@ final class Branding
         $this->recorder->transaction(fn () => $this->recorder->save($actor, $asset, 'brand.asset_removed', BrandAsset::KINDS[$kind]));
     }
 
-    /** The brand colour (#RRGGBB, null = the product's) and whether receipts print the logo. */
-    public function saveSettings(Actor $actor, ?string $color, bool $receiptLogo): Tenant
+    /**
+     * The brand colour (#RRGGBB, null = the product's), whether receipts print the logo, and the menu colour (the band
+     * of tabs and the side menu of the new look; null = a dark shade of the brand colour; false = leave as it is).
+     */
+    public function saveSettings(Actor $actor, ?string $color, bool $receiptLogo, string|false|null $menuColor = false): Tenant
     {
         $this->require($actor);
-        $color = $color ? strtoupper(trim($color)) : null;
-        if ($color !== null && ! preg_match('/^#[0-9A-F]{6}$/', $color)) {
-            throw new DomainException('The colour is #RRGGBB, for example #0F766E.');
-        }
+        $clean = function (?string $c): ?string {
+            $c = $c ? strtoupper(trim($c)) : null;
+            if ($c !== null && ! preg_match('/^#[0-9A-F]{6}$/', $c)) {
+                throw new DomainException('The colour is #RRGGBB, for example #0F766E.');
+            }
+
+            return $c;
+        };
+        $color = $clean($color);
         $tenant = Tenant::findOrFail($actor->tenantId);
         $tenant->forceFill(['brand_color' => $color, 'brand_receipt_logo' => $receiptLogo]);
+        if ($menuColor !== false) {
+            $tenant->brand_menu_color = $clean($menuColor);
+        }
 
         return $this->recorder->transaction(fn () => $this->recorder->save($actor, $tenant, 'brand.settings_saved'));
     }

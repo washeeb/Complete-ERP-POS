@@ -39,6 +39,9 @@ class BrandingPage extends Page
 
     public string $color = '';
 
+    /** The new look's menu band and side menu; empty = a dark shade of the brand colour. */
+    public string $menuColor = '';
+
     public bool $receiptLogo = true;
 
     public static function canAccess(): bool
@@ -50,6 +53,7 @@ class BrandingPage extends Page
     {
         $t = Tenant::find(Erp::user()->tenant_id);
         $this->color = (string) ($t->brand_color ?? '');
+        $this->menuColor = (string) ($t->brand_menu_color ?? '');
         $this->receiptLogo = (bool) $t->brand_receipt_logo;
     }
 
@@ -119,7 +123,7 @@ class BrandingPage extends Page
     public function saveSettings(): void
     {
         try {
-            Erp::run(fn ($actor) => app(Branding::class)->saveSettings($actor, $this->color ?: null, $this->receiptLogo), 'Saved — refresh the page to see the new colour everywhere');
+            Erp::run(fn ($actor) => app(Branding::class)->saveSettings($actor, $this->color ?: null, $this->receiptLogo, $this->menuColor ?: null), 'Saved — refresh the page to see the new colour everywhere');
         } catch (Halt) {
         }
     }
