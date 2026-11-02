@@ -18,8 +18,12 @@ use App\Support\People;
 use App\Support\RequestMemo;
 use App\Support\Settings;
 use App\Support\TenantContext;
+use Filament\Actions\Action;
+use Filament\Actions\CreateAction;
+use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Resources\Pages\Page as ResourcePage;
 use Filament\Support\Exceptions\Halt;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -27,6 +31,7 @@ use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Console\ServeCommand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -108,6 +113,13 @@ class AppServiceProvider extends ServiceProvider
 
         // Every list in the back office can be exported (CSV / PDF) with its current search, filters and sort.
         Table::configureUsing(fn (Table $table) => $table->pushHeaderActions([TableExport::group()]));
+
+        // Filament shows "New" and "Edit" buttons to everyone unless told otherwise, so a person could see a button that
+        // only leads to "no access". On a resource's own pages they follow the resource's rules (canCreate / canEdit),
+        // the same ones its create and edit pages enforce. Relation managers and custom pages keep their own rules.
+        $resourceOf = fn (Action $action): ?string => ($page = $action->getLivewire()) instanceof ResourcePage ? $page::getResource() : null;
+        CreateAction::configureUsing(fn (CreateAction $a) => $a->authorize(fn (CreateAction $action): bool => ($r = $resourceOf($action)) === null || $r::canCreate()));
+        EditAction::configureUsing(fn (EditAction $a) => $a->authorize(fn (EditAction $action, ?Model $record): bool => ($r = $resourceOf($action)) === null || $record === null || $r::canEdit($record)));
 
         // Dotted abilities are ERP permissions: $user->can('admin.users.manage', $branch).
         // No target = only a company-wide grant counts. Anything else falls through to policies.

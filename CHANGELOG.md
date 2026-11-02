@@ -10,6 +10,7 @@
 - **Staff names were sent to an outside website:** the initials circle for people without a photo was fetched from ui-avatars.com on every page; it is now drawn on the server.
 - **Uploads failed on the Windows development server** (`php artisan serve`): PHP was started without a temporary folder.
 - The progress box no longer checks for progress on the sign-in page (it was refused there, filling the browser console).
+- **"New" and "Edit" buttons shown to people who may not use them** (e.g. *New quotation* for a storekeeper), leading to a "no access" page: on every list and record page they now follow the same rules as the pages they open.
 - **Passkeys box** on the profile page was unaligned: its layout used styles the back office does not include; it now has its own.
 
 - **Spend analytics** (procurement stage 5; Purchasing → Spend analytics): spend from posted supplier bills (before VAT) by month, supplier, category and department, with the share bought on approved orders and under contracts, how much the biggest supplier and the biggest five take, bills above order prices, and what requests for quotation saved; by dates and branch; export to Excel, CSV or PDF. Manual 14.5h.
