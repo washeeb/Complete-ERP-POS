@@ -54,6 +54,15 @@ const shot = (page, name) => page.screenshot({ path: resolve(out, `${name}.png`)
   await code.fill(totp(secrets.totp_secret))
   await code.press('Enter')
   await page.waitForURL(/\/admin(?!\/login)/, { timeout: 20000 })
+  const chooseLook = async (value) => { // '' = the company's choice
+    await page.goto(`${base}/admin/profile`)
+    await page.waitForLoadState('networkidle')
+    await page.locator(`input[type=radio][value="${value}"]`).check()
+    await page.getByRole('button', { name: 'Save changes' }).click()
+    await page.waitForLoadState('networkidle')
+    await page.waitForTimeout(800)
+  }
+  await chooseLook('') // a run stopped half-way may have left this account on the side menu
 
   for (const [path, name, action] of [
     ['/admin/devices', 'devices', null],
@@ -89,6 +98,7 @@ const shot = (page, name) => page.screenshot({ path: resolve(out, `${name}.png`)
     ['/admin/spend-analytics', 'spend-analytics', null],
     ['/admin/purchase-orders/create', 'purchase-order-new', null],
     ['/admin/expiry-returns', 'expiry-returns', null],
+    ['/admin/pricing-rules', 'pricing-rules', null],
   ]) {
     await page.goto(base + path)
     await page.waitForLoadState('networkidle')
@@ -113,14 +123,6 @@ const shot = (page, name) => page.screenshot({ path: resolve(out, `${name}.png`)
 
   // The looks. The tabs are the default; the side menu is switched on for this account on its profile page,
   // pictured, then put back to the company's choice.
-  const chooseLook = async (value) => { // '' = the company's choice
-    await page.goto(`${base}/admin/profile`)
-    await page.waitForLoadState('networkidle')
-    await page.locator(`input[type=radio][value="${value}"]`).check()
-    await page.getByRole('button', { name: 'Save changes' }).click()
-    await page.waitForLoadState('networkidle')
-    await page.waitForTimeout(800)
-  }
   await page.goto(`${base}/admin/profile`)
   await page.waitForLoadState('networkidle')
   await shot(page, 'profile-look')

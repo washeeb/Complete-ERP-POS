@@ -32,7 +32,7 @@ final class TestTradingReset
         'supplier_returns', 'supplier_return_lines', 'waybills',
         // Purchasing and suppliers' accounts
         'purchase_orders', 'purchase_order_lines', 'purchase_requests', 'purchase_request_lines', 'goods_receipts', 'goods_receipt_lines', 'supplier_bills', 'supplier_bill_lines', 'supplier_payments', 'supplier_ledger',
-        'supplier_balances', 'payable_allocations', 'consignment_sales', 'landed_costs', 'landed_cost_charges', 'landed_cost_lines',
+        'supplier_balances', 'payable_allocations', 'consignment_sales', 'landed_costs', 'landed_cost_charges', 'landed_cost_lines', 'price_suggestions',
         'rfqs', 'rfq_lines', 'rfq_suppliers', 'rfq_quote_lines', 'supplier_invoices',
         // Selling on account, orders and online orders
         'customer_orders', 'customer_order_lines', 'deliveries', 'delivery_lines', 'invoices', 'invoice_lines', 'credit_notes', 'customer_payments', 'customer_ledger',
