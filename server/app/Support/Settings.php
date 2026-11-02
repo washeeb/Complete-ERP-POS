@@ -83,9 +83,9 @@ final class Settings
             'help' => '0 = off. e.g. 200000 = GHS 2,000: when the cash in a drawer goes above it, the till asks for a cash drop and supervisors are told. Less cash in the drawer means less to lose.',
         ],
         'ui.look' => [
-            'type' => 'choice', 'default' => 'classic', 'group' => 'Appearance', 'options' => Look::LOOKS,
+            'type' => 'choice', 'default' => Look::DEFAULT, 'group' => 'Appearance', 'options' => Look::LOOKS,
             'label' => 'How the back office looks',
-            'help' => 'For everyone who has not chosen for themselves (each person can choose under their profile, top right → Profile). The new look puts the menu in tabs across the top, like a desktop program, with denser lists; the side menu stays available. Try it yourself first, then choose it here for everyone.',
+            'help' => 'For everyone who has not chosen for themselves (each person can choose under their profile, top right → Profile). The new look (the default) puts the menu in tabs across the top, like a desktop program, with denser lists; the new side menu is a dark menu that folds to icons; Classic is the original layout.',
         ],
         'remote.consent' => [
             'type' => 'choice', 'default' => 'outside_hours', 'group' => 'Remote access', 'branch' => true,

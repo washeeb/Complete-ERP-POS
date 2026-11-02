@@ -14,11 +14,13 @@ use Throwable;
  *   - top: the new look — the menu as tabs across the top, each opening a panel of its sections, like a desktop
  *     program; denser lists and forms;
  *   - side: the new look with the side menu kept.
- * The person's own choice (profile) wins; otherwise the company's (System → Settings → Appearance), classic by default,
- * so nobody is surprised mid-shift. Phones always get the side menu (the tabs do not fit).
+ * The person's own choice (profile) wins; otherwise the company's (System → Settings → Appearance), the tabs by default
+ * (owner 2026-11-02). Phones always get the side menu (the tabs do not fit).
  */
 final class Look
 {
+    public const DEFAULT = 'top';
+
     public const LOOKS = [
         'classic' => 'Classic (side menu)',
         'top' => 'New look: tabs across the top',
@@ -54,10 +56,10 @@ final class Look
         try {
             $company = (string) app(Settings::class)->get('ui.look', $user?->tenant_id);
         } catch (Throwable) {
-            $company = 'classic';
+            $company = self::DEFAULT;
         }
 
-        return isset(self::LOOKS[$company]) ? $company : 'classic';
+        return isset(self::LOOKS[$company]) ? $company : self::DEFAULT;
     }
 
     public static function current(): string
@@ -99,6 +101,32 @@ final class Look
         return app(RequestMemo::class)->remember('look.tabs.'.auth()->id(), fn () => self::buildTabs());
     }
 
+    /** The home page (the house icon on the band). */
+    public static function homeUrl(): string
+    {
+        return (string) Filament::getCurrentPanel()?->getUrl();
+    }
+
+    /** The person's favourite pages (the star on the band). @return list<array{url: string, label: string}> */
+    public static function favourites(): array
+    {
+        $user = auth()->user();
+
+        return $user instanceof User ? array_values($user->ui_favourites ?? []) : [];
+    }
+
+    /** "Owner", "Cashier +1": the person's role, shown under their name at the top right. */
+    public static function roleLine(): string
+    {
+        $user = auth()->user();
+        if (! $user instanceof User) {
+            return '';
+        }
+        $roles = $user->roleAssignments()->active()->with('role')->get()->pluck('role.name')->filter()->unique()->values();
+
+        return $roles->isEmpty() ? '' : $roles[0].($roles->count() > 1 ? ' +'.($roles->count() - 1) : '');
+    }
+
     private static function buildTabs(): array
     {
         $sectionsByGroup = [];
@@ -118,10 +146,12 @@ final class Look
             }
         }
 
+        // The home page has its own house icon on the band; other pages without a section (e.g. Today) go first in the
+        // first tab as "Overview", or in a Home tab of their own when the person has no other tab to hold them.
+        $home = array_values(array_filter($home, fn ($i) => $i['url'] !== self::homeUrl()));
+        $overview = $home === [] ? [] : ['label' => 'Overview', 'items' => $home];
+
         $tabs = [];
-        if ($home !== []) {
-            $tabs[] = ['label' => 'Home', 'sections' => [['label' => 'Home', 'items' => $home]]];
-        }
         $placed = [];
         foreach (self::TABS as $tab => $groups) {
             $sections = [];
@@ -139,6 +169,11 @@ final class Look
         $rest = array_values(array_diff_key($sectionsByGroup, $placed));
         if ($rest !== []) {
             $tabs[] = ['label' => 'More', 'sections' => $rest];
+        }
+        if ($overview !== [] && $tabs === []) {
+            $tabs[] = ['label' => 'Home', 'sections' => [$overview]];
+        } elseif ($overview !== []) {
+            array_unshift($tabs[0]['sections'], $overview);
         }
 
         return array_map(fn ($t) => $t + ['active' => collect($t['sections'])->flatMap(fn ($s) => $s['items'])->contains('active', true)], $tabs);

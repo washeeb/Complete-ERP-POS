@@ -26,38 +26,58 @@ function photoBytes(): string
     return (string) ob_get_clean();
 }
 
-it('keeps the classic look until the person or the company chooses the new one', function () {
-    expect(Look::for($this->owner))->toBe('classic');
+it('uses the tabs unless the company or the person chooses another look', function () {
+    expect(Look::for($this->owner))->toBe('top');
 
-    app(Settings::class)->set(actorFor($this->owner), 'ui.look', 'top');
-    expect(Look::for($this->owner->fresh()))->toBe('top');
+    app(Settings::class)->set(actorFor($this->owner), 'ui.look', 'classic');
+    expect(Look::for($this->owner->fresh()))->toBe('classic');
 
     app(AccessService::class)->updateOwnProfile(actorFor($this->owner), $this->owner->fresh(), ['ui_look' => 'side']);
     expect(Look::for($this->owner->fresh()))->toBe('side');
 
     app(AccessService::class)->updateOwnProfile(actorFor($this->owner), $this->owner->fresh(), ['ui_look' => '']); // back to the company's
-    expect(Look::for($this->owner->fresh()))->toBe('top');
+    expect(Look::for($this->owner->fresh()))->toBe('classic');
 
     expect(fn () => app(AccessService::class)->updateOwnProfile(actorFor($this->owner), $this->owner->fresh(), ['ui_look' => 'neon']))
         ->toThrow(DomainException::class);
 });
 
-it('shows the tabs, the page finder and + New in the new look, built from what the person may open', function () {
+it('shows the tabs, the page finder, + New and who is signed in, built from what the person may open', function () {
     $this->actingAs(withMfa($this->owner));
-    $this->get('/admin/sales')->assertOk()->assertDontSee('zx-tabbar', false)->assertSee('zx-classic', false);
-
-    app(AccessService::class)->updateOwnProfile(actorFor($this->owner), $this->owner->fresh(), ['ui_look' => 'top']);
-    $this->actingAs(withMfa($this->owner->fresh()));
     $this->get('/admin/sales')->assertOk()->assertSee('zx-tabbar', false)->assertSee('Purchasing')->assertSee('Finance')
-        ->assertSee('Find a page')->assertSee('Purchase order');
+        ->assertSee('Find a page')->assertSee('Purchase order')->assertSee('zx-who', false)->assertSee('Favourites');
+
+    app(AccessService::class)->updateOwnProfile(actorFor($this->owner), $this->owner->fresh(), ['ui_look' => 'classic']);
+    $this->actingAs(withMfa($this->owner->fresh()));
+    $this->get('/admin/sales')->assertOk()->assertDontSee('zx-tabbar', false)->assertSee('zx-classic', false)->assertDontSee('zx-who', false);
 });
 
 it('gives a cashier only the tabs for the pages a cashier may open', function () {
     $cashier = staff($this->owner, 'efua', 3, 'cashier');
-    app(AccessService::class)->updateOwnProfile(actorFor($cashier), $cashier, ['ui_look' => 'top']);
     $this->actingAs(withMfa($cashier->fresh()));
     $this->get('/admin/profile'); // builds the menu as the cashier (a new cashier is sent on to the first sign-in steps)
-    expect(collect(Look::tabs())->pluck('label')->all())->toBe(['Home', 'Sales', 'Setup']);
+    expect(collect(Look::tabs())->pluck('label')->all())->toBe(['Sales', 'Setup']); // the home page is the house icon
+});
+
+it('keeps favourite pages for the person, only pages of the back office', function () {
+    $this->actingAs(withMfa($this->owner));
+    $add = $this->postJson(route('ui.favourite'), ['url' => '/admin/purchase-orders?tableSearch=x', 'label' => 'Purchase Orders'])->assertOk();
+    expect($add->json('favourites'))->toBe([['url' => '/admin/purchase-orders?tableSearch=x', 'label' => 'Purchase Orders']]);
+    $this->postJson(route('ui.favourite'), ['url' => url('/admin/products'), 'label' => '<b>Products</b>'])->assertOk();
+    expect($this->owner->fresh()->ui_favourites[1])->toBe(['url' => '/admin/products', 'label' => 'Products']);
+    expect(DB::table('audit_events')->where('action', 'user.favourites_changed')->count())->toBe(2);
+
+    // Pressing the star again takes the page off.
+    $this->postJson(route('ui.favourite'), ['url' => '/admin/purchase-orders?tableSearch=x', 'label' => 'x'])->assertOk()
+        ->assertJsonCount(1, 'favourites');
+
+    // Never a page elsewhere.
+    $this->postJson(route('ui.favourite'), ['url' => 'https://evil.example/admin/x', 'label' => 'x'])->assertStatus(422);
+    $this->postJson(route('ui.favourite'), ['url' => '/s/some-supplier-token', 'label' => 'x'])->assertStatus(422);
+
+    $this->owner->forceFill(['ui_favourites' => collect(range(1, AccessService::MAX_FAVOURITES))->map(fn ($i) => ['url' => "/admin/p{$i}", 'label' => "P{$i}"])->all()])->saveQuietly();
+    $this->actingAs(withMfa($this->owner->fresh()));
+    $this->postJson(route('ui.favourite'), ['url' => '/admin/one-more', 'label' => 'x'])->assertStatus(422)->assertJsonPath('message', fn ($m) => str_contains($m, 'Remove one first'));
 });
 
 it('cleans a profile photo into a small square copy, shows it only within the company, and removes it', function () {

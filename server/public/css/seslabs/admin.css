@@ -92,3 +92,16 @@ button[data-loading], a[data-loading], [wire\:click][data-loading] { pointer-eve
 .ses-menu-search { flex: none; margin: calc(var(--spacing, .25rem) * -4) 0 calc(var(--spacing, .25rem) * -3); padding: 0 .25rem; }
 .ses-menu-search .ses-menu-q { background: var(--color-white, #fff); }
 .dark .ses-menu-search .ses-menu-q { background: var(--gray-900); }
+
+/* Passkeys on the profile page (every look): our own layout classes, as Filament ships no general utility classes. */
+.zx-pk-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .75rem; }
+.zx-pk-field { flex: 1 1 16rem; display: grid; gap: .4rem; }
+.zx-pk-label { font-size: .875rem; font-weight: 500; }
+.zx-pk-error { font-size: .8125rem; color: var(--danger-600); }
+.zx-pk-list { margin-top: 1.25rem; border-top: 1px solid var(--gray-200); }
+.dark .zx-pk-list { border-color: rgb(255 255 255 / .1); }
+.zx-pk-list li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .75rem 0; border-bottom: 1px solid var(--gray-200); }
+.dark .zx-pk-list li { border-color: rgb(255 255 255 / .1); }
+.zx-pk-name { font-weight: 600; }
+.zx-pk-meta { font-size: .8125rem; color: var(--gray-500); }
+.zx-pk-none { margin-top: 1rem; }

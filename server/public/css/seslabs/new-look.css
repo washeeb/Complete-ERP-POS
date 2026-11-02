@@ -1,13 +1,15 @@
 /*
  * The new look (interface stage 1a; App\Support\Look). Everything is scoped to html.zx-new, so the classic look is
- * untouched. Like a desktop program: a white header (logo, search, actions), a dark band of tabs under it, a light
- * grey work area with white panels, and denser lists and forms so more fits on the screen. Dark mode follows.
+ * untouched. Laid out like NetSuite: a white header (logo, a wide search, actions, who is signed in), a steel-blue band
+ * with Recent, Favourites and Home icons then the tabs, a light grey work area with white panels, and denser lists and
+ * forms so more fits on the screen. Dark mode follows.
  */
 
 html.zx-new {
-    --zx-band: #1c2a3a;
-    --zx-band-2: #243549;
-    --zx-band-text: rgb(255 255 255 / .84);
+    --zx-band: #3b6386;
+    --zx-band-2: #2f5272;
+    --zx-band-ico: #2a4a66;
+    --zx-band-text: rgb(255 255 255 / .92);
     --zx-canvas: #eef1f5;
     --zx-panel: #ffffff;
     --zx-line: #d9dee6;
@@ -17,8 +19,9 @@ html.zx-new {
     --zx-shadow: 0 1px 2px rgb(16 24 40 / .06), 0 1px 3px rgb(16 24 40 / .05);
 }
 html.zx-new.dark {
-    --zx-band: #0c1520;
-    --zx-band-2: #13202e;
+    --zx-band: #1d3247;
+    --zx-band-2: #152638;
+    --zx-band-ico: #12202f;
     --zx-canvas: #0b0f14;
     --zx-panel: #121821;
     --zx-line: rgb(255 255 255 / .09);
@@ -35,13 +38,25 @@ html.zx-new .fi-header-subheading { font-size: .875rem; }
 html.zx-new .fi-breadcrumbs { font-size: .8125rem; }
 
 /* Panels: square-ish corners, a hairline border, a grey title band (sections, lists, widgets). */
-html.zx-new .fi-section, html.zx-new .fi-ta-ctn, html.zx-new .fi-wi-stats-overview-stat, html.zx-new .fi-wi-chart .fi-section {
+html.zx-new .fi-section, html.zx-new .fi-ta-ctn, html.zx-new .fi-wi-stats-overview-stat {
     border-radius: var(--zx-radius); box-shadow: var(--zx-shadow); background: var(--zx-panel);
     --tw-ring-color: var(--zx-line);
 }
-html.zx-new .fi-section-header { background: var(--zx-head); border-bottom: 1px solid var(--zx-line); padding-block: .7rem; border-radius: var(--zx-radius) var(--zx-radius) 0 0; }
+html.zx-new .fi-section:not(.fi-aside) > .fi-section-header { background: var(--zx-head); border-bottom: 1px solid var(--zx-line); padding-block: .7rem; border-radius: var(--zx-radius) var(--zx-radius) 0 0; }
 html.zx-new .fi-section-header-heading { font-size: .9375rem; font-weight: 650; }
+/* A closed group (e.g. Settings) is only its header: white like a panel, with a hover cue as it opens on click. */
+html.zx-new .fi-section.fi-collapsed > .fi-section-header { background: transparent; border-bottom: 0; border-radius: var(--zx-radius); }
+html.zx-new .fi-section.fi-collapsible > .fi-section-header { cursor: pointer; }
+html.zx-new .fi-section.fi-collapsible > .fi-section-header:hover { background: color-mix(in oklab, var(--primary-500) 5%, transparent); }
+html.zx-new .ses-settings-find { background: var(--zx-canvas); }
 html.zx-new .fi-section-content { padding: 1rem 1.1rem; }
+
+/* A titled section with its explanation beside it (the profile page, settings-like forms): the explanation sits on the
+   page, only the fields are a panel. */
+html.zx-new .fi-section.fi-aside { background: transparent; box-shadow: none; --tw-ring-color: transparent; border: 0; }
+html.zx-new .fi-section.fi-aside > .fi-section-header { background: transparent; border: 0; padding: .25rem 0 0; }
+html.zx-new .fi-section.fi-aside > .fi-section-header .fi-section-header-description { color: var(--zx-muted); font-size: .8125rem; line-height: 1.45; }
+html.zx-new .fi-section.fi-aside > .fi-section-content-ctn { background: var(--zx-panel); border: 1px solid var(--zx-line); border-radius: var(--zx-radius); box-shadow: var(--zx-shadow); }
 
 /* Lists: a grey header row in small capitals, tighter rows, zebra stripes, a clear hover. */
 html.zx-new .fi-ta-header-cell { background: var(--zx-head); padding-block: .55rem; font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: var(--zx-muted); }
@@ -59,21 +74,33 @@ html.zx-new .fi-input { padding-block: .4rem; font-size: .875rem; }
 html.zx-new .fi-btn { border-radius: 5px; }
 html.zx-new .fi-sc-form, html.zx-new .fi-fo-component-ctn { gap: 1rem; }
 
-/* ---- Header (Filament's top bar) -------------------------------------------------------------------------------- */
-html.zx-new .fi-topbar { min-height: 3.5rem; box-shadow: none; border-bottom: 1px solid var(--zx-line); }
+/* ---- Header (Filament's top bar), NetSuite's order: logo · wide search · industry · actions · who ---------------- */
+html.zx-new .fi-topbar { min-height: 3.5rem; box-shadow: none; border-bottom: 1px solid var(--zx-line); gap: 1rem; }
 html.zx-new .fi-topbar-nav-groups { display: none; } /* replaced by the tab band below */
+html.zx-new .fi-topbar-end { flex: 1 1 auto; justify-content: flex-end; gap: .75rem; margin-inline-start: 1.5rem; }
+@media (min-width: 1024px) {
+    html.zx-new .fi-topbar-end > .fi-global-search-ctn { order: -1; flex: 1 1 auto; max-width: 46rem; margin-inline-end: auto; }
+    html.zx-new .fi-topbar-end > .fi-global-search-ctn .fi-global-search, html.zx-new .fi-topbar-end > .fi-global-search-ctn .fi-input-wrp { width: 100%; }
+}
 html.zx-new .fi-user-avatar, html.zx-new .fi-avatar { box-shadow: 0 0 0 2px var(--zx-panel), 0 0 0 3px var(--zx-line); }
 
+/* Who is signed in, and as what (beside the photo) */
+.zx-who { display: grid; line-height: 1.15; text-align: end; max-width: 15rem; }
+.zx-who-name { font-size: .875rem; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zx-who-role { font-size: .75rem; color: var(--zx-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 1279px) { .zx-who { display: none; } }
+
 /* Find a page, + New */
-.zx-actions { display: flex; align-items: center; gap: .5rem; margin-inline-end: .5rem; }
+.zx-actions { display: flex; align-items: center; gap: .5rem; }
 .zx-find-btn, .zx-new-btn { display: inline-flex; align-items: center; gap: .4rem; height: 2.25rem; padding: 0 .75rem; border-radius: 6px; font-size: .875rem; font-weight: 550; white-space: nowrap; cursor: pointer; }
 .zx-find-btn { border: 1px solid var(--zx-line); color: var(--zx-muted); background: var(--zx-panel); }
 .zx-find-btn:hover { border-color: var(--primary-500); color: inherit; }
 .zx-find-btn kbd, .zx-finder kbd { font: 600 .7rem/1 ui-monospace, monospace; padding: .2rem .35rem; border-radius: 4px; border: 1px solid var(--zx-line); background: var(--zx-head); }
-.zx-new-btn { background: var(--primary-600); color: #fff; border: 0; }
-.zx-new-btn:hover { background: var(--primary-700); }
-.zx-find-btn svg, .zx-new-btn svg { width: 1rem; height: 1rem; }
-.zx-find-btn:focus-visible, .zx-new-btn:focus-visible, .zx-tab:focus-visible, .zx-mega-a:focus-visible { outline: 2px solid var(--primary-500); outline-offset: 2px; }
+.zx-new-btn { background: transparent; color: inherit; border: 1px solid transparent; }
+.zx-new-btn:hover, .zx-new-btn[aria-expanded='true'] { background: var(--zx-head); border-color: var(--zx-line); }
+.zx-new-btn svg { color: var(--primary-600); }
+.zx-find-btn svg, .zx-new-btn svg { width: 1.05rem; height: 1.05rem; }
+.zx-find-btn:focus-visible, .zx-new-btn:focus-visible, .zx-tab:focus-visible, .zx-mega-a:focus-visible, .zx-fav-toggle:focus-visible { outline: 2px solid var(--primary-500); outline-offset: 2px; }
 @media (max-width: 1023px) { .zx-find-btn span, .zx-find-btn kbd { display: none; } }
 @media (max-width: 639px) { .zx-actions { display: none; } }
 
@@ -87,16 +114,19 @@ html.zx-new .fi-user-avatar, html.zx-new .fi-avatar { box-shadow: 0 0 0 2px var(
 .zx-new-menu a:hover, .zx-new-menu a:focus-visible { background: color-mix(in oklab, var(--primary-500) 10%, transparent); color: var(--primary-700); outline: none; }
 .dark .zx-new-menu a:hover { color: var(--primary-200); }
 
-/* ---- The tab band ----------------------------------------------------------------------------------------------- */
-.zx-tabbar { position: sticky; top: 0; z-index: 25; background: var(--zx-band); color: var(--zx-band-text); box-shadow: 0 1px 0 rgb(0 0 0 / .2); }
-.zx-tabs { display: flex; flex-wrap: wrap; gap: .1rem; padding-inline: clamp(.5rem, 2vw, 1.5rem); }
+/* ---- The tab band (NetSuite's steel blue) ----------------------------------------------------------------------- */
+.zx-tabbar { position: sticky; top: 0; z-index: 25; background: var(--zx-band); color: var(--zx-band-text); box-shadow: 0 1px 2px rgb(0 0 0 / .18); }
+.zx-tabs { display: flex; flex-wrap: wrap; padding-inline: clamp(.25rem, 1.5vw, 1.25rem) clamp(.5rem, 2vw, 1.5rem); }
 .zx-tab-li { position: relative; }
-.zx-tab { display: inline-flex; align-items: center; gap: .3rem; height: 2.6rem; padding: 0 .85rem; font-size: .875rem; font-weight: 550; letter-spacing: .01em;
-    color: inherit; background: transparent; border: 0; border-bottom: 3px solid transparent; border-top: 3px solid transparent; cursor: pointer; white-space: nowrap; }
+.zx-tab { display: inline-flex; align-items: center; height: 2.5rem; padding: 0 .9rem; font-size: .875rem; font-weight: 500; letter-spacing: .005em;
+    color: inherit; background: transparent; border: 0; cursor: pointer; white-space: nowrap; text-decoration: none; }
 .zx-tab:hover, .zx-tab[aria-expanded='true'] { background: var(--zx-band-2); color: #fff; }
-.zx-tab.zx-active { color: #fff; border-bottom-color: var(--primary-400); font-weight: 650; }
-.zx-caret { width: .85rem; height: .85rem; opacity: .65; transition: transform .15s; }
-.zx-tab[aria-expanded='true'] .zx-caret { transform: rotate(180deg); }
+.zx-tab.zx-active { background: var(--zx-band-2); color: #fff; font-weight: 650; box-shadow: inset 0 -3px 0 var(--primary-400); }
+/* Recent, Favourites, Home: square icon cells, Home on a darker cell as in NetSuite */
+.zx-tab.zx-ico { width: 2.75rem; padding: 0; justify-content: center; }
+.zx-tab.zx-ico svg { width: 1.25rem; height: 1.25rem; }
+.zx-tab.zx-home { background: var(--zx-band-ico); margin-inline-end: .35rem; }
+.zx-tab.zx-home:hover, .zx-tab.zx-home.zx-active { background: color-mix(in oklab, var(--zx-band-ico) 80%, #000); }
 
 /* A tab's panel: its sections side by side. */
 .zx-mega { position: absolute; left: 0; top: 100%; z-index: 30; color: var(--gray-950);
@@ -115,6 +145,14 @@ html.zx-new .fi-user-avatar, html.zx-new .fi-avatar { box-shadow: 0 0 0 2px var(
 .zx-badge { margin-inline-start: auto; font-size: .6875rem; font-weight: 700; padding: .05rem .4rem; border-radius: 999px; background: color-mix(in oklab, var(--primary-500) 16%, transparent); color: var(--primary-700); }
 .dark .zx-badge { color: var(--primary-200); }
 
+/* Favourites panel */
+.zx-mega.zx-fav { width: 20rem; padding: .6rem .9rem .8rem; }
+.zx-fav-toggle { width: 100%; text-align: start; padding: .45rem .5rem; margin-bottom: .4rem; border-radius: 5px; font-size: .875rem; font-weight: 600; color: var(--primary-700); background: color-mix(in oklab, var(--primary-500) 9%, transparent); cursor: pointer; }
+.dark .zx-fav-toggle { color: var(--primary-200); }
+.zx-fav-toggle:disabled { opacity: .6; cursor: progress; }
+.zx-mega.zx-fav ul { display: grid; gap: .05rem; padding-inline: .5rem; }
+.zx-fav-msg { font-size: .8125rem; color: var(--zx-muted); padding: .35rem .5rem; }
+
 /* Phones and small tablets: the side menu (Filament's ☰), no tab band. */
 @media (max-width: 1023px) { .zx-tabbar { display: none; } }
 
@@ -131,11 +169,40 @@ html.zx-new .fi-user-avatar, html.zx-new .fi-avatar { box-shadow: 0 0 0 2px var(
 .zx-finder-none { padding: .5rem 1.1rem 1rem; font-size: .875rem; color: var(--zx-muted, #5b6676); }
 .zx-finder-keys { border-top: 1px solid var(--zx-line, #d9dee6); padding: .55rem 1.1rem; font-size: .75rem; color: var(--zx-muted, #5b6676); background: var(--zx-head, #f4f6f9); }
 
-/* ---- New look with the side menu: a denser, calmer menu --------------------------------------------------------- */
-html.zx-side .fi-sidebar { background: var(--zx-panel); border-inline-end: 1px solid var(--zx-line); }
-html.zx-side .fi-sidebar-item-btn { padding-block: .32rem; }
-html.zx-side .fi-sidebar-item-label { font-size: .875rem; }
-html.zx-side .fi-sidebar-group-label { font-size: .6875rem; text-transform: uppercase; letter-spacing: .06em; }
+/* ---- New look with the side menu: a dark navigation rail ------------------------------------------------------- */
+/* Entirely unlike the classic white menu: a deep navy rail, quiet section headings, the current page as a filled pill
+   in the brand colour, and a fold-to-icons button (Filament's collapsible sidebar) for more room. */
+html.zx-side {
+    --zx-rail: #0f1a2a;
+    --zx-rail-end: #0a1320;
+    --zx-rail-text: rgb(226 232 240 / .80);
+    --zx-rail-muted: rgb(148 163 184 / .85);
+    --zx-rail-hover: rgb(255 255 255 / .07);
+}
+html.zx-side.dark { --zx-rail: #070d16; --zx-rail-end: #05090f; }
+html.zx-side .fi-main-sidebar { background: linear-gradient(180deg, var(--zx-rail), var(--zx-rail-end)); color: var(--zx-rail-text); border-inline-end: 0; box-shadow: 1px 0 0 rgb(0 0 0 / .3); }
+html.zx-side .fi-main-sidebar .fi-sidebar-header { background: transparent; box-shadow: none; }
+html.zx-side .fi-main-sidebar .fi-sidebar-nav { scrollbar-color: rgb(255 255 255 / .18) transparent; }
+html.zx-side .fi-main-sidebar .fi-sidebar-nav-groups, html.zx-side .fi-main-sidebar .ses-menu-search { padding-inline: .85rem; }
+html.zx-side .fi-main-sidebar .fi-sidebar-group-btn { padding-inline: .7rem; }
+html.zx-side .fi-main-sidebar .fi-sidebar-group-label { color: var(--zx-rail-muted); font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+html.zx-side .fi-main-sidebar .fi-sidebar-group:has(.fi-sidebar-item.fi-active) .fi-sidebar-group-label { color: var(--primary-300); }
+html.zx-side .fi-main-sidebar .fi-sidebar-group-collapse-btn, html.zx-side .fi-main-sidebar .fi-sidebar-group-btn .fi-icon { color: var(--zx-rail-muted); }
+html.zx-side .fi-main-sidebar .fi-sidebar-item-btn { border-radius: 8px; padding-block: .42rem; background: transparent; box-shadow: none; }
+html.zx-side .fi-main-sidebar .fi-sidebar-item-label { color: var(--zx-rail-text); font-size: .875rem; font-weight: 500; }
+html.zx-side .fi-main-sidebar .fi-sidebar-item-icon { color: var(--zx-rail-muted); }
+html.zx-side .fi-main-sidebar .fi-sidebar-item-btn:hover, html.zx-side .fi-main-sidebar .fi-sidebar-item-btn:focus-visible { background: var(--zx-rail-hover); }
+html.zx-side .fi-main-sidebar .fi-sidebar-item-btn:hover .fi-sidebar-item-label { color: #fff; }
+html.zx-side .fi-main-sidebar .fi-sidebar-item.fi-active > .fi-sidebar-item-btn { background: var(--primary-600); box-shadow: 0 4px 14px color-mix(in oklab, var(--primary-600) 45%, transparent); }
+html.zx-side .fi-main-sidebar .fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-sidebar-item-label,
+html.zx-side .fi-main-sidebar .fi-sidebar-item.fi-active > .fi-sidebar-item-btn .fi-sidebar-item-icon { color: #fff; font-weight: 600; }
+html.zx-side .fi-main-sidebar .fi-sidebar-item-grouped-border-part, html.zx-side .fi-main-sidebar .fi-sidebar-item-grouped-border { background: rgb(255 255 255 / .15); }
+/* The menu search on the rail */
+html.zx-side .fi-main-sidebar .ses-menu-q { background: rgb(255 255 255 / .06); border-color: rgb(255 255 255 / .12); color: #fff; }
+html.zx-side .fi-main-sidebar .ses-menu-q::placeholder { color: rgb(255 255 255 / .5); }
+html.zx-side .fi-main-sidebar .ses-menu-none { color: var(--zx-rail-muted); }
+/* Folded to icons: centred icons, the search hidden */
+html.zx-side .fi-main-sidebar:not(.fi-sidebar-open) .ses-menu-search { display: none; }
 
 @media (prefers-reduced-motion: reduce) { .zx-caret { transition: none; } }
 @media print { .zx-tabbar, .zx-actions { display: none !important; } }

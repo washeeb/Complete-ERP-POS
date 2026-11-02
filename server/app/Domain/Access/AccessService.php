@@ -138,6 +138,42 @@ final class AccessService
         return $saved;
     }
 
+    public const MAX_FAVOURITES = 20;
+
+    /**
+     * Adds the page to the person's favourites (the star on the menu band), or takes it off if it is there. Only pages
+     * of this back office are kept, as an address without the site name, so a favourite can never lead elsewhere.
+     *
+     * @return list<array{url: string, label: string}>
+     */
+    public function toggleOwnFavourite(Actor $actor, User $user, string $url, string $label): array
+    {
+        if ($actor->id === null || $actor->id !== $user->id) {
+            throw new AccessDenied('You can only change your own favourites.');
+        }
+        $parts = parse_url($url);
+        $path = '/'.ltrim((string) ($parts['path'] ?? ''), '/');
+        if ($parts === false || isset($parts['scheme']) && ($parts['host'] ?? null) !== request()->getHost() || ! preg_match('#^/admin(/|$)#', $path)) {
+            throw new DomainException('Only pages of the back office can be favourites.');
+        }
+        $url = $path.(isset($parts['query']) ? '?'.$parts['query'] : '');
+        $label = mb_substr(trim(strip_tags($label)), 0, 80) ?: $path;
+
+        $list = collect($user->ui_favourites ?? []);
+        if ($list->contains('url', $url)) {
+            $list = $list->reject(fn ($f) => $f['url'] === $url);
+        } else {
+            if ($list->count() >= self::MAX_FAVOURITES) {
+                throw new DomainException('You have '.self::MAX_FAVOURITES.' favourites already. Remove one first.');
+            }
+            $list->push(['url' => $url, 'label' => $label]);
+        }
+        $user->ui_favourites = $list->values()->all();
+        $this->recorder->save($actor, $user, 'user.favourites_changed');
+
+        return $user->ui_favourites;
+    }
+
     public function setPin(Actor $actor, User $user, string $pin): void
     {
         if ($user->id !== $actor->id) {

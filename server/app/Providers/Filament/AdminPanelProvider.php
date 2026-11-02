@@ -62,6 +62,7 @@ class AdminPanelProvider extends PanelProvider
             ->defaultAvatarProvider(LocalAvatars::class) // initials drawn here, not fetched from ui-avatars.com
             // The new look (System → Settings → Appearance, or each person's profile): tabs across the top.
             ->topNavigation(fn () => Look::hasTopTabs())
+            ->sidebarCollapsibleOnDesktop(fn () => Look::current() === 'side') // the dark rail folds to icons
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->databaseNotifications()->databaseNotificationsPolling('30s')
             // Pages refresh parts of themselves in the background, so a dropped connection or an idle sign-out shows up
@@ -112,6 +113,7 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::FOOTER, fn () => view('branding.powered-by'))
             // "Report a problem" for everyone signed in (pilot support, Phase 14).
             ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => Blade::render('@livewire(\'report-problem\')'))
+            ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => Look::isNew() ? view('layout.who') : '') // name and role beside the photo
             // Industries: show one industry (its branches, catalogue, stock, sales, reports) or all.
             ->renderHook(PanelsRenderHook::GLOBAL_SEARCH_BEFORE, fn () => Blade::render('@livewire(\'industry-switcher\')'))
             ->renderHook(PanelsRenderHook::GLOBAL_SEARCH_BEFORE, fn () => Look::isNew() ? view('layout.look-actions', ['tabs' => Look::tabs(), 'create' => Look::quickCreate()]) : '') // find a page, + New

@@ -5,12 +5,14 @@
         'label' => $i['label'], 'where' => $t['label'] === $s['label'] ? $t['label'] : $t['label'].' › '.$s['label'], 'url' => $i['url'],
     ])))->unique('url')->values();
 @endphp
-<div class="zx-actions" x-data="zxFinder(@js($pages), @js(\App\Support\Look::MENU_WORDS))"
+<div class="zx-actions" x-data="zxFinder(@js($pages), @js(\App\Support\Look::MENU_WORDS))" x-on:zx-find.window="show()"
      x-on:keydown.window="if ($event.key === '/' && ! ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName) && ! document.activeElement?.isContentEditable) { $event.preventDefault(); show() }">
+    @unless (\App\Support\Look::hasTopTabs()) {{-- with the tabs, the clock icon on the band opens it --}}
     <button type="button" class="zx-find-btn" x-on:click="show()" aria-haspopup="dialog">
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
         <span>Find a page</span><kbd>/</kbd>
     </button>
+    @endunless
 
     @if ($create !== [])
         <div class="zx-new-wrap" x-data="{ o: false }" x-on:click.outside="o = false" x-on:keydown.escape="o = false">
