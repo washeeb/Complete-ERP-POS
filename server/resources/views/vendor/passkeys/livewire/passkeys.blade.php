@@ -1,34 +1,33 @@
-{{-- Overrides spatie/laravel-passkeys' unstyled view with Filament components. Behaviour is the package's. --}}
+{{-- Overrides spatie/laravel-passkeys' unstyled view with a Filament card like the profile page's other cards. Layout classes are our own (admin.css, .zx-pk-*): Filament ships only the styles it uses itself, so
+     general utility classes (flex, gap-3…) would do nothing here. Behaviour is the package's. --}}
 <div>
-    <x-filament::section icon="heroicon-o-finger-print">
+    <x-filament::section icon="heroicon-o-finger-print" id="zx-passkeys">
         <x-slot name="heading">Passkeys</x-slot>
         <x-slot name="description">
-            Sign in with your phone, fingerprint or face instead of a password. A passkey also counts as
-            two-factor sign-in. Give each one a name you will recognise, e.g. "Work laptop".
+            Sign in with your phone, fingerprint or face instead of a password. A passkey also counts as two-factor
+            sign-in.
         </x-slot>
 
-        <form id="passkeyForm" wire:submit="validatePasskeyProperties" class="flex flex-wrap items-end gap-3">
-            <div class="grow">
-                <label for="passkey-name" class="fi-fo-field-label text-sm font-medium">Passkey name</label>
+        <form id="passkeyForm" wire:submit="validatePasskeyProperties" class="zx-pk-form">
+            <div class="zx-pk-field">
+                <label for="passkey-name" class="zx-pk-label">Name for this passkey</label>
                 <x-filament::input.wrapper :valid="! $errors->has('name')">
-                    <x-filament::input id="passkey-name" type="text" autocomplete="off" wire:model="name" />
+                    <x-filament::input id="passkey-name" type="text" autocomplete="off" wire:model="name" placeholder="e.g. Work laptop" />
                 </x-filament::input.wrapper>
                 @error('name')
-                    <p class="fi-fo-field-wrp-error-message text-sm text-danger-600">{{ $message }}</p>
+                    <p class="zx-pk-error">{{ $message }}</p>
                 @enderror
             </div>
             <x-filament::button type="submit" icon="heroicon-o-plus">Add passkey</x-filament::button>
         </form>
 
         @if ($passkeys->isNotEmpty())
-            <ul class="mt-6 divide-y divide-gray-200 dark:divide-white/10">
+            <ul class="zx-pk-list">
                 @foreach ($passkeys as $passkey)
-                    <li class="flex items-center justify-between gap-4 py-3">
+                    <li>
                         <div>
-                            <div class="font-medium">{{ $passkey->name }}</div>
-                            <div class="text-sm text-gray-500">
-                                Last used: {{ $passkey->last_used_at?->diffForHumans() ?? 'not yet' }}
-                            </div>
+                            <div class="zx-pk-name">{{ $passkey->name }}</div>
+                            <div class="zx-pk-meta">Last used: {{ $passkey->last_used_at?->diffForHumans() ?? 'not yet' }}</div>
                         </div>
                         <x-filament::button color="danger" size="sm" outlined
                             wire:click="deletePasskey({{ $passkey->id }})"
@@ -38,6 +37,8 @@
                     </li>
                 @endforeach
             </ul>
+        @else
+            <p class="zx-pk-meta zx-pk-none">No passkey yet on this account.</p>
         @endif
     </x-filament::section>
 </div>

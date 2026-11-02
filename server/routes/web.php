@@ -1,6 +1,9 @@
 <?php
 
+use App\Domain\Access\AccessService;
 use App\Domain\Purchasing\OrderSender;
+use App\Domain\Support\Actor;
+use App\Domain\Support\DomainException;
 use App\Http\Controllers\AccessRequestController;
 use App\Http\Controllers\BrandAssetController;
 use App\Http\Controllers\ExpenseReceiptController;
@@ -15,9 +18,12 @@ use App\Http\Controllers\WaybillConfirmController;
 use App\Http\Controllers\WhatsappMediaController;
 use App\Models\PurchaseAgreement;
 use App\Models\PurchaseOrder;
+use App\Models\User;
 use App\Security\Authorizer;
 use App\Security\Passkeys\PasskeyLoginController;
 use App\Support\Progress;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Spatie\LaravelPasskeys\Http\Controllers\GeneratePasskeyAuthenticationOptionsController;
@@ -133,3 +139,25 @@ Route::post('access-request', AccessRequestController::class)->middleware(['auth
 
 // How far the signed-in person's long work has got (imports, bulk changes): asked by the progress card every second.
 Route::get('progress-status', fn () => response()->json(Progress::live()))->middleware(['auth'])->name('progress.status');
+
+// A person's profile photo: for people signed in to the same company. Cached by the browser (the address changes
+// with the photo).
+Route::get('user-photo/{user}', function (User $user) {
+    $me = request()->user();
+    abort_unless($me && $me->tenant_id === $user->tenant_id, 403);
+    abort_unless($user->avatar_path && Storage::disk('local')->exists($user->avatar_path), 404);
+
+    return Storage::disk('local')->response($user->avatar_path, 'photo.jpg', ['Cache-Control' => 'private, max-age=604800, immutable']);
+})->middleware(['auth'])->name('user.photo')->whereUuid('user');
+
+// The star on the menu band: adds the page to the person's favourites, or takes it off (new look).
+Route::post('admin-ui/favourite', function (Request $request, AccessService $access) {
+    $data = $request->validate(['url' => ['required', 'string', 'max:500'], 'label' => ['nullable', 'string', 'max:200']]);
+    try {
+        $list = DB::transaction(fn () => $access->toggleOwnFavourite(Actor::user($request->user()), $request->user(), $data['url'], (string) ($data['label'] ?? '')));
+    } catch (DomainException $e) {
+        return response()->json(['message' => $e->getMessage()], 422);
+    }
+
+    return response()->json(['favourites' => $list]);
+})->middleware(['auth', 'throttle:30,1'])->name('ui.favourite');

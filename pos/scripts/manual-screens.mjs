@@ -110,6 +110,36 @@ const shot = (page, name) => page.screenshot({ path: resolve(out, `${name}.png`)
     }
     await shot(page, name)
   }
+
+  // The looks. The tabs are the default; the side menu is switched on for this account on its profile page,
+  // pictured, then put back to the company's choice.
+  const chooseLook = async (value) => { // '' = the company's choice
+    await page.goto(`${base}/admin/profile`)
+    await page.waitForLoadState('networkidle')
+    await page.locator(`input[type=radio][value="${value}"]`).check()
+    await page.getByRole('button', { name: 'Save changes' }).click()
+    await page.waitForLoadState('networkidle')
+    await page.waitForTimeout(800)
+  }
+  await page.goto(`${base}/admin/profile`)
+  await page.waitForLoadState('networkidle')
+  await shot(page, 'profile-look')
+  await page.goto(`${base}/admin/purchase-orders`)
+  await page.waitForLoadState('networkidle')
+  await page.locator('.zx-tab', { hasText: 'Purchasing' }).click()
+  await page.waitForTimeout(400)
+  await shot(page, 'look-tabs')
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('/')
+  await page.keyboard.type('order')
+  await page.waitForTimeout(400)
+  await shot(page, 'look-finder')
+  await page.keyboard.press('Escape')
+  await chooseLook('side')
+  await page.goto(`${base}/admin/purchase-orders`)
+  await page.waitForLoadState('networkidle')
+  await shot(page, 'look-side')
+  await chooseLook('')
   await page.close()
 }
 await browser.close()

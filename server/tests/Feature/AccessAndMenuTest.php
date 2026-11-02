@@ -57,3 +57,14 @@ it('shows the company of the industry, not the group, on the till and in the bac
     expect(PanelBrand::industryCompany($pharmacist))->toBe('Asante Pharmacy Ltd') // works in the pharmacy only
         ->and(PanelBrand::industryCompany($this->owner))->toBeNull(); // sees every industry: the group name stays
 });
+
+it('shows New and Edit buttons only to people allowed to use them', function () {
+    $keeper = withMfa(staff($this->owner, 'yaw', 2, 'storekeeper', ScopeType::Branch, $this->branches['HQ']->id));
+    $this->actingAs($keeper, 'web')->get('/admin/customer-orders')->assertDontSee('/admin/customer-orders/create', false);
+    $this->actingAs($keeper, 'web')->get('/admin/customer-orders/create')->assertForbidden();
+
+});
+
+it('still shows the New button to people who may create', function () {
+    $this->actingAs(withMfa($this->owner), 'web')->get('/admin/customer-orders')->assertOk()->assertSee('/admin/customer-orders/create', false);
+});

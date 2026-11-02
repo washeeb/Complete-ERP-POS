@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Support\LocalAvatars;
 use App\Http\Middleware\BlockSiteCopiers;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Http\Middleware\Authenticate;
@@ -41,6 +42,7 @@ class VendorPanelProvider extends PanelProvider
             ->requiresMultiFactorAuthentication()
             ->colors(['primary' => Color::Indigo])
             ->darkMode()
+            ->defaultAvatarProvider(LocalAvatars::class)
             ->databaseNotifications()
             ->discoverResources(in: app_path('Filament/Vendor/Resources'), for: 'App\Filament\Vendor\Resources')
             ->discoverPages(in: app_path('Filament/Vendor/Pages'), for: 'App\Filament\Vendor\Pages')

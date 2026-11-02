@@ -8,6 +8,7 @@ use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Filament\Resources\Users\RelationManagers\AccessGrantsRelationManager;
 use App\Filament\Support\Erp;
 use App\Filament\Support\GlobalSearch;
+use App\Filament\Support\LocalAvatars;
 use App\Models\User;
 use App\Security\SecurityLevel;
 use BackedEnum;
@@ -20,6 +21,7 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
@@ -109,6 +111,8 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
+                ImageColumn::make('photo')->label('')->circular()->imageSize(32)
+                    ->state(fn (User $r) => $r->getFilamentAvatarUrl() ?? LocalAvatars::svgDataUri($r->name)),
                 TextColumn::make('name')->searchable()->sortable()
                     ->description(fn (User $r) => $r->isSupport() ? 'SyncLytics support (Superadmin)' : null),
                 TextColumn::make('username')->searchable(),

@@ -1,0 +1,305 @@
+/*
+ * The new look (interface stage 1a; App\Support\Look). Scoped to html.zx-new, so the classic look is untouched
+ * (only the profile page's own parts, near the end, apply in every look).
+ *
+ * Every colour comes from the company: the brand colour (Company → Branding, offered from the logo) is Filament's
+ * --primary-*; the menu colour (the band of tabs, the side menu, page banners) is the company's own when set, else a
+ * dark shade of the brand colour — so the whole look follows each client's logo.
+ *
+ *   Tabs across the top (zx-top): a white header (logo, a wide pill search, + New, who is signed in), the menu band
+ *   (Recent, Favourites, Home, then the tabs, opening on hover), then the page.
+ *   Side menu (zx-side): a full-height dark menu with the company's icon and name, areas that open to their pages, and
+ *   a fold-to-icons button; the header beside it.
+ *   Both: each page starts with a banner in the menu colour (its icon, title, actions); sections are white cards with a
+ *   tinted icon; lists are dense with a grey header row; light and dark mode.
+ */
+
+html.zx-new {
+    --zx-menu: color-mix(in oklab, var(--primary-800) 42%, #0b1526);
+    --zx-menu-2: color-mix(in oklab, var(--zx-menu) 82%, #000);
+    --zx-menu-ico: color-mix(in oklab, var(--zx-menu) 72%, #000);
+    --zx-menu-text: rgb(255 255 255 / .9);
+    --zx-menu-muted: rgb(255 255 255 / .62);
+    --zx-canvas: #eef2f6;
+    --zx-panel: #ffffff;
+    --zx-line: #dde3ea;
+    --zx-head: #f5f7fa;
+    --zx-muted: #5b6676;
+    --zx-radius: 12px;
+    --zx-shadow: 0 1px 2px rgb(16 24 40 / .05), 0 2px 8px rgb(16 24 40 / .05);
+}
+html.zx-new.dark {
+    --zx-menu: color-mix(in oklab, var(--primary-900) 35%, #070d16);
+    --zx-canvas: #0b0f14;
+    --zx-panel: #121821;
+    --zx-line: rgb(255 255 255 / .09);
+    --zx-head: rgb(255 255 255 / .035);
+    --zx-muted: #9aa5b4;
+    --zx-shadow: 0 1px 2px rgb(0 0 0 / .4);
+}
+
+/* ---- Work area -------------------------------------------------------------------------------------------------- */
+html.zx-new body.fi-body { background: var(--zx-canvas); }
+html.zx-new .fi-main { max-width: 1680px; padding-inline: clamp(.75rem, 2vw, 1.75rem); }
+html.zx-new .fi-page-header-main-ctn, html.zx-new .fi-page-main { row-gap: 1.25rem; }
+
+/* The page's banner: its icon, title and subtitle in white on the menu colour, with soft curves in the brand colour. */
+html.zx-new .fi-header {
+    position: relative; overflow: hidden; isolation: isolate; border-radius: 14px; padding: 1.25rem 1.6rem; min-height: 6rem; color: #fff;
+    background:
+        radial-gradient(70% 160% at 100% 0%, color-mix(in oklab, var(--primary-500) 45%, transparent) 0, transparent 60%),
+        radial-gradient(50% 120% at 75% 130%, color-mix(in oklab, var(--primary-400) 28%, transparent) 0, transparent 60%),
+        linear-gradient(115deg, var(--zx-menu) 0%, color-mix(in oklab, var(--zx-menu) 65%, var(--primary-700)) 100%);
+    box-shadow: 0 6px 18px color-mix(in oklab, var(--zx-menu) 28%, transparent);
+}
+html.zx-new .fi-header::after { content: ''; position: absolute; z-index: -1; right: -8%; top: -70%; width: 46%; height: 240%; border-radius: 50%;
+    border: 1.5px solid rgb(255 255 255 / .10); box-shadow: 0 0 0 36px rgb(255 255 255 / .035), 0 0 0 72px rgb(255 255 255 / .02); }
+html.zx-new .fi-header-heading { color: #fff; font-size: 1.6rem; line-height: 2rem; letter-spacing: -.01em; }
+html.zx-new .fi-header-subheading { color: rgb(255 255 255 / .82); font-size: .9rem; margin-top: .2rem; }
+html.zx-new .fi-header .fi-breadcrumbs, html.zx-new .fi-header .fi-breadcrumbs a, html.zx-new .fi-header .fi-breadcrumbs-item-label { color: rgb(255 255 255 / .72); font-size: .8125rem; }
+html.zx-new .fi-header .fi-breadcrumbs-item-separator { color: rgb(255 255 255 / .45); }
+html.zx-new .fi-header:has(.zx-hero-ic) > div:first-child { position: relative; padding-inline-start: 5.25rem; min-height: 4.25rem; display: flex; flex-direction: column; justify-content: center; }
+.zx-hero-ic { position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 4.25rem; height: 4.25rem; border-radius: 50%; display: grid; place-items: center;
+    background: #fff; color: var(--zx-menu); box-shadow: 0 4px 14px rgb(0 0 0 / .18); }
+.zx-hero-ic svg { width: 2rem; height: 2rem; }
+.zx-hero-photo img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+/* Buttons on the banner: the brand-coloured ones stay; the plain ones turn white-on-glass. */
+html.zx-new .fi-header .fi-btn.fi-color-gray, html.zx-new .fi-header .fi-btn.fi-outlined { background: rgb(255 255 255 / .12); color: #fff; --tw-ring-color: rgb(255 255 255 / .28); border-color: rgb(255 255 255 / .28); }
+html.zx-new .fi-header .fi-btn.fi-color-gray:hover, html.zx-new .fi-header .fi-btn.fi-outlined:hover { background: rgb(255 255 255 / .2); }
+html.zx-new .fi-header .fi-btn.fi-color-gray .fi-icon, html.zx-new .fi-header .fi-btn.fi-outlined .fi-icon { color: #fff; }
+@media (max-width: 639px) { html.zx-new .fi-header:has(.zx-hero-ic) > div:first-child { padding-inline-start: 0; } .zx-hero-ic { display: none; } }
+
+/* Cards: white, rounded, a soft shadow; the title row with its icon in a tinted circle. */
+html.zx-new .fi-section, html.zx-new .fi-ta-ctn, html.zx-new .fi-wi-stats-overview-stat {
+    border-radius: var(--zx-radius); box-shadow: var(--zx-shadow); background: var(--zx-panel); --tw-ring-color: var(--zx-line);
+}
+html.zx-new .fi-section-header { padding: 1rem 1.25rem .5rem; gap: .9rem; }
+html.zx-new .fi-section-header-heading { font-size: 1.0625rem; font-weight: 650; }
+html.zx-new .fi-section-header-description { color: var(--zx-muted); font-size: .8125rem; }
+html.zx-new .fi-section-header > .fi-icon, html.zx-new .fi-section-header .fi-section-header-icon {
+    box-sizing: content-box; width: 1.35rem; height: 1.35rem; padding: .6rem; border-radius: 50%; flex: none;
+    color: var(--primary-600); background: color-mix(in oklab, var(--primary-500) 14%, transparent);
+}
+html.zx-new.dark .fi-section-header > .fi-icon { color: var(--primary-300); }
+html.zx-new .fi-section-content { padding: .75rem 1.25rem 1.25rem; }
+html.zx-new .fi-section.fi-collapsible > .fi-section-header { cursor: pointer; padding-bottom: 1rem; }
+html.zx-new .fi-section.fi-collapsible > .fi-section-header:hover { background: color-mix(in oklab, var(--primary-500) 4%, transparent); border-radius: var(--zx-radius); }
+html.zx-new .ses-settings-find { background: var(--zx-canvas); }
+
+/* A titled section with its explanation beside it: the explanation sits on the page, only the fields are a card. */
+html.zx-new .fi-section.fi-aside { background: transparent; box-shadow: none; --tw-ring-color: transparent; }
+html.zx-new .fi-section.fi-aside > .fi-section-content-ctn { background: var(--zx-panel); border-radius: var(--zx-radius); box-shadow: var(--zx-shadow); }
+
+/* Lists: a grey header row in small capitals, tighter rows, zebra stripes, a clear hover. */
+html.zx-new .fi-ta-header-cell { background: var(--zx-head); padding-block: .55rem; font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: var(--zx-muted); }
+html.zx-new .fi-ta-header-cell .fi-ta-header-cell-label { font-weight: 650; }
+html.zx-new .fi-ta-text, html.zx-new .fi-ta-icon, html.zx-new .fi-ta-image { padding-block: .45rem; }
+html.zx-new .fi-ta-text-item, html.zx-new .fi-ta-text { font-size: .875rem; }
+html.zx-new .fi-ta-row:nth-child(even) { background: color-mix(in srgb, var(--zx-head) 70%, transparent); }
+html.zx-new .fi-ta-row:hover { background: color-mix(in oklab, var(--primary-500) 7%, transparent); }
+html.zx-new .fi-ta-header-toolbar, html.zx-new .fi-ta-header { padding-block: .6rem; }
+
+/* Forms: compact fields with rounder corners. */
+html.zx-new .fi-fo-field-label-content { font-size: .8125rem; }
+html.zx-new .fi-input-wrp { border-radius: 8px; }
+html.zx-new .fi-input { padding-block: .45rem; font-size: .875rem; }
+html.zx-new .fi-btn { border-radius: 8px; }
+html.zx-new .fi-sc-form, html.zx-new .fi-fo-component-ctn { gap: 1rem; }
+
+/* ---- Header (Filament's top bar): logo · a wide pill search · industry · actions · who ------------------------- */
+html.zx-new .fi-topbar { height: 4rem; box-shadow: 0 1px 0 var(--zx-line); gap: 1rem; background: var(--zx-panel); }
+html.zx-new .fi-topbar-nav-groups { display: none; } /* replaced by the menu band */
+html.zx-new .fi-topbar-end { flex: 1 1 auto; justify-content: flex-end; gap: .75rem; margin-inline-start: 1.5rem; }
+@media (min-width: 1024px) {
+    html.zx-new .fi-topbar-end > .fi-global-search-ctn { order: -1; flex: 1 1 auto; max-width: 40rem; margin-inline-end: auto; }
+    html.zx-new .fi-topbar-end > .fi-global-search-ctn .fi-global-search, html.zx-new .fi-topbar-end > .fi-global-search-ctn .fi-input-wrp { width: 100%; }
+}
+html.zx-new .fi-global-search .fi-input-wrp { border-radius: 999px; background: var(--zx-head); --tw-ring-color: transparent; box-shadow: inset 0 0 0 1px var(--zx-line); }
+html.zx-new .fi-global-search .fi-input-wrp:focus-within { background: var(--zx-panel); box-shadow: inset 0 0 0 2px var(--primary-500); }
+html.zx-new .ind-switch select, html.zx-new .ind-switch .fi-select-input { border-radius: 999px; }
+html.zx-new .fi-user-avatar, html.zx-new .fi-avatar { box-shadow: 0 0 0 2px var(--zx-panel), 0 0 0 3px var(--zx-line); }
+
+/* Who is signed in, and as what (beside the photo) */
+.zx-who { display: grid; line-height: 1.15; text-align: end; max-width: 15rem; }
+.zx-who-name { font-size: .875rem; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zx-who-role { font-size: .75rem; color: var(--zx-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 1279px) { .zx-who { display: none; } }
+/* The side look's header is narrower (the menu takes the left): the search keeps a usable width and the extras step
+   back first — the name and role, then the words on Find a page. */
+@media (min-width: 1024px) { html.zx-new .fi-topbar-end > .fi-global-search-ctn { min-width: 13rem; } }
+@media (max-width: 1535px) { html.zx-side .zx-who { display: none; } }
+@media (max-width: 1365px) { html.zx-side .zx-find-btn span, html.zx-side .zx-find-btn kbd, html.zx-side .ind-switch-label { display: none; } }
+
+/* Find a page, + New */
+.zx-actions { display: flex; align-items: center; gap: .5rem; }
+.zx-find-btn, .zx-new-btn { display: inline-flex; align-items: center; gap: .4rem; height: 2.25rem; padding: 0 .85rem; border-radius: 999px; font-size: .875rem; font-weight: 550; white-space: nowrap; cursor: pointer; }
+.zx-find-btn { border: 1px solid var(--zx-line); color: var(--zx-muted); background: var(--zx-panel); }
+.zx-find-btn:hover { border-color: var(--primary-500); color: inherit; }
+.zx-find-btn kbd, .zx-finder kbd { font: 600 .7rem/1 ui-monospace, monospace; padding: .2rem .35rem; border-radius: 4px; border: 1px solid var(--zx-line); background: var(--zx-head); }
+.zx-new-btn { background: transparent; color: inherit; border: 1px solid transparent; }
+.zx-new-btn:hover, .zx-new-btn[aria-expanded='true'] { background: var(--zx-head); border-color: var(--zx-line); }
+.zx-new-btn svg { color: var(--primary-600); }
+.zx-find-btn svg, .zx-new-btn svg { width: 1.05rem; height: 1.05rem; }
+.zx-find-btn:focus-visible, .zx-new-btn:focus-visible, .zx-tab:focus-visible, .zx-mega-a:focus-visible, .zx-fav-toggle:focus-visible, .zx-sn-item:focus-visible, .zx-sn-sub:focus-visible { outline: 2px solid var(--primary-500); outline-offset: 2px; }
+@media (max-width: 1023px) { .zx-find-btn span, .zx-find-btn kbd { display: none; } }
+@media (max-width: 639px) { .zx-actions { display: none; } }
+
+.zx-new-wrap { position: relative; }
+.zx-new-menu { position: absolute; right: 0; top: calc(100% + .4rem); z-index: 40; width: min(720px, calc(100vw - 2rem)); max-height: 70vh; overflow: auto;
+    columns: 3 180px; column-gap: 1.5rem; padding: .7rem 1rem .9rem;
+    background: var(--zx-panel); border: 1px solid var(--zx-line); border-radius: 12px; box-shadow: 0 12px 32px rgb(16 24 40 / .16); }
+.zx-new-menu section { break-inside: avoid; padding-bottom: .4rem; }
+.zx-new-menu h3, .zx-mega-h { font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--zx-muted); margin: .35rem 0 .3rem; }
+.zx-new-menu a { display: block; padding: .3rem .45rem; margin-inline: -.45rem; border-radius: 6px; font-size: .875rem; }
+.zx-new-menu a:hover, .zx-new-menu a:focus-visible { background: color-mix(in oklab, var(--primary-500) 10%, transparent); color: var(--primary-700); outline: none; }
+.dark .zx-new-menu a:hover { color: var(--primary-200); }
+
+/* ---- The menu band (tabs across the top), in the menu colour --------------------------------------------------- */
+.zx-tabbar { position: sticky; top: 0; z-index: 25; background: var(--zx-menu); color: var(--zx-menu-text); box-shadow: 0 2px 6px rgb(0 0 0 / .14); }
+.zx-tabs { display: flex; flex-wrap: wrap; padding-inline: clamp(.25rem, 1.5vw, 1.25rem) clamp(.5rem, 2vw, 1.5rem); }
+.zx-tab-li { position: relative; }
+.zx-tab { display: inline-flex; align-items: center; height: 2.6rem; padding: 0 .95rem; font-size: .875rem; font-weight: 500; letter-spacing: .005em;
+    color: inherit; background: transparent; border: 0; cursor: pointer; white-space: nowrap; text-decoration: none; }
+.zx-tab:hover, .zx-tab[aria-expanded='true'] { background: var(--zx-menu-2); color: #fff; }
+.zx-tab.zx-active { background: var(--zx-menu-2); color: #fff; font-weight: 650; box-shadow: inset 0 -3px 0 var(--primary-400); }
+.zx-tab.zx-ico { width: 2.75rem; padding: 0; justify-content: center; }
+.zx-tab.zx-ico svg { width: 1.25rem; height: 1.25rem; }
+.zx-tab.zx-home { background: var(--zx-menu-ico); margin-inline-end: .35rem; }
+.zx-tab.zx-home:hover, .zx-tab.zx-home.zx-active { background: color-mix(in oklab, var(--zx-menu-ico) 78%, #000); }
+
+/* A tab's panel: its sections side by side. */
+.zx-mega { position: absolute; left: 0; top: 100%; z-index: 30; color: var(--gray-950);
+    width: max-content; max-width: calc(100vw - 2rem); max-height: calc(100vh - 8rem); overflow: auto;
+    background: var(--zx-panel); border: 1px solid var(--zx-line); border-top: 0; border-radius: 0 0 12px 12px; box-shadow: 0 16px 36px rgb(16 24 40 / .18); }
+.zx-mega.zx-right { left: auto; right: 0; }
+.dark .zx-mega { color: #fff; }
+.zx-mega-cols { display: grid; grid-template-columns: repeat(var(--cols, 1), minmax(200px, 250px)); gap: .5rem 1.75rem; padding: 1rem 1.25rem 1.1rem; }
+.zx-mega-sec ul { display: grid; gap: .05rem; }
+.zx-mega-a { display: flex; align-items: center; gap: .55rem; padding: .36rem .5rem; margin-inline: -.5rem; border-radius: 6px; font-size: .875rem; }
+.zx-mega-a:hover, .zx-mega-a:focus-visible { background: color-mix(in oklab, var(--primary-500) 10%, transparent); outline: none; }
+.zx-mega-a.zx-active { color: var(--primary-700); font-weight: 650; background: color-mix(in oklab, var(--primary-500) 12%, transparent); }
+.dark .zx-mega-a.zx-active { color: var(--primary-200); }
+.zx-mega-ic { width: 1.05rem; height: 1.05rem; flex: none; color: var(--zx-muted); }
+.zx-mega-a.zx-active .zx-mega-ic { color: var(--primary-600); }
+.zx-badge { margin-inline-start: auto; font-size: .6875rem; font-weight: 700; padding: .05rem .4rem; border-radius: 999px; background: color-mix(in oklab, var(--primary-500) 16%, transparent); color: var(--primary-700); }
+.dark .zx-badge { color: var(--primary-200); }
+
+/* Favourites panel */
+.zx-mega.zx-fav { width: 20rem; padding: .6rem .9rem .8rem; }
+.zx-fav-toggle { width: 100%; text-align: start; padding: .45rem .5rem; margin-bottom: .4rem; border-radius: 6px; font-size: .875rem; font-weight: 600; color: var(--primary-700); background: color-mix(in oklab, var(--primary-500) 9%, transparent); cursor: pointer; }
+.dark .zx-fav-toggle { color: var(--primary-200); }
+.zx-fav-toggle:disabled { opacity: .6; cursor: progress; }
+.zx-mega.zx-fav ul { display: grid; gap: .05rem; padding-inline: .5rem; }
+.zx-fav-msg { font-size: .8125rem; color: var(--zx-muted); padding: .35rem .5rem; }
+
+@media (max-width: 1023px) { .zx-tabbar { display: none; } }
+
+/* ---- Find a page ------------------------------------------------------------------------------------------------ */
+.zx-finder-back { position: fixed; inset: 0; z-index: 60; background: rgb(10 15 25 / .45); display: flex; justify-content: center; align-items: flex-start; padding: 12vh 1rem 1rem; }
+.zx-finder { width: min(620px, 100%); background: var(--zx-panel, #fff); color: inherit; border-radius: 14px; box-shadow: 0 24px 60px rgb(0 0 0 / .3); overflow: hidden; border: 1px solid var(--zx-line, #d9dee6); }
+.dark .zx-finder { color: #fff; }
+.zx-finder input { width: 100%; border: 0; border-bottom: 1px solid var(--zx-line, #d9dee6); padding: .95rem 1.1rem; font-size: 1rem; background: transparent; color: inherit; outline: none; }
+.zx-finder-h { font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--zx-muted, #5b6676); padding: .7rem 1.1rem .3rem; }
+.zx-finder ul { max-height: 50vh; overflow: auto; padding: 0 .5rem .5rem; }
+.zx-finder li { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: .5rem .6rem; border-radius: 8px; cursor: pointer; font-size: .9375rem; }
+.zx-finder li small { color: var(--zx-muted, #5b6676); font-size: .75rem; white-space: nowrap; }
+.zx-finder li.zx-sel { background: color-mix(in oklab, var(--primary-500) 13%, transparent); }
+.zx-finder-none { padding: .5rem 1.1rem 1rem; font-size: .875rem; color: var(--zx-muted, #5b6676); }
+.zx-finder-keys { border-top: 1px solid var(--zx-line, #d9dee6); padding: .55rem 1.1rem; font-size: .75rem; color: var(--zx-muted, #5b6676); background: var(--zx-head, #f4f6f9); }
+
+/* ---- Side menu look: a full-height menu in the menu colour ------------------------------------------------------ */
+html.zx-side .fi-main-sidebar { background: linear-gradient(180deg, var(--zx-menu), color-mix(in oklab, var(--zx-menu) 85%, #000)); color: var(--zx-menu-text); border-inline-end: 0; }
+html.zx-side .fi-main-sidebar .fi-sidebar-header { background: transparent; box-shadow: none; }
+html.zx-side .fi-main-sidebar .fi-sidebar-nav { scrollbar-color: rgb(255 255 255 / .18) transparent; scrollbar-width: thin; scrollbar-gutter: auto; padding-inline: 0; background: transparent; overflow-y: auto; overscroll-behavior: contain; }
+html.zx-side .fi-main-sidebar .fi-sidebar-nav-groups, html.zx-side .fi-main-sidebar .ses-menu-search { display: none; } /* replaced by .zx-sidenav */
+@media (min-width: 1024px) {
+    /* The menu runs from the top of the window, the header beside it (as in the design). */
+    html.zx-side .fi-main-sidebar { position: sticky; top: 0; height: 100dvh; margin-top: -4rem; z-index: 31; }
+    html.zx-side .fi-topbar { padding-inline-start: calc(var(--sidebar-width) + 1rem); }
+    html.zx-side body:has(.fi-main-sidebar:not(.fi-sidebar-open)) .fi-topbar { padding-inline-start: calc(var(--collapsed-sidebar-width) + 1rem); }
+    html.zx-side .fi-topbar-start > a { display: none; } /* the logo is on the menu; the fold button stays */
+}
+.zx-sb-brand { display: flex; align-items: center; gap: .7rem; padding: 1.1rem 1.25rem 1rem; color: #fff; text-decoration: none; }
+.zx-sb-icon { width: 2.25rem; height: 2.25rem; border-radius: 9px; flex: none; object-fit: contain; background: #fff; }
+.zx-sb-logo { display: flex; align-items: center; height: 2.5rem; max-width: 100%; }
+.zx-sb-logo img { height: 1.85rem; width: auto; max-width: 12.5rem; object-fit: contain; display: block; }
+.zx-sb-chip { background: #fff; border-radius: 10px; padding: .35rem .7rem; box-shadow: 0 1px 4px rgb(0 0 0 / .25); }
+.zx-sb-folded { display: none; }
+.zx-sb-name { font-weight: 700; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zx-sidenav { display: grid; gap: .1rem; padding: .25rem 0 1rem; }
+.zx-sn-item { display: flex; align-items: center; gap: .85rem; width: 100%; padding: .62rem 1.25rem; color: var(--zx-menu-text); font-size: .9375rem; font-weight: 500; text-align: start; background: transparent; border: 0; cursor: pointer; text-decoration: none; }
+.zx-sn-item:hover { background: rgb(255 255 255 / .07); color: #fff; }
+.zx-sn-item.zx-active { background: var(--primary-600); color: #fff; font-weight: 650; box-shadow: inset 4px 0 0 color-mix(in oklab, var(--primary-300) 80%, #fff); }
+.zx-sn-item.zx-sn-parent { color: #fff; font-weight: 650; }
+.zx-sn-ic { width: 1.35rem; height: 1.35rem; flex: none; color: var(--zx-menu-muted); }
+.zx-sn-item:hover .zx-sn-ic, .zx-sn-item.zx-active .zx-sn-ic, .zx-sn-parent .zx-sn-ic { color: #fff; }
+.zx-sn-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.zx-sn-chev { width: 1rem; height: 1rem; opacity: .6; transition: transform .15s; }
+.zx-sn-item[aria-expanded='true'] .zx-sn-chev { transform: rotate(90deg); }
+.zx-sn-children { padding: .15rem 0 .45rem; background: rgb(0 0 0 / .16); }
+.zx-sn-h { padding: .55rem 1.25rem .2rem 3.45rem; font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--zx-menu-muted); }
+.zx-sn-sub { display: flex; align-items: center; gap: .6rem; padding: .42rem 1rem .42rem 3.45rem; font-size: .875rem; color: var(--zx-menu-text); text-decoration: none; }
+.zx-sn-sub:hover { background: rgb(255 255 255 / .07); color: #fff; }
+.zx-sn-sub.zx-active { background: color-mix(in oklab, var(--primary-600) 85%, transparent); color: #fff; font-weight: 600; box-shadow: inset 4px 0 0 color-mix(in oklab, var(--primary-300) 80%, #fff); }
+.zx-sn-subic { width: 1.05rem; height: 1.05rem; flex: none; color: var(--zx-menu-muted); }
+.zx-sn-sub.zx-active .zx-sn-subic { color: #fff; }
+.zx-sidenav .zx-badge { background: rgb(255 255 255 / .16); color: #fff; }
+/* Folded to icons */
+html.zx-side .fi-main-sidebar:not(.fi-sidebar-open) .zx-sb-name, html.zx-side .fi-main-sidebar:not(.fi-sidebar-open) .zx-sn-label, html.zx-side .fi-main-sidebar:not(.fi-sidebar-open) .zx-sb-logo,
+html.zx-side .fi-main-sidebar:not(.fi-sidebar-open) .zx-sn-chev, html.zx-side .fi-main-sidebar:not(.fi-sidebar-open) .zx-sn-children { display: none !important; }
+html.zx-side .fi-main-sidebar:not(.fi-sidebar-open) .zx-sn-item, html.zx-side .fi-main-sidebar:not(.fi-sidebar-open) .zx-sb-brand { justify-content: center; padding-inline: 0; }
+html.zx-side .fi-main-sidebar:not(.fi-sidebar-open) .zx-sb-folded { display: block; }
+
+/* ---- The profile page (every look) ------------------------------------------------------------------------------ */
+.zx-pnav-wrap { display: grid; gap: 1rem; align-content: start; position: sticky; top: 7.5rem; }
+.zx-pnav { display: grid; gap: .5rem; }
+.zx-pnav-a { display: flex; gap: .85rem; align-items: center; padding: .9rem 1rem; border-radius: 12px; background: var(--zx-panel, #fff); box-shadow: var(--zx-shadow, 0 1px 2px rgb(0 0 0 / .06));
+    border-inline-start: 4px solid transparent; text-decoration: none; color: inherit; }
+.dark .zx-pnav-a { background: rgb(255 255 255 / .04); }
+.zx-pnav-a strong { display: block; font-size: .9375rem; }
+.zx-pnav-a small { display: block; font-size: .78rem; color: var(--zx-muted, #6b7280); }
+.zx-pnav-ic { width: 1.6rem; height: 1.6rem; flex: none; color: var(--zx-menu, var(--primary-700)); }
+.dark .zx-pnav-ic { color: var(--primary-300); }
+.zx-pnav-a:hover { background: color-mix(in oklab, var(--primary-500) 6%, var(--zx-panel, #fff)); }
+.zx-pnav-a.zx-on { border-inline-start-color: var(--primary-600); background: color-mix(in oklab, var(--primary-500) 11%, var(--zx-panel, #fff)); }
+.zx-pnav-a.zx-on strong { color: var(--primary-700); }
+.dark .zx-pnav-a.zx-on { background: color-mix(in oklab, var(--primary-500) 16%, transparent); }
+.dark .zx-pnav-a.zx-on strong { color: var(--primary-200); }
+.zx-help { display: grid; gap: .35rem; justify-items: start; padding: 1.1rem 1rem; border-radius: 12px; background: var(--zx-panel, #fff); box-shadow: var(--zx-shadow, 0 1px 2px rgb(0 0 0 / .06)); }
+.dark .zx-help { background: rgb(255 255 255 / .04); }
+.zx-help p { font-size: .8125rem; color: var(--zx-muted, #6b7280); }
+.zx-help-ic { width: 1.75rem; height: 1.75rem; color: var(--zx-menu, var(--primary-700)); }
+.dark .zx-help-ic { color: var(--primary-300); }
+.zx-help-btn { margin-top: .35rem; padding: .45rem .95rem; border-radius: 999px; border: 1px solid var(--zx-line, #d1d5db); font-size: .875rem; font-weight: 600; }
+.zx-help-btn:hover { border-color: var(--primary-500); }
+.zx-help-link { font-size: .78rem; color: var(--primary-700); }
+.dark .zx-help-link { color: var(--primary-300); }
+.zx-profile-main { display: grid; gap: 1.25rem; }
+@media (max-width: 1023px) { .zx-pnav-wrap { position: static; } }
+
+/* Photo: a large circle */
+.zx-photo .filepond--root { width: 9rem; height: 9rem; margin-inline: auto; }
+
+/* Look picker */
+.zx-looks { display: grid; grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); gap: .75rem; }
+.zx-look { position: relative; display: grid; gap: .6rem; padding: .85rem .85rem .75rem 2.5rem; border-radius: 12px; cursor: pointer;
+    border: 1.5px solid var(--zx-line, #e5e7eb); background: var(--zx-panel, #fff); transition: border-color .12s, box-shadow .12s; }
+.dark .zx-look { background: rgb(255 255 255 / .03); }
+.zx-look:hover { border-color: color-mix(in oklab, var(--primary-500) 55%, var(--zx-line, #e5e7eb)); }
+.zx-look.zx-on { border-color: var(--primary-500); background: color-mix(in oklab, var(--primary-500) 7%, var(--zx-panel, #fff)); box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary-500) 18%, transparent); }
+.dark .zx-look.zx-on { background: color-mix(in oklab, var(--primary-500) 14%, transparent); }
+.zx-look-radio { position: absolute; left: .85rem; top: 1rem; width: 1.05rem; height: 1.05rem; accent-color: var(--primary-600); }
+.zx-look-text strong { display: block; font-size: .875rem; }
+.zx-look-text small { display: block; font-size: .75rem; color: var(--zx-muted, #6b7280); }
+.zx-look-pic { height: auto; margin-inline-start: -1.65rem; width: calc(100% + 1.65rem); border-radius: 6px; box-shadow: 0 1px 3px rgb(0 0 0 / .1); }
+
+/* Password strength */
+.zx-pw { display: grid; gap: .4rem; align-content: end; height: 100%; padding-bottom: .4rem; }
+.zx-pw-bar { height: .45rem; border-radius: 999px; background: var(--zx-head, #f3f4f6); overflow: hidden; box-shadow: inset 0 0 0 1px var(--zx-line, #e5e7eb); }
+.zx-pw-bar span { display: block; height: 100%; border-radius: inherit; transition: width .2s; }
+.zx-pw-1 { background: #dc2626; } .zx-pw-2 { background: #f97316; } .zx-pw-3 { background: #eab308; } .zx-pw-4 { background: #22c55e; } .zx-pw-5 { background: #15803d; }
+.zx-pw-label { font-size: .78rem; color: var(--zx-muted, #6b7280); }
+.zx-pw-t1, .zx-pw-t2 { color: #dc2626; } .zx-pw-t3 { color: #b45309; } .zx-pw-t4, .zx-pw-t5 { color: #15803d; }
+
+@media (prefers-reduced-motion: reduce) { .zx-sn-chev, .zx-look, .zx-pw-bar span { transition: none; } }
+@media print { .zx-tabbar, .zx-actions, .zx-sidenav, .zx-sb-brand { display: none !important; } html.zx-new .fi-header { background: none !important; color: inherit; box-shadow: none; } }

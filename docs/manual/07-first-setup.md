@@ -55,6 +55,7 @@ The wizard opens by itself the first time.
 2. **Logo for dark backgrounds** (optional) — a light version for dark mode and dark headers. Without it, the normal logo is used.
 3. **Square icon** — the symbol alone, at least 256 × 256 pixels. It is the browser-tab icon and the small icon on the till. Until you add one, your **initials on your colour** are used.
 4. **Brand colour** — pick it, type it (`#0F766E`), or press **Use … from your logo**. If the colour is too light to read on white, the page says so: choose a darker shade.
+   **Menu colour** (optional) — the colour of the menu band, the side menu and each page's banner. Leave it empty and it is a dark shade of your brand colour, so it always goes with your logo; or pick your own dark colour (white writing must read on it). **Automatic** goes back to the shade.
 5. **Print the logo on till receipts** — receipt printers print it in black and white (it is converted for them).
 6. Press **Save colour and receipts**, and look at the **Preview**: the till accent, a receipt and an invoice.
 
@@ -122,6 +123,61 @@ For each staff member:
 | Payment alerts (group) | Off by default. *Each payment*, *each payment and a daily summary* or *the summary only*, for mobile money and/or card; single alerts only from an amount you choose; also by e-mail, SMS or WhatsApp (to each person's e-mail and **Mobile (WhatsApp) number**); the summary time (default 21:00). Who gets them: anyone with *receive payment alerts* — the Owner, General Manager, Finance Manager and Accountant by default. Alerts show on the bell in the back office. **Why:** the owner sees MoMo and card money arrive without asking the till, and the evening summary is checked against the MoMo statement. |
 
 Module settings (Grocery, Pharmacy, Restaurant, Fashion, Services) are explained in Chapter 8.
+
+## Step 6b — How the back office looks, favourites and profile photos
+
+The back office has three looks. **Tabs across the top** is the standard one:
+- **Tabs across the top** (standard): like a desktop accounting program. The top row has your logo, a wide **Search**
+  (for records: products, customers, orders…), **+ New** (create any record you are allowed to create, e.g. an order
+  or a product, without looking for its page first) and your name with your role. Under it, a band in your menu colour
+  starts with three icons, then the tabs (Insights, Sales, Purchasing, Stock, Finance, People, your industry, Setup).
+  Point at a tab and its pages open in a panel.
+  - **Clock — recent pages and Find a page:** the pages you opened last; type part of a page's name to find any page.
+    The **/** key opens it from anywhere.
+  - **Star — favourites:** open a page you use often, click the star, then *Add this page to favourites*. Your
+    favourites follow you to any computer (up to 20).
+  - **House — home:** your home page.
+- **New look: side menu:** a menu in your menu colour down the whole left side, with your logo at the top and one row
+  per area (Dashboard, Insights, Sales, Purchasing…); click an area to open its pages. The **‹** button folds it to
+  icons for more room.
+- **Classic:** the original layout.
+
+![Tabs across the top: the Purchasing tab open](img/look-tabs.png)
+
+![Find a page: press / and type part of a page's name](img/look-finder.png)
+
+![The side menu look](img/look-side.png)
+
+In both new looks each page opens with a banner in your menu colour (the page's icon, its name and its buttons), and
+sections are white cards, so every page looks the same way. All colours follow your brand (Step 4, *Your brand*).
+
+**Where the menu sections are in the tabs:** this guide names pages by their menu section, e.g. *System → Settings*.
+With the tabs, the sections are grouped like this: **Insights** (Insights, Reports) · **Sales** (Sales, Cash, Online)
+· **Purchasing** · **Stock** (Stock, Catalog, Pricing & tax) · **Finance** · **People** (HR & payroll, People &
+access) · your **industry** (e.g. Pharmacy) · **Setup** (Company, Messages, System). So *System → Settings* is
+**Setup → Settings**. Or press **/** and type *settings*.
+
+**Why a choice:** most people find the tabs faster, and they fit more on the screen. Anyone who prefers another look
+can keep it.
+
+1. **Each person, for themselves:** top right, click your photo or initials → **Profile** → **Look** → choose →
+   **Save changes**. *As the company chose* follows the company's choice.
+2. **For everyone:** **System → Settings → Appearance → How the back office looks**. This applies to everyone who has
+   not chosen for themselves.
+3. **On a phone** the side menu is always used, because the tabs do not fit.
+
+![Profile: its parts on the left, a card for each on the right](img/profile-look.png)
+
+The **Profile** page lists its parts on the left (Your profile, Look, Security) with SyncLytics' support contacts, and
+shows a card for each on the right: your photo and details, the look (pictures of each, in your colours), your
+password (with how strong it is), two-factor sign-in and passkeys.
+
+**Profile photo:** on the same **Profile** page, drop a photo on the circle (or click *Browse*), adjust it with the
+pencil if you like, and **Save changes**. It shows beside your name in the top bar and in the list of users.
+**Why:** colleagues see at a glance who did what. The server keeps only a small square copy, with the hidden details
+of the original removed (where and when it was taken, the camera). It stays on your company's server and is shown only
+to people signed in to your company. People without a photo show their initials, drawn on your own server (no name is
+sent to an outside website).
 
 ## Step 7 — Tax set-up (with your accountant)
 
