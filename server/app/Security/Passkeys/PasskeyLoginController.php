@@ -5,6 +5,7 @@ namespace App\Security\Passkeys;
 use App\Domain\Support\Actor;
 use App\Domain\Support\Recorder;
 use App\Models\User;
+use App\Support\UserPrefs;
 use Filament\Facades\Filament;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\RedirectResponse;
@@ -46,6 +47,8 @@ class PasskeyLoginController extends AuthenticateUsingPasskeyController
             return $this->invalidPasskeyResponse();
         }
 
-        return redirect()->intended(Filament::getPanel('admin')->getUrl());
+        $user = $request->user();
+
+        return redirect()->intended(UserPrefs::homeUrl($user instanceof User ? $user : null)); // the person's own home page
     }
 }

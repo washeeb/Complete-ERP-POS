@@ -56,7 +56,7 @@ final class NotificationRelay
         $number = $row['number'] ?? '';
         $this->notifier->toPermission($e->tenant_id, $permission, $branchId, "{$what} {$number} is waiting for approval",
             trim(($row['submitted_by_name'] ?? $row['prepared_by_name'] ?? $row['created_by_name'] ?? $row['claimant_name'] ?? '').' sent it.'),
-            url("/admin/{$slug}/{$e->aggregate_id}"), [$row['submitted_by'] ?? null, $row['prepared_by'] ?? null, $row['created_by'] ?? null, $row['claimant_id'] ?? null]);
+            url("/admin/{$slug}/{$e->aggregate_id}"), [$row['submitted_by'] ?? null, $row['prepared_by'] ?? null, $row['created_by'] ?? null, $row['claimant_id'] ?? null], topic: 'approvals');
     }
 
     private function invoice(OutboxEvent $e): void

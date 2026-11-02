@@ -179,6 +179,40 @@ of the original removed (where and when it was taken, the camera). It stays on y
 to people signed in to your company. People without a photo show their initials, drawn on your own server (no name is
 sent to an outside website).
 
+## Step 6c — Your dashboard, preferences and notifications
+
+**The dashboard** (the house icon, or *Dashboard*) is each person's home page: panels with figures, charts and lists —
+sales today and this month, the sales trend, how customers paid, sales by branch, best sellers, stock to act on, buying,
+spend by month, what customers owe by how late, cash, pharmacy, people, and **Waiting for you** (orders, stock
+adjustments, expense claims and leave waiting for your approval) with **Shortcuts** (your favourite pages and quick
+*new* links).
+
+![The dashboard: panels for the person's role](img/dashboard.png)
+
+**Why:** each person sees first what they act on. A cashier sees the cash and shortcuts; a buyer sees buying and stock;
+the owner sees the whole business. Panels show only what the person may see, for their own branches.
+
+1. Each role starts with its own set of panels.
+2. **Arrange** (top right of the dashboard): switch panels on or off, drag them into order (⇅) and choose how wide each
+   is (a third, half, two thirds, full width) → **Save my dashboard**.
+3. **Back to my role's** brings the role's panels back.
+
+![Arrange your dashboard](img/dashboard-arrange.png)
+
+**Preferences** (top right → **Profile** → *Preferences*) — they follow you to any computer:
+- **Home page:** the dashboard, *Today*, or one of your favourite pages — opened when you sign in and by the house icon.
+- **Rows a list shows at first:** 10, 25, 50 or 100.
+- **How dates are written:** *2 Nov 2026*, *02/11/2026* or *2026-11-02*.
+- **Light or dark**, and **Lists**: comfortable or compact (more rows on the screen).
+
+**Notifications** (Profile → *Notifications*): for each kind of notification — waiting for your approval, buying, stock,
+cash, pharmacy, payments received, the daily summary, server and devices — tick how it reaches you: the bell in the back
+office and, where the company uses them, e-mail, SMS or WhatsApp. **Why:** people get what they act on, not everything.
+The company still decides which channels are used at all (System → Settings → *Payment alerts*, *Daily summary*), and
+security notices (SyncLytics support signing in) always reach the owner.
+
+![Profile → Preferences and Notifications](img/profile-prefs.png)
+
 ## Step 7 — Tax set-up (with your accountant)
 
 **Pricing & tax → Tax groups** and **Tax rates.** The starter Ghana set-up (VAT 15 %, NHIL 2.5 %, GETFund 2.5 %, all on the price before tax) is marked **Not verified**.

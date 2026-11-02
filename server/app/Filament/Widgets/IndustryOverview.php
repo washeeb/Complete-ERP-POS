@@ -21,7 +21,7 @@ class IndustryOverview extends StatsOverviewWidget
 
     protected ?string $heading = 'Industries';
 
-    protected int|string|array $columnSpan = 'full';
+    public int|string|array $columnSpan = 'full'; // public: the dashboard sets each panel's width
 
     protected function getStats(): array
     {

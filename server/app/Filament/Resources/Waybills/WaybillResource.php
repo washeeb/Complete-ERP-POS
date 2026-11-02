@@ -165,7 +165,7 @@ class WaybillResource extends Resource
         return $table->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('number')->searchable(),
-                TextColumn::make('created_at')->label('Date')->date('j M Y'),
+                TextColumn::make('created_at')->label('Date')->date(),
                 TextColumn::make('kind')->label('For')->formatStateUsing(fn ($state) => Waybill::KINDS[$state] ?? $state)->description(fn (Waybill $r) => $r->source_number),
                 TextColumn::make('to_name')->label('To')->searchable()->wrap(),
                 TextColumn::make('vehicle_no')->label('Vehicle')->placeholder('—')->searchable()->description(fn (Waybill $r) => $r->driver_name),

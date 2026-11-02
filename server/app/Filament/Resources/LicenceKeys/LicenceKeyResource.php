@@ -71,7 +71,7 @@ class LicenceKeyResource extends Resource
                 TextColumn::make('hint')->label('Key')->formatStateUsing(fn ($state) => '…'.$state)->searchable(),
                 TextColumn::make('status')->badge()->formatStateUsing(fn ($state) => LicenceKey::STATUSES[$state] ?? $state)
                     ->color(fn ($state) => ['available' => 'success', 'sold' => 'info'][$state] ?? 'gray'),
-                TextColumn::make('sold_at')->label('Sold')->dateTime('j M Y H:i')->placeholder('—')
+                TextColumn::make('sold_at')->label('Sold')->dateTime()->placeholder('—')
                     ->description(fn (LicenceKey $r) => $r->sale_id ? Sale::whereKey($r->sale_id)->value('receipt_no') : null),
             ])
             ->filters([

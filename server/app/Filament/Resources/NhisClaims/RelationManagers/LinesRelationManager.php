@@ -30,7 +30,7 @@ class LinesRelationManager extends RelationManager
         return $table
             ->modifyQueryUsing(fn ($query) => $query->with('sale.customer', 'payment'))
             ->columns([
-                TextColumn::make('sale.occurred_at')->label('Date')->dateTime('j M Y H:i'),
+                TextColumn::make('sale.occurred_at')->label('Date')->dateTime(),
                 TextColumn::make('sale.receipt_no')->label('Receipt'),
                 TextColumn::make('sale.customer.name')->label('Patient'),
                 TextColumn::make('payment.reference')->label('NHIS no.'),

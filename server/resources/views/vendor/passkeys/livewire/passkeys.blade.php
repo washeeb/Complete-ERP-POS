@@ -1,7 +1,7 @@
 {{-- Overrides spatie/laravel-passkeys' unstyled view with a Filament card like the profile page's other cards. Layout classes are our own (admin.css, .zx-pk-*): Filament ships only the styles it uses itself, so
      general utility classes (flex, gap-3…) would do nothing here. Behaviour is the package's. --}}
 <div>
-    <x-filament::section icon="heroicon-o-finger-print" id="zx-passkeys">
+    <x-filament::section icon="heroicon-o-finger-print" data-zx-part="zx-passkeys">
         <x-slot name="heading">Passkeys</x-slot>
         <x-slot name="description">
             Sign in with your phone, fingerprint or face instead of a password. A passkey also counts as two-factor

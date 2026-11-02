@@ -11,6 +11,7 @@ use App\Models\Till;
 use App\Models\User;
 use App\Security\Authorizer;
 use App\Support\Money;
+use App\Support\NotifyPrefs;
 use App\Support\Settings;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -142,13 +143,14 @@ final class PaymentAlerts
         if ($url) {
             $n->actions([Action::make('open')->label('Open the sale')->url($url)->markAsRead()]);
         }
-        $n->sendToDatabase($people);
+        // Each person may turn payment alerts, or one of their channels, off for themselves (Profile → Notifications).
+        $n->sendToDatabase($people->filter(fn (User $u) => NotifyPrefs::wants($u, 'payments'))->values());
         foreach (['email' => 'alerts.by_email', 'sms' => 'alerts.by_sms', 'whatsapp' => 'alerts.by_whatsapp'] as $channel => $setting) {
             $t = $this->settings->get($setting, $tenantId) ? Templates::find($tenantId, $template, $channel) : null;
             if (! $t?->is_active) {
                 continue;
             }
-            foreach ($people as $u) {
+            foreach ($people->filter(fn (User $u) => NotifyPrefs::wants($u, 'payments', $channel)) as $u) {
                 $this->messenger->later($tenantId, $channel, $channel === 'email' ? $u->email : $u->phone, $t, $vars, $reference, 'Payment alerts');
             }
         }

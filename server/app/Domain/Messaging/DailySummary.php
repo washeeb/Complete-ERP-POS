@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
 use App\Support\Money;
+use App\Support\NotifyPrefs;
 use App\Support\Settings;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Carbon;
@@ -63,13 +64,14 @@ final class DailySummary
             return 0;
         }
         $s = $this->build($tenant, $day);
-        Notification::make()->title($s['title'])->body($s['text'])->info()->sendToDatabase($people);
+        // Each person may turn the summary, or one of its channels, off for themselves (Profile → Notifications).
+        Notification::make()->title($s['title'])->body($s['text'])->info()->sendToDatabase($people->filter(fn (User $u) => NotifyPrefs::wants($u, 'summary'))->values());
         foreach (['email' => 'summary.by_email', 'whatsapp' => 'summary.by_whatsapp'] as $channel => $setting) {
             $t = $this->settings->get($setting, $tenant->id) ? Templates::find($tenant->id, 'daily_summary', $channel) : null;
             if (! $t?->is_active) {
                 continue;
             }
-            foreach ($people as $u) {
+            foreach ($people->filter(fn (User $u) => NotifyPrefs::wants($u, 'summary', $channel)) as $u) {
                 $this->messenger->later($tenant->id, $channel, $channel === 'email' ? $u->email : $u->phone, $t,
                     ['company' => $tenant->name, 'date' => $s['date'], 'sales' => $s['sales'], 'text' => $s['text']], 'SUMMARY-'.$day->format('Ymd'), 'Daily summary');
             }

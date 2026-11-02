@@ -21,7 +21,10 @@ use App\Models\Warehouse;
 use App\Security\Authorizer;
 use App\Security\ScopeType;
 use App\Security\SecurityLevel;
+use App\Support\Dashboard\Panels;
 use App\Support\Look;
+use App\Support\NotifyPrefs;
+use App\Support\UserPrefs;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -116,6 +119,12 @@ final class AccessService
             }
             $user->ui_look = $look;
         }
+        if (array_key_exists('ui_prefs', $data)) { // home page, rows, light/dark, dates, density — only allowed values
+            $user->ui_prefs = UserPrefs::clean((array) $data['ui_prefs'], $user);
+        }
+        if (array_key_exists('notify_prefs', $data)) { // topics and channels — only the ones that exist
+            $user->notify_prefs = NotifyPrefs::clean((array) $data['notify_prefs']);
+        }
         // The photo field holds the current photo (unchanged), a new upload waiting on the private disk, or nothing.
         $old = $user->avatar_path;
         if (array_key_exists('photo', $data) && $data['photo'] !== $old) {
@@ -136,6 +145,23 @@ final class AccessService
         }
 
         return $saved;
+    }
+
+    /**
+     * The person's own dashboard: the panels in their order and size, or null to go back to their role's. Only panels
+     * of the catalogue are kept (App\Support\Dashboard\Panels); whether a panel shows is still decided by its own
+     * permissions each time the dashboard opens.
+     *
+     * @param  list<array{key: string, size?: string}>|null  $panels
+     */
+    public function updateOwnDashboard(Actor $actor, User $user, ?array $panels): User
+    {
+        if ($actor->id === null || $actor->id !== $user->id) {
+            throw new AccessDenied('You can only change your own dashboard.');
+        }
+        $user->dashboard = $panels === null ? null : Panels::clean($panels);
+
+        return $this->recorder->save($actor, $user, 'user.dashboard_changed');
     }
 
     public const MAX_FAVOURITES = 20;

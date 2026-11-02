@@ -29,7 +29,7 @@ class ReorderLevelsCommand extends Command
                 }
                 if ($this->option('alerts') && $settings->get('stock.low_stock_alerts', $tenant->id) && ($n = count($levels->low($w))) > 0) {
                     $notifier->toPermission($tenant->id, ['purchasing.manage', 'stock.levels'], $w->branch_id, "{$n} product(s) at or below their minimum in {$w->name}",
-                        'Purchasing → What to order turns them into draft purchase orders.', url('/admin/reorder-suggestions'));
+                        'Purchasing → What to order turns them into draft purchase orders.', url('/admin/reorder-suggestions'), topic: 'stock');
                     $this->info("{$w->code}: {$n} low.");
                 }
             }

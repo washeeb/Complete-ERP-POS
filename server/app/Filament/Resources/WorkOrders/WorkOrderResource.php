@@ -199,7 +199,7 @@ class WorkOrderResource extends Resource
                 TextColumn::make('warehouse.code')->label('Warehouse'),
                 TextColumn::make('qty_planned')->label('Planned')->formatStateUsing(fn ($state) => Fields::qty($state)),
                 TextColumn::make('qty_done')->label('Made')->formatStateUsing(fn ($state) => Fields::qty($state)),
-                TextColumn::make('due_on')->label('Needed by')->date('j M Y')->placeholder('—')->sortable(),
+                TextColumn::make('due_on')->label('Needed by')->date()->placeholder('—')->sortable(),
                 TextColumn::make('status')->badge()->formatStateUsing(fn ($state) => WorkOrder::STATUSES[$state] ?? $state)->color(fn ($state) => self::colour($state)),
             ])
             ->filters([

@@ -10,6 +10,7 @@ use App\Domain\Sync\Transport\HttpSyncTransport;
 use App\Domain\Sync\Transport\SyncTransport;
 use App\Filament\Support\TableExport;
 use App\Http\Middleware\RecordSlowRequests;
+use App\Http\Responses\HomeLoginResponse;
 use App\Models\User;
 use App\Modules\ModuleRegistry;
 use App\Providers\Filament\VendorPanelProvider;
@@ -18,12 +19,15 @@ use App\Support\People;
 use App\Support\RequestMemo;
 use App\Support\Settings;
 use App\Support\TenantContext;
+use App\Support\UserPrefs;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Actions\EditAction;
+use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Pages\Page as ResourcePage;
+use Filament\Schemas\Schema;
 use Filament\Support\Exceptions\Halt;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -44,6 +48,7 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->bind(LoginResponse::class, HomeLoginResponse::class); // after signing in: the person's own home page
         // SyncLytics' licence generator (/vendor): only on the licence server, and its files are left out of client builds.
         if (config('license.server.enabled') && class_exists(VendorPanelProvider::class)) {
             $this->app->register(VendorPanelProvider::class);
@@ -113,6 +118,12 @@ class AppServiceProvider extends ServiceProvider
 
         // Every list in the back office can be exported (CSV / PDF) with its current search, filters and sort.
         Table::configureUsing(fn (Table $table) => $table->pushHeaderActions([TableExport::group()]));
+
+        // Each person's preferences (Profile → Preferences): rows a list shows at first, and how dates are written in
+        // lists and record pages. Lists with their own sizes (e.g. the chart of accounts) keep them.
+        Table::configureUsing(fn (Table $table) => $table->paginated(UserPrefs::ROWS)->defaultPaginationPageOption(fn () => UserPrefs::get('rows'))
+            ->defaultDateDisplayFormat(fn () => UserPrefs::dateFormat())->defaultDateTimeDisplayFormat(fn () => UserPrefs::dateTimeFormat()));
+        Schema::configureUsing(fn (Schema $schema) => $schema->defaultDateDisplayFormat(fn () => UserPrefs::dateFormat())->defaultDateTimeDisplayFormat(fn () => UserPrefs::dateTimeFormat()));
 
         // Filament shows "New" and "Edit" buttons to everyone unless told otherwise, so a person could see a button that
         // only leads to "no access". On a resource's own pages they follow the resource's rules (canCreate / canEdit),

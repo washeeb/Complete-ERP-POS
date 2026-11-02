@@ -133,7 +133,7 @@ class SupplierReturnResource extends Resource
         return $table->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('number')->searchable(),
-                TextColumn::make('created_at')->label('Date')->date('j M Y'),
+                TextColumn::make('created_at')->label('Date')->date(),
                 TextColumn::make('supplier.name')->label('Supplier')->searchable(),
                 TextColumn::make('warehouse.code')->label('Store'),
                 TextColumn::make('reason')->formatStateUsing(fn ($state) => SupplierReturn::REASONS[$state] ?? $state),

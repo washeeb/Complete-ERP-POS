@@ -38,9 +38,9 @@ class PharmacySignoffsCommand extends Command
                 }
                 $after === 'signoff'
                     ? $notifier->toPermission($tenant->id, 'pharmacy.dispense', $branch->id, "{$n} medicine sale(s) to sign off at {$branch->name}",
-                        'Prescription-only or controlled medicines sold without a pharmacist. Pharmacy → Sales to sign off.', url('/admin/medicine-signoffs'))
+                        'Prescription-only or controlled medicines sold without a pharmacist. Pharmacy → Sales to sign off.', url('/admin/medicine-signoffs'), topic: 'pharmacy')
                     : $notifier->toPermission($tenant->id, 'pharmacy.manage', $branch->id, "{$n} medicine sale(s) without a pharmacist today at {$branch->name}",
-                        'Pharmacy → Sales to sign off lists them.', url('/admin/medicine-signoffs'));
+                        'Pharmacy → Sales to sign off lists them.', url('/admin/medicine-signoffs'), topic: 'pharmacy');
                 $this->info("{$branch->code}: {$n}");
             }
         }

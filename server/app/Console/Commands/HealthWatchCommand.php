@@ -40,7 +40,7 @@ class HealthWatchCommand extends Command
         }
         $body = $problems->map(fn ($c) => "{$c['check']}: {$c['detail']}")->implode("\n");
         foreach (Tenant::query()->get() as $tenant) {
-            $notifier->toPermission($tenant->id, 'admin.settings.manage', null, 'The server needs attention', $body, SystemHealthPage::getUrl(panel: 'admin'));
+            $notifier->toPermission($tenant->id, 'admin.settings.manage', null, 'The server needs attention', $body, SystemHealthPage::getUrl(panel: 'admin'), topic: 'system');
             $people = User::where('tenant_id', $tenant->id)->where('is_active', true)->get()->filter(fn (User $u) => $authz->allowsAnywhere($u, 'admin.settings.manage'));
             foreach ($people as $u) {
                 try {

@@ -5,11 +5,16 @@ namespace App\Filament\Auth;
 use App\Domain\Access\AccessService;
 use App\Filament\Support\Erp;
 use App\Support\Look;
+use App\Support\NotifyPrefs;
 use App\Support\Settings;
+use App\Support\UserPrefs;
 use Filament\Auth\MultiFactor\Contracts\MultiFactorAuthenticationProvider;
 use Filament\Auth\Pages\EditProfile as BaseEditProfile;
 use Filament\Facades\Filament;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Components\ViewField;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Grid;
@@ -57,7 +62,7 @@ class EditProfile extends BaseEditProfile
     {
         return $schema->components([
             Section::make('Personal information')->description('Your photo, name and e-mail address, as colleagues see them.')
-                ->icon('heroicon-o-user')->extraAttributes(['id' => 'zx-you'])
+                ->icon('heroicon-o-user')->extraAttributes(['data-zx-part' => 'zx-you'])
                 ->schema([
                     Grid::make(['default' => 1, 'md' => 4])->schema([
                         FileUpload::make('photo')->hiddenLabel()->avatar()->image()
@@ -70,13 +75,30 @@ class EditProfile extends BaseEditProfile
                     ]),
                 ]),
             Section::make('Look')->description('How the back office looks for you. Switch at any time; on a phone the side menu is always used.')
-                ->icon('heroicon-o-paint-brush')->extraAttributes(['id' => 'zx-look'])
+                ->icon('heroicon-o-paint-brush')->extraAttributes(['data-zx-part' => 'zx-look'])
                 ->schema([
                     ViewField::make('ui_look')->hiddenLabel()->view('filament.profile.look-picker')
                         ->viewData(['company' => $this->companyLook()]),
                 ]),
+            Section::make('Preferences')->description('Your own defaults. They follow you to any computer you sign in to.')
+                ->icon('heroicon-o-adjustments-horizontal')->extraAttributes(['data-zx-part' => 'zx-prefs'])
+                ->schema([
+                    Grid::make(['default' => 1, 'md' => 2])->schema([
+                        Select::make('ui_prefs.home')->label('Home page')->options(fn () => UserPrefs::homes(Erp::user()))->selectablePlaceholder(false)
+                            ->helperText('Opened when you sign in and by the house icon. Favourites (the star) can be chosen too.'),
+                        Select::make('ui_prefs.rows')->label('Rows a list shows at first')->options(array_combine(UserPrefs::ROWS, UserPrefs::ROWS))->selectablePlaceholder(false),
+                        Select::make('ui_prefs.date')->label('How dates are written')->options(array_map(fn ($d) => $d[0], UserPrefs::DATES))->selectablePlaceholder(false),
+                        ToggleButtons::make('ui_prefs.theme')->label('Light or dark')->options(UserPrefs::THEMES)->inline()
+                            ->helperText('Set on each computer you sign in to; the switcher in your menu still changes it for that computer.'),
+                        ToggleButtons::make('ui_prefs.density')->label('Lists')->options(UserPrefs::DENSITIES)->inline(),
+                    ]),
+                ]),
+            Section::make('Notifications')->description('What reaches you, and how. The company decides which channels are used at all (System → Settings); here you can turn off what you do not need. Security notices always reach you.')
+                ->icon('heroicon-o-bell')->extraAttributes(['data-zx-part' => 'zx-notify'])
+                ->schema(collect(NotifyPrefs::TOPICS)->map(fn ($t, $topic) => CheckboxList::make("notify_prefs.{$topic}")->label($t[0])->helperText($t[1])
+                    ->options(array_intersect_key(NotifyPrefs::CHANNELS, array_flip($t[2])))->columns(4)->gridDirection('row'))->values()->all()),
             Section::make('Password')->description('Leave empty to keep your password. A long phrase is safer than a short word with symbols.')
-                ->icon('heroicon-o-lock-closed')->extraAttributes(['id' => 'zx-security'])
+                ->icon('heroicon-o-lock-closed')->extraAttributes(['data-zx-part' => 'zx-security'])
                 ->schema([
                     Grid::make(['default' => 1, 'md' => 3])->schema([
                         Group::make([$this->getPasswordFormComponent()])->columnSpan(['md' => 2]),
@@ -97,7 +119,7 @@ class EditProfile extends BaseEditProfile
         $user = Filament::auth()->user();
 
         return Section::make('Two-factor sign-in')->description('A code from an app on your phone, asked for at sign-in, so a stolen password alone is not enough.')
-            ->icon('heroicon-o-shield-check')->extraAttributes(['id' => 'zx-2fa'])
+            ->icon('heroicon-o-shield-check')->extraAttributes(['data-zx-part' => 'zx-2fa'])
             ->schema(collect(Filament::getMultiFactorAuthenticationProviders())
                 ->sort(fn (MultiFactorAuthenticationProvider $p): int => $p->isEnabled($user) ? 0 : 1)
                 ->map(fn (MultiFactorAuthenticationProvider $p): Component => Group::make($p->getManagementSchemaComponents())->statePath($p->getId()))
@@ -108,11 +130,17 @@ class EditProfile extends BaseEditProfile
     {
         $user = Erp::user();
 
-        return ['photo' => $user->avatar_path, 'ui_look' => $user->ui_look ?? ''] + $data;
+        // Notifications as ticked channels per topic (nothing chosen yet = every channel ticked).
+        $notify = collect(NotifyPrefs::TOPICS)->map(fn ($t, $topic) => array_values(array_filter($t[2], fn ($c) => NotifyPrefs::wants($user, $topic, $c))))->all();
+
+        return ['photo' => $user->avatar_path, 'ui_look' => $user->ui_look ?? '', 'ui_prefs' => UserPrefs::for($user), 'notify_prefs' => $notify] + $data;
     }
 
     protected function handleRecordUpdate(Model $record, #[SensitiveParameter] array $data): Model
     {
+        if (isset($data['notify_prefs'])) { // ticked channels per topic → on/off for each channel the topic uses
+            $data['notify_prefs'] = collect(NotifyPrefs::TOPICS)->map(fn ($t, $topic) => collect($t[2])->mapWithKeys(fn ($c) => [$c => in_array($c, (array) ($data['notify_prefs'][$topic] ?? []), true)])->all())->all();
+        }
         $saved = Erp::run(fn ($actor) => app(AccessService::class)->updateOwnProfile($actor, $record, $data));
         $this->redirect(static::getUrl()); // the new look and photo show at once
 

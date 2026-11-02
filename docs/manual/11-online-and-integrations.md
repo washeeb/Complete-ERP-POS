@@ -106,3 +106,17 @@ The provider pays the money into your bank account or wallet on its own schedule
 
 **Branch servers:** set the provider up on each server the tills sign in to (the keys are not copied between servers).
 
+## 11.7 Integrations: every connection on one page (paid add-on)
+
+**Setup → Integrations** shows a card for each connection to the outside world — e-mail, SMS, WhatsApp, mobile money,
+GRA E-VAT, online shops, other systems (API), branch servers, backups off the server, the AI assistant and accounting
+exports. Each card says whether it is **set up**, **when it last worked** and **how many failed this week**, with the
+way to its set-up page and its test.
+
+**Why:** a connection that stops (an SMS account out of credit, a GRA certificate expired, a backup place full) is found
+the same day, from one page, instead of when a customer complains.
+
+**Availability:** a paid add-on. It appears once your licence includes **Integrations** (ask SyncLytics; a new licence
+key is entered under *System → Licence*). Without it, every connection still works and is set up on its own page as
+described above.
+

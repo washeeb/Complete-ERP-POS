@@ -62,7 +62,7 @@ final class SupportAccount
             }
             $this->authz->forget($user);
             $this->notifier->toPermission($tenant->id, 'support.access.grant', null, $isNew ? 'SyncLytics support account added' : 'SyncLytics support account changed',
-                "{$name} ({$email}) can sign in to support your business. It always uses an authenticator app, and you are told each time it signs in.", null, [$user->id]);
+                "{$name} ({$email}) can sign in to support your business. It always uses an authenticator app, and you are told each time it signs in.", null, [$user->id], topic: 'security');
 
             return [$user->fresh(), $isNew];
         });
@@ -75,6 +75,6 @@ final class SupportAccount
             return;
         }
         $this->notifier->toPermission($user->tenant_id, 'support.access.grant', null, 'SyncLytics support signed in',
-            "{$user->name} signed in to the back office at ".now()->format('H:i').'. Everything they do is in the audit log.', null, [$user->id]);
+            "{$user->name} signed in to the back office at ".now()->format('H:i').'. Everything they do is in the audit log.', null, [$user->id], topic: 'security');
     }
 }

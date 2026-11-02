@@ -44,16 +44,17 @@ html.zx-new .fi-main { max-width: 1680px; padding-inline: clamp(.75rem, 2vw, 1.7
 html.zx-new .fi-page-header-main-ctn, html.zx-new .fi-page-main { row-gap: 1.25rem; }
 
 /* The page's banner: its icon, title and subtitle in white on the menu colour, with soft curves in the brand colour. */
+/* The banner's curves are part of its background (no layer of its own): windows opened from its buttons (e.g. Arrange)
+   must not be trapped under the sticky menu band. */
 html.zx-new .fi-header {
-    position: relative; overflow: hidden; isolation: isolate; border-radius: 14px; padding: 1.25rem 1.6rem; min-height: 6rem; color: #fff;
+    position: relative; border-radius: 14px; padding: 1.25rem 1.6rem; min-height: 6rem; color: #fff;
     background:
+        radial-gradient(circle at 96% 10%, transparent 0 9rem, rgb(255 255 255 / .10) 9.05rem 9.2rem, transparent 9.25rem 11.5rem, rgb(255 255 255 / .06) 11.55rem 11.7rem, transparent 11.75rem),
         radial-gradient(70% 160% at 100% 0%, color-mix(in oklab, var(--primary-500) 45%, transparent) 0, transparent 60%),
         radial-gradient(50% 120% at 75% 130%, color-mix(in oklab, var(--primary-400) 28%, transparent) 0, transparent 60%),
         linear-gradient(115deg, var(--zx-menu) 0%, color-mix(in oklab, var(--zx-menu) 65%, var(--primary-700)) 100%);
     box-shadow: 0 6px 18px color-mix(in oklab, var(--zx-menu) 28%, transparent);
 }
-html.zx-new .fi-header::after { content: ''; position: absolute; z-index: -1; right: -8%; top: -70%; width: 46%; height: 240%; border-radius: 50%;
-    border: 1.5px solid rgb(255 255 255 / .10); box-shadow: 0 0 0 36px rgb(255 255 255 / .035), 0 0 0 72px rgb(255 255 255 / .02); }
 html.zx-new .fi-header-heading { color: #fff; font-size: 1.6rem; line-height: 2rem; letter-spacing: -.01em; }
 html.zx-new .fi-header-subheading { color: rgb(255 255 255 / .82); font-size: .9rem; margin-top: .2rem; }
 html.zx-new .fi-header .fi-breadcrumbs, html.zx-new .fi-header .fi-breadcrumbs a, html.zx-new .fi-header .fi-breadcrumbs-item-label { color: rgb(255 255 255 / .72); font-size: .8125rem; }
@@ -303,3 +304,50 @@ html.zx-side .fi-main-sidebar:not(.fi-sidebar-open) .zx-sb-folded { display: blo
 
 @media (prefers-reduced-motion: reduce) { .zx-sn-chev, .zx-look, .zx-pw-bar span { transition: none; } }
 @media print { .zx-tabbar, .zx-actions, .zx-sidenav, .zx-sb-brand { display: none !important; } html.zx-new .fi-header { background: none !important; color: inherit; box-shadow: none; } }
+
+/* ---- Compact lists (Profile → Preferences; every look) ---------------------------------------------------------- */
+html.zx-compact .fi-ta-text, html.zx-compact .fi-ta-icon, html.zx-compact .fi-ta-image { padding-block: .25rem; }
+html.zx-compact .fi-ta-header-cell { padding-block: .4rem; }
+html.zx-compact .fi-ta-text-item, html.zx-compact .fi-ta-text { font-size: .8125rem; }
+
+/* ---- Dashboard panels (every look) ------------------------------------------------------------------------------ */
+.zx-panel-list { display: grid; gap: .15rem; }
+.zx-panel-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .5rem .6rem; margin-inline: -.6rem; border-radius: 8px; font-size: .9rem; color: inherit; text-decoration: none; }
+a.zx-panel-row:hover { background: color-mix(in oklab, var(--primary-500) 8%, transparent); }
+.zx-count { min-width: 1.9rem; text-align: center; padding: .1rem .5rem; border-radius: 999px; font-weight: 700; font-size: .8125rem; background: var(--zx-head, #f3f4f6); color: var(--zx-muted, #6b7280); }
+.zx-count-on { background: color-mix(in oklab, var(--primary-500) 16%, transparent); color: var(--primary-700); }
+.dark .zx-count-on { color: var(--primary-200); }
+.zx-panel-h { margin: .6rem 0 .25rem; font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--zx-muted, #6b7280); }
+.zx-panel-h:first-child { margin-top: 0; }
+.zx-panel-note { font-size: .8125rem; color: var(--zx-muted, #6b7280); }
+.zx-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+.zx-chip { padding: .35rem .75rem; border-radius: 999px; font-size: .8125rem; font-weight: 600; border: 1px solid var(--zx-line, #e5e7eb); color: inherit; text-decoration: none; }
+.zx-chip:hover { border-color: var(--primary-500); color: var(--primary-700); }
+.dark .zx-chip:hover { color: var(--primary-200); }
+
+/* ---- Setup → Integrations (every look) -------------------------------------------------------------------------- */
+.zx-int-sum { display: flex; flex-wrap: wrap; gap: .5rem; }
+.zx-int-pill { padding: .3rem .8rem; border-radius: 999px; font-size: .8125rem; font-weight: 650; }
+.zx-int-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: 1rem; }
+.zx-int { display: grid; gap: .6rem; align-content: start; padding: 1.1rem 1.2rem; border-radius: 12px; background: var(--zx-panel, #fff); box-shadow: var(--zx-shadow, 0 1px 2px rgb(0 0 0 / .06));
+    border-top: 4px solid var(--zx-line, #e5e7eb); }
+.dark .zx-int { background: rgb(255 255 255 / .04); }
+.zx-int.zx-int-ok { border-top-color: #16a34a; }
+.zx-int.zx-int-attention { border-top-color: #f59e0b; }
+.zx-int header { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+.zx-int h2 { font-size: 1rem; font-weight: 700; }
+.zx-int-state { font-size: .72rem; font-weight: 700; padding: .15rem .55rem; border-radius: 999px; white-space: nowrap; }
+.zx-int-ok.zx-int-state, .zx-int-pill.zx-int-ok { background: rgb(22 163 74 / .12); color: #15803d; }
+.zx-int-attention.zx-int-state, .zx-int-pill.zx-int-attention { background: rgb(245 158 11 / .16); color: #b45309; }
+.zx-int-off.zx-int-state, .zx-int-pill.zx-int-off { background: var(--zx-head, #f3f4f6); color: var(--zx-muted, #6b7280); }
+.zx-int-what { font-size: .8125rem; color: var(--zx-muted, #6b7280); }
+.zx-int dl { display: grid; gap: .25rem; font-size: .8125rem; }
+.zx-int dl div { display: flex; justify-content: space-between; gap: .75rem; }
+.zx-int dt { color: var(--zx-muted, #6b7280); }
+.zx-int dd { text-align: end; font-weight: 550; }
+.zx-int-bad { color: #dc2626; }
+.zx-int-link { margin-top: .2rem; font-size: .875rem; font-weight: 650; color: var(--primary-700); }
+.dark .zx-int-link { color: var(--primary-300); }
+
+/* Profile parts scrolled to from the list on the left land below the sticky header and menu band. */
+[data-zx-part] { scroll-margin-top: 7.5rem; }

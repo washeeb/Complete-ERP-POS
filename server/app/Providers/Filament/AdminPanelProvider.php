@@ -6,27 +6,25 @@ use App\Domain\Branding\Branding;
 use App\Domain\Licensing\Watermark;
 use App\Filament\Auth\EditProfile;
 use App\Filament\Auth\Login;
+use App\Filament\Pages\Dashboard;
 use App\Filament\Support\LocalAvatars;
 use App\Filament\Support\PanelBrand;
-use App\Filament\Widgets\BusinessStats;
-use App\Filament\Widgets\IndustryHighlights;
-use App\Filament\Widgets\IndustryOverview;
 use App\Http\Middleware\BlockSiteCopiers;
 use App\Http\Middleware\EnforceLicense;
 use App\Http\Middleware\RedirectToSetupWizard;
 use App\Http\Middleware\TrackComputer;
 use App\Security\SignInCode;
+use App\Support\Dashboard\Panels;
 use App\Support\Look;
+use App\Support\UserPrefs;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\View\PanelsRenderHook;
-use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -62,6 +60,7 @@ class AdminPanelProvider extends PanelProvider
             ->defaultAvatarProvider(LocalAvatars::class) // initials drawn here, not fetched from ui-avatars.com
             // The new look (System → Settings → Appearance, or each person's profile): tabs across the top.
             ->topNavigation(fn () => Look::hasTopTabs())
+            ->homeUrl(fn () => UserPrefs::homeUrl(auth()->user())) // the logo opens the person's own home page
             ->sidebarCollapsibleOnDesktop(fn () => Look::current() === 'side') // the dark rail folds to icons
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->databaseNotifications()->databaseNotificationsPolling('30s')
@@ -76,7 +75,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([Dashboard::class])
             ->navigationGroups(['Insights', 'Reports', 'Sales', 'Cash', 'Online', 'Purchasing', 'Finance', 'HR & payroll', 'Stock', 'Grocery', 'Restaurant', 'Pharmacy', 'Electronics', 'Fashion', 'Catalog', 'Pricing & tax', 'Company', 'People & access', 'Messages', 'System'])
-            ->widgets([AccountWidget::class, BusinessStats::class, IndustryOverview::class, IndustryHighlights::class])
+            ->widgets(Panels::classes()) // the dashboard's panels (App\Support\Dashboard\Panels); each person arranges their own
             ->unsavedChangesAlerts() // leaving a form with changes not saved asks first (owner request 2026-10-24)
             ->middleware([
                 EncryptCookies::class,

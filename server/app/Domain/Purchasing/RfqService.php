@@ -226,7 +226,7 @@ final class RfqService
             // Sealed: the record says who quoted and when, never the price, until the request closes.
             $this->recorder->audit->record($actor, $again ? 'rfq.quote_changed' : 'rfq.quoted', $rfq, [], "{$supplier->name}: ".count($rows).' line(s)', $rfq->branch_id);
             $this->notifier->toPermission($rfq->tenant_id, 'purchasing.manage', $rfq->branch_id, "Quote from {$supplier->name} on {$rfq->number}",
-                'Prices stay sealed until '.$rfq->closes_at->format('j M H:i').' or until you close the request.', url('/admin/rfqs/'.$rfq->id));
+                'Prices stay sealed until '.$rfq->closes_at->format('j M H:i').' or until you close the request.', url('/admin/rfqs/'.$rfq->id), topic: 'purchasing');
 
             return $inv->fresh('quoteLines');
         });

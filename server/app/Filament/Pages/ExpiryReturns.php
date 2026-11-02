@@ -116,7 +116,7 @@ class ExpiryReturns extends Page implements HasTable
             ->columns([
                 TextColumn::make('name')->label('Product')->searchable()->description(fn (array $record) => $record['sku'].($record['controlled'] ? ' · controlled' : '')),
                 TextColumn::make('batch_no')->label('Batch'),
-                TextColumn::make('expires_on')->label('Expires')->date('j M Y'),
+                TextColumn::make('expires_on')->label('Expires')->date(),
                 TextColumn::make('days_left')->label('Days left')->badge()
                     ->formatStateUsing(fn (int $state) => $state < 0 ? 'expired '.abs($state).' d ago' : ($state === 0 ? 'today' : "{$state} d"))
                     ->color(fn (int $state) => $state < 0 ? 'danger' : ($state <= 30 ? 'warning' : 'gray')),

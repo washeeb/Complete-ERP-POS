@@ -72,8 +72,8 @@ class RefillReminderResource extends Resource
                 TextColumn::make('customer.phone')->label('Phone')->placeholder('—'),
                 TextColumn::make('product_name')->label('Medicine')->searchable()->wrap(),
                 TextColumn::make('qty_base')->label('Sold')->numeric(decimalPlaces: 0),
-                TextColumn::make('runs_out_on')->label('Runs out')->date('j M Y')->sortable(),
-                TextColumn::make('remind_on')->label('Remind on')->date('j M Y')->sortable(),
+                TextColumn::make('runs_out_on')->label('Runs out')->date()->sortable(),
+                TextColumn::make('remind_on')->label('Remind on')->date()->sortable(),
                 TextColumn::make('branch.name')->label('Branch')->toggleable(),
                 TextColumn::make('sent_at')->label('Sent')->dateTime('j M H:i')->placeholder('—')
                     ->description(fn (RefillReminder $r) => $r->channel ? ($r->channel === 'whatsapp' ? 'WhatsApp' : strtoupper($r->channel)) : null),

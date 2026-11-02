@@ -150,8 +150,8 @@ class LicenseResource extends Resource
                     ->color(fn (VendorLicense $r) => ['active' => 'success', 'expiring' => 'warning', 'grace' => 'danger', 'expired' => 'danger', 'revoked' => 'gray', 'replaced' => 'gray'][$r->status()]),
                 TextEntry::make('client.name')->label('Customer')->url(fn (VendorLicense $r) => $r->customer_id ? CustomerResource::getUrl('edit', ['record' => $r->customer_id]) : null),
                 TextEntry::make('kind')->formatStateUsing(fn ($state) => VendorLicense::KINDS[$state] ?? $state),
-                TextEntry::make('starts_on')->label('Starts')->date('j M Y'),
-                TextEntry::make('expires_on')->label('Ends')->date('j M Y')->belowContent(fn (VendorLicense $r) => $r->daysLeft() === null ? null
+                TextEntry::make('starts_on')->label('Starts')->date(),
+                TextEntry::make('expires_on')->label('Ends')->date()->belowContent(fn (VendorLicense $r) => $r->daysLeft() === null ? null
                     : ($r->daysLeft() >= 0 ? "{$r->daysLeft()} days left" : abs($r->daysLeft()).' days ago')),
                 TextEntry::make('plan.name')->label('Plan')->placeholder('custom'),
                 TextEntry::make('price_minor')->label('Price')->formatStateUsing(fn ($state, VendorLicense $r) => VendorUi::money((int) $state, $r->currency)),
@@ -201,13 +201,13 @@ class LicenseResource extends Resource
             ->columns([
                 TextColumn::make('client.name')->label('Customer')->searchable()->description(fn (VendorLicense $r) => $r->short().($r->site ? " · {$r->site}" : '')),
                 TextColumn::make('plan.name')->label('Plan')->placeholder('custom')->description(fn (VendorLicense $r) => VendorLicense::KINDS[$r->kind] ?? $r->kind),
-                TextColumn::make('expires_on')->label('Ends')->date('j M Y')->sortable()
+                TextColumn::make('expires_on')->label('Ends')->date()->sortable()
                     ->description(fn (VendorLicense $r) => $r->daysLeft() === null ? null : ($r->daysLeft() >= 0 ? "{$r->daysLeft()} days left" : abs($r->daysLeft()).' days ago')),
                 TextColumn::make('status')->badge()->state(fn (VendorLicense $r) => VendorLicense::STATUSES[$r->status()])
                     ->color(fn (VendorLicense $r) => ['active' => 'success', 'expiring' => 'warning', 'grace' => 'danger', 'expired' => 'danger', 'revoked' => 'gray', 'replaced' => 'gray'][$r->status()]),
                 TextColumn::make('price_minor')->label('Price')->formatStateUsing(fn ($state, VendorLicense $r) => VendorUi::money((int) $state, $r->currency))->toggleable(),
                 TextColumn::make('last_checkin_at')->label('Last seen')->since()->placeholder('never')->sortable(),
-                TextColumn::make('created_at')->label('Issued')->date('j M Y')->sortable()->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('created_at')->label('Issued')->date()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('state')->label('Status')->options(['current' => 'Current (not replaced or revoked)', 'expiring' => 'Ending within 60 days',

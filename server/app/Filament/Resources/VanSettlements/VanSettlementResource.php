@@ -125,7 +125,7 @@ class VanSettlementResource extends Resource
         return $table->defaultSort('business_date', 'desc')
             ->columns([
                 TextColumn::make('number')->searchable(),
-                TextColumn::make('business_date')->label('Day')->date('j M Y'),
+                TextColumn::make('business_date')->label('Day')->date(),
                 TextColumn::make('van.code')->label('Van'),
                 TextColumn::make('sales_minor')->label('Sales')->formatStateUsing(fn ($state) => FinanceUi::money((int) $state)),
                 TextColumn::make('cash')->label('Cash over / short')->state(fn (VanSettlement $r) => $r->cash_counted_minor === null ? '—' : FinanceUi::money($r->cash_counted_minor - (int) $r->cash_expected_minor)),
