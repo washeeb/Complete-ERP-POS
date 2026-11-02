@@ -27,7 +27,10 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 | 4 | Service desk (tickets) and asset maintenance | paid |
 | 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid |
 
-## Interface stage 1b: dashboards, preferences, notifications, integrations — branch `stage-1b-dashboards`
+## Catalogue for branch stock people — branch `catalog-branch-staff`
+- `catalog.*` checked anywhere (pages, `SimpleCatalogResource`, `CatalogService`, `UnitChangeService`, `StyleService`); `pricing.*` stays company-wide. `StockControllerRoleTest` updated.
+
+## Interface stage 1b: dashboards, preferences, notifications, integrations — merged (PR #126, release BAQTHZO0G)
 - Migration `2026_12_12_100001` (`users.dashboard`, `notify_prefs`, `ui_prefs`). `App\Support\Dashboard\Panels`, `App\Filament\Pages\Dashboard` (Arrange / Back to my role's), widgets `App\Filament\Widgets\Panels\*` (+ BusinessStats, IndustryOverview, IndustryHighlights as panels), views `filament/widgets/{my-approvals,shortcuts}`.
 - `UserPrefs`, `NotifyPrefs`, `HomeLoginResponse`; profile cards Preferences + Notifications; `Notifier` topics; per-channel filters in DailySummary / PaymentAlerts.
 - `IntegrationsOverview`, `IntegrationsPage` (add-on `integrations`). Oheneba's licence should get the add-on (founding-client benefit) — new key needed.

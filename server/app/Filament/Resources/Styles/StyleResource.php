@@ -57,7 +57,7 @@ class StyleResource extends Resource
 
     public static function canCreate(): bool
     {
-        return Erp::can('catalog.manage') && config('erp.node.role') !== 'branch';
+        return Erp::canAnywhere('catalog.manage') && config('erp.node.role') !== 'branch';
     }
 
     public static function canEdit(Model $record): bool

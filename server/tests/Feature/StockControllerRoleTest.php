@@ -1,5 +1,7 @@
 <?php
 
+use App\Domain\Catalog\CatalogService;
+use App\Domain\Support\AccessDenied;
 use App\Filament\Pages\ManageSettings;
 use App\Filament\Resources\Customers\CustomerResource;
 use App\Filament\Resources\JournalEntries\JournalEntryResource;
@@ -41,7 +43,15 @@ it('gives a stock controller products and stock, and nothing at the top level', 
     }
 });
 
-it('does not open the catalogue to a stock controller given one branch only (products belong to the whole company)', function () {
-    $this->actingAs(withMfa(staff($this->owner, 'kofi', 3, 'stock_controller', ScopeType::Branch, $this->branches['HQ']->id)));
-    $this->get(ProductResource::getUrl('create'))->assertForbidden();
+it('lets a stock controller given one branch keep products up to date, but not change prices (owner 2026-11-03)', function () {
+    $kofi = withMfa(staff($this->owner, 'kofi', 3, 'stock_controller', ScopeType::Branch, $this->branches['HQ']->id));
+    $this->actingAs($kofi);
+    $this->get(ProductResource::getUrl('index'))->assertOk();
+    $this->get(ProductResource::getUrl('create'))->assertOk()->assertDontSee('Retail price');
+    expect(PriceListResource::canCreate())->toBeFalse(); // price lists stay with managers
+
+    $product = makeProduct($this->owner, 'ITEMB', 'Item B', retail: '10.00');
+    app(CatalogService::class)->saveProduct(actorFor($kofi), $product, ['name' => 'ITEM B (renamed)']);
+    expect($product->fresh()->name)->toBe('ITEM B (RENAMED)');
+    expect(fn () => app(CatalogService::class)->saveProduct(actorFor($kofi), $product->fresh(), ['prices' => []]))->toThrow(AccessDenied::class);
 });
