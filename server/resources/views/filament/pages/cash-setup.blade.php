@@ -26,7 +26,7 @@
         <x-filament::section>
             <p>Cash control with vaults is <strong>off</strong>: whoever closes a till counts the drawer. To use vaults, the Cashier and the Income Controller, switch on
                 <em>Cash control with vaults</em> under <strong>System → Settings → Tills and cash</strong>. Shifts and vaults can be set up before that.
-                For each teller's own vault instead (no Cashier needed), switch on <em>Each teller sells from her own vault</em> there.</p>
+                For each teller's own vault instead (no Cashier needed), switch on <em>Each teller sells from their own vault</em> there.</p>
         </x-filament::section>
     @endif
 

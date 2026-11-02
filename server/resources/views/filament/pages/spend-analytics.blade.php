@@ -24,7 +24,7 @@
         <div class="sa-tile"><div class="sa-k">Biggest supplier / biggest five</div><div class="sa-v">{{ $conc['top1'] }} % / {{ $conc['top5'] }} %</div><div class="sa-s">of all spend</div></div>
         <div class="sa-tile"><div class="sa-k">Billed above order prices</div><div class="sa-v">{{ $money($pv['above']) }}</div><div class="sa-s">on {{ $pv['bills_above'] }} bill(s); {{ $pv['held'] }} needed approval</div></div>
         <div class="sa-tile"><div class="sa-k">Saved by asking for quotes</div><div class="sa-v">{{ $money($rfq['saved']) }}</div>
-            <div class="sa-s">{{ $rfq['rfqs'] }} request(s) awarded@if ($rfq['quotes_per_rfq'] !== null), {{ $rfq['quotes_per_rfq'] }} quotes each, {{ $rfq['response_pct'] }} % of suppliers answered@endif</div></div>
+            <div class="sa-s">{{ $rfq['rfqs'] }} request(s) awarded{{ $rfq['quotes_per_rfq'] !== null ? ', '.$rfq['quotes_per_rfq'].' quotes each, '.$rfq['response_pct'].' % of suppliers answered' : '' }}</div></div>
     </div>
 
     <x-filament::section heading="Spend by month" description="The twelve months up to the end of the period.">

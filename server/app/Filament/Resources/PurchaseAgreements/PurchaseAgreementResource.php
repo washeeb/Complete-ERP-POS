@@ -55,6 +55,8 @@ class PurchaseAgreementResource extends Resource
 
     protected static ?string $modelLabel = 'agreement';
 
+    protected static ?string $pluralModelLabel = 'contracts and blanket orders';
+
     protected static ?int $navigationSort = 3;
 
     public static function canViewAny(): bool

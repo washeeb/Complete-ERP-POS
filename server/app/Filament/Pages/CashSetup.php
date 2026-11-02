@@ -152,7 +152,7 @@ class CashSetup extends Page
                 Select::make('till_id')->label('Till')->placeholder('Any till of the branch (removable tray)')
                     ->options(fn ($get) => Till::where('branch_id', $get('branch_id'))->where('is_active', true)->orderBy('code')->pluck('name', 'id'))
                     ->required(fn () => app(TellerVaults::class)->trays(Erp::user()->tenant_id) === 'till'),
-                TextInput::make('float')->label('Standard float')->numeric()->required()->helperText('What is in the tray when the teller opens; she confirms it by counting.'),
+                TextInput::make('float')->label('Standard float')->numeric()->required()->helperText('What is in the tray when the teller opens; they confirm it by counting.'),
                 Toggle::make('is_active')->label('In use'),
             ])
             ->action(fn (array $data, array $arguments) => Erp::run(fn ($actor) => app(TellerVaults::class)->save($actor, Vault::find($arguments['vault'] ?? null) ?? new Vault, [

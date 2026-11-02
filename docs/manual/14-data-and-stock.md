@@ -146,6 +146,8 @@ The adjustment page shows each line's stock **before**, the **change** and **aft
 
 There are two ways to bring the system in line with what is on the shelves.
 
+![Stock → Stock counts](img/stock-counts.png)
+
 ### A. A stock count (recommended for full or regular counts)
 
 1. **Stock → Stock counts → Start a count** for a warehouse (or one bin). The system freezes what it expects at that moment. Leave **blind** on so counters do not see the expected figure.
@@ -191,6 +193,8 @@ There are two ways to bring the system in line with what is on the shelves.
 
 Every product that keeps stock has a **minimum** in each store. When stock (plus what is already on order or on its way) falls to it, **Purchasing → What to order** suggests topping it up to the **maximum** and turns the suggestions into draft purchase orders, one per supplier.
 
+![Purchasing → What to order](img/reorder-suggestions.png)
+
 **Why:** running out of a medicine loses the sale and the patient; a minimum on every product means nothing is forgotten, without anyone having to type 2,000 figures.
 
 - **The default** (System → Settings → Stock → *Default minimum stock*, 5): 5 of the unit the product is **bought** in — for example 5 packs of 100 tablets — and orders up to twice that (10 packs). New and existing products all get it. 0 switches it off.
@@ -219,6 +223,8 @@ Medicines are bought by the box (or carton) and sold by the tablet or strip. Sto
 
 **Why:** buying only from suppliers you have checked keeps fake medicines and unlicensed sellers out, and a second person
 checking bank details stops the commonest supplier fraud (a message asking you to pay into a "new account").
+
+![A new supplier](img/supplier-new.png)
 
 **Supplier controls** (System → Settings → Purchasing → *Supplier controls: approval, documents and bank checks*) are
 **off** until you switch them on, so a one-person business can keep ordering straight away. Switch them on once two or
@@ -252,6 +258,8 @@ negotiate.
 **Why:** a carton bought for GHS 240 that cost GHS 48 to bring to the shop really cost GHS 288. Without spreading the
 freight, your stock looks cheaper than it is and your margins look better than they are.
 
+![Purchasing → Landed costs](img/landed-costs.png)
+
 1. **Enter the charge as a supplier bill** (the transport company, the clearing agent or customs): an expense line to
    the account **Freight, duty and clearing to spread** (1360). It waits there.
 2. **Purchasing → Landed costs → Spread freight and duty:** choose the deliveries (goods received) it belongs to, how to
@@ -269,6 +277,8 @@ A posted landed cost is never edited. A mistake is corrected with another one wi
 **Why:** asking three suppliers for the same list, and comparing their answers fairly, usually saves more than any
 discount you could ask one supplier for. Quotes are **sealed**: nobody in the company sees a price before the closing
 time. That way no supplier can be told what to beat.
+
+![Asking suppliers for prices](img/rfq-new.png)
 
 1. **Purchasing → Requests for quotation → Ask for quotes.** Give a title, the store to deliver to, the closing time,
    the suppliers to ask (three or more is fairest), what you want to tell them (delivery place, minimum expiry, payment
@@ -302,6 +312,8 @@ their link.
 are on the way. Invoices arrive as files instead of paper that gets lost, and suppliers stop calling to ask whether
 they have been paid.
 
+![Purchasing → Invoices from suppliers](img/supplier-invoices.png)
+
 The portal is **off** until you switch it on: **System → Settings → Purchasing → Supplier portal**.
 
 1. **Purchasing → Suppliers → Portal link** on the supplier. Send it by e-mail or WhatsApp, or choose *just show me the
@@ -333,6 +345,8 @@ portal)*.
 them the same way as stock means someone approves the spending first, and the bill is checked against what was really
 delivered. The **department** (cost centre) shows who spent the money.
 
+![A purchase request, with a department and a choice of product or service line](img/purchase-request-new.png)
+
 1. On a **purchase request** or **purchase order** line, choose **Service or non-stock item** instead of *Product*.
    Then describe it (e.g. *Servicing of the generator*), choose the **kind of spending** (the expense account, e.g.
    repairs), the unit (JOB, HOUR, MONTH…) and, if you want, the **department**. On a request, give an **estimated
@@ -350,6 +364,8 @@ delivered. The **department** (cost centre) shows who spent the money.
 
 **Why:** the budget you set under Finance → Budgets is only useful if people see it *before* they spend.
 
+![Finance → Budgets: the figures the budget check uses](img/budgets.png)
+
 **System → Settings → Purchasing → Budget check on service and non-stock buying.** It is **off** until you choose:
 - **Warn and record:** a request shows a **Budget** box: the year's budget for the branch and kind of spending, what is
   already spent, what is already ordered and not yet billed, this request, and what is left. An order that goes over
@@ -364,6 +380,8 @@ budget counts as over, so set budgets first.
 
 **Why:** prices agreed for the year are only worth having if every order uses them. A blanket order also stops buyers
 ordering more than was agreed.
+
+![A new contract or blanket order](img/agreement-new.png)
 
 1. **Purchasing → Contracts and blanket orders → New agreement:**
    - the supplier;
@@ -388,6 +406,8 @@ ordering more than was agreed.
 **Why:** knowing where the money goes is the first step to spending less. It shows which suppliers to negotiate with,
 which categories cost most, and whether people buy without approval.
 
+![Purchasing → Spend analytics](img/spend-analytics.png)
+
 **Purchasing → Spend analytics** (for people who see supplier bills or approve orders). Choose the dates and, if you
 want, a branch. It counts posted supplier bills before VAT, by bill date:
 - **Spend**, the number of bills and the number of suppliers.
@@ -407,6 +427,8 @@ want, a branch. It counts posted supplier bills before VAT, by bill date:
 ## 14.6 Purchase orders from a file, ordering again and sending to the supplier
 
 **From a file:** **Purchasing → Purchase orders → Order from a file**.
+
+![A new purchase order](img/purchase-order-new.png)
 
 1. Choose **An Excel or CSV list** or **A supplier's pro-forma invoice** (a photo or PDF, read by the AI — it must be switched on under System → Settings → AI).
 2. Choose the supplier (for a pro-forma you may leave it empty: the system finds it from the paper) and the store to deliver to, then the file.
@@ -430,6 +452,8 @@ The order then shows **Sent to supplier** with when, how and to whom; **Send aga
 ## 14.7 Expired and near-expiry stock: disposals and returns to suppliers
 
 **Stock → Expiry & returns** lists every batch in stock that has expired or expires soon, earliest first. For each batch it shows the days left (red once expired, amber under 30 days), the quantity, its value at cost, the store, the supplier it came from and whether that supplier still takes it back. Controlled drugs are marked.
+
+![Stock → Expiry & returns](img/expiry-returns.png)
 
 **Why:** expired medicines must leave the shelf and be destroyed (or returned) with a record. Doing it batch by batch from a list stops anything being missed, and the record satisfies an FDA inspection.
 

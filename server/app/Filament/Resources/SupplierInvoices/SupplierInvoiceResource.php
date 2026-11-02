@@ -39,6 +39,10 @@ class SupplierInvoiceResource extends Resource
 
     protected static ?string $navigationLabel = 'Invoices from suppliers';
 
+    protected static ?string $modelLabel = 'invoice from a supplier';
+
+    protected static ?string $pluralModelLabel = 'invoices from suppliers';
+
     protected static ?int $navigationSort = 7;
 
     public static function canViewAny(): bool
