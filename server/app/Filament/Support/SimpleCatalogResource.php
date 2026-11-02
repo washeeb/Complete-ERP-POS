@@ -32,17 +32,26 @@ abstract class SimpleCatalogResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return Erp::can(static::$viewPermission);
+        return self::allowed(static::$viewPermission);
     }
 
     public static function canCreate(): bool
     {
-        return Erp::can(static::$managePermission);
+        return self::allowed(static::$managePermission);
     }
 
     public static function canEdit(Model $record): bool
     {
-        return Erp::can(static::$managePermission);
+        return self::allowed(static::$managePermission);
+    }
+
+    /**
+     * Catalogue work (categories, brands, units) is open to stock people of any branch (owner 2026-11-03); pricing and
+     * tax set-up stay with people who hold them for the whole company.
+     */
+    private static function allowed(string $permission): bool
+    {
+        return str_starts_with($permission, 'catalog.') ? Erp::canAnywhere($permission) : Erp::can($permission);
     }
 
     public static function canDelete(Model $record): bool

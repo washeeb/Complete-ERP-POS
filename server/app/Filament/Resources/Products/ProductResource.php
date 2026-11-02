@@ -88,17 +88,17 @@ class ProductResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return Erp::can('catalog.view');
+        return Erp::canAnywhere('catalog.view');
     }
 
     public static function canCreate(): bool
     {
-        return Erp::can('catalog.manage');
+        return Erp::canAnywhere('catalog.manage');
     }
 
     public static function canEdit(Model $record): bool
     {
-        return Erp::can('catalog.manage');
+        return Erp::canAnywhere('catalog.manage');
     }
 
     public static function canDelete(Model $record): bool
@@ -321,7 +321,7 @@ class ProductResource extends Resource
             ->toolbarActions([
                 LabelsAction::bulk(),
                 BulkAction::make('changeUnit')->label('Change the unit')->icon(Heroicon::OutlinedScale)
-                    ->visible(fn () => Erp::can('catalog.manage'))
+                    ->visible(fn () => Erp::canAnywhere('catalog.manage'))
                     ->modalDescription('The same change for every ticked product. Products on open documents, or already in that unit, are skipped and listed.')
                     ->schema(self::unitChangeSchema())
                     ->action(function (Collection $records, array $data) {
@@ -343,7 +343,7 @@ class ProductResource extends Resource
                         ($skipped ? $n->warning()->persistent() : $n->success())->send();
                     }),
                 BulkAction::make('move')->label('Change category, brand or tax')->icon(Heroicon::OutlinedArrowsRightLeft)
-                    ->visible(fn () => Erp::can('catalog.manage'))
+                    ->visible(fn () => Erp::canAnywhere('catalog.manage'))
                     ->schema([
                         Select::make('field')->label('Change')->required()->live()->default('category_id')
                             ->options(['category_id' => 'Category', 'brand_id' => 'Brand', 'tax_group_id' => 'Tax group']),
@@ -361,7 +361,7 @@ class ProductResource extends Resource
                     })
                     ->deselectRecordsAfterCompletion(),
                 BulkAction::make('schedule')->label('Set medicine schedule')->icon(Heroicon::OutlinedShieldCheck)
-                    ->visible(fn () => ModuleService::enabledAnywhere('pharmacy') && Erp::can('catalog.manage'))
+                    ->visible(fn () => ModuleService::enabledAnywhere('pharmacy') && Erp::canAnywhere('catalog.manage'))
                     ->modalDescription('Prescription-only and controlled medicines need a pharmacist\'s approval at the till; controlled drugs go in the controlled-drug register. Medicines are switched to batches and expiry dates.')
                     ->schema([Select::make('drug_schedule')->label('Schedule for the ticked products')->required()
                         ->options(Product::SCHEDULES + ['none' => 'Not a medicine'])])
@@ -384,7 +384,7 @@ class ProductResource extends Resource
                     ->deselectRecordsAfterCompletion(),
                 // Products in the wrong industry's catalogue (e.g. imported before the import asked): move the ticked ones.
                 BulkAction::make('moveIndustry')->label('Move to industry')->icon(Heroicon::OutlinedArrowsRightLeft)
-                    ->visible(fn () => Industry::licensed()->exists() && Erp::can('catalog.manage'))
+                    ->visible(fn () => Industry::licensed()->exists() && Erp::canAnywhere('catalog.manage'))
                     ->schema([Select::make('industry')->label('Move the ticked products to')->required()
                         ->options(fn () => Industry::licensed()->orderBy('sort')->pluck('name', 'id')->all() + ['shared' => 'Shared by all industries'])])
                     ->action(function (Collection $records, array $data) {

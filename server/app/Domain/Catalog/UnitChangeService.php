@@ -217,7 +217,7 @@ final class UnitChangeService
 
     private function require(Actor $actor): void
     {
-        if (! $actor->user || ! $this->authz->allows($actor->user, 'catalog.manage')) {
+        if (! $actor->user || ! $this->authz->allowsAnywhere($actor->user, 'catalog.manage')) {
             throw new AccessDenied;
         }
     }

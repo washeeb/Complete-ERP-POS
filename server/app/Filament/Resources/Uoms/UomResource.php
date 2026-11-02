@@ -73,7 +73,7 @@ class UomResource extends SimpleCatalogResource
         ])->defaultSort('code'))->pushRecordActions([
             // Two codes for the same thing (PCS and PC): move every product to the right one.
             Action::make('merge')->label('Merge into…')->icon(Heroicon::OutlinedArrowsPointingIn)->color('gray')
-                ->visible(fn (Uom $record) => Erp::can('catalog.manage') && ! $record->merged_into_id)
+                ->visible(fn (Uom $record) => Erp::canAnywhere('catalog.manage') && ! $record->merged_into_id)
                 ->modalDescription(fn (Uom $record) => "Every product using {$record->code} moves to the unit you choose, with its pack size, prices and barcodes. "
                     .'Past documents keep what they showed. '.$record->code.' is then no longer offered.')
                 ->schema([Select::make('to')->label('Merge into')->required()->searchable()

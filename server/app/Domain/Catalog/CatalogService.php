@@ -759,9 +759,16 @@ final class CatalogService
         }
     }
 
+    /**
+     * Products, categories, brands and units: the catalogue permission held anywhere (a branch's stock people may keep
+     * the shared product list up to date; owner 2026-11-03). Prices and tax: only held for the whole company.
+     */
     private function require(Actor $actor, string $permission): void
     {
-        if (! $actor->user || ! $this->authz->allows($actor->user, $permission)) {
+        $ok = $actor->user && (str_starts_with($permission, 'catalog.')
+            ? $this->authz->allowsAnywhere($actor->user, $permission)
+            : $this->authz->allows($actor->user, $permission));
+        if (! $ok) {
             throw new AccessDenied;
         }
     }
