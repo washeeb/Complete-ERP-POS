@@ -1,7 +1,7 @@
 # State (resume file)
 
 **Phase:** all phases of the master plan built; first client (a pharmacy) live since 2026-10-19 on an Ubuntu server, with releases delivered by `release:build` and the Ubuntu installer.
-**Updated:** 2026-11-01 · Procurement stage 5 on branch `procurement-stage5`; every other section below is merged to `main`.
+**Updated:** 2026-11-02 · Guide screenshots retaken and extended on branch `manual-screens-procurement`; every section below is merged to `main` (procurement stage 5: PR #123, release BXFETGTUK).
 
 
 
@@ -16,7 +16,12 @@
 
 
 
-## Procurement stage 5: smarter invoice reading + spend analytics — branch `procurement-stage5` (on top of stage 4)
+## Guide screenshots and fixes found with them — branch `manual-screens-procurement`
+- `pos/scripts/manual-screens.mjs`: sign-in by `autocomplete=username`; installation code hidden by content; 15 new pages (cash setup, channels, GRA E-VAT, stock counts, what to order, supplier, landed costs, RFQ, supplier invoices, purchase request, budgets, agreement, spend analytics, purchase order, expiry returns) placed in chapters 7, 9, 11 and 14 (`devices.png` now used in 9).
+- Fixes: spend analytics glued `@if`; labels on supplier invoices / agreements; "their own vault" wording. New `BladeDirectivesTest`.
+- `import-check.png` is not made by the script (it shows the result of checking a file); keep the existing one.
+
+## Procurement stage 5: smarter invoice reading + spend analytics — merged (PR #123)
 - `InvoiceScanner`: `order_number`, `orderOf`, service-line matching (`order_lines`), `checks()`; `scan(..., $supplier, $supplierInvoiceId)`. `CreateSupplierBill`: `?invoice=` (portal invoice, marked entered on create), checks in the subheading. `SupplierInvoiceResource`: *Read with AI*, *Enter as bill*. `Purchasing\SpendAnalytics` + page `SpendAnalyticsPage` (`spend-analytics`, view `filament.pages.spend-analytics`). Test `ProcurementStage5Test` (3).
 - This completes the owner's 2026-11-01 procurement plan (stages 1–5).
 ## Procurement stage 4: services and non-stock buying, budget check, contracts and blanket orders — merged (PR #122)

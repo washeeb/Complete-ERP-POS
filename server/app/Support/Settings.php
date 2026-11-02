@@ -223,19 +223,19 @@ final class Settings
         'cash.personal_vaults' => [
             'type' => 'choice', 'default' => 'off', 'group' => 'Tills and cash',
             'options' => ['off' => 'Off', 'manager' => 'On: a manager recounts each closed vault (recommended)', 'teller' => 'On: the teller\'s own count stands'],
-            'label' => 'Each teller sells from her own vault',
-            'help' => 'On: each teller is given her own vault (Cash → Shifts and vaults) and a till opens only on a vault she holds, or one a manager lends her for the day, so nobody sells in someone else\'s name. With "a manager recounts", the manager counts each closed vault blind (Sales → Shifts) before its over/short is booked. Not used with the full cashier chain below.',
+            'label' => 'Each teller sells from their own vault',
+            'help' => 'On: each teller is given their own vault (Cash → Shifts and vaults) and a till opens only on a vault they hold, or one a manager lends them for the day, so nobody sells in someone else\'s name. With "a manager recounts", the manager counts each closed vault blind (Sales → Shifts) before its over/short is booked. Not used with the full cashier chain below.',
         ],
         'cash.vault_trays' => [
             'type' => 'choice', 'default' => 'tray', 'group' => 'Tills and cash',
             'options' => ['tray' => 'Own removable cash tray (any till of the branch)', 'till' => 'Own till and drawer each', 'shared' => 'One shared drawer (the vault is a record of whose cash is whose)'],
             'label' => 'How each teller\'s cash is kept',
-            'help' => 'Tray: the teller puts her own tray in the drawer when she opens and takes it out at close; it can go on any till of the branch. Own till: a vault belongs to one till. Shared: one drawer, counted at every change of teller.',
+            'help' => 'Tray: the teller puts their own tray in the drawer when they open and takes it out at close; it can go on any till of the branch. Own till: a vault belongs to one till. Shared: one drawer, counted at every change of teller.',
         ],
         'pos.idle_lock_minutes' => [
             'type' => 'int', 'default' => 5, 'min' => 0, 'max' => 120, 'group' => 'Tills and cash',
             'label' => 'Lock the till after this many idle minutes',
-            'help' => 'After this long without a touch or a scan, the till locks with the person\'s name on it: she unlocks with her PIN (the sale on screen stays), or someone else signs in. 0 = never.',
+            'help' => 'After this long without a touch or a scan, the till locks with the person\'s name on it: they unlock with their PIN (the sale on screen stays), or someone else signs in. 0 = never.',
         ],
         'cash.vaults' => [
             'type' => 'bool', 'default' => false, 'group' => 'Tills and cash',

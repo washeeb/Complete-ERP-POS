@@ -44,9 +44,9 @@ const shot = (page, name) => page.screenshot({ path: resolve(out, `${name}.png`)
 {
   const page = await browser.newPage({ viewport: { width: 1280, height: 760 } })
   await page.goto(`${base}/admin/login`)
-  await page.locator('input[type=email]').waitFor()
+  await page.locator('input[autocomplete=username]').waitFor()
   await shot(page, 'admin-login')
-  await page.locator('input[type=email]').fill(secrets.email)
+  await page.locator('input[autocomplete=username]').fill(secrets.email)
   await page.locator('input[type=password]').fill(secrets.password)
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
   const code = page.locator('input[autocomplete="one-time-code"], input[inputmode="numeric"]').first()
@@ -74,6 +74,21 @@ const shot = (page, name) => page.screenshot({ path: resolve(out, `${name}.png`)
     ['/admin/go-live', 'go-live', null],
     ['/admin/branding', 'branding', null],
     ['/admin/import-data?type=opening_balances&source=quickbooks', 'import-migration', null],
+    ['/admin/cash-setup', 'cash-setup', null],
+    ['/admin/sales-channels', 'sales-channels', null],
+    ['/admin/gra-evat', 'gra-evat', null],
+    ['/admin/stock-counts', 'stock-counts', null],
+    ['/admin/reorder-suggestions', 'reorder-suggestions', null],
+    ['/admin/suppliers/create', 'supplier-new', null],
+    ['/admin/landed-costs', 'landed-costs', null],
+    ['/admin/rfqs/create', 'rfq-new', null],
+    ['/admin/supplier-invoices', 'supplier-invoices', null],
+    ['/admin/purchase-requests/create', 'purchase-request-new', null],
+    ['/admin/budgets', 'budgets', null],
+    ['/admin/purchase-agreements/create', 'agreement-new', null],
+    ['/admin/spend-analytics', 'spend-analytics', null],
+    ['/admin/purchase-orders/create', 'purchase-order-new', null],
+    ['/admin/expiry-returns', 'expiry-returns', null],
   ]) {
     await page.goto(base + path)
     await page.waitForLoadState('networkidle')
@@ -83,7 +98,15 @@ const shot = (page, name) => page.screenshot({ path: resolve(out, `${name}.png`)
       await page.waitForTimeout(500)
     }
     if (name === 'licence') { // show a placeholder instead of this machine's own installation code
-      await page.locator('textarea').first().evaluate((el) => { el.value = 'SYNREQ-…  (your own installation code appears here)' })
+      const hidden = await page.evaluate(() => {
+        let n = 0
+        for (const el of document.querySelectorAll('textarea, input, code, pre')) {
+          if ((el.value ?? '').startsWith('SYNREQ-')) { el.value = 'SYNREQ-…  (your own installation code appears here)'; n++ }
+          else if (!('value' in el) && el.textContent.includes('SYNREQ-')) { el.textContent = 'SYNREQ-…  (your own installation code appears here)'; n++ }
+        }
+        return n
+      })
+      if (!hidden) throw new Error('Licence page: installation code not found to hide; not taking the screenshot')
     }
     await shot(page, name)
   }

@@ -154,7 +154,7 @@ final class TellerVaults
             if ($offline) {
                 return null;
             }
-            throw new DomainException('Choose your vault: each person sells only from her own vault. No vault yet? A manager can lend you one for today.', 'no_vault');
+            throw new DomainException('Choose your vault: each person sells only from their own vault. No vault yet? A manager can lend you one for today.', 'no_vault');
         }
         $vault = Vault::find($vaultId);
         if ($offline) {

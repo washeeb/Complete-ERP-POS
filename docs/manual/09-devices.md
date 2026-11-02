@@ -25,6 +25,8 @@ Every till, handheld and kitchen screen is set up the same way:
 
 Click **Create**. The code is shown **once**: write it down or keep the page open while you set up the device. If it expires, use **New code** on the device's row.
 
+![The list of devices](img/devices.png)
+
 ## 9.2 The till app address
 
 | Setup | Address to open on the device |

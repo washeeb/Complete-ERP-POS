@@ -18,6 +18,8 @@ These connect your system to other services. Each one is used **only with your o
 | **Shopify** | Create a custom app with Admin API access to products, inventory and orders; note the access token and your location id. Webhook *Order creation* to the address ZionEX shows | Channel type *Shopify*: shop address, token, location id, webhook secret |
 | **Other shops (generic)** | Must accept JSON product updates and send signed order webhooks | Channel type *Generic REST* |
 
+![Online → Channels](img/sales-channels.png)
+
 For every channel:
 
 1. **New channel**: type, name, the **fulfilling branch**, **stock warehouse** and **price list**.
@@ -45,6 +47,8 @@ Booking and appointment messages, digital receipts, invoice e-mails and schedule
 ## 11.5 GRA E-VAT (electronic VAT invoicing)
 
 The system talks to GRA's **VSDC** (Virtual Sales Data Controller) the way GRA's *E-VAT API version 8.2* describes. Once GRA has onboarded your business for E-VAT (apply through GRA's E-VAT team; they first give you **staging** access to test), GRA gives you three things: the VSDC address, your **company reference** (your TIN with a suffix, e.g. `C00XXXXXXXX-001`) and your **security key**.
+
+![Finance → GRA E-VAT](img/gra-evat.png)
 
 1. Put them in the server's `.env` (head office), then `php artisan optimize`:
    ```

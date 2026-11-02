@@ -14,6 +14,15 @@
 - **Supplier onboarding and scorecards** (procurement stage 2a): supplier documents (TIN, VAT, business registration, FDA, Pharmacy Council, bank letter…) with scans, expiry and a second person's check; bell notices before and at expiry. Optional **supplier controls** (Settings → Purchasing, off until switched on): a new supplier is approved by someone other than who added it, with its TIN and the required documents; orders go to approved suppliers only and stop when a required document expires; new or changed bank / MoMo details are verified by a second person before any transfer or MoMo payment. **Block / Unblock** a supplier. **Scorecard** from the last 12 months: on time, fill rate, faults sent back, price changes, lead time, graded A–D. What a supplier supplies (goods / services / works) is recorded for withholding tax. New permission *Approve suppliers* (General Manager, Finance Manager). Manual 14.5a.
 
 ### Fixed
+- **Spend analytics showed template code** in the *Saved by asking for quotes* box ("awarded@if (…)…@endif") instead of the number of quotes and replies.
+- **Installation guide pictures were out of date** (taken before the ZionEX name, the industry switch and the newer menus): the screenshot script no longer signed in (the sign-in box became *E-mail or username*), so every picture is retaken. The licence picture had also shown the development PC's own installation code; it now shows a placeholder again.
+- **Page titles** *Supplier Invoices* and *Agreements* now match their menu names: *Invoices From Suppliers*, *Contracts And Blanket Orders*.
+- **Wording:** *Each teller sells from her own vault* is now *…from their own vault* (setting, its help, the cash screen, the till message and the guide).
+
+### Added
+- **Guide pictures** for cash shifts and vaults, online channels, GRA E-VAT, stock counts, what to order, new supplier, landed costs, requests for quotation, invoices from suppliers, purchase requests with services, budgets, contracts, spend analytics, new purchase orders and expiry & returns.
+
+### Fixed
 - **Printed receipts showed "?" for the middle dot** (e.g. *1 Nov 2026, 15:51 ? Efua*): the receipt printer's code page has it at another place; it now prints as "·".
 
 ### Changed

@@ -321,7 +321,7 @@ function LendVault({ boot, online, onLent, onBack, onLogout }: { boot: Bootstrap
     <form className="card narrow" onSubmit={lend}>
       <h1>Open shift</h1>
       <p className="who-band" style={{ background: personColor(boot.user.id) }}>{boot.user.name}</p>
-      {!onBack && <p>You have no vault on {boot.till?.name ?? 'this till'} today. Each person sells only from her own vault.</p>}
+      {!onBack && <p>You have no vault on {boot.till?.name ?? 'this till'} today. Each person sells only from their own vault.</p>}
       <p className="muted">A manager can lend you another person's vault for today (they are away, or you cover their shift). Otherwise ask for a vault of your own (Cash → Shifts and vaults).</p>
       {!online && <p className="error">Lending a vault needs the server. Try again when the till is online.</p>}
       {others.length === 0 ? <p className="muted">There is no other vault at this branch.</p> : (
