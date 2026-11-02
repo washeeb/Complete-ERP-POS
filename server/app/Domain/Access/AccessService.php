@@ -21,14 +21,19 @@ use App\Models\Warehouse;
 use App\Security\Authorizer;
 use App\Security\ScopeType;
 use App\Security\SecurityLevel;
+use App\Support\Look;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 /** Users, roles and grants. Every rule here exists to stop privilege escalation. */
 final class AccessService
 {
+    /** Where the profile page leaves a new photo until it is saved (then cleaned into ProfilePhoto::DIR). */
+    public const PHOTO_UPLOADS = 'avatar-uploads';
+
     public function __construct(private readonly Recorder $recorder, private readonly Authorizer $authz) {}
 
     public function createUser(Actor $actor, array $data): User
@@ -104,9 +109,33 @@ final class AccessService
         if (! empty($data['password'])) {
             $user->password = $data['password'];
         }
+        if (array_key_exists('ui_look', $data)) { // '' = the company's choice
+            $look = $data['ui_look'] ?: null;
+            if ($look !== null && ! isset(Look::LOOKS[$look])) {
+                throw new DomainException('Choose one of the looks offered.');
+            }
+            $user->ui_look = $look;
+        }
+        // The photo field holds the current photo (unchanged), a new upload waiting on the private disk, or nothing.
+        $old = $user->avatar_path;
+        if (array_key_exists('photo', $data) && $data['photo'] !== $old) {
+            $upload = $data['photo'];
+            if ($upload !== null && ! str_starts_with((string) $upload, self::PHOTO_UPLOADS.'/')) {
+                throw new DomainException('Upload the photo again.');
+            }
+            $user->avatar_path = $upload === null ? null : ProfilePhoto::store($user, (string) Storage::disk('local')->get($upload));
+            if ($upload !== null) {
+                Storage::disk('local')->delete($upload);
+            }
+        }
         $this->assertUnique($user);
 
-        return $this->recorder->save($actor, $user, 'user.profile_updated');
+        $saved = $this->recorder->save($actor, $user, $user->avatar_path !== $old ? 'user.photo_changed' : 'user.profile_updated');
+        if ($user->avatar_path !== $old) {
+            ProfilePhoto::delete($old);
+        }
+
+        return $saved;
     }
 
     public function setPin(Actor $actor, User $user, string $pin): void

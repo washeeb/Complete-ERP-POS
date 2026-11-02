@@ -1,7 +1,7 @@
 # State (resume file)
 
 **Phase:** all phases of the master plan built; first client (a pharmacy) live since 2026-10-19 on an Ubuntu server, with releases delivered by `release:build` and the Ubuntu installer.
-**Updated:** 2026-11-02 · Guide screenshots retaken and extended on branch `manual-screens-procurement`; every section below is merged to `main` (procurement stage 5: PR #123, release BXFETGTUK).
+**Updated:** 2026-11-02 · Interface stage 1a (new look, profile photos) on branch `new-look-1a`; every other section below is merged to `main` (latest release BJN1N5YGS).
 
 
 
@@ -16,7 +16,25 @@
 
 
 
-## Guide screenshots and fixes found with them — branch `manual-screens-procurement`
+## Interface update and new modules (owner request 2026-11-02, competitors NetSuite & co.) — plan
+One branch, PR and release per stage. Paid = licence option, hidden until licensed (owner decides paid/free for every new feature; Oheneba's licence includes the paid ones).
+| Stage | What | Paid? |
+|---|---|---|
+| 1a | New look: top tabs (default when chosen) + side-menu option, denser style, dark mode, Find a page, + New; profile photos | free — branch `new-look-1a` |
+| 1b | Dashboards per role with panels (key figures, charts, tables, reminders, shortcuts); each person adds/removes/drags, resets | free |
+| 2 | CRM: leads, deals pipeline, quotations, follow-ups, campaigns | paid |
+| 3 | Projects and job costing | paid |
+| 4 | Service desk (tickets) and asset maintenance | paid |
+| 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid |
+
+## Interface stage 1a: new look + profile photos — branch `new-look-1a`
+- `App\Support\Look` (LOOKS, TABS, MENU_WORDS, for/current/hasTopTabs/htmlClasses/tabs/quickCreate); setting `ui.look` (Appearance, default classic); `users.ui_look`, `users.avatar_path` (migration `2026_12_11_100001`).
+- Views `layout/look-head` (HEAD_END), `layout/tabbar` (TOPBAR_AFTER, top only), `layout/look-actions` (GLOBAL_SEARCH_BEFORE, new look: Find a page + New); CSS `public/css/seslabs/new-look.css`.
+- `ProfilePhoto`, `AccessService::updateOwnProfile` (ui_look, photo; `PHOTO_UPLOADS`), `EditProfile` form, `User::getFilamentAvatarUrl`, route `user.photo`, `LocalAvatars` (both panels), users list photo column.
+- Dev: `ServeCommand::$passthroughVariables` gains TMP/TEMP (Windows uploads under `artisan serve`). Guide: chapter 7 step 6b; pictures `look-tabs`, `profile-look` (script switches the dev account to the new look and back).
+- Tests: `NewLookTest` (6).
+
+## Guide screenshots and fixes found with them — merged (PR #124, release BJN1N5YGS)
 - `pos/scripts/manual-screens.mjs`: sign-in by `autocomplete=username`; installation code hidden by content; 15 new pages (cash setup, channels, GRA E-VAT, stock counts, what to order, supplier, landed costs, RFQ, supplier invoices, purchase request, budgets, agreement, spend analytics, purchase order, expiry returns) placed in chapters 7, 9, 11 and 14 (`devices.png` now used in 9).
 - Fixes: spend analytics glued `@if`; labels on supplier invoices / agreements; "their own vault" wording. New `BladeDirectivesTest`.
 - `import-check.png` is not made by the script (it shows the result of checking a file); keep the existing one.

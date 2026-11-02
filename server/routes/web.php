@@ -15,6 +15,7 @@ use App\Http\Controllers\WaybillConfirmController;
 use App\Http\Controllers\WhatsappMediaController;
 use App\Models\PurchaseAgreement;
 use App\Models\PurchaseOrder;
+use App\Models\User;
 use App\Security\Authorizer;
 use App\Security\Passkeys\PasskeyLoginController;
 use App\Support\Progress;
@@ -133,3 +134,13 @@ Route::post('access-request', AccessRequestController::class)->middleware(['auth
 
 // How far the signed-in person's long work has got (imports, bulk changes): asked by the progress card every second.
 Route::get('progress-status', fn () => response()->json(Progress::live()))->middleware(['auth'])->name('progress.status');
+
+// A person's profile photo: for people signed in to the same company. Cached by the browser (the address changes
+// with the photo).
+Route::get('user-photo/{user}', function (User $user) {
+    $me = request()->user();
+    abort_unless($me && $me->tenant_id === $user->tenant_id, 403);
+    abort_unless($user->avatar_path && Storage::disk('local')->exists($user->avatar_path), 404);
+
+    return Storage::disk('local')->response($user->avatar_path, 'photo.jpg', ['Cache-Control' => 'private, max-age=604800, immutable']);
+})->middleware(['auth'])->name('user.photo')->whereUuid('user');

@@ -123,6 +123,38 @@ For each staff member:
 
 Module settings (Grocery, Pharmacy, Restaurant, Fashion, Services) are explained in Chapter 8.
 
+## Step 6b — The new look and profile photos (optional)
+
+The back office has two looks:
+- **Classic:** the menu down the left side, as in the pictures in this guide.
+- **New look:** the menu as **tabs across the top** (Home, Sales, Purchasing, Stock, Finance…), each opening a panel of
+  its pages, like a desktop program. Lists are denser, so more fits on the screen. A **Find a page** box (press **/**)
+  opens any page by typing part of its name, and lists the pages you opened last. **+ New** creates any record you are
+  allowed to create (an order, a product, a customer…) without looking for its page first. A **side menu** version of
+  the new look is also offered.
+
+![The new look: tabs across the top, the Purchasing tab open](img/look-tabs.png)
+
+![Find a page: press / and type part of a page's name](img/look-finder.png)
+
+**Why it is optional:** staff who know where everything is should not be surprised mid-shift. Each person tries it
+first, and the company switches everyone over when ready.
+
+1. **Each person, for themselves:** top right, click your initials → **Profile** → *How the back office looks for you*
+   → choose a look → **Save changes**. Choose *As the company chose* to follow the company again.
+2. **For everyone:** **System → Settings → Appearance → How the back office looks**. This applies to everyone who has
+   not chosen for themselves.
+3. **On a phone** the side menu is always used, because the tabs do not fit.
+
+![Profile: your photo and your choice of look](img/profile-look.png)
+
+**Profile photo:** on the same **Profile** page, drop a photo on the circle (or click *Browse*), adjust it with the
+pencil if you like, and **Save changes**. It shows beside your name in the top bar and in the list of users.
+**Why:** colleagues see at a glance who did what. The server keeps only a small square copy, with the hidden details
+of the original removed (where and when it was taken, the camera). It stays on your company's server and is shown only
+to people signed in to your company. People without a photo show their initials, drawn on your own server (no name is
+sent to an outside website).
+
 ## Step 7 — Tax set-up (with your accountant)
 
 **Pricing & tax → Tax groups** and **Tax rates.** The starter Ghana set-up (VAT 15 %, NHIL 2.5 %, GETFund 2.5 %, all on the price before tax) is marked **Not verified**.

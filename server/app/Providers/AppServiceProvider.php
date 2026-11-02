@@ -27,6 +27,7 @@ use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Foundation\Console\ServeCommand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -51,6 +52,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(EnabledModules::class);
         $this->app->scoped(RequestMemo::class);
         $this->app->bind(SyncTransport::class, HttpSyncTransport::class);
+        // `php artisan serve` (development) hands the PHP it starts only a short list of settings; on Windows, without
+        // TMP/TEMP that PHP has no temporary folder and every file upload fails ("unable to create a temporary file").
+        ServeCommand::$passthroughVariables = array_values(array_unique([...ServeCommand::$passthroughVariables, 'TMP', 'TEMP']));
     }
 
     public function boot(): void

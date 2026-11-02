@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 ### Added
+- **The new look** (interface stage 1a; free): the back-office menu as **tabs across the top**, each opening a panel of its pages, like a desktop program; denser lists and forms; a matching dark mode. **Find a page** (press **/**) opens any page by part of its name and lists the pages opened last; **+ New** creates any record the person may create. A side-menu version is offered too. Off until chosen: each person under **Profile**, or for everyone under **System → Settings → Appearance**; phones keep the side menu.
+- **Profile photos** (free): on the Profile page, with a round crop; shown in the top bar and the list of users. The server keeps only a cleaned 256-pixel square copy (location and camera details removed), visible only to people signed in to the same company.
+
+### Fixed
+- **Staff names were sent to an outside website:** the initials circle for people without a photo was fetched from ui-avatars.com on every page; it is now drawn on the server.
+- **Uploads failed on the Windows development server** (`php artisan serve`): PHP was started without a temporary folder.
+- The progress box no longer checks for progress on the sign-in page (it was refused there, filling the browser console).
+
 - **Spend analytics** (procurement stage 5; Purchasing → Spend analytics): spend from posted supplier bills (before VAT) by month, supplier, category and department, with the share bought on approved orders and under contracts, how much the biggest supplier and the biggest five take, bills above order prices, and what requests for quotation saved; by dates and branch; export to Excel, CSV or PDF. Manual 14.5h.
 - **Smarter invoice reading** (stage 5): the AI also reads the order number on the invoice and matches lines to that order's deliveries first, then to services confirmed on orders. The bill form lists what to check: lines not adding up to the invoice total, the invoice already entered, the supplier not found, an order number that is not theirs, lines that matched nothing. Portal invoices: **Read with AI** and **Enter as bill**; creating the bill marks the supplier's invoice entered. Manual 15.
 - **Buying services and non-stock items** (procurement stage 4): a purchase request or order line can be a service or non-stock item (description, kind of spending = expense or asset account, unit) instead of a product, with a **department** (cost centre) on the line, request or order. **Confirm delivered** on the order (no stock, hidden from goods received and the handheld); the bill is matched to the confirmed quantity (*Services and non-stock items on orders*), priced against the order, and charged to the line's account and department; the department now goes into the books (journal lines). *Order again* keeps these lines. Manual 14.5e.

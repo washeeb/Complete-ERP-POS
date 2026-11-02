@@ -1,0 +1,141 @@
+/*
+ * The new look (interface stage 1a; App\Support\Look). Everything is scoped to html.zx-new, so the classic look is
+ * untouched. Like a desktop program: a white header (logo, search, actions), a dark band of tabs under it, a light
+ * grey work area with white panels, and denser lists and forms so more fits on the screen. Dark mode follows.
+ */
+
+html.zx-new {
+    --zx-band: #1c2a3a;
+    --zx-band-2: #243549;
+    --zx-band-text: rgb(255 255 255 / .84);
+    --zx-canvas: #eef1f5;
+    --zx-panel: #ffffff;
+    --zx-line: #d9dee6;
+    --zx-head: #f4f6f9;
+    --zx-muted: #5b6676;
+    --zx-radius: 6px;
+    --zx-shadow: 0 1px 2px rgb(16 24 40 / .06), 0 1px 3px rgb(16 24 40 / .05);
+}
+html.zx-new.dark {
+    --zx-band: #0c1520;
+    --zx-band-2: #13202e;
+    --zx-canvas: #0b0f14;
+    --zx-panel: #121821;
+    --zx-line: rgb(255 255 255 / .09);
+    --zx-head: rgb(255 255 255 / .035);
+    --zx-muted: #9aa5b4;
+}
+
+/* ---- Work area -------------------------------------------------------------------------------------------------- */
+html.zx-new body.fi-body { background: var(--zx-canvas); }
+html.zx-new .fi-main { max-width: 1680px; padding-inline: clamp(.75rem, 2vw, 1.75rem); }
+html.zx-new .fi-page-header-main-ctn, html.zx-new .fi-page-main { row-gap: 1rem; }
+html.zx-new .fi-header-heading { font-size: 1.5rem; line-height: 2rem; letter-spacing: -.01em; }
+html.zx-new .fi-header-subheading { font-size: .875rem; }
+html.zx-new .fi-breadcrumbs { font-size: .8125rem; }
+
+/* Panels: square-ish corners, a hairline border, a grey title band (sections, lists, widgets). */
+html.zx-new .fi-section, html.zx-new .fi-ta-ctn, html.zx-new .fi-wi-stats-overview-stat, html.zx-new .fi-wi-chart .fi-section {
+    border-radius: var(--zx-radius); box-shadow: var(--zx-shadow); background: var(--zx-panel);
+    --tw-ring-color: var(--zx-line);
+}
+html.zx-new .fi-section-header { background: var(--zx-head); border-bottom: 1px solid var(--zx-line); padding-block: .7rem; border-radius: var(--zx-radius) var(--zx-radius) 0 0; }
+html.zx-new .fi-section-header-heading { font-size: .9375rem; font-weight: 650; }
+html.zx-new .fi-section-content { padding: 1rem 1.1rem; }
+
+/* Lists: a grey header row in small capitals, tighter rows, zebra stripes, a clear hover. */
+html.zx-new .fi-ta-header-cell { background: var(--zx-head); padding-block: .55rem; font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; color: var(--zx-muted); }
+html.zx-new .fi-ta-header-cell .fi-ta-header-cell-label { font-weight: 650; }
+html.zx-new .fi-ta-text, html.zx-new .fi-ta-icon, html.zx-new .fi-ta-image { padding-block: .45rem; }
+html.zx-new .fi-ta-text-item, html.zx-new .fi-ta-text { font-size: .875rem; }
+html.zx-new .fi-ta-row:nth-child(even) { background: color-mix(in srgb, var(--zx-head) 70%, transparent); }
+html.zx-new .fi-ta-row:hover { background: color-mix(in oklab, var(--primary-500) 7%, transparent); }
+html.zx-new .fi-ta-header-toolbar, html.zx-new .fi-ta-header { padding-block: .6rem; }
+
+/* Forms: compact fields, labels a little smaller. */
+html.zx-new .fi-fo-field-label-content { font-size: .8125rem; }
+html.zx-new .fi-input-wrp { border-radius: 5px; }
+html.zx-new .fi-input { padding-block: .4rem; font-size: .875rem; }
+html.zx-new .fi-btn { border-radius: 5px; }
+html.zx-new .fi-sc-form, html.zx-new .fi-fo-component-ctn { gap: 1rem; }
+
+/* ---- Header (Filament's top bar) -------------------------------------------------------------------------------- */
+html.zx-new .fi-topbar { min-height: 3.5rem; box-shadow: none; border-bottom: 1px solid var(--zx-line); }
+html.zx-new .fi-topbar-nav-groups { display: none; } /* replaced by the tab band below */
+html.zx-new .fi-user-avatar, html.zx-new .fi-avatar { box-shadow: 0 0 0 2px var(--zx-panel), 0 0 0 3px var(--zx-line); }
+
+/* Find a page, + New */
+.zx-actions { display: flex; align-items: center; gap: .5rem; margin-inline-end: .5rem; }
+.zx-find-btn, .zx-new-btn { display: inline-flex; align-items: center; gap: .4rem; height: 2.25rem; padding: 0 .75rem; border-radius: 6px; font-size: .875rem; font-weight: 550; white-space: nowrap; cursor: pointer; }
+.zx-find-btn { border: 1px solid var(--zx-line); color: var(--zx-muted); background: var(--zx-panel); }
+.zx-find-btn:hover { border-color: var(--primary-500); color: inherit; }
+.zx-find-btn kbd, .zx-finder kbd { font: 600 .7rem/1 ui-monospace, monospace; padding: .2rem .35rem; border-radius: 4px; border: 1px solid var(--zx-line); background: var(--zx-head); }
+.zx-new-btn { background: var(--primary-600); color: #fff; border: 0; }
+.zx-new-btn:hover { background: var(--primary-700); }
+.zx-find-btn svg, .zx-new-btn svg { width: 1rem; height: 1rem; }
+.zx-find-btn:focus-visible, .zx-new-btn:focus-visible, .zx-tab:focus-visible, .zx-mega-a:focus-visible { outline: 2px solid var(--primary-500); outline-offset: 2px; }
+@media (max-width: 1023px) { .zx-find-btn span, .zx-find-btn kbd { display: none; } }
+@media (max-width: 639px) { .zx-actions { display: none; } }
+
+.zx-new-wrap { position: relative; }
+.zx-new-menu { position: absolute; right: 0; top: calc(100% + .4rem); z-index: 40; width: min(720px, calc(100vw - 2rem)); max-height: 70vh; overflow: auto;
+    columns: 3 180px; column-gap: 1.5rem; padding: .7rem 1rem .9rem;
+    background: var(--zx-panel); border: 1px solid var(--zx-line); border-radius: 8px; box-shadow: 0 12px 32px rgb(16 24 40 / .16); }
+.zx-new-menu section { break-inside: avoid; padding-bottom: .4rem; }
+.zx-new-menu h3, .zx-mega-h { font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--zx-muted); margin: .35rem 0 .3rem; }
+.zx-new-menu a { display: block; padding: .3rem .45rem; margin-inline: -.45rem; border-radius: 4px; font-size: .875rem; }
+.zx-new-menu a:hover, .zx-new-menu a:focus-visible { background: color-mix(in oklab, var(--primary-500) 10%, transparent); color: var(--primary-700); outline: none; }
+.dark .zx-new-menu a:hover { color: var(--primary-200); }
+
+/* ---- The tab band ----------------------------------------------------------------------------------------------- */
+.zx-tabbar { position: sticky; top: 0; z-index: 25; background: var(--zx-band); color: var(--zx-band-text); box-shadow: 0 1px 0 rgb(0 0 0 / .2); }
+.zx-tabs { display: flex; flex-wrap: wrap; gap: .1rem; padding-inline: clamp(.5rem, 2vw, 1.5rem); }
+.zx-tab-li { position: relative; }
+.zx-tab { display: inline-flex; align-items: center; gap: .3rem; height: 2.6rem; padding: 0 .85rem; font-size: .875rem; font-weight: 550; letter-spacing: .01em;
+    color: inherit; background: transparent; border: 0; border-bottom: 3px solid transparent; border-top: 3px solid transparent; cursor: pointer; white-space: nowrap; }
+.zx-tab:hover, .zx-tab[aria-expanded='true'] { background: var(--zx-band-2); color: #fff; }
+.zx-tab.zx-active { color: #fff; border-bottom-color: var(--primary-400); font-weight: 650; }
+.zx-caret { width: .85rem; height: .85rem; opacity: .65; transition: transform .15s; }
+.zx-tab[aria-expanded='true'] .zx-caret { transform: rotate(180deg); }
+
+/* A tab's panel: its sections side by side. */
+.zx-mega { position: absolute; left: 0; top: 100%; z-index: 30; color: var(--gray-950);
+    width: max-content; max-width: calc(100vw - 2rem); max-height: calc(100vh - 8rem); overflow: auto;
+    background: var(--zx-panel); border: 1px solid var(--zx-line); border-top: 0; border-radius: 0 0 8px 8px; box-shadow: 0 16px 36px rgb(16 24 40 / .18); }
+.zx-mega.zx-right { left: auto; right: 0; } /* tabs on the right half open leftwards, so the panel stays on screen */
+.dark .zx-mega { color: #fff; }
+.zx-mega-cols { display: grid; grid-template-columns: repeat(var(--cols, 1), minmax(200px, 250px)); gap: .5rem 1.75rem; padding: 1rem 1.25rem 1.1rem; }
+.zx-mega-sec ul { display: grid; gap: .05rem; }
+.zx-mega-a { display: flex; align-items: center; gap: .55rem; padding: .36rem .5rem; margin-inline: -.5rem; border-radius: 5px; font-size: .875rem; }
+.zx-mega-a:hover, .zx-mega-a:focus-visible { background: color-mix(in oklab, var(--primary-500) 10%, transparent); outline: none; }
+.zx-mega-a.zx-active { color: var(--primary-700); font-weight: 650; background: color-mix(in oklab, var(--primary-500) 12%, transparent); }
+.dark .zx-mega-a.zx-active { color: var(--primary-200); }
+.zx-mega-ic { width: 1.05rem; height: 1.05rem; flex: none; color: var(--zx-muted); }
+.zx-mega-a.zx-active .zx-mega-ic { color: var(--primary-600); }
+.zx-badge { margin-inline-start: auto; font-size: .6875rem; font-weight: 700; padding: .05rem .4rem; border-radius: 999px; background: color-mix(in oklab, var(--primary-500) 16%, transparent); color: var(--primary-700); }
+.dark .zx-badge { color: var(--primary-200); }
+
+/* Phones and small tablets: the side menu (Filament's ☰), no tab band. */
+@media (max-width: 1023px) { .zx-tabbar { display: none; } }
+
+/* ---- Find a page ------------------------------------------------------------------------------------------------ */
+.zx-finder-back { position: fixed; inset: 0; z-index: 60; background: rgb(10 15 25 / .45); display: flex; justify-content: center; align-items: flex-start; padding: 12vh 1rem 1rem; }
+.zx-finder { width: min(620px, 100%); background: var(--zx-panel, #fff); color: inherit; border-radius: 10px; box-shadow: 0 24px 60px rgb(0 0 0 / .3); overflow: hidden; border: 1px solid var(--zx-line, #d9dee6); }
+.dark .zx-finder { color: #fff; }
+.zx-finder input { width: 100%; border: 0; border-bottom: 1px solid var(--zx-line, #d9dee6); padding: .95rem 1.1rem; font-size: 1rem; background: transparent; color: inherit; outline: none; }
+.zx-finder-h { font-size: .6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--zx-muted, #5b6676); padding: .7rem 1.1rem .3rem; }
+.zx-finder ul { max-height: 50vh; overflow: auto; padding: 0 .5rem .5rem; }
+.zx-finder li { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: .5rem .6rem; border-radius: 6px; cursor: pointer; font-size: .9375rem; }
+.zx-finder li small { color: var(--zx-muted, #5b6676); font-size: .75rem; white-space: nowrap; }
+.zx-finder li.zx-sel { background: color-mix(in oklab, var(--primary-500) 13%, transparent); }
+.zx-finder-none { padding: .5rem 1.1rem 1rem; font-size: .875rem; color: var(--zx-muted, #5b6676); }
+.zx-finder-keys { border-top: 1px solid var(--zx-line, #d9dee6); padding: .55rem 1.1rem; font-size: .75rem; color: var(--zx-muted, #5b6676); background: var(--zx-head, #f4f6f9); }
+
+/* ---- New look with the side menu: a denser, calmer menu --------------------------------------------------------- */
+html.zx-side .fi-sidebar { background: var(--zx-panel); border-inline-end: 1px solid var(--zx-line); }
+html.zx-side .fi-sidebar-item-btn { padding-block: .32rem; }
+html.zx-side .fi-sidebar-item-label { font-size: .875rem; }
+html.zx-side .fi-sidebar-group-label { font-size: .6875rem; text-transform: uppercase; letter-spacing: .06em; }
+
+@media (prefers-reduced-motion: reduce) { .zx-caret { transition: none; } }
+@media print { .zx-tabbar, .zx-actions { display: none !important; } }

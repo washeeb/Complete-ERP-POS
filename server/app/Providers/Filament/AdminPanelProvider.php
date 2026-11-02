@@ -6,6 +6,7 @@ use App\Domain\Branding\Branding;
 use App\Domain\Licensing\Watermark;
 use App\Filament\Auth\EditProfile;
 use App\Filament\Auth\Login;
+use App\Filament\Support\LocalAvatars;
 use App\Filament\Support\PanelBrand;
 use App\Filament\Widgets\BusinessStats;
 use App\Filament\Widgets\IndustryHighlights;
@@ -15,6 +16,7 @@ use App\Http\Middleware\EnforceLicense;
 use App\Http\Middleware\RedirectToSetupWizard;
 use App\Http\Middleware\TrackComputer;
 use App\Security\SignInCode;
+use App\Support\Look;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -57,6 +59,9 @@ class AdminPanelProvider extends PanelProvider
             ->multiFactorAuthenticationRequiredMiddlewareName('erp.mfa')
             ->colors(fn () => PanelBrand::colors())
             ->darkMode()
+            ->defaultAvatarProvider(LocalAvatars::class) // initials drawn here, not fetched from ui-avatars.com
+            // The new look (System → Settings → Appearance, or each person's profile): tabs across the top.
+            ->topNavigation(fn () => Look::hasTopTabs())
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->databaseNotifications()->databaseNotificationsPolling('30s')
             // Pages refresh parts of themselves in the background, so a dropped connection or an idle sign-out shows up
@@ -99,7 +104,9 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::BODY_START, fn () => view('license.banner'))
             ->renderHook(PanelsRenderHook::BODY_START, fn () => view('launch.practice-banner'))
             ->renderHook(PanelsRenderHook::BODY_START, fn () => view('remote.support-banner'))
-            ->renderHook(PanelsRenderHook::BODY_END, fn () => view('progress.overlay')) // "Importing 150 of 2,000" for long work
+            ->renderHook(PanelsRenderHook::BODY_END, fn () => auth()->check() ? view('progress.overlay') : '') // "Importing 150 of 2,000" for long work (not on the sign-in page, where it can only be refused)
+            ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('layout.look-head'))
+            ->renderHook(PanelsRenderHook::TOPBAR_AFTER, fn () => Look::hasTopTabs() ? view('layout.tabbar', ['tabs' => Look::tabs()]) : '')
             ->renderHook(PanelsRenderHook::BODY_END, fn () => view('layout.sidebar-focus')) // the current menu section at the top
             ->renderHook(PanelsRenderHook::SIDEBAR_NAV_START, fn () => view('layout.menu-search')) // type to find a page in the menu
             ->renderHook(PanelsRenderHook::FOOTER, fn () => view('branding.powered-by'))
@@ -107,6 +114,7 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => Blade::render('@livewire(\'report-problem\')'))
             // Industries: show one industry (its branches, catalogue, stock, sales, reports) or all.
             ->renderHook(PanelsRenderHook::GLOBAL_SEARCH_BEFORE, fn () => Blade::render('@livewire(\'industry-switcher\')'))
+            ->renderHook(PanelsRenderHook::GLOBAL_SEARCH_BEFORE, fn () => Look::isNew() ? view('layout.look-actions', ['tabs' => Look::tabs(), 'create' => Look::quickCreate()]) : '') // find a page, + New
             ->renderHook(PanelsRenderHook::GLOBAL_SEARCH_AFTER, fn () => view('filament.calculator')) // calculator for everyone in the top bar
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => new HtmlString(Watermark::meta()))
             // Where am I (current menu item, group and tab stand out) and file pickers that look like buttons.

@@ -82,6 +82,11 @@ final class Settings
             'label' => 'Cash limit in a till drawer (pesewas)',
             'help' => '0 = off. e.g. 200000 = GHS 2,000: when the cash in a drawer goes above it, the till asks for a cash drop and supervisors are told. Less cash in the drawer means less to lose.',
         ],
+        'ui.look' => [
+            'type' => 'choice', 'default' => 'classic', 'group' => 'Appearance', 'options' => Look::LOOKS,
+            'label' => 'How the back office looks',
+            'help' => 'For everyone who has not chosen for themselves (each person can choose under their profile, top right → Profile). The new look puts the menu in tabs across the top, like a desktop program, with denser lists; the side menu stays available. Try it yourself first, then choose it here for everyone.',
+        ],
         'remote.consent' => [
             'type' => 'choice', 'default' => 'outside_hours', 'group' => 'Remote access', 'branch' => true,
             'options' => ['outside_hours' => 'Unattended outside trading hours; during trading the person at the device accepts', 'unattended' => 'Always unattended (a banner shows who is connected)', 'ask' => 'Always ask the person at the device'],

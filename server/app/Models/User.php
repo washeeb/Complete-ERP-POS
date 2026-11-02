@@ -14,6 +14,7 @@ use Database\Factories\UserFactory;
 use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthentication;
 use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthenticationRecovery;
 use Filament\Models\Contracts\FilamentUser;
+use Filament\Models\Contracts\HasAvatar;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -30,7 +31,7 @@ use Spatie\LaravelPasskeys\Models\Concerns\InteractsWithPasskeys;
  * Not tenant-scoped by a global scope (auth resolves users before a tenant is known);
  * every query listing users filters by tenant explicitly.
  */
-class User extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery, HasPasskeys
+class User extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery, HasAvatar, HasPasskeys
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasOriginNode, HasUuids, InteractsWithPasskeys, Notifiable;
@@ -66,6 +67,12 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
     public function level(): SecurityLevel
     {
         return SecurityLevel::from($this->security_level);
+    }
+
+    /** The profile photo (route user.photo), versioned by its file name so a new photo shows at once; null = initials. */
+    public function getFilamentAvatarUrl(): ?string
+    {
+        return $this->avatar_path ? route('user.photo', ['user' => $this->id, 'v' => substr(md5($this->avatar_path), 0, 8)]) : null;
     }
 
     public function canAccessPanel(Panel $panel): bool
