@@ -132,7 +132,7 @@ final class SupplierPortal
         return $this->recorder->transaction(function () use ($actor, $po, $s, $day) {
             $this->recorder->save($actor, $po, 'purchase_order.supplier_confirmed', "Delivery promised for {$day->format('j M Y')}", $po->branch_id);
             $this->notifier->toPermission($po->tenant_id, 'purchasing.manage', $po->branch_id, "{$s->name} confirmed {$po->number}",
-                "Delivery promised for {$day->format('j M Y')}".($po->supplier_reply ? ": {$po->supplier_reply}" : '.'), url('/admin/purchase-orders/'.$po->id));
+                "Delivery promised for {$day->format('j M Y')}".($po->supplier_reply ? ": {$po->supplier_reply}" : '.'), url('/admin/purchase-orders/'.$po->id), topic: 'purchasing');
 
             return $po;
         });
@@ -152,7 +152,7 @@ final class SupplierPortal
         return $this->recorder->transaction(function () use ($actor, $po, $s) {
             $this->recorder->save($actor, $po, 'purchase_order.dispatched', $po->dispatch_ref, $po->branch_id);
             $this->notifier->toPermission($po->tenant_id, ['stock.receive', 'purchasing.manage'], $po->branch_id, "Goods on the way: {$po->number} from {$s->name}",
-                "Their delivery note: {$po->dispatch_ref}. Receive them against {$po->number}.", url('/admin/purchase-orders/'.$po->id));
+                "Their delivery note: {$po->dispatch_ref}. Receive them against {$po->number}.", url('/admin/purchase-orders/'.$po->id), topic: 'purchasing');
 
             return $po;
         });
@@ -189,7 +189,7 @@ final class SupplierPortal
                 'sent_by_name' => mb_substr(trim($byName), 0, 120), 'status' => 'received']);
             $this->recorder->save($actor, $inv, 'supplier_invoice.received', $po ? "For {$po->number}" : null, $po?->branch_id);
             $this->notifier->toPermission($s->tenant_id, 'payables.manage', $po?->branch_id, "Invoice {$no} from {$s->name}",
-                Money::display($amount, $currency).($po ? " for {$po->number}" : '').'. Enter it as a supplier bill: Purchasing → Invoices from suppliers.', url('/admin/supplier-invoices'));
+                Money::display($amount, $currency).($po ? " for {$po->number}" : '').'. Enter it as a supplier bill: Purchasing → Invoices from suppliers.', url('/admin/supplier-invoices'), topic: 'purchasing');
 
             return $inv;
         });

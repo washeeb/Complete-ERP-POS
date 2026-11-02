@@ -3,7 +3,7 @@
      tabs, ↓ into the panel, Esc closes. Built from the same menu as the side menu, so access rules are the same. Hidden
      on phones (the side menu is used there). --}}
 @php
-    $homeUrl = \App\Support\Look::homeUrl();
+    $homeUrl = \App\Support\UserPrefs::homeUrl(auth()->user()); // the person's own home page (Profile → Preferences)
     $onHome = rtrim(url()->current(), '/') === rtrim($homeUrl, '/');
 @endphp
 <nav class="zx-tabbar" aria-label="Main menu"

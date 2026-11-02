@@ -79,7 +79,7 @@ class SupplierInvoiceResource extends Resource
 
         return $table
             ->columns([
-                TextColumn::make('created_at')->label('Received')->dateTime('j M Y H:i')->sortable(),
+                TextColumn::make('created_at')->label('Received')->dateTime()->sortable(),
                 TextColumn::make('supplier.name')->label('Supplier')->searchable(),
                 TextColumn::make('invoice_no')->label('Their invoice')->searchable(),
                 TextColumn::make('invoice_date')->label('Dated')->date(),

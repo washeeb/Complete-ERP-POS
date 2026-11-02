@@ -52,6 +52,9 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
             'app_authentication_secret' => 'encrypted',
             'app_authentication_recovery_codes' => 'encrypted:array',
             'ui_favourites' => 'array',
+            'dashboard' => 'array',
+            'notify_prefs' => 'array',
+            'ui_prefs' => 'array',
         ];
     }
 

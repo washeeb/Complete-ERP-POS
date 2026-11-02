@@ -1,7 +1,7 @@
 # State (resume file)
 
 **Phase:** all phases of the master plan built; first client (a pharmacy) live since 2026-10-19 on an Ubuntu server, with releases delivered by `release:build` and the Ubuntu installer.
-**Updated:** 2026-11-02 · Interface stage 1a (new look, profile photos) on branch `new-look-1a`; every other section below is merged to `main` (latest release BJN1N5YGS).
+**Updated:** 2026-11-02 · Interface stage 1b on branch `stage-1b-dashboards`; every other section below is merged to `main` (latest release BRMTHCJYP).
 
 
 
@@ -21,13 +21,19 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 | Stage | What | Paid? |
 |---|---|---|
 | 1a | New look laid out like NetSuite (standard look): header with wide search, + New, name and role; steel-blue band with Recent / Favourites / Home and hover tabs; dark-rail side look; Classic kept; profile photos; profile page in sections | free — branch `new-look-1a` (PR #125) |
-| 1b | Dashboards per role with panels (key figures, charts, tables, reminders, shortcuts); each person adds/removes/drags, resets | free |
+| 1b | Dashboards per role with panels (figures, charts, tables, waiting for you, shortcuts), Arrange/reset; Preferences and Notifications (Profile); Integrations page | free; Integrations paid — branch `stage-1b-dashboards` |
 | 2 | CRM: leads, deals pipeline, quotations, follow-ups, campaigns | paid |
 | 3 | Projects and job costing | paid |
 | 4 | Service desk (tickets) and asset maintenance | paid |
 | 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid |
 
-## Interface stage 1a: new look + profile photos — branch `new-look-1a`
+## Interface stage 1b: dashboards, preferences, notifications, integrations — branch `stage-1b-dashboards`
+- Migration `2026_12_12_100001` (`users.dashboard`, `notify_prefs`, `ui_prefs`). `App\Support\Dashboard\Panels`, `App\Filament\Pages\Dashboard` (Arrange / Back to my role's), widgets `App\Filament\Widgets\Panels\*` (+ BusinessStats, IndustryOverview, IndustryHighlights as panels), views `filament/widgets/{my-approvals,shortcuts}`.
+- `UserPrefs`, `NotifyPrefs`, `HomeLoginResponse`; profile cards Preferences + Notifications; `Notifier` topics; per-channel filters in DailySummary / PaymentAlerts.
+- `IntegrationsOverview`, `IntegrationsPage` (add-on `integrations`). Oheneba's licence should get the add-on (founding-client benefit) — new key needed.
+- Tests: `DashboardPanelsTest` (6), `PreferencesNotificationsTest` (4). Guide: chapter 7 step 6c, chapter 11.7.
+
+## Interface stage 1a: new look + profile photos — merged (PR #125, release BRMTHCJYP)
 - `App\Support\Look` (DEFAULT top, LOOKS, TABS, MENU_WORDS, for/current/hasTopTabs/htmlClasses/tabs/quickCreate/homeUrl/favourites/roleLine); setting `ui.look` (Appearance, default top); `users.ui_look`, `users.avatar_path`, `users.ui_favourites` (migration `2026_12_11_100001`); route `ui.favourite` (POST) → `AccessService::toggleOwnFavourite`.
 - Views `layout/look-head` (HEAD_END), `layout/tabbar` (TOPBAR_AFTER, top only: Recent/Favourites/Home + tabs), `layout/look-actions` (GLOBAL_SEARCH_BEFORE: + New, and Find a page in the side look), `layout/who` (USER_MENU_BEFORE); passkeys view restyled; CSS `public/css/seslabs/new-look.css` (+ `.zx-pk-*` in admin.css).
 - `ProfilePhoto`, `AccessService::updateOwnProfile` (ui_look, photo; `PHOTO_UPLOADS`), `EditProfile` form, `User::getFilamentAvatarUrl`, route `user.photo`, `LocalAvatars` (both panels), users list photo column.

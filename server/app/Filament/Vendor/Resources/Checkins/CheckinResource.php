@@ -40,7 +40,7 @@ class CheckinResource extends Resource
 
         return $table->defaultSort('created_at', 'desc')
             ->columns([
-                TextColumn::make('created_at')->label('When')->dateTime('j M Y H:i')->sortable(),
+                TextColumn::make('created_at')->label('When')->dateTime()->sortable(),
                 TextColumn::make('license_id')->label('Customer')->formatStateUsing(fn ($state, VendorCheckin $r) => $customer($r))
                     ->description(fn (VendorCheckin $r) => strtoupper(substr(str_replace('-', '', $r->license_id), 0, 8)))
                     ->url(fn (VendorCheckin $r) => VendorLicense::find($r->license_id) ? LicenseResource::getUrl('view', ['record' => $r->license_id]) : null),

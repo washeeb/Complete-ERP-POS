@@ -214,7 +214,7 @@ class StockAdjustmentResource extends Resource
                 ->description('Removed from stock once approved by someone other than the person who prepared it. Keep the packs aside, marked "not for sale", until they are destroyed.')
                 ->schema([
                     TextEntry::make('disposal_method')->label('Method')->placeholder('—')->formatStateUsing(fn ($state) => ExpiryService::DISPOSAL_METHODS[$state] ?? $state),
-                    TextEntry::make('disposed_on')->label('Disposed of on')->date('j M Y')->placeholder('—'),
+                    TextEntry::make('disposed_on')->label('Disposed of on')->date()->placeholder('—'),
                     TextEntry::make('witness_name')->label('Witness')->placeholder('—'),
                     TextEntry::make('certificate_path')->label('Certificate')->placeholder('none')->formatStateUsing(fn () => 'Open')
                         ->url(fn (StockAdjustment $r) => $r->certificate_path ? route('disposal.certificate', $r) : null, true),
@@ -277,7 +277,7 @@ class StockAdjustmentResource extends Resource
         return $table->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('number')->searchable(),
-                TextColumn::make('created_at')->label('Date')->date('j M Y'),
+                TextColumn::make('created_at')->label('Date')->date(),
                 TextColumn::make('warehouse.code')->label('Warehouse'),
                 TextColumn::make('reason_code')->label('Reason')->formatStateUsing(fn ($state) => InventoryService::ADJUSTMENT_REASONS[$state] ?? $state)
                     ->description(fn (StockAdjustment $r) => $r->kind === 'disposal' ? 'disposal' : null),

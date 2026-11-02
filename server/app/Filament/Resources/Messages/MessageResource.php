@@ -61,7 +61,7 @@ class MessageResource extends Resource
     public static function infolist(Schema $schema): Schema
     {
         return $schema->columns(3)->components([
-            TextEntry::make('created_at')->label('When')->dateTime('j M Y H:i'),
+            TextEntry::make('created_at')->label('When')->dateTime(),
             TextEntry::make('channel')->formatStateUsing(fn ($state) => Message::CHANNELS[$state] ?? $state),
             TextEntry::make('to'),
             TextEntry::make('status')->badge()->formatStateUsing(fn ($state) => Message::STATUSES[$state] ?? $state)->color(fn ($state) => self::colour($state)),

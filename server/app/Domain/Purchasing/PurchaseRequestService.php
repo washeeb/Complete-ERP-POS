@@ -96,7 +96,7 @@ final class PurchaseRequestService
             $this->recorder->outbox->publish($actor, $r->fresh(), 'purchase_request.lines_changed'); // the lines travel inside the snapshot
             $this->notifier->toPermission($actor->tenantId, 'purchasing.manage', $warehouse->branch_id, "Purchase request {$r->number} from {$actor->name}",
                 count($lines)." product(s) for {$warehouse->name}".($neededBy ? ", needed by {$neededBy}" : '').'. Purchasing → Purchase requests.',
-                url('/admin/purchase-requests'), [$actor->user?->id]);
+                url('/admin/purchase-requests'), [$actor->user?->id], topic: 'purchasing');
 
             return $r->fresh('lines');
         });

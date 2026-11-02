@@ -68,7 +68,7 @@ class SupportReportResource extends Resource
     public static function infolist(Schema $schema): Schema
     {
         return $schema->columns(3)->components([
-            TextEntry::make('number'), TextEntry::make('created_at')->label('When')->dateTime('j M Y H:i'), TextEntry::make('user_name')->asPerson('user_id')->label('From'),
+            TextEntry::make('number'), TextEntry::make('created_at')->label('When')->dateTime(), TextEntry::make('user_name')->asPerson('user_id')->label('From'),
             TextEntry::make('source')->formatStateUsing(fn ($state) => SupportReport::SOURCES[$state] ?? $state), TextEntry::make('page')->placeholder('—'),
             TextEntry::make('status')->badge()->formatStateUsing(fn ($state) => SupportReport::STATUSES[$state] ?? $state),
             TextEntry::make('message')->label('What happened')->columnSpanFull()->extraAttributes(['style' => 'white-space:pre-wrap']),

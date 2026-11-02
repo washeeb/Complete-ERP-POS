@@ -271,7 +271,7 @@ final class AgreementService
             $this->notifier->toPermission($tenantId, 'purchasing.manage', null,
                 $stage === 'ended' ? "Agreement {$a->number} with {$a->supplier?->name} has ended" : "Agreement {$a->number} with {$a->supplier?->name} ends {$a->ends_on->format('j M Y')}",
                 $stage === 'ended' ? 'Its prices no longer apply to new orders. Close it, or agree a new one.' : 'Agree new prices in time, or close it.',
-                url('/admin/purchase-agreements/'.$a->id));
+                url('/admin/purchase-agreements/'.$a->id), topic: 'purchasing');
             DB::table('purchase_agreements')->where('id', $a->id)->update(['alerted' => $stage]);
             $n++;
         }

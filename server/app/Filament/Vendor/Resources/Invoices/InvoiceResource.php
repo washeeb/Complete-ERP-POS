@@ -81,8 +81,8 @@ class InvoiceResource extends Resource
                 TextEntry::make('customer.name')->label('Customer'),
                 TextEntry::make('license_id')->label('Licence')->placeholder('—')->formatStateUsing(fn ($state) => strtoupper(substr(str_replace('-', '', $state), 0, 8)))
                     ->url(fn (VendorInvoice $r) => $r->license_id ? LicenseResource::getUrl('view', ['record' => $r->license_id]) : null),
-                TextEntry::make('issued_on')->date('j M Y'),
-                TextEntry::make('due_on')->date('j M Y'),
+                TextEntry::make('issued_on')->date(),
+                TextEntry::make('due_on')->date(),
                 TextEntry::make('total_minor')->label('Total')->formatStateUsing(fn ($state, VendorInvoice $r) => VendorUi::money((int) $state, $r->currency)),
                 TextEntry::make('balance')->label('Still owed')->state(fn (VendorInvoice $r) => VendorUi::money($r->balanceMinor(), $r->currency)),
                 TextEntry::make('void_reason')->label('Voided')->visible(fn (VendorInvoice $r) => $r->status === 'void'),
@@ -107,8 +107,8 @@ class InvoiceResource extends Resource
             ->columns([
                 TextColumn::make('number')->searchable(),
                 TextColumn::make('customer.name')->label('Customer')->searchable(),
-                TextColumn::make('issued_on')->date('j M Y')->sortable(),
-                TextColumn::make('due_on')->date('j M Y')->sortable(),
+                TextColumn::make('issued_on')->date()->sortable(),
+                TextColumn::make('due_on')->date()->sortable(),
                 TextColumn::make('total_minor')->label('Total')->formatStateUsing(fn ($state, VendorInvoice $r) => VendorUi::money((int) $state, $r->currency)),
                 TextColumn::make('balance')->label('Owed')->state(fn (VendorInvoice $r) => VendorUi::money($r->balanceMinor(), $r->currency)),
                 TextColumn::make('status')->badge()->formatStateUsing(fn ($state, VendorInvoice $r) => $state === 'open' && $r->due_on->isPast() ? 'overdue' : $state)

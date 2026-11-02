@@ -16,7 +16,7 @@ class BusinessStats extends StatsOverviewWidget
 
     protected ?string $pollingInterval = '60s';
 
-    protected int|string|array $columnSpan = 'full';
+    public int|string|array $columnSpan = 'full'; // public: the dashboard sets each panel's width
 
     protected function getStats(): array
     {

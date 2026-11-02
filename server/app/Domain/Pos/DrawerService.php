@@ -154,7 +154,7 @@ final class DrawerService
             }
             if ($kind === 'limit_alert') {
                 $this->notifier->toPermission($device->tenant_id, 'pos.drawer', $shift->branch_id, "Cash drop needed at {$till->code}",
-                    "{$user->name}'s drawer holds about ".number_format($amount / 100, 2).', above the cash limit.', exceptUserIds: [$user->id]);
+                    "{$user->name}'s drawer holds about ".number_format($amount / 100, 2).', above the cash limit.', exceptUserIds: [$user->id], topic: 'cash');
             }
 
             return $event;

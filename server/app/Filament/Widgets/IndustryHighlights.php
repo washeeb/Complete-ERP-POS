@@ -20,7 +20,7 @@ class IndustryHighlights extends StatsOverviewWidget
 {
     protected static ?int $sort = 2;
 
-    protected int|string|array $columnSpan = 'full';
+    public int|string|array $columnSpan = 'full'; // public: the dashboard sets each panel's width
 
     protected function getHeading(): ?string
     {

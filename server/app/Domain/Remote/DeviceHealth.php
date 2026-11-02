@@ -143,7 +143,7 @@ final class DeviceHealth
             foreach ($this->problems($d) as $p) {
                 $key = 'device-alert:'.$d->id.':'.md5(preg_replace('/\d+/', '#', $p)).':'.now()->toDateString();
                 if (Cache::add($key, 1, now()->endOfDay())) {
-                    $n += $this->notifier->toPermission($tenantId, 'admin.devices.manage', $d->branch_id, "{$d->name}: {$p}", 'System → Devices shows its health; a fix can be sent from there.');
+                    $n += $this->notifier->toPermission($tenantId, 'admin.devices.manage', $d->branch_id, "{$d->name}: {$p}", 'System → Devices shows its health; a fix can be sent from there.', topic: 'system');
                 }
             }
         }

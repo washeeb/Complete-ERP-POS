@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 ### Added
+- **Dashboards** (interface stage 1b; free): each person's home page of panels — key figures, sales trend (7/30/90 days), how customers paid, sales by branch, best sellers, stock (below minimum, expired, expiring, value), buying, spend by month, customers owe by how late, cash, pharmacy, people, **Waiting for you** (approvals) and **Shortcuts**. Each role starts with its own set; **Arrange** switches panels on or off, drags them into order and sets their width; **Back to my role's** resets. Panels show only what the person may see, for their branches.
+- **Preferences** (Profile; free): home page (dashboard, Today or a favourite — used after signing in and by the house icon), rows a list shows at first, how dates are written, light or dark, comfortable or compact lists.
+- **Notifications** (Profile; free): each person turns notification topics (approvals, buying, stock, cash, pharmacy, payments, daily summary, server and devices) and channels (bell, e-mail, SMS, WhatsApp) off for themselves; security notices always arrive.
+- **Integrations** (Setup; paid add-on): one card per connection — e-mail, SMS, WhatsApp, mobile money, GRA E-VAT, online shops, API, branch servers, off-server backups, AI, accounting exports — set up or not, when it last worked, failures this week, link to its set-up and test.
+
 - **The new look** (interface stage 1a; free), laid out like NetSuite and now the standard look: a white header with a wide **Search**, **+ New** (create any record the person may create) and the person's name and role; a steel-blue band with **Recent** (the page finder, also on **/**), **Favourites** (up to 20 pages, kept per person on the server) and **Home** icons, then the tabs, each opening a panel of its pages on hover. Denser lists and forms, matching dark mode. Also offered: **New look: side menu** — a dark navigation rail that folds to icons — and **Classic**. Chosen per person under **Profile**, or for everyone under **System → Settings → Appearance**; phones keep the side menu.
 - **Colours from the client's brand:** the menu band, side menu and page banners take a dark shade of the brand colour (which can come from the logo), or the company's own **Menu colour** (Company → Branding, optional).
 - **Page banners and cards** (new look): each page opens with a banner in the menu colour (its icon or the person's photo, title, buttons); sections are white cards with a tinted icon; pill-shaped search.
@@ -10,6 +15,8 @@
 - **Profile photos** (free): on the Profile page, with a round crop; shown in the top bar and the list of users. The server keeps only a cleaned 256-pixel square copy (location and camera details removed), visible only to people signed in to the same company.
 
 ### Fixed
+- **Profile page:** the list on the left did not scroll to its parts (the page dropped their anchors); it now does, and marks the part in view.
+- **Windows opened from a page banner** (e.g. *Arrange*) showed under the menu band; they now open above it.
 - **Staff names were sent to an outside website:** the initials circle for people without a photo was fetched from ui-avatars.com on every page; it is now drawn on the server.
 - **Uploads failed on the Windows development server** (`php artisan serve`): PHP was started without a temporary folder.
 - The progress box no longer checks for progress on the sign-in page (it was refused there, filling the browser console).

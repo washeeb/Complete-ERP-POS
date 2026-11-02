@@ -142,7 +142,7 @@ class RfqResource extends Resource
                 TextEntry::make('status')->badge()->formatStateUsing(fn ($state, Rfq $record) => $state === 'open' && ! $record->acceptsQuotes() ? 'Closing time passed: compare and award' : (Rfq::STATUSES[$state] ?? $state)),
                 TextEntry::make('title')->columnSpan(2),
                 TextEntry::make('warehouse.name')->label('Deliver to'),
-                TextEntry::make('closes_at')->label('Quotes close')->dateTime('j M Y H:i'),
+                TextEntry::make('closes_at')->label('Quotes close')->dateTime(),
                 TextEntry::make('needed_by')->label('Needed by')->date()->placeholder('—'),
                 TextEntry::make('created_by_name')->label('Made by'),
                 TextEntry::make('purchaseRequest.number')->label('From purchase request')->placeholder('—')

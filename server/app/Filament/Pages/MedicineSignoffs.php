@@ -111,7 +111,7 @@ class MedicineSignoffs extends Page implements HasTable
     {
         return $this->paged($table)
             ->columns([
-                TextColumn::make('occurred_at')->label('Sold')->dateTime('j M Y H:i'),
+                TextColumn::make('occurred_at')->label('Sold')->dateTime(),
                 TextColumn::make('receipt_no')->label('Receipt'),
                 TextColumn::make('cashier_name')->label('Sold by'),
                 TextColumn::make('medicines')->label('Medicines')->wrap()

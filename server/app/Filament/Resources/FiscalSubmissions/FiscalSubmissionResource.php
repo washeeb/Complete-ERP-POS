@@ -59,7 +59,7 @@ class FiscalSubmissionResource extends Resource
     public static function infolist(Schema $schema): Schema
     {
         return $schema->columns(3)->components([
-            TextEntry::make('doc_number')->label('Document'), TextEntry::make('doc_type')->label('Type'), TextEntry::make('doc_date')->date('j M Y'),
+            TextEntry::make('doc_number')->label('Document'), TextEntry::make('doc_type')->label('Type'), TextEntry::make('doc_date')->date(),
             TextEntry::make('status')->badge()->formatStateUsing(fn ($state) => FiscalSubmission::STATUSES[$state] ?? $state),
             TextEntry::make('gra_reference')->label('GRA reference')->placeholder('—'), TextEntry::make('attempts'),
             TextEntry::make('error')->placeholder('—')->columnSpanFull(),
@@ -72,7 +72,7 @@ class FiscalSubmissionResource extends Resource
     {
         return $table->defaultSort('created_at', 'desc')
             ->columns([
-                TextColumn::make('doc_date')->label('Date')->date('j M Y')->sortable(),
+                TextColumn::make('doc_date')->label('Date')->date()->sortable(),
                 TextColumn::make('doc_number')->label('Document')->searchable(),
                 TextColumn::make('doc_type')->label('Type')->badge(),
                 TextColumn::make('mode'),
