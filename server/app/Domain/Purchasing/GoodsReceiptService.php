@@ -5,6 +5,7 @@ namespace App\Domain\Purchasing;
 use App\Domain\Inventory\SerialRegistry;
 use App\Domain\Inventory\StockBatches;
 use App\Domain\Inventory\StockLedger;
+use App\Domain\Pricing\PricingRules;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DocumentNumbers;
@@ -233,6 +234,8 @@ final class GoodsReceiptService
         }
         $grn->forceFill(['status' => 'posted', 'posted_at' => now()]);
         $this->recorder->save($actor, $grn->load('lines'), $action, branchId: $grn->branch_id);
+        // Selling prices follow the new cost where a pricing rule says so (rises at once, drops for approval by default).
+        app(PricingRules::class)->follow($actor, $grn->lines->pluck('product_id')->unique()->all(), "after {$grn->number}");
 
         return $grn->fresh('lines');
     }

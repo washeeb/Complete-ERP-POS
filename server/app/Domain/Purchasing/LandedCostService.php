@@ -2,6 +2,7 @@
 
 namespace App\Domain\Purchasing;
 
+use App\Domain\Pricing\PricingRules;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DocumentNumbers;
@@ -104,8 +105,11 @@ final class LandedCostService
                     'to_cogs_minor' => $alloc - $stock, 'avg_before' => $avgBefore, 'avg_after' => $avgAfter])->save();
             }
             $doc->forceFill(['to_stock_minor' => $toStock, 'to_cogs_minor' => $total - $toStock]);
+            $saved = $this->recorder->save($actor, $doc, 'landed_cost.posted', "{$doc->number}: ".$charges[0]['description'], $branch->id);
+            // The freight raised these products' cost: their selling prices follow where a pricing rule says so.
+            app(PricingRules::class)->follow($actor, LandedCostLine::where('landed_cost_id', $doc->id)->distinct()->pluck('product_id')->all(), "after {$doc->number}");
 
-            return $this->recorder->save($actor, $doc, 'landed_cost.posted', "{$doc->number}: ".$charges[0]['description'], $branch->id);
+            return $saved;
         });
     }
 

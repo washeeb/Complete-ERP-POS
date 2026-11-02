@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets\Panels;
 
+use App\Filament\Pages\PricesToReview;
 use App\Filament\Resources\ExpenseClaims\ExpenseClaimResource;
 use App\Filament\Resources\LeaveRequests\LeaveRequestResource;
 use App\Filament\Resources\PurchaseOrders\PurchaseOrderResource;
@@ -28,6 +29,7 @@ class MyApprovals extends Widget
         'adjustment' => ['Stock adjustments', 'stock.adjust.approve', 'stock_adjustments', 'submitted', StockAdjustmentResource::class, 'branch_id', 'submitted_by'],
         'claim' => ['Expense claims', 'expenses.approve', 'expense_claims', 'submitted', ExpenseClaimResource::class, 'branch_id', 'claimant_id'],
         'leave' => ['Leave requests', 'leave.approve', 'leave_requests', 'requested', LeaveRequestResource::class, null, null],
+        'prices' => ['Prices to review', 'pricing.manage', 'price_suggestions', 'pending', PricesToReview::class, null, null],
     ];
 
     /** @return list<array{label: string, count: int, url: ?string}> */
@@ -47,7 +49,8 @@ class MyApprovals extends Widget
                 ->when($branchCol && $branches !== null, fn ($q) => $q->whereIn($branchCol, $branches))
                 ->when($askedBy, fn ($q) => $q->where(fn ($w) => $w->whereNull($askedBy)->orWhere($askedBy, '<>', $me->id)))
                 ->count();
-            $out[] = ['label' => $label, 'count' => $n, 'url' => $resource::canViewAny() ? $resource::getUrl('index') : null];
+            $isPage = ! method_exists($resource, 'canViewAny');
+            $out[] = ['label' => $label, 'count' => $n, 'url' => $isPage ? ($resource::canAccess() ? $resource::getUrl() : null) : ($resource::canViewAny() ? $resource::getUrl('index') : null)];
         }
 
         return $out;

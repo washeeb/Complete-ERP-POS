@@ -1022,3 +1022,13 @@ Design:
 - **Batch corrections:** only the expiry date is corrected in place (`InventoryService::correctBatch`, reason required, audited `stock_batch.corrected`). A batch's id is a UUIDv5 of its number (`StockBatches::idFor`) on every node, so a number is never renamed: a wrong number is fixed by a correction adjustment (remove from the wrong batch, add to the right one), which keeps the ledger true and lets later deliveries of that batch join it.
 - **Superadmin = SyncLytics support (L7, owner 2026-10-22):** role `superadmin` (all permissions) hidden from every pick list; L7 is never grantable or editable from the back office (`assertLevelGrantable`), only by `erp:support-account` (system actor, audited). Always `requiresMfa`; excluded from the licence's user count; each sign-in notifies holders of `support.access.grant`.
 - **Expiry at the till:** the catalogue carries `expires_on` = earliest dated batch with stock at the till's store (the batch FEFO sells next); amber within 90 days, red once past.
+
+## Pricing rules (2026-11-02)
+- Owner request: a client sells at cost × 1.40; other clients price differently. Rules, not a fixed formula: multiply, markup, margin or cost + amount; company, category (inherited down the tree) or product; per price list. Free (owner).
+- Cost = the latest posted delivery per base unit plus its landed-cost share (owner choice: latest cost with freight), not the average: prices should follow what the next restock costs. Average cost of the stock only before any delivery.
+- Result is the shelf price with tax inside by default, before tax as an option (owner); converted to the list's own tax treatment with the product's tax group.
+- On a cost change: rises at once, drops for approval by default (owner), with "always at once" and "always for approval" per rule. Never selling below a new cost matters more than a manager seeing every rise; lowering prices is a commercial decision.
+- Only the standard price (min qty 1, no dates) is touched: bulk breaks and promotions stay hand-made.
+- Set at head office only (like price lists); branch-node deliveries are caught by the hourly run there, since synced documents do not pass through posting. Repeated runs are idempotent and do not repeat messages.
+- Latest delivery: posted_at, then the UUIDv7 id (time-ordered) when two share a second.
+

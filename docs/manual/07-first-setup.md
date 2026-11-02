@@ -210,7 +210,7 @@ the owner sees the whole business. Panels show only what the person may see, for
 - **Light or dark**, and **Lists**: comfortable or compact (more rows on the screen).
 
 **Notifications** (Profile → *Notifications*): for each kind of notification — waiting for your approval, buying, stock,
-cash, pharmacy, payments received, the daily summary, server and devices — tick how it reaches you: the bell in the back
+prices to review, cash, pharmacy, payments received, the daily summary, server and devices — tick how it reaches you: the bell in the back
 office and, where the company uses them, e-mail, SMS or WhatsApp. **Why:** people get what they act on, not everything.
 The company still decides which channels are used at all (System → Settings → *Payment alerts*, *Daily summary*), and
 security notices (SyncLytics support signing in) always reach the owner.
@@ -231,6 +231,37 @@ security notices (SyncLytics support signing in) always reach the owner.
 **Pricing & tax → Price lists.** You start with **Retail** (default) and **Wholesale**, both including tax. Add lists for special customers if needed. Tick *Cashier can switch to it at the till* only for lists cashiers may use.
 
 **Note:** whether a list's prices include tax cannot change once it has prices.
+
+## Step 8b — Pricing rules (selling prices worked out for you)
+
+If your selling prices come from what you pay (for example *cost × 1.40*), let the system work them out instead of using a calculator. **Why:** every delivery at a new cost would otherwise mean typing new prices by hand, and a missed one means selling below cost or overcharging.
+
+1. **Pricing & tax → Pricing rules → New rule.**
+2. **Applies to:** *Whole company* for your usual rule. Add more rules later for a **category** (e.g. a lower markup on baby milk) or a single **product**; the most specific rule wins (product, then its category or the one above it, then the company). A rule set to **Manual** keeps a product or category out of automatic pricing.
+3. **Price list it sets:** usually *Retail*. A second rule can set *Wholesale* with a lower figure.
+4. **How the price is worked out:**
+   - **Multiply the cost** — e.g. 1.40 (a cost of 10.00 gives 14.00);
+   - **Markup** — a percentage added to the cost (40 % gives the same as × 1.40);
+   - **Margin** — the percentage of the selling price you keep (25 % margin on a cost of 10.00 gives 13.33);
+   - **Cost + a fixed amount.**
+   The form shows an example as you type.
+5. **The result is:** *Shelf price* (VAT and levies inside — the price the customer pays, usual) or *Before tax* (taxes are added on top for taxable items).
+6. **Rounding:** to 10 pesewas (usual), 50 pesewas or a whole cedi; *to the nearest* or *always up*. **Why:** prices like 13.37 are awkward at the till and on shelf labels.
+7. **When a delivery changes the cost:**
+   - *Rises at once, drops for approval* (recommended) — you never sell below the new cost, and a manager decides whether to lower prices;
+   - *Always at once*; or *Always for approval*.
+   ![The Pricing rules page](img/pricing-rules.png)
+8. **Save**, then **Apply the rules to all products now**. **Why:** the rule otherwise starts with the next delivery; this sets every product with a cost straight away.
+
+**What "cost" means:** the cost of one piece on the **latest posted delivery**, with its share of freight, duty and clearing once a landed cost is posted. Before the first delivery, the average cost of the stock is used. Every unit for sale (piece, strip, carton…) is priced from it.
+
+**Prices to review** (Pricing & tax, also on the dashboard under *Waiting for you* and in the bell): prices waiting for approval, with the cost, the current price and the new one. **Approve** them (several at once with the boxes) or **Keep current**.
+
+**On the product form**, the *Prices* part says which rule sets the price and the latest cost, and warns in red when a price is below the cost.
+
+**Note:** only the standard price of each unit (from quantity 1, no dates) is set by a rule; bulk prices and dated promotions stay as you typed them. With branch servers, prices are set at head office: deliveries posted at a branch are priced within the hour after they reach head office.
+
+**Tip:** need people to set rules? They need a manager role with *Change prices, price lists and tax set-up* for the whole company.
 
 ## Step 9 — Products
 

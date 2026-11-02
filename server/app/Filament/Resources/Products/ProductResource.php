@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Products;
 use App\Domain\Catalog\CatalogService;
 use App\Domain\Catalog\UnitChangeService;
 use App\Domain\Modules\ModuleService;
+use App\Domain\Pricing\PricingRules;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Filament\Resources\Products\Pages\CreateProduct;
@@ -44,6 +45,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -235,6 +237,8 @@ class ProductResource extends Resource
             Section::make('Prices')->visible(fn () => Erp::can('pricing.manage'))
                 ->description('One row per price list and unit. Add rows with a minimum quantity for bulk prices, or with dates for a promotion.')
                 ->schema([
+                    Text::make(fn (?Product $record) => $record ? self::pricingNote($record) : 'After saving, the pricing rules (Pricing & tax → Pricing rules) set this product\'s prices from its cost.')
+                        ->color(fn (?Product $record) => $record && self::belowCost($record) ? 'danger' : 'gray'),
                     Repeater::make('prices')->hiddenLabel()->defaultItems(0)->columns(6)->reorderable(false)
                         ->schema([
                             Select::make('price_list_id')->label('List')->required()
@@ -251,6 +255,44 @@ class ProductResource extends Resource
                 TextInput::make('reason')->label('Reason for change (optional, kept in the audit log)')->maxLength(255),
             ]),
         ]);
+    }
+
+    /** "Price set by the rule: Cost × 1.40 (whole company); latest cost 10.00 per PC (GRN-HQ-000012 with freight)." */
+    public static function pricingNote(Product $product): string
+    {
+        $rules = app(PricingRules::class);
+        $list = PriceList::where('is_default', true)->first();
+        $rule = $list ? $rules->ruleFor($product, $list) : null;
+        $cost = $rules->latestCost($product);
+        $text = match (true) {
+            ! $rule => 'No pricing rule: these prices are kept as typed.',
+            $rule->method === 'manual' => 'Manual pricing: these prices are kept as typed (a rule says so).',
+            default => 'Prices on '.$list->name.' follow the rule '.$rule->describe().' ('.($rule->scope === 'product' ? 'this product' : ($rule->scope === 'category' ? 'its category' : 'whole company')).'): a new delivery\'s cost updates them.',
+        };
+        if ($cost) {
+            $text .= ' Latest cost: '.FinanceUi::money((int) round($cost['cost'])).' per base unit ('.$cost['source'].').';
+        }
+        if (self::belowCost($product)) {
+            $text .= ' Warning: a price is below the cost — each sale loses money.';
+        }
+
+        return $text;
+    }
+
+    /** Any standard price below the latest cost of its unit (before tax). */
+    public static function belowCost(Product $product): bool
+    {
+        $cost = app(PricingRules::class)->latestCost($product);
+        if (! $cost) {
+            return false;
+        }
+        $taxBp = (int) ($product->taxGroup?->rates->where('is_active', true)->sum('rate_bp') ?? 0);
+
+        return $product->prices()->with(['productUom', 'priceList'])->where('min_qty', 1)->get()->contains(function ($p) use ($cost, $taxBp) {
+            $net = $p->priceList?->prices_include_tax ? $p->amount_minor * 10000 / (10000 + $taxBp) : $p->amount_minor;
+
+            return $net < $cost['cost'] * (float) ($p->productUom?->factor ?? 1);
+        });
     }
 
     /** Ingredients for recipes: stocked products, by unit. */

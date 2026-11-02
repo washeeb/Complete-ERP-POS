@@ -27,6 +27,10 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 | 4 | Service desk (tickets) and asset maintenance | paid |
 | 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid |
 
+## Pricing rules (free) — branch `pricing-rules`
+- `App\Domain\Pricing\PricingRules` (saveRule, ruleFor, latestCost, priceFor, follow, followAll, approve, dismiss); tables `pricing_rules`, `price_suggestions`. Hooks: `GoodsReceiptService::post`, `LandedCostService::post`; hourly `erp:pricing-rules` (head office). Pages: `PricingRuleResource`, `PricesToReview`; panel kind `prices`; notify topic `pricing`; note on the product form. `PricingRulesTest` (10).
+- Next: stage 2 CRM (paid).
+
 ## Catalogue for branch stock people — branch `catalog-branch-staff`
 - `catalog.*` checked anywhere (pages, `SimpleCatalogResource`, `CatalogService`, `UnitChangeService`, `StyleService`); `pricing.*` stays company-wide. `StockControllerRoleTest` updated.
 
