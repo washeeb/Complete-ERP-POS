@@ -152,6 +152,33 @@ Uninstalling the app keeps its settings (the server address, printer and scale),
 
 **Note:** sales not yet sent to the server are in the second folder. Clear it only when the till shows nothing waiting to send, or when the till never worked.
 
+## 9.8a The back-office desktop app (office computers)
+
+Office staff can use the back office in **ZionEX Back Office**, an app installed on the computer, instead of a
+browser tab. It is free with every licence. **Why:** the back office gets its own icon and window (no address bar or
+tabs to close by mistake), the server address is remembered, exports go straight into *Downloads*, and the audit log
+records which computer each change was made from.
+
+1. Trust the server on this computer first if it is on the shop network (9.3). A cloud server with a name needs
+   nothing.
+2. Run `ZionEX Back Office_<version>_x64-setup.exe` (from SyncLytics). It installs for every user of the computer.
+3. On first start it asks for the **server address**: what you type in a browser to open the back office, without
+   `/admin` — for a cloud server its name, e.g. `https://erp.clientdomain.com`, **never its IP address**. Click **Save
+   and open**, then sign in with your usual username and password (and your second step, as in the browser).
+
+**Using it:**
+- Everything works as in the browser: the same pages, menus, look and rights. New features appear in it by themselves.
+- **Export** files and documents are saved in your **Downloads** folder and open by themselves; a file of the same name
+  is never overwritten (*report (2).xlsx*).
+- **Print** opens the normal print window.
+- Links to other sites (help pages, WhatsApp, a supplier's website) open in your normal browser; the app only ever
+  shows your own server.
+- **F5** reloads the page; **Ctrl + / Ctrl −** zoom; **Ctrl+Shift+S** goes back to the set-up page to change the
+  server address.
+- If the server cannot be reached when the app starts, it says so with **Try again** instead of an error page.
+
+**Updating:** install the new `ZionEX Back Office_<version>_x64-setup.exe` over the old one; the server address is kept.
+
 ## 9.8 Barcode scanner
 
 **Tablets and phones without a scanner** use the camera: the 📷 button beside the till's search box (Chrome on Android). Hold the barcode steady in the frame; the item is added as if scanned.

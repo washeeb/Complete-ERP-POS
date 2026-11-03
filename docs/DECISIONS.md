@@ -1067,3 +1067,9 @@ Design:
 - Alarms (owner: bell + WhatsApp/SMS to those on duty, breakdown work order, silent sensors): only after the sensor's delay out of range (door openings are not alarms), checked again every minute without waiting for the next reading; reminders every 15 minutes until acknowledged; managers after 30 minutes; WhatsApp when a provider and approved template exist, else SMS; each person's channel choice respected. Fridges, cold rooms and freezers linked to equipment open one urgent breakdown work order (repeats add to it).
 - Records (owner: log with signed checks): every reading kept (unique per sensor and time; future times taken as now), a daily summary for fast logs and charts, signed checks, alarms closed only with what was done; the monthly log printed from the browser (no PDF library).
 
+## Back-office desktop app (2026-11-03)
+- Owner asked for an installable back office, "maybe Oracle / Java". Chosen (owner): a **Tauri shell** like the till, showing the server's back office — not a Java rewrite (hundreds of pages to rebuild and keep in step, Oracle Java's per-employee commercial licence, a 100+ MB runtime, nothing gained since the logic and data live on the server). Free (owner).
+- Separate app from the till (`desktop/`, own identifier and config file) so office PCs do not get the till's hardware commands and tills keep their own start-up.
+- Only the chosen server opens in the window; other links go to the default browser. Downloads are saved to Downloads with a free name and opened. The computer details cookie is the till's, so the audit log already understands it.
+- No self-update yet: it needs a signed update feed on a server SyncLytics runs (same gap as the licence server); updates are installed over the old version, like the till.
+
