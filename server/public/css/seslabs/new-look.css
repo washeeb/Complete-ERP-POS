@@ -351,3 +351,32 @@ a.zx-panel-row:hover { background: color-mix(in oklab, var(--primary-500) 8%, tr
 
 /* Profile parts scrolled to from the list on the left land below the sticky header and menu band. */
 [data-zx-part] { scroll-margin-top: 7.5rem; }
+
+/* CRM pipeline (App\Filament\Pages\CrmPipeline): a column per stage, cards dragged between them; Won and Lost targets. */
+.zx-pipe-sum { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; font-size: .9rem; color: var(--zx-muted, #5b6676); }
+.zx-pipe-sum b { color: var(--gray-950, #030712); }
+.dark .zx-pipe-sum b { color: #fff; }
+.zx-pipe { display: flex; gap: .9rem; overflow-x: auto; padding-bottom: .5rem; align-items: flex-start; }
+.zx-pipe-col { flex: 0 0 17rem; display: grid; gap: .6rem; padding: .75rem; border-radius: 12px; background: var(--zx-head, #f5f7fa);
+    border: 1px solid var(--zx-line, #dde3ea); transition: box-shadow .15s, border-color .15s; }
+.dark .zx-pipe-col { background: rgb(255 255 255 / .03); border-color: rgb(255 255 255 / .09); }
+.zx-pipe-col header h2 { display: flex; justify-content: space-between; font-weight: 650; font-size: .95rem; }
+.zx-pipe-n { font-weight: 500; color: var(--zx-muted, #5b6676); }
+.zx-pipe-tot { font-size: .78rem; color: var(--zx-muted, #5b6676); }
+.zx-pipe-cards { display: grid; gap: .5rem; min-height: 4rem; }
+.zx-pipe-card { display: grid; gap: .2rem; padding: .65rem .75rem; border-radius: 10px; background: var(--zx-panel, #fff); border: 1px solid var(--zx-line, #dde3ea);
+    box-shadow: var(--zx-shadow, 0 1px 2px rgb(0 0 0 / .06)); cursor: grab; }
+.dark .zx-pipe-card { background: #121821; border-color: rgb(255 255 255 / .09); }
+.zx-pipe-card:hover { border-color: var(--primary-400); }
+.zx-pipe-title { font-weight: 600; font-size: .9rem; line-height: 1.25; }
+.zx-pipe-who, .zx-pipe-foot { font-size: .78rem; color: var(--zx-muted, #5b6676); }
+.zx-pipe-meta { display: flex; justify-content: space-between; font-size: .85rem; }
+.zx-pipe-late { color: #dc2626; font-weight: 600; }
+.zx-pipe-foot { display: flex; justify-content: space-between; gap: .5rem; }
+.zx-pipe-empty { font-size: .8rem; color: var(--zx-muted, #5b6676); text-align: center; padding: 1rem 0; }
+.zx-pipe-wrap { display: grid; gap: .9rem; }
+.zx-pipe-ends { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; }
+.zx-pipe-end { display: grid; place-items: center; min-height: 3.25rem; border-radius: 12px; border: 2px dashed; font-weight: 650; }
+.zx-pipe-won { border-color: #16a34a; color: #15803d; background: rgb(22 163 74 / .06); }
+.zx-pipe-lost { border-color: #9ca3af; color: #6b7280; background: rgb(107 114 128 / .06); }
+.zx-pipe-over { box-shadow: 0 0 0 3px var(--primary-400); }

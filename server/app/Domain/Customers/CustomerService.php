@@ -185,6 +185,21 @@ final class CustomerService
     }
 
     /** Field stamps for field-level merging between nodes: time|node of the change, and the stamp the editor saw. */
+    /** The customer asked to receive no more messages on a channel (the link in a campaign e-mail): no right needed. */
+    public function withdrawConsent(Actor $actor, Customer $customer, string $channel, string $source): Customer
+    {
+        if (! isset(Customer::CONSENT_CHANNELS[$channel]) || ! $customer->hasConsent($channel)) {
+            return $customer;
+        }
+
+        return $this->recorder->transaction(function () use ($actor, $customer, $channel, $source) {
+            $customer->consents = $this->consents($actor, $customer->consents ?? [], [$channel => false], $source);
+            $this->stamp($customer);
+
+            return $this->recorder->save($actor, $customer, 'customer.consent_withdrawn', $source, $customer->home_branch_id);
+        });
+    }
+
     private function stamp(Customer $customer): void
     {
         $stamps = $customer->field_stamps ?? [];

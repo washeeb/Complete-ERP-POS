@@ -26,10 +26,11 @@ final class VendorLicensing
 {
     public const FEATURES = ['finance' => 'Finance (accounts, payables, banking, expenses, assets, budgets)', 'hr' => 'HR & payroll',
         'remote_access' => 'Remote access (paid add-on: the client\'s staff see and control devices, training sessions, device health and remote fixes)',
-        'integrations' => 'Integrations (paid add-on: one page with every connection — e-mail, SMS, WhatsApp, mobile money, GRA E-VAT, online shops, API, branch servers, backups, AI — its status, last success and failures)'];
+        'integrations' => 'Integrations (paid add-on: one page with every connection — e-mail, SMS, WhatsApp, mobile money, GRA E-VAT, online shops, API, branch servers, backups, AI — its status, last success and failures)',
+        'crm' => 'CRM (paid add-on: leads, deals on a pipeline, follow-ups with reminders, campaigns by SMS, WhatsApp and e-mail)'];
 
     /** Paid add-ons: only when ticked by name; "all features" does not include them (owner decisions 2026-10-20, 2026-11-02). */
-    public const ADDON_FEATURES = ['remote_access', 'integrations'];
+    public const ADDON_FEATURES = ['remote_access', 'integrations', 'crm'];
 
     public function __construct(private readonly AuditLog $audit, private readonly VendorBilling $billing) {}
 

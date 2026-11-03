@@ -2,6 +2,7 @@
 
 namespace App\Domain\Org;
 
+use App\Domain\Crm\Crm;
 use App\Domain\Finance\ChartTemplate;
 use App\Domain\Hr\HrBaseline;
 use App\Domain\Messaging\Templates;
@@ -92,6 +93,7 @@ final class TenantBaseline
                 ChartTemplate::ensure($tenant);
                 HrBaseline::ensure($tenant);
                 Templates::seed($tenant); // message wording; branch servers receive it by sync
+                Crm::seedStages($tenant); // the sales pipeline's starting stages (CRM, kept at head office)
             }
         });
     }

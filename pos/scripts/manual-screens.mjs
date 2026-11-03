@@ -99,6 +99,9 @@ const shot = (page, name) => page.screenshot({ path: resolve(out, `${name}.png`)
     ['/admin/purchase-orders/create', 'purchase-order-new', null],
     ['/admin/expiry-returns', 'expiry-returns', null],
     ['/admin/pricing-rules', 'pricing-rules', null],
+    ['/admin/crm-pipeline', 'crm-pipeline', null],
+    ['/admin/crm-leads', 'crm-leads', null],
+    ['/admin/crm-campaigns/create', 'crm-campaign-new', null],
   ]) {
     await page.goto(base + path)
     await page.waitForLoadState('networkidle')

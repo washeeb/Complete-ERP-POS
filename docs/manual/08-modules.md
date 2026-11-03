@@ -266,6 +266,94 @@ When an industry is first switched on, the system creates its company under **Co
 |---|---|---|
 | **Finance** | Chart of accounts, automatic postings from sales, purchases, stock and payroll; supplier bills; bank reconciliation; month-end; reports | Chapter 7, step 12; your accountant reviews the chart and opening balances |
 | **HR & payroll** | Employees, clock-in at tills, leave, loans, monthly payroll with PAYE and SSNIT, payslips | Chapter 7, step 12; payroll profile checked with your accountant |
+| **CRM** (paid add-on) | Leads, deals on a pipeline, follow-ups with reminders, campaigns by SMS, WhatsApp and e-mail | Section 8.3a below |
+
+## 8.3a CRM: leads, deals, follow-ups and campaigns (paid add-on)
+
+The **CRM** menu (under the *Sales* tab) helps you win and keep customers: nobody who asked about buying is forgotten,
+every sale you are working on is visible with its value, and customers who agreed hear about your offers.
+
+**Availability:** a paid add-on. The menu appears once your licence includes **CRM** (ask SyncLytics; a new licence key
+is entered under *System → Licence*). **Why:** it is priced separately, so shops that do not need it do not pay for it.
+
+**Who can use it** (People → Roles): *See leads, deals…* to look; *Work leads and deals…* to add and change them;
+*Send campaigns…* for campaigns; *Set up the sales pipeline stages* for the stages. Managers, branch managers, customer
+service and marketing roles get them when CRM arrives; give them to others as needed. People given one branch see and
+work only that branch's leads and deals. **Why:** a branch's prospects stay with the people who serve them.
+
+### Step 1 — Check the pipeline stages
+
+**CRM → Pipeline stages.** You start with *New → Contacted → Quotation sent → Negotiation*, then *Won* and *Lost*. Each
+stage in progress has a **chance of winning** (10 %, 20 %, 50 %, 75 %); rename stages, change the chances or add your
+own (e.g. *Sample given*), and set the order with *Order*. Keep one *Won* and one *Lost* stage.
+**Why:** the chances give the **weighted** value of the pipeline — a realistic figure of what is likely to come in.
+
+### Step 2 — Add leads
+
+**CRM → Leads → New lead** for everyone who asks about buying: a walk-in, a call, a WhatsApp message, a referral.
+Enter the name, the business (if any), a phone number or e-mail, where they came from, what they want and what it
+may be worth, and who follows it up. Tick the **marketing consent** they gave (SMS, WhatsApp, e-mail).
+**Why:** a lead written down is followed up; one in someone's head is often lost. Consent is needed before campaigns.
+
+On each lead:
+- **Follow-up** plans the next call or visit (with a date and time and who does it) or notes what happened. A call
+  noted moves a new lead to *Contacted*.
+- **Make customer** turns the lead into a customer — with their consents and follow-ups — and can open a deal at
+  once. If a customer already has the same phone number, the lead is linked to them instead of making a duplicate.
+- **Lost** (in the **⋮** menu of the row, with *Edit*) closes the lead with the reason (too far, bought elsewhere…). **Why:** the reasons show what to improve.
+
+![The list of leads](img/crm-leads.png)
+
+### Step 3 — Work deals on the pipeline
+
+A **deal** is a sale you are working on. Add one from **CRM → Deals → New deal**, from a lead (*Make customer*), or
+from a customer's page (**New deal**). Give it a title, its value and the date you expect to close it.
+
+**CRM → Pipeline** shows the open deals as cards, in a column per stage, with each column's total and weighted value.
+**Drag a card** to its next stage, onto **Won**, or onto **Lost** (you are asked why). *My deals only* shows yours.
+On a phone, open the deal and change its stage. In the list of deals, *Won*, *Lost* and *Reopen* are in the **⋮** menu of each row.
+
+![The pipeline: a column per stage, Won and Lost on the right](img/crm-pipeline.png)
+
+**Make quotation** on a deal starts its quotation (Sales → Quotes & orders) for the customer, with the deal number as
+the customer's reference, and moves the deal to *Quotation sent*. Add the items and send it as usual. **When the
+quotation is confirmed as an order, the deal is won by itself**, at the order's value. **Why:** nobody has to remember
+to update the CRM after the real work is done.
+
+### Step 4 — Follow-ups
+
+**CRM → Follow-ups** lists what to do and when — your own by default, overdue ones in red — with **Done** (and what
+came of it) and **Another time**. The person a follow-up is given to is told in the bell, and **reminded when it is
+due**. The menu shows how many are due today. Plan follow-ups from a lead, a deal or a customer's page (**Follow-up**).
+
+### Step 5 — Campaigns
+
+**CRM → Campaigns → New campaign**: one message to many people.
+1. **Name** it (for you) and choose **SMS, WhatsApp or e-mail**. Write the message; `{customer}` becomes each
+   person's name and `{company}` your company's name. Keep SMS under 480 characters (3 SMS).
+   - **WhatsApp** only delivers business messages that use a **template approved by Meta**: create the template in
+     your WhatsApp Business account first, then type its name; the text must match it.
+   - **E-mails** get a link at the end to stop them. The link asks the person to confirm, so e-mail scanners that
+     open links do not unsubscribe anyone. Their choice is kept on their customer record.
+2. **Who gets it**: customers with certain **tags** (e.g. *VIP*), a **home branch**, who **bought in the last …
+   days**, who have **not been back for … days** (to win them back), who **spent at least …** in the last 12 months;
+   and, if you like, open leads. The count shows how many it reaches: **only people who agreed to that channel and have
+   a number or address** get it. **Why:** sending to people who did not agree is against data-protection law and
+   annoys customers.
+3. **When**: leave empty to send when you press **Send now**, or pick a date and time (**Schedule**). Avoid nights.
+4. Save, check the campaign in the list, then **Send now** (or **Schedule**). The confirmation says how many people it
+   goes to; it cannot be called back.
+
+![A new campaign: the message, who gets it and how many it reaches](img/crm-campaign-new.png)
+
+The list shows how many it was sent to, how many were left out (no consent, no number) and how many arrived. Every
+message is also in **Setup → Message log**. A campaign is sent with the SMS, WhatsApp or e-mail set-up you already use for
+receipts and reminders (Chapter 16). **Copy** reuses a campaign.
+
+**Dashboards:** the **Customers and deals** panel shows the open pipeline and its weighted value, deals won this month,
+new leads and your follow-ups due today (add it with *Arrange*).
+
+**Note:** with branch servers, CRM is used at head office (or on the cloud server), like the customers' accounts.
 
 ## 8.4 Planned modules
 
