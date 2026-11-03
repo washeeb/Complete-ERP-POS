@@ -8,6 +8,7 @@ use App\Filament\Resources\Invoices\Pages\ViewInvoice;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\GlobalSearch;
+use App\Filament\Support\ListFilters;
 use App\Models\Invoice;
 use App\Models\Warehouse;
 use App\Support\Money;
@@ -155,13 +156,15 @@ class InvoiceResource extends Resource
                 TextColumn::make('customer_ref')->label('Ref.')->searchable()->placeholder('—')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('issued_on')->label('Issued')->date()->sortable(),
                 TextColumn::make('due_on')->label('Due')->date()->sortable(),
-                TextColumn::make('total_minor')->label('Total')->alignEnd()->formatStateUsing(fn ($state, Invoice $record) => self::money($state, $record)),
+                TextColumn::make('total_minor')->label('Total')->alignEnd()->sortable()->formatStateUsing(fn ($state, Invoice $record) => self::money($state, $record)),
                 TextColumn::make('open')->label('Owed')->alignEnd()->state(fn (Invoice $record) => self::openMinor($record))
                     ->formatStateUsing(fn ($state, Invoice $record) => $state ? self::money($state, $record) : 'paid')
                     ->color(fn ($state, Invoice $record) => $state && $record->due_on->isPast() ? 'danger' : ($state ? null : 'success')),
                 TextColumn::make('status')->badge()->formatStateUsing(fn ($state) => Invoice::STATUSES[$state] ?? $state),
             ])
             ->filters([
+                ListFilters::amount('total_minor', 'Total'),
+                ListFilters::dates('issued_on', 'Issued', isDate: true),
                 SelectFilter::make('status')->options(Invoice::STATUSES),
                 Filter::make('overdue')->label('Past due date')->query(fn (Builder $q) => $q->where('status', 'posted')->whereDate('due_on', '<', now())),
             ])

@@ -10,6 +10,7 @@ use App\Domain\Pricing\PriceResolver;
 use App\Domain\Pricing\TaxCalculator;
 use App\Filament\Resources\Devices\DeviceResource;
 use App\Filament\Resources\Roles\RoleResource;
+use App\Filament\Resources\Sales\Pages\ListSales;
 use App\Filament\Resources\Sales\SaleResource;
 use App\Filament\Resources\Shifts\Pages\ListShifts;
 use App\Filament\Resources\Shifts\ShiftResource;
@@ -378,4 +379,22 @@ it('keeps one shift per person: another person closes the open shift and opens t
     app('auth')->forgetGuards();
     $this->withToken($this->token)->postJson('/api/v1/pos/sales', $sale())->assertCreated();
     expect(ShiftResource::sellers(Shift::find($mine)))->toBe('Sold by Esi (1), Kofi (1)');
+});
+
+it('filters and sorts till sales by teller, total and how they were paid', function () {
+    $cash = $this->withToken($this->token)->postJson('/api/v1/pos/sales', cart($this, [[$this->milo, true, '2']]))->assertCreated()->json('sale.id');
+    $card = $this->withToken($this->token)->postJson('/api/v1/pos/sales', cart($this, [[$this->bread, true, '1']],
+        [['method' => 'card', 'amount_minor' => 1850, 'tendered_minor' => 1850, 'reference' => 'APPROVAL-1']]))->assertCreated()->json('sale.id');
+    app('auth')->forgetGuards();
+    Filament\Facades\Filament::setCurrentPanel(Filament\Facades\Filament::getPanel('admin'));
+    $this->withoutToken()->actingAs(withMfa($this->owner), 'web');
+    [$cash, $card] = [Sale::find($cash), Sale::find($card)];
+
+    $list = fn () => Livewire\Livewire::test(ListSales::class);
+    $list()->filterTable('payment_method', ['card'])->assertCanSeeTableRecords([$card])->assertCanNotSeeTableRecords([$cash]);
+    $list()->filterTable('total_minor_range', ['from' => '50'])->assertCanSeeTableRecords([$cash])->assertCanNotSeeTableRecords([$card]);
+    $list()->filterTable('cashier_id', [$this->cashier->id])->assertCanSeeTableRecords([$cash, $card]);
+    $list()->sortTable('total_minor')->assertCanSeeTableRecords([$card, $cash], inOrder: true);
+    $list()->sortTable('paid_by')->assertCanSeeTableRecords([$card, $cash], inOrder: true); // "card" before "cash"
+    $list()->sortTable('cashier_name')->assertSuccessful();
 });

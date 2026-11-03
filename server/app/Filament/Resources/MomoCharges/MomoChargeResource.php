@@ -4,6 +4,7 @@ namespace App\Filament\Resources\MomoCharges;
 
 use App\Filament\Resources\MomoCharges\Pages\ListMomoCharges;
 use App\Filament\Support\Erp;
+use App\Filament\Support\ListFilters;
 use App\Models\MomoCharge;
 use App\Models\SalePayment;
 use App\Support\Money;
@@ -70,16 +71,19 @@ class MomoChargeResource extends Resource
                         'success' => 'success', 'failed', 'expired' => 'danger', default => 'warning'
                     })
                     ->description(fn (MomoCharge $r) => $r->status !== 'success' ? $r->message : null),
-                TextColumn::make('amount_minor')->label('Amount')->formatStateUsing(fn ($state, MomoCharge $r) => Money::display((int) $state, $r->currency_code)),
+                TextColumn::make('amount_minor')->label('Amount')->sortable()->formatStateUsing(fn ($state, MomoCharge $r) => Money::display((int) $state, $r->currency_code)),
                 TextColumn::make('network')->formatStateUsing(fn ($state) => SalePayment::MOMO_PROVIDERS[$state] ?? $state),
                 TextColumn::make('phone')->label('Customer number'),
                 TextColumn::make('sale.receipt_no')->label('Sale')->placeholder(fn (MomoCharge $r) => $r->status === 'success' ? 'Paid, not on a sale' : '—'),
                 TextColumn::make('provider_ref')->label('Transaction')->placeholder('—')->copyable(),
                 TextColumn::make('branch.name')->label('Branch')->toggleable(),
                 TextColumn::make('device.name')->label('Till')->toggleable(),
-                TextColumn::make('requested_by_name')->label('Cashier')->toggleable(),
+                TextColumn::make('requested_by_name')->label('Cashier')->toggleable()->sortable(),
             ])
             ->filters([
+                ListFilters::person(self::class, 'requested_by_name', 'requested_by_name', 'Cashier'),
+                ListFilters::amount('amount_minor', 'Amount'),
+                ListFilters::dates('created_at', 'Asked'),
                 SelectFilter::make('status')->options(MomoCharge::STATUSES),
                 // Money received with no sale: the till gave up before the customer approved — give it back or ring up the sale.
                 Filter::make('unused')->label('Paid, not on a sale')->query(fn (Builder $q) => $q->where('status', 'success')->whereNull('sale_id')),

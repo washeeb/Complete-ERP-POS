@@ -6,6 +6,7 @@ use App\Domain\Sales\ReceivablesService;
 use App\Filament\Resources\CustomerPayments\Pages\ListCustomerPayments;
 use App\Filament\Support\Erp;
 use App\Filament\Support\GlobalSearch;
+use App\Filament\Support\ListFilters;
 use App\Models\CustomerPayment;
 use App\Models\SalePayment;
 use App\Support\Money;
@@ -92,9 +93,12 @@ class CustomerPaymentResource extends Resource
                     .($record->provider ? ' · '.(SalePayment::MOMO_PROVIDERS[$record->provider] ?? $record->provider) : '')),
                 TextColumn::make('reference')->placeholder('—')->searchable(),
                 TextColumn::make('amount_minor')->label('Amount')->alignEnd()->formatStateUsing(fn ($state, CustomerPayment $record) => Money::display($state, $record->currency_code)),
-                TextColumn::make('received_by_name')->label('Received by'),
+                TextColumn::make('received_by_name')->label('Received by')->sortable(),
             ])
-            ->filters([SelectFilter::make('method')->options(ReceivablesService::METHODS)])
+            ->filters([SelectFilter::make('method')->options(ReceivablesService::METHODS)->multiple(),
+                ListFilters::person(self::class, 'received_by_name', 'received_by_name', 'Received by'),
+                ListFilters::amount('amount_minor', 'Amount'),
+                ListFilters::dates('received_on', 'Received', isDate: true)])
             ->defaultSort('received_on', 'desc')
             ->recordActions([
                 Action::make('print')->label('Receipt')->icon(Heroicon::OutlinedPrinter)->color('gray')

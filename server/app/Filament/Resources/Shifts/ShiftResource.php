@@ -8,6 +8,7 @@ use App\Filament\Resources\Shifts\Pages\ListShifts;
 use App\Filament\Support\CashCountForm;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\ListFilters;
 use App\Models\SalePayment;
 use App\Models\Shift;
 use App\Models\TillDrawerEvent;
@@ -131,6 +132,9 @@ class ShiftResource extends Resource
                 TextColumn::make('close_note')->label('Note')->limit(40)->toggleable(),
             ])
             ->filters([SelectFilter::make('status')->options(['open' => 'Open', 'closed' => 'Closed']),
+                ListFilters::person(self::class, 'opened_by', 'opened_by_name', 'Teller'),
+                ListFilters::dates('opened_at', 'Opened'),
+                ListFilters::amount('over_short_minor', 'Over / short', signed: true),
                 Filter::make('vault_waiting')->label('Vaults waiting for the manager\'s count')
                     ->query(fn (Builder $q) => $q->whereNotNull('vault_id')->where('status', 'closed')->whereNull('checked_at'))])
             ->recordActions([

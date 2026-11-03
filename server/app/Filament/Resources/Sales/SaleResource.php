@@ -8,6 +8,7 @@ use App\Filament\Resources\Sales\Pages\ViewSale;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
 use App\Filament\Support\GlobalSearch;
+use App\Filament\Support\ListFilters;
 use App\Models\Branch;
 use App\Models\Sale;
 use App\Models\SalePayment;
@@ -155,15 +156,23 @@ class SaleResource extends Resource
                     ->description(fn (Sale $r) => $r->kind === 'return' ? 'Return' : null),
                 TextColumn::make('occurred_at')->label('Sold at')->dateTime()->sortable(),
                 TextColumn::make('branch.code')->label('Branch'),
-                TextColumn::make('cashier_name')->asPerson('cashier_id')->label('Teller')->searchable(),
+                TextColumn::make('cashier_name')->asPerson('cashier_id')->label('Teller')->searchable()->sortable(),
                 TextColumn::make('total_minor')->label('Total')->sortable()->alignEnd()
                     ->formatStateUsing(fn ($state, Sale $r) => self::money($state, $r)),
                 TextColumn::make('paid_by')->label('Paid by')
-                    ->state(fn (Sale $r) => $r->payments->pluck('method')->unique()->map(fn ($m) => SalePayment::METHODS[$m])->implode(' + ')),
+                    ->state(fn (Sale $r) => $r->payments->pluck('method')->unique()->map(fn ($m) => SalePayment::METHODS[$m])->implode(' + '))
+                    // Sorted by the method that paid most of the sale.
+                    ->sortable(query: fn (Builder $query, string $direction) => $query->orderBy(SalePayment::query()->select('method')->whereColumn('sale_payments.sale_id', 'sales.id')
+                        ->orderByDesc('amount_minor')->limit(1), $direction)),
             ])
             ->filters([
                 SelectFilter::make('branch_id')->label('Branch')->options(fn () => Branch::orderBy('code')->pluck('code', 'id')),
                 Filter::make('today')->label('Today')->query(fn ($q) => $q->where('occurred_at', '>=', now()->startOfDay())),
+                ListFilters::dates('occurred_at', 'Sold'),
+                ListFilters::person(self::class, 'cashier_id', 'cashier_name', 'Teller'),
+                SelectFilter::make('payment_method')->label('Paid by')->multiple()->options(SalePayment::METHODS)
+                    ->query(fn (Builder $query, array $data) => $query->when($data['values'] ?? [], fn ($w, $m) => $w->whereIn('sales.id', SalePayment::query()->select('sale_id')->whereIn('method', $m)))),
+                ListFilters::amount('total_minor', 'Total'),
             ])
             ->defaultSort('occurred_at', 'desc')
             ->recordActions([ViewAction::make()]);

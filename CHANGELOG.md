@@ -19,6 +19,8 @@
 - **Profile photos** (free): on the Profile page, with a round crop; shown in the top bar and the list of users. The server keeps only a cleaned 256-pixel square copy (location and camera details removed), visible only to people signed in to the same company.
 
 ### Changed
+- **Till sales** can be filtered and sorted by **teller**, **total** (from / up to) and **how they were paid**, and filtered by the days sold (owner request). The same filters on related lists: Till shifts (teller, days, over / short), Mobile money (cashier, amount, days), Customer payments (who received it, amount, days, several methods), Invoices, Online orders and Quotes & orders (total, days, who entered it), Till drawer (who); totals and amounts sortable there. Export takes the filtered list. Guide 12.
+- **Till sales** can be filtered and sorted by **teller**, **total** (from / up to) and **how they were paid**, and filtered by the days sold (owner request). The same filters on related lists: Till shifts (teller, days, over / short), Mobile money (cashier, amount, days), Customer payments (who received it, amount, days, several methods), Invoices, Online orders and Quotes & orders (total, days, who entered it), Till drawer (who); totals and amounts sortable there. Export takes the filtered list. Guide 12.
 - **Stock people of one branch can keep products up to date** (owner request): a Stock Controller or Warehouse Manager given a branch, a store or a till can now create and edit products, categories, brands and units; before, only a company-wide grant opened the catalogue, so it did not appear for them. Prices, price lists and tax set-up still need a manager role for the whole company.
 
 ### Fixed
