@@ -46,7 +46,7 @@ it('sets up a WooCommerce channel, keeps its secrets encrypted and never shows t
     Livewire::test(EditSalesChannel::class, ['record' => $c->id])->fillForm(['name' => 'Woo store'])->call('save')->assertHasNoFormErrors();
     expect($c->fresh()->credentials['consumer_key'])->toBe('ck_test')->and($c->fresh()->name)->toBe('Woo store');
 
-    $this->get(SalesChannelResource::getUrl())->assertOk()->assertSee('Woo store')->assertSee('draft')->assertSee("/api/v1/channels/{$c->id}/webhooks");
+    $this->get(SalesChannelResource::getUrl())->assertOk()->assertSee('Woo store')->assertSee('draft')->assertSee(str_replace('/', '\/', "/api/v1/channels/{$c->id}/webhooks"), false); // shortened on the line; whole on hover and when copied
 });
 
 it('activates the built-in shop from the list and shows its address', function () {

@@ -1,6 +1,11 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+- **Lists: one line per row** (owner request): in every list the details under a value (payment breakdowns, who else sold, reasons) moved into the hover tip, long text and names are shortened with the full text on hover, and such values are underlined with dots. View pages and prints unchanged.
+### Fixed
+- **"Could not reach the server" popping up** in the back office (browser and desktop app): a background refresh (the bell every 30 seconds, self-updating lists) missing once on a shaky line no longer shows it; it shows once when the connection stays down, then *Connected again*; a click that did not reach the server says it may not have gone through; requests cut off by leaving the page are ignored; other server answers (e.g. not allowed, not found) no longer say "could not reach".
+
 ### Added
 - **ZionEX Back Office desktop app** (free; owner request): the back office in its own installable Windows app (Tauri, like the till; `desktop/`, `npm run desktop:build`): server address asked once and checked, remembered; opens only that server (other sites in the normal browser); exports saved to Downloads without overwriting and opened; the computer's name, network card and address recorded in the audit log; Ctrl+Shift+S back to set-up. Updated by installing the new version over the old one. Guide 9.8a.
 - **Sensors** (interface stage 5; paid add-on *iot*; the *Sensors* menu under *Stock*): fridges, cold rooms, freezers and rooms (temperature, humidity), mains power and doors. Readings **straight from the device** to its own secret address (JSON or a link; Shelly, Tasmota / ESP32, The Things Network understood) or from **SensorPush** and **Tuya** clouds every 5 minutes. Ranges by kind; **alarms** only after the delay out of range, for power off, doors left open and **silent sensors**; the people on duty told by **bell and WhatsApp / SMS**, reminded every 15 minutes until acknowledged, managers after 30; fridges' alarms open an **urgent breakdown work order**; acknowledged with what was done (stock checked, moved, discarded…). Every reading kept with a daily summary, **signed checks**, a 24-hour chart per sensor and a printable **monthly temperature log** for inspections; dashboard panel. Guide 8.3d.

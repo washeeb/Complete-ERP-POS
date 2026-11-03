@@ -21,3 +21,5 @@
 @if ($menu = \App\Support\Look::menuColor())
     <style>:root.zx-new, :root.zx-new.dark { --zx-menu: {{ $menu }}; }</style>
 @endif
+{{-- Lists keep one line per row; a value with more on hover (a breakdown, a full name) is underlined with dots. --}}
+<style>.fi-ta-cell .fi-ta-text-item [x-tooltip] { text-decoration: underline dotted; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); cursor: help; }</style>

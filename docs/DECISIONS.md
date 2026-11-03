@@ -1073,3 +1073,7 @@ Design:
 - Only the chosen server opens in the window; other links go to the default browser. Downloads are saved to Downloads with a free name and opened. The computer details cookie is the till's, so the audit log already understands it.
 - No self-update yet: it needs a signed update feed on a server SyncLytics runs (same gap as the licence server); updates are installed over the old version, like the till.
 
+## One line per row in lists; quieter connection notices (2026-11-03)
+- Owner: lists should be clean — totals only, details on hover, names on one line. Done once for every list by binding a `TextColumn` subclass in the container (Filament builds columns with `app()`), not by editing ~100 columns: descriptions go into the tooltip, wrapping is off, long text is cut with the whole of it on hover. View pages and prints keep the full detail.
+- "Could not reach the server" kept popping up in browsers and the desktop app: Filament shows it for any failed fetch, including the bell's 30-second refresh on a shaky line (its failure handler has no exception for the bell) and for unrelated statuses (403, 404, 422). Replaced by our own handler: a background refresh must fail twice in a row before anyone is told, once, with "Connected again" after; a click that failed is always told; leaving the page is not a failure; each status gets its own words.
+

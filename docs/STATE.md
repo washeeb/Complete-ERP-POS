@@ -27,7 +27,10 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 | 4 | Service desk (tickets) and asset maintenance | paid add-on — branch `service-desk` |
 | 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid add-on — branch `iot` |
 
-## Back-office desktop app (free) — branch `backoffice-desktop`
+## Clean list lines + connection notices — branch `clean-list-lines`
+- `App\Filament\Support\CleanTextColumn` is bound in place of Filament's `TextColumn` (AppServiceProvider::register): no wrapping, descriptions merged into the tooltip, columns that asked to wrap are cut at 40 characters (full text in the tooltip); `asPerson` cuts names at 24. Dotted underline on tooltipped cells (look-head). Infolists untouched. Failed requests: Filament's error notifications off; `layout.connection-notices` (HEAD_END) handles them (background failure quiet until 2 in a row, clicked = always, `beforeunload` ignored, status texts 419/429/503/5xx/other). Tests: ListLinesTest.
+
+## Back-office desktop app (free) — merged (PR #134)
 - `desktop/src-tauri` (Tauri 2, crate `zionex-backoffice`, product *ZionEX Back Office*, id `com.synclytics.zionex.backoffice`): set-up page (server, `/up` check), `set_server` / `open_setup` / `show_window` / `get_config`; navigation limited to the server, other links via `tauri-plugin-opener`; `on_download` → Downloads (no overwrite) and open; `ses_client` cookie (as the till) + Ctrl+Shift+S. Build: `cd pos; npm run desktop:build` (installer in `desktop/src-tauri/target/release/bundle/nsis`). Rust tests: `cd desktop/src-tauri; cargo test`. No auto-update yet (needs an update server, like the licence server).
 
 ## List filters (owner request) — merged (PR #133, release BHQ5DOJPI)
