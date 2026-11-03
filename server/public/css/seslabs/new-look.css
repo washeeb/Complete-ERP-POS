@@ -380,3 +380,11 @@ a.zx-panel-row:hover { background: color-mix(in oklab, var(--primary-500) 8%, tr
 .zx-pipe-won { border-color: #16a34a; color: #15803d; background: rgb(22 163 74 / .06); }
 .zx-pipe-lost { border-color: #9ca3af; color: #6b7280; background: rgb(107 114 128 / .06); }
 .zx-pipe-over { box-shadow: 0 0 0 3px var(--primary-400); }
+
+/* Projects → My time: the running timer. */
+.zx-timer { display: flex; align-items: center; gap: .9rem; padding: .85rem 1.1rem; border-radius: 12px; border: 1px solid #16a34a55; background: rgb(22 163 74 / .07); }
+.zx-timer-dot { width: .7rem; height: .7rem; border-radius: 999px; background: #16a34a; box-shadow: 0 0 0 4px rgb(22 163 74 / .2); animation: zx-pulse 1.6s ease-in-out infinite; }
+.zx-timer-what { font-weight: 650; }
+.zx-timer-since { font-size: .85rem; color: var(--zx-muted, #5b6676); }
+@keyframes zx-pulse { 50% { box-shadow: 0 0 0 7px rgb(22 163 74 / .08); } }
+@media (prefers-reduced-motion: reduce) { .zx-timer-dot { animation: none; } }

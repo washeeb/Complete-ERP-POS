@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets\Panels;
 
 use App\Filament\Pages\PricesToReview;
+use App\Filament\Pages\TimeApprovals;
 use App\Filament\Resources\ExpenseClaims\ExpenseClaimResource;
 use App\Filament\Resources\LeaveRequests\LeaveRequestResource;
 use App\Filament\Resources\PurchaseOrders\PurchaseOrderResource;
@@ -52,12 +53,15 @@ class MyApprovals extends Widget
             $isPage = ! method_exists($resource, 'canViewAny');
             $out[] = ['label' => $label, 'count' => $n, 'url' => $isPage ? ($resource::canAccess() ? $resource::getUrl() : null) : ($resource::canViewAny() ? $resource::getUrl('index') : null)];
         }
+        if (TimeApprovals::canAccess()) { // time belongs to a branch through its project
+            $out[] = ['label' => 'Timesheets', 'count' => TimeApprovals::waiting()->count(), 'url' => TimeApprovals::getUrl()];
+        }
 
         return $out;
     }
 
     public static function canView(): bool
     {
-        return collect(self::KINDS)->contains(fn ($k) => Erp::canAnywhere($k[1]));
+        return collect(self::KINDS)->contains(fn ($k) => Erp::canAnywhere($k[1])) || TimeApprovals::canAccess();
     }
 }

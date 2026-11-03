@@ -18,7 +18,7 @@ class CreateExpenseClaim extends CreateRecord
     {
         return Erp::run(fn ($actor) => app(ExpenseService::class)->submit($actor, Branch::findOrFail($data['branch_id']), [
             'spent_on' => $data['spent_on'], 'account_id' => $data['account_id'], 'description' => $data['description'], 'payee' => $data['payee'] ?? null,
-            'amount_minor' => FinanceUi::toMinor($data['amount']), 'receipt_path' => $data['receipt_path'] ?? null,
+            'amount_minor' => FinanceUi::toMinor($data['amount']), 'receipt_path' => $data['receipt_path'] ?? null, 'project_id' => $data['project_id'] ?? null,
         ]));
     }
 

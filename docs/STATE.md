@@ -23,11 +23,18 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 | 1a | New look laid out like NetSuite (standard look): header with wide search, + New, name and role; steel-blue band with Recent / Favourites / Home and hover tabs; dark-rail side look; Classic kept; profile photos; profile page in sections | free — branch `new-look-1a` (PR #125) |
 | 1b | Dashboards per role with panels (figures, charts, tables, waiting for you, shortcuts), Arrange/reset; Preferences and Notifications (Profile); Integrations page | free; Integrations paid — branch `stage-1b-dashboards` |
 | 2 | CRM: leads, deals pipeline, quotations, follow-ups, campaigns | paid add-on — branch `crm` |
-| 3 | Projects and job costing | paid |
+| 3 | Projects and job costing | paid add-on — branch `projects` |
 | 4 | Service desk (tickets) and asset maintenance | paid |
 | 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid |
 
-## Stage 2: CRM (paid add-on `crm`) — branch `crm`
+## Stage 3: Projects and job costing (paid add-on `projects`) — branch `projects`
+- `App\Domain\Projects\Projects` (projects, tasks, milestones, rates, `issue` stock, `collectBill/collectExpense/collectTime`, `invoiceMilestone`, `invoiceTime`, `close`, `figures`) and `Timesheets` (log, timer, `submitWeek`, approve/reject). Tables `projects`, `project_tasks`, `project_milestones`, `project_rates`, `time_entries`, `project_issues`, `project_costs` (append-only, unique per source), `project_billings` (GL source: WIP → project costs); `project_id` on `journal_lines`, `invoices`, `purchase_order_lines`, `supplier_bill_lines`, `expense_claims`.
+- Books: accounts `project_wip` 1345, `sales_projects` 4130, `project_costs` 5700 (ChartTemplate adds them). AutoPoster: stock types `project_issue/return` → WIP (internal → project costs); bill/expense lines of billed projects → WIP; project invoices → sales_projects; `project_billings` source. `GeneralLedger` merges on project_id.
+- Hooks: `BillService::post` → collectBill; `ExpenseService::pay` → collectExpense; `Fields::projectField` on PO service lines, bill charges, expense claims.
+- UI: `ProjectResource` (+ Tasks / Milestones / Costs relation managers, header actions), `MyTime`, `TimeApprovals`, `ProjectRates`, `ProjectsPanel`, MyApprovals "Timesheets". Planned module manifest `modules/Projects` removed (reservations deleted in the migration). `ProjectsTest` (9).
+- Next: stage 4 Service desk and asset maintenance (paid).
+
+## Stage 2: CRM (paid add-on `crm`) — merged (PR #129, release BBO3CYZUS)
 - `App\Domain\Crm\Crm` (stages, leads, deals, follow-ups, campaigns, unsubscribe); tables `crm_stages`, `crm_leads`, `crm_deals`, `crm_activities`, `crm_campaigns`, `crm_campaign_recipients`; stages seeded in `TenantBaseline` (head office). Hooks: `CustomerOrderService::confirm/release` → `Crm::orderConfirmed` (deal won). `Messenger::queue` for campaign messages; routes `crm.unsubscribe` (GET asks, POST acts, signed). `erp:crm` every 5 min (reminders, scheduled campaigns). UI: `CrmPipeline`, `CrmFollowUps`, `CrmLeadResource`, `CrmDealResource`, `CrmCampaignResource`, `CrmStageResource`, `CrmUi`, `CrmPanel`; customer page *Follow-up* / *New deal*. Licence: `VendorLicensing::ADDON_FEATURES` + `crm`. `CrmTest` (13).
 - Dev installation runs a development licence with finance, hr, integrations, crm (for screenshots).
 

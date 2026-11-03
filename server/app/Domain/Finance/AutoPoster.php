@@ -30,7 +30,7 @@ final class AutoPoster
         'money_transfers' => 'Money moved between accounts', 'expense_claims' => 'Expense claims paid', 'depreciation' => 'Depreciation', 'asset_disposals' => 'Assets disposed of',
         'staff_loans' => 'Staff loans and advances paid out', 'payroll' => 'Payroll (approved)', 'payroll_payments' => 'Payroll paid',
         'deposits' => 'Booking deposits (restaurant)', 'production' => 'Production labour and cost differences',
-        'nhis_claims' => 'NHIS claims settled',
+        'nhis_claims' => 'NHIS claims settled', 'project_billings' => 'Project work in progress moved to cost (invoiced or closed)',
     ];
 
     /** How each kind of stock movement is balanced against the stock account. */
@@ -44,6 +44,7 @@ final class AutoPoster
         'opening' => 'opening_equity',
         'trade_in' => 'trade_in_clearing', // used items taken in on a sale (the sale's trade-in tender is on the other side)
         'production_issue' => 'wip', 'production_return' => 'wip', 'production_output' => 'wip', 'by_product' => 'wip', // work orders
+        'project_issue' => 'project_wip', 'project_return' => 'project_wip', // projects (internal ones: straight to project costs)
     ];
 
     /** Till tenders → the account the money (or claim) sits in. */
@@ -150,6 +151,7 @@ final class AutoPoster
             'deposits' => [$this->unpostedQuery('deposit_movements', 'deposit_movement', $tenantId), $d('s.occurred_at')],
             'production' => [$this->unpostedQuery('work_order_costs', 'work_order_cost', $tenantId), $d('s.occurred_at')],
             'nhis_claims' => [$this->unpostedQuery('nhis_claims', 'nhis_claim', $tenantId)->where('s.status', 'settled'), 's.paid_on'],
+            'project_billings' => [$this->unpostedQuery('project_billings', 'project_billing', $tenantId), 's.released_on'],
         ];
     }
 
@@ -276,6 +278,10 @@ final class AutoPoster
         $senders = DB::table('stock_transfers')->whereIn('id', collect($rows)->where('type', 'transfer_in')->where('source_type', 'stock_transfer')->pluck('source_id')->unique()->all())
             ->pluck('from_branch_id', 'id');
         $codes = DB::table('branches')->pluck('code', 'id');
+        // Stock issued to (or back from) a project: its work in progress, or its costs for an internal project.
+        $projects = DB::table('project_issues as i')->join('projects as p', 'p.id', '=', 'i.project_id')
+            ->whereIn('i.id', collect($rows)->whereIn('type', ['project_issue', 'project_return'])->pluck('source_id')->unique()->all())
+            ->get(['i.id', 'p.id as project_id', 'p.billing'])->keyBy('id');
         // Containers sold with a held deposit are still ours: they move to "with customers" instead of cost of sales.
         $containers = $this->depositsAsLiability($actor->tenantId)
             ? array_flip(DB::table('products')->where('is_container', true)->whereIn('id', array_unique(array_column($rows, 'product_id')))->pluck('id')->all()) : [];
@@ -287,8 +293,12 @@ final class AutoPoster
                 if (isset($containers[$m->product_id]) && in_array($m->type, ['sale', 'sale_return'], true)) {
                     $counter = 'containers_out';
                 }
+                $project = in_array($m->type, ['project_issue', 'project_return'], true) ? ($projects[$m->source_id] ?? null) : null;
+                if ($project && $project->billing === 'internal') {
+                    $counter = 'project_costs';
+                }
                 $lines[] = ['account' => 'inventory', 'amount' => (int) $m->value, 'branch_id' => $m->branch_id];
-                $lines[] = ['account' => $counter, 'amount' => -(int) $m->value,
+                $lines[] = ['account' => $counter, 'amount' => -(int) $m->value, 'project_id' => $project?->project_id,
                     'branch_id' => $m->type === 'transfer_in' && $m->source_type === 'stock_transfer' ? ($senders[$m->source_id] ?? $m->branch_id) : $m->branch_id];
             }
             $this->gl->post($actor, $first->d, 'auto', "Stock at cost {$codes[$first->branch_id]} {$first->d}", $lines,
@@ -301,11 +311,11 @@ final class AutoPoster
     private function invoices(Actor $actor, int $batch): int
     {
         $rows = $this->rows('invoices', $actor->tenantId, $batch, ['s.id', 's.number', 's.branch_id', 's.customer_id', 's.customer_name', 's.net_minor',
-            's.total_minor', 's.tax_breakdown']);
+            's.total_minor', 's.tax_breakdown', 's.project_id']);
         foreach ($rows as $i) {
             $this->gl->post($actor, $i->d, 'auto', "Invoice {$i->number} {$i->customer_name}", [
                 ['account' => 'receivables', 'amount' => (int) $i->total_minor, 'branch_id' => $i->branch_id, 'party_type' => 'customer', 'party_id' => $i->customer_id],
-                ['account' => 'sales_invoice', 'amount' => -(int) $i->net_minor, 'branch_id' => $i->branch_id],
+                ['account' => $i->project_id ? 'sales_projects' : 'sales_invoice', 'amount' => -(int) $i->net_minor, 'branch_id' => $i->branch_id, 'project_id' => $i->project_id],
                 ...$this->taxLines($i->tax_breakdown, -1, $i->branch_id),
             ], [['invoice', $i->id]], 'invoices', late: true);
         }
@@ -447,6 +457,7 @@ final class AutoPoster
     {
         $rows = $this->rows('supplier_bills', $actor->tenantId, $batch, ['s.id', 's.number', 's.supplier_id', 's.branch_id', 's.total_minor', 's.supplier_invoice_no']);
         $recoverable = DB::table('tax_rates')->where('tenant_id', $actor->tenantId)->pluck('input_recoverable', 'code');
+        $billing = DB::table('projects')->where('tenant_id', $actor->tenantId)->pluck('billing', 'id');
         foreach ($rows as $b) {
             $lines = [['account' => 'payables', 'amount' => -(int) $b->total_minor, 'branch_id' => $b->branch_id, 'party_type' => 'supplier', 'party_id' => $b->supplier_id]];
             foreach (DB::table('supplier_bill_lines')->where('supplier_bill_id', $b->id)->get() as $l) {
@@ -455,7 +466,9 @@ final class AutoPoster
                     $lines[] = ['account' => 'grni', 'amount' => (int) $l->received_value_minor, 'branch_id' => $b->branch_id];
                     $lines[] = ['account' => $costAccount, 'amount' => (int) $l->net_minor - (int) $l->received_value_minor, 'branch_id' => $b->branch_id];
                 } else { // an expense line, or a service on an order: charged to the department (cost centre) when given
-                    $lines[] = ['account' => $costAccount, 'amount' => (int) $l->net_minor, 'branch_id' => $b->branch_id, 'department_id' => $l->department_id];
+                    // Bought for a billed project: its work in progress until invoiced.
+                    $account = $l->project_id && ($billing[$l->project_id] ?? 'internal') !== 'internal' ? 'project_wip' : $costAccount;
+                    $lines[] = ['account' => $account, 'amount' => (int) $l->net_minor, 'branch_id' => $b->branch_id, 'department_id' => $l->department_id, 'project_id' => $l->project_id];
                 }
                 foreach (json_decode($l->tax_breakdown, true) ?? [] as $t) {
                     $lines[] = ['account' => ($recoverable[$t['code']] ?? true) ? "input_tax:{$t['code']}" : $costAccount, 'amount' => (int) $t['amount_minor'], 'branch_id' => $b->branch_id];
@@ -575,12 +588,30 @@ final class AutoPoster
 
     private function expense_claims(Actor $actor, int $batch): int
     {
-        $rows = $this->rows('expense_claims', $actor->tenantId, $batch, ['s.id', 's.number', 's.account_id', 's.paid_from_account_id', 's.branch_id', 's.amount_minor', 's.description']);
+        $rows = $this->rows('expense_claims', $actor->tenantId, $batch, ['s.id', 's.number', 's.account_id', 's.paid_from_account_id', 's.branch_id', 's.amount_minor', 's.description', 's.project_id']);
+        $billing = DB::table('projects')->where('tenant_id', $actor->tenantId)->pluck('billing', 'id');
         foreach ($rows as $e) {
+            $wip = $e->project_id && ($billing[$e->project_id] ?? 'internal') !== 'internal'; // for a billed project: its work in progress
             $this->gl->post($actor, $e->d, 'auto', "Expense {$e->number}: {$e->description}", [
-                ['account' => Account::withoutGlobalScopes()->findOrFail($e->account_id), 'amount' => (int) $e->amount_minor, 'branch_id' => $e->branch_id],
+                ['account' => $wip ? 'project_wip' : Account::withoutGlobalScopes()->findOrFail($e->account_id), 'amount' => (int) $e->amount_minor, 'branch_id' => $e->branch_id,
+                    'project_id' => $e->project_id],
                 ['account' => Account::withoutGlobalScopes()->findOrFail($e->paid_from_account_id), 'amount' => -(int) $e->amount_minor, 'branch_id' => $e->branch_id],
             ], [['expense_claim', $e->id]], 'expense_claims', late: true);
+        }
+
+        return count($rows);
+    }
+
+    /** A billed project's costs leave work in progress for project costs when they are invoiced (or the project closes). */
+    private function project_billings(Actor $actor, int $batch): int
+    {
+        $rows = $this->rows('project_billings', $actor->tenantId, $batch, ['s.id', 's.project_id', 's.branch_id', 's.released_minor', 's.reason']);
+        $numbers = DB::table('projects')->whereIn('id', array_unique(array_column($rows, 'project_id')))->pluck('number', 'id');
+        foreach ($rows as $r) {
+            $this->gl->post($actor, $r->d, 'auto', 'Project '.($numbers[$r->project_id] ?? '').($r->reason === 'close' ? ' closed' : ' invoiced').': costs out of work in progress', [
+                ['account' => 'project_costs', 'amount' => (int) $r->released_minor, 'branch_id' => $r->branch_id, 'project_id' => $r->project_id],
+                ['account' => 'project_wip', 'amount' => -(int) $r->released_minor, 'branch_id' => $r->branch_id, 'project_id' => $r->project_id],
+            ], [['project_billing', $r->id]], 'project_billings', late: true);
         }
 
         return count($rows);

@@ -3,6 +3,7 @@
 namespace App\Domain\Payables;
 
 use App\Domain\Pricing\TaxCalculator;
+use App\Domain\Projects\Projects;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DocumentNumbers;
@@ -11,6 +12,7 @@ use App\Domain\Support\Recorder;
 use App\Models\Account;
 use App\Models\Branch;
 use App\Models\GoodsReceipt;
+use App\Models\Project;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
 use App\Models\SupplierBill;
@@ -150,7 +152,7 @@ final class BillService
                     $t = TaxCalculator::line($net, $rates, false);
                     $variance += $net - $ordered;
                     $orderValue += $ordered;
-                    $lines[] = ['line_no' => $i + 1, 'purchase_order_line_id' => $pl->id, 'account_id' => $pl->account_id, 'department_id' => $pl->department_id,
+                    $lines[] = ['line_no' => $i + 1, 'purchase_order_line_id' => $pl->id, 'account_id' => $pl->account_id, 'department_id' => $pl->department_id, 'project_id' => $pl->project_id,
                         'description' => mb_substr("{$po->number} {$pl->name}", 0, 255), 'qty' => Qty::format($qty), 'unit_cost_minor' => $cost,
                         'order_cost_minor' => (int) $pl->unit_cost_minor, 'net_minor' => $t['net'], 'tax_minor' => $t['tax'], 'total_minor' => $t['gross'], 'tax_breakdown' => $t['breakdown']];
                 } else {
@@ -167,7 +169,7 @@ final class BillService
                     $t = TaxCalculator::line($amount, $rates, false);
                     $lines[] = ['line_no' => $i + 1, 'account_id' => $account->id, 'description' => mb_substr(trim((string) ($in['description'] ?? '')) ?: $account->name, 0, 255),
                         'qty' => '1.000', 'unit_cost_minor' => $amount, 'net_minor' => $t['net'], 'tax_minor' => $t['tax'], 'total_minor' => $t['gross'],
-                        'tax_breakdown' => $t['breakdown'], 'department_id' => ($in['department_id'] ?? null) ?: null];
+                        'tax_breakdown' => $t['breakdown'], 'department_id' => ($in['department_id'] ?? null) ?: null, 'project_id' => self::openProject($in['project_id'] ?? null)];
                 }
             }
 
@@ -266,6 +268,21 @@ final class BillService
         $this->recorder->save($actor, $bill, 'supplier_bill.posted', branchId: $bill->branch_id);
         $this->ledger->post($actor, Supplier::findOrFail($bill->supplier_id), 'bill', $bill->total_minor, $bill->currency_code, 'supplier_bill', $bill->id,
             $bill->number, $bill->due_on, $bill->branch_id, $bill->bill_date->copy()->setTimeFrom(now()));
+        app(Projects::class)->collectBill($bill); // lines charged to projects become their costs
+    }
+
+    /** A project a line is charged to: open ones only. */
+    public static function openProject(?string $id): ?string
+    {
+        if (! $id) {
+            return null;
+        }
+        $p = Project::find($id);
+        if (! $p || ! $p->isOpen()) {
+            throw new DomainException('Charge lines to a project that is still open.');
+        }
+
+        return $p->id;
     }
 
     private function requireApprover(Actor $actor, SupplierBill $bill): void

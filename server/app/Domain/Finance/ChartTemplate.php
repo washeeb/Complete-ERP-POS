@@ -41,6 +41,7 @@ final class ChartTemplate
         ['1320', 'Stock in transit between branches', 'asset', '1300', false, null, 'stock_in_transit'],
         ['1330', 'Returnable containers with customers', 'asset', '1300', false, null, 'containers_out'],
         ['1340', 'Work in progress (production)', 'asset', '1300', false, null, 'wip'],
+        ['1345', 'Project work in progress (costs not yet invoiced)', 'asset', '1300', false, null, 'project_wip'],
         ['1350', 'Goods returned to suppliers (awaiting credit)', 'asset', '1300', false, null, 'supplier_returns'],
         ['1360', 'Freight, duty and clearing to spread (landed costs)', 'asset', '1300', false, null, 'landed_clearing'], // bills for freight / duty go here; a landed cost moves them into stock
         ['1400', 'Tax assets', 'asset', '1000', true, null, null],
@@ -90,6 +91,7 @@ final class ChartTemplate
         ['4100', 'Sales – shops (till)', 'income', '4000', false, null, 'sales_pos'],
         ['4110', 'Sales – wholesale (invoices)', 'income', '4000', false, null, 'sales_invoice'],
         ['4120', 'Sales – online store', 'income', '4000', false, null, 'sales_online'],
+        ['4130', 'Project and service income', 'income', '4000', false, null, 'sales_projects'],
         ['4800', 'Other income', 'income', '4000', false, null, 'other_income'],
         ['4810', 'Unused gift cards (expired)', 'income', '4000', false, null, 'breakage'],
         ['4820', 'Gain or loss on sale of assets', 'income', '4000', false, null, 'disposal'],
@@ -101,6 +103,7 @@ final class ChartTemplate
         ['5400', 'Carriage inwards', 'expense', '5000', false, null, null],
         ['5500', 'Labour and overhead charged to production', 'expense', '5000', false, null, 'production_absorbed'],
         ['5600', 'Production cost differences', 'expense', '5000', false, null, 'production_variance'],
+        ['5700', 'Project costs', 'expense', '5000', false, null, 'project_costs'],
 
         ['6000', 'Operating expenses', 'expense', null, true, null, null],
         ['6100', 'Salaries and wages', 'expense', '6000', false, null, 'salaries'],

@@ -267,6 +267,7 @@ When an industry is first switched on, the system creates its company under **Co
 | **Finance** | Chart of accounts, automatic postings from sales, purchases, stock and payroll; supplier bills; bank reconciliation; month-end; reports | Chapter 7, step 12; your accountant reviews the chart and opening balances |
 | **HR & payroll** | Employees, clock-in at tills, leave, loans, monthly payroll with PAYE and SSNIT, payslips | Chapter 7, step 12; payroll profile checked with your accountant |
 | **CRM** (paid add-on) | Leads, deals on a pipeline, follow-ups with reminders, campaigns by SMS, WhatsApp and e-mail | Section 8.3a below |
+| **Projects** (paid add-on) | Projects with tasks and milestones, timesheets, costs from stock, bills, expenses and time, invoicing, profit per project | Section 8.3b below |
 
 ## 8.3a CRM: leads, deals, follow-ups and campaigns (paid add-on)
 
@@ -355,6 +356,92 @@ new leads and your follow-ups due today (add it with *Arrange*).
 
 **Note:** with branch servers, CRM is used at head office (or on the cloud server), like the customers' accounts.
 
+## 8.3b Projects and job costing (paid add-on)
+
+The **Projects** menu (under the *Sales* tab) runs jobs from start to invoice: a shop fit-out, an installation, a
+consultancy assignment, or an internal job such as a new store. Each project **collects its costs by itself** and
+shows what it earns.
+
+**Availability:** a paid add-on. The menu appears once your licence includes **Projects** (ask SyncLytics; a new
+licence key is entered under *System → Licence*).
+
+**Who can use it** (People → Roles): *See projects…* to look; *Run projects…* to create them, plan tasks and
+milestones, issue stock and set hourly rates; *Log your own time on projects*; *Approve other people's timesheets*;
+*Invoice projects*. Managers get them when Projects arrives; supervisors, technicians and service staff can log time;
+accountants can invoice. Give them to others as needed.
+
+### Step 1 — Hourly rates
+
+**Projects → Hourly rates**: for each person who logs time, what an hour **costs the company** (their pay and
+overheads divided by the hours they work, e.g. GHS 3,000 a month ÷ 176 hours ≈ GHS 17) and, if they have their own
+price, what an hour is **billed at**. **Why:** approved time is valued at the cost rate, so each project shows its true
+cost; only people who run projects see these rates.
+
+### Step 2 — A project
+
+**Projects → Projects → New project**: name, customer, branch, manager, dates, and the **budget** (what it should cost).
+Choose **how it is billed**:
+- **Fixed price, by milestones** — give the **agreed price**, then add milestones on the project (e.g. *Deposit 30 %*,
+  *Delivery 50 %*, *Handover 20 %*). They cannot add up to more than the agreed price.
+- **Time and materials** — the **hourly rate billed** (for people without their own) and the **markup on materials**
+  (e.g. 10 %: items costing 100 are billed at 110).
+- **Internal** — not billed (your own work, e.g. a new branch).
+
+For a billed project, choose the **service on invoices** — a product that is a service, not a stock item (e.g.
+*Professional services*, created under Catalog → Products with *Track stock* off). **Why:** invoices need an item to
+show time, milestones and bought-in costs, with its tax.
+
+On the project, add **tasks** (who does them, by when, hours planned).
+
+![The list of projects](img/projects.png)
+
+### Step 3 — Costs arrive by themselves
+
+- **Stock**: **Issue stock** on the project takes items out of a store at their cost; **Return stock** brings unused
+  items back at what the project was charged. **Why:** the store's stock and the project's cost stay right together.
+- **Bought in**: on a supplier bill (*Other charges*) or a purchase order's service line, choose **For project**.
+- **Expenses**: on an expense claim, choose **For project**; it counts when the claim is paid.
+- **Time**: approved timesheets (Step 4), at each person's cost rate.
+
+The **Costs** list on the project shows each one; the top of the project shows the cost against the budget, what was
+invoiced and the profit so far.
+
+### Step 4 — Timesheets
+
+Everyone who logs time uses **Projects → My time**: **Start timer** when they begin (and **Stop timer** after), or
+**Add time** for a day (project, task, hours, what they did). At the end of the week, **Send this week**.
+
+Managers open **Projects → Time to approve** (also under *Waiting for you* on the dashboard): **Approve** (one or many
+at once) or **Send back** with what to correct. Nobody approves their own time. Approved hours become project costs and,
+for time-and-materials projects, billable time. **Why:** only checked hours are costed and billed.
+
+![My time: the week, the timer and Send this week](img/my-time.png)
+
+### Step 5 — Invoicing
+
+- **Milestones**: on the project, **Invoice** next to a milestone when it is reached.
+- **Time and materials**: **Invoice time and materials** puts everything not yet invoiced on one invoice — hours at the
+  billing rate, materials at cost plus markup, bought-in costs and expenses. To invoice only some, tick them in the
+  **Costs** list and use **Invoice the selected**.
+
+Invoices go to the customer's account like any other (Sales → Invoices) and show the project number as the customer's
+reference.
+
+### Step 6 — Finish
+
+**Finish** (or **Cancel project**) when the work is done: open tasks close, and nothing more can be charged to it.
+**Reopen** if needed.
+
+**In the books** (Finance): every journal line carries its project, so reports can show profit per project. For a
+billed project, stock, bought-in costs and expenses wait in **Project work in progress** (an asset) until they are
+invoiced — each milestone takes the costs so far, a time-and-materials invoice the costs it bills — or the project is
+finished; then they move to **Project costs**. Invoices go to **Project and service income**. An internal project's
+costs go straight to project costs. Staff time is a management figure only: salaries are already in the books through
+payroll. **Why:** costs are matched to the income they earn, as accountants expect.
+
+**Dashboards:** the **Projects** panel shows projects in progress (and those over budget), time and materials not yet
+invoiced, your hours this week and timesheets to approve.
+
 ## 8.4 Planned modules
 
-These appear as **Planned** and can be reserved: **Manufacturing** (bills of materials, production at actual cost), **Logistics & Delivery**, **Assets & Maintenance**, **Projects & Tasks**, **Helpdesk**. This guide gets a checklist for each as it is released.
+These appear as **Planned** and can be reserved: **Manufacturing** (bills of materials, production at actual cost), **Logistics & Delivery**, **Assets & Maintenance**, **Helpdesk**. This guide gets a checklist for each as it is released.
