@@ -2,6 +2,7 @@
 
 namespace App\Domain\Sales;
 
+use App\Domain\Crm\Crm;
 use App\Domain\Customers\CustomerService;
 use App\Domain\Pricing\PriceResolver;
 use App\Domain\Pricing\TaxCalculator;
@@ -106,6 +107,8 @@ final class CustomerOrderService
                 $this->reviews->add($actor, 'credit_hold', 'customer_order', $order->id,
                     "Order {$order->number} for {$customer->name} (".Money::display($order->total_minor, $order->currency_code).') is on credit hold: '.implode('; ', $problems),
                     [], $order->branch_id);
+            } else {
+                app(Crm::class)->orderConfirmed($actor, $order); // the deal it came from is won
             }
 
             return $order;
@@ -134,6 +137,7 @@ final class CustomerOrderService
             $order->forceFill(['status' => 'confirmed', 'released_by_name' => $actor->name, 'released_at' => now()]);
             $this->recorder->save($actor, $order, 'customer_order.released', $reason, $order->branch_id);
             $this->reviews->closeBySystem('customer_order', $order->id, "Released by {$actor->name}: {$reason}");
+            app(Crm::class)->orderConfirmed($actor, $order);
 
             return $order;
         });

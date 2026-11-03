@@ -105,6 +105,23 @@ final class Messenger
             'status' => 'queued', 'sent_by_name' => mb_substr($by, 0, 120), 'next_attempt_at' => now()]);
     }
 
+    /**
+     * Log a message written for the occasion (a campaign) for the relay to deliver, without waiting here. A WhatsApp
+     * message goes out as the approved template named $templateKey, its {placeholders} filled from $params in order.
+     * An address that does not look right is skipped (null).
+     */
+    public function queue(string $tenantId, string $channel, ?string $to, string $body, ?string $subject, array $params, ?string $templateKey, ?string $reference, string $by): ?Message
+    {
+        $to = trim((string) $to);
+        if (! array_key_exists($channel, Message::CHANNELS) || $to === '' || ($channel === 'email' ? ! filter_var($to, FILTER_VALIDATE_EMAIL) : ! Phone::looksValid($to))) {
+            return null;
+        }
+
+        return Message::create(['tenant_id' => $tenantId, 'channel' => $channel, 'to' => mb_substr($to, 0, 160), 'template_key' => $templateKey,
+            'subject' => $subject ? mb_substr($subject, 0, 255) : null, 'body' => $body, 'params' => $params, 'reference' => $reference ? mb_substr($reference, 0, 80) : null,
+            'status' => 'queued', 'sent_by_name' => mb_substr($by, 0, 120), 'next_attempt_at' => now()]);
+    }
+
     /** Retry messages whose provider was down. Run by the relay every few seconds. */
     public function deliverDue(int $limit = 50): int
     {

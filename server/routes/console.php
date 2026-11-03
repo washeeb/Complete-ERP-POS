@@ -32,6 +32,7 @@ Schedule::command('erp:daily-summary')->everyFiveMinutes()->withoutOverlapping(1
 Schedule::command('erp:payment-summary')->everyFiveMinutes()->withoutOverlapping(10); // daily MoMo / card summary after its time
 Schedule::command('erp:pharmacy-signoffs')->dailyAt('19:00')->withoutOverlapping(30); // medicine sales without a pharmacist: reminder or summary
 Schedule::command('vendor:license-reminders')->dailyAt('08:00')->withoutOverlapping(30); // licence server only: renewal reminders
+Schedule::command('erp:crm')->everyFiveMinutes()->withoutOverlapping(10); // CRM: follow-up reminders, scheduled campaigns (head office, add-on)
 Schedule::command('erp:pricing-rules')->hourlyAt(40)->withoutOverlapping(30); // selling prices follow deliveries and freight (head office, incl. synced from branches)
 Schedule::command('erp:reorder-levels --alerts')->dailyAt('07:00')->withoutOverlapping(60); // low-stock message to buyers
 Schedule::command('erp:reports')->everyFifteenMinutes()->withoutOverlapping(30); // scheduled reports by e-mail / WhatsApp

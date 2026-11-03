@@ -1032,3 +1032,13 @@ Design:
 - Set at head office only (like price lists); branch-node deliveries are caught by the hourly run there, since synced documents do not pass through posting. Repeated runs are idempotent and do not repeat messages.
 - Latest delivery: posted_at, then the UUIDv7 id (time-ordered) when two share a second.
 
+## CRM (interface stage 2, 2026-11-03)
+- Paid add-on `crm` (owner: stage 2 paid; Oheneba's licence includes it): named on the licence like Integrations, not part of "all features", so existing licences do not get it unasked.
+- Built on what exists: customers (and their consents), Quotes & orders, the message log and its providers. A deal makes its quotation; confirming the order (or releasing its credit hold) wins the deal at the order's value — no double entry.
+- Leads are separate from customers until converted, so the customer list stays people who bought; converting links to an existing customer with the same phone instead of a duplicate.
+- Records belong to a branch; a person works those of the branches they hold the CRM rights for. Owners of leads/deals and people given follow-ups must hold `crm.manage` for that branch.
+- Four rights (view, manage, campaigns, setup); campaigns separate because they reach many customers at once. Marketing gets campaigns; converting a lead also needs `customers.manage`.
+- Campaigns go only to people who agreed to that channel (Ghana Data Protection Act; WhatsApp and SMS rules), each address once; WhatsApp needs a Meta-approved template name. E-mails carry a signed unsubscribe link whose page asks before acting (mail scanners open links). Messages are queued in the message log (retries, practice companies never send).
+- Kept at head office (or a cloud/standalone server), like customers' accounts: no sync to branch servers in this stage.
+- Pipeline drag-and-drop uses the browser's own drag and drop (no extra library); on phones the stage is changed on the deal.
+

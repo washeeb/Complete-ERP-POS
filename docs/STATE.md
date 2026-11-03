@@ -22,14 +22,17 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 |---|---|---|
 | 1a | New look laid out like NetSuite (standard look): header with wide search, + New, name and role; steel-blue band with Recent / Favourites / Home and hover tabs; dark-rail side look; Classic kept; profile photos; profile page in sections | free — branch `new-look-1a` (PR #125) |
 | 1b | Dashboards per role with panels (figures, charts, tables, waiting for you, shortcuts), Arrange/reset; Preferences and Notifications (Profile); Integrations page | free; Integrations paid — branch `stage-1b-dashboards` |
-| 2 | CRM: leads, deals pipeline, quotations, follow-ups, campaigns | paid |
+| 2 | CRM: leads, deals pipeline, quotations, follow-ups, campaigns | paid add-on — branch `crm` |
 | 3 | Projects and job costing | paid |
 | 4 | Service desk (tickets) and asset maintenance | paid |
 | 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid |
 
-## Pricing rules (free) — branch `pricing-rules`
+## Stage 2: CRM (paid add-on `crm`) — branch `crm`
+- `App\Domain\Crm\Crm` (stages, leads, deals, follow-ups, campaigns, unsubscribe); tables `crm_stages`, `crm_leads`, `crm_deals`, `crm_activities`, `crm_campaigns`, `crm_campaign_recipients`; stages seeded in `TenantBaseline` (head office). Hooks: `CustomerOrderService::confirm/release` → `Crm::orderConfirmed` (deal won). `Messenger::queue` for campaign messages; routes `crm.unsubscribe` (GET asks, POST acts, signed). `erp:crm` every 5 min (reminders, scheduled campaigns). UI: `CrmPipeline`, `CrmFollowUps`, `CrmLeadResource`, `CrmDealResource`, `CrmCampaignResource`, `CrmStageResource`, `CrmUi`, `CrmPanel`; customer page *Follow-up* / *New deal*. Licence: `VendorLicensing::ADDON_FEATURES` + `crm`. `CrmTest` (13).
+- Dev installation runs a development licence with finance, hr, integrations, crm (for screenshots).
+
+## Pricing rules (free) — merged (PR #128, release BJRSVTMLP)
 - `App\Domain\Pricing\PricingRules` (saveRule, ruleFor, latestCost, priceFor, follow, followAll, approve, dismiss); tables `pricing_rules`, `price_suggestions`. Hooks: `GoodsReceiptService::post`, `LandedCostService::post`; hourly `erp:pricing-rules` (head office). Pages: `PricingRuleResource`, `PricesToReview`; panel kind `prices`; notify topic `pricing`; note on the product form. `PricingRulesTest` (10).
-- Next: stage 2 CRM (paid).
 
 ## Catalogue for branch stock people — branch `catalog-branch-staff`
 - `catalog.*` checked anywhere (pages, `SimpleCatalogResource`, `CatalogService`, `UnitChangeService`, `StyleService`); `pricing.*` stays company-wide. `StockControllerRoleTest` updated.

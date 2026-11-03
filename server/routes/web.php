@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Access\AccessService;
+use App\Domain\Crm\Crm;
 use App\Domain\Purchasing\OrderSender;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
@@ -108,6 +109,14 @@ Route::get('po/{po}', function (string $po) {
 
     return Storage::disk('local')->download($path, PurchaseOrder::withoutGlobalScopes()->whereKey($po)->value('number').'.pdf');
 })->name('purchase-order.pdf')->whereUuid('po')->middleware(['signed', 'throttle:30,1']);
+
+// Someone stops campaign e-mails from the link in one (CRM): no sign-in, a signed link. The page asks first, so mail
+// scanners opening links do not unsubscribe people; the button posts.
+Route::get('u/{kind}/{id}/{channel}', fn (string $kind, string $id, string $channel) => view('crm-unsubscribe', ['done' => false, 'company' => null]))
+    ->name('crm.unsubscribe')->where(['kind' => 'customer|lead', 'channel' => 'email|sms|whatsapp'])->whereUuid('id')->middleware(['signed', 'throttle:30,1']);
+Route::post('u/{kind}/{id}/{channel}', fn (string $kind, string $id, string $channel) => view('crm-unsubscribe', ['done' => true,
+    'company' => app(Crm::class)->unsubscribe($kind, $id, $channel)]))
+    ->where(['kind' => 'customer|lead', 'channel' => 'email|sms|whatsapp'])->whereUuid('id')->middleware(['signed', 'throttle:10,1']);
 
 // A supplier quotes on a request for quotation from the link sent to them: no sign-in, that request only.
 Route::get('q/{token}', [RfqQuoteController::class, 'show'])->name('rfq.quote')->middleware('throttle:30,1');
