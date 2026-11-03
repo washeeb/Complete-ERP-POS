@@ -8,6 +8,7 @@ use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
 use App\Domain\Sync\Transport\HttpSyncTransport;
 use App\Domain\Sync\Transport\SyncTransport;
+use App\Filament\Support\CleanTextColumn;
 use App\Filament\Support\TableExport;
 use App\Http\Middleware\RecordSlowRequests;
 use App\Http\Responses\HomeLoginResponse;
@@ -49,6 +50,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(LoginResponse::class, HomeLoginResponse::class); // after signing in: the person's own home page
+        $this->app->bind(TextColumn::class, CleanTextColumn::class); // every list: one line per row, details on hover
         // SyncLytics' licence generator (/vendor): only on the licence server, and its files are left out of client builds.
         if (config('license.server.enabled') && class_exists(VendorPanelProvider::class)) {
             $this->app->register(VendorPanelProvider::class);
@@ -76,10 +78,14 @@ class AppServiceProvider extends ServiceProvider
         });
         // Who did it: the name at the time, as recorded (also on prints). If the account has been renamed since, an icon
         // and a hint give today's name; People & access → Users → Name history lists every rename.
+        // In lists a name stays on one line: a long one is shortened, the full name on hover (CleanTextColumn).
         foreach ([TextColumn::class, TextEntry::class] as $component) {
             $component::macro('asPerson', function (string $idColumn) {
                 /** @var TextColumn|TextEntry $this */
                 $renamed = fn ($state, $record) => People::renamedTo($record?->{$idColumn}, $state);
+                if ($this instanceof TextColumn) {
+                    $this->limit(24);
+                }
 
                 return $this->icon(fn ($state, $record) => $renamed($state, $record) ? 'heroicon-m-arrows-right-left' : null)->iconPosition('after')
                     ->tooltip(fn ($state, $record) => ($now = $renamed($state, $record)) ? "Account now named {$now}" : null);
