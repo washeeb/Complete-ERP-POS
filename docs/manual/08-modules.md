@@ -269,6 +269,7 @@ When an industry is first switched on, the system creates its company under **Co
 | **CRM** (paid add-on) | Leads, deals on a pipeline, follow-ups with reminders, campaigns by SMS, WhatsApp and e-mail | Section 8.3a below |
 | **Projects** (paid add-on) | Projects with tasks and milestones, timesheets, costs from stock, bills, expenses and time, invoicing, profit per project | Section 8.3b below |
 | **Service desk and maintenance** (paid add-on) | Tickets from WhatsApp, e-mail, the web and staff with deadlines; equipment register, servicing plans and work orders | Section 8.3c below |
+| **Sensors** (paid add-on) | Fridge, cold-room, freezer and room temperature and humidity, power and doors; alarms by WhatsApp / SMS; temperature log | Section 8.3d below |
 
 ## 8.3a CRM: leads, deals, follow-ups and campaigns (paid add-on)
 
@@ -528,6 +529,82 @@ contract to **Warranty and after-sales costs**; for a chargeable job to **cost o
 
 **Dashboards:** the **Service desk and maintenance** panel shows open and late tickets, the customers' rating, equipment
 not working and open work orders.
+
+## 8.3d Sensors: fridges, cold rooms, freezers, rooms, power and doors (paid add-on)
+
+The **Sensors** menu (under *Stock*) watches temperature and humidity around the clock, tells the people on duty the
+moment something is wrong, and keeps the temperature log inspectors ask for (FDA Ghana, Good Pharmacy Practice).
+
+**Availability:** a paid add-on. It appears once your licence includes **Sensors** (ask SyncLytics; a new licence key
+is entered under *System → Licence*).
+
+**Who can use it** (People → Roles): *See sensors…* (anyone who should see the log); *Respond to sensor alarms and sign
+fridge checks* (pharmacists, technicians, storekeepers, supervisors — the people on duty); *Set up sensors…* (managers:
+they are also told when an alarm goes unanswered). Give each person their **phone number** on their user record so
+alarms reach them by WhatsApp or SMS.
+
+### Step 1 — Choose the sensors
+
+Any sensor that can send its readings over the internet works. Three ways:
+1. **Straight to ZionEX (recommended)** — Wi-Fi or LoRa devices that can post to a web address: for example Shelly
+   (H&T for rooms; a Shelly with a wired temperature probe for fridges, the probe inside and the device outside so
+   Wi-Fi reaches it), ESP32 / Tasmota devices, or LoRaWAN sensors through The Things Network. No subscription.
+2. **A model SyncLytics recommends and sets up** — ask us; we test it and configure it for you.
+3. **A sensor cloud** — if you already have **SensorPush** (with its gateway) or **Tuya / Smart Life** sensors, ZionEX
+   reads them from their cloud every 5 minutes (Step 3).
+
+**Why:** a probe sensor gives the temperature of the fridge's air and contents, independent of the fridge's own
+thermostat; a sensor that reports on its own needs nobody to remember to look.
+
+### Step 2 — Add each sensor
+
+**Sensors → Sensors → New sensor**: a name (e.g. *Vaccine fridge, dispensary*), what it watches (fridge, cold room,
+freezer, room, mains power, door), the branch, and the **equipment** it is on (Maintenance → Equipment) so an alarm opens
+a breakdown work order. The range fills in by itself — fridges and cold rooms 2–8 °C, freezers −25 to −15 °C, rooms 15–25 °C
+and 30–65 % humidity — change it to your products' storage conditions.
+- **Alarm after … minutes out of range** (10 by default): opening the door to take out a vial is not an alarm.
+- **Alarm when no reading for … minutes** (30): a silent sensor (flat battery, Wi-Fi down, power cut) could hide a warm
+  fridge.
+
+Save, then **Sensor address** shows the secret address the device sends to, with examples (JSON for most devices; a
+link with `?temp=…&hum=…` for devices that can only call a web address, such as Shelly's). Enter it in the device's
+settings. The sensor shows **In range** once its first reading arrives. **New address** replaces it if a device is
+replaced or the address was shared.
+
+![The sensors, with what each reads now](img/sensors.png)
+
+### Step 3 — Sensor clouds (only for SensorPush or Tuya sensors)
+
+**Sensors → Sensor clouds → Add a sensor cloud**: for SensorPush the account's e-mail and password; for Tuya the Access
+ID and Secret of a cloud project (iot.tuya.com) linked to the Smart Life app account, and its data centre. Then on each
+sensor choose *SensorPush cloud* or *Tuya cloud*, the account, and the sensor's id in it. **Read now** checks it works;
+a problem shows on the line.
+
+### Step 4 — When an alarm goes off
+
+The people on duty for the branch are told at once — the bell, and **WhatsApp or SMS** (System → Messaging must be set
+up; WhatsApp needs the template *sensor_alarm* approved by Meta, otherwise SMS is used) — and again **every 15 minutes**
+until someone acknowledges it. After **30 minutes** the managers are told that nobody has. A fridge, cold room or freezer
+with its equipment chosen also gets an **urgent breakdown work order** (Service desk and maintenance add-on).
+
+**Sensors → Alarms → Acknowledge**: check the stock (how warm, for how long?) and say what was done — stock fine, moved to
+another fridge, quarantined or discarded (name the product, batch and quantity), fault fixed, false alarm. The alarm
+closes when it is acknowledged and the reading is back in range. **Why:** inspectors look for what was done about every
+excursion, and by whom.
+
+Each person chooses under **Profile → Notifications → Sensor alarms** whether alarms reach them by the bell, WhatsApp or SMS.
+
+### Step 5 — Daily checks and the temperature log
+
+On a fridge's page, **Record a check**: what the fridge's own display shows and whether all is well, signed with your
+name. Most pharmacies check morning and afternoon. The dashboard's **Sensors** panel shows how many fridges are checked
+today.
+
+**Sensors → Temperature log**: choose the sensor and the month — each day's lowest, highest and average, minutes out of
+range, the signed checks, and every alarm with what was done. **Print / save as PDF** for the inspector's file, and sign
+the *Reviewed by* line. Every reading is kept.
+
+![The monthly temperature log](img/temperature-log.png)
 
 ## 8.4 Planned modules
 

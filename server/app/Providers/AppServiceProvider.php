@@ -145,6 +145,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('public-api', fn (Request $r) => Limit::perMinute(120)->by('api:'.(string) $r->user()?->getKey()));
         RateLimiter::for('device-enroll', fn (Request $r) => Limit::perMinute(5)->by($r->ip()));
         RateLimiter::for('webhooks', fn (Request $r) => Limit::perMinute(300)->by((string) $r->route('channel')));
+        RateLimiter::for('iot', fn (Request $r) => Limit::perMinute(30)->by((string) $r->route('token'))); // a sensor reports every minute or few; more is a fault or an attack
         RateLimiter::for('node-sync', fn (Request $r) => Limit::perMinute(600)->by($r->header('X-Sync-Node').'|'.$r->ip()));
         RateLimiter::for('wms', fn (Request $r) => Limit::perMinute(300)->by((string) $r->user()?->getKey())); // scanning is bursty
         RateLimiter::for('kds', fn (Request $r) => Limit::perMinute(240)->by((string) $r->user()?->getKey())); // kitchen screens poll every few seconds

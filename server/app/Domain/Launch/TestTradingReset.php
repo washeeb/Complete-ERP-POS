@@ -37,6 +37,8 @@ final class TestTradingReset
         'project_issues', 'project_costs', 'project_billings', 'time_entries',
         // Service desk tickets and maintenance jobs (the equipment register and plans stay)
         'tickets', 'ticket_messages', 'maintenance_orders', 'maintenance_parts',
+        // Sensor readings, their daily summaries, alarms and checks (the sensors stay)
+        'iot_readings', 'iot_days', 'iot_alarms', 'iot_checks',
         'rfqs', 'rfq_lines', 'rfq_suppliers', 'rfq_quote_lines', 'supplier_invoices',
         // Selling on account, orders and online orders
         'customer_orders', 'customer_order_lines', 'deliveries', 'delivery_lines', 'invoices', 'invoice_lines', 'credit_notes', 'customer_payments', 'customer_ledger',
