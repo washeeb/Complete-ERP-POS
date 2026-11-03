@@ -3,12 +3,16 @@
 namespace App\Filament\Resources\WhatsappOrders;
 
 use App\Domain\Channels\WhatsappOrders;
+use App\Domain\Service\ServiceDesk;
 use App\Filament\Resources\SalesOrders\SalesOrderResource;
+use App\Filament\Resources\Tickets\TicketResource;
 use App\Filament\Resources\WhatsappOrders\Pages\ListWhatsappOrders;
 use App\Filament\Resources\WhatsappOrders\Pages\ViewWhatsappOrder;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
+use App\Filament\Support\ServiceUi;
 use App\Models\Branch;
+use App\Models\Ticket;
 use App\Models\WhatsappOrder;
 use App\Support\Settings;
 use BackedEnum;
@@ -165,6 +169,15 @@ class WhatsappOrderResource extends Resource
                 ->modalDescription('The customer is told on WhatsApp, with your reason.')
                 ->schema([TextInput::make('reason')->label('Why (the customer sees this)')->required()->maxLength(255)->placeholder('e.g. out of stock, or a prescription is needed')])
                 ->action(fn (WhatsappOrder $record, array $data) => Erp::run(fn ($actor) => $svc()->decline($actor, $record, $data['reason']), 'Declined; the customer was told')),
+            // Not an order but a problem (a complaint, a return, a question): the service desk takes it, and their next messages.
+            Action::make('ticket')->label('Make a ticket')->icon(Heroicon::OutlinedLifebuoy)->color('gray')
+                ->visible(fn (WhatsappOrder $record) => $record->status === 'new' && ServiceUi::can('helpdesk.work'))
+                ->schema([Select::make('kind')->label('What kind')->options(array_diff_key(Ticket::KINDS, ['internal' => 1]))->default('support')->required()->selectablePlaceholder(false),
+                    Select::make('priority')->options(Ticket::PRIORITIES)->default('normal')->required()->selectablePlaceholder(false)])
+                ->action(function (WhatsappOrder $record, array $data, $livewire) {
+                    $t = Erp::run(fn ($actor) => app(ServiceDesk::class)->fromWhatsappOrder($actor, $record, $data), 'Ticket opened');
+                    $livewire->redirect(TicketResource::getUrl('view', ['record' => $t]));
+                }),
         ];
     }
 

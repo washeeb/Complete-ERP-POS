@@ -6,6 +6,7 @@ use App\Domain\Messaging\Gateways;
 use App\Domain\Messaging\Messenger;
 use App\Domain\Messaging\Phone;
 use App\Domain\Pricing\PriceResolver;
+use App\Domain\Service\ServiceDesk;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DocumentNumbers;
@@ -119,6 +120,9 @@ final class WhatsappOrders
         $media = $type === 'text' ? null : ['id' => (string) ($msg[$type]['id'] ?? ''), 'mime' => (string) ($msg[$type]['mime_type'] ?? ''),
             'name' => isset($msg[$type]['filename']) ? mb_substr((string) $msg[$type]['filename'], 0, 120) : null, 'path' => null, 'tries' => 0, 'error' => null];
         $actor = Actor::system($tenantId, 'WhatsApp', 'whatsapp');
+        if ($text !== '' && ! $media && app(ServiceDesk::class)->absorbWhatsapp($tenantId, '+'.ltrim($from, '+'), $text)) {
+            return null; // they wrote about their open ticket (service desk)
+        }
 
         [$o, $new] = $this->recorder->transaction(function () use ($tenantId, $from, $name, $text, $media, $id, $actor) {
             $open = WhatsappOrder::where('from_phone', $from)->where('status', 'new')->where('last_message_at', '>=', now()->subHours(self::JOIN_HOURS))

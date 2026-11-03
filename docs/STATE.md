@@ -24,10 +24,16 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 | 1b | Dashboards per role with panels (figures, charts, tables, waiting for you, shortcuts), Arrange/reset; Preferences and Notifications (Profile); Integrations page | free; Integrations paid — branch `stage-1b-dashboards` |
 | 2 | CRM: leads, deals pipeline, quotations, follow-ups, campaigns | paid add-on — branch `crm` |
 | 3 | Projects and job costing | paid add-on — branch `projects` |
-| 4 | Service desk (tickets) and asset maintenance | paid |
+| 4 | Service desk (tickets) and asset maintenance | paid add-on — branch `service-desk` |
 | 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid |
 
-## Stage 3: Projects and job costing (paid add-on `projects`) — branch `projects`
+## Stage 4: Service desk and maintenance (paid add-on `service`) — branch `service-desk` (on top of `projects`)
+- `App\Domain\Service\ServiceDesk` (levels, open, fromWeb/fromEmail/absorbWhatsapp/fromWhatsappOrder, reply, note, assign, resolve, reopen, customerSaid, rate, watch, warranty) and `Maintenance` (assets, meter, plans, duePlans, open, breakdown, fromTicket, start, waitForParts, labour, parts, collectBill, complete, cancel, invoice). Tables `service_levels`, `tickets`, `ticket_messages`, `maintenance_assets`, `maintenance_plans`, `maintenance_orders`, `maintenance_parts`; `supplier_bill_lines.maintenance_order_id`.
+- Books: stock types `maintenance_issue/return` → `repairs` (6600, now keyed) / `warranty_costs` (6610) / `cogs` by the job. Public: `ServiceDeskPublicController` (`/help/{slug}`, signed `/r/{ticket}`, `POST /api/v1/service/email/{key}`). `erp:service` every 5 min. WhatsApp: `WhatsappOrders::store` hands messages to an open WhatsApp ticket.
+- UI: `TicketResource` (list / create / view with conversation and actions; "My requests" for staff), `ServiceLevels`, `MaintenanceAssetResource` (+ plans, orders), `MaintenanceOrderResource`, `ServicePanel`, WhatsApp entry "Make a ticket", bill charge "For work order"; settings group hidden without the add-on (`ManageSettings`). Planned manifests Helpdesk and Assets removed (reservations deleted). `ServiceDeskTest` (11).
+- Next: stage 5 IoT (paid): sensors call `Maintenance::breakdown()`.
+
+## Stage 3: Projects and job costing (paid add-on `projects`) — PR #130 (CI green)
 - `App\Domain\Projects\Projects` (projects, tasks, milestones, rates, `issue` stock, `collectBill/collectExpense/collectTime`, `invoiceMilestone`, `invoiceTime`, `close`, `figures`) and `Timesheets` (log, timer, `submitWeek`, approve/reject). Tables `projects`, `project_tasks`, `project_milestones`, `project_rates`, `time_entries`, `project_issues`, `project_costs` (append-only, unique per source), `project_billings` (GL source: WIP → project costs); `project_id` on `journal_lines`, `invoices`, `purchase_order_lines`, `supplier_bill_lines`, `expense_claims`.
 - Books: accounts `project_wip` 1345, `sales_projects` 4130, `project_costs` 5700 (ChartTemplate adds them). AutoPoster: stock types `project_issue/return` → WIP (internal → project costs); bill/expense lines of billed projects → WIP; project invoices → sales_projects; `project_billings` source. `GeneralLedger` merges on project_id.
 - Hooks: `BillService::post` → collectBill; `ExpenseService::pay` → collectExpense; `Fields::projectField` on PO service lines, bill charges, expense claims.

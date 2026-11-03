@@ -210,7 +210,7 @@ the owner sees the whole business. Panels show only what the person may see, for
 - **Light or dark**, and **Lists**: comfortable or compact (more rows on the screen).
 
 **Notifications** (Profile → *Notifications*): for each kind of notification — waiting for your approval, buying, stock,
-prices to review, customers and deals (CRM), projects, cash, pharmacy, payments received, the daily summary, server and devices — tick how it reaches you: the bell in the back
+prices to review, customers and deals (CRM), projects, service desk and maintenance, cash, pharmacy, payments received, the daily summary, server and devices — tick how it reaches you: the bell in the back
 office and, where the company uses them, e-mail, SMS or WhatsApp. **Why:** people get what they act on, not everything.
 The company still decides which channels are used at all (System → Settings → *Payment alerts*, *Daily summary*), and
 security notices (SyncLytics support signing in) always reach the owner.

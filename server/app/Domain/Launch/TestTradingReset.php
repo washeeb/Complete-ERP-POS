@@ -35,6 +35,8 @@ final class TestTradingReset
         'supplier_balances', 'payable_allocations', 'consignment_sales', 'landed_costs', 'landed_cost_charges', 'landed_cost_lines', 'price_suggestions',
         // Projects' costs, stock issued to them, time and what was moved out of work in progress
         'project_issues', 'project_costs', 'project_billings', 'time_entries',
+        // Service desk tickets and maintenance jobs (the equipment register and plans stay)
+        'tickets', 'ticket_messages', 'maintenance_orders', 'maintenance_parts',
         'rfqs', 'rfq_lines', 'rfq_suppliers', 'rfq_quote_lines', 'supplier_invoices',
         // Selling on account, orders and online orders
         'customer_orders', 'customer_order_lines', 'deliveries', 'delivery_lines', 'invoices', 'invoice_lines', 'credit_notes', 'customer_payments', 'customer_ledger',
