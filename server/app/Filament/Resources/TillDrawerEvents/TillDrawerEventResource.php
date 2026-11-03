@@ -4,6 +4,7 @@ namespace App\Filament\Resources\TillDrawerEvents;
 
 use App\Filament\Resources\TillDrawerEvents\Pages\ListTillDrawerEvents;
 use App\Filament\Support\Erp;
+use App\Filament\Support\ListFilters;
 use App\Models\Branch;
 use App\Models\TillDrawerEvent;
 use App\Support\Money;
@@ -81,6 +82,7 @@ class TillDrawerEventResource extends Resource
                 TextColumn::make('offline')->label('Offline')->formatStateUsing(fn ($state) => $state ? 'yes' : '')->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                ListFilters::person(self::class, 'user_id', 'user_name', 'By'),
                 SelectFilter::make('kind')->label('What')->options(TillDrawerEvent::KINDS),
                 SelectFilter::make('branch_id')->label('Branch')->options(fn () => Branch::orderBy('code')->pluck('name', 'id')),
                 Filter::make('period')->schema([DatePicker::make('from'), DatePicker::make('until')])

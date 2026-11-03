@@ -13,6 +13,7 @@ use App\Filament\Resources\Waybills\WaybillResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\GlobalSearch;
+use App\Filament\Support\ListFilters;
 use App\Filament\Support\QuickCreate;
 use App\Models\Customer;
 use App\Models\CustomerOrder;
@@ -260,14 +261,16 @@ class CustomerOrderResource extends Resource
                 TextColumn::make('quote_number')->label('Quote')->searchable(),
                 TextColumn::make('number')->label('Order')->searchable()->placeholder('—'),
                 TextColumn::make('customer.name')->label('Customer')->searchable(),
-                TextColumn::make('total_minor')->label('Total')->alignEnd()->formatStateUsing(fn ($state, CustomerOrder $record) => self::money($state, $record)),
+                TextColumn::make('total_minor')->label('Total')->alignEnd()->sortable()->formatStateUsing(fn ($state, CustomerOrder $record) => self::money($state, $record)),
                 TextColumn::make('status')->badge()->formatStateUsing(fn ($state) => CustomerOrder::STATUSES[$state] ?? $state)
                     ->color(fn ($state) => match ($state) {
                         'on_hold' => 'danger', 'confirmed', 'partially_delivered' => 'info', 'delivered' => 'success', 'lost', 'cancelled' => 'gray', default => 'warning'
                     }),
                 TextColumn::make('created_at')->label('Created')->since()->sortable(),
             ])
-            ->filters([SelectFilter::make('status')->options(CustomerOrder::STATUSES)->multiple()])
+            ->filters([SelectFilter::make('status')->options(CustomerOrder::STATUSES)->multiple(),
+                ListFilters::amount('total_minor', 'Total'),
+                ListFilters::person(self::class, 'created_by', 'created_by_name', 'Entered by')])
             ->defaultSort('created_at', 'desc')
             ->recordActions([ViewAction::make(), EditAction::make()]);
     }

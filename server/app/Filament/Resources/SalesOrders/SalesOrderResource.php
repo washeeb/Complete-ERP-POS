@@ -7,6 +7,7 @@ use App\Filament\Resources\SalesOrders\Pages\ListSalesOrders;
 use App\Filament\Resources\SalesOrders\Pages\ViewSalesOrder;
 use App\Filament\Support\Erp;
 use App\Filament\Support\GlobalSearch;
+use App\Filament\Support\ListFilters;
 use App\Models\SalesOrder;
 use App\Support\Money;
 use App\Support\Qty;
@@ -167,7 +168,7 @@ class SalesOrderResource extends Resource
                 TextColumn::make('placed_at')->label('Placed')->since()->sortable(),
                 TextColumn::make('customer_name')->label('Customer')->searchable()->description(fn (SalesOrder $record) => $record->customer_phone),
                 TextColumn::make('branch.code')->label('Branch'),
-                TextColumn::make('total_minor')->label('Total')->alignEnd()->formatStateUsing(fn ($state, SalesOrder $record) => self::money($state, $record)),
+                TextColumn::make('total_minor')->label('Total')->alignEnd()->sortable()->formatStateUsing(fn ($state, SalesOrder $record) => self::money($state, $record)),
                 TextColumn::make('payment_status')->label('Payment')->badge()->formatStateUsing(fn ($state) => self::PAYMENT_STATUSES[$state] ?? $state)
                     ->color(fn ($state) => $state === 'paid' ? 'success' : 'warning'),
                 TextColumn::make('status')->badge()->formatStateUsing(fn ($state) => SalesOrder::STATUSES[$state] ?? $state)
@@ -176,6 +177,8 @@ class SalesOrderResource extends Resource
                     }),
             ])
             ->filters([
+                ListFilters::amount('total_minor', 'Total'),
+                ListFilters::dates('placed_at', 'Placed'),
                 SelectFilter::make('status')->options(SalesOrder::STATUSES)->multiple()->default(['pending', 'confirmed', 'ready']),
                 SelectFilter::make('channel_id')->label('Channel')->relationship('channel', 'name'),
             ])
