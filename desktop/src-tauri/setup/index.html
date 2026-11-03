@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Back office set-up</title>
+  <style>
+    :root { color-scheme: light dark; --bg: #f8fafc; --fg: #0f172a; --muted: #475569; --card: #fff; --line: #cbd5e1; --accent: #334155; --bad: #b91c1c; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #0f172a; --fg: #e2e8f0; --muted: #94a3b8; --card: #1e293b; --line: #334155; --accent: #e2e8f0; --bad: #f87171; } }
+    * { box-sizing: border-box; } body { margin: 0; font: 16px/1.5 system-ui, sans-serif; background: var(--bg); color: var(--fg); }
+    main { max-width: 600px; margin: 64px auto; padding: 0 16px; } h1 { font-size: 1.6rem; margin: 0 0 4px; } p { color: var(--muted); }
+    section { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin: 16px 0; }
+    label { display: grid; gap: 4px; margin: 12px 0; font-weight: 600; } input { font: inherit; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
+    button { font: inherit; padding: 10px 16px; border-radius: 8px; border: 0; background: var(--accent); color: var(--bg); cursor: pointer; margin-right: 8px; }
+    button.secondary { background: transparent; color: var(--fg); border: 1px solid var(--line); } .msg { min-height: 1.5em; } .bad { color: var(--bad); }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; } :focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+    #opening { min-height: 100vh; display: grid; place-items: center; color: var(--muted); margin: 0; } [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+<p id="opening" role="status">Opening the back office…</p>
+<main id="form" hidden>
+  <h1>ZionEX Back Office</h1>
+  <p>Connect this computer to your business server. You sign in with your usual username and password.</p>
+  <section aria-labelledby="h-server">
+    <label id="h-server">Server address <input id="server" placeholder="https://erp.yourshop.com" autocomplete="off" required></label>
+    <p>The address you type in a browser to open the back office, without <code>/admin</code> — for a cloud server its name
+      (e.g. <code>https://erp.yourshop.com</code>), never its IP address.</p>
+  </section>
+  <div class="row"><button type="button" id="save">Save and open</button><button type="button" class="secondary" id="retry" hidden>Try again</button><span class="msg" id="msg" role="status"></span></div>
+</main>
+<script>
+  const T = window.__TAURI__.core;
+  const $ = (id) => document.getElementById(id);
+  const say = (text, bad) => { $('msg').textContent = text; $('msg').className = 'msg' + (bad ? ' bad' : ''); };
+  const params = new URLSearchParams(location.search);
+
+  // Does the server answer? (Its /up page; a wrong address, a certificate for another name or no network all fail.)
+  async function reachable(server) {
+    let base;
+    try { base = new URL(server.trim()).origin; } catch { return false; }
+    const stop = new AbortController();
+    const timer = setTimeout(() => stop.abort(), 8000);
+    try { await fetch(base + '/up', { mode: 'no-cors', cache: 'no-store', signal: stop.signal }); return true; } catch { return false; } finally { clearTimeout(timer); }
+  }
+  const unreachable = (server) => `Could not reach ${server}. Check the address and this computer's internet or network, then try again.`;
+  const showForm = () => { $('opening').hidden = true; $('form').hidden = false; T.invoke('show_window').catch(() => {}); };
+
+  async function load() {
+    const cfg = await T.invoke('get_config');
+    if (cfg.server && !params.has('setup')) {
+      if (await reachable(cfg.server)) return T.invoke('set_server', { server: cfg.server });
+      $('retry').hidden = false;
+      say(unreachable(cfg.server), true);
+    }
+    showForm();
+    $('server').value = cfg.server || '';
+    $('server').focus();
+  }
+  async function open() {
+    try {
+      say('Checking the server …');
+      if (await reachable($('server').value)) return await T.invoke('set_server', { server: $('server').value });
+      say(unreachable($('server').value.trim()), true);
+    } catch (e) { say(String(e), true); }
+  }
+  $('save').onclick = open;
+  $('retry').onclick = open;
+  $('server').addEventListener('keydown', (e) => { if (e.key === 'Enter') open(); });
+  load().catch((e) => { showForm(); say(String(e), true); });
+</script>
+</body>
+</html>

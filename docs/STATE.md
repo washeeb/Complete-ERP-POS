@@ -27,7 +27,13 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 | 4 | Service desk (tickets) and asset maintenance | paid add-on — branch `service-desk` |
 | 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid add-on — branch `iot` |
 
-## Stage 5: Sensors / IoT (paid add-on `iot`) — branch `iot`
+## Back-office desktop app (free) — branch `backoffice-desktop`
+- `desktop/src-tauri` (Tauri 2, crate `zionex-backoffice`, product *ZionEX Back Office*, id `com.synclytics.zionex.backoffice`): set-up page (server, `/up` check), `set_server` / `open_setup` / `show_window` / `get_config`; navigation limited to the server, other links via `tauri-plugin-opener`; `on_download` → Downloads (no overwrite) and open; `ses_client` cookie (as the till) + Ctrl+Shift+S. Build: `cd pos; npm run desktop:build` (installer in `desktop/src-tauri/target/release/bundle/nsis`). Rust tests: `cd desktop/src-tauri; cargo test`. No auto-update yet (needs an update server, like the licence server).
+
+## List filters (owner request) — merged (PR #133, release BHQ5DOJPI)
+- `App\Filament\Support\ListFilters` (person from the page's own scoped list, amount range (signed for over / short), date range) on Till sales (teller, total, payment method filter and sort, days), Shifts, MoMo charges, Customer payments, Invoices, Sales orders, Customer orders, Till drawer. Filament injects callback arguments by name: use `$query`.
+
+## Stage 5: Sensors / IoT (paid add-on `iot`) — merged (PR #132, release BHQ5DOJPI)
 - `App\Domain\Iot\Sensors` (save, newToken, parse, receive, record, evaluate, raise, end, watch, acknowledge, check, alert) and `Clouds` (save, pollDue, poll; SensorPush, Tuya signed GETs). Tables `iot_connections` (encrypted credentials), `iot_sensors`, `iot_readings` (unique sensor+time), `iot_days`, `iot_alarms`, `iot_checks`.
 - `GET|POST /api/v1/iot/{token}` (`IotController`, throttle `iot`); `erp:iot` every minute. Fridge alarms → `Maintenance::breakdown()`. Template `iot_alarm` (WhatsApp template `sensor_alarm`), notify topic `iot` (bell / WhatsApp / SMS).
 - UI: `IotSensorResource` (+ alarms, checks; now + 24 h chart; address; record a check), `IotAlarms`, `TemperatureLog` (printable), `IotClouds`, `IotPanel`. `IotTest` (8).

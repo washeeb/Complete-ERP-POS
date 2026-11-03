@@ -15,7 +15,8 @@
     "manual:screens": "node scripts/manual-screens.mjs",
     "training": "node scripts/training.mjs",
     "pentest": "node scripts/training.mjs pentest ^0[12]-",
-    "brand": "node scripts/brand.mjs"
+    "brand": "node scripts/brand.mjs",
+    "desktop:build": "cd ../desktop && node ../pos/node_modules/@tauri-apps/cli/tauri.js build"
   },
   "dependencies": {
     "dexie": "^4.4.6",
