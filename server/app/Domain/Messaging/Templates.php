@@ -84,6 +84,10 @@ final class Templates
             'email' => ['{report} — {period}', "Attached: {report} for {period} ({rows} row(s)).\n\nSent automatically by {company}'s business system. Change the schedule under Reports.", true, null],
             'whatsapp' => [null, '{company}: {report} for {period} is ready ({rows} row(s)). It was e-mailed to the recipients.', true, 'report_ready'],
         ]],
+        'iot_alarm' => ['Sensor alarm to staff on duty', '{sensor} {problem} {value} {since} {number}', [
+            'whatsapp' => [null, 'ALARM {number}: {problem} — {sensor} {value}, since {since}. Check it and acknowledge in ZionEX.', true, 'sensor_alarm'],
+            'sms' => [null, 'ALARM {number}: {problem} - {sensor} {value}, since {since}. Check and acknowledge in ZionEX.', true, null],
+        ]],
     ];
 
     public function __construct(private readonly Recorder $recorder) {}

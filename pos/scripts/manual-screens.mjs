@@ -106,6 +106,8 @@ const shot = (page, name) => page.screenshot({ path: resolve(out, `${name}.png`)
     ['/admin/my-time', 'my-time', null],
     ['/admin/tickets', 'tickets', null],
     ['/admin/equipment', 'equipment', null],
+    ['/admin/sensors', 'sensors', null],
+    ['/admin/temperature-log', 'temperature-log', null],
   ]) {
     await page.goto(base + path)
     await page.waitForLoadState('networkidle')

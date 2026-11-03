@@ -19,7 +19,7 @@ final class DocumentNumbers
         'prescription' => 'RX', 'dining_order' => 'ORD', 'reservation' => 'RES', 'repair_job' => 'JOB', 'alteration' => 'ALT',
         'appointment' => 'APT', 'service_pass' => 'PASS', 'membership' => 'MEM',
         'stock_adjustment' => 'ADJ', 'supplier_return' => 'RTS', 'waybill' => 'WB', 'van_settlement' => 'VS',
-        'work_order' => 'WO', 'qc_inspection' => 'QC', 'support_report' => 'SUP', 'cash_handover' => 'CH', 'stock_request' => 'SRQ', 'purchase_request' => 'PRQ', 'crm_lead' => 'LD', 'project' => 'PRJ', 'project_issue' => 'PIS', 'ticket' => 'TCK', 'maintenance_asset' => 'AST', 'maintenance_order' => 'MWO', 'crm_deal' => 'DL', 'crm_campaign' => 'CMP',
+        'work_order' => 'WO', 'qc_inspection' => 'QC', 'support_report' => 'SUP', 'cash_handover' => 'CH', 'stock_request' => 'SRQ', 'purchase_request' => 'PRQ', 'crm_lead' => 'LD', 'project' => 'PRJ', 'project_issue' => 'PIS', 'ticket' => 'TCK', 'maintenance_asset' => 'AST', 'maintenance_order' => 'MWO', 'iot_sensor' => 'SNS', 'iot_alarm' => 'ALM', 'crm_deal' => 'DL', 'crm_campaign' => 'CMP',
         'whatsapp_order' => 'WA'];
 
     public function next(string $tenantId, string $docType): string

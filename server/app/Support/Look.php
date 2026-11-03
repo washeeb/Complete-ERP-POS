@@ -33,7 +33,7 @@ final class Look
         'Insights' => ['Insights', 'Reports'],
         'Sales' => ['Sales', 'CRM', 'Projects', 'Service desk', 'Cash', 'Online'],
         'Purchasing' => ['Purchasing'],
-        'Stock' => ['Stock', 'Catalog', 'Pricing & tax', 'Maintenance'],
+        'Stock' => ['Stock', 'Catalog', 'Pricing & tax', 'Maintenance', 'Sensors'],
         'Finance' => ['Finance'],
         'People' => ['HR & payroll', 'People & access'],
         'Industries' => ['Grocery', 'Restaurant', 'Pharmacy', 'Electronics', 'Fashion'],
@@ -50,7 +50,8 @@ final class Look
         'lead' => ['leads'], 'deal' => ['deals', 'pipeline'], 'prospect' => ['leads'], 'follow' => ['follow-ups'], 'campaign' => ['campaigns'], 'crm' => ['pipeline'],
         'job' => ['projects'], 'timesheet' => ['my time'], 'hours' => ['my time'], 'timer' => ['my time'],
         'ticket' => ['tickets'], 'complaint' => ['tickets'], 'helpdesk' => ['tickets'], 'warranty' => ['tickets'], 'repair' => ['work orders'],
-        'generator' => ['equipment'], 'asset' => ['equipment'], 'breakdown' => ['work orders'], 'servicing' => ['work orders']];
+        'generator' => ['equipment'], 'asset' => ['equipment'], 'breakdown' => ['work orders'], 'servicing' => ['work orders'],
+        'fridge' => ['sensors'], 'temperature' => ['sensors', 'temperature log'], 'cold chain' => ['sensors'], 'alarm' => ['sensor alarms']];
 
     public static function for(?User $user): string
     {

@@ -25,15 +25,21 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 | 2 | CRM: leads, deals pipeline, quotations, follow-ups, campaigns | paid add-on — branch `crm` |
 | 3 | Projects and job costing | paid add-on — branch `projects` |
 | 4 | Service desk (tickets) and asset maintenance | paid add-on — branch `service-desk` |
-| 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid |
+| 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid add-on — branch `iot` |
 
-## Stage 4: Service desk and maintenance (paid add-on `service`) — branch `service-desk` (on top of `projects`)
+## Stage 5: Sensors / IoT (paid add-on `iot`) — branch `iot`
+- `App\Domain\Iot\Sensors` (save, newToken, parse, receive, record, evaluate, raise, end, watch, acknowledge, check, alert) and `Clouds` (save, pollDue, poll; SensorPush, Tuya signed GETs). Tables `iot_connections` (encrypted credentials), `iot_sensors`, `iot_readings` (unique sensor+time), `iot_days`, `iot_alarms`, `iot_checks`.
+- `GET|POST /api/v1/iot/{token}` (`IotController`, throttle `iot`); `erp:iot` every minute. Fridge alarms → `Maintenance::breakdown()`. Template `iot_alarm` (WhatsApp template `sensor_alarm`), notify topic `iot` (bell / WhatsApp / SMS).
+- UI: `IotSensorResource` (+ alarms, checks; now + 24 h chart; address; record a check), `IotAlarms`, `TemperatureLog` (printable), `IotClouds`, `IotPanel`. `IotTest` (8).
+- Next: owner to confirm the recommended / supplied sensor model.
+
+## Stage 4: Service desk and maintenance (paid add-on `service`) — merged (PR #131, release B3W1JTCQ6)
 - `App\Domain\Service\ServiceDesk` (levels, open, fromWeb/fromEmail/absorbWhatsapp/fromWhatsappOrder, reply, note, assign, resolve, reopen, customerSaid, rate, watch, warranty) and `Maintenance` (assets, meter, plans, duePlans, open, breakdown, fromTicket, start, waitForParts, labour, parts, collectBill, complete, cancel, invoice). Tables `service_levels`, `tickets`, `ticket_messages`, `maintenance_assets`, `maintenance_plans`, `maintenance_orders`, `maintenance_parts`; `supplier_bill_lines.maintenance_order_id`.
 - Books: stock types `maintenance_issue/return` → `repairs` (6600, now keyed) / `warranty_costs` (6610) / `cogs` by the job. Public: `ServiceDeskPublicController` (`/help/{slug}`, signed `/r/{ticket}`, `POST /api/v1/service/email/{key}`). `erp:service` every 5 min. WhatsApp: `WhatsappOrders::store` hands messages to an open WhatsApp ticket.
 - UI: `TicketResource` (list / create / view with conversation and actions; "My requests" for staff), `ServiceLevels`, `MaintenanceAssetResource` (+ plans, orders), `MaintenanceOrderResource`, `ServicePanel`, WhatsApp entry "Make a ticket", bill charge "For work order"; settings group hidden without the add-on (`ManageSettings`). Planned manifests Helpdesk and Assets removed (reservations deleted). `ServiceDeskTest` (11).
 - Next: stage 5 IoT (paid): sensors call `Maintenance::breakdown()`.
 
-## Stage 3: Projects and job costing (paid add-on `projects`) — PR #130 (CI green)
+## Stage 3: Projects and job costing (paid add-on `projects`) — merged (PR #130, release B3W1JTCQ6)
 - `App\Domain\Projects\Projects` (projects, tasks, milestones, rates, `issue` stock, `collectBill/collectExpense/collectTime`, `invoiceMilestone`, `invoiceTime`, `close`, `figures`) and `Timesheets` (log, timer, `submitWeek`, approve/reject). Tables `projects`, `project_tasks`, `project_milestones`, `project_rates`, `time_entries`, `project_issues`, `project_costs` (append-only, unique per source), `project_billings` (GL source: WIP → project costs); `project_id` on `journal_lines`, `invoices`, `purchase_order_lines`, `supplier_bill_lines`, `expense_claims`.
 - Books: accounts `project_wip` 1345, `sales_projects` 4130, `project_costs` 5700 (ChartTemplate adds them). AutoPoster: stock types `project_issue/return` → WIP (internal → project costs); bill/expense lines of billed projects → WIP; project invoices → sales_projects; `project_billings` source. `GeneralLedger` merges on project_id.
 - Hooks: `BillService::post` → collectBill; `ExpenseService::pay` → collectExpense; `Fields::projectField` on PO service lines, bill charges, expense claims.
