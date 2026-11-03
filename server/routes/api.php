@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\SyncController;
 use App\Http\Controllers\Api\V1\VanController;
 use App\Http\Controllers\Api\V1\WhatsappController;
 use App\Http\Controllers\Api\V1\WmsController;
+use App\Http\Controllers\IotController;
 use App\Http\Controllers\LicenseServerController;
 use App\Http\Controllers\ServiceDeskPublicController;
 use Illuminate\Support\Facades\Broadcast;
@@ -37,6 +38,9 @@ Route::prefix('v1')->group(function () {
 
     // Service desk e-mail (paid add-on): incoming mail forwarded by the company's mail provider; the key names the company.
     Route::post('service/email/{key}', [ServiceDeskPublicController::class, 'email'])->where('key', '[A-Za-z0-9]{24,64}')->middleware('throttle:webhooks')->name('service.email');
+
+    // Sensors (paid add-on): a sensor posts its readings to its own secret address (GET for devices that can only call a link).
+    Route::match(['get', 'post'], 'iot/{token}', IotController::class)->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:iot')->name('iot.reading');
 
     // Mobile money provider callbacks (Paystack signed; Hubtel answered by a status check). The token names the company.
     Route::post('momo/webhook/{token}', [MomoController::class, 'webhook'])->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:webhooks')->name('momo.webhook');

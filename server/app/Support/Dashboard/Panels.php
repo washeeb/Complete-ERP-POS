@@ -8,6 +8,7 @@ use App\Filament\Widgets\IndustryOverview;
 use App\Filament\Widgets\Panels\CashPanel;
 use App\Filament\Widgets\Panels\CrmPanel;
 use App\Filament\Widgets\Panels\HrPanel;
+use App\Filament\Widgets\Panels\IotPanel;
 use App\Filament\Widgets\Panels\MyApprovals;
 use App\Filament\Widgets\Panels\PaymentMixChart;
 use App\Filament\Widgets\Panels\PharmacyPanel;
@@ -48,6 +49,7 @@ final class Panels
         'receivables_aging' => [ReceivablesAgingChart::class, 'Customers owe, by how late', 'Not yet due, 1–30, 31–60, 61–90 and over 90 days.', 'half'],
         'cash' => [CashPanel::class, 'Cash', 'Tills open now, over and short this month.', 'full'],
         'pharmacy' => [PharmacyPanel::class, 'Pharmacy', 'Prescriptions today and this month, medicines expiring.', 'full'],
+        'iot' => [IotPanel::class, 'Sensors', 'Alarms waiting, sensors in alarm or silent, fridges checked today, low batteries (Sensors add-on).', 'full'],
         'service' => [ServicePanel::class, 'Service desk and maintenance', 'Open and late tickets, customers’ rating, equipment not working, open work orders (Service desk add-on).', 'full'],
         'projects' => [ProjectsPanel::class, 'Projects', 'Projects in progress and over budget, time and materials not yet invoiced, your hours, timesheets to approve (Projects add-on).', 'full'],
         'crm' => [CrmPanel::class, 'Customers and deals', 'Open deals and their weighted value, won this month, new leads, your follow-ups (CRM add-on).', 'full'],
@@ -63,16 +65,16 @@ final class Panels
 
     /** Each role's starting dashboard, most senior first; a person with several roles gets the first that applies. */
     public const ROLE_DEFAULTS = [
-        'owner' => ['figures', 'industry_highlights', 'approvals', 'sales_trend', 'payment_mix', 'sales_by_branch', 'top_products', 'purchasing', 'stock_watch', 'receivables_aging', 'spend_by_month', 'industries', 'service', 'projects', 'crm', 'shortcuts'],
-        'general_manager' => ['figures', 'industry_highlights', 'approvals', 'sales_trend', 'payment_mix', 'sales_by_branch', 'top_products', 'purchasing', 'stock_watch', 'receivables_aging', 'spend_by_month', 'service', 'projects', 'crm', 'shortcuts'],
+        'owner' => ['figures', 'industry_highlights', 'approvals', 'sales_trend', 'payment_mix', 'sales_by_branch', 'top_products', 'purchasing', 'stock_watch', 'receivables_aging', 'spend_by_month', 'industries', 'iot', 'service', 'projects', 'crm', 'shortcuts'],
+        'general_manager' => ['figures', 'industry_highlights', 'approvals', 'sales_trend', 'payment_mix', 'sales_by_branch', 'top_products', 'purchasing', 'stock_watch', 'receivables_aging', 'spend_by_month', 'iot', 'service', 'projects', 'crm', 'shortcuts'],
         'finance_manager' => ['figures', 'approvals', 'receivables_aging', 'spend_by_month', 'sales_trend', 'payment_mix', 'purchasing', 'shortcuts'],
         'accountant' => ['figures', 'receivables_aging', 'spend_by_month', 'sales_trend', 'payment_mix', 'approvals', 'shortcuts'],
         'auditor' => ['figures', 'receivables_aging', 'spend_by_month', 'sales_trend', 'stock_watch', 'shortcuts'],
         'hr_manager' => ['hr', 'approvals', 'shortcuts'],
         'payroll_officer' => ['hr', 'shortcuts'],
-        'superintendent_pharmacist' => ['pharmacy', 'stock_watch', 'figures', 'top_products', 'approvals', 'shortcuts'],
-        'pharmacist' => ['pharmacy', 'stock_watch', 'top_products', 'approvals', 'shortcuts'],
-        'branch_manager' => ['figures', 'approvals', 'sales_trend', 'payment_mix', 'top_products', 'stock_watch', 'cash', 'service', 'projects', 'crm', 'shortcuts'],
+        'superintendent_pharmacist' => ['pharmacy', 'iot', 'stock_watch', 'figures', 'top_products', 'approvals', 'shortcuts'],
+        'pharmacist' => ['pharmacy', 'iot', 'stock_watch', 'top_products', 'approvals', 'shortcuts'],
+        'branch_manager' => ['figures', 'approvals', 'sales_trend', 'payment_mix', 'top_products', 'stock_watch', 'cash', 'iot', 'service', 'projects', 'crm', 'shortcuts'],
         'purchase_approver' => ['approvals', 'purchasing', 'spend_by_month', 'shortcuts'],
         'purchasing_officer' => ['purchasing', 'stock_watch', 'spend_by_month', 'approvals', 'shortcuts'],
         'warehouse_manager' => ['stock_watch', 'approvals', 'purchasing', 'shortcuts'],

@@ -1060,3 +1060,10 @@ Design:
 - IoT (owner: yes): `Maintenance::breakdown(tenant, asset, title)` opens one urgent breakdown per asset (further alarms append) for stage 5's sensors.
 - Settings of a paid add-on show only when the licence has it.
 
+## Sensors / IoT (interface stage 5, 2026-11-03)
+- Paid add-on `iot` (owner: stage 5 paid).
+- Connections (owner: all three, open by default): any device posting to its own secret address (40-character token in the URL, rate-limited; GET allowed for devices that can only call a link); a recommended / supplied model (to be confirmed by the owner); SensorPush and Tuya clouds read every 5 minutes (credentials encrypted; Tuya requests signed as documented).
+- Measures (owner: all): fridges, cold rooms (2–8 °C), freezers (−25 to −15 °C), rooms (15–25 °C, 30–65 %), power, doors; defaults editable per sensor.
+- Alarms (owner: bell + WhatsApp/SMS to those on duty, breakdown work order, silent sensors): only after the sensor's delay out of range (door openings are not alarms), checked again every minute without waiting for the next reading; reminders every 15 minutes until acknowledged; managers after 30 minutes; WhatsApp when a provider and approved template exist, else SMS; each person's channel choice respected. Fridges, cold rooms and freezers linked to equipment open one urgent breakdown work order (repeats add to it).
+- Records (owner: log with signed checks): every reading kept (unique per sensor and time; future times taken as now), a daily summary for fast logs and charts, signed checks, alarms closed only with what was done; the monthly log printed from the browser (no PDF library).
+
