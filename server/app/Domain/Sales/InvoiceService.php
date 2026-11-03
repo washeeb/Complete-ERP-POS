@@ -25,7 +25,7 @@ final class InvoiceService
 
     /**
      * @param  list<array{product_id: string, product_uom_id: string, sku: string, name: string, uom_code: string, factor: string, qty: string, unit_price_minor: int, net_minor: int, tax_minor: int, total_minor: int, tax_breakdown: array}>  $lines
-     * @param  array{branch_id: string, currency_code: string, prices_include_tax: bool, customer_order_id?: ?string, delivery_id?: ?string, customer_ref?: ?string, membership_id?: ?string}  $meta
+     * @param  array{branch_id: string, currency_code: string, prices_include_tax: bool, customer_order_id?: ?string, delivery_id?: ?string, customer_ref?: ?string, membership_id?: ?string, project_id?: ?string}  $meta
      */
     public function raise(Actor $actor, Customer $customer, array $lines, array $meta): Invoice
     {
@@ -34,7 +34,7 @@ final class InvoiceService
             $invoice = new Invoice;
             $invoice->forceFill(['tenant_id' => $customer->tenant_id, 'number' => $this->numbers->next($customer->tenant_id, 'invoice'), 'customer_id' => $customer->id,
                 'branch_id' => $meta['branch_id'], 'customer_order_id' => $meta['customer_order_id'] ?? null, 'delivery_id' => $meta['delivery_id'] ?? null,
-                'membership_id' => $meta['membership_id'] ?? null, 'status' => 'posted',
+                'membership_id' => $meta['membership_id'] ?? null, 'project_id' => $meta['project_id'] ?? null, 'status' => 'posted',
                 'currency_code' => $meta['currency_code'], 'prices_include_tax' => $meta['prices_include_tax'],
                 'net_minor' => array_sum(array_column($lines, 'net_minor')), 'tax_minor' => array_sum(array_column($lines, 'tax_minor')),
                 'total_minor' => array_sum(array_column($lines, 'total_minor')), 'tax_breakdown' => TaxCalculator::sum(array_column($lines, 'tax_breakdown')),

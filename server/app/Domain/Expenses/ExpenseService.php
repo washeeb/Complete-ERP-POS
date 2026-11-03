@@ -3,6 +3,7 @@
 namespace App\Domain\Expenses;
 
 use App\Domain\Banking\BankingService;
+use App\Domain\Projects\Projects;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DocumentNumbers;
@@ -11,6 +12,7 @@ use App\Domain\Support\Recorder;
 use App\Models\Account;
 use App\Models\Branch;
 use App\Models\ExpenseClaim;
+use App\Models\Project;
 use App\Security\Authorizer;
 use Illuminate\Support\Carbon;
 
@@ -48,12 +50,16 @@ final class ExpenseService
         if ($day->isAfter(now()->endOfDay())) {
             throw new DomainException('The date cannot be in the future.');
         }
+        $project = ($data['project_id'] ?? null) ? Project::find($data['project_id']) : null;
+        if (($data['project_id'] ?? null) && (! $project || ! $project->isOpen())) {
+            throw new DomainException('Choose a project that is still open.');
+        }
 
-        return $this->recorder->transaction(function () use ($actor, $branch, $data, $account, $amount, $day) {
+        return $this->recorder->transaction(function () use ($actor, $branch, $data, $account, $amount, $day, $project) {
             $claim = (new ExpenseClaim)->forceFill(['tenant_id' => $actor->tenantId, 'number' => $this->numbers->next($actor->tenantId, 'expense_claim'),
                 'branch_id' => $branch->id, 'claimant_id' => $actor->id, 'claimant_name' => $actor->name, 'spent_on' => $day->toDateString(),
                 'account_id' => $account->id, 'description' => mb_substr(trim($data['description']), 0, 255), 'payee' => ($data['payee'] ?? null) ? mb_substr($data['payee'], 0, 255) : null,
-                'amount_minor' => $amount, 'receipt_path' => $data['receipt_path'] ?? null, 'status' => 'submitted']);
+                'amount_minor' => $amount, 'receipt_path' => $data['receipt_path'] ?? null, 'status' => 'submitted', 'project_id' => $project?->id]);
 
             return $this->recorder->save($actor, $claim, 'expense_claim.submitted', branchId: $branch->id);
         });
@@ -123,8 +129,10 @@ final class ExpenseService
                 throw new DomainException('Only approved claims are paid.');
             }
             $claim->forceFill(['status' => 'paid', 'paid_from_account_id' => $from->id, 'paid_on' => $day->toDateString(), 'paid_by_name' => $actor->name]);
+            $saved = $this->recorder->save($actor, $claim, 'expense_claim.paid', branchId: $claim->branch_id);
+            app(Projects::class)->collectExpense($claim); // charged to a project: one of its costs
 
-            return $this->recorder->save($actor, $claim, 'expense_claim.paid', branchId: $claim->branch_id);
+            return $saved;
         });
     }
 }

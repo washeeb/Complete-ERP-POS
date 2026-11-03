@@ -1042,3 +1042,12 @@ Design:
 - Kept at head office (or a cloud/standalone server), like customers' accounts: no sync to branch servers in this stage.
 - Pipeline drag-and-drop uses the browser's own drag and drop (no extra library); on phones the stage is changed on the deal.
 
+## Projects and job costing (interface stage 3, 2026-11-03)
+- Paid add-on `projects`, named on the licence (owner: stage 3 paid). Replaces the planned "Projects & Tasks" module; branch reservations of it are deleted.
+- Billing per project (owner): fixed price by milestones, time and materials, or internal. Milestones cannot exceed the agreed price.
+- Costs collected automatically (owner: all four): stock issued/returned (own movement types, returns at what the project paid), supplier bill / PO service lines and expense claims charged to a project (expenses when paid, bills when posted), approved time at the person's cost rate. One append-only `project_costs` row per source (unique), so nothing is counted twice.
+- Time (owner): weekly timesheets with a timer; a manager approves (never their own); only approved time is costed or billed. Timer rounds to the nearest minute.
+- Books (owner: project as a dimension): every journal line can carry the project. Billed projects hold stock, bought-in and expense costs in Project work in progress until invoiced — T&M: the costs on the invoice; milestones: all costs to date at each milestone — or finished, then Project costs; income to Project and service income. Internal projects post straight to Project costs. Staff time stays a management cost (salaries are already expensed through payroll) to avoid counting pay twice.
+- Invoices for time, milestones and bought-in costs use a per-project service product (not stock-tracked) so the normal invoice, tax and receivables apply; materials invoice as their own products. Amounts are before tax.
+- Hourly cost and billing rates per person (company-wide), project rate fills a missing billing rate; seen only with projects.manage.
+

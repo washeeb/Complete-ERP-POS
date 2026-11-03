@@ -2,6 +2,7 @@
 
 namespace App\Domain\Purchasing;
 
+use App\Domain\Payables\BillService;
 use App\Domain\Pricing\TaxCalculator;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
@@ -96,7 +97,7 @@ final class PurchaseOrderService
         $currency = $from->currency_code;
         $lines = $from->lines()->get()->filter(fn ($l) => $l->isNonStock() || Product::where('id', $l->product_id)->where('is_active', true)->exists())
             ->map(fn ($l) => $l->isNonStock() ? ['account_id' => $l->account_id, 'description' => $l->name, 'uom_code' => $l->uom_code, 'qty' => (string) $l->qty,
-                'unit_cost' => Money::format((int) $l->unit_cost_minor, $currency), 'department_id' => $l->department_id] : ['product_uom_id' => $l->product_uom_id, 'qty' => (string) $l->qty,
+                'unit_cost' => Money::format((int) $l->unit_cost_minor, $currency), 'department_id' => $l->department_id, 'project_id' => $l->project_id] : ['product_uom_id' => $l->product_uom_id, 'qty' => (string) $l->qty,
                     'unit_cost' => SupplierProduct::where('supplier_id', $from->supplier_id)->where('product_uom_id', $l->product_uom_id)->whereNotNull('last_cost_minor')->exists()
                         ? null : Money::format((int) $l->unit_cost_minor, $currency)])
             ->values()->all();
@@ -307,7 +308,8 @@ final class PurchaseOrderService
             $t = TaxCalculator::line($net, $rates, false);
             $out[] = ['line_no' => $i + 1] + $base + ['qty' => Qty::format($qty), 'received_qty' => '0.000', 'unit_cost_minor' => $cost,
                 'net_minor' => $t['net'], 'tax_minor' => $t['tax'], 'total_minor' => $t['gross'], 'tax_breakdown' => $t['breakdown'],
-                'department_id' => $department, 'agreement_line_id' => $agreed?->id];
+                'department_id' => $department, 'agreement_line_id' => $agreed?->id,
+                'project_id' => empty($r['product_uom_id']) ? BillService::openProject($r['project_id'] ?? null) : null];
         }
         if ($out === []) {
             throw new DomainException('Add at least one line.');

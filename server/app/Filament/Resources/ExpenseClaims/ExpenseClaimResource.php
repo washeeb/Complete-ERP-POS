@@ -7,6 +7,7 @@ use App\Filament\Resources\ExpenseClaims\Pages\CreateExpenseClaim;
 use App\Filament\Resources\ExpenseClaims\Pages\ListExpenseClaims;
 use App\Filament\Resources\ExpenseClaims\Pages\ViewExpenseClaim;
 use App\Filament\Support\Erp;
+use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
 use App\Filament\Support\GlobalSearch;
 use App\Models\Account;
@@ -114,6 +115,7 @@ class ExpenseClaimResource extends Resource
             TextInput::make('amount')->required()->numeric()->minValue(0.01),
             TextInput::make('description')->required()->maxLength(255)->columnSpanFull(),
             TextInput::make('payee')->label('Paid to (shop, person)')->maxLength(255),
+            Fields::projectField(),
             FileUpload::make('receipt_path')->label('Receipt photo')->disk('local')->directory('expense-receipts')->visibility('private')
                 ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])->maxSize(5120),
         ]);

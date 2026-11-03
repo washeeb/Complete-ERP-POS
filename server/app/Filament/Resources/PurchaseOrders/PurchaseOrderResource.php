@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PurchaseOrders;
 
+use App\Domain\Projects\Projects;
 use App\Domain\Purchasing\GoodsReceiptService;
 use App\Domain\Purchasing\OrderSender;
 use App\Domain\Purchasing\PurchaseOrderService;
@@ -124,7 +125,7 @@ class PurchaseOrderResource extends Resource
     public static function toFormData(PurchaseOrder $po): array
     {
         return ['lines' => $po->lines()->get()->map(fn ($l) => ['kind' => $l->isNonStock() ? 'service' : 'stock', 'product_uom_id' => $l->product_uom_id,
-            'account_id' => $l->account_id, 'description' => $l->isNonStock() ? $l->name : null, 'uom_code' => $l->uom_code, 'department_id' => $l->department_id,
+            'account_id' => $l->account_id, 'description' => $l->isNonStock() ? $l->name : null, 'uom_code' => $l->uom_code, 'department_id' => $l->department_id, 'project_id' => $l->project_id,
             'agreement_line_id' => $l->agreement_line_id, 'qty' => Fields::qty($l->qty), 'unit_cost' => Money::format($l->unit_cost_minor, $po->currency_code)])->all()];
     }
 
@@ -148,6 +149,7 @@ class PurchaseOrderResource extends Resource
                         TextInput::make('unit_cost')->label('Cost per unit')->numeric()->minValue(0),
                         Fields::available('../../warehouse_id')->label('In stock there')->visible(fn (Get $get) => $get('kind') !== 'service'),
                         Fields::departmentField()->visible(fn (Get $get) => $get('kind') === 'service'),
+                        Fields::projectField()->visible(fn (Get $get) => $get('kind') === 'service' && Projects::enabled()),
                         Hidden::make('agreement_line_id'),
                         Fields::duplicateWarning(),
                     ]),

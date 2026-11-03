@@ -31,7 +31,7 @@ final class Look
     /** The top tabs and the menu sections each one holds, in order. A section not listed goes under "More". */
     public const TABS = [
         'Insights' => ['Insights', 'Reports'],
-        'Sales' => ['Sales', 'CRM', 'Cash', 'Online'],
+        'Sales' => ['Sales', 'CRM', 'Projects', 'Cash', 'Online'],
         'Purchasing' => ['Purchasing'],
         'Stock' => ['Stock', 'Catalog', 'Pricing & tax'],
         'Finance' => ['Finance'],
@@ -47,7 +47,8 @@ final class Look
         'count' => ['stock count'], 'transfer' => ['stock transfer'], 'receipt' => ['sales'], 'rfq' => ['requests for quotation'],
         'quote' => ['requests for quotation'], 'contract' => ['contracts and blanket orders'], 'photo' => ['profile'],
         'avatar' => ['profile'], 'dark' => ['profile'], 'theme' => ['profile'],
-        'lead' => ['leads'], 'deal' => ['deals', 'pipeline'], 'prospect' => ['leads'], 'follow' => ['follow-ups'], 'campaign' => ['campaigns'], 'crm' => ['pipeline']];
+        'lead' => ['leads'], 'deal' => ['deals', 'pipeline'], 'prospect' => ['leads'], 'follow' => ['follow-ups'], 'campaign' => ['campaigns'], 'crm' => ['pipeline'],
+        'job' => ['projects'], 'timesheet' => ['my time'], 'hours' => ['my time'], 'timer' => ['my time']];
 
     public static function for(?User $user): string
     {

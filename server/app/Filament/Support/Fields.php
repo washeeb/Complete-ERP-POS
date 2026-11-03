@@ -2,9 +2,11 @@
 
 namespace App\Filament\Support;
 
+use App\Domain\Projects\Projects;
 use App\Models\Bin;
 use App\Models\Department;
 use App\Models\ProductUom;
+use App\Models\Project;
 use App\Models\Warehouse;
 use App\Support\Qty;
 use Filament\Actions\Action;
@@ -187,6 +189,13 @@ final class Fields
     public static function departmentField(string $name = 'department_id'): Select
     {
         return Select::make($name)->label('Department (cost centre)')->placeholder('—')->options(fn () => Department::orderBy('name')->pluck('name', 'id'));
+    }
+
+    /** The project a cost is for (Projects add-on): open projects only; hidden without the add-on. */
+    public static function projectField(string $name = 'project_id'): Select
+    {
+        return Select::make($name)->label('For project')->placeholder('—')->searchable()->visible(fn () => Projects::enabled())
+            ->options(fn () => Project::whereIn('status', ['planned', 'active', 'on_hold'])->orderBy('number')->get()->mapWithKeys(fn ($p) => [$p->id => "{$p->number} {$p->name}"]));
     }
 
     /** Warehouses where the signed-in person holds the permission. */
