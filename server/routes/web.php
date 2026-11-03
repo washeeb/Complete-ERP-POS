@@ -11,6 +11,7 @@ use App\Http\Controllers\ExpenseReceiptController;
 use App\Http\Controllers\PrintController;
 use App\Http\Controllers\RemoteConnectController;
 use App\Http\Controllers\RfqQuoteController;
+use App\Http\Controllers\ServiceDeskPublicController;
 use App\Http\Controllers\StockPhotoController;
 use App\Http\Controllers\StorefrontController;
 use App\Http\Controllers\SupplierPortalController;
@@ -117,6 +118,13 @@ Route::get('u/{kind}/{id}/{channel}', fn (string $kind, string $id, string $chan
 Route::post('u/{kind}/{id}/{channel}', fn (string $kind, string $id, string $channel) => view('crm-unsubscribe', ['done' => true,
     'company' => app(Crm::class)->unsubscribe($kind, $id, $channel)]))
     ->where(['kind' => 'customer|lead', 'channel' => 'email|sms|whatsapp'])->whereUuid('id')->middleware(['signed', 'throttle:10,1']);
+
+// Service desk (paid add-on): customers report a problem on the company's web form; "How did we do?" after a ticket is
+// resolved (signed link; the page asks first).
+Route::get('help/{company}', [ServiceDeskPublicController::class, 'form'])->where('company', '[a-z0-9-]+')->middleware('throttle:30,1')->name('service.help');
+Route::post('help/{company}', [ServiceDeskPublicController::class, 'submit'])->where('company', '[a-z0-9-]+')->middleware('throttle:5,1');
+Route::get('r/{ticket}', [ServiceDeskPublicController::class, 'rateForm'])->whereUuid('ticket')->middleware(['signed', 'throttle:30,1'])->name('ticket.rate');
+Route::post('r/{ticket}', [ServiceDeskPublicController::class, 'rate'])->whereUuid('ticket')->middleware(['signed', 'throttle:10,1']);
 
 // A supplier quotes on a request for quotation from the link sent to them: no sign-in, that request only.
 Route::get('q/{token}', [RfqQuoteController::class, 'show'])->name('rfq.quote')->middleware('throttle:30,1');

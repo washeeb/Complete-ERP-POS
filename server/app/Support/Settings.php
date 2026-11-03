@@ -117,6 +117,17 @@ final class Settings
         ],
         'whatsapp.order_reply' => ['type' => 'string', 'default' => 'Thank you! We have your message and will confirm your order shortly. Your reference is {number}.', 'max' => 300,
             'group' => 'WhatsApp orders', 'label' => 'Automatic reply', 'help' => 'Sent once when a new order arrives, so the customer knows it was received. {number} is its reference. Leave empty to send nothing.'],
+        'service.web_form' => [
+            'type' => 'bool', 'default' => false, 'group' => 'Service desk and maintenance',
+            'label' => 'Customers can report a problem on a web page',
+            'help' => 'A web page where customers describe a problem with their name and phone or e-mail; it becomes a ticket. Its link is under Service desk → Tickets → “Where tickets come from”: put it on your website, receipts or a QR code.',
+        ],
+        'service.email_key' => ['type' => 'string', 'default' => '', 'max' => 64, 'group' => 'Service desk and maintenance', 'label' => 'Key for e-mails to tickets',
+            'help' => 'To turn e-mails to your support address into tickets: type a long secret here (letters and numbers, at least 24), then have your e-mail provider (e.g. Mailgun, SendGrid, Postmark) forward incoming mail to the address shown under Service desk → Tickets → “Where tickets come from”. Replies quoting the ticket number join its conversation. Empty: off.'],
+        'service.close_after_days' => ['type' => 'int', 'default' => 7, 'min' => 1, 'max' => 60, 'group' => 'Service desk and maintenance', 'label' => 'Close resolved tickets after (days)',
+            'help' => 'A resolved ticket the customer does not come back on closes by itself; until then, their reply reopens it.'],
+        'maintenance.hourly_cost' => ['type' => 'int', 'default' => 0, 'min' => 0, 'max' => 100000, 'group' => 'Service desk and maintenance', 'label' => 'Technician time costs per hour (whole cedis)',
+            'help' => 'Values the time logged on maintenance work orders (pay and overheads ÷ hours worked), so each asset shows what it really costs to keep running. 0: time is counted, not costed.'],
         'refill.days_before' => ['type' => 'int', 'default' => 3, 'min' => 0, 'max' => 14, 'group' => 'Refill reminders', 'label' => 'Days before it runs out', 'help' => 'Time to come back or send someone; 3 days suits most.'],
         'refill.send_at' => ['type' => 'string', 'default' => '09:00', 'max' => 5, 'group' => 'Refill reminders', 'label' => 'Send at (HH:MM)', 'help' => 'Morning, when the pharmacy is open to answer.'],
         'summary.daily' => [

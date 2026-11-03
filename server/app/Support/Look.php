@@ -31,9 +31,9 @@ final class Look
     /** The top tabs and the menu sections each one holds, in order. A section not listed goes under "More". */
     public const TABS = [
         'Insights' => ['Insights', 'Reports'],
-        'Sales' => ['Sales', 'CRM', 'Projects', 'Cash', 'Online'],
+        'Sales' => ['Sales', 'CRM', 'Projects', 'Service desk', 'Cash', 'Online'],
         'Purchasing' => ['Purchasing'],
-        'Stock' => ['Stock', 'Catalog', 'Pricing & tax'],
+        'Stock' => ['Stock', 'Catalog', 'Pricing & tax', 'Maintenance'],
         'Finance' => ['Finance'],
         'People' => ['HR & payroll', 'People & access'],
         'Industries' => ['Grocery', 'Restaurant', 'Pharmacy', 'Electronics', 'Fashion'],
@@ -48,7 +48,9 @@ final class Look
         'quote' => ['requests for quotation'], 'contract' => ['contracts and blanket orders'], 'photo' => ['profile'],
         'avatar' => ['profile'], 'dark' => ['profile'], 'theme' => ['profile'],
         'lead' => ['leads'], 'deal' => ['deals', 'pipeline'], 'prospect' => ['leads'], 'follow' => ['follow-ups'], 'campaign' => ['campaigns'], 'crm' => ['pipeline'],
-        'job' => ['projects'], 'timesheet' => ['my time'], 'hours' => ['my time'], 'timer' => ['my time']];
+        'job' => ['projects'], 'timesheet' => ['my time'], 'hours' => ['my time'], 'timer' => ['my time'],
+        'ticket' => ['tickets'], 'complaint' => ['tickets'], 'helpdesk' => ['tickets'], 'warranty' => ['tickets'], 'repair' => ['work orders'],
+        'generator' => ['equipment'], 'asset' => ['equipment'], 'breakdown' => ['work orders'], 'servicing' => ['work orders']];
 
     public static function for(?User $user): string
     {

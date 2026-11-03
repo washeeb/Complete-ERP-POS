@@ -4,6 +4,7 @@ namespace App\Domain\Payables;
 
 use App\Domain\Pricing\TaxCalculator;
 use App\Domain\Projects\Projects;
+use App\Domain\Service\Maintenance;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DocumentNumbers;
@@ -169,7 +170,7 @@ final class BillService
                     $t = TaxCalculator::line($amount, $rates, false);
                     $lines[] = ['line_no' => $i + 1, 'account_id' => $account->id, 'description' => mb_substr(trim((string) ($in['description'] ?? '')) ?: $account->name, 0, 255),
                         'qty' => '1.000', 'unit_cost_minor' => $amount, 'net_minor' => $t['net'], 'tax_minor' => $t['tax'], 'total_minor' => $t['gross'],
-                        'tax_breakdown' => $t['breakdown'], 'department_id' => ($in['department_id'] ?? null) ?: null, 'project_id' => self::openProject($in['project_id'] ?? null)];
+                        'tax_breakdown' => $t['breakdown'], 'department_id' => ($in['department_id'] ?? null) ?: null, 'project_id' => self::openProject($in['project_id'] ?? null), 'maintenance_order_id' => ($in['maintenance_order_id'] ?? null) ?: null];
                 }
             }
 
@@ -269,6 +270,7 @@ final class BillService
         $this->ledger->post($actor, Supplier::findOrFail($bill->supplier_id), 'bill', $bill->total_minor, $bill->currency_code, 'supplier_bill', $bill->id,
             $bill->number, $bill->due_on, $bill->branch_id, $bill->bill_date->copy()->setTimeFrom(now()));
         app(Projects::class)->collectBill($bill); // lines charged to projects become their costs
+        app(Maintenance::class)->collectBill($bill); // outside technicians on work orders
     }
 
     /** A project a line is charged to: open ones only. */

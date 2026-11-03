@@ -20,6 +20,7 @@ final class NotifyPrefs
         'purchasing' => ['Buying', 'Purchase requests, quotes from suppliers, their confirmations and invoices, goods on the way, contracts ending.', ['in_app']],
         'stock' => ['Stock', 'Products at or below their minimum.', ['in_app']],
         'pricing' => ['Prices to review', 'New prices worked out by the pricing rules, waiting for your approval.', ['in_app']],
+        'service' => ['Service desk and maintenance', 'Tickets for you and their deadlines, late tickets, work orders and breakdowns.', ['in_app']],
         'projects' => ['Projects', 'Tasks given to you, your time approved or sent back.', ['in_app']],
         'crm' => ['Customers and deals (CRM)', 'Follow-ups due, leads and deals given to you.', ['in_app']],
         'cash' => ['Cash', 'A till holding more cash than allowed (cash drop needed).', ['in_app']],

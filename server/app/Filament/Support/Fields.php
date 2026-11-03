@@ -3,8 +3,10 @@
 namespace App\Filament\Support;
 
 use App\Domain\Projects\Projects;
+use App\Domain\Service\ServiceDesk;
 use App\Models\Bin;
 use App\Models\Department;
+use App\Models\MaintenanceOrder;
 use App\Models\ProductUom;
 use App\Models\Project;
 use App\Models\Warehouse;
@@ -196,6 +198,13 @@ final class Fields
     {
         return Select::make($name)->label('For project')->placeholder('—')->searchable()->visible(fn () => Projects::enabled())
             ->options(fn () => Project::whereIn('status', ['planned', 'active', 'on_hold'])->orderBy('number')->get()->mapWithKeys(fn ($p) => [$p->id => "{$p->number} {$p->name}"]));
+    }
+
+    /** The maintenance work order an outside charge is for (Service desk add-on): open ones only; hidden without it. */
+    public static function workOrderField(string $name = 'maintenance_order_id'): Select
+    {
+        return Select::make($name)->label('For work order')->placeholder('—')->searchable()->visible(fn () => ServiceDesk::enabled())
+            ->options(fn () => MaintenanceOrder::whereIn('status', ['open', 'working', 'waiting'])->orderBy('number')->get()->mapWithKeys(fn ($o) => [$o->id => "{$o->number} {$o->title}"]));
     }
 
     /** Warehouses where the signed-in person holds the permission. */

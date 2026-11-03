@@ -6,6 +6,7 @@ use App\Domain\Crm\Crm;
 use App\Domain\Finance\ChartTemplate;
 use App\Domain\Hr\HrBaseline;
 use App\Domain\Messaging\Templates;
+use App\Domain\Service\ServiceDesk;
 use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
 use App\Domain\Support\Outbox;
@@ -94,6 +95,7 @@ final class TenantBaseline
                 HrBaseline::ensure($tenant);
                 Templates::seed($tenant); // message wording; branch servers receive it by sync
                 Crm::seedStages($tenant); // the sales pipeline's starting stages (CRM, kept at head office)
+                ServiceDesk::seedLevels($tenant); // ticket deadlines by priority (service desk)
             }
         });
     }

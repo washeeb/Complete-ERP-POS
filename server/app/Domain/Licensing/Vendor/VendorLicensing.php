@@ -28,10 +28,11 @@ final class VendorLicensing
         'remote_access' => 'Remote access (paid add-on: the client\'s staff see and control devices, training sessions, device health and remote fixes)',
         'integrations' => 'Integrations (paid add-on: one page with every connection — e-mail, SMS, WhatsApp, mobile money, GRA E-VAT, online shops, API, branch servers, backups, AI — its status, last success and failures)',
         'crm' => 'CRM (paid add-on: leads, deals on a pipeline, follow-ups with reminders, campaigns by SMS, WhatsApp and e-mail)',
-        'projects' => 'Projects and job costing (paid add-on: projects, tasks, milestones, timesheets, costs from stock, bills, expenses and time, invoicing, profit per project)'];
+        'projects' => 'Projects and job costing (paid add-on: projects, tasks, milestones, timesheets, costs from stock, bills, expenses and time, invoicing, profit per project)',
+        'service' => 'Service desk and maintenance (paid add-on: tickets from WhatsApp, e-mail, the web and staff with deadlines; equipment register, maintenance plans and work orders)'];
 
     /** Paid add-ons: only when ticked by name; "all features" does not include them (owner decisions 2026-10-20, 2026-11-02). */
-    public const ADDON_FEATURES = ['remote_access', 'integrations', 'crm', 'projects'];
+    public const ADDON_FEATURES = ['remote_access', 'integrations', 'crm', 'projects', 'service'];
 
     public function __construct(private readonly AuditLog $audit, private readonly VendorBilling $billing) {}
 

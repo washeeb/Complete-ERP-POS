@@ -268,6 +268,7 @@ When an industry is first switched on, the system creates its company under **Co
 | **HR & payroll** | Employees, clock-in at tills, leave, loans, monthly payroll with PAYE and SSNIT, payslips | Chapter 7, step 12; payroll profile checked with your accountant |
 | **CRM** (paid add-on) | Leads, deals on a pipeline, follow-ups with reminders, campaigns by SMS, WhatsApp and e-mail | Section 8.3a below |
 | **Projects** (paid add-on) | Projects with tasks and milestones, timesheets, costs from stock, bills, expenses and time, invoicing, profit per project | Section 8.3b below |
+| **Service desk and maintenance** (paid add-on) | Tickets from WhatsApp, e-mail, the web and staff with deadlines; equipment register, servicing plans and work orders | Section 8.3c below |
 
 ## 8.3a CRM: leads, deals, follow-ups and campaigns (paid add-on)
 
@@ -442,6 +443,92 @@ payroll. **Why:** costs are matched to the income they earn, as accountants expe
 **Dashboards:** the **Projects** panel shows projects in progress (and those over budget), time and materials not yet
 invoiced, your hours this week and timesheets to approve.
 
+## 8.3c Service desk and maintenance (paid add-on)
+
+Two menus: **Service desk** (under *Sales*) for requests and complaints, and **Maintenance** (under *Stock*) for the
+equipment you look after.
+
+**Availability:** a paid add-on. Both appear once your licence includes **Service desk and maintenance** (ask
+SyncLytics; a new licence key is entered under *System → Licence*).
+
+**Who can use it** (People → Roles): *Ask for help* (most staff: their own requests); *See service desk tickets*;
+*Handle tickets* (customer service, supervisors, technicians); *Run the service desk* (managers: pass on anyone's
+tickets, deadlines, late tickets); *See equipment*; *Do maintenance work* (technicians); *Run maintenance* (managers:
+equipment register, plans, invoicing customers' jobs).
+
+### Service desk — Step 1: deadlines
+
+**Service desk → Deadlines**: how fast a ticket is **answered** and **fixed**, by priority — you start with Urgent 1 h /
+4 h, High 4 h / 1 day, Normal 8 h / 3 days, Low 1 day / 7 days, counted around the clock. Change them to suit. **Why:**
+everyone knows what is late; the person handling a ticket is warned when 75 % of the time is gone, managers are told
+when it is missed. While you wait for the customer's answer the clock stops.
+
+### Step 2: where tickets come from
+
+**Service desk → Tickets → Where tickets come from** shows the exact links for your company.
+- **At the counter or on the phone**: **New ticket** — what kind (complaint, return, warranty, question, request), the
+  customer (or their name and number), the receipt number for a return or warranty (the warranty is checked on the
+  sale), the equipment if it is about one.
+- **WhatsApp**: messages to your WhatsApp Business number arrive under *Online → WhatsApp orders*; for a problem rather
+  than an order, use **Make a ticket**. Their next messages are added to the ticket by themselves.
+- **Web form**: switch on *Customers can report a problem on a web page* (System → Settings → *Service desk and
+  maintenance*) and put the link on your website, receipts or a QR code. A hidden field stops robots.
+- **E-mail**: type a long secret key in *Key for e-mails to tickets* (same settings), then have your e-mail provider
+  (Mailgun, SendGrid, Postmark…) forward incoming mail to the address shown. A customer's reply that keeps the ticket
+  number in the subject joins the ticket. **Why:** the key keeps strangers from creating tickets; keep the address
+  private.
+- **Staff**: anyone with *Ask for help* sees **Ask for help** (and *My requests*) for their own problems — a printer, a
+  stock problem — and is told when it is resolved.
+
+![The list of tickets](img/tickets.png)
+
+### Step 3: working a ticket
+
+Open the ticket: **Reply** by WhatsApp, SMS or e-mail (tick *Wait for their answer* to stop the clock), add a **Note**
+(staff only), **Pass on** to someone else or change the priority, open a maintenance **Work order** for the equipment
+it is about, and **Resolve** it — optionally telling the customer, with a link to rate the service from 1 to 5.
+**Why:** the whole conversation is on one page, so anyone can pick it up. A resolved ticket closes by itself after 7
+days (*Close resolved tickets after*); a reply from the customer before then reopens it.
+
+**Note:** a free WhatsApp reply reaches the customer only within 24 hours of their last message (WhatsApp's rule);
+after that, answer by SMS or e-mail.
+
+### Maintenance — Step 1: the equipment register
+
+**Maintenance → Equipment → New equipment**: your own equipment (generator, fridge, air conditioner, van, tills,
+computers) with its branch and place, make, model, serial number, supplier, warranty date, the fixed asset it is in the
+books as, and its **meter** (running hours or km) if it has one. Add **customers' equipment** you sold or service: the
+customer, the warranty and any **service contract** date. **Why:** you see each machine's history, cost and downtime.
+
+![The equipment register](img/equipment.png)
+
+### Step 2: servicing plans
+
+On the equipment, **New plan**: what is done (e.g. *Oil and filter change*), **every so many days** and/or **every so
+many hours / km**, when it was last done, who does it, how many days early to open the work order, and a **checklist**.
+**Why:** a work order opens by itself when servicing is due — by date or when **New meter reading** passes the mark.
+
+### Step 3: work orders
+
+**Maintenance → Work orders**: planned servicing (from the plans), breakdowns (**Report a breakdown** on the equipment,
+from a ticket, or from a fridge sensor alarm once sensors are connected) and **customer visits**. On each: **Start**,
+**Log time**, **Use parts** (out of a store, at cost; **Parts back** for unused ones), **Waiting for parts**, and **Done**
+with what was done, the checklist ticked and the meter reading. A breakdown marks the equipment *Not working* and
+**Done** puts it back to work, counting the downtime. An outside technician's bill is charged to the work order with
+*For work order* on the supplier bill's charge.
+
+**Customers' jobs**: under warranty or contract they cost you; otherwise **Invoice the customer** — parts at the
+customer's price list, labour at the amount you type, as a service product.
+
+**Technician time** is valued at the person's hourly cost (Projects → Hourly rates, if you have Projects) or at *Technician
+time costs per hour* (System → Settings → *Service desk and maintenance*).
+
+**In the books**: parts for your own equipment go to **Repairs and maintenance**; for a customer's under warranty or
+contract to **Warranty and after-sales costs**; for a chargeable job to **cost of sales** (it is invoiced).
+
+**Dashboards:** the **Service desk and maintenance** panel shows open and late tickets, the customers' rating, equipment
+not working and open work orders.
+
 ## 8.4 Planned modules
 
-These appear as **Planned** and can be reserved: **Manufacturing** (bills of materials, production at actual cost), **Logistics & Delivery**, **Assets & Maintenance**, **Helpdesk**. This guide gets a checklist for each as it is released.
+These appear as **Planned** and can be reserved: **Manufacturing** (bills of materials, production at actual cost), **Logistics & Delivery**. This guide gets a checklist for each as it is released.

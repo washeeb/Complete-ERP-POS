@@ -388,3 +388,12 @@ a.zx-panel-row:hover { background: color-mix(in oklab, var(--primary-500) 8%, tr
 .zx-timer-since { font-size: .85rem; color: var(--zx-muted, #5b6676); }
 @keyframes zx-pulse { 50% { box-shadow: 0 0 0 7px rgb(22 163 74 / .08); } }
 @media (prefers-reduced-motion: reduce) { .zx-timer-dot { animation: none; } }
+
+/* Service desk: a ticket's conversation. */
+.zx-thread { display: grid; gap: .6rem; }
+.zx-msg { max-width: 46rem; padding: .6rem .8rem; border-radius: 12px; border: 1px solid var(--zx-line, #dde3ea); background: var(--zx-panel, #fff); }
+.dark .zx-msg { background: rgb(255 255 255 / .04); border-color: rgb(255 255 255 / .09); }
+.zx-msg-out { justify-self: end; background: color-mix(in oklab, var(--primary-500) 9%, transparent); }
+.zx-msg-note { justify-self: center; background: rgb(245 158 11 / .1); border-color: rgb(245 158 11 / .35); }
+.zx-msg-head { font-size: .78rem; color: var(--zx-muted, #5b6676); margin-bottom: .2rem; }
+.zx-msg-body { white-space: pre-wrap; overflow-wrap: anywhere; }

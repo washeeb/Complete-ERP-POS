@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Domain\Licensing\LicenseManager;
 use App\Domain\Modules\ModuleService;
 use App\Domain\Support\Recorder;
 use App\Filament\Support\Erp;
@@ -84,11 +85,15 @@ class ManageSettings extends Page
 
         // An industry's settings show only where that industry runs (and follow the industry chosen at the top).
         $industryGroups = ['Restaurant' => 'restaurant', 'Pharmacy' => 'pharmacy', 'Grocery' => 'grocery', 'Fashion' => 'fashion', 'Services' => 'services', 'Distribution' => 'distribution'];
+        // A paid add-on's settings show only when the licence has it.
+        $addonGroups = ['Service desk and maintenance' => 'service'];
+        $licence = app(LicenseManager::class);
 
         return $schema->statePath('data')->components([
             ...collect($groups)->map(fn ($fields, $group) => Section::make($group)->schema($fields)->description(count($fields).' setting(s)')
                 ->collapsible()->collapsed(fn () => trim($this->find) === '') // a short list of groups; searching opens what matches
                 ->visible(fn () => (! isset($industryGroups[$group]) || ModuleService::enabledAnywhere($industryGroups[$group]))
+                    && (! isset($addonGroups[$group]) || $licence->hasAddon($addonGroups[$group]))
                     && collect($keys[$group])->contains(fn ($k) => $this->matches($k))))->values()->all(),
             TextInput::make('reason')->label('Reason for change')->maxLength(255),
         ]);

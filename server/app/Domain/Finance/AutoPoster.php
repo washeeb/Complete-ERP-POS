@@ -45,6 +45,7 @@ final class AutoPoster
         'trade_in' => 'trade_in_clearing', // used items taken in on a sale (the sale's trade-in tender is on the other side)
         'production_issue' => 'wip', 'production_return' => 'wip', 'production_output' => 'wip', 'by_product' => 'wip', // work orders
         'project_issue' => 'project_wip', 'project_return' => 'project_wip', // projects (internal ones: straight to project costs)
+        'maintenance_issue' => 'repairs', 'maintenance_return' => 'repairs', // parts on work orders (customers' equipment: warranty costs or cost of sales)
     ];
 
     /** Till tenders → the account the money (or claim) sits in. */
@@ -282,6 +283,10 @@ final class AutoPoster
         $projects = DB::table('project_issues as i')->join('projects as p', 'p.id', '=', 'i.project_id')
             ->whereIn('i.id', collect($rows)->whereIn('type', ['project_issue', 'project_return'])->pluck('source_id')->unique()->all())
             ->get(['i.id', 'p.id as project_id', 'p.billing'])->keyBy('id');
+        // Parts on a customer's job: warranty and contract work is an after-sales cost; a chargeable job is a sale.
+        $jobs = DB::table('maintenance_orders as o')->join('maintenance_assets as a', 'a.id', '=', 'o.asset_id')
+            ->whereIn('o.id', collect($rows)->whereIn('type', ['maintenance_issue', 'maintenance_return'])->pluck('source_id')->unique()->all())
+            ->get(['o.id', 'a.owner', 'o.chargeable'])->keyBy('id');
         // Containers sold with a held deposit are still ours: they move to "with customers" instead of cost of sales.
         $containers = $this->depositsAsLiability($actor->tenantId)
             ? array_flip(DB::table('products')->where('is_container', true)->whereIn('id', array_unique(array_column($rows, 'product_id')))->pluck('id')->all()) : [];
@@ -296,6 +301,10 @@ final class AutoPoster
                 $project = in_array($m->type, ['project_issue', 'project_return'], true) ? ($projects[$m->source_id] ?? null) : null;
                 if ($project && $project->billing === 'internal') {
                     $counter = 'project_costs';
+                }
+                $job = in_array($m->type, ['maintenance_issue', 'maintenance_return'], true) ? ($jobs[$m->source_id] ?? null) : null;
+                if ($job && $job->owner === 'customer') {
+                    $counter = $job->chargeable ? 'cogs' : 'warranty_costs';
                 }
                 $lines[] = ['account' => 'inventory', 'amount' => (int) $m->value, 'branch_id' => $m->branch_id];
                 $lines[] = ['account' => $counter, 'amount' => -(int) $m->value, 'project_id' => $project?->project_id,

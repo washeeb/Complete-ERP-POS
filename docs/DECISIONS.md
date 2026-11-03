@@ -1051,3 +1051,12 @@ Design:
 - Invoices for time, milestones and bought-in costs use a per-project service product (not stock-tracked) so the normal invoice, tax and receivables apply; materials invoice as their own products. Amounts are before tax.
 - Hourly cost and billing rates per person (company-wide), project rate fills a missing billing rate; seen only with projects.manage.
 
+## Service desk and maintenance (interface stage 4, 2026-11-03)
+- One paid add-on `service` for both (owner: stage 4 paid). Replaces the planned modules Helpdesk and Assets & Maintenance; their reservations are deleted.
+- Tickets from customers by WhatsApp, e-mail and a web form, from staff for customers, and from staff for themselves (owner: all three). WhatsApp reuses the existing intake: staff turn an entry into a ticket, and a customer with an open WhatsApp ticket (busy in the last week) has later messages added to it rather than new order entries. E-mail via the provider's inbound forwarding (no mailbox polling): a secret key in the address names the company; a reply is matched by the ticket number in the subject and the same sender. The web form has a hidden robot trap and a rate limit; links to rate are signed and the rating page asks before it records.
+- Deadlines (owner: with alerts): answer and fix by priority, around the clock (shops open long hours; working-hours calendars can come later), clock stopped while waiting for the customer, warning at 75 % to the person, escalation to managers once when missed, resolved tickets close after N days (setting).
+- Maintenance (owner: own register, planned maintenance, breakdowns and repairs, customers' equipment): plans by days and/or meter open one work order at a time with lead days; parts by stock movement at cost; labour valued at the person's project cost rate or a company rate; outside technicians via supplier bill lines; downtime from the breakdown to done.
+- Books: own equipment parts → Repairs and maintenance; customers' equipment under warranty or contract → Warranty and after-sales costs; chargeable customer jobs → cost of sales and invoiced (parts at the customer's price list, labour typed, before tax as a service).
+- IoT (owner: yes): `Maintenance::breakdown(tenant, asset, title)` opens one urgent breakdown per asset (further alarms append) for stage 5's sensors.
+- Settings of a paid add-on show only when the licence has it.
+

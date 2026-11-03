@@ -190,6 +190,7 @@ class SupplierBillResource extends Resource
                     Select::make('tax_group_id')->label('Tax')->options(fn () => TaxGroup::orderBy('code')->pluck('name', 'id'))->placeholder('No tax'),
                     Fields::departmentField(),
                     Fields::projectField(),
+                    Fields::workOrderField(),
                 ]),
             ]),
             Hidden::make('grns_seen'),
@@ -207,7 +208,7 @@ class SupplierBillResource extends Resource
         }
         foreach ($data['expense_lines'] ?? [] as $l) {
             $lines[] = ['account_id' => $l['account_id'], 'description' => $l['description'] ?? null, 'amount_minor' => FinanceUi::toMinor($l['amount']),
-                'tax_group_id' => $l['tax_group_id'] ?? null, 'department_id' => $l['department_id'] ?? null, 'project_id' => $l['project_id'] ?? null];
+                'tax_group_id' => $l['tax_group_id'] ?? null, 'department_id' => $l['department_id'] ?? null, 'project_id' => $l['project_id'] ?? null, 'maintenance_order_id' => $l['maintenance_order_id'] ?? null];
         }
 
         return ['supplier_invoice_no' => $data['supplier_invoice_no'], 'bill_date' => $data['bill_date'], 'due_on' => $data['due_on'] ?? null,
