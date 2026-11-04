@@ -243,38 +243,100 @@ class ShiftResource extends Resource
         return $parts ? implode(' · ', $parts) : null;
     }
 
-    /** Shift report (Z report): the cash count, every payment method taken, the MoMo / card / voucher / coupon checks, the drawer and coupons. */
+    /**
+     * Shift report (Z report), one page: the grand total and the key figures at the top, who and when, then sales by
+     * payment method (sold, refunded, net, with the total), the cash count, the MoMo / card / voucher / coupon checks,
+     * the drawer and coupons (left out when there were none), and lines to sign. The branch's own name, address and
+     * phone are in the heading, under the company.
+     */
     private static function report(Shift $r)
+    {
+        ['intro' => $intro, 'sheets' => $sheets] = self::reportContent($r);
+
+        return Erp::run(fn ($actor) => app(Exporter::class)->pdf($actor, "Shift report {$r->branch->code} · {$r->till->code}", $sheets, [], 'portrait', $intro));
+    }
+
+    /** @return array{intro: array, sheets: array} */
+    public static function reportContent(Shift $r): array
     {
         $cur = $r->currency_code;
         $m = fn (?int $v) => $v === null ? '' : Money::display($v, $cur);
-        $counted = $r->latestCorrection?->counted_after_minor ?? $r->counted_cash_minor;
-        $cash = [['Opening float', $m($r->opening_float_minor)], ['Expected in the drawer', $m($r->expected_cash_minor)], ['Counted', $m($counted)],
-            ['Over / short', $m($r->latestCorrection?->over_short_after_minor ?? $r->over_short_minor)]];
-        $methods = DB::table('sale_payments')->whereIn('sale_id', $r->sales()->where('status', 'posted')->select('id'))
-            ->groupBy('method', 'provider')->orderBy('method')->selectRaw('method, provider, COUNT(*) AS n, SUM(amount_minor) AS amount')->get()
-            ->map(fn ($p) => [(SalePayment::METHODS[$p->method] ?? $p->method).($p->provider ? ' · '.(SalePayment::MOMO_PROVIDERS[$p->provider] ?? $p->provider) : ''),
-                (string) $p->n, $m((int) $p->amount)])->all();
+        $tz = $r->branch->timezone ?: config('app.timezone');
+        $at = fn ($t) => $t?->copy()->setTimezone($tz)->format('D j M Y, H:i') ?? '';
+
+        $posted = $r->sales()->where('status', 'posted');
+        $byMethod = DB::table('sale_payments')->join('sales as s', 's.id', '=', 'sale_payments.sale_id')->where('s.shift_id', $r->id)->where('s.status', 'posted')
+            ->groupBy('sale_payments.method', 'sale_payments.provider')
+            ->orderByRaw("CASE sale_payments.method WHEN 'cash' THEN 0 WHEN 'momo' THEN 1 ELSE 2 END")->orderBy('sale_payments.method')->orderBy('sale_payments.provider')
+            ->selectRaw("sale_payments.method, sale_payments.provider, SUM(CASE WHEN s.kind = 'return' THEN 0 ELSE 1 END) AS n,
+                SUM(CASE WHEN s.kind = 'return' THEN 0 ELSE sale_payments.amount_minor END) AS sold,
+                -SUM(CASE WHEN s.kind = 'return' THEN sale_payments.amount_minor ELSE 0 END) AS refunded")->get();
+        $sold = (int) $byMethod->sum('sold');
+        $refunded = (int) $byMethod->sum('refunded');
+        $total = $sold - $refunded; // the grand total: everything the shift sold, however it was paid, less returns refunded
+        $sales = (clone $posted)->where('kind', 'sale')->count();
+        $returns = (clone $posted)->where('kind', 'return')->count();
+        $methods = $byMethod->map(fn ($p) => [(SalePayment::METHODS[$p->method] ?? $p->method).($p->provider ? ' · '.(SalePayment::MOMO_PROVIDERS[$p->provider] ?? $p->provider) : ''),
+            (string) $p->n, $m((int) $p->sold), (int) $p->refunded ? $m((int) $p->refunded) : '—', $m((int) $p->sold - (int) $p->refunded)])->all();
+
+        $counted = $r->latestCorrection?->counted_after_minor ?? $r->checked_count_minor ?? $r->counted_cash_minor;
+        $overShort = $r->latestCorrection?->over_short_after_minor ?? $r->over_short_minor;
+        $cash = [['Opening float', $m($r->opening_float_minor)], ['Expected in the drawer', $m($r->expected_cash_minor)], ['Counted', $m($counted)]];
+        if ($r->latestCorrection) {
+            $cash[] = ['Count corrected', 'from '.$m($r->latestCorrection->counted_before_minor)." by {$r->latestCorrection->corrected_by_name}: {$r->latestCorrection->reason}"];
+        }
         $v = fn (array $c, ?int $x) => $x === null ? '' : ($c['pieces'] ? (string) $x : $m($x));
         $checks = array_map(fn ($c) => [$c['label'], $v($c, $c['expected']), $c['counted'] === null ? 'not checked' : $v($c, $c['counted']),
             $v($c, $c['diff'])], $r->otherChecks());
-        $drawer = $r->drawerEvents()->with('account')->orderBy('occurred_at')->get()->map(fn (TillDrawerEvent $e) => [$e->occurred_at->format('H:i'),
+        $drawer = $r->drawerEvents()->with('account')->orderBy('occurred_at')->get()->map(fn (TillDrawerEvent $e) => [$e->occurred_at->copy()->setTimezone($tz)->format('H:i'),
             TillDrawerEvent::KINDS[$e->kind] ?? $e->kind, $e->kind === 'no_sale' ? '' : $m($e->amount_minor),
             trim(($e->account?->name ? $e->account->name.': ' : '').($e->reason ?? '').($e->payee ? " (paid to {$e->payee})" : '')), $e->user_name, $e->approved_by_name ?? ''])->all();
-        $sales = $r->sales()->where('status', 'posted')->where('kind', 'sale');
-        $coupons = (clone $sales)->whereNotNull('coupon_code')->groupBy('coupon_code')->selectRaw('coupon_code, COUNT(*) AS n, SUM(discount_minor) AS d')->toBase()->get()
+        $coupons = (clone $posted)->where('kind', 'sale')->whereNotNull('coupon_code')->groupBy('coupon_code')->selectRaw('coupon_code, COUNT(*) AS n, SUM(discount_minor) AS d')->toBase()->get()
             ->map(fn ($c) => ["Coupon {$c->coupon_code}", (string) $c->n, $m((int) $c->d)])->all();
-        $where = "{$r->branch->code} · {$r->till->code} · opened {$r->opened_at->format('j M Y H:i')} by {$r->opened_by_name} · closed "
-            .($r->closed_at?->format('j M Y H:i') ?? '').' by '.($r->closed_by_name ?? '');
+
+        $branch = $r->branch;
+        $entity = $branch->legalEntity;
+        $sellers = self::sellers($r);
+        $intro = [
+            // The branch under the company (and its own company when it belongs to another one in the group).
+            'branch' => implode(' · ', array_filter([$entity && ! $entity->is_primary ? $entity->name : null, "{$branch->name} ({$branch->code})", $branch->address,
+                $branch->phone ? "Tel {$branch->phone}" : null])),
+            'tiles' => [
+                ['label' => 'Grand total sold', 'value' => $m($total)],
+                ['label' => 'Sales', 'value' => (string) $sales],
+                ['label' => 'Average sale', 'value' => $sales ? $m(intdiv($sold, $sales)) : '—'],
+                ['label' => 'Returns refunded', 'value' => $returns ? $m($refunded)." ({$returns})" : '—', 'tone' => $returns ? 'warn' : null],
+                ['label' => 'Cash expected', 'value' => $r->expected_cash_minor === null ? '—' : $m($r->expected_cash_minor)],
+                ['label' => 'Cash counted', 'value' => $counted === null ? '—' : $m($counted)],
+                ['label' => 'Over / short', 'value' => $overShort === null ? '—' : $m($overShort),
+                    'tone' => $overShort === null ? null : ($overShort < 0 ? 'bad' : ($overShort > 0 ? 'warn' : 'good'))],
+                ['label' => 'Opening float', 'value' => $m($r->opening_float_minor)],
+            ],
+            'facts' => array_filter([
+                'Till' => "{$branch->code} · {$r->till->code}".($r->shift_name ? " · {$r->shift_name}" : ''),
+                'Teller' => $r->opened_by_name,
+                'Opened' => $at($r->opened_at),
+                'Closed' => $r->closed_at ? $at($r->closed_at).($r->closed_by_name ? " by {$r->closed_by_name}" : '') : 'still open',
+                'Sold by' => $sellers ? substr($sellers, strlen('Sold by ')) : null,
+                'Counted by' => $r->checked_at ? "{$r->checked_by_name} (manager)" : null,
+                'Vault' => $r->vault?->name,
+                'Note' => $r->close_note,
+            ]),
+            'sign' => ["Teller: {$r->opened_by_name}", 'Checked by (manager)', 'Date'],
+        ];
         $sheets = [
-            ['title' => 'Cash', 'headings' => ['', 'Amount'], 'rows' => $cash, 'note' => $where.' · Checked by: ______________', 'numeric' => [1]],
-            ['title' => 'Takings by payment method', 'headings' => ['Method', 'Payments', 'Amount'], 'rows' => $methods, 'numeric' => [1, 2]],
-            ['title' => 'Mobile money, card, vouchers and coupons check', 'headings' => ['Check', 'Expected', 'Entered at close', 'Over / short'], 'rows' => $checks, 'numeric' => [1, 2, 3]],
-            ['title' => 'Drawer: expenses paid out, pay-ins, cash drops, no-sale opens', 'headings' => ['Time', 'What', 'Amount', 'Details', 'By', 'Approved by'], 'rows' => $drawer, 'numeric' => [2]],
-            ['title' => 'Coupons used (discount given)', 'headings' => ['Coupon', 'Sales', 'Discount on those sales'], 'rows' => $coupons, 'numeric' => [1, 2]],
+            ['title' => 'Sales by payment method', 'headings' => ['Method', 'Payments', 'Sold', 'Refunded', 'Net'], 'rows' => $methods, 'numeric' => [1, 2, 3, 4],
+                'foot' => ['Grand total', (string) $byMethod->sum('n'), $m($sold), $refunded ? $m($refunded) : '—', $m($total)]],
+            ['title' => 'Cash drawer', 'headings' => ['', 'Amount'], 'rows' => $cash, 'numeric' => [1],
+                'foot' => ['Over / short', $overShort === null ? '—' : $m($overShort)]],
+            ['title' => 'Mobile money, card, vouchers and coupons check', 'headings' => ['Check', 'Expected', 'Entered at close', 'Over / short'], 'rows' => $checks,
+                'numeric' => [1, 2, 3], 'skip_empty' => true],
+            ['title' => 'Drawer: expenses paid out, pay-ins, cash drops, no-sale opens', 'headings' => ['Time', 'What', 'Amount', 'Details', 'By', 'Approved by'], 'rows' => $drawer,
+                'numeric' => [2], 'skip_empty' => true],
+            ['title' => 'Coupons used (discount given)', 'headings' => ['Coupon', 'Sales', 'Discount on those sales'], 'rows' => $coupons, 'numeric' => [1, 2], 'skip_empty' => true],
         ];
 
-        return Erp::run(fn ($actor) => app(Exporter::class)->pdf($actor, "Shift report {$r->till->code}", $sheets, [$r->branch->code], 'portrait'));
+        return ['intro' => $intro, 'sheets' => $sheets];
     }
 
     public static function getPages(): array

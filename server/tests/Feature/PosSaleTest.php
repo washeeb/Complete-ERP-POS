@@ -304,6 +304,12 @@ it('checks mobile money per network and the card terminal at the close, and show
     expect(ShiftResource::takings($shift)['total'])->toBe('GH₵ 148.00');
     Livewire\Livewire::test(ListShifts::class)->assertSee('MTN MoMo short')->assertSee('GH₵ 148.00')
         ->callTableAction('report', $shift->id)->assertFileDownloaded();
+    // The shift report leads with the grand total sold (every payment method), with the total row under the methods.
+    $report = ShiftResource::reportContent($shift->fresh());
+    expect($report['intro']['tiles'][0])->toBe(['label' => 'Grand total sold', 'value' => 'GH₵ 148.00'])
+        ->and($report['intro']['tiles'][1]['value'])->toBe('4')
+        ->and($report['sheets'][0]['foot'])->toBe(['Grand total', '5', 'GH₵ 148.00', '—', 'GH₵ 148.00'])
+        ->and($report['intro']['branch'])->toContain("({$shift->branch->code})");
     app('auth')->forgetGuards();
 
     $this->withToken($this->token)->postJson('/api/v1/pos/shifts/open', ['opening_float_minor' => 0])->assertCreated();
