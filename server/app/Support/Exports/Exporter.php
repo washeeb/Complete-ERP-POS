@@ -108,11 +108,16 @@ final class Exporter
             'csv' => 'text/csv', 'pdf' => 'application/pdf'][$format] ?? 'application/pdf'];
     }
 
-    /** One or more sheets as an A4 PDF with the company name, filters, who printed it and page numbers. */
-    public function pdf(Actor $actor, string $name, array $sheets, array $filters = [], string $orientation = 'landscape'): StreamedResponse
+    /**
+     * One or more sheets as an A4 PDF with the company name, filters, who printed it and page numbers.
+     * A sheet may have a 'foot' row (a total, in bold) and 'skip_empty' (left out when it has no rows). $intro puts a
+     * summary above the sheets: 'tiles' (key figures, the first one large: label, value, tone good / warn / bad),
+     * 'facts' (label => text) and 'sign' (signature lines printed at the end).
+     */
+    public function pdf(Actor $actor, string $name, array $sheets, array $filters = [], string $orientation = 'landscape', array $intro = []): StreamedResponse
     {
         $this->guard();
-        [$bytes, $prepared] = $this->pdfBytes($actor, $name, $sheets, $filters, $orientation);
+        [$bytes, $prepared] = $this->pdfBytes($actor, $name, $sheets, $filters, $orientation, $intro);
         $this->log($actor, $name, 'pdf', $prepared, $filters);
 
         return new StreamedResponse(function () use ($bytes) {
@@ -121,11 +126,14 @@ final class Exporter
     }
 
     /** @return array{0: string, 1: array} the PDF and the sheets as printed */
-    private function pdfBytes(Actor $actor, string $name, array $sheets, array $filters, string $orientation): array
+    private function pdfBytes(Actor $actor, string $name, array $sheets, array $filters, string $orientation, array $intro = []): array
     {
         $prepared = [];
         $truncated = false;
         foreach ($sheets as $sheet) {
+            if (! empty($sheet['skip_empty']) && ! count($sheet['rows'])) {
+                continue;
+            }
             $rows = [];
             foreach ($sheet['rows'] as $row) {
                 if (count($rows) >= self::PDF_ROW_LIMIT) {
@@ -137,7 +145,7 @@ final class Exporter
             $prepared[] = ['rows' => $rows, 'numeric' => $sheet['numeric'] ?? self::guessNumeric($rows)] + $sheet;
         }
         $tenant = Tenant::find($actor->tenantId);
-        $html = view('exports.table', ['title' => $name, 'sheets' => $prepared, 'filters' => $filters, 'truncated' => $truncated,
+        $html = view('exports.table', ['title' => $name, 'sheets' => $prepared, 'filters' => $filters, 'truncated' => $truncated, 'intro' => $intro,
             'company' => Watermark::stamp($tenant?->name ?? ''), 'by' => $actor->name, 'at' => now()->setTimezone($tenant?->timezone ?: 'UTC'),
             'ref' => Watermark::reference(), 'logo' => Branding::logoDataUri($actor->tenantId, svgOk: false), 'powered' => Branding::poweredBy()])->render();
 

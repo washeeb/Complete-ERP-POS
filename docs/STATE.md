@@ -27,7 +27,10 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 | 4 | Service desk (tickets) and asset maintenance | paid add-on — branch `service-desk` |
 | 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid add-on — branch `iot` |
 
-## Clean list lines + connection notices — branch `clean-list-lines`
+## Shift report redesign — branch `shift-report-total`
+- `ShiftResource::reportContent()` (intro tiles / facts / branch line / sign + sheets); `Exporter::pdf(..., $intro)`; sheets take `foot` and `skip_empty` (exports/table.blade.php). Test in PosSaleTest (grand total tile and foot).
+
+## Clean list lines + connection notices — merged (PR #135, release B6B9IOFXS)
 - `App\Filament\Support\CleanTextColumn` is bound in place of Filament's `TextColumn` (AppServiceProvider::register): no wrapping, descriptions merged into the tooltip, columns that asked to wrap are cut at 40 characters (full text in the tooltip); `asPerson` cuts names at 24. Dotted underline on tooltipped cells (look-head). Infolists untouched. Failed requests: Filament's error notifications off; `layout.connection-notices` (HEAD_END) handles them (background failure quiet until 2 in a row, clicked = always, `beforeunload` ignored, status texts 419/429/503/5xx/other). Tests: ListLinesTest.
 
 ## Back-office desktop app (free) — merged (PR #134)

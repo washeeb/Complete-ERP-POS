@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 ### Changed
+- **Shift report redesigned** (owner request): the branch's name, address and phone under the company; key figures at the top led by the **grand total sold** (all payment methods less returns), sales, average sale, returns, cash expected / counted / over-short, float; who and when; sales by payment method with sold, refunded, net and a grand total row; empty sections left out; signature lines. PDF exports can now carry a summary, total rows and signature lines.
+### Changed
 - **Lists: one line per row** (owner request): in every list the details under a value (payment breakdowns, who else sold, reasons) moved into the hover tip, long text and names are shortened with the full text on hover, and such values are underlined with dots. View pages and prints unchanged.
 ### Fixed
 - **"Could not reach the server" popping up** in the back office (browser and desktop app): a background refresh (the bell every 30 seconds, self-updating lists) missing once on a shaky line no longer shows it; it shows once when the connection stays down, then *Connected again*; a click that did not reach the server says it may not have gone through; requests cut off by leaving the page are ignored; other server answers (e.g. not allowed, not found) no longer say "could not reach".
