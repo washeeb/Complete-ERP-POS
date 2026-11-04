@@ -1081,3 +1081,13 @@ Design:
 - Owner: the shift report must show the shift's grand total, and the branch (it showed only the company). Redesigned as one page led by key figures; the grand total is every payment method less returns refunded, the same figure as *Sales total* on Till shifts and on the till's close screen.
 - Built on the shared PDF exporter (an optional summary, total rows, signature lines) rather than a separate template, so the company heading, watermark reference, page numbers and the export audit stay the same as every other PDF.
 
+## SES Licensing: offline generator and sync (2026-11-04)
+- Owner: a separate desktop app issues licences offline and syncs both ways with the licence server, the server being master. The ERP keeps only the verifying side and the sync API; the app has its own private repository and is never shipped.
+- Same key format and package rules as `VendorLicensing`, pinned both ways by test vectors (`LicenseSyncVectorTest` here, `license.rs` there), so the ERP accepts its keys unchanged.
+- Device trust: a one-time code (hash stored, 15 minutes) registers an Ed25519 public key; every request is signed, with time and nonce. Chosen over a shared HMAC secret so the server holds nothing that can impersonate the device. Replies are not signed: TLS covers them, and the app checks each pulled key's signature itself.
+- A change feed (`vendor_sync_changes`) gives pulls a cursor instead of comparing `updated_at`, which can repeat and miss rows. An advisory lock keeps its numbers in commit order.
+- Merging is field by field against the last copy both sides had, done in the app; the server only compares versions. Only the same field changed to two values is shown to the person. Revocation and "replaced by" always win.
+- Invoices do not sync: SyncLytics bills from SES-Billing, which the app reads directly. `/vendor` invoices stay on the server.
+- Routes are at `api/license/sync/*` beside the existing `api/license/checkin` (the master prompt's `api/v1` was not what the check-in uses).
+- A pulled key is not re-signed or altered, and the check-in server still needs its own key file to sign answers.
+- The check-in address goes in a key only when ticked per licence, off by default: a key naming a server that is not live would make the installation read-only after 30 + 14 days.

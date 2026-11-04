@@ -24,7 +24,7 @@ it('sends a brand-new installation to the licence page first, and to the setup w
     $this->actingAs($owner->fresh());
 
     $this->get('/admin')->assertRedirect(LicensePage::getUrl());
-    $this->get(LicensePage::getUrl())->assertOk()->assertSee('SYNREQ-');
+    $this->get(LicensePage::getUrl())->assertOk()->assertSee('SYNREQ-')->assertSee('lic-qr', false)->assertSee('<svg', false);
     $this->get(SetupWizard::getUrl())->assertRedirect(LicensePage::getUrl());
 
     activateTestLicense();

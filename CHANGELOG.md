@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- **SES Licensing sync** (licence server only; for the new desktop app in its own private repository): device registration by one-time code, signed pull and push with versions, conflicts returned for the app to settle, idempotent pushes, rate limits, audit rows, and **Set-up → Sync devices** in `/vendor` (`license:sync-device`). Records are customers, plans, add-ons and licences. A licence from the app is accepted only with a key signed by a trusted key; revocation is final.
+- **Licence page: QR code** of the installation code, to photograph or scan into the app.
 ### Changed
 - **Shift report redesigned** (owner request): the branch's name, address and phone under the company; key figures at the top led by the **grand total sold** (all payment methods less returns), sales, average sale, returns, cash expected / counted / over-short, float; who and when; sales by payment method with sold, refunded, net and a grand total row; empty sections left out; signature lines. PDF exports can now carry a summary, total rows and signature lines.
 ### Changed

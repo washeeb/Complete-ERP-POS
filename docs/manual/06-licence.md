@@ -14,7 +14,7 @@ Parts that are not licensed are hidden from the menus.
 ## 6.2 Activate
 
 1. Open the back office at `https://<server-address>/admin` (Windows) or `https://<your-domain>/admin` (Ubuntu) and sign in as the **owner** (Chapter 7, steps 1–2 explain the first sign-in and two-factor set-up).
-2. You are taken to **System → Licence**. It shows the **installation code**, which starts with `SYNREQ-`.
+2. You are taken to **System → Licence**. It shows the **installation code** (also as a QR code), which starts with `SYNREQ-`.
 3. Send that code to SyncLytics: copy and paste it into an e-mail to info@synclyticsenterprisesystems.com, or a WhatsApp message to the hotline 024 563 6889. The Licence page shows these contacts too. Tell them which modules and how many branches, devices and users you need.
 4. You receive a **licence key** starting with `SYN1-`. On the Licence page click **Enter licence key**, paste it and confirm.
 
@@ -38,6 +38,14 @@ Every hour head office also sends SyncLytics support a short **health report**: 
 **Why:** support sees a failed backup, a full disk or a silent till on its console and can call you before it becomes a problem. To stop it: **System → Settings → Security → Share system health with SyncLytics support** → off (the daily licence check-in stays).
 
 **For SyncLytics (licence server):** **Licences → Support console** lists every client, worst first: *Needs attention* (a red check), *Not reporting* (no report for 3 hours: server, internet or scheduler down), *Warning*, *OK*. **Details** shows every check, the tills with problems and the open problem reports; the dashboard's *Needs attention* list includes the same red and silent servers.
+
+**For SyncLytics (issuing licences):** licences are made with the **SES Licensing** desktop app on the owner's PC, which works without internet. Its own guide is the README in the `SES-Licensing` folder. If the licence server is running, connect the app once so the two stay the same:
+
+1. On the licence server, open **/vendor → Set-up → Sync devices → New device**, name the PC and copy the one-time code. **Why:** only a PC you allow can change licences, and the code works once, for 15 minutes.
+2. In the app, open **Sync**, type the server's address and the code, and click **Connect**. **Why:** the app makes its own private key and sends only the public half, so no password travels or sits on the server.
+3. To stop a lost PC from syncing, click **Revoke** beside it on the same page.
+
+**Check:** the device shows *Active* and a recent *Last seen*, and the licences issued in the app appear under **Licences**.
 
 ## 6.4 Licence states
 

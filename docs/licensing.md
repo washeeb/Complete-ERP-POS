@@ -105,3 +105,23 @@ The command line (`license:issue`, `license:revoke`) still works; licences issue
 - The development private key lives in the git-ignored `.local-secrets/license-dev.json`.
 - Activate the dev installation with `php artisan license:issue --customer=Dev --until=2027-12-31 --activate`.
 - Tests generate their own key and licence (`activateTestLicense()`).
+
+## SES Licensing desktop app and sync (2026-11-04)
+
+Keys are also issued offline by **SES Licensing**, SyncLytics' own Windows app (private repository `washeeb/SES-Licensing`, never shipped to clients). It writes the same `SYN1-` format, so an installation cannot tell the two apart. The private key lives in the app's vault; a licence server needs its key file only to sign check-in answers.
+
+When `LICENSE_SERVER=true`, these answer (`routes/license-sync.php`, left out of client builds):
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /api/license/sync/register` | One-time code + name + Ed25519 public key → device id (5 a minute) |
+| `POST /api/license/sync/pull` | `{cursor, limit}` → changes after the cursor, each record as it stands now, plus `meta` (feature and module names, trusted key ids) |
+| `POST /api/license/sync/push` | `{changes: [{entity, id, base_version, data}]}` with `Idempotency-Key` → per record `applied`, `unchanged`, `conflict` (with the server's copy) or `rejected` (with the reason) |
+
+Pull and push are signed by the device: headers `X-Sync-Device`, `X-Sync-Time`, `X-Sync-Nonce`, `X-Sync-Signature` (Ed25519, base64url) over `ZX-SYNC-1\nPOST\n/<path>\n<time>\n<nonce>\n<sha256 of the body>`. A request over 5 minutes off the clock or with a used nonce is refused; plain HTTP only on `local` and `testing`; 120 requests a minute.
+
+Rules: the server is master. Records are customers, plans, add-ons and licences (not invoices: SyncLytics bills from SES-Billing), each with a UUIDv7 id, `version` and `updated_at`; the `Syncable` trait bumps the version and writes `vendor_sync_changes` on any save through the model, so `/vendor` changes reach the app. A licence pushed from the app must carry a key signed by a trusted key whose `license_id` is the record's id; everything signed is read from the key, not from the push, and a push cannot change it. Revocation is final. Every applied change is in the audit log as `vendor.sync.*` or `vendor.license.revoked`, and a first full pull as `vendor.sync.full_pull`.
+
+Devices: **/vendor → Set-up → Sync devices**, or `php artisan license:sync-device "Name"` (`--list`, `--revoke=id`). `license:sync-prune` runs daily.
+
+Rotating the signing key: generate it in the app, add its public half to `config/license.php`, release that to every client, and only then make it active in the app. The app warns when a key is not among the ids the server trusts.
