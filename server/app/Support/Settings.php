@@ -512,6 +512,11 @@ final class Settings
             'label' => 'In-store barcodes start with',
             'help' => 'Products without a barcode can be given one when printing labels: an EAN-13 starting with these two digits (20–29 are for in-store use). Must differ from the scale and markdown prefixes (Grocery).',
         ],
+        'stock.cost_run_two_people' => [
+            'type' => 'bool', 'default' => true, 'group' => 'Stock',
+            'label' => 'Cost runs need a second person to approve them',
+            'help' => 'A cost run changes the stock value in the books. Turn off only where one manager runs the company: they can then post their own run.',
+        ],
         'stock.adjustment_photos' => [
             'type' => 'choice', 'default' => 'optional', 'group' => 'Stock',
             'options' => ['optional' => 'Optional', 'losses' => 'Required for damaged, expired, spoiled and missing stock', 'off' => 'Not used'],

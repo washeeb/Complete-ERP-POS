@@ -282,7 +282,7 @@ If your selling prices come from what you pay (for example *cost × 1.40*), let 
 
 **Stock → Stock on hand → Opening stock / adjustment**, choosing *Opening balance*, for each product and warehouse: the quantity you counted and the **cost per unit**.
 
-**Why:** the cost is used for the value of your stock and the cost of goods sold in the accounts.
+**Why:** the cost is used for the value of your stock and the cost of goods sold in the accounts. If you do not have the costs, leave them empty and use a **cost run** afterwards (14.3b), so nothing stays at zero.
 
 **Tip:** count on a day you are closed, enter the counts, then start selling. For many products use **System → Import data (CSV / Excel) → Opening stock** (warehouse, SKU, quantity, unit cost per row). Medicines and other batch-tracked products: **one row per batch**, with its `batch_no` and `expires_on`; a medicine with three batches on the shelf has three rows. Each batch can be loaded once; once a product has been sold, received or adjusted, further changes go through a stock adjustment.
 

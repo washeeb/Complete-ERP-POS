@@ -3,6 +3,7 @@
 use App\Domain\Finance\AutoPoster;
 use App\Domain\Finance\GlCheck;
 use App\Domain\Inventory\InventoryService;
+use App\Domain\Inventory\StockCostRuns;
 use App\Domain\Purchasing\GoodsReceiptService;
 use App\Domain\Purchasing\LandedCostService;
 use App\Domain\Purchasing\PurchaseOrderService;
@@ -12,6 +13,7 @@ use App\Models\PurchaseOrder;
 use App\Models\Supplier;
 use App\Models\Warehouse;
 use App\Security\ScopeType;
+use App\Support\Settings;
 use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
@@ -88,6 +90,30 @@ it('keeps stock at cost tied to the ledger through a landed cost, a correction a
     $out('-100');
     $tied(0);
     expect((int) DB::table('stock_movements')->where('tenant_id', $this->tenant->id)->sum(DB::raw('ROUND(qty_entered * COALESCE(unit_cost_minor, 0))')))->toBe(-34000); // what the freight added, on its own
+});
+
+it('keeps the books tied when a cost run replaces a cost that carries freight, and when it is undone', function () {
+    app(Settings::class)->set(actorFor($this->owner), 'stock.cost_run_two_people', false);
+    app(LandedCostService::class)->post(actorFor($this->accountant), [$this->grn->id], [['description' => 'Freight', 'amount_minor' => 24000]], 'quantity');
+    expect(miloAvg($this))->toBe('1100.0000');
+    $tied = function (int $value) {
+        app(AutoPoster::class)->run($this->tenant->id);
+        expect(collect(app(GlCheck::class)->run($this->tenant->id)['ties'])->firstWhere('control', 'inventory'))
+            ->ledger->toBe($value)->sub_ledger->toBe($value);
+    };
+    $tied(264000); // 240 pieces at GHS 11.00
+
+    // GHS 15.00 ÷ 1.4 = GHS 10.71 a piece. The run works from what the books hold, freight included.
+    $runs = app(StockCostRuns::class);
+    $run = $runs->prepare(actorFor($this->owner), ['method' => 'divide', 'value' => '1.4', 'overwrite' => true, 'product_ids' => [$this->milo->id]]);
+    expect($run->stock_value_minor)->toBe(-6960);
+    $posted = $runs->post(actorFor($this->owner), $run);
+    expect(miloAvg($this))->toBe('1071.0000');
+    $tied(257040); // exactly on hand × the new cost
+
+    $runs->undo(actorFor($this->owner), $posted, 'Wrong factor');
+    expect(miloAvg($this))->toBe('1100.0000');
+    $tied(264000);
 });
 
 it('splits to the pesewa, corrects with a negative charge, and refuses what does not fit', function () {

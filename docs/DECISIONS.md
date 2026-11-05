@@ -1101,4 +1101,18 @@ Design:
 ## Landed costs in the stock sub-ledger (2026-11-05)
 - A landed cost's stock share has no stock movement (see *Landed costs*, 2026-11-01), so the stock sub-ledger is now the sum of movement values **plus `landed_costs.to_stock_minor`**. That is the same figure `AutoPoster::landed_costs` debits to inventory. Goods sold later go out at the raised average, so their movements carry the share back out: the sum of movements falls below what came in by exactly what the landed costs added, and the two parts together reach zero when the stock is gone.
 - Read from the header `landed_costs`, not `landed_cost_lines`: the header is what the auto-poster posts from, it has `tenant_id`, and only the header replicates (`Replication` has no children entry for `LandedCost`), so at head office lines from a branch may be absent while the journal exists.
+- `StockCostRuns::booksHold` (added the same day, PR 141) is the same figure per store and product: same movement filter and rounding, plus the landed share. It has to use the lines because it needs the product, so the two agree wherever the lines are present (their totals are equal by construction). A cost run moves stock out at `booksHold`, so it carries the landed share out in movements while the share stays in the sub-ledger's second term; the two cancel and the sub-ledger lands on on hand × new cost.
 - No backfill: the figure is computed on read. Go-live reconciliation's *stock value* uses the same `GlCheck::subLedgers`, so it follows.
+
+## Cost runs: cost from the selling price (2026-11-05)
+- Owner: a client's products were loaded with no cost, so stock value is unknown; use their 1.4 to work out cost, as a feature for any client, on selected or all products. Free (owner).
+- Answers: 1.4 = price ÷ 1.4 (a percentage-of-price form also offered). Tax default **shelf price** (owner, and for that client), with "remove tax first" as an option. Past sales: one catch-up entry. Existing costs skipped by default, replacing is an option. Two people by default, one person as a setting. Books: Opening balances (to clear) at the go-live date by default; the accountant may choose the account.
+- It is the retail method (IAS 2): an estimate standing in for cost, so the accountant should agree the factor.
+- **Stays a ledger:** a pair of movements per batch and bin (out at what the books hold, in at the new cost), as a unit change does; nothing is edited, the average follows by itself, and a run on a level leaves the sub-ledger at on hand × cost. Whole pesewas per unit, so one unit carries the rounding and the books end exact.
+- **Top-up:** a delivery on no-cost stock sets the average for all of it while the books hold only the delivery, so "already has a cost" would leave the value short. The run tops the books up without touching the cost, only where stock really came in at no cost.
+- **Catch-up** is one journal per branch, not edited sales: posted sales are immutable. Reports per sale keep showing no cost for those; the accounts carry the correction.
+- **Selling prices and pricing rules are not triggered:** the cost came from the price, so following it would go round in a circle.
+- **Undo** skips products whose cost has moved since (a real delivery): undoing would throw a real cost away.
+- A run prepared by someone scoped to some branches is fixed to those stores, so the approver posts the same run. Runs are head office only.
+- Serial-numbered and consignment products are skipped, not estimated; zero-stock products get no average (a delivery sets it), only their catch-up.
+
