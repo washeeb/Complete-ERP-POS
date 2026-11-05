@@ -5,6 +5,7 @@ namespace App\Domain\Licensing\Vendor;
 use App\Domain\Licensing\LicenseKey;
 use App\Domain\Licensing\LicenseService;
 use App\Domain\Licensing\Signer;
+use App\Models\Vendor\VendorLicense;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -33,6 +34,7 @@ final class LicenseIssuer
         if ($record) {
             DB::table('vendor_licenses')->insert(['id' => $payload['license_id'], 'customer' => $o['customer'], 'installation_id' => $req['installation_id'],
                 'payload' => json_encode($payload), 'license_key' => $key, 'issued_by' => $issuedBy ?? config('brand.vendor'), 'created_at' => now(), 'updated_at' => now()]);
+            VendorLicense::noteSync($payload['license_id'], 1); // written without the model, so the feed is told here
         }
 
         return ['license_id' => $payload['license_id'], 'key' => $key, 'payload' => $payload];

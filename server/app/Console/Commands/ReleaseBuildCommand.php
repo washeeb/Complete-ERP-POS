@@ -69,7 +69,9 @@ class ReleaseBuildCommand extends Command
 
         // The licence generator (vendor panel, its screens, prints and routes) never goes to customers.
         foreach (['app/Filament/Vendor', 'app/Providers/Filament/VendorPanelProvider.php', 'app/Http/Controllers/VendorPrintController.php',
-            'resources/views/licensing-vendor', 'routes/vendor.php'] as $vendorOnly) {
+            'resources/views/licensing-vendor', 'routes/vendor.php', 'routes/license-sync.php', 'app/Http/Controllers/LicenseSyncController.php',
+            'app/Http/Middleware/VerifySyncSignature.php', 'app/Domain/Licensing/Vendor/LicenseSync.php', 'app/Domain/Licensing/Vendor/SyncDevices.php',
+            'app/Console/Commands/LicenseSyncDeviceCommand.php'] as $vendorOnly) {
             File::isDirectory($root.'/'.$vendorOnly) ? File::deleteDirectory($root.'/'.$vendorOnly) : File::delete($root.'/'.$vendorOnly);
         }
 

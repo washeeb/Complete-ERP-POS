@@ -2,6 +2,7 @@
 
 namespace App\Models\Vendor;
 
+use App\Models\Vendor\Concerns\Syncable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,11 @@ use Illuminate\Support\Carbon;
 /** A licence key issued to a customer installation, with its package, dates, price and history. */
 class VendorLicense extends Model
 {
-    use HasUuids;
+    use HasUuids, Syncable;
+
+    public const SYNC_ENTITY = 'license';
+
+    public const SYNC_FIELDS = ['customer', 'installation_id', 'payload', 'license_key', 'issued_by', 'revoked_at', 'revoked_reason', 'revoked_by', 'superseded_by', 'customer_id', 'plan_id', 'addons', 'kind', 'site', 'starts_on', 'expires_on', 'price_minor', 'currency', 'replaces', 'request_code', 'notes'];
 
     protected $table = 'vendor_licenses';
 
