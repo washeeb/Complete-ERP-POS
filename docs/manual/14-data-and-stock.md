@@ -336,6 +336,8 @@ freight, your stock looks cheaper than it is and your margins look better than t
    their cost (the average cost per piece goes up); the part for goods **already sold** goes to cost of sales, since
    it is too late to put it in stock. The books move the total out of *to spread*, which comes back to zero.
 4. **Per product** on a landed cost shows each product's share and its cost per unit before and after.
+5. **Finance → Reports → Ledger check:** *Stock at cost* includes the part that went into stock, so it still agrees with the stock account. That is why the figure can be higher than the deliveries alone add up to.
+6. **With branch servers**, the landed cost reaches them through sync like any other document, and the cost per piece rises there too, so sales there go out at the right cost once it has synced.
 
 A posted landed cost is never edited. A mistake is corrected with another one with a **negative** amount.
 
