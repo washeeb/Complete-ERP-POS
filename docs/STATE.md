@@ -27,6 +27,9 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 | 4 | Service desk (tickets) and asset maintenance | paid add-on — branch `service-desk` |
 | 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid add-on — branch `iot` |
 
+## Cost runs (free) — branch `estimated-cost`
+- `App\Domain\Inventory\StockCostRuns`, models `StockCostRun` / `StockCostRunLine` (migration 2026_12_19_100001), UI `StockCostRunResource` + `LinesRelationManager`, page `EstimatedCosts`, bulk action on Products. Movement types `cost_set` (opening_equity) and `cost_change` (stock_adjustment), or the run's `account_id`; `StockLedger` lets those two carry an explicit cost going out. AutoPoster source `stock_cost_runs` (catch-up: cogs against the same account). Permissions `stock.cost.manage`, `stock.cost.approve`; setting `stock.cost_run_two_people`; document prefix CST. Line: `kind` estimate / overwrite / top_up / skipped. Tests: StockCostRunsTest. **Oheneba:** factor 1.4 ÷, tax mode shelf, catch-up on; run after install.
+
 ## IotTest clock pinned — merged (PR #138)
 - `IotTest` `beforeEach` starts with `travelTo(now()->setTime(12, 0))` in place of the closing `freezeTime()`. Tests only.
 - `erp_test` is one shared database: a second test run on this PC at the same time fails with deadlocks on `drop table`. Check for a running `artisan test` / `pest` first.

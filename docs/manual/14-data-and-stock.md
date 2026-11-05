@@ -128,6 +128,43 @@ The adjustment page shows each line's stock **before**, the **change** and **aft
 
 **Photos of damaged or expired goods:** under **Details** on a line, **Photo of the goods** (a phone photo, up to 5 MB). The adjustment shows *Photos: Line 1 · Line 3* to open them; only people who may see that store's stock can. **System → Settings → Stock → Photos on stock adjustment lines**: *Optional* (default), *Required for damaged, expired, spoiled and missing stock* (the adjustment cannot be submitted or posted without them), or *Not used*. **Why:** a photo settles questions about a write-off months later, and makes "it was damaged" harder to say without proof.
 
+## 14.3b Cost runs: products loaded without a cost
+
+**Stock → Cost runs** gives products a cost worked out from their selling price, when the real cost was never entered. It is free with every licence.
+
+**Why:** stock with no cost is worth nothing in the books, and each sale of it shows its whole price as profit. Where the real costs cannot be found, an estimate from the selling price (accountants call it the *retail method*, allowed by IAS 2) is far closer to the truth than zero. Ask your accountant to agree the factor and keep the signed run with your stock records.
+
+**Before you start:**
+- Enter any real costs you do have (Chapter 7, Step 10): a real cost is always better than an estimate.
+- Do a stock count if you can: the value is only as good as the quantities. Products below zero are left out until they are counted.
+- Choose a quiet time for posting: it can take a few minutes on a large catalogue. Tills keep selling; their sales go in right after.
+
+**Step by step:**
+1. Click **New cost run** (or tick products under **Catalog → Products** and choose **Work out cost from selling price**, to run on those only).
+2. **How to work out the cost:**
+   - *Selling price ÷ a factor*: at 1.4, an item selling at GH₵ 14.00 costs GH₵ 10.00. Use this when you add 40% to your cost.
+   - *Selling price less a profit percentage*: at 40%, the same item costs GH₵ 8.40. Use this when 40% of the selling price is your profit.
+   - **VAT and levies:** *Use the price the customer pays* if that is the price you multiply your cost by. *Remove VAT and levies first* if you add your profit before tax.
+   - Add **a different factor** for a category or brand that earns more or less, e.g. cosmetics at 1.6.
+3. **Which products:** leave empty for all, or choose products, categories, brands, suppliers or stores. Products that already have a cost are left as they are unless you switch on *Also replace costs products already have*. **Why:** a real cost from a delivery is worth more than an estimate.
+4. **The books:** the *Date in the books* is usually your go-live date, in an open month. *Add the cost of past sales* is explained below. Your accountant may choose another account.
+5. Click **Create**. Nothing has changed yet: this page is the **preview**. It shows what is added to the stock value, every product with its old and new cost, and each **skipped** product with the reason. **Export** gives the whole run in Excel for checking. Correct what you can (a missing price, say), then **Work it out again**.
+6. **Send for approval.** Someone else with the right to approve opens it (it shows on their dashboard) and clicks **Approve and post**. **Why:** the run changes the balance sheet, so a second person checks it. A company with one manager can turn this off in **System → Settings → Stock**.
+
+**What it changes:** the cost of each product in each store, and the stock value in the books. Quantities, batches and bins stay as they are. **Selling prices never change.**
+
+**In the books:**
+- Stock that had no cost goes against **Opening balances (to clear)**, which your accountant then clears to capital.
+- A replaced cost goes to **Stock losses and count differences**.
+- **Past sales:** sales made with no cost stay as they are, but one labelled entry per branch adds their estimated cost to cost of sales, so your profit is realistic. Sales are only counted once, however many runs follow. Reports per sale still show the old sales at no cost; the accounts carry the correction.
+- **Delivered onto no-cost stock:** when a delivery arrives on stock that had no cost, its cost becomes the cost of all of it, but the books only hold the delivered goods. The run brings the books up to that cost, without changing the cost (*Books brought up to its cost* in the preview).
+
+**Skipped products:** no selling price on the chosen list, stock below zero, batches that do not add up to the stock on hand, consignment goods (their cost is what you pay the consignor), and products with serial numbers.
+
+**Undo:** **Undo this run** on a posted run puts the earlier costs back with an equal and opposite run, dated today. Products that had a delivery since keep their new cost, and sales made since keep the cost they were sold at. Costs cannot be undone by editing: a posted run stays on record.
+
+**Is the factor right?** **Stock → Estimated costs** lists every product with an estimated cost, and what its first real delivery cost, with the real factor (price ÷ real cost). **Why:** after a few weeks of deliveries you can see whether 1.4 was close, and run the rest again with a better factor if it was not.
+
 ## 14.3a Barcode and shelf labels
 
 **Catalog → Products**: tick the products → **Print labels** (or **Print labels** on one product, or on a delivery under **Purchasing → Goods received** for what came in).

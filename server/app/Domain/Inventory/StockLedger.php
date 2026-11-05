@@ -103,7 +103,7 @@ final class StockLedger
             // reversal takes the goods out at the cost they came in at, so goods-received-not-billed clears exactly.
             $atAverage = StockProjection::costPerUnit($avg === null ? null : (string) $avg, (string) $e['unit']->factor);
             $cost = match (true) {
-                $type === 'receipt_reversal' => $e['unit_cost_minor'] ?? $atAverage,
+                in_array($type, ['receipt_reversal', 'cost_set', 'cost_change'], true) => $e['unit_cost_minor'] ?? $atAverage, // a cost run takes stock out at what the books hold for it
                 $e['qty_milli'] > 0 => $e['unit_cost_minor'] ?? ($type === 'putaway' ? null : $atAverage),
                 default => $atAverage,
             };

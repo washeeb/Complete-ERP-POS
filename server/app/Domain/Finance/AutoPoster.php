@@ -31,6 +31,7 @@ final class AutoPoster
         'staff_loans' => 'Staff loans and advances paid out', 'payroll' => 'Payroll (approved)', 'payroll_payments' => 'Payroll paid',
         'deposits' => 'Booking deposits (restaurant)', 'production' => 'Production labour and cost differences',
         'nhis_claims' => 'NHIS claims settled', 'project_billings' => 'Project work in progress moved to cost (invoiced or closed)',
+        'stock_cost_runs' => 'Cost of past sales added by a cost run',
     ];
 
     /** How each kind of stock movement is balanced against the stock account. */
@@ -40,6 +41,7 @@ final class AutoPoster
         'transfer_out' => 'stock_in_transit', 'transfer_in' => 'stock_in_transit',
         'adjustment' => 'stock_adjustment', 'count' => 'stock_adjustment',
         'unit_conversion' => 'stock_adjustment', // a product's unit changed (Pack → Tablet): out and back in at the same value
+        'cost_set' => 'opening_equity', 'cost_change' => 'stock_adjustment', // a cost run: stock that never had a cost; a cost replaced (or the run's own account)
         'supplier_return' => 'supplier_returns', // held until the supplier settles (credit, replacement, refund or nothing)
         'opening' => 'opening_equity',
         'trade_in' => 'trade_in_clearing', // used items taken in on a sale (the sale's trade-in tender is on the other side)
@@ -137,6 +139,7 @@ final class AutoPoster
             'supplier_bills' => [$this->unpostedQuery('supplier_bills', 'supplier_bill', $tenantId)->where('s.status', 'posted'), 's.bill_date'],
             'supplier_payments' => [$this->unpostedQuery('supplier_payments', 'supplier_payment', $tenantId), 's.paid_on'],
             'landed_costs' => [$this->unpostedQuery('landed_costs', 'landed_cost', $tenantId), $d('s.posted_at')],
+            'stock_cost_runs' => [$this->unpostedQuery('stock_cost_runs', 'stock_cost_run', $tenantId)->whereIn('s.status', ['posted', 'reversed'])->where('s.catch_up_minor', '<>', 0), 's.effective_on'],
             'supplier_openings' => [$this->unpostedQuery('supplier_ledger', 'supplier_ledger', $tenantId)->where('s.type', 'opening'), $d('s.occurred_at')],
             // A refund return is booked when the money comes in (supplier_refunds); the others when the goods leave.
             'supplier_returns' => [$this->unpostedQuery('supplier_returns', 'supplier_return', $tenantId)->where('s.status', 'posted')->where('s.settlement', '<>', 'refund'), $d('s.posted_at')],
@@ -279,6 +282,7 @@ final class AutoPoster
         $senders = DB::table('stock_transfers')->whereIn('id', collect($rows)->where('type', 'transfer_in')->where('source_type', 'stock_transfer')->pluck('source_id')->unique()->all())
             ->pluck('from_branch_id', 'id');
         $codes = DB::table('branches')->pluck('code', 'id');
+        $runAccounts = $this->runAccounts(collect($rows)->where('source_type', 'stock_cost_run')->pluck('source_id')->unique()->all());
         // Stock issued to (or back from) a project: its work in progress, or its costs for an internal project.
         $projects = DB::table('project_issues as i')->join('projects as p', 'p.id', '=', 'i.project_id')
             ->whereIn('i.id', collect($rows)->whereIn('type', ['project_issue', 'project_return'])->pluck('source_id')->unique()->all())
@@ -295,6 +299,9 @@ final class AutoPoster
             $first = $group->first();
             foreach ($group as $m) {
                 $counter = self::STOCK_COUNTER[$m->type] ?? throw new DomainException("Stock movement type “{$m->type}” has no account.", 'gl_account_missing');
+                if ($m->source_type === 'stock_cost_run' && isset($runAccounts[$m->source_id])) {
+                    $counter = $runAccounts[$m->source_id];
+                }
                 if (isset($containers[$m->product_id]) && in_array($m->type, ['sale', 'sale_return'], true)) {
                     $counter = 'containers_out';
                 }
@@ -490,6 +497,35 @@ final class AutoPoster
     }
 
     /** Freight and duty spread: out of "to spread", into stock (still on hand) and cost of sales (already sold). */
+    /** Cost runs with their own account: [run id => account]. */
+    private function runAccounts(array $runIds): array
+    {
+        if ($runIds === []) {
+            return [];
+        }
+        $ids = DB::table('stock_cost_runs')->whereIn('id', $runIds)->whereNotNull('account_id')->pluck('account_id', 'id');
+        $accounts = Account::withoutGlobalScopes()->whereIn('id', $ids->values()->unique()->all())->get()->keyBy('id');
+
+        return $ids->map(fn ($id) => $accounts[$id])->all();
+    }
+
+    /** Sales made before a cost run cost nothing: the run adds their estimated cost, per branch, in one entry. */
+    private function stock_cost_runs(Actor $actor, int $batch): int
+    {
+        $rows = $this->rows('stock_cost_runs', $actor->tenantId, $batch, ['s.id', 's.number']);
+        $accounts = $this->runAccounts(array_column($rows, 'id'));
+        foreach ($rows as $r) {
+            $lines = [];
+            foreach (DB::table('stock_cost_run_lines')->where('stock_cost_run_id', $r->id)->whereNotNull('branch_id')->groupBy('branch_id')->selectRaw('branch_id, SUM(catch_up_minor)::bigint AS v')->get() as $b) {
+                $lines[] = ['account' => 'cogs', 'amount' => (int) $b->v, 'branch_id' => $b->branch_id];
+                $lines[] = ['account' => $accounts[$r->id] ?? 'opening_equity', 'amount' => -(int) $b->v, 'branch_id' => $b->branch_id];
+            }
+            $this->gl->post($actor, $r->d, 'auto', "Cost of past sales {$r->number}", $lines, [['stock_cost_run', $r->id]], 'stock_cost_runs', late: true);
+        }
+
+        return count($rows);
+    }
+
     private function landed_costs(Actor $actor, int $batch): int
     {
         $rows = $this->rows('landed_costs', $actor->tenantId, $batch, ['s.id', 's.number', 's.branch_id', 's.total_minor', 's.to_stock_minor', 's.to_cogs_minor']);
