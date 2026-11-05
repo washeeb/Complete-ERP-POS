@@ -1,7 +1,7 @@
 # State (resume file)
 
 **Phase:** all phases of the master plan built; first client (a pharmacy) live since 2026-10-19 on an Ubuntu server, with releases delivered by `release:build` and the Ubuntu installer.
-**Updated:** 2026-11-05 · every section below is merged to `main` (latest release B6B9IOFXS). The SES Licensing sync API is merged but not deployed or in a release yet.
+**Updated:** 2026-11-05 · every section below is merged to `main` (latest release BTMQHFOWQ, installed at the first client). The SES Licensing sync API is in that release but switched off: no licence server is deployed yet.
 
 
 
@@ -32,15 +32,15 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 - Agrees with `StockCostRuns::booksHold` (same figure per store and product, from the lines). Test in `LandedCostTest` covers a cost run on stock with a landed cost.
 - Landed costs replicate whole: `Replication::snapshot` sends charges and lines, `ReplicationApplier::landedCost` adds the per-piece rise once via `StockProjection::addToAverage`. Ones replicated earlier are not backfilled.
 
-## Cost runs (free) — branch `estimated-cost`
-- `App\Domain\Inventory\StockCostRuns`, models `StockCostRun` / `StockCostRunLine` (migration 2026_12_19_100001), UI `StockCostRunResource` + `LinesRelationManager`, page `EstimatedCosts`, bulk action on Products. Movement types `cost_set` (opening_equity) and `cost_change` (stock_adjustment), or the run's `account_id`; `StockLedger` lets those two carry an explicit cost going out. AutoPoster source `stock_cost_runs` (catch-up: cogs against the same account). Permissions `stock.cost.manage`, `stock.cost.approve`; setting `stock.cost_run_two_people`; document prefix CST. Line: `kind` estimate / overwrite / top_up / skipped. Tests: StockCostRunsTest. **Oheneba:** factor 1.4 ÷, tax mode shelf, catch-up on; run after install.
+## Cost runs (free) — merged (PR #141, release BTMQHFOWQ)
+- `App\Domain\Inventory\StockCostRuns`, models `StockCostRun` / `StockCostRunLine` (migration 2026_12_19_100001), UI `StockCostRunResource` + `LinesRelationManager`, page `EstimatedCosts`, bulk action on Products. Movement types `cost_set` (opening_equity) and `cost_change` (stock_adjustment), or the run's `account_id`; `StockLedger` lets those two carry an explicit cost going out. AutoPoster source `stock_cost_runs` (catch-up: cogs against the same account). Permissions `stock.cost.manage`, `stock.cost.approve`; setting `stock.cost_run_two_people`; document prefix CST. Line: `kind` estimate / overwrite / top_up / skipped. Tests: StockCostRunsTest. **First client:** ÷ 1.4, shelf price, catch-up on; to be prepared, checked by their accountant and posted by them (not posted as of 2026-11-05).
 
 ## IotTest clock pinned — merged (PR #138)
 - `IotTest` `beforeEach` starts with `travelTo(now()->setTime(12, 0))` in place of the closing `freezeTime()`. Tests only.
 - `erp_test` is one shared database: a second test run on this PC at the same time fails with deadlocks on `drop table`. Check for a running `artisan test` / `pest` first.
 
 ## SES Licensing sync — merged (PR #137), not deployed
-- Desktop app: folder `../SES-Licensing`, committed locally; private repo `washeeb/SES-Licensing` still to be created and pushed (Tauri 2, React; vault, in-memory SQLite written out encrypted, hash-chained log, backups, sync). Decisions in its README.
+- Desktop app: folder `../SES-Licensing`, private repo `washeeb/SES-Licensing`, pushed (Tauri 2, React; vault, in-memory SQLite written out encrypted, hash-chained log, backups, sync). Decisions in its README.
 - Here: `App\Domain\Licensing\Vendor\{LicenseSync,SyncDevices}`, `LicenseSyncController`, `VerifySyncSignature`, `routes/license-sync.php` (loaded by `VendorPanelProvider`), `Models\Vendor\Concerns\Syncable` (version + `vendor_sync_changes`), `VendorSyncDevice`, `SyncDeviceResource`, `license:sync-device`, `license:sync-prune`; migration `2026_12_18_100001_license_sync`. Files left out of client builds are listed in `ReleaseBuildCommand`. Migration `2026_12_18_100002_license_sync_invoices`: invoices and payments sync through `VendorBilling`. `update` routes hand the app its new versions from `storage/app/ses-licensing/`. Tests: `LicenseSyncTest` (24), `LicenseSyncVectorTest`. Doc: `docs/licensing.md`.
 - Licence page shows a QR of the installation code.
 - Next: owner to deploy the licence server (nothing deployed yet), then connect the app.
