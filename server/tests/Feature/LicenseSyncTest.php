@@ -6,16 +6,20 @@ use App\Domain\Licensing\Signer;
 use App\Domain\Licensing\Vendor\CheckinServer;
 use App\Domain\Licensing\Vendor\LicenseIssuer;
 use App\Domain\Licensing\Vendor\SyncDevices;
+use App\Domain\Licensing\Vendor\VendorBilling;
 use App\Domain\Licensing\Vendor\VendorLicensing;
 use App\Domain\Support\DomainException;
 use App\Filament\Vendor\Resources\SyncDevices\Pages\ListSyncDevices;
 use App\Http\Middleware\VerifySyncSignature;
 use App\Models\Vendor\VendorCustomer;
+use App\Models\Vendor\VendorInvoice;
 use App\Models\Vendor\VendorLicense;
+use App\Models\Vendor\VendorPayment;
 use App\Models\Vendor\VendorPlan;
 use App\Models\Vendor\VendorSyncDevice;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -263,4 +267,101 @@ it('prunes used nonces and old answers', function () {
     $this->travel(31)->days();
     $this->artisan('license:sync-prune')->assertSuccessful();
     expect(DB::table('vendor_sync_nonces')->count())->toBe(0)->and(DB::table('vendor_sync_requests')->count())->toBe(0);
+});
+
+/** An invoice as the app sends it. */
+function syncInvoice(string $customerId, array $over = []): array
+{
+    return $over + ['number' => 'SES-2026-0001', 'customer_id' => $customerId, 'license_id' => null, 'issued_on' => '2026-11-05', 'due_on' => '2026-11-19',
+        'lines' => [['description' => 'Licence, 12 months', 'qty' => 1, 'unit_minor' => 500000, 'total_minor' => 500000]], 'total_minor' => 500000, 'currency' => 'GHS', 'status' => 'open',
+        'void_reason' => null, 'notes' => null, 'created_by' => 'Owner'];
+}
+
+function syncPayment(string $invoiceId, array $over = []): array
+{
+    return $over + ['invoice_id' => $invoiceId, 'customer_id' => null, 'received_on' => '2026-11-06', 'amount_minor' => 500000, 'method' => 'momo', 'reference' => 'MM-1', 'recorded_by' => 'Owner'];
+}
+
+it('takes an invoice and its payment from the app, and works out paid itself', function () {
+    $c = VendorCustomer::create(syncCustomer());
+    $inv = (string) Str::uuid7();
+    $pay = (string) Str::uuid7();
+    // Sent in the wrong order on purpose: the invoice still goes first.
+    $r = syncPush($this, [['entity' => 'payment', 'id' => $pay, 'base_version' => 0, 'data' => syncPayment($inv)], ['entity' => 'invoice', 'id' => $inv, 'base_version' => 0, 'data' => syncInvoice($c->id)]])->assertOk();
+    expect(collect($r->json('results'))->pluck('status')->all())->toBe(['applied', 'applied']);
+    $i = VendorInvoice::find($inv);
+    expect($i->status)->toBe('paid')->and($i->version)->toBe(2)->and($i->balanceMinor())->toBe(0)
+        ->and(VendorPayment::find($pay)->recorded_by)->toBe('Owner')->and(VendorPayment::find($pay)->customer_id)->toBe($c->id)
+        ->and(DB::table('audit_events')->where('action', 'vendor.invoice.issued')->count())->toBe(1)
+        ->and(DB::table('audit_events')->where('action', 'vendor.payment.received')->count())->toBe(1);
+    $p = syncCall($this, 'pull', ['cursor' => 0])->assertOk()->json('changes');
+    $back = collect($p)->firstWhere('entity', 'invoice');
+    expect($back['data']['status'])->toBe('paid')->and($back['data']['issued_on'])->toBe('2026-11-05')->and(collect($p)->firstWhere('entity', 'payment')['data']['received_on'])->toBe('2026-11-06');
+});
+
+it('sends invoices and payments made on the server to the app', function () {
+    $c = VendorCustomer::create(syncCustomer());
+    $billing = app(VendorBilling::class);
+    $inv = $billing->invoice(actorFor($this->owner), $c, [['description' => 'Set-up', 'qty' => 1, 'unit_minor' => 10000]], 'GHS');
+    $cursor = syncCall($this, 'pull', ['cursor' => 0])->assertOk()->json('cursor');
+    $billing->pay(actorFor($this->owner), $inv, 10000, 'cash', null);
+    $p = collect(syncCall($this, 'pull', ['cursor' => $cursor])->json('changes'));
+    expect($p->firstWhere('entity', 'payment')['data']['amount_minor'])->toBe(10000)->and($p->firstWhere('entity', 'invoice')['data']['status'])->toBe('paid');
+});
+
+it('refuses an invoice whose total does not match, a taken number, or an overpayment', function () {
+    $c = VendorCustomer::create(syncCustomer());
+    $good = (string) Str::uuid7();
+    $bad = fn (array $d) => syncPush($this, [['entity' => 'invoice', 'id' => (string) Str::uuid7(), 'base_version' => 0, 'data' => $d]])->json('results.0');
+    expect($bad(syncInvoice($c->id, ['total_minor' => 1]))['message'])->toContain('total')
+        ->and($bad(syncInvoice($c->id, ['number' => 'SYN-2026-0001']))['message'])->toContain('SES-');
+    syncPush($this, [['entity' => 'invoice', 'id' => $good, 'base_version' => 0, 'data' => syncInvoice($c->id)]]);
+    expect($bad(syncInvoice($c->id))['status'])->toBe('rejected');
+    $r = syncPush($this, [['entity' => 'payment', 'id' => (string) Str::uuid7(), 'base_version' => 0, 'data' => syncPayment($good, ['amount_minor' => 500001])]])->json('results.0');
+    expect($r['status'])->toBe('rejected')->and($r['message'])->toContain('still owed')->and(VendorPayment::count())->toBe(0);
+});
+
+it('never edits a posted invoice or payment; voiding is the one change, and is final', function () {
+    $c = VendorCustomer::create(syncCustomer());
+    $inv = (string) Str::uuid7();
+    syncPush($this, [['entity' => 'invoice', 'id' => $inv, 'base_version' => 0, 'data' => syncInvoice($c->id)]]);
+    $r = syncPush($this, [['entity' => 'invoice', 'id' => $inv, 'base_version' => 1, 'data' => syncInvoice($c->id, ['total_minor' => 1, 'notes' => 'changed'])]])->json('results.0');
+    expect($r['status'])->toBe('unchanged')->and(VendorInvoice::find($inv)->total_minor)->toBe(500000);
+    expect(syncPush($this, [['entity' => 'invoice', 'id' => $inv, 'base_version' => 1, 'data' => syncInvoice($c->id, ['status' => 'void'])]])->json('results.0.message'))->toContain('reason');
+    expect(syncPush($this, [['entity' => 'invoice', 'id' => $inv, 'base_version' => 1, 'data' => syncInvoice($c->id, ['status' => 'void', 'void_reason' => 'Wrong client'])]])->json('results.0.status'))->toBe('applied');
+    expect(VendorInvoice::find($inv)->status)->toBe('void')->and(syncPush($this, [['entity' => 'invoice', 'id' => $inv, 'base_version' => 2, 'data' => syncInvoice($c->id)]])->json('results.0.status'))->toBe('unchanged')
+        ->and(VendorInvoice::find($inv)->status)->toBe('void');
+    $r = syncPush($this, [['entity' => 'payment', 'id' => (string) Str::uuid7(), 'base_version' => 0, 'data' => syncPayment($inv)]])->json('results.0');
+    expect($r['message'])->toContain('voided');
+});
+
+it('will not void an invoice with payments, and answers a stale void with a conflict', function () {
+    $c = VendorCustomer::create(syncCustomer());
+    $inv = (string) Str::uuid7();
+    syncPush($this, [['entity' => 'invoice', 'id' => $inv, 'base_version' => 0, 'data' => syncInvoice($c->id)], ['entity' => 'payment', 'id' => (string) Str::uuid7(), 'base_version' => 0, 'data' => syncPayment($inv, ['amount_minor' => 1000])]]);
+    $void = syncInvoice($c->id, ['status' => 'void', 'void_reason' => 'Oops']);
+    expect(syncPush($this, [['entity' => 'invoice', 'id' => $inv, 'base_version' => 1, 'data' => $void]])->json('results.0.message'))->toContain('payments');
+    $i = (string) Str::uuid7();
+    syncPush($this, [['entity' => 'invoice', 'id' => $i, 'base_version' => 0, 'data' => syncInvoice($c->id, ['number' => 'SES-2026-0002'])]]);
+    VendorInvoice::find($i)->forceFill(['notes' => 'Changed on the server'])->save();
+    expect(syncPush($this, [['entity' => 'invoice', 'id' => $i, 'base_version' => 1, 'data' => syncInvoice($c->id, ['number' => 'SES-2026-0002', 'status' => 'void', 'void_reason' => 'Oops'])]])->json('results.0.status'))->toBe('conflict');
+});
+
+it('hands updates of the app only to signed-in devices, through short-lived links', function () {
+    $dir = storage_path('app/ses-licensing');
+    expect(is_dir($dir))->toBeFalse(); // nothing of a real release is ever touched here
+    expect(syncCall($this, 'update', [])->assertOk()->json('manifest'))->toBeNull();
+    $this->call('POST', '/api/license/sync/update')->assertUnauthorized();
+    mkdir($dir, 0777, true);
+    try {
+        file_put_contents("{$dir}/setup.exe", 'installer');
+        file_put_contents("{$dir}/latest.json", json_encode(['version' => '1.2.0', 'notes' => 'New', 'signature' => 'sig', 'file' => '../setup.exe']));
+        expect(json_decode(file_get_contents("{$dir}/latest.json"), true)['file'])->toBe('../setup.exe'); // the name is cut down to the file itself
+        $link = syncCall($this, 'update', [])->assertOk()->json('manifest');
+        $this->get(strtok($link, '?'))->assertForbidden();
+        $m = $this->get($link)->assertOk()->assertJsonPath('version', '1.2.0')->assertJsonPath('platforms.windows-x86_64.signature', 'sig');
+        $this->get($m->json('platforms.windows-x86_64.url'))->assertOk()->assertDownload('setup.exe');
+    } finally {
+        File::deleteDirectory($dir);
+    }
 });

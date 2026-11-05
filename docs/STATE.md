@@ -1,7 +1,7 @@
 # State (resume file)
 
 **Phase:** all phases of the master plan built; first client (a pharmacy) live since 2026-10-19 on an Ubuntu server, with releases delivered by `release:build` and the Ubuntu installer.
-**Updated:** 2026-11-04 · SES Licensing sync API on branch `license-sync`; every other section below is merged to `main` (latest release B6B9IOFXS).
+**Updated:** 2026-11-05 · SES Licensing sync API on branch `license-sync`; every other section below is merged to `main` (latest release B6B9IOFXS).
 
 
 
@@ -29,7 +29,7 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 
 ## SES Licensing sync — branch `license-sync`
 - Desktop app: folder `../SES-Licensing`, committed locally; private repo `washeeb/SES-Licensing` still to be created and pushed (Tauri 2, React; vault, in-memory SQLite written out encrypted, hash-chained log, backups, sync). Decisions in its README.
-- Here: `App\Domain\Licensing\Vendor\{LicenseSync,SyncDevices}`, `LicenseSyncController`, `VerifySyncSignature`, `routes/license-sync.php` (loaded by `VendorPanelProvider`), `Models\Vendor\Concerns\Syncable` (version + `vendor_sync_changes`), `VendorSyncDevice`, `SyncDeviceResource`, `license:sync-device`, `license:sync-prune`; migration `2026_12_18_100001_license_sync`. Files left out of client builds are listed in `ReleaseBuildCommand`. Tests: `LicenseSyncTest` (18), `LicenseSyncVectorTest`. Doc: `docs/licensing.md`.
+- Here: `App\Domain\Licensing\Vendor\{LicenseSync,SyncDevices}`, `LicenseSyncController`, `VerifySyncSignature`, `routes/license-sync.php` (loaded by `VendorPanelProvider`), `Models\Vendor\Concerns\Syncable` (version + `vendor_sync_changes`), `VendorSyncDevice`, `SyncDeviceResource`, `license:sync-device`, `license:sync-prune`; migration `2026_12_18_100001_license_sync`. Files left out of client builds are listed in `ReleaseBuildCommand`. Migration `2026_12_18_100002_license_sync_invoices`: invoices and payments sync through `VendorBilling`. `update` routes hand the app its new versions from `storage/app/ses-licensing/`. Tests: `LicenseSyncTest` (24), `LicenseSyncVectorTest`. Doc: `docs/licensing.md`.
 - Licence page shows a QR of the installation code.
 - Next: owner to deploy the licence server (nothing deployed yet), then connect the app.
 

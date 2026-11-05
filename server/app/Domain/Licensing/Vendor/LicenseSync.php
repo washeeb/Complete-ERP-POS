@@ -6,9 +6,12 @@ use App\Domain\Licensing\LicenseException;
 use App\Domain\Licensing\LicenseKey;
 use App\Domain\Licensing\Signer;
 use App\Domain\Support\AuditLog;
+use App\Domain\Support\DomainException;
 use App\Models\Vendor\VendorAddon;
 use App\Models\Vendor\VendorCustomer;
+use App\Models\Vendor\VendorInvoice;
 use App\Models\Vendor\VendorLicense;
+use App\Models\Vendor\VendorPayment;
 use App\Models\Vendor\VendorPlan;
 use App\Models\Vendor\VendorSyncDevice;
 use Illuminate\Database\Eloquent\Model;
@@ -26,18 +29,21 @@ use Illuminate\Validation\Rule;
  *
  * A licence's signed content cannot be changed by sync: the key is the truth and everything in it is read from the key.
  * Its signature is checked against the keys this server trusts before it is accepted. Revocation only goes one way.
+ *
+ * Invoices and payments are posted documents: they go through VendorBilling with its rules, and a push can add one but
+ * never edit one. The only change an invoice takes is being voided. "Paid" is worked out here from the payments.
  */
 final class LicenseSync
 {
-    /** In dependency order: a licence points at its customer and plan. */
-    public const ENTITIES = ['customer' => VendorCustomer::class, 'plan' => VendorPlan::class, 'addon' => VendorAddon::class, 'license' => VendorLicense::class];
+    /** In dependency order: a licence points at its customer and plan, an invoice at its customer, a payment at its invoice. */
+    public const ENTITIES = ['customer' => VendorCustomer::class, 'plan' => VendorPlan::class, 'addon' => VendorAddon::class, 'license' => VendorLicense::class, 'invoice' => VendorInvoice::class, 'payment' => VendorPayment::class];
 
     /** What a push may change on a licence that exists. */
     public const LICENSE_MUTABLE = ['customer_id', 'plan_id', 'addons', 'kind', 'site', 'price_minor', 'currency', 'notes', 'revoked_at', 'revoked_reason', 'revoked_by', 'superseded_by'];
 
-    private const DATE_ONLY = ['starts_on', 'expires_on'];
+    private const DATE_ONLY = ['starts_on', 'expires_on', 'issued_on', 'due_on', 'received_on'];
 
-    public function __construct(private readonly AuditLog $audit) {}
+    public function __construct(private readonly AuditLog $audit, private readonly VendorBilling $billing) {}
 
     /** The app's copy of what a record looks like. */
     public static function record(Model $m): array
@@ -134,6 +140,13 @@ final class LicenseSync
         if ($error = $this->invalid($entity, $id, $data)) {
             return $done('rejected', $error);
         }
+        if (in_array($entity, ['invoice', 'payment'], true)) {
+            try {
+                return $this->applyDocument($device, $entity, $id, $base, $data, $m, $done);
+            } catch (DomainException $e) {
+                return $done('rejected', $e->getMessage());
+            }
+        }
         if (! $m) {
             if ($entity === 'license') {
                 $m = $this->createLicense($device, $id, $data);
@@ -182,6 +195,39 @@ final class LicenseSync
         return $done('applied', null, $m->fresh());
     }
 
+    /** An invoice or payment: added once, then only an invoice can change, by being voided. VendorBilling writes the audit rows. */
+    private function applyDocument(VendorSyncDevice $device, string $entity, string $id, int $base, array $d, ?Model $m, callable $done): array
+    {
+        $actor = SyncDevices::actor($device);
+        if ($entity === 'payment') {
+            if ($m) {
+                return $done('unchanged', null, $m);
+            }
+            $inv = VendorInvoice::whereKey($d['invoice_id'])->lockForUpdate()->first();
+            if (! $inv) {
+                return $done('rejected', 'That invoice is not on the server.');
+            }
+
+            return $done('applied', null, $this->billing->pay($actor, $inv, $d['amount_minor'], $d['method'], $d['reference'] ?? null, $d['received_on'], $id, $d['recorded_by'])->fresh());
+        }
+        $void = ($d['status'] ?? null) === 'void';
+        if ($void && trim((string) ($d['void_reason'] ?? '')) === '') {
+            return $done('rejected', 'Give the reason for voiding.');
+        }
+        if (! $m) {
+            $m = $this->billing->adoptInvoice($actor, $id, $d);
+        } elseif (! $void || $m->status === 'void') {
+            return $done('unchanged', null, $m);
+        } elseif ($base !== (int) $m->version) {
+            return $done('conflict', null, $m);
+        }
+        if ($void) {
+            $this->billing->void($actor, $m, (string) ($d['void_reason'] ?? ''));
+        }
+
+        return $done('applied', null, $m->fresh());
+    }
+
     private function createLicense(VendorSyncDevice $device, string $id, array $d): VendorLicense|string
     {
         try {
@@ -217,6 +263,13 @@ final class LicenseSync
                 'tin' => ['nullable', 'string', 'max:40'], 'industry' => ['nullable', 'string', 'max:60'], 'notes' => ['nullable', 'string'], 'is_active' => ['boolean']],
             'plan' => ['code' => $code, 'name' => ['required', 'string', 'max:80'], 'description' => ['nullable', 'string', 'max:500'], 'months' => ['integer', 'min:1', 'max:120']] + $limits,
             'addon' => ['code' => $code, 'name' => ['required', 'string', 'max:80']] + $limits,
+            'invoice' => ['number' => ['required', 'string', 'max:30', Rule::unique('vendor_invoices', 'number')->ignore($id)], 'customer_id' => ['required', 'uuid', Rule::exists('vendor_customers', 'id')],
+                'license_id' => ['nullable', 'uuid'], 'issued_on' => ['required', 'date'], 'due_on' => ['required', 'date'], 'lines' => ['required', 'array', 'min:1', 'max:100'],
+                'lines.*.description' => ['required', 'string', 'max:255'], 'lines.*.qty' => ['required', 'numeric', 'gt:0'], 'lines.*.unit_minor' => ['required', 'integer', 'min:0'],
+                'total_minor' => ['required', 'integer', 'min:0'], 'currency' => ['required', 'string', 'size:3'], 'status' => ['required', Rule::in(['open', 'paid', 'void'])], 'void_reason' => ['nullable', 'string', 'max:255'],
+                'notes' => ['nullable', 'string', 'max:500'], 'created_by' => ['required', 'string', 'max:255']],
+            'payment' => ['invoice_id' => ['required', 'uuid'], 'received_on' => ['required', 'date'], 'amount_minor' => ['required', 'integer', 'min:1'], 'method' => ['required', Rule::in(array_keys(VendorPayment::METHODS))],
+                'reference' => ['nullable', 'string', 'max:120'], 'recorded_by' => ['required', 'string', 'max:255']],
             default => ['customer_id' => ['nullable', 'uuid', Rule::exists('vendor_customers', 'id')], 'plan_id' => ['nullable', 'uuid', Rule::exists('vendor_plans', 'id')], 'addons' => ['nullable', 'array'],
                 'kind' => ['nullable', Rule::in(array_keys(VendorLicense::KINDS))], 'site' => ['nullable', 'string', 'max:120'], 'price_minor' => ['nullable', 'integer', 'min:0'], 'currency' => ['nullable', 'string', 'size:3'],
                 'notes' => ['nullable', 'string'], 'revoked_at' => ['nullable', 'date'], 'revoked_reason' => ['nullable', 'string', 'max:255'], 'revoked_by' => ['nullable', 'string', 'max:255'],

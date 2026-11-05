@@ -9,4 +9,10 @@ Route::post('register', [LicenseSyncController::class, 'register'])->middleware(
 Route::middleware(['throttle:120,1', VerifySyncSignature::class])->group(function () {
     Route::post('pull', [LicenseSyncController::class, 'pull']);
     Route::post('push', [LicenseSyncController::class, 'push']);
+    Route::post('update', [LicenseSyncController::class, 'update']);
+});
+// The app's own updates: reached only through the short-lived links a signed request above hands out.
+Route::middleware(['throttle:30,1', 'signed'])->group(function () {
+    Route::get('update/manifest', [LicenseSyncController::class, 'updateManifest'])->name('license-sync.update.manifest');
+    Route::get('update/download', [LicenseSyncController::class, 'updateDownload'])->name('license-sync.update.download');
 });

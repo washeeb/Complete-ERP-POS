@@ -2,6 +2,7 @@
 
 namespace App\Models\Vendor;
 
+use App\Models\Vendor\Concerns\Syncable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** An invoice to a customer for a licence or anything else. */
 class VendorInvoice extends Model
 {
-    use HasUuids;
+    use HasUuids, Syncable;
+
+    public const SYNC_ENTITY = 'invoice';
+
+    public const SYNC_FIELDS = ['number', 'customer_id', 'license_id', 'issued_on', 'due_on', 'lines', 'total_minor', 'currency', 'status', 'void_reason', 'notes', 'created_by'];
 
     protected $table = 'vendor_invoices';
 

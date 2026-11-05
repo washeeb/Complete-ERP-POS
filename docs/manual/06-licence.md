@@ -45,7 +45,11 @@ Every hour head office also sends SyncLytics support a short **health report**: 
 2. In the app, open **Sync**, type the server's address and the code, and click **Connect**. **Why:** the app makes its own private key and sends only the public half, so no password travels or sits on the server.
 3. To stop a lost PC from syncing, click **Revoke** beside it on the same page.
 
+Customers, plans, add-ons, licences, invoices and payments then stay the same in both places. **Why:** a payment recorded on either side shows on both, so nobody chases a client who has paid.
+
 **Check:** the device shows *Active* and a recent *Last seen*, and the licences issued in the app appear under **Licences**.
+
+To update the app itself, copy `latest.json` and the installer that `npm run release` made into `storage/app/ses-licensing/` on the licence server. **Why:** connected copies of the app find the new version there and offer it under **Settings → Updates**.
 
 ## 6.4 Licence states
 

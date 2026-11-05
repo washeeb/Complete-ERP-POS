@@ -2,7 +2,9 @@
 
 ## [Unreleased]
 ### Added
-- **SES Licensing sync** (licence server only; for the new desktop app in its own private repository): device registration by one-time code, signed pull and push with versions, conflicts returned for the app to settle, idempotent pushes, rate limits, audit rows, and **Set-up → Sync devices** in `/vendor` (`license:sync-device`). Records are customers, plans, add-ons and licences. A licence from the app is accepted only with a key signed by a trusted key; revocation is final.
+- **SES Licensing sync** (licence server only; for the new desktop app in its own private repository): device registration by one-time code, signed pull and push with versions, conflicts returned for the app to settle, idempotent pushes, rate limits, audit rows, and **Set-up → Sync devices** in `/vendor` (`license:sync-device`). Records are customers, plans, add-ons, licences, invoices and payments. A licence from the app is accepted only with a key signed by a trusted key; revocation is final.
+- **Invoices and payments sync with the app**, added but never edited: the server checks totals, refuses overpayments and works out "paid". Invoices from the app are numbered `SES-YYYY-NNNN`.
+- **App updates through the licence server**: signed-in devices get short-lived links; the installer is checked against a key built into the app.
 - **Licence page: QR code** of the installation code, to photograph or scan into the app.
 ### Security
 - Symfony packages updated for the advisories published 2026-11-04 (serializer, http-foundation, http-kernel, routing, html-sanitizer).
