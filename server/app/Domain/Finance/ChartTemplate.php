@@ -85,6 +85,7 @@ final class ChartTemplate
         ['3100', "Owner's capital", 'equity', '3000', false, null, null],
         ['3200', 'Retained earnings', 'equity', '3000', false, null, 'retained_earnings'],
         ['3300', 'Opening balances (to clear)', 'equity', '3000', false, null, 'opening_equity'],
+        ['3310', 'Stock received, to be cleared', 'equity', '3000', false, null, 'stock_to_clear'],
         ['3400', 'Drawings', 'equity', '3000', false, null, null],
 
         ['4000', 'Income', 'income', null, true, null, null],

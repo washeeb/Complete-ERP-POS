@@ -41,6 +41,7 @@ final class AutoPoster
         'transfer_out' => 'stock_in_transit', 'transfer_in' => 'stock_in_transit',
         'adjustment' => 'stock_adjustment', 'count' => 'stock_adjustment',
         'unit_conversion' => 'stock_adjustment', // a product's unit changed (Pack → Tablet): out and back in at the same value
+        'stock_received' => 'stock_to_clear', // came in with a cost and no invoice: the accountant decides what it was
         'cost_set' => 'opening_equity', 'cost_change' => 'stock_adjustment', // a cost run: stock that never had a cost; a cost replaced (or the run's own account)
         'supplier_return' => 'supplier_returns', // held until the supplier settles (credit, replacement, refund or nothing)
         'opening' => 'opening_equity',

@@ -40,9 +40,9 @@ final class SupplierPaymentService
      * @param  ?int  $whtMinor  the tax to keep back when it differs from the computed one (the accountant's figure)
      */
     public function pay(Actor $actor, Supplier $supplier, Branch $branch, Account $from, string $method, int $amountMinor, ?string $reference = null,
-        ?string $paidOn = null, ?array $billIds = null, ?string $note = null, bool $withhold = true, ?int $whtMinor = null): SupplierPayment
+        ?string $paidOn = null, ?array $billIds = null, ?string $note = null, bool $withhold = true, ?int $whtMinor = null, bool $authorised = false): SupplierPayment
     {
-        if (! $actor->user || ! $this->authz->allows($actor->user, 'payables.pay', $branch)) {
+        if (! $authorised && (! $actor->user || ! $this->authz->allows($actor->user, 'payables.pay', $branch))) {
             throw new AccessDenied;
         }
         if (! array_key_exists($method, SupplierPayment::METHODS)) {
