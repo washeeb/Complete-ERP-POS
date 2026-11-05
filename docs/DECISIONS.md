@@ -1081,3 +1081,7 @@ Design:
 - Owner: the shift report must show the shift's grand total, and the branch (it showed only the company). Redesigned as one page led by key figures; the grand total is every payment method less returns refunded, the same figure as *Sales total* on Till shifts and on the till's close screen.
 - Built on the shared PDF exporter (an optional summary, total rows, signature lines) rather than a separate template, so the company heading, watermark reference, page numbers and the export audit stay the same as every other PDF.
 
+
+## IotTest clock pinned at mid-day (2026-11-05)
+- The alarm test moves the clock on about 49 minutes and expects one `iot_days` row, so it failed when started shortly before midnight. Pinned to today at 12:00 for the whole file. Today rather than a fixed date, because the test licence is issued relative to now.
+- The pin is the first line of `beforeEach`, not the top of the test: moving the clock back after set-up puts the users created there in the future and the alarm test's notification check fails. Product code unchanged: one day row per day is correct.

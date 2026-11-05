@@ -24,6 +24,9 @@ use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 
 beforeEach(function () {
+    // Mid-day and before anything is created: tests move the clock on by up to an hour and
+    // readings are kept per day, and moving it back later would put the set-up in the future.
+    $this->travelTo(now()->setTime(12, 0));
     [$this->tenant, $this->owner] = installCompany();
     $this->branches = setUpBranches($this->owner);
     activateTestLicense(['features' => ['finance', 'hr', 'iot', 'service']]);
@@ -33,7 +36,6 @@ beforeEach(function () {
     $this->pharmacist = staff($this->owner, 'abena', 4, 'pharmacist', ScopeType::Branch, $this->hq->id);
     $this->pharmacist->forceFill(['phone' => '+233244000222'])->save();
     (new MessageProvider)->forceFill(['tenant_id' => $this->tenant->id, 'channel' => 'sms', 'provider' => 'webhook', 'credentials' => ['url' => 'https://sms.example.test'], 'is_active' => true])->save();
-    $this->freezeTime();
 });
 
 function fridge($t, array $d = []): IotSensor

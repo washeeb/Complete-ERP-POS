@@ -27,6 +27,10 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 | 4 | Service desk (tickets) and asset maintenance | paid add-on — branch `service-desk` |
 | 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid add-on — branch `iot` |
 
+## IotTest clock pinned — branch `fix-iot-test-midnight`
+- `IotTest` `beforeEach` starts with `travelTo(now()->setTime(12, 0))` in place of the closing `freezeTime()`. Tests only.
+- `erp_test` is one shared database: a second test run on this PC at the same time fails with deadlocks on `drop table`. Check for a running `artisan test` / `pest` first.
+
 ## Shift report redesign — branch `shift-report-total`
 - `ShiftResource::reportContent()` (intro tiles / facts / branch line / sign + sheets); `Exporter::pdf(..., $intro)`; sheets take `foot` and `skip_empty` (exports/table.blade.php). Test in PosSaleTest (grand total tile and foot).
 

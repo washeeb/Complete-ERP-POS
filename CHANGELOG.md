@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- **Sensor test failing in the hour before midnight UTC** (test only, no change to the product): `IotTest` now sets its clock to 12:00 before any test data is created, so its readings stay on one day whatever time the tests run.
 ### Changed
 - **Shift report redesigned** (owner request): the branch's name, address and phone under the company; key figures at the top led by the **grand total sold** (all payment methods less returns), sales, average sale, returns, cash expected / counted / over-short, float; who and when; sales by payment method with sold, refunded, net and a grand total row; empty sections left out; signature lines. PDF exports can now carry a summary, total rows and signature lines.
 ### Changed
