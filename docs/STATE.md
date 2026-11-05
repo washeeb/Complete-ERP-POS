@@ -1,7 +1,7 @@
 # State (resume file)
 
 **Phase:** all phases of the master plan built; first client (a pharmacy) live since 2026-10-19 on an Ubuntu server, with releases delivered by `release:build` and the Ubuntu installer.
-**Updated:** 2026-11-05 · SES Licensing sync API on branch `license-sync`; every other section below is merged to `main` (latest release B6B9IOFXS).
+**Updated:** 2026-11-05 · every section below is merged to `main` (latest release B6B9IOFXS). The SES Licensing sync API is merged but not deployed or in a release yet.
 
 
 
@@ -31,7 +31,7 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 - `IotTest` `beforeEach` starts with `travelTo(now()->setTime(12, 0))` in place of the closing `freezeTime()`. Tests only.
 - `erp_test` is one shared database: a second test run on this PC at the same time fails with deadlocks on `drop table`. Check for a running `artisan test` / `pest` first.
 
-## SES Licensing sync — branch `license-sync`
+## SES Licensing sync — merged (PR #137), not deployed
 - Desktop app: folder `../SES-Licensing`, committed locally; private repo `washeeb/SES-Licensing` still to be created and pushed (Tauri 2, React; vault, in-memory SQLite written out encrypted, hash-chained log, backups, sync). Decisions in its README.
 - Here: `App\Domain\Licensing\Vendor\{LicenseSync,SyncDevices}`, `LicenseSyncController`, `VerifySyncSignature`, `routes/license-sync.php` (loaded by `VendorPanelProvider`), `Models\Vendor\Concerns\Syncable` (version + `vendor_sync_changes`), `VendorSyncDevice`, `SyncDeviceResource`, `license:sync-device`, `license:sync-prune`; migration `2026_12_18_100001_license_sync`. Files left out of client builds are listed in `ReleaseBuildCommand`. Migration `2026_12_18_100002_license_sync_invoices`: invoices and payments sync through `VendorBilling`. `update` routes hand the app its new versions from `storage/app/ses-licensing/`. Tests: `LicenseSyncTest` (24), `LicenseSyncVectorTest`. Doc: `docs/licensing.md`.
 - Licence page shows a QR of the installation code.
