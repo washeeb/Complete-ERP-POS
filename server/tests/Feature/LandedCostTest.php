@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Finance\AutoPoster;
+use App\Domain\Finance\GlCheck;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Purchasing\GoodsReceiptService;
 use App\Domain\Purchasing\LandedCostService;
@@ -52,6 +53,41 @@ it('spreads freight over a delivery: the share for stock still here raises its c
         ->join('accounts', 'accounts.id', '=', 'journal_lines.account_id')->where('accounts.system_key', $key)->where('journal_entries.memo', 'like', 'Landed cost%')
         ->sum('journal_lines.amount_minor');
     expect($gl('inventory'))->toBe(40000)->and($gl('cogs'))->toBe(8000)->and($gl('landed_clearing'))->toBe(-48000);
+});
+
+it('keeps stock at cost tied to the ledger through a landed cost, a correction and selling everything at the raised cost', function () {
+    $svc = app(LandedCostService::class);
+    $inventory = fn () => collect(app(GlCheck::class)->run($this->tenant->id)['ties'])->firstWhere('control', 'inventory');
+    $tied = function (int $value) use ($inventory) {
+        app(AutoPoster::class)->run($this->tenant->id);
+        expect($inventory())->ledger->toBe($value)->sub_ledger->toBe($value)->difference->toBe(0)
+            ->and(app(GlCheck::class)->run($this->tenant->id)['problems'])->toBe([]);
+    };
+    $piece = $this->milo->units->firstWhere('is_base', true);
+    $out = fn (string $qty) => app(InventoryService::class)->adjust(actorFor($this->owner), $this->hq, $this->milo, $piece, $qty, 'adjustment', 'damaged');
+
+    $tied(240000); // 240 pieces at GHS 10.00
+    $out('-40');
+    $tied(200000);
+
+    // GHS 480 of freight: GHS 400 for the 200 pieces left, GHS 80 to cost of sales. No stock movement carries the GHS 400.
+    $lc = $svc->post(actorFor($this->accountant), [$this->grn->id], [['kind' => 'freight', 'description' => 'Freight', 'amount_minor' => 48000]]);
+    expect($lc->to_stock_minor)->toBe(40000);
+    $tied(240000);
+
+    // Half goes out at the raised cost of GHS 12.00, more than the GHS 10.00 they came in at.
+    $out('-100');
+    $tied(120000);
+
+    // A GHS 144 correction: GHS 60 off the 100 pieces left (GHS 0.60 each), GHS 84 off cost of sales for the 140 gone.
+    $fix = $svc->post(actorFor($this->accountant), [$this->grn->id], [['description' => 'Freight overstated', 'amount_minor' => -14400]]);
+    expect($fix->to_stock_minor)->toBe(-6000)->and(miloAvg($this))->toBe('1140.0000');
+    $tied(114000);
+
+    // Everything gone: nothing left in stock, on either side.
+    $out('-100');
+    $tied(0);
+    expect((int) DB::table('stock_movements')->where('tenant_id', $this->tenant->id)->sum(DB::raw('ROUND(qty_entered * COALESCE(unit_cost_minor, 0))')))->toBe(-34000); // what the freight added, on its own
 });
 
 it('splits to the pesewa, corrects with a negative charge, and refuses what does not fit', function () {

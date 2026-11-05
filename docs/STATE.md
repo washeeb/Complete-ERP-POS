@@ -27,6 +27,10 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 | 4 | Service desk (tickets) and asset maintenance | paid add-on — branch `service-desk` |
 | 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid add-on — branch `iot` |
 
+## Landed costs in the stock sub-ledger — branch `fix-landed-cost-gl-check`
+- `GlCheck::subLedgers` adds `landed_costs.to_stock_minor` to the movement sum, so `erp:gl-check`, month close and go-live reconciliation tie after a landed cost. Test in `LandedCostTest`. No migration.
+- `App\Domain\Inventory\StockCostRuns` / `booksHold` is not in this repository on `main` or on any stock or cost branch checked.
+
 ## IotTest clock pinned — merged (PR #138)
 - `IotTest` `beforeEach` starts with `travelTo(now()->setTime(12, 0))` in place of the closing `freezeTime()`. Tests only.
 - `erp_test` is one shared database: a second test run on this PC at the same time fails with deadlocks on `drop table`. Check for a running `artisan test` / `pest` first.

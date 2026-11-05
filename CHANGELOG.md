@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Fixed
+- **Ledger check failing after a landed cost** (Finance → Reports → Ledger check, `erp:gl-check`, month close, go-live reconciliation): the part of a landed cost that went into stock raises the average cost without a stock movement, so **Stock at cost** came out short of the inventory account by that amount, and the gap stayed after the goods were sold. Stock at cost now includes it. No data changes: existing installs tie as soon as they update.
 - **Sensor test failing in the hour before midnight UTC** (test only, no change to the product): `IotTest` now sets its clock to 12:00 before any test data is created, so its readings stay on one day whatever time the tests run.
 ### Added
 - **SES Licensing sync** (licence server only; for the new desktop app in its own private repository): device registration by one-time code, signed pull and push with versions, conflicts returned for the app to settle, idempotent pushes, rate limits, audit rows, and **Set-up → Sync devices** in `/vendor` (`license:sync-device`). Records are customers, plans, add-ons, licences, invoices and payments. A licence from the app is accepted only with a key signed by a trusted key; revocation is final.

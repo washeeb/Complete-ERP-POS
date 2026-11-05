@@ -19,7 +19,9 @@ final class GlCheck
         return [
             'receivables' => ['Customer accounts', $one('SELECT COALESCE(SUM(balance_minor), 0) AS v FROM customer_balances WHERE tenant_id = ?')],
             'payables' => ['Supplier accounts', -$one('SELECT COALESCE(SUM(balance_minor), 0) AS v FROM supplier_balances WHERE tenant_id = ?')],
-            'inventory' => ['Stock at cost', $one("SELECT COALESCE(SUM(ROUND(qty_entered * COALESCE(unit_cost_minor, 0))), 0)::bigint AS v FROM stock_movements WHERE tenant_id = ? AND type NOT IN ('putaway', 'batch_assign')")],
+            // A landed cost raises the average with no movement: its share for stock counts on top, as the auto-poster debits it.
+            'inventory' => ['Stock at cost', $one("SELECT COALESCE(SUM(ROUND(qty_entered * COALESCE(unit_cost_minor, 0))), 0)::bigint AS v FROM stock_movements WHERE tenant_id = ? AND type NOT IN ('putaway', 'batch_assign')")
+                + $one('SELECT COALESCE(SUM(to_stock_minor), 0)::bigint AS v FROM landed_costs WHERE tenant_id = ?')],
             'stored_value' => ['Gift cards and store credit', -$one('SELECT COALESCE(SUM(balance_minor), 0) AS v FROM stored_value_balances WHERE tenant_id = ?')],
             'loyalty' => ['Loyalty points (1 point = 1 pesewa)', -$one('SELECT COALESCE(SUM(points), 0) AS v FROM loyalty_balances WHERE tenant_id = ?')],
         ];
