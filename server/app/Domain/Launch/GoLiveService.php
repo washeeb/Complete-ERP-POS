@@ -129,6 +129,8 @@ final class GoLiveService
             ['suppliers', 'Suppliers', 'Who you buy from.', $fresh, fn () => Supplier::exists(), $import('suppliers')],
             ['opening_stock', 'Opening stock', 'What is on the shelves on the go-live date, counted, at cost.', false,
                 fn () => DB::table('stock_movements')->where('type', 'opening')->exists(), $import('opening_stock')],
+            ['stock_costs', 'Every product in stock has a cost', 'Stock with no cost is worth nothing in the books, and its sales cost nothing. No costs to hand? Use Stock → Cost runs.', true,
+                fn () => ! DB::table('stock_levels')->where('tenant_id', $plan->tenant_id)->where('on_hand', '>', 0)->where(fn ($q) => $q->whereNull('avg_cost_minor')->orWhere('avg_cost_minor', '<=', 0))->exists(), '/admin/stock-cost-runs'],
             ['opening_balances', 'Opening trial balance', 'Bank, cash, assets, loans and capital from the old books.', $fresh,
                 fn () => DB::table('journal_entries')->where('tenant_id', $plan->tenant_id)->where('kind', 'opening')->exists(), $import('opening_balances')],
             ['customer_balances', 'What customers owe', 'Open customer balances, collected later like invoices.', $fresh,

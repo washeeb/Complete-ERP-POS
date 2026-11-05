@@ -11,6 +11,7 @@ use App\Domain\Support\DomainException;
 use App\Filament\Resources\Products\Pages\CreateProduct;
 use App\Filament\Resources\Products\Pages\EditProduct;
 use App\Filament\Resources\Products\Pages\ListProducts;
+use App\Filament\Resources\StockCostRuns\StockCostRunResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
 use App\Filament\Support\GlobalSearch;
@@ -362,6 +363,12 @@ class ProductResource extends Resource
             ->recordActions([EditAction::make()])
             ->toolbarActions([
                 LabelsAction::bulk(),
+                BulkAction::make('costRun')->label('Work out cost from selling price')->icon(Heroicon::OutlinedCalculator)
+                    ->visible(fn () => StockCostRunResource::canCreate())
+                    ->action(function (Collection $records, $livewire) {
+                        session()->put('stock_cost_run.products', $records->pluck('id')->all()); // hundreds may be ticked: too long for an address
+                        $livewire->redirect(StockCostRunResource::getUrl('create'));
+                    }),
                 BulkAction::make('changeUnit')->label('Change the unit')->icon(Heroicon::OutlinedScale)
                     ->visible(fn () => Erp::canAnywhere('catalog.manage'))
                     ->modalDescription('The same change for every ticked product. Products on open documents, or already in that unit, are skipped and listed.')

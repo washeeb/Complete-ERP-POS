@@ -179,7 +179,7 @@ final class UnitChangeService
      *
      * @return array<string, list<array{milli: int, batch_id: ?string, bin_id?: ?string, cost: ?int}>>
      */
-    private function stockPlan(Product $product): array
+    public function stockPlan(Product $product): array
     {
         $plan = [];
         foreach (DB::table('stock_levels as l')->join('warehouses as w', 'w.id', '=', 'l.warehouse_id')->where('l.product_id', $product->id)

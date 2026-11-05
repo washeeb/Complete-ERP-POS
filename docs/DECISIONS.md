@@ -1097,3 +1097,16 @@ Design:
 - Routes are at `api/license/sync/*` beside the existing `api/license/checkin` (the master prompt's `api/v1` was not what the check-in uses).
 - A pulled key is not re-signed or altered, and the check-in server still needs its own key file to sign answers.
 - The check-in address goes in a key only when ticked per licence, off by default: a key naming a server that is not live would make the installation read-only after 30 + 14 days.
+
+## Cost runs: cost from the selling price (2026-11-05)
+- Owner: a client's products were loaded with no cost, so stock value is unknown; use their 1.4 to work out cost, as a feature for any client, on selected or all products. Free (owner).
+- Answers: 1.4 = price ÷ 1.4 (a percentage-of-price form also offered). Tax default **shelf price** (owner, and for that client), with "remove tax first" as an option. Past sales: one catch-up entry. Existing costs skipped by default, replacing is an option. Two people by default, one person as a setting. Books: Opening balances (to clear) at the go-live date by default; the accountant may choose the account.
+- It is the retail method (IAS 2): an estimate standing in for cost, so the accountant should agree the factor.
+- **Stays a ledger:** a pair of movements per batch and bin (out at what the books hold, in at the new cost), as a unit change does; nothing is edited, the average follows by itself, and a run on a level leaves the sub-ledger at on hand × cost. Whole pesewas per unit, so one unit carries the rounding and the books end exact.
+- **Top-up:** a delivery on no-cost stock sets the average for all of it while the books hold only the delivery, so "already has a cost" would leave the value short. The run tops the books up without touching the cost, only where stock really came in at no cost.
+- **Catch-up** is one journal per branch, not edited sales: posted sales are immutable. Reports per sale keep showing no cost for those; the accounts carry the correction.
+- **Selling prices and pricing rules are not triggered:** the cost came from the price, so following it would go round in a circle.
+- **Undo** skips products whose cost has moved since (a real delivery): undoing would throw a real cost away.
+- A run prepared by someone scoped to some branches is fixed to those stores, so the approver posts the same run. Runs are head office only.
+- Serial-numbered and consignment products are skipped, not estimated; zero-stock products get no average (a delivery sets it), only their catch-up.
+
