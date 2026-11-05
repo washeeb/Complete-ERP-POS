@@ -9,6 +9,7 @@ use App\Models\Device;
 use App\Models\DiningOrder;
 use App\Models\GoodsReceipt;
 use App\Models\Invoice;
+use App\Models\LandedCost;
 use App\Models\ModifierGroup;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
@@ -163,6 +164,11 @@ final class Replication
         } elseif (isset(self::CHILDREN[$model::class])) {
             [$relation, $table] = self::CHILDREN[$model::class];
             $snapshot['children'] = [$table => $model->{$relation}()->get()->map->getAttributes()->all()];
+        } elseif ($model instanceof LandedCost) {
+            $snapshot['children'] = [
+                'landed_cost_charges' => $model->charges()->get()->map->getAttributes()->all(),
+                'landed_cost_lines' => $model->lines()->get()->map->getAttributes()->all(),
+            ];
         } elseif ($model instanceof SalesOrder) {
             $snapshot['children'] = ['sales_order_lines' => $model->lines()->get()->map->getAttributes()->all()];
         } elseif ($model instanceof Device) {
