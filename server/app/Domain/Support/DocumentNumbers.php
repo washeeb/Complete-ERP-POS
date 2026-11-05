@@ -22,9 +22,12 @@ final class DocumentNumbers
         'work_order' => 'WO', 'qc_inspection' => 'QC', 'support_report' => 'SUP', 'cash_handover' => 'CH', 'stock_request' => 'SRQ', 'purchase_request' => 'PRQ', 'crm_lead' => 'LD', 'project' => 'PRJ', 'project_issue' => 'PIS', 'ticket' => 'TCK', 'maintenance_asset' => 'AST', 'maintenance_order' => 'MWO', 'iot_sensor' => 'SNS', 'iot_alarm' => 'ALM', 'crm_deal' => 'DL', 'crm_campaign' => 'CMP',
         'whatsapp_order' => 'WA'];
 
+    /** Transactions around the work that are not the document's: tests run inside one, which would hide a number taken outside. */
+    public static int $outerTransactions = 0;
+
     public function next(string $tenantId, string $docType): string
     {
-        if (DB::transactionLevel() === 0) {
+        if (DB::transactionLevel() <= self::$outerTransactions) {
             throw new LogicException('Document numbers are taken inside the document transaction.');
         }
         $prefix = self::PREFIXES[$docType] ?? throw new LogicException("No numbering for {$docType}.");

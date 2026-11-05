@@ -1127,3 +1127,8 @@ Design:
 - No reversal of a posted direct purchase: as with a delivery, a return to the supplier puts it right.
 - Serial-numbered products are refused here: each number is entered on Goods received.
 
+## Errors say what happened (2026-11-05)
+- Owner: errors must tell exactly what happened; a supplier's code is always automatic. "Something went wrong on the server" hid a fault only the server log could name.
+- `PlainError` turns a failure into plain words: the field or rule, or the exception and where in the program. Never raw database text, which holds people's data and the query; the reference finds the full error in the log. Shown to signed-in back-office users only; the sign-in page and the API say nothing more than before.
+- Tests run inside a transaction, so "numbers are taken inside the document transaction" could never fail under test; `DocumentNumbers::$outerTransactions` makes it fail there as in production, for every number in the system.
+

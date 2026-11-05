@@ -27,7 +27,10 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 | 4 | Service desk (tickets) and asset maintenance | paid add-on — branch `service-desk` |
 | 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid add-on — branch `iot` |
 
-## Direct purchases (free) — branch `direct-purchase`
+## Errors say what happened; supplier codes automatic — branch `supplier-terms-empty`
+- `App\Support\PlainError` + render in `bootstrap/app.php` for Livewire requests (`problem`, `reference`), shown by `layout.connection-notices`. `DocumentNumbers::$outerTransactions` = 1 in `tests/TestCase.php`, so a number taken outside a transaction fails under test. Supplier number moved inside the save; code field disabled on the form.
+
+## Direct purchases (free) — merged (PR #144, release BARYN2U6Z)
 - `App\Domain\Purchasing\DirectPurchases`, models `DirectPurchase` / `DirectPurchaseLine` (migration 2026_12_19_100002, also `products.consignment_cost_minor` and account 3310 `stock_to_clear`), `DirectPurchaseResource`, page `ConsignmentToPay`. Posting calls `GoodsReceiptService::receive`, `BillService::create`, `SupplierPaymentService::pay` with `authorised: true` (the document has its own permissions `purchasing.direct`, `purchasing.direct.approve`). `InvoiceScanner::scanPurchase` (pages, lots, expiry). `ConsignmentService::share` (agreed cost or share). Movement type `stock_received` → `stock_to_clear`. Settings `purchasing.direct_approval_minor`, `short_dated_months`, `direct_min_margin_pct`. Prefix DP. Tests: DirectPurchasesTest.
 
 ## Landed costs in the stock sub-ledger — merged (PR #142, with direct purchases)

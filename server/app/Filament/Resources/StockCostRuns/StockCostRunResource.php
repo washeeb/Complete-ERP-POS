@@ -97,7 +97,7 @@ class StockCostRunResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return $schema->components([
+        return $schema->columns(1)->components([
             Section::make('How to work out the cost')->columns(2)->schema([
                 Radio::make('method')->label('Method')->options(StockCostRun::METHODS)->default('divide')->required()->live()->columnSpanFull(),
                 TextInput::make('value')->label(fn (Get $get) => $get('method') === 'margin' ? 'Profit, % of the selling price' : 'Factor')->required()->numeric()->default('1.4')
