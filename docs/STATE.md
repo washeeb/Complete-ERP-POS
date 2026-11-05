@@ -27,7 +27,7 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 | 4 | Service desk (tickets) and asset maintenance | paid add-on — branch `service-desk` |
 | 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid add-on — branch `iot` |
 
-## Landed costs in the stock sub-ledger — branch `fix-landed-cost-gl-check`
+## Landed costs in the stock sub-ledger and across servers — merged (PR #142), not in a release yet
 - `GlCheck::subLedgers` adds `landed_costs.to_stock_minor` to the movement sum, so `erp:gl-check`, month close and go-live reconciliation tie after a landed cost. Test in `LandedCostTest`. No migration.
 - Agrees with `StockCostRuns::booksHold` (same figure per store and product, from the lines). Test in `LandedCostTest` covers a cost run on stock with a landed cost.
 - Landed costs replicate whole: `Replication::snapshot` sends charges and lines, `ReplicationApplier::landedCost` adds the per-piece rise once via `StockProjection::addToAverage`. Ones replicated earlier are not backfilled.
