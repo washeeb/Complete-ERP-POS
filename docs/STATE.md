@@ -27,6 +27,9 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 | 4 | Service desk (tickets) and asset maintenance | paid add-on — branch `service-desk` |
 | 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid add-on — branch `iot` |
 
+## Direct purchases (free) — branch `direct-purchase`
+- `App\Domain\Purchasing\DirectPurchases`, models `DirectPurchase` / `DirectPurchaseLine` (migration 2026_12_19_100002, also `products.consignment_cost_minor` and account 3310 `stock_to_clear`), `DirectPurchaseResource`, page `ConsignmentToPay`. Posting calls `GoodsReceiptService::receive`, `BillService::create`, `SupplierPaymentService::pay` with `authorised: true` (the document has its own permissions `purchasing.direct`, `purchasing.direct.approve`). `InvoiceScanner::scanPurchase` (pages, lots, expiry). `ConsignmentService::share` (agreed cost or share). Movement type `stock_received` → `stock_to_clear`. Settings `purchasing.direct_approval_minor`, `short_dated_months`, `direct_min_margin_pct`. Prefix DP. Tests: DirectPurchasesTest.
+
 ## Cost runs (free) — branch `estimated-cost`
 - `App\Domain\Inventory\StockCostRuns`, models `StockCostRun` / `StockCostRunLine` (migration 2026_12_19_100001), UI `StockCostRunResource` + `LinesRelationManager`, page `EstimatedCosts`, bulk action on Products. Movement types `cost_set` (opening_equity) and `cost_change` (stock_adjustment), or the run's `account_id`; `StockLedger` lets those two carry an explicit cost going out. AutoPoster source `stock_cost_runs` (catch-up: cogs against the same account). Permissions `stock.cost.manage`, `stock.cost.approve`; setting `stock.cost_run_two_people`; document prefix CST. Line: `kind` estimate / overwrite / top_up / skipped. Tests: StockCostRunsTest. **Oheneba:** factor 1.4 ÷, tax mode shelf, catch-up on; run after install.
 

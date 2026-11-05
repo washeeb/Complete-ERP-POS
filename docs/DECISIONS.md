@@ -1110,3 +1110,13 @@ Design:
 - A run prepared by someone scoped to some branches is fixed to those stores, so the approver posts the same run. Runs are head office only.
 - Serial-numbered and consignment products are skipped, not estimated; zero-stock products get no average (a delivery sets it), only their catch-up.
 
+## Direct purchases (2026-11-05)
+- Owner asked for a stock adjustment reason "consignment with cost" for goods that never pass through purchase orders; the sample was a supplier invoice paid by MoMo. An adjustment cannot carry the supplier, VAT or payment and books to Stock losses, so owner chose both: a Direct purchase form (opened from Stock adjustments too) that makes the usual documents, and a costed reason for stock with no paperwork. Free (owner).
+- Reuses goods received, bills and payments instead of a parallel path, so reports, the supplier's account, input tax and the real-cost comparison on cost runs all see it. Those services take `authorised: true` because the document carries its own approval: a branch manager may approve one without holding payables rights.
+- Owner's answers: VAT inclusive or exclusive per invoice, tax per line; stock staff enter, manager approves above a limit (default GHS 500), not their own; selling prices entered with a margin check, applied at posting (a warning, not a block); clearing account for costed stock (3310, equity, beside Opening balances).
+- Withholding tax is not kept back on a direct payment: the sum paid is the one on the invoice.
+- **Consignment at an agreed cost per unit** (`products.consignment_cost_minor`), alongside the existing share of the price. A product is one or the other: consigned stock comes in at no cost, so sharing a product with own stock would break the weighted average. Refused rather than splitting stock by owner. Tax is not added on consignment: the bill at settlement carries the agreed cost.
+- Settling consignment was only under Fashion; *Consignment to pay* opens it to every industry.
+- No reversal of a posted direct purchase: as with a delivery, a return to the supplier puts it right.
+- Serial-numbered products are refused here: each number is entered on Goods received.
+

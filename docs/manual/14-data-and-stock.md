@@ -165,6 +165,36 @@ The adjustment page shows each line's stock **before**, the **change** and **aft
 
 **Is the factor right?** **Stock → Estimated costs** lists every product with an estimated cost, and what its first real delivery cost, with the real factor (price ÷ real cost). **Why:** after a few weeks of deliveries you can see whether 1.4 was close, and run the rest again with a better factor if it was not.
 
+## 14.3c Direct purchases: a supplier's invoice with no purchase order
+
+Goods often arrive with an invoice and no purchase order, such as a wholesaler's delivery paid by MoMo at the door. **Purchasing → Direct purchases** (also **Enter a supplier invoice** on *Stock adjustments*) records it all on one form. It is free with every licence.
+
+**Why not a stock adjustment?** An adjustment only changes the stock. It would not show what you bought from whom, the VAT, what you paid or what you still owe, and the value would land in *Stock losses*. This form makes the goods received, the supplier bill and the payment for you, so everything agrees.
+
+**Step by step:**
+1. Click **Enter a supplier invoice**. If AI is switched on, click **Scan the invoice** and add a photo of **every page**. It fills the form; check every line against the paper. Handwriting on the invoice is ignored.
+2. **The invoice:** supplier, invoice number, date, store. Switch on *Prices on the invoice include VAT and levies* only if they do: most supplier invoices show prices before VAT. Type the **invoice total as printed**, so a mistyped line shows up.
+3. Add the **photo or PDF of every page**, so the paper is kept with the record.
+4. **How is it paid?**
+   - *Paid on delivery*: how, from which account, and the MoMo or transfer reference.
+   - *On credit*: it shows in what you owe the supplier. Leave *Due on* empty to use their payment terms.
+   - *Consignment*: see below.
+5. **Products**, one line per invoice line: the product and the unit you bought it in, quantity, unit price as printed, batch and expiry date, and the supplier's code. Tax follows the product; change it on a line if the invoice differs.
+   - A new product? Click **+** beside the product, and give it the unit it sells in and the pack size, e.g. sold in tablets, 60 in a box.
+   - **New selling price:** type it to change the price, and choose the unit it is for (box or tablet). The line shows the margin and how many times the cost it is. Leave it empty to keep today's price.
+6. Click **Create**. Nothing has changed yet. The page shows the totals and anything to check: a total that differs from the invoice, goods that expire soon, or a thin margin.
+7. **Post**, or **Send for approval** when it is above the limit. A manager (not the person who entered it) then posts it, and it shows on their dashboard. **Why:** receiving goods with no order is an easy way to hide missing stock or fake a purchase, so larger ones get a second look. Set the limit in **System → Settings → Purchasing** (default GHS 500).
+
+The same invoice number from the same supplier is refused, so an invoice cannot be entered or paid twice. Expired batches are refused.
+
+**After posting:** **Print labels** gives shelf labels for the products. **The invoice** shows the pages. The goods received note, bill and payment are all listed on the document, and appear under Purchasing and Payables as usual.
+
+**Mistakes:** a posted purchase cannot be edited. Goods sent back go through **Purchasing → Returns to suppliers**, and a wrong selling price is changed on the product.
+
+**Consignment (pay when sold):** the goods stay the supplier's. They come in at no cost, and each sale owes the supplier the cost on the invoice. **Purchasing → Consignment to pay** shows what is owed; **Settle** raises a bill to approve and pay as usual. A product is either your own or consigned, never both, because one average cost cannot cover goods you paid for and goods you did not. If you hold stock of your own, the form refuses it: sell that first, or enter this as a purchase.
+
+**Stock with no invoice at all** (a gift, or goods from the owner's other shop): use a stock adjustment with the reason **Received with a cost, no supplier invoice**, and enter the cost on each line. The value waits in *Stock received, to be cleared*. **Why:** your accountant then decides what it was, such as capital or a gift, so it does not show up as profit.
+
 ## 14.3a Barcode and shelf labels
 
 **Catalog → Products**: tick the products → **Print labels** (or **Print labels** on one product, or on a delivery under **Purchasing → Goods received** for what came in).

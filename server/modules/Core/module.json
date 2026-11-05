@@ -26,6 +26,8 @@
     {"key": "stock.view", "label": "View stock levels and movements", "min_level": 1},
     {"key": "stock.adjust", "label": "Enter opening stock and stock adjustments", "min_level": 3},
     {"key": "stock.adjust.approve", "label": "Approve and post stock adjustments above the approval limit, disposals and returns to suppliers (not your own)", "min_level": 4},
+    {"key": "purchasing.direct", "label": "Enter direct purchases (a supplier's invoice with no purchase order)", "min_level": 2},
+    {"key": "purchasing.direct.approve", "label": "Approve direct purchases above the limit: receives the goods, enters the bill and records the payment (not your own)", "min_level": 4},
     {"key": "stock.cost.manage", "label": "Prepare cost runs (work out products' cost from their selling price)", "min_level": 4},
     {"key": "stock.cost.approve", "label": "Approve, post and undo cost runs (not your own)", "min_level": 5},
     {"key": "stock.expiry", "label": "See expiring stock and prepare disposals and returns to suppliers", "min_level": 2},

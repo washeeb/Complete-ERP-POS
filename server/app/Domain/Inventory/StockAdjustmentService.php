@@ -285,8 +285,11 @@ final class StockAdjustmentService
                     'unit_cost_minor' => $l->unit_cost_minor, 'serials' => $l->serials] + $batch;
             }
             $reason = ($a->kind === 'disposal' ? 'disposal, ' : '').InventoryService::ADJUSTMENT_REASONS[$a->reason_code].($a->reference ? " ({$a->reference})" : '');
+            if ($a->reason_code === 'received_costed' && collect($entries)->contains(fn ($e) => $e['qty_milli'] <= 0 || (int) $e['unit_cost_minor'] <= 0)) {
+                throw new DomainException('Stock received with a cost: every line adds stock and has its cost.');
+            }
             if ($entries) {
-                $this->ledger->post($actor, $warehouse, 'adjustment', $entries, "Stock adjustment {$a->number}: {$reason}", 'stock_adjustment', $a->id);
+                $this->ledger->post($actor, $warehouse, $a->reason_code === 'received_costed' ? 'stock_received' : 'adjustment', $entries, "Stock adjustment {$a->number}: {$reason}", 'stock_adjustment', $a->id);
             }
             $a->forceFill(['status' => 'posted', 'posted_by_name' => $actor->name, 'posted_at' => now(), 'value_minor' => $preview['value']]);
 
