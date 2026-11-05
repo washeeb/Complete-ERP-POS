@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\StockAdjustments\Pages;
 
 use App\Filament\Pages\ImportData;
+use App\Filament\Resources\DirectPurchases\DirectPurchaseResource;
 use App\Filament\Resources\StockAdjustments\StockAdjustmentResource;
 use App\Filament\Support\Erp;
 use Filament\Actions\Action;
@@ -19,6 +20,9 @@ class ListStockAdjustments extends ListRecords
         return [
             Action::make('fromCsv')->label('Update stock from a CSV file')->icon(Heroicon::OutlinedArrowUpTray)->color('gray')
                 ->visible(fn () => Erp::canAnywhere('stock.adjust'))->url(ImportData::getUrl(['type' => 'stock_adjustment'])),
+            Action::make('invoice')->label('Enter a supplier invoice')->icon(Heroicon::OutlinedDocumentCheck)->color('gray')
+                ->visible(fn () => DirectPurchaseResource::canCreate())->url(DirectPurchaseResource::getUrl('create'))
+                ->tooltip('Goods with a supplier invoice and no purchase order: paid, on credit or on consignment'),
             CreateAction::make()->label('New stock adjustment'),
         ];
     }

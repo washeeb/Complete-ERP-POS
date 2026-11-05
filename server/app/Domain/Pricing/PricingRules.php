@@ -260,13 +260,13 @@ final class PricingRules
         return $n;
     }
 
-    private function setPrice(Actor $actor, Product $product, ProductUom $unit, PriceList $list, ?Price $price, int $amount, string $reason): void
+    public function setPrice(Actor $actor, Product $product, ProductUom $unit, PriceList $list, ?Price $price, int $amount, string $reason, string $action = 'price.set_by_rule'): void
     {
         $price ??= new Price;
         $price->fill(['price_list_id' => $list->id, 'product_id' => $product->id, 'product_uom_id' => $unit->id, 'min_qty' => '1', 'amount_minor' => $amount, 'starts_at' => null, 'ends_at' => null]);
         $price->tenant_id = $product->tenant_id;
         $price->updated_by = $actor->id;
-        $this->recorder->save($actor, $price, 'price.set_by_rule', mb_substr($reason, 0, 250));
+        $this->recorder->save($actor, $price, $action, mb_substr($reason, 0, 250));
         PriceSuggestion::where('product_uom_id', $unit->id)->where('price_list_id', $list->id)->where('status', 'pending')
             ->update(['status' => 'applied', 'decided_by_name' => 'Set by the rule', 'decided_at' => now()]);
     }

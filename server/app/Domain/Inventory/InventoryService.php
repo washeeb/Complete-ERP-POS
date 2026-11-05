@@ -29,6 +29,7 @@ final class InventoryService
         'spoilage' => 'Spoilage (fresh produce)',
         'kitchen_waste' => 'Kitchen waste',
         'consignment_in' => 'Consignment received (no cost)',
+        'received_costed' => 'Received with a cost, no supplier invoice',
         'consignment_out' => 'Consignment returned to the consignor',
         'theft' => 'Theft / missing',
         'found' => 'Found / surplus',
@@ -118,12 +119,16 @@ final class InventoryService
         }
         $cost = $unitCost !== null && $unitCost !== '' ? Money::toMinor($unitCost, $actor->user->tenant->currency_code) : null;
 
+        $received = $type === 'adjustment' && $reasonCode === 'received_costed';
+        if ($received && ($cost === null || $cost <= 0 || $milli <= 0)) {
+            throw new DomainException('Stock received with a cost: enter the quantity coming in and its cost.');
+        }
         $reason = $type === 'opening' ? 'Opening balance' : self::ADJUSTMENT_REASONS[$reasonCode].($note ? ": {$note}" : '');
 
-        return $this->recorder->transaction(function () use ($actor, $warehouse, $product, $unit, $milli, $type, $reason, $cost, $batchNo, $expiresOn, $serials) {
+        return $this->recorder->transaction(function () use ($actor, $warehouse, $product, $unit, $milli, $type, $reason, $cost, $batchNo, $expiresOn, $serials, $received) {
             // Batch-tracked: a named batch (new or existing); without one, stock out is taken earliest expiry first.
             $batch = $product->track_batches && trim((string) $batchNo) !== '' ? ['batch_id' => app(StockBatches::class)->ensure($actor, $product, (string) $batchNo, $expiresOn)] : [];
-            [$movement] = $this->ledger->post($actor, $warehouse, $type, [
+            [$movement] = $this->ledger->post($actor, $warehouse, $received ? 'stock_received' : $type, [
                 ['product' => $product, 'unit' => $unit, 'qty_milli' => $milli, 'unit_cost_minor' => $cost, 'serials' => $serials] + $batch,
             ], $reason, 'manual', null);
             $this->recorder->audit->record($actor, "stock.{$type}", $product, [

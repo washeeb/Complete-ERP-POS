@@ -30,14 +30,21 @@ final class ConsignmentService
     public function record(Actor $actor, Sale $sale): void
     {
         $lines = DB::table('sale_lines as l')->join('products as p', 'p.id', '=', 'l.product_id')->whereNotNull('p.consignor_id')
-            ->where('l.sale_id', $sale->id)->get(['l.id', 'l.product_id', 'l.qty', 'l.net_minor', 'p.consignor_id', 'p.consignment_bp']);
+            ->where('l.sale_id', $sale->id)->get(['l.id', 'l.product_id', 'l.qty', 'l.factor', 'l.net_minor', 'p.consignor_id', 'p.consignment_bp', 'p.consignment_cost_minor']);
         foreach ($lines as $l) {
             $row = (new ConsignmentSale)->forceFill(['id' => (string) Str::uuid7(), 'tenant_id' => $sale->tenant_id, 'branch_id' => $sale->branch_id, 'sale_id' => $sale->id,
                 'sale_line_id' => $l->id, 'product_id' => $l->product_id, 'consignor_id' => $l->consignor_id, 'qty' => $l->qty, 'net_minor' => (int) $l->net_minor,
-                'share_minor' => Qty::divRound((int) $l->net_minor * (int) $l->consignment_bp, 10000), 'occurred_at' => $sale->occurred_at, 'created_at' => now()]);
+                'share_minor' => self::share($l), 'occurred_at' => $sale->occurred_at, 'created_at' => now()]);
             $row->save();
             $this->recorder->outbox->publish($actor, $row, 'consignment.sold');
         }
+    }
+
+    /** An agreed cost per base unit, or a share of the price before tax. A return's quantity and price are negative. */
+    public static function share(object $l): int
+    {
+        return $l->consignment_cost_minor !== null ? (int) round((float) $l->qty * (float) $l->factor * (int) $l->consignment_cost_minor)
+            : Qty::divRound((int) $l->net_minor * (int) $l->consignment_bp, 10000);
     }
 
     /** What is owed to each consignor (not yet settled) at a branch, up to a date. */

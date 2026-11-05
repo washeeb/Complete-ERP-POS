@@ -74,9 +74,9 @@ final class BillService
      * @param  array{supplier_invoice_no: string, bill_date: string, due_on?: ?string, note?: ?string, lines: list<array>}  $data
      *                                                                                                                             stock line: {goods_receipt_line_id, qty, unit_cost_minor}; expense line: {account_id, description, amount_minor, tax_group_id?}
      */
-    public function create(Actor $actor, Supplier $supplier, Branch $branch, array $data): SupplierBill
+    public function create(Actor $actor, Supplier $supplier, Branch $branch, array $data, bool $authorised = false): SupplierBill
     {
-        if (! $actor->user || ! $this->authz->allows($actor->user, 'payables.manage', $branch)) {
+        if (! $authorised && (! $actor->user || ! $this->authz->allows($actor->user, 'payables.manage', $branch))) {
             throw new AccessDenied;
         }
         $invoiceNo = trim((string) ($data['supplier_invoice_no'] ?? ''));
@@ -122,7 +122,7 @@ final class BillService
                     $line = collect($this->billable($grn))->firstWhere('goods_receipt_line_id', $l->id);
                     $net = Qty::divRound($qty * $cost, 1000);
                     $ordered = Qty::divRound($qty * $line['order_cost_minor'], 1000);
-                    $t = TaxCalculator::line($net, $line['rates'], false);
+                    $t = TaxCalculator::line($net, $in['rates'] ?? $line['rates'], false); // a direct purchase brings the invoice's own tax
                     $variance += $net - $ordered;
                     $orderValue += $ordered;
                     $lines[] = ['line_no' => $i + 1, 'goods_receipt_line_id' => $l->id, 'product_id' => $l->product_id, 'description' => "{$grn->number} {$l->name}",

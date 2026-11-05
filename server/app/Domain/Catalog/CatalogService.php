@@ -224,8 +224,9 @@ final class CatalogService
         }
         // Fashion: consignment stock belongs to a supplier (the consignor), who is owed a share of each sale.
         $product->consignor_id = $product->consignor_id ?: null;
-        $product->consignment_bp = $product->consignor_id ? (int) $product->consignment_bp : null;
-        if ($product->consignor_id && (! Supplier::find($product->consignor_id) || $product->consignment_bp < 1 || $product->consignment_bp > 10000)) {
+        $agreedCost = $product->consignor_id && $product->consignment_cost_minor !== null; // set by a direct purchase
+        $product->consignment_bp = $product->consignor_id && ! $agreedCost ? (int) $product->consignment_bp : null;
+        if ($product->consignor_id && ! $agreedCost && (! Supplier::find($product->consignor_id) || $product->consignment_bp < 1 || $product->consignment_bp > 10000)) {
             throw new DomainException('Consignment: choose the consignor and their share (0.01–100 % of the price before tax).');
         }
         // Electronics: serial / IMEI numbers per unit, and the warranty from the date sold.

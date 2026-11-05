@@ -512,6 +512,21 @@ final class Settings
             'label' => 'In-store barcodes start with',
             'help' => 'Products without a barcode can be given one when printing labels: an EAN-13 starting with these two digits (20–29 are for in-store use). Must differ from the scale and markdown prefixes (Grocery).',
         ],
+        'purchasing.direct_approval_minor' => [
+            'type' => 'int', 'default' => 50000, 'min' => 0, 'max' => 100000000000, 'group' => 'Purchasing',
+            'label' => 'Direct purchases above this value need a manager\'s approval (in pesewas/cents)',
+            'help' => '50000 = GHS 500. 0 = every direct purchase needs approval by someone else.',
+        ],
+        'purchasing.short_dated_months' => [
+            'type' => 'int', 'default' => 6, 'min' => 0, 'max' => 60, 'group' => 'Purchasing',
+            'label' => 'Warn when goods bought expire within this many months',
+            'help' => 'Shown on a direct purchase before it is posted. 0 = no warning.',
+        ],
+        'purchasing.direct_min_margin_pct' => [
+            'type' => 'int', 'default' => 10, 'min' => 0, 'max' => 95, 'group' => 'Purchasing',
+            'label' => 'Warn when a new selling price leaves less than this margin (%)',
+            'help' => 'Profit as a percentage of the selling price, on a direct purchase. A warning only.',
+        ],
         'stock.cost_run_two_people' => [
             'type' => 'bool', 'default' => true, 'group' => 'Stock',
             'label' => 'Cost runs need a second person to approve them',

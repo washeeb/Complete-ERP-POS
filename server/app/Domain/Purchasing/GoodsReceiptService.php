@@ -53,17 +53,19 @@ final class GoodsReceiptService
      *   lines: list<array{purchase_order_line_id?: ?string, product_uom_id?: ?string, qty: string, unit_cost?: ?string, bin_id?: ?string}>} $data
      *   client_id: a handheld's id for this delivery, so a resend never receives twice
      */
-    public function receive(Actor $actor, ?PurchaseOrder $po, array $data): GoodsReceipt
+    public function receive(Actor $actor, ?PurchaseOrder $po, array $data, bool $authorised = false): GoodsReceipt
     {
         $warehouse = $po ? $po->warehouse : Warehouse::findOrFail($data['warehouse_id'] ?? null);
-        $this->require($actor, 'stock.receive', $warehouse);
+        if (! $authorised) { // a direct purchase has its own permission and approval
+            $this->require($actor, 'stock.receive', $warehouse);
+        }
         if (! empty($data['client_id']) && ($done = GoodsReceipt::find($data['client_id']))) {
             return $done; // already received (the handheld lost the answer and sent again)
         }
         if ($po && ! $po->isReceivable()) {
             throw new DomainException("Purchase order {$po->number} is ".(PurchaseOrder::STATUSES[$po->status] ?? $po->status).'; it cannot be received.', 'wrong_status');
         }
-        $manager = $this->authz->allows($actor->user, 'stock.receive.approve', $warehouse);
+        $manager = $authorised || $this->authz->allows($actor->user, 'stock.receive.approve', $warehouse);
         if (! $po && ! $manager) {
             throw new DomainException('Goods without a purchase order can only be received by a manager.', 'no_po');
         }
@@ -100,9 +102,9 @@ final class GoodsReceiptService
                 }
             }
             $product = Product::findOrFail($unit->product_id);
-            $cost = isset($r['unit_cost']) && $r['unit_cost'] !== '' && $r['unit_cost'] !== null
+            $cost = isset($r['unit_cost_minor']) ? (int) $r['unit_cost_minor'] : (isset($r['unit_cost']) && $r['unit_cost'] !== '' && $r['unit_cost'] !== null
                 ? Money::toMinor((string) $r['unit_cost'], $currency)
-                : ($poLine?->unit_cost_minor ?? SupplierProduct::where('supplier_id', $supplier->id)->where('product_uom_id', $unit->id)->value('last_cost_minor'));
+                : ($poLine?->unit_cost_minor ?? SupplierProduct::where('supplier_id', $supplier->id)->where('product_uom_id', $unit->id)->value('last_cost_minor')));
             if ($cost === null || $cost < 0) {
                 throw new DomainException("{$product->name}: enter the cost.");
             }

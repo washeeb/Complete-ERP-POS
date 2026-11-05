@@ -9,6 +9,8 @@ use App\Domain\Support\DomainException;
 use App\Models\AiDocument;
 use App\Models\Branch;
 use App\Models\GoodsReceipt;
+use App\Models\Product;
+use App\Models\ProductUom;
 use App\Models\Supplier;
 use App\Security\Authorizer;
 use App\Support\Money;
@@ -63,6 +65,89 @@ final class InvoiceScanner
         $doc->forceFill(['status' => 'read', 'extracted' => $data, 'form' => $form])->save();
 
         return $doc;
+    }
+
+    /**
+     * A direct purchase's invoice: every page read, then one form (Purchasing → Direct purchases), with the lots and
+     * expiry dates. Lines are matched to products by the supplier's code, the SKU, then the name; one with no match
+     * keeps what was read, for a person to choose or add. Nothing is entered until a person checks and saves it.
+     *
+     * @param  list<string>  $paths  files on the local (private) disk, in page order
+     * @return array<string, mixed> the form's data
+     */
+    public function scanPurchase(Actor $actor, Branch $branch, array $paths): array
+    {
+        if (! $actor->user || ! $this->authz->allows($actor->user, 'purchasing.direct', $branch)) {
+            throw new AccessDenied;
+        }
+        $disk = Storage::disk('local');
+        $provider = $this->gateway->provider($actor->tenantId, 'vision');
+        $pages = [];
+        foreach ($paths as $path) {
+            $mime = $disk->mimeType($path) ?: '';
+            if (! in_array($mime, self::TYPES, true) || $disk->size($path) > 10 * 1024 * 1024) {
+                throw new DomainException('Upload photos (JPG, PNG, WebP) or a PDF of the invoice, at most 10 MB each.');
+            }
+            if ($mime === 'application/pdf' && ! in_array($provider->name(), ['claude', 'fake'], true)) {
+                throw new DomainException('This AI model reads photos, not PDFs: take a photo or screenshot of the invoice (JPG or PNG).');
+            }
+            $reply = $this->gateway->chat($actor, 'invoice_scan', $provider, $this->purchasePrompt(), [['role' => 'user', 'content' => 'Read this page of a supplier invoice and return the JSON.']],
+                images: [['mime' => $mime, 'data' => base64_encode($disk->get($path))]], json: true);
+            $page = self::json($reply->text) ?? throw new DomainException('The invoice could not be read. Try a sharper, straight photo.');
+            AiDocument::create(['tenant_id' => $actor->tenantId, 'kind' => 'supplier_invoice', 'file_path' => $path, 'file_name' => basename($path), 'status' => 'read',
+                'created_by_name' => $actor->name, 'extracted' => $page]);
+            $pages[] = $page;
+        }
+        $first = $pages[0] ?? [];
+        $supplier = self::matchSupplier($first);
+        $lines = [];
+        foreach ($pages as $page) {
+            foreach ((array) ($page['lines'] ?? []) as $l) {
+                $lines[] = $this->purchaseLine($l, $supplier);
+            }
+        }
+        $total = collect($pages)->map(fn ($p) => $p['total'] ?? null)->filter()->last();
+
+        return ['supplier_id' => $supplier?->id, 'invoice_no' => mb_substr(trim((string) ($first['invoice_number'] ?? '')), 0, 60), 'invoice_date' => min(self::date($first['invoice_date'] ?? null) ?? now()->toDateString(), now()->toDateString()),
+            'prices_include_tax' => (bool) ($first['prices_include_tax'] ?? false), 'printed_total' => $total, 'attachments' => $paths, 'lines' => $lines,
+            'note' => 'Read from a scanned invoice: check every line against the paper.'];
+    }
+
+    private function purchaseLine(array $l, ?Supplier $supplier): array
+    {
+        $code = trim((string) ($l['sku'] ?? ''));
+        $name = trim((string) ($l['description'] ?? ''));
+        $unit = null;
+        if ($code !== '') {
+            $unit = DB::table('supplier_products')->where('supplier_sku', $code)->when($supplier, fn ($q) => $q->where('supplier_id', $supplier->id))->value('product_uom_id');
+            $product = $unit ? null : Product::whereRaw('lower(sku) = lower(?)', [$code])->first();
+        }
+        $product ??= null;
+        if (! $unit && ! $product && $name !== '') {
+            $best = 0;
+            foreach (Product::where('is_active', true)->get(['id', 'name']) as $p) {
+                similar_text(mb_strtolower($name), mb_strtolower($p->name), $pct);
+                if ($pct > $best && $pct >= 75) {
+                    [$product, $best] = [$p, $pct];
+                }
+            }
+        }
+        if (! $unit && $product) {
+            $buying = Product::find($product->id);
+            $unit = ProductUom::where('product_id', $product->id)->when($buying->buying_uom_id, fn ($q, $u) => $q->where('uom_id', $u), fn ($q) => $q->where('is_base', true))->value('id');
+        }
+        $qty = (float) ($l['qty'] ?? 0) ?: 1.0;
+
+        return ['product_uom_id' => $unit, 'read_as' => $unit ? null : $name, 'qty' => $qty, 'unit_price' => (float) ($l['unit_price'] ?? 0) ?: ((float) ($l['line_total'] ?? 0) / $qty),
+            'batch_no' => mb_substr(trim((string) ($l['lot'] ?? '')), 0, 60) ?: null, 'expires_on' => self::date($l['expiry_date'] ?? null), 'supplier_sku' => $code !== '' ? mb_substr($code, 0, 60) : null];
+    }
+
+    private function purchasePrompt(): string
+    {
+        return 'You read one page of a supplier invoice for a business in Ghana. Return only JSON with these keys: supplier_name, supplier_tax_no (TIN, or null), invoice_number, invoice_date (YYYY-MM-DD), '
+            .'prices_include_tax (true only if the prices are stated to include VAT), lines (array of {sku: the supplier\'s item code or null, description, qty (number), lot (lot or batch number, or null), '
+            .'expiry_date (YYYY-MM-DD; for 28/02/29 give 2029-02-28), unit_price (number), line_total (number)}), total (the invoice total if on this page, or null). Use numbers without currency symbols or '
+            .'thousands separators. Copy text exactly as printed; ignore handwriting; use null for anything you cannot read. Do not add lines that are not on the page.';
     }
 
     /** The bill was entered from this scan. */
