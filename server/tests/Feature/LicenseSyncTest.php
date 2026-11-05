@@ -3,6 +3,7 @@
 use App\Domain\Licensing\LicenseKey;
 use App\Domain\Licensing\LicenseService;
 use App\Domain\Licensing\Signer;
+use App\Domain\Licensing\Vendor\CheckinServer;
 use App\Domain\Licensing\Vendor\LicenseIssuer;
 use App\Domain\Licensing\Vendor\SyncDevices;
 use App\Domain\Licensing\Vendor\VendorLicensing;
@@ -55,6 +56,12 @@ function syncKey(array $over = []): array
 {
     return LicenseIssuer::issue(['customer' => 'Acme Stores', 'installation' => ['installation_id' => 'inst-1', 'fingerprint' => 'fp'], 'expires_at' => '2027-11-03', 'branches' => 1, 'devices' => 2, 'users' => 5] + $over,
         TestCase::$licenseKeys, 'Test', false);
+}
+
+/** What the check-in server answers for this licence (with the test key: the signing key file is not on every machine). */
+function syncCheckin(string $id): array
+{
+    return CheckinServer::answer(['license_id' => $id, 'installation_id' => 'inst-1', 'fingerprint' => 'fp', 'nonce' => 'n'], '127.0.0.1', TestCase::$licenseKeys)['answer'];
 }
 
 it('registers a device with a one-time code', function () {
@@ -195,7 +202,7 @@ it('takes a licence only with a key this server trusts, and reads it from the ke
     expect(LicenseKey::verify($l->license_key)['license_id'])->toBe($id);
 
     // The check-in server now knows it.
-    $this->postJson('/api/license/checkin', ['license_id' => $id, 'installation_id' => 'inst-1', 'fingerprint' => 'fp', 'nonce' => 'n'])->assertOk()->assertJsonPath('answer.status', 'active');
+    expect(syncCheckin($id)['status'])->toBe('active');
 
     // Signed by someone else.
     $pair = sodium_crypto_sign_keypair();
@@ -216,7 +223,7 @@ it('keeps signed fields out of reach and revocation final', function () {
     $l = VendorLicense::find($id);
     expect($l->license_key)->toBe($k['key'])->and($l->revoked_reason)->toBe('Stopped paying')->and($l->status())->toBe('revoked');
     expect(DB::table('audit_events')->where('action', 'vendor.license.revoked')->where('subject_id', $id)->count())->toBe(1);
-    $this->postJson('/api/license/checkin', ['license_id' => $id, 'installation_id' => 'inst-1', 'fingerprint' => 'fp', 'nonce' => 'n'])->assertJsonPath('answer.status', 'revoked');
+    expect(syncCheckin($id)['status'])->toBe('revoked');
 
     syncPush($this, [['entity' => 'license', 'id' => $id, 'base_version' => 2, 'data' => ['revoked_at' => null, 'revoked_reason' => null, 'notes' => 'still here']]])->assertJsonPath('results.0.status', 'applied');
     expect(VendorLicense::find($id)->revoked_at)->not->toBeNull()->and(VendorLicense::find($id)->notes)->toBe('still here');
@@ -229,7 +236,7 @@ it('hands a renewal pushed from the app to the installation at check-in', functi
         ['entity' => 'license', 'id' => $new['license_id'], 'base_version' => 0, 'data' => ['license_key' => $new['key'], 'replaces' => $old['license_id']]],
         ['entity' => 'license', 'id' => $old['license_id'], 'base_version' => 0, 'data' => ['license_key' => $old['key'], 'superseded_by' => $new['license_id']]],
     ])->assertJsonPath('results.0.status', 'applied')->assertJsonPath('results.1.status', 'applied');
-    $this->postJson('/api/license/checkin', ['license_id' => $old['license_id'], 'installation_id' => 'inst-1', 'fingerprint' => 'fp', 'nonce' => 'n'])->assertJsonPath('answer.license_key', $new['key']);
+    expect(syncCheckin($old['license_id'])['license_key'])->toBe($new['key']);
 });
 
 it('feeds licences issued in /vendor to the app, and a cursor only moves forward', function () {
