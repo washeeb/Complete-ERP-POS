@@ -30,7 +30,7 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 ## Direct purchases (free) — branch `direct-purchase`
 - `App\Domain\Purchasing\DirectPurchases`, models `DirectPurchase` / `DirectPurchaseLine` (migration 2026_12_19_100002, also `products.consignment_cost_minor` and account 3310 `stock_to_clear`), `DirectPurchaseResource`, page `ConsignmentToPay`. Posting calls `GoodsReceiptService::receive`, `BillService::create`, `SupplierPaymentService::pay` with `authorised: true` (the document has its own permissions `purchasing.direct`, `purchasing.direct.approve`). `InvoiceScanner::scanPurchase` (pages, lots, expiry). `ConsignmentService::share` (agreed cost or share). Movement type `stock_received` → `stock_to_clear`. Settings `purchasing.direct_approval_minor`, `short_dated_months`, `direct_min_margin_pct`. Prefix DP. Tests: DirectPurchasesTest.
 
-## Landed costs in the stock sub-ledger — merged (PR #142, with direct purchases)
+## Landed costs in the stock sub-ledger — merged (PR #142, with direct purchases), not in a release yet
 - `GlCheck::subLedgers` adds `landed_costs.to_stock_minor` to the movement sum, so `erp:gl-check`, month close and go-live reconciliation tie after a landed cost. Test in `LandedCostTest`. No migration.
 - Agrees with `StockCostRuns::booksHold` (same figure per store and product, from the lines). Test in `LandedCostTest` covers a cost run on stock with a landed cost.
 - Landed costs replicate whole: `Replication::snapshot` sends charges and lines, `ReplicationApplier::landedCost` adds the per-piece rise once via `StockProjection::addToAverage`. Ones replicated earlier are not backfilled.
