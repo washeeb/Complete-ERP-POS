@@ -23,6 +23,10 @@
         // Leaving the page cuts off its requests; a download also starts this way but the page stays, so it ends after a moment.
         addEventListener('beforeunload', () => { leaving = true; setTimeout(() => { leaving = false }, 3000) });
         const say = (n, kind = 'danger') => new FilamentNotification().title(n.title).body(n.body)[kind]().send();
+        // What really failed, from the server (bootstrap/app.php): it stays until closed, so the reference can be passed on.
+        const problem = (body) => {
+            try { return JSON.parse(body)?.problem ? JSON.parse(body) : null } catch { return null }
+        };
         const onlyBell = (request) => {
             try {
                 const c = request?.payload?.components;
@@ -44,9 +48,13 @@
                 told = true;
                 say(N.background);
             });
-            onError(({ response, preventDefault }) => {
+            onError(({ response, body, preventDefault }) => {
                 if (onlyBell(request)) return;
                 preventDefault();
+                const told = problem(body);
+                if (told) {
+                    return new FilamentNotification().title('This did not go through').body(told.problem + (told.reference ? ' Tell SyncLytics support this reference: ' + told.reference : '')).danger().persistent().send();
+                }
                 const s = response?.status;
                 say(N[s] ?? (s >= 500 ? N[500] : N.other));
             });

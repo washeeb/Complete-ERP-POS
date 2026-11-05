@@ -102,7 +102,7 @@ class SupplierResource extends Resource
     {
         return $schema->columns(1)->components([
             Section::make()->columns(3)->schema([
-                TextInput::make('code')->maxLength(20)->placeholder('Given by the system')->helperText('Leave empty for the next number (SUP-…), or type a short code, e.g. NESTLE.'),
+                TextInput::make('code')->placeholder('Given by the system')->disabled()->dehydrated(false),
                 TextInput::make('name')->required()->maxLength(255)->caps()->columnSpan(2),
                 TextInput::make('contact_name')->label('Contact person')->maxLength(255)->caps(),
                 TextInput::make('phone')->tel()->maxLength(30),

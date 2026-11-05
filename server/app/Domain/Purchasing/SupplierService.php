@@ -31,12 +31,15 @@ final class SupplierService
             throw new AccessDenied;
         }
         $data = Caps::keys($data, ['name', 'contact_name']);
+        if (array_key_exists('payment_terms_days', $data)) {
+            $data['payment_terms_days'] = (int) $data['payment_terms_days']; // a box left empty is cash, 0 days
+        }
         // The code is given by the system when left empty (SUP-HQ-000001), like customers; a typed one is kept.
-        $code = strtoupper(trim((string) ($data['code'] ?? $supplier->code))) ?: $this->numbers->next($actor->tenantId, 'supplier');
-        if (! preg_match('/^[A-Z0-9][A-Z0-9\-]{0,19}$/', $code)) {
+        $code = strtoupper(trim((string) ($data['code'] ?? $supplier->code)));
+        if ($code !== '' && ! preg_match('/^[A-Z0-9][A-Z0-9\-]{0,19}$/', $code)) {
             throw new DomainException('Supplier codes use letters, digits and dashes (up to 20).');
         }
-        if (Supplier::where('code', $code)->when($supplier->exists, fn ($q) => $q->whereKeyNot($supplier->id))->exists()) {
+        if ($code !== '' && Supplier::where('code', $code)->when($supplier->exists, fn ($q) => $q->whereKeyNot($supplier->id))->exists()) {
             throw new DomainException("Supplier code {$code} is already used.");
         }
         if (trim((string) ($data['name'] ?? $supplier->name)) === '') {
@@ -50,7 +53,7 @@ final class SupplierService
             if (! array_key_exists($supplier->supply_kind ?? 'goods', Supplier::SUPPLY_KINDS)) {
                 throw new DomainException('Choose what they supply: goods, services or works.');
             }
-            $supplier->code = $code;
+            $supplier->code = $code ?: $this->numbers->next($actor->tenantId, 'supplier');
             $supplier->currency_code ??= $currency;
             if (! $supplier->exists) {
                 $supplier->tenant_id = $actor->tenantId;

@@ -88,7 +88,7 @@ class DirectPurchaseResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return $schema->components([
+        return $schema->columns(1)->components([
             Section::make('The invoice')->columns(4)->schema([
                 Select::make('supplier_id')->label('Supplier')->required()->searchable()->columnSpan(2)
                     ->options(fn () => Supplier::where('is_active', true)->orderBy('name')->pluck('name', 'id')),

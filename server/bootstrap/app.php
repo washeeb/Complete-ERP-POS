@@ -10,10 +10,14 @@ use App\Http\Middleware\EnsureDeviceToken;
 use App\Http\Middleware\EnsureMfaForLevel;
 use App\Http\Middleware\RecordSlowRequests;
 use App\Http\Middleware\SecurityHeaders;
+use App\Support\PlainError;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -54,5 +58,15 @@ return Application::configure(basePath: dirname(__DIR__))
 
                 return response()->json(['error' => $e->errorCode, 'detail' => $e->getMessage()], $status);
             }
+        });
+        // Back-office pages: the person is told what really failed, with the reference to find it in the server log
+        // (layout.connection-notices shows it). Status errors (signed out, not allowed, updating) keep their own words.
+        $exceptions->render(function (Throwable $e, Request $request) {
+            if (! $request->hasHeader('X-Livewire') || config('app.debug') || $e instanceof HttpExceptionInterface || $e instanceof ValidationException
+                || $e instanceof AuthenticationException || $e instanceof DomainException) {
+                return null;
+            }
+
+            return response()->json(['problem' => PlainError::explain($e), 'reference' => $request->attributes->get('request_id')], 500);
         });
     })->create();

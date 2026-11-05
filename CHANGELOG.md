@@ -1,6 +1,12 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+- **Errors say what really happened** (owner request): in place of "Something went wrong on the server", the back office names the field or rule that failed (e.g. *Payment terms days was left empty*, *Code is already used*, someone else changing the same thing), or the part of the program, with a reference to find it in the server log. The message stays until closed. Values and queries are never shown.
+- **Supplier codes are always given by the system** on the form (imports can still bring their own).
+### Fixed
+- **"Something went wrong on the server" creating a supplier** with the *Code* left empty, the usual way: the number was taken before the save began. The tests could not see it, because they run inside a transaction of their own; they now can, everywhere numbers are taken.
+- The same message with the supplier's *Payment terms* box left empty: empty now means 0 days.
 ### Added
 - **Direct purchases** (free; owner request; *Purchasing → Direct purchases*, and *Enter a supplier invoice* on Stock adjustments): a supplier's invoice with no purchase order on one form: batch, expiry, prices with or without VAT per invoice, tax per line, printed total checked, the invoice's pages kept, supplier's codes remembered, new selling prices with their margin. Paid on delivery, on credit or on consignment; posting makes the goods received, the bill and the payment. Stock staff enter, a manager approves above a limit (Settings → Purchasing), not their own. Same invoice twice refused; short-dated and thin-margin warnings; scan every page with the AI invoice reader; add a product with its pack size on the spot; shelf labels.
 - **Consignment at an agreed cost per unit**, in any industry, with *Purchasing → Consignment to pay*.
