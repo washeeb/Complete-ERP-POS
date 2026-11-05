@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- **"Something went wrong on the server" saving a supplier** with the *Payment terms* box left empty: empty now means 0 days.
 ### Added
 - **Direct purchases** (free; owner request; *Purchasing → Direct purchases*, and *Enter a supplier invoice* on Stock adjustments): a supplier's invoice with no purchase order on one form: batch, expiry, prices with or without VAT per invoice, tax per line, printed total checked, the invoice's pages kept, supplier's codes remembered, new selling prices with their margin. Paid on delivery, on credit or on consignment; posting makes the goods received, the bill and the payment. Stock staff enter, a manager approves above a limit (Settings → Purchasing), not their own. Same invoice twice refused; short-dated and thin-margin warnings; scan every page with the AI invoice reader; add a product with its pack size on the spot; shelf labels.
 - **Consignment at an agreed cost per unit**, in any industry, with *Purchasing → Consignment to pay*.
