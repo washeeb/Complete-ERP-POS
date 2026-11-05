@@ -17,6 +17,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Route;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 /**
@@ -29,6 +30,7 @@ class VendorPanelProvider extends PanelProvider
     public function boot(): void
     {
         $this->loadRoutesFrom(base_path('routes/vendor.php')); // certificate, invoice print, licence register (CSV)
+        Route::prefix('api/license/sync')->middleware('api')->group(base_path('routes/license-sync.php')); // the SES Licensing desktop app
     }
 
     public function panel(Panel $panel): Panel

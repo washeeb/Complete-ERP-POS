@@ -20,18 +20,7 @@ final class VendorBilling
     /** @param list<array{description: string, qty: int|float, unit_minor: int}> $lines */
     public function invoice(Actor $actor, VendorCustomer $customer, array $lines, string $currency, ?string $licenseId = null, int $dueDays = 14, ?string $notes = null): VendorInvoice
     {
-        $rows = [];
-        foreach ($lines as $l) {
-            $qty = (float) ($l['qty'] ?? 1);
-            if (trim((string) ($l['description'] ?? '')) === '' || $qty <= 0) {
-                continue;
-            }
-            $rows[] = ['description' => mb_substr(trim($l['description']), 0, 255), 'qty' => $qty, 'unit_minor' => (int) $l['unit_minor'],
-                'total_minor' => (int) round($qty * (int) $l['unit_minor'])];
-        }
-        if (! $rows) {
-            throw new DomainException('Add at least one line.');
-        }
+        $rows = self::rows($lines);
 
         return DB::transaction(function () use ($actor, $customer, $rows, $currency, $licenseId, $dueDays, $notes) {
             DB::select('SELECT pg_advisory_xact_lock(hashtext(?))', ['vendor_invoice_number']);
@@ -45,6 +34,48 @@ final class VendorBilling
 
             return $inv;
         });
+    }
+
+    /** @return list<array{description: string, qty: float, unit_minor: int, total_minor: int}> */
+    private static function rows(array $lines): array
+    {
+        $rows = [];
+        foreach ($lines as $l) {
+            $qty = (float) ($l['qty'] ?? 1);
+            if (trim((string) ($l['description'] ?? '')) === '' || $qty <= 0) {
+                continue;
+            }
+            $rows[] = ['description' => mb_substr(trim($l['description']), 0, 255), 'qty' => $qty, 'unit_minor' => (int) $l['unit_minor'],
+                'total_minor' => (int) round($qty * (int) $l['unit_minor'])];
+        }
+        if (! $rows) {
+            throw new DomainException('Add at least one line.');
+        }
+
+        return $rows;
+    }
+
+    /**
+     * An invoice made in the SES Licensing app, which works offline, so it arrives with its own id and a number from its
+     * own series (SES-...); this server's series (SYN-...) stays gap-free. The total is worked out here, never taken on trust.
+     *
+     * @param  array{number: string, customer_id: string, license_id?: ?string, issued_on: string, due_on: string, lines: array, total_minor: int, currency: string, notes?: ?string, created_by: string}  $d
+     */
+    public function adoptInvoice(Actor $actor, string $id, array $d): VendorInvoice
+    {
+        $rows = self::rows($d['lines']);
+        $total = array_sum(array_column($rows, 'total_minor'));
+        if (! preg_match('/^SES-\d{4}-\d{4,}$/', $d['number'])) {
+            throw new DomainException('An invoice from the app has a number like SES-2026-0001.');
+        }
+        if ($total !== (int) $d['total_minor']) {
+            throw new DomainException('The invoice total does not match its lines.');
+        }
+        $inv = VendorInvoice::create(['id' => $id, 'number' => $d['number'], 'customer_id' => $d['customer_id'], 'license_id' => $d['license_id'] ?? null, 'issued_on' => $d['issued_on'], 'due_on' => $d['due_on'],
+            'lines' => $rows, 'total_minor' => $total, 'currency' => $d['currency'], 'status' => 'open', 'notes' => $d['notes'] ?? null, 'created_by' => $d['created_by']]);
+        $this->audit->record($actor, 'vendor.invoice.issued', $inv, ['total_minor' => [null, $total]]);
+
+        return $inv;
     }
 
     /** The invoice for a licence: the plan (or "Licence"), each add-on, for the licence period. */
@@ -64,7 +95,8 @@ final class VendorBilling
             $lic->id, $dueDays, 'Licence '.$lic->short());
     }
 
-    public function pay(Actor $actor, VendorInvoice $inv, int $amountMinor, string $method, ?string $reference, ?string $receivedOn = null): VendorPayment
+    /** `$id` and `$recordedBy` come from the app when the payment was recorded there. */
+    public function pay(Actor $actor, VendorInvoice $inv, int $amountMinor, string $method, ?string $reference, ?string $receivedOn = null, ?string $id = null, ?string $recordedBy = null): VendorPayment
     {
         if ($inv->status === 'void') {
             throw new DomainException('This invoice was voided.');
@@ -76,9 +108,9 @@ final class VendorBilling
             throw new DomainException('Choose how it was paid.');
         }
 
-        return DB::transaction(function () use ($actor, $inv, $amountMinor, $method, $reference, $receivedOn) {
-            $p = VendorPayment::create(['invoice_id' => $inv->id, 'customer_id' => $inv->customer_id, 'received_on' => $receivedOn ?? now()->toDateString(),
-                'amount_minor' => $amountMinor, 'method' => $method, 'reference' => $reference ? mb_substr(trim($reference), 0, 120) : null, 'recorded_by' => $actor->name]);
+        return DB::transaction(function () use ($actor, $inv, $amountMinor, $method, $reference, $receivedOn, $id, $recordedBy) {
+            $p = VendorPayment::create(array_filter(['id' => $id]) + ['invoice_id' => $inv->id, 'customer_id' => $inv->customer_id, 'received_on' => $receivedOn ?? now()->toDateString(),
+                'amount_minor' => $amountMinor, 'method' => $method, 'reference' => $reference ? mb_substr(trim($reference), 0, 120) : null, 'recorded_by' => $recordedBy ?? $actor->name]);
             if ($inv->balanceMinor() <= 0) {
                 $inv->forceFill(['status' => 'paid'])->save();
             }

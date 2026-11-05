@@ -38,12 +38,14 @@
                 </p>
             @endif
             <textarea readonly rows="3" class="lic-code" onclick="this.select()">{{ $this->installationCode() }}</textarea>
+            <div class="lic-qr" role="img" aria-label="QR code of the installation code">{!! $this->installationQr() !!}</div>
         </x-filament::section>
     @elseif ($s['read_only'])
         <x-filament::section><p>Ask the owner or general manager to renew the licence.</p></x-filament::section>
     @endif
     <style>
         .lic-head { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; } .lic-muted { opacity: .7; font-size: .85rem; }
+        .lic-qr { margin-top: 10px; width: 180px; background: #fff; padding: 4px; border-radius: 6px; } .lic-qr svg { width: 100%; height: auto; }
         .lic-msg { margin-top: 10px; font-weight: 500; } .lic-t { margin-top: 10px; font-size: .875rem; border-collapse: collapse; }
         .lic-t td, .lic-t th { padding: 4px 12px 4px 0; text-align: left; }
         .lic-code { width: 100%; font-family: ui-monospace, monospace; font-size: .8rem; padding: 8px; border: 1px solid color-mix(in srgb, currentColor 15%, transparent); border-radius: 6px; background: transparent; color: inherit; }

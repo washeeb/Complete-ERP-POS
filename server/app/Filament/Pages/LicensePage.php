@@ -9,6 +9,10 @@ use App\Filament\Support\Erp;
 use App\Models\License;
 use App\Models\User;
 use BackedEnum;
+use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+use BaconQrCode\Writer;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
@@ -57,6 +61,12 @@ class LicensePage extends Page
     public function installationCode(): string
     {
         return LicenseService::installationCode();
+    }
+
+    /** The same code as a QR picture, to photograph or scan into the licence app. */
+    public function installationQr(): string
+    {
+        return (new Writer(new ImageRenderer(new RendererStyle(220, 2), new SvgImageBackEnd)))->writeString($this->installationCode());
     }
 
     public function usage(): array
