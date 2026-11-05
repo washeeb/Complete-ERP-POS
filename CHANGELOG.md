@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- **Sensor test failing in the hour before midnight UTC** (test only, no change to the product): `IotTest` now sets its clock to 12:00 before any test data is created, so its readings stay on one day whatever time the tests run.
 ### Added
 - **SES Licensing sync** (licence server only; for the new desktop app in its own private repository): device registration by one-time code, signed pull and push with versions, conflicts returned for the app to settle, idempotent pushes, rate limits, audit rows, and **Set-up → Sync devices** in `/vendor` (`license:sync-device`). Records are customers, plans, add-ons, licences, invoices and payments. A licence from the app is accepted only with a key signed by a trusted key; revocation is final.
 - **Invoices and payments sync with the app**, added but never edited: the server checks totals, refuses overpayments and works out "paid". Invoices from the app are numbered `SES-YYYY-NNNN`.

@@ -27,6 +27,10 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 | 4 | Service desk (tickets) and asset maintenance | paid add-on — branch `service-desk` |
 | 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid add-on — branch `iot` |
 
+## IotTest clock pinned — branch `fix-iot-test-midnight`
+- `IotTest` `beforeEach` starts with `travelTo(now()->setTime(12, 0))` in place of the closing `freezeTime()`. Tests only.
+- `erp_test` is one shared database: a second test run on this PC at the same time fails with deadlocks on `drop table`. Check for a running `artisan test` / `pest` first.
+
 ## SES Licensing sync — branch `license-sync`
 - Desktop app: folder `../SES-Licensing`, committed locally; private repo `washeeb/SES-Licensing` still to be created and pushed (Tauri 2, React; vault, in-memory SQLite written out encrypted, hash-chained log, backups, sync). Decisions in its README.
 - Here: `App\Domain\Licensing\Vendor\{LicenseSync,SyncDevices}`, `LicenseSyncController`, `VerifySyncSignature`, `routes/license-sync.php` (loaded by `VendorPanelProvider`), `Models\Vendor\Concerns\Syncable` (version + `vendor_sync_changes`), `VendorSyncDevice`, `SyncDeviceResource`, `license:sync-device`, `license:sync-prune`; migration `2026_12_18_100001_license_sync`. Files left out of client builds are listed in `ReleaseBuildCommand`. Migration `2026_12_18_100002_license_sync_invoices`: invoices and payments sync through `VendorBilling`. `update` routes hand the app its new versions from `storage/app/ses-licensing/`. Tests: `LicenseSyncTest` (24), `LicenseSyncVectorTest`. Doc: `docs/licensing.md`.
