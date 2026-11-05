@@ -31,6 +31,16 @@ final class StockProjection
         return bcdiv($value, (string) ($before + $inMilli), 4);
     }
 
+    /** A landed cost posted on another server: add its amount a piece to the average here. Must run inside the applying transaction. */
+    public function addToAverage(string $warehouseId, string $productId, string $perBase): void
+    {
+        $level = DB::table('stock_levels')->where('warehouse_id', $warehouseId)->where('product_id', $productId)->lockForUpdate()->first();
+        if ($level && bccomp($perBase, '0', 4) !== 0) {
+            DB::table('stock_levels')->where('warehouse_id', $warehouseId)->where('product_id', $productId)
+                ->update(['avg_cost_minor' => bcadd((string) ($level->avg_cost_minor ?? '0'), $perBase, 4), 'updated_at' => now()]);
+        }
+    }
+
     /** @param list<array<string, mixed>> $movements raw movement rows (qty_base as "1.000" strings) */
     public function apply(array $movements): void
     {

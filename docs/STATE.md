@@ -30,6 +30,7 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 ## Landed costs in the stock sub-ledger — branch `fix-landed-cost-gl-check`
 - `GlCheck::subLedgers` adds `landed_costs.to_stock_minor` to the movement sum, so `erp:gl-check`, month close and go-live reconciliation tie after a landed cost. Test in `LandedCostTest`. No migration.
 - Agrees with `StockCostRuns::booksHold` (same figure per store and product, from the lines). Test in `LandedCostTest` covers a cost run on stock with a landed cost.
+- Landed costs replicate whole: `Replication::snapshot` sends charges and lines, `ReplicationApplier::landedCost` adds the per-piece rise once via `StockProjection::addToAverage`. Ones replicated earlier are not backfilled.
 
 ## Cost runs (free) — branch `estimated-cost`
 - `App\Domain\Inventory\StockCostRuns`, models `StockCostRun` / `StockCostRunLine` (migration 2026_12_19_100001), UI `StockCostRunResource` + `LinesRelationManager`, page `EstimatedCosts`, bulk action on Products. Movement types `cost_set` (opening_equity) and `cost_change` (stock_adjustment), or the run's `account_id`; `StockLedger` lets those two carry an explicit cost going out. AutoPoster source `stock_cost_runs` (catch-up: cogs against the same account). Permissions `stock.cost.manage`, `stock.cost.approve`; setting `stock.cost_run_two_people`; document prefix CST. Line: `kind` estimate / overwrite / top_up / skipped. Tests: StockCostRunsTest. **Oheneba:** factor 1.4 ÷, tax mode shelf, catch-up on; run after install.

@@ -143,6 +143,9 @@ final class ReplicationApplier
                     $this->replaceSet($table, "{$type}_id", $id, $c[$table]); // lines belong to their document
                 }
                 break;
+            case 'landed_cost':
+                $this->landedCost($c);
+                break;
             case 'sale':
                 foreach (['sale_lines' => $c['sale_lines'] ?? [], 'sale_payments' => $c['sale_payments'] ?? []] as $table => $rows) {
                     if ($rows) {
@@ -150,6 +153,25 @@ final class ReplicationApplier
                     }
                 }
                 break;
+        }
+    }
+
+    /**
+     * A landed cost is never edited, and it moves the average with no stock movement, so nothing else carries that here.
+     * Each line raises the average once, when it first arrives, by what it added a piece where it was posted: stock here
+     * may differ for now, and a piece costs the same on every server. Added as a difference, not set to the sender's
+     * figure, so a delivery this server has and the sender has not seen is kept.
+     */
+    private function landedCost(array $children): void
+    {
+        foreach ($children['landed_cost_charges'] ?? [] as $r) {
+            DB::table('landed_cost_charges')->insertOrIgnore(array_intersect_key($r, array_flip($this->columnsOf('landed_cost_charges'))));
+        }
+        foreach ($children['landed_cost_lines'] ?? [] as $r) {
+            $inserted = DB::table('landed_cost_lines')->insertOrIgnore(array_intersect_key($r, array_flip($this->columnsOf('landed_cost_lines'))));
+            if ($inserted > 0 && $r['avg_after'] !== null) {
+                $this->projection->addToAverage($r['warehouse_id'], $r['product_id'], bcsub((string) $r['avg_after'], (string) ($r['avg_before'] ?? '0'), 4));
+            }
         }
     }
 

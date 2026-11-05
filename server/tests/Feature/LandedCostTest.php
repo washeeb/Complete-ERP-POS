@@ -9,6 +9,8 @@ use App\Domain\Purchasing\LandedCostService;
 use App\Domain\Purchasing\PurchaseOrderService;
 use App\Domain\Purchasing\SupplierService;
 use App\Domain\Support\DomainException;
+use App\Domain\Sync\ReplicationApplier;
+use App\Models\OutboxEvent;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
 use App\Models\Warehouse;
@@ -114,6 +116,41 @@ it('keeps the books tied when a cost run replaces a cost that carries freight, a
     $runs->undo(actorFor($this->owner), $posted, 'Wrong factor');
     expect(miloAvg($this))->toBe('1100.0000');
     $tied(264000);
+});
+
+it('reaches another server whole: its lines and charges arrive and the average there rises once', function () {
+    $lc = app(LandedCostService::class)->post(actorFor($this->accountant), [$this->grn->id],
+        [['kind' => 'freight', 'description' => 'Freight', 'amount_minor' => 16000], ['kind' => 'duty', 'description' => 'Duty', 'amount_minor' => 8000]], 'quantity');
+    expect(miloAvg($this))->toBe('1100.0000');
+    $row = OutboxEvent::where('aggregate_type', 'landed_cost')->where('aggregate_id', $lc->id)->firstOrFail();
+    $event = ['id' => $row->id, 'tenant_id' => $this->tenant->id, 'origin_node' => 'BR1', 'origin_seq' => 1, 'aggregate_type' => 'landed_cost', 'aggregate_id' => $lc->id,
+        'event_type' => $row->event_type, 'payload' => json_decode(json_encode($row->payload), true)];
+
+    // This database now plays the other server: it has the delivery, at the cost before the freight.
+    DB::table('landed_costs')->where('id', $lc->id)->delete();
+    DB::table('stock_levels')->where('warehouse_id', $this->hq->id)->where('product_id', $this->milo->id)->update(['avg_cost_minor' => '1000.0000']);
+
+    DB::transaction(fn () => app(ReplicationApplier::class)->apply($event));
+    expect(DB::table('landed_cost_lines')->where('landed_cost_id', $lc->id)->sum('to_stock_minor'))->toEqual(24000)
+        ->and(DB::table('landed_cost_charges')->where('landed_cost_id', $lc->id)->count())->toBe(2)
+        ->and(miloAvg($this))->toBe('1100.0000');
+
+    // The same event again (a retry, or head office passing it back): nothing doubles.
+    DB::transaction(fn () => app(ReplicationApplier::class)->apply($event));
+    expect(miloAvg($this))->toBe('1100.0000')->and(DB::table('landed_cost_lines')->where('landed_cost_id', $lc->id)->count())->toBe(1);
+});
+
+it('raises the average by the same amount a piece on a server where the stock differs', function () {
+    $lc = app(LandedCostService::class)->post(actorFor($this->accountant), [$this->grn->id], [['description' => 'Freight', 'amount_minor' => 24000]], 'quantity');
+    $row = OutboxEvent::where('aggregate_type', 'landed_cost')->where('aggregate_id', $lc->id)->firstOrFail();
+    $event = ['id' => $row->id, 'tenant_id' => $this->tenant->id, 'origin_node' => 'BR1', 'origin_seq' => 1, 'aggregate_type' => 'landed_cost', 'aggregate_id' => $lc->id,
+        'event_type' => $row->event_type, 'payload' => json_decode(json_encode($row->payload), true)];
+    DB::table('landed_costs')->where('id', $lc->id)->delete();
+    // Sales and a dearer delivery not yet seen by the sender: its GHS 1.00 a piece still applies on top of what is here.
+    DB::table('stock_levels')->where('warehouse_id', $this->hq->id)->where('product_id', $this->milo->id)->update(['avg_cost_minor' => '1040.0000', 'on_hand' => '150']);
+
+    DB::transaction(fn () => app(ReplicationApplier::class)->apply($event));
+    expect(miloAvg($this))->toBe('1140.0000');
 });
 
 it('splits to the pesewa, corrects with a negative charge, and refuses what does not fit', function () {
