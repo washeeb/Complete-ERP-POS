@@ -102,7 +102,7 @@ class SaleResource extends Resource
                 TextEntry::make('receipt_no')->label('Receipt'),
                 TextEntry::make('occurred_at')->label('Sold at')->dateTime(),
                 TextEntry::make('cashier_name')->asPerson('cashier_id')->label('Teller'),
-                TextEntry::make('where')->label('Where')->state(fn (Sale $r) => "{$r->branch->code} · till {$r->till->code}"),
+                TextEntry::make('where')->label('Where')->state(fn (Sale $r) => $r->till ? "{$r->branch->code} · till {$r->till->code}" : "{$r->branch->code} · back office"),
                 TextEntry::make('net_minor')->label('Before tax')->formatStateUsing(fn ($state, Sale $r) => self::money($state, $r)),
                 TextEntry::make('tax_minor')->label('Tax')->formatStateUsing(fn ($state, Sale $r) => self::money($state, $r)),
                 TextEntry::make('total_minor')->label('Total')->weight('bold')->formatStateUsing(fn ($state, Sale $r) => self::money($state, $r)),

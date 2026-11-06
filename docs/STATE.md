@@ -29,7 +29,8 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 
 ## Owner's list of 2026-11-06 — branch `office-returns-and-fixes`
 - Stage 1: Tauri ACL (`pos/src-tauri` and `desktop/src-tauri`: `build.rs` app manifest, capabilities `setup` local and `till` / `office` remote; Till 0.29.0, Back Office 1.0.1), PDF limit 800 rows (`Exporter::PDF_ROW_LIMIT`, measured), ledger filters, `PriceListExport`, `CatalogService::switchOnBatches`. Tests: ListExportsTest.
-- Still to do. Stage 2 returns: setting Off / Allow / Require manager's PIN, default Require on every return, with a value limit; reason per return; medicines not restocked (quarantine); back-office returns from a receipt with store, resaleable or damaged, refund by store credit, account or a chosen money account, approved by someone else; return slip; returns report. Stage 3: fee services (no stock) with readings on the patient (BP, pulse, sugar, weight), trend, slip, high-reading flag. All free. Owner's answers are in this section's PR thread and DECISIONS.
+- Stage 2 returns (branch `returns`): `ReturnService` (`book`, `fromOffice`, REASONS, quarantine store `warehouses.is_quarantine`, settings `returns.manager_approval`, `approval_above_minor`, `medicines_to_quarantine`), `OfficeReturns`, `OfficeReturnResource`, `ReturnsReport` (with `slip`), `ReturnScreen.tsx`. Sales now allow null till, device, shift and seq for back-office returns; `sale_payments.account_id` with AutoPoster paying from that account. Tests: ReturnsTest, PosSaleTest. `installCompany` in tests turns approval and quarantine off.
+- Stage 3: `products.reading_kind`, `HealthReading`, `HealthReadings` (flags, `fromSale`), `HealthReadingsPage`, till `ReadingPrompt.tsx`, `reading.ts`. Tests: HealthReadingsTest, PosSaleTest.
 - Ledger "exported empty": not a fault; the owner found the PDF complete on opening it again.
 
 ## Errors say what happened; supplier codes automatic — branch `supplier-terms-empty`

@@ -96,6 +96,8 @@ class PosController extends Controller
             ])->values(),
             'receipt_footer' => $settings->get('receipt.footer', $device->tenant_id),
             'show_stock' => (bool) $settings->get('pos.show_stock', $device->tenant_id),
+            'returns' => ['approval' => (string) $settings->get('returns.manager_approval', $device->tenant_id), 'above_minor' => (int) $settings->get('returns.approval_above_minor', $device->tenant_id),
+                'reasons' => ReturnService::REASONS],
             'auto_print_receipt' => (bool) $settings->get('pos.auto_print_receipt', $device->tenant_id),
             'shift_per_person' => (bool) $settings->get('pos.shift_per_person', $device->tenant_id), // another person's open shift: close it first
             'idle_lock_minutes' => (int) $settings->get('pos.idle_lock_minutes', $device->tenant_id), // lock the till after this long untouched (0 = never)
@@ -210,7 +212,7 @@ class PosController extends Controller
                 'id' => $p->id, 'sku' => $p->sku, 'name' => $p->name, 'category_id' => $p->category_id, 'track_stock' => $p->track_stock, 'plu' => $p->plu, 'location' => $p->location, 'dosage' => $p->dosage,
                 'station' => $p->station, 'modifier_group_ids' => $p->modifier_group_ids ?? [], 'track_serials' => $p->track_serials, 'warranty_months' => $p->warranty_months,
                 'style_id' => $p->style_id, 'size' => $p->size, 'colour' => $p->colour,
-                'service_minutes' => $p->service_minutes, 'is_pack' => $p->pack !== null, 'licence_keys' => $p->licence_keys,
+                'service_minutes' => $p->service_minutes, 'reading_kind' => $p->reading_kind, 'is_pack' => $p->pack !== null, 'licence_keys' => $p->licence_keys,
                 'is_container' => $p->is_container, 'deposit_product_id' => $p->deposit_product_id, 'deposit_per_unit' => $p->deposit_per_unit === null ? null : (string) $p->deposit_per_unit,
                 'drug' => $p->drug_schedule ? ['schedule' => $p->drug_schedule, 'generic_name' => $p->generic_name, 'strength' => $p->strength,
                     'dosage_form' => $p->dosage_form, 'active_ingredients' => $p->active_ingredients ?? [], 'nhis_price_minor' => $p->nhis_price_minor] : null,
@@ -441,6 +443,7 @@ class PosController extends Controller
             'lines.*.unit_price_minor' => ['required', 'integer', 'min:0'],
             'lines.*.line_total_minor' => ['required', 'integer'], // negative for empties handed back
             'lines.*.note' => ['nullable', 'string', 'max:255'],
+            'lines.*.reading' => ['nullable', 'array'],
             'lines.*.dosage' => ['nullable', 'string', 'max:255'],
             'lines.*.serials' => ['nullable', 'array', 'max:500'], 'lines.*.serials.*' => ['string', 'max:80'],
             'lines.*.repair_job_id' => ['nullable', 'uuid'],
@@ -606,7 +609,7 @@ class PosController extends Controller
     {
         $request->validate([
             'id' => ['required', 'uuid'], 'device_seq' => ['required', 'integer', 'min:1'], 'occurred_at' => ['required', 'date'], 'shift_id' => ['required', 'uuid'],
-            'original_sale_id' => ['nullable', 'uuid'], 'reason' => ['required', 'string', 'max:255'], 'customer_id' => ['nullable', 'uuid'],
+            'original_sale_id' => ['nullable', 'uuid'], 'reason' => ['required', 'string', 'max:255'], 'reason_code' => ['nullable', 'string', 'max:20'], 'customer_id' => ['nullable', 'uuid'],
             'lines' => ['required', 'array', 'min:1', 'max:200'], 'lines.*.qty' => ['required', 'string', 'max:20'],
             'refunds' => ['nullable', 'array', 'max:10'], 'refunds.*.method' => ['required', 'string', 'max:20'], 'refunds.*.amount_minor' => ['required', 'integer', 'min:1'],
         ]);
@@ -643,7 +646,7 @@ class PosController extends Controller
                 'discount_minor' => (int) $l->discount_minor, 'promotions' => $l->promotions ?? [], 'note' => $l->note, 'dosage' => $l->dosage, 'serials' => $l->serials ?? [],
                 'id' => $l->id, 'staff_id' => $l->staff_id, 'service_pass_id' => $l->service_pass_id,
                 'warranty_until' => $l->serials ? SerialNumber::where('sale_id', $s->id)->whereIn('serial', $l->serials)->max('warranty_until') : null])->values(),
-            'tip_minor' => (int) $s->tip_minor,
+            'tip_minor' => (int) $s->tip_minor, 'approved_by' => $s->kind === 'return' ? $s->discount_approved_by_name : null,
             'comment' => $s->comment_on_receipt ? $s->comment : null, 'walk_in' => $s->walk_in_name || $s->walk_in_phone ? ['name' => $s->walk_in_name, 'phone' => $s->walk_in_phone] : null,
             'licence_keys' => LicenceKeyService::forSale($s->id), // Services: printed on the receipt
             'order_number' => $s->dining_order_id ? DiningOrder::whereKey($s->dining_order_id)->value('number') : null,

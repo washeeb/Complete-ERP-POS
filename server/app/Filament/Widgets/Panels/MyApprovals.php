@@ -7,6 +7,7 @@ use App\Filament\Pages\TimeApprovals;
 use App\Filament\Resources\DirectPurchases\DirectPurchaseResource;
 use App\Filament\Resources\ExpenseClaims\ExpenseClaimResource;
 use App\Filament\Resources\LeaveRequests\LeaveRequestResource;
+use App\Filament\Resources\OfficeReturns\OfficeReturnResource;
 use App\Filament\Resources\PurchaseOrders\PurchaseOrderResource;
 use App\Filament\Resources\StockAdjustments\StockAdjustmentResource;
 use App\Filament\Resources\StockCostRuns\StockCostRunResource;
@@ -30,6 +31,7 @@ class MyApprovals extends Widget
     private const KINDS = [
         'po' => ['Purchase orders', 'purchasing.approve', 'purchase_orders', 'pending_approval', PurchaseOrderResource::class, 'branch_id', 'created_by'],
         'adjustment' => ['Stock adjustments', 'stock.adjust.approve', 'stock_adjustments', 'submitted', StockAdjustmentResource::class, 'branch_id', 'submitted_by'],
+        'return' => ['Returns', 'returns.office.approve', 'office_returns', 'submitted', OfficeReturnResource::class, 'branch_id', 'created_by'],
         'direct' => ['Direct purchases', 'purchasing.direct.approve', 'direct_purchases', 'submitted', DirectPurchaseResource::class, 'branch_id', 'submitted_by'],
         'cost_run' => ['Cost runs', 'stock.cost.approve', 'stock_cost_runs', 'submitted', StockCostRunResource::class, null, 'submitted_by'],
         'claim' => ['Expense claims', 'expenses.approve', 'expense_claims', 'submitted', ExpenseClaimResource::class, 'branch_id', 'claimant_id'],

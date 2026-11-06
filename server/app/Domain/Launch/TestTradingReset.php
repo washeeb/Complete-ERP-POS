@@ -32,7 +32,7 @@ final class TestTradingReset
         'supplier_returns', 'supplier_return_lines', 'waybills',
         // Purchasing and suppliers' accounts
         'purchase_orders', 'purchase_order_lines', 'purchase_requests', 'purchase_request_lines', 'goods_receipts', 'goods_receipt_lines', 'supplier_bills', 'supplier_bill_lines', 'supplier_payments', 'supplier_ledger',
-        'supplier_balances', 'payable_allocations', 'consignment_sales', 'landed_costs', 'landed_cost_charges', 'landed_cost_lines', 'stock_cost_runs', 'stock_cost_run_lines', 'direct_purchases', 'direct_purchase_lines', 'price_suggestions',
+        'supplier_balances', 'payable_allocations', 'consignment_sales', 'landed_costs', 'landed_cost_charges', 'landed_cost_lines', 'stock_cost_runs', 'stock_cost_run_lines', 'direct_purchases', 'direct_purchase_lines', 'office_returns', 'health_readings', 'price_suggestions',
         // Projects' costs, stock issued to them, time and what was moved out of work in progress
         'project_issues', 'project_costs', 'project_billings', 'time_entries',
         // Service desk tickets and maintenance jobs (the equipment register and plans stay)

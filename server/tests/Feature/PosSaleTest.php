@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Access\AccessService;
+use App\Domain\Catalog\CatalogService;
 use App\Domain\Customers\CustomerService;
 use App\Domain\Devices\DeviceService;
 use App\Domain\Inventory\InventoryService;
@@ -8,6 +9,7 @@ use App\Domain\Inventory\StockLedger;
 use App\Domain\Pos\ReturnService;
 use App\Domain\Pricing\PriceResolver;
 use App\Domain\Pricing\TaxCalculator;
+use App\Domain\Support\DomainException;
 use App\Filament\Resources\Devices\DeviceResource;
 use App\Filament\Resources\Roles\RoleResource;
 use App\Filament\Resources\Sales\Pages\ListSales;
@@ -19,6 +21,8 @@ use App\Filament\Resources\StockMovements\StockMovementResource;
 use App\Filament\Resources\TaxRates\TaxRateResource;
 use App\Models\AuditEvent;
 use App\Models\Customer;
+use App\Models\Device;
+use App\Models\HealthReading;
 use App\Models\OutboxEvent;
 use App\Models\PriceList;
 use App\Models\Product;
@@ -27,7 +31,10 @@ use App\Models\Sale;
 use App\Models\Shift;
 use App\Models\StockLevel;
 use App\Models\StockMovement;
+use App\Models\TaxGroup;
 use App\Models\Till;
+use App\Models\Uom;
+use App\Models\User;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
 use App\Security\ScopeType;
@@ -403,4 +410,49 @@ it('filters and sorts till sales by teller, total and how they were paid', funct
     $list()->sortTable('total_minor')->assertCanSeeTableRecords([$card, $cash], inOrder: true);
     $list()->sortTable('paid_by')->assertCanSeeTableRecords([$card, $cash], inOrder: true); // "card" before "cash"
     $list()->sortTable('cashier_name')->assertSuccessful();
+});
+
+it('needs a manager for a return when required, takes the reason, and leaves it for review when only allowed', function () {
+    $sold = $this->withToken($this->token)->postJson('/api/v1/pos/sales', cart($this, [[$this->bread, true, '2']]))->assertCreated()->json('sale');
+    $line = $sold['lines'][0]['id'];
+    $total = $sold['total_minor'];
+    app('auth')->forgetGuards();
+    $device = Device::query()->first();
+    $cashier = User::where('username', 'esi')->sole();
+    $settings = app(Settings::class);
+    $settings->set(actorFor($this->owner), 'returns.manager_approval', 'require');
+    $payload = fn (int $seq) => ['id' => (string) Str::uuid7(), 'device_seq' => $seq, 'occurred_at' => now()->toIso8601String(), 'shift_id' => $this->shiftId, 'original_sale_id' => $sold['id'],
+        'reason' => 'Wrong item', 'reason_code' => 'wrong_item', 'lines' => [['original_line_id' => $line, 'qty' => '1']], 'refunds' => [['method' => 'cash', 'amount_minor' => (int) ($total / 2)]]];
+
+    expect(fn () => app(ReturnService::class)->post($device, $cashier, $payload(900)))->toThrow(DomainException::class, 'A manager must approve');
+
+    $settings->set(actorFor($this->owner), 'returns.manager_approval', 'allow');
+    $done = app(ReturnService::class)->post($device, $cashier, $payload(901))['sale'];
+    expect($done->return_reason_code)->toBe('wrong_item')->and($done->discount_approved_by_name)->toBeNull()
+        ->and(DB::table('review_items')->where('type', 'return_unsigned')->exists())->toBeTrue();
+
+    $settings->set(actorFor($this->owner), 'returns.approval_above_minor', 999999);
+    $settings->set(actorFor($this->owner), 'returns.manager_approval', 'require');
+    $this->withToken($this->token)->getJson('/api/v1/pos/bootstrap')->assertOk()->assertJsonPath('returns.approval', 'require')->assertJsonPath('returns.reasons.wrong_item', 'Wrong item');
+});
+
+it('keeps a reading sold at the till against the customer, and never refuses a sale for a bad one', function () {
+    $tax = TaxGroup::query()->first();
+    $this->actingAs(withMfa($this->owner), 'web');
+    $service = app(CatalogService::class)->saveProduct(actorFor($this->owner), new Product, ['name' => 'Blood pressure check', 'base_uom_id' => Uom::where('code', 'PC')->value('id'), 'tax_group_id' => $tax->id,
+        'track_stock' => false, 'is_active' => true, 'reading_kind' => 'bp', 'prices' => [['price_list_id' => PriceList::where('is_default', true)->value('id'), 'uom_id' => Uom::where('code', 'PC')->value('id'), 'min_qty' => '1', 'amount' => '5.00']]])->fresh(['units', 'prices']);
+    app('auth')->forgetGuards();
+    $this->withToken($this->token)->getJson('/api/v1/pos/bootstrap')->assertOk();
+
+    $sale = cart($this, [[$service, true, '1']]);
+    $sale['lines'][0]['reading'] = ['systolic' => 185, 'diastolic' => 95, 'pulse' => 74];
+    $sale['lines'][0]['note'] = '185/95 mmHg, pulse 74';
+    $this->withToken($this->token)->postJson('/api/v1/pos/sales', $sale)->assertCreated();
+    $r = HealthReading::sole();
+    expect($r->flag)->toBe('urgent')->and($r->summary())->toBe('185/95 mmHg, pulse 74')->and($r->sale_id)->not->toBeNull();
+
+    $bad = cart($this, [[$service, true, '1']]);
+    $bad['lines'][0]['reading'] = ['systolic' => 5, 'diastolic' => 900];
+    $this->withToken($this->token)->postJson('/api/v1/pos/sales', $bad)->assertCreated();
+    expect(HealthReading::count())->toBe(1);
 });

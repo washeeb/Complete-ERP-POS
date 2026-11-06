@@ -36,6 +36,7 @@ import { SlipScreen } from './Slip'
 import type { DrawerSlip } from '../slip'
 import { checkCashLimit } from '../drawer'
 import { confirmLeave, useLeaveWarning } from '../unsaved'
+import { ReadingPrompt } from './ReadingPrompt'
 import { cachedCustomers, refreshCustomers } from '../customers'
 import { CustomerPicker } from './CustomerPicker'
 import { Pay } from './Pay'
@@ -69,6 +70,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   const [payError, setPayError] = useState('')
   const [customers, setCustomers] = useState<TillCustomer[]>([])
   const [customer, setCustomer] = useState<TillCustomer | null>(null)
+  const [readingPick, setReadingPick] = useState<{ product: Product; unit: Unit } | null>(null)
   const [picking, setPicking] = useState(false)
   // seq: a retry of the same sale (after an approval) keeps its receipt number, so numbers have no gaps.
   type Approvals = { credit?: { username: string; pin: string }; discount?: { username: string; pin: string }; offlineApproverId?: string; seq?: number; rx?: Rx; tip?: number
@@ -224,6 +226,10 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       return setCounterPick(product) // a dish with choices: ask them first
     }
     const u = unit ?? product.units.find((x) => x.is_base) ?? product.units[0]
+    if (product.reading_kind) {
+      setQuery('')
+      return setReadingPick({ product, unit: u }) // a health check: ask for the reading
+    }
     setLines((l) => addToCart(l, product, u))
     setQuery('')
     setMessage('')
@@ -723,6 +729,13 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
         onBack={() => { setBillOpen(null); setFloorOpen(true) }} />}
       {counterPick && restaurant && <ModifierPicker product={counterPick} restaurant={restaurant} tableService={false}
         onDone={(c) => addWithChoices(counterPick, c)} onCancel={() => setCounterPick(null)} />}
+      {readingPick && <ReadingPrompt kind={readingPick.product.reading_kind!} name={readingPick.product.name} onCancel={() => setReadingPick(null)}
+        onDone={(reading, note) => {
+          const { product, unit } = readingPick
+          setLines((l) => [...l, { key: `chk:${uuidv7()}`, product, unit, qtyMilli: 1000, reading, note }])
+          setReadingPick(null)
+          searchRef.current?.focus()
+        }} />}
       {stylePick && <StylePicker style={stylePick} products={products} onPick={(p) => { setStylePick(null); add(p, p.units.find((u) => u.is_base) ?? p.units[0]) }}
         onCancel={() => setStylePick(null)} />}
       {alterationsOpen && <AlterationsScreen currency={boot.company.currency} exponent={boot.company.exponent} onCollect={collectAlteration} onClose={() => setAlterationsOpen(false)} />}

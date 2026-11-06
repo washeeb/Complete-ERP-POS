@@ -19,18 +19,21 @@ use App\Domain\Sync\ReviewQueue;
 use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\Device;
+use App\Models\OfficeReturn;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\ProductUom;
 use App\Models\Sale;
 use App\Models\SaleLine;
 use App\Models\SalePayment;
+use App\Models\Shift;
 use App\Models\Till;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
 use App\Support\Qty;
 use App\Support\Settings;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -40,9 +43,20 @@ use Illuminate\Support\Str;
  * goods back and refunds to the original tenders (cash, MoMo/card with a reference, the customer's account, points, the
  * gift card). Without a receipt or after the period: store credit only, approved by a supervisor's PIN. A return is a
  * sale of kind "return" with negative quantities and amounts, numbered on the till's own series; returns need the server.
+ *
+ * Manager's approval (owner request 2026-11-06, Settings → Returns): Require (default) needs a PIN on every return above
+ * the limit; Allow lets the cashier go on and puts it in the review queue for a manager; Off leaves it to the rules above.
+ * Goods that may not go back on sale (damaged, expired, medicines once they have left the pharmacy) go to the branch's
+ * quarantine store: stock with a value that no till can sell, to be disposed of or sent back to the supplier.
  */
 final class ReturnService
 {
+    public const REASONS = ['wrong_item' => 'Wrong item', 'damaged' => 'Damaged', 'expired' => 'Expired or short-dated', 'changed_mind' => 'Customer changed their mind',
+        'doctor_changed' => 'Doctor changed the treatment', 'cashier_error' => 'Cashier\'s mistake', 'other' => 'Other'];
+
+    /** These may not go back on sale, whatever the product. */
+    private const NOT_RESALEABLE = ['damaged', 'expired'];
+
     public function __construct(
         private readonly Recorder $recorder,
         private readonly Authorizer $authz,
@@ -100,6 +114,7 @@ final class ReturnService
         if ($reason === '') {
             throw new DomainException('Give the reason for the return.');
         }
+        $code = array_key_exists($p['reason_code'] ?? '', self::REASONS) ? $p['reason_code'] : 'other';
         $original = ! empty($p['original_sale_id']) ? Sale::with('lines', 'payments')->where('kind', 'sale')->findOrFail($p['original_sale_id']) : null;
         $info = $original ? $this->returnable($original) : null;
         $withReceipt = $original && $info['within_period'];
@@ -112,21 +127,7 @@ final class ReturnService
                 throw new DomainException('Enter what is coming back.');
             }
             if ($original) {
-                $ol = $original->lines->firstWhere('id', $l['original_line_id'] ?? null) ?? throw new DomainException('That line is not on the receipt.');
-                $left = Qty::toMilli(collect($info['lines'])->firstWhere('id', $ol->id)['returnable_qty']);
-                if ($qty > $left) {
-                    throw new DomainException("{$ol->name}: only ".Qty::format($left)." {$ol->uom_code} can still be returned.", 'over_return');
-                }
-                $gross = Qty::divRound($ol->line_total_minor * $qty, Qty::toMilli((string) $ol->qty)); // the price actually paid
-                $rates = array_map(fn ($b) => ['code' => $b['code'], 'name' => $b['name'], 'rate_bp' => $b['rate_bp']], $ol->tax_breakdown ?? []);
-                // Serial-numbered: the units named, else the first ones sold on that line.
-                $serials = $ol->serials ? (SerialRegistry::normalise($l['serials'] ?? []) ?: array_slice($ol->serials, 0, intdiv($qty, 1000))) : null;
-                if ($serials && array_diff($serials, $ol->serials)) {
-                    throw new DomainException('A serial number given was not sold on that line.', 'serial_conflict');
-                }
-                $lines[] = ['no' => $i + 1, 'product' => Product::findOrFail($ol->product_id), 'unit' => ProductUom::with('uom')->findOrFail($ol->product_uom_id),
-                    'qty' => $qty, 'unit_price' => $ol->unit_price_minor, 'gross' => $gross, 'rates' => $rates, 'original_line_id' => $ol->id, 'serials' => $serials,
-                    'staff_id' => $ol->staff_id]; // Services: the commission on it comes back off the same person
+                $lines[] = $this->receiptLine($original, $info, $i + 1, $l, $qty);
             } else {
                 $unit = ProductUom::with('uom')->findOrFail($l['product_uom_id'] ?? null);
                 $product = Product::with('taxGroup.rates')->findOrFail($unit->product_id);
@@ -176,25 +177,145 @@ final class ReturnService
             $approvedBy = $this->approvals->verify($device, $p['approval'], 'pos.return.no_receipt', $till, null, $total, $user->id)->name;
             $refunds = [['method' => 'store_credit', 'amount_minor' => $total, 'reference' => null, 'provider' => null]];
         }
+        // A manager's approval of every return, on top of the rules above.
+        $mode = (string) $this->settings->get('returns.manager_approval', $device->tenant_id);
+        $unsigned = false;
+        if ($approvedBy === null && $mode !== 'off' && $total > (int) $this->settings->get('returns.approval_above_minor', $device->tenant_id)) {
+            if (! empty($p['approval'])) {
+                $approvedBy = $this->approvals->verify($device, $p['approval'], 'pos.return.no_receipt', $till, null, $total, $user->id)->name;
+            } elseif ($mode === 'require') {
+                throw new DomainException('A manager must approve this return: their username and PIN.', 'return_needs_manager');
+            } else {
+                $unsigned = true;
+            }
+        }
         $customer = $original?->customer_id ? Customer::find($original->customer_id) : (! empty($p['customer_id']) ? Customer::find($p['customer_id']) : null);
         $branch = Branch::findOrFail($till->branch_id);
         $warehouse = Warehouse::findOrFail($till->warehouse_id);
         $receiptNo = sprintf('%s-%s%s-%06d', $branch->code, $till->code, $device->receipt_series, $p['device_seq']);
         $actor = Actor::user($user, 'pos', $device->id);
         $occurredAt = Carbon::parse($p['occurred_at'] ?? now());
+        $reasonLabel = $reason;
 
-        return $this->recorder->transaction(function () use ($p, $device, $till, $shift, $user, $original, $lines, $total, $refunds, $customer, $branch, $warehouse, $receiptNo, $actor, $occurredAt, $reason, $approvedBy, $inclusive) {
+        return $this->book($device, $till, $shift, $user, $original, $lines, $total, $refunds, $customer, $branch, $warehouse, $receiptNo, $actor, $occurredAt,
+            ['id' => $p['id'], 'device_seq' => $p['device_seq'], 'hash' => hash('sha256', json_encode($p)), 'reason' => $reasonLabel, 'code' => $code, 'approved_by' => $approvedBy, 'inclusive' => (bool) $inclusive, 'unsigned' => $unsigned]);
+    }
+
+    /** What comes back from one line of the receipt, at the price actually paid. */
+    private function receiptLine(Sale $original, array $info, int $no, array $l, int $qty): array
+    {
+        $ol = $original->lines->firstWhere('id', $l['original_line_id'] ?? null) ?? throw new DomainException('That line is not on the receipt.');
+        $left = Qty::toMilli(collect($info['lines'])->firstWhere('id', $ol->id)['returnable_qty']);
+        if ($qty > $left) {
+            throw new DomainException("{$ol->name}: only ".Qty::format($left)." {$ol->uom_code} can still be returned.", 'over_return');
+        }
+        $gross = Qty::divRound($ol->line_total_minor * $qty, Qty::toMilli((string) $ol->qty)); // the price actually paid
+        $rates = array_map(fn ($b) => ['code' => $b['code'], 'name' => $b['name'], 'rate_bp' => $b['rate_bp']], $ol->tax_breakdown ?? []);
+        // Serial-numbered: the units named, else the first ones sold on that line.
+        $serials = $ol->serials ? (SerialRegistry::normalise($l['serials'] ?? []) ?: array_slice($ol->serials, 0, intdiv($qty, 1000))) : null;
+        if ($serials && array_diff($serials, $ol->serials)) {
+            throw new DomainException('A serial number given was not sold on that line.', 'serial_conflict');
+        }
+
+        return ['no' => $no, 'product' => Product::findOrFail($ol->product_id), 'unit' => ProductUom::with('uom')->findOrFail($ol->product_uom_id),
+            'qty' => $qty, 'unit_price' => $ol->unit_price_minor, 'gross' => $gross, 'rates' => $rates, 'original_line_id' => $ol->id, 'serials' => $serials,
+            'staff_id' => $ol->staff_id]; // Services: the commission on it comes back off the same person
+    }
+
+    /** For the back office: the lines of a return against a receipt. @param list<array{original_line_id: string, qty: string}> $rows */
+    public function receiptLines(Sale $original, array $rows): array
+    {
+        $info = $this->returnable($original);
+        $lines = [];
+        foreach (array_values($rows) as $i => $l) {
+            $qty = Qty::toMilli((string) ($l['qty'] ?? '0'));
+            if ($qty <= 0) {
+                throw new DomainException('Enter what is coming back.');
+            }
+            $lines[] = $this->receiptLine($original, $info, $i + 1, $l, $qty);
+        }
+        if ($lines === []) {
+            throw new DomainException('Enter what is coming back.');
+        }
+
+        return $lines;
+    }
+
+    public function totalOf(Sale $original, array $lines): int
+    {
+        return array_sum(array_map(fn ($l) => TaxCalculator::line($l['gross'], $l['rates'], (bool) $original->prices_include_tax)['gross'], $lines));
+    }
+
+    /** Posts an approved return from the back office: an ordinary return on the receipt, with no till, device or shift. */
+    public function fromOffice(Actor $actor, OfficeReturn $doc, string $receiptNo): Sale
+    {
+        $original = Sale::with('lines', 'payments')->findOrFail($doc->original_sale_id);
+        $rows = array_map(fn ($l) => ['original_line_id' => $l['line_id'], 'qty' => $l['qty']], $doc->lines);
+        $damaged = collect($doc->lines)->where('damaged', true)->pluck('line_id')->all();
+        $lines = array_map(function ($l) use ($damaged) {
+            $l['damaged'] = in_array($l['original_line_id'], $damaged, true);
+            $l['t'] = null;
+
+            return $l;
+        }, $this->receiptLines($original, $rows));
+        foreach ($lines as &$l) {
+            $l['t'] = TaxCalculator::line($l['gross'], $l['rates'], (bool) $original->prices_include_tax);
+        }
+        unset($l);
+        $total = array_sum(array_map(fn ($l) => $l['t']['gross'], $lines));
+        $refund = match ($doc->refund_method) {
+            'money' => ['method' => 'office', 'amount_minor' => $total, 'reference' => $doc->reference, 'provider' => null, 'account_id' => $doc->account_id],
+            'account' => ['method' => 'account', 'amount_minor' => $total, 'reference' => null, 'provider' => null],
+            default => ['method' => 'store_credit', 'amount_minor' => $total, 'reference' => null, 'provider' => null],
+        };
+        $user = $actor->user;
+        $result = $this->book(null, null, null, $user, $original, $lines, $total, [$refund], $original->customer_id ? Customer::find($original->customer_id) : null, Branch::findOrFail($doc->branch_id),
+            Warehouse::findOrFail($doc->warehouse_id), $receiptNo, $actor, now(), ['id' => (string) Str::uuid7(), 'device_seq' => null, 'hash' => hash('sha256', $doc->id), 'reason' => $doc->reason ?: self::REASONS[$doc->reason_code],
+                'code' => $doc->reason_code, 'approved_by' => $user->name, 'inclusive' => (bool) $original->prices_include_tax, 'unsigned' => false]);
+
+        return $result['sale'];
+    }
+
+    /** Where this comes back to: quarantine, or the shelf it was sold from. */
+    private function goesToQuarantine(array $line, string $code, string $tenantId): bool
+    {
+        return ! empty($line['damaged']) || in_array($code, self::NOT_RESALEABLE, true)
+            || ($line['product']->drug_schedule && (bool) $this->settings->get('returns.medicines_to_quarantine', $tenantId));
+    }
+
+    /** The branch's quarantine store: made the first time it is needed. */
+    private function quarantine(Actor $actor, Warehouse $warehouse): Warehouse
+    {
+        $branch = Branch::findOrFail($warehouse->branch_id);
+        $found = Warehouse::where('branch_id', $branch->id)->where('is_quarantine', true)->first();
+        if ($found) {
+            return $found;
+        }
+        $q = (new Warehouse)->forceFill(['tenant_id' => $warehouse->tenant_id, 'branch_id' => $branch->id, 'code' => mb_substr("{$branch->code}-QUAR", 0, 20), 'name' => "{$branch->name} quarantine",
+            'is_active' => true, 'is_quarantine' => true]);
+
+        return $this->recorder->save($actor, $q, 'warehouse.created', 'Quarantine for returned goods', $branch->id);
+    }
+
+    /** @param array{id: string, device_seq: ?int, hash: string, reason: string, code: string, approved_by: ?string, inclusive: bool, unsigned: bool} $meta */
+    private function book(?Device $device, ?Till $till, ?Shift $shift, User $user, ?Sale $original, array $lines, int $total, array $refunds, ?Customer $customer, Branch $branch,
+        Warehouse $warehouse, string $receiptNo, Actor $actor, CarbonInterface $occurredAt, array $meta): array
+    {
+        ['reason' => $reason, 'code' => $code, 'approved_by' => $approvedBy, 'inclusive' => $inclusive] = $meta;
+        $tenantId = $branch->tenant_id;
+
+        return $this->recorder->transaction(function () use ($device, $till, $shift, $user, $original, $lines, $total, $refunds, $customer, $branch, $warehouse, $receiptNo, $actor, $occurredAt, $meta, $reason, $code, $approvedBy, $inclusive, $tenantId) {
             $sale = new Sale;
             $sale->forceFill([
-                'id' => $p['id'], 'tenant_id' => $device->tenant_id, 'branch_id' => $branch->id, 'warehouse_id' => $warehouse->id, 'till_id' => $till->id,
-                'device_id' => $device->id, 'shift_id' => $shift->id, 'device_seq' => $p['device_seq'], 'receipt_no' => $receiptNo, 'cashier_id' => $user->id,
+                'id' => $meta['id'], 'tenant_id' => $tenantId, 'branch_id' => $branch->id, 'warehouse_id' => $warehouse->id, 'till_id' => $till?->id,
+                'device_id' => $device?->id, 'shift_id' => $shift?->id, 'device_seq' => $meta['device_seq'], 'receipt_no' => $receiptNo, 'cashier_id' => $user->id,
                 'cashier_name' => $user->name, 'price_list_id' => $original?->price_list_id ?? PriceList::where('is_default', true)->value('id'),
                 'prices_include_tax' => (bool) $inclusive, 'currency_code' => $original?->currency_code ?? PriceList::where('is_default', true)->value('currency_code'),
                 'net_minor' => -array_sum(array_map(fn ($l) => $l['t']['net'], $lines)), 'tax_minor' => -array_sum(array_map(fn ($l) => $l['t']['tax'], $lines)),
                 'total_minor' => -$total, 'paid_minor' => -$total, 'change_minor' => 0,
                 'tax_breakdown' => array_map(fn ($b) => ['amount_minor' => -$b['amount_minor']] + $b, TaxCalculator::sum(array_map(fn ($l) => $l['t']['breakdown'], $lines))),
-                'status' => 'posted', 'payload_hash' => hash('sha256', json_encode($p)), 'offline' => false, 'occurred_at' => $occurredAt, 'received_at' => now(),
-                'customer_id' => $customer?->id, 'kind' => 'return', 'original_sale_id' => $original?->id, 'return_reason' => mb_substr($reason, 0, 255),
+                'status' => 'posted', 'payload_hash' => $meta['hash'], 'offline' => false, 'occurred_at' => $occurredAt, 'received_at' => now(),
+                'customer_id' => $customer?->id, 'kind' => 'return', 'original_sale_id' => $original?->id, 'return_reason' => mb_substr($reason, 0, 255), 'return_reason_code' => $code,
                 'discount_approved_by_name' => $approvedBy,
             ])->save();
             foreach ($lines as $l) {
@@ -202,16 +323,21 @@ final class ReturnService
                     'product_uom_id' => $l['unit']->id, 'uom_code' => $l['unit']->uom->code, 'factor' => $l['unit']->factor, 'qty' => Qty::format(-$l['qty']),
                     'unit_price_minor' => $l['unit_price'], 'line_total_minor' => -$l['t']['gross'], 'net_minor' => -$l['t']['net'], 'tax_minor' => -$l['t']['tax'],
                     'tax_breakdown' => array_map(fn ($b) => ['amount_minor' => -$b['amount_minor']] + $b, $l['t']['breakdown']), 'original_line_id' => $l['original_line_id'],
-                    'serials' => $l['serials'], 'staff_id' => $l['staff_id'] ?? null]);
+                    'serials' => $l['serials'], 'staff_id' => $l['staff_id'] ?? null, 'returned_to' => $this->goesToQuarantine($l, $code, $tenantId) ? 'quarantine' : 'shelf']);
             }
             // Goods come back into the batch they were sold from (batch-tracked products).
             $soldFrom = $original ? DB::table('stock_movements')->where('source_type', 'sale')->where('source_id', $original->id)->whereNotNull('batch_id')
                 ->orderByDesc('qty_base')->pluck('batch_id', 'product_id') : collect(); // pluck keeps the last row: the batch most was sold from
             app(ConsignmentService::class)->record($actor, $sale); // consignment stock: the consignor's share comes back
             app(ServiceSales::class)->settleReturn($actor, $sale); // sessions given back, unused packs voided, commission and licence keys taken back
-            $this->stock->post($actor, $warehouse, 'sale_return', array_map(fn ($l) => ['product' => $l['product'], 'unit' => $l['unit'], 'qty_milli' => $l['qty'], 'serials' => $l['serials']]
-                + (isset($soldFrom[$l['product']->id]) ? ['batch_id' => $soldFrom[$l['product']->id]] : []), $lines),
-                "Return {$receiptNo}".($original ? " of {$original->receipt_no}" : ''), 'sale', $sale->id, $occurredAt);
+            foreach ([false, true] as $held) {
+                $part = array_values(array_filter($lines, fn ($l) => $this->goesToQuarantine($l, $code, $tenantId) === $held));
+                if ($part !== []) {
+                    $this->stock->post($actor, $held ? $this->quarantine($actor, $warehouse) : $warehouse, 'sale_return', array_map(fn ($l) => ['product' => $l['product'], 'unit' => $l['unit'], 'qty_milli' => $l['qty'], 'serials' => $l['serials']]
+                        + (isset($soldFrom[$l['product']->id]) ? ['batch_id' => $soldFrom[$l['product']->id]] : []), $part),
+                        "Return {$receiptNo}".($original ? " of {$original->receipt_no}" : '').($held ? ': quarantine' : ''), 'sale', $sale->id, $occurredAt);
+                }
+            }
 
             $storeCredit = null;
             foreach ($refunds as $r) {
@@ -227,7 +353,7 @@ final class ReturnService
                     $storeCredit = $this->storedValues->issue($actor, 'store_credit', $r['amount_minor'], 'sale', $sale->id, $receiptNo, $customer);
                     $r['reference'] = $storeCredit->code;
                 }
-                SalePayment::create(['id' => (string) Str::uuid7(), 'sale_id' => $sale->id, 'method' => $r['method'], 'provider' => $r['provider'],
+                SalePayment::create(['id' => (string) Str::uuid7(), 'sale_id' => $sale->id, 'method' => $r['method'], 'provider' => $r['provider'], 'account_id' => $r['account_id'] ?? null,
                     'amount_minor' => -$r['amount_minor'], 'tendered_minor' => -$r['amount_minor'], 'reference' => $r['reference'], 'status' => 'refunded',
                     'approved_by_name' => $approvedBy]);
             }
@@ -235,6 +361,9 @@ final class ReturnService
             if ($original && $customer && $original->points_earned > 0 && $original->total_minor > 0) {
                 $back = intdiv($original->points_earned * $total, $original->total_minor);
                 $this->loyalty->post($actor, $customer, 'reverse', -$back, 'sale', $sale->id, $receiptNo, $occurredAt);
+            }
+            if ($meta['unsigned']) {
+                $this->reviews->add($actor, 'return_unsigned', 'sale', $sale->id, "{$receiptNo}: taken back with no manager's approval: {$reason}", [], $branch->id);
             }
             if (! $original) {
                 $this->reviews->add($actor, 'return_no_receipt', 'sale', $sale->id, "{$receiptNo}: goods taken back without a receipt for store credit (approved by {$approvedBy}): {$reason}", [], $branch->id);

@@ -16,6 +16,7 @@ use App\Models\TaxGroup;
 use App\Models\Uom;
 use App\Models\User;
 use App\Security\ScopeType;
+use App\Support\Settings;
 use App\Support\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -35,6 +36,9 @@ function installCompany(string $name = 'Demo Ltd', string $email = 'owner@demo.t
     ]);
     app(TenantContext::class)->set($tenant->id);
     activateTestLicense();
+    // Tests of other things take goods back freely; ReturnsTest turns these on.
+    app(Settings::class)->set(actorFor($owner), 'returns.manager_approval', 'off');
+    app(Settings::class)->set(actorFor($owner), 'returns.medicines_to_quarantine', false);
 
     return [$tenant, $owner];
 }
