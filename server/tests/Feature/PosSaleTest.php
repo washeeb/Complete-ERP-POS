@@ -9,6 +9,7 @@ use App\Domain\Inventory\StockLedger;
 use App\Domain\Pos\ReturnService;
 use App\Domain\Pricing\PriceResolver;
 use App\Domain\Pricing\TaxCalculator;
+use App\Domain\Support\DomainException;
 use App\Filament\Resources\Devices\DeviceResource;
 use App\Filament\Resources\Roles\RoleResource;
 use App\Filament\Resources\Sales\Pages\ListSales;
@@ -423,12 +424,12 @@ it('needs a manager for a return when required, takes the reason, and leaves it 
     $payload = fn (int $seq) => ['id' => (string) Str::uuid7(), 'device_seq' => $seq, 'occurred_at' => now()->toIso8601String(), 'shift_id' => $this->shiftId, 'original_sale_id' => $sold['id'],
         'reason' => 'Wrong item', 'reason_code' => 'wrong_item', 'lines' => [['original_line_id' => $line, 'qty' => '1']], 'refunds' => [['method' => 'cash', 'amount_minor' => (int) ($total / 2)]]];
 
-    expect(fn () => app(ReturnService::class)->post($device, $cashier, $payload(900)))->toThrow(App\Domain\Support\DomainException::class, 'A manager must approve');
+    expect(fn () => app(ReturnService::class)->post($device, $cashier, $payload(900)))->toThrow(DomainException::class, 'A manager must approve');
 
     $settings->set(actorFor($this->owner), 'returns.manager_approval', 'allow');
     $done = app(ReturnService::class)->post($device, $cashier, $payload(901))['sale'];
     expect($done->return_reason_code)->toBe('wrong_item')->and($done->discount_approved_by_name)->toBeNull()
-        ->and(DB::table('review_items')->where('kind', 'return_unsigned')->exists())->toBeTrue();
+        ->and(DB::table('review_items')->where('type', 'return_unsigned')->exists())->toBeTrue();
 
     $settings->set(actorFor($this->owner), 'returns.approval_above_minor', 999999);
     $settings->set(actorFor($this->owner), 'returns.manager_approval', 'require');

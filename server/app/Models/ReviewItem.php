@@ -32,7 +32,7 @@ class ReviewItem extends Model
         'discount_over_limit' => 'Discount above the cashier’s limit (offline)',
         'points_overdrawn' => 'Loyalty points used beyond the balance (offline)',
         'stored_value_overdrawn' => 'Gift card or store credit used beyond its balance (offline)',
-        'return_no_receipt' => 'Return without a receipt',
+        'return_no_receipt' => 'Return without a receipt', 'return_unsigned' => 'Return with no manager\'s approval',
         'expired_sold' => 'Expired batch sold offline',
         'pharmacy_unapproved' => 'Prescription medicine sold offline without a valid pharmacist approval',
         'nhis_problem' => 'NHIS taken offline that the card or the NHIS prices did not allow',
