@@ -85,16 +85,16 @@ if ! grep -rqs "ondrej/php" /etc/apt/sources.list /etc/apt/sources.list.d/; then
   done
 fi
 install -d /usr/share/postgresql-common/pgdg
-curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
 echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" > /etc/apt/sources.list.d/pgdg.list
 # Caddy's own signed package source (the web server; it fetches and renews certificates by itself).
-curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/gpg.key | gpg --dearmor --yes -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt -o /etc/apt/sources.list.d/caddy-stable.list
+curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 https://dl.cloudsmith.io/public/caddy/stable/gpg.key | gpg --dearmor --yes -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt -o /etc/apt/sources.list.d/caddy-stable.list
 apt-get update -q
 apt-get install -y -q caddy "php${PHP_V}-fpm" "php${PHP_V}-cli" "php${PHP_V}-pgsql" "php${PHP_V}-intl" "php${PHP_V}-bcmath" "php${PHP_V}-mbstring" \
   "php${PHP_V}-xml" "php${PHP_V}-curl" "php${PHP_V}-zip" "php${PHP_V}-gd" "postgresql-${PG_MAJOR}" "postgresql-client-${PG_MAJOR}"
 if ! command -v composer >/dev/null; then
-  curl -fsSL https://getcomposer.org/installer -o /tmp/composer-setup.php
+  curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 https://getcomposer.org/installer -o /tmp/composer-setup.php
   php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer --quiet
 fi
 
@@ -173,7 +173,7 @@ php artisan migrate --force --no-interaction
 php artisan db:seed --force --no-interaction
 if [ ! -f public/pos/index.html ] && [ -f "$SRC/pos/package.json" ]; then
   say "   Building the till app from source (why: the release did not include it)"
-  command -v npm >/dev/null || { curl -fsSL https://deb.nodesource.com/setup_24.x | bash - >/dev/null && apt-get install -y -q nodejs; }
+  command -v npm >/dev/null || { curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 https://deb.nodesource.com/setup_24.x | bash - >/dev/null && apt-get install -y -q nodejs; }
   (cd "$SRC/pos" && npm ci --no-audit --no-fund && POS_OUT_DIR="$DIR/server/public/pos" npm run build:server)
 fi
 php artisan storage:link --no-interaction >/dev/null 2>&1 || true
