@@ -8,6 +8,7 @@ use App\Domain\Modules\ModuleService;
 use App\Domain\Pricing\PricingRules;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
+use App\Filament\Pages\PriceListExport;
 use App\Filament\Resources\Products\Pages\CreateProduct;
 use App\Filament\Resources\Products\Pages\EditProduct;
 use App\Filament\Resources\Products\Pages\ListProducts;
@@ -63,6 +64,21 @@ use UnitEnum;
 class ProductResource extends Resource
 {
     use GlobalSearch;
+
+    public const BATCHES_NOTE = 'Products already switched on are left as they are. Stock on hand goes into a batch called OPENING with no expiry date, so it gets no expiry warnings; new deliveries need a batch and expiry. This cannot be switched off once batches exist.';
+
+    public static function switchOnBatches(iterable $products): void
+    {
+        @set_time_limit(1800);
+        Progress::start('Switching on batches', is_countable($products) ? count($products) : 0);
+        $r = Erp::run(fn ($actor) => app(CatalogService::class)->switchOnBatches($actor, $products));
+        Progress::finish();
+        if ($r) {
+            $n = Notification::make()->title("{$r['done']} product(s) switched on, {$r['untouched']} already on")
+                ->body($r['skipped'] ? count($r['skipped']).' left out: '.implode(' · ', array_slice($r['skipped'], 0, 8)).(count($r['skipped']) > 8 ? ' …' : '') : null);
+            ($r['skipped'] ? $n->warning()->persistent() : $n->success())->send();
+        }
+    }
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -363,6 +379,15 @@ class ProductResource extends Resource
             ->recordActions([EditAction::make()])
             ->toolbarActions([
                 LabelsAction::bulk(),
+                BulkAction::make('prices')->label('Export prices')->icon(Heroicon::OutlinedListBullet)
+                    ->action(function (Collection $records, $livewire) {
+                        session()->put('price_list.products', $records->pluck('id')->all());
+                        $livewire->redirect(PriceListExport::getUrl());
+                    }),
+                BulkAction::make('batches')->label('Switch on batches and expiry')->icon(Heroicon::OutlinedCalendarDays)
+                    ->visible(fn () => Erp::canAnywhere('catalog.manage'))->requiresConfirmation()
+                    ->modalDescription(self::BATCHES_NOTE)
+                    ->action(fn (Collection $records) => self::switchOnBatches($records))->deselectRecordsAfterCompletion(),
                 BulkAction::make('costRun')->label('Work out cost from selling price')->icon(Heroicon::OutlinedCalculator)
                     ->visible(fn () => StockCostRunResource::canCreate())
                     ->action(function (Collection $records, $livewire) {

@@ -25,7 +25,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 final class Exporter
 {
-    public const PDF_ROW_LIMIT = 5000;
+    /** Measured: about 470 KB of memory a row, and 1,000 rows took 27 seconds and nearly all of the server's 512 MB. */
+    public const PDF_ROW_LIMIT = 800;
 
     public function __construct(private readonly AuditLog $audit) {}
 

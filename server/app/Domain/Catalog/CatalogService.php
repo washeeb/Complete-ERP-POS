@@ -336,6 +336,36 @@ final class CatalogService
         });
     }
 
+    /**
+     * Batches and expiry dates on, for many products at once. A product already on is left exactly as it is. Stock on
+     * hand becomes batch OPENING with no expiry date; new deliveries carry real ones. Serial-numbered products and items
+     * not kept in stock cannot have batches, and a product that fails its own checks is listed, not stopped at.
+     *
+     * @return array{done: int, untouched: int, skipped: list<string>}
+     */
+    public function switchOnBatches(Actor $actor, iterable $products): array
+    {
+        $this->require($actor, 'catalog.manage');
+        $out = ['done' => 0, 'untouched' => 0, 'skipped' => []];
+        foreach ($products as $product) {
+            if ($product->track_batches) {
+                $out['untouched']++;
+            } elseif (! $product->track_stock || $product->track_serials) {
+                $out['skipped'][] = $product->name.($product->track_serials ? ': serial numbers' : ': not kept in stock');
+            } else {
+                try {
+                    $this->saveProduct($actor, $product, ['track_batches' => true], 'Batches and expiry dates switched on in bulk');
+                    $out['done']++;
+                } catch (DomainException $e) {
+                    $out['skipped'][] = "{$product->name}: {$e->getMessage()}";
+                }
+            }
+            Progress::tick($out['done'] + $out['untouched'] + count($out['skipped']));
+        }
+
+        return $out;
+    }
+
     public function saveSimple(Actor $actor, Model $model, array $data, string $permission = 'catalog.manage'): Model
     {
         $this->require($actor, $permission);

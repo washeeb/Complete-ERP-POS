@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-list-scale-ports"
+description = "Enables the list_scale_ports command without any pre-configured scope."
+commands.allow = ["list_scale_ports"]
+
+[[permission]]
+identifier = "deny-list-scale-ports"
+description = "Denies the list_scale_ports command without any pre-configured scope."
+commands.deny = ["list_scale_ports"]

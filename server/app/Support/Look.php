@@ -47,6 +47,7 @@ final class Look
         'count' => ['stock count'], 'transfer' => ['stock transfer'], 'receipt' => ['sales'], 'rfq' => ['requests for quotation'],
         'quote' => ['requests for quotation'], 'contract' => ['contracts and blanket orders'], 'photo' => ['profile'],
         'avatar' => ['profile'], 'dark' => ['profile'], 'theme' => ['profile'],
+        'price list' => ['price list'], 'prices' => ['price list'],
         'invoice' => ['direct purchases'], 'direct' => ['direct purchases'], 'consignment' => ['direct purchases', 'consignment to pay'],
         'cost' => ['cost runs', 'estimated costs'], 'revalue' => ['cost runs'], 'margin' => ['cost runs'],
         'lead' => ['leads'], 'deal' => ['deals', 'pipeline'], 'prospect' => ['leads'], 'follow' => ['follow-ups'], 'campaign' => ['campaigns'], 'crm' => ['pipeline'],

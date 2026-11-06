@@ -6,6 +6,7 @@ use App\Support\Exports\Exporter;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
+use Filament\Notifications\Notification;
 use Filament\Support\Contracts\HasLabel;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\Column;
@@ -24,6 +25,9 @@ use Illuminate\Support\Str;
  */
 final class TableExport
 {
+    /** The PDF library lays out every row in memory: beyond this it runs out of memory or time. */
+    public const PDF_ROWS = Exporter::PDF_ROW_LIMIT;
+
     public static function group(): ActionGroup
     {
         return ActionGroup::make([
@@ -43,6 +47,13 @@ final class TableExport
         $columns = array_values(array_filter($table->getVisibleColumns(), fn (Column $c) => trim(self::plain($c->getLabel())) !== ''));
         $title = self::title($livewire);
         $query = $livewire->getFilteredSortedTableQuery();
+        @set_time_limit(600); // a whole ledger
+        if ($format === 'pdf' && ($n = (clone $query)->toBase()->getCountForPagination()) > self::PDF_ROWS) {
+            Notification::make()->warning()->persistent()->title(number_format($n).' rows are too many for a PDF')
+                ->body('A PDF can hold about '.number_format(self::PDF_ROWS).'. Narrow the list with the filters, such as a date range, or export to Excel or CSV, which take everything.')->send();
+
+            return null;
+        }
         $rows = (function () use ($query, $columns) {
             foreach ($query->lazy(500) as $record) {
                 yield array_map(fn (Column $c) => self::value($c, $record), $columns);

@@ -1,6 +1,13 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- **"Command get_config not allowed by ACL" on the desktop till**: Tauri now refuses pages served from a server unless each of the app's commands is named. The till's commands that touch hardware are now allowed for the till page: silent receipts, slips, the cash drawer, the scale and the unsent-sales backup. Till 0.29.0 and Back Office 1.0.1: install the new version on each PC.
+- **PDF export of a long list failing** (stock ledger): PDFs stop at 800 rows, measured on the server; a longer list says so and suggests filters, or Excel and CSV, which take everything. Scheduled report PDFs follow the same limit.
+### Added
+- **Stock ledger filters**: date range, product, type (all of them), warehouse, category, brand and person; Export follows them.
+- **Price list** (*Pricing & tax*): every product and unit with price before tax, tax and what the customer pays, on a chosen list, by category, brand, supplier, product, status, in stock or priced; stock, cost and margin as columns (cost and margin only for those who set prices); Excel, CSV or PDF with the logo. *Export prices* on ticked products.
+- **Batches and expiry dates switched on in bulk** on ticked products or all of them; those already on stay untouched, and stock on hand becomes batch OPENING.
 ### Changed
 - **Errors say what really happened** (owner request): in place of "Something went wrong on the server", the back office names the field or rule that failed (e.g. *Payment terms days was left empty*, *Code is already used*, someone else changing the same thing), or the part of the program, with a reference to find it in the server log. The message stays until closed. Values and queries are never shown.
 - **Supplier codes are always given by the system** on the form (imports can still bring their own).

@@ -1,0 +1,30 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "till",
+  "description": "The till, served by the server chosen at set-up: only what it calls. The window refuses to open any other site (see on_navigation).",
+  "windows": [
+    "main"
+  ],
+  "local": false,
+  "remote": {
+    "urls": [
+      "http://*",
+      "https://*",
+      "http://*:*",
+      "https://*:*"
+    ]
+  },
+  "permissions": [
+    "core:default",
+    "allow-client-info",
+    "allow-get-config",
+    "allow-list-scale-ports",
+    "allow-open-drawer",
+    "allow-open-setup",
+    "allow-print-raw",
+    "allow-printers-info",
+    "allow-read-scale",
+    "allow-save-unsent",
+    "allow-set-settings"
+  ]
+}

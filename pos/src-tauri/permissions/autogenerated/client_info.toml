@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-client-info"
+description = "Enables the client_info command without any pre-configured scope."
+commands.allow = ["client_info"]
+
+[[permission]]
+identifier = "deny-client-info"
+description = "Denies the client_info command without any pre-configured scope."
+commands.deny = ["client_info"]

@@ -322,3 +322,23 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running the till");
 }
+
+#[cfg(test)]
+mod acl_tests {
+    /// Tauri refuses a command the capability does not name: the till then cannot print or open the drawer.
+    #[test]
+    fn the_till_page_may_use_every_command_it_calls() {
+        let till = include_str!("../capabilities/till.json");
+        let mut used = String::new();
+        for file in ["src/hardware.ts", "src/screens/Sell.tsx", "src/screens/Setup.tsx", "src/clientInfo.ts"] {
+            used += &std::fs::read_to_string(format!("../{file}")).unwrap_or_default();
+        }
+        for part in used.split("invoke").skip(1) {
+            let Some(start) = part.find('\'') else { continue };
+            let name: String = part[start + 1..].chars().take_while(|c| *c == '_' || c.is_ascii_lowercase()).collect();
+            if part[..start].len() < 30 && !name.is_empty() {
+                assert!(till.contains(&format!("allow-{}", name.replace('_', "-"))), "{name} is not allowed from the server");
+            }
+        }
+    }
+}

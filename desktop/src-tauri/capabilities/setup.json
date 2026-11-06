@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "setup",
+  "description": "The local set-up page: every command.",
+  "windows": [
+    "main"
+  ],
+  "local": true,
+  "permissions": [
+    "core:default",
+    "allow-get-config",
+    "allow-set-server",
+    "allow-open-setup",
+    "allow-show-window"
+  ]
+}
