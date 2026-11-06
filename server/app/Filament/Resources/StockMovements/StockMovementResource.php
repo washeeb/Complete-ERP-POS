@@ -5,6 +5,10 @@ namespace App\Filament\Resources\StockMovements;
 use App\Filament\Resources\StockLevels\StockLevelResource;
 use App\Filament\Resources\StockMovements\Pages\ListStockMovements;
 use App\Filament\Support\Erp;
+use App\Filament\Support\ListFilters;
+use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Product;
 use App\Models\StockMovement;
 use App\Models\Warehouse;
 use App\Support\Qty;
@@ -29,6 +33,12 @@ class StockMovementResource extends Resource
     protected static ?string $navigationLabel = 'Stock ledger';
 
     protected static ?int $navigationSort = 2;
+
+    /** What a movement can be, for the filter. */
+    public const TYPES = ['sale' => 'Sale', 'sale_return' => 'Return from a customer', 'receipt' => 'Goods received', 'receipt_reversal' => 'Goods received, reversed', 'adjustment' => 'Adjustment',
+        'count' => 'Stock count', 'opening' => 'Opening', 'transfer_out' => 'Transfer out', 'transfer_in' => 'Transfer in', 'supplier_return' => 'Return to supplier', 'delivery' => 'Delivery to customer',
+        'customer_return' => 'Customer return', 'batch_assign' => 'Batch tracking started', 'unit_conversion' => 'Unit changed', 'cost_set' => 'Cost set by a cost run', 'cost_change' => 'Cost changed by a cost run',
+        'stock_received' => 'Received with a cost'];
 
     public static function canViewAny(): bool
     {
@@ -75,8 +85,17 @@ class StockMovementResource extends Resource
                 TextColumn::make('actor_name')->asPerson('actor_id')->label('By'),
             ])
             ->filters([
-                SelectFilter::make('type')->options(['opening' => 'Opening', 'adjustment' => 'Adjustment', 'sale' => 'Sale']),
-                SelectFilter::make('warehouse_id')->label('Warehouse')->options(fn () => Warehouse::orderBy('code')->pluck('code', 'id')),
+                ListFilters::dates('occurred_at', 'Date'),
+                SelectFilter::make('product_id')->label('Product')->multiple()->searchable()
+                    ->getSearchResultsUsing(fn (string $search) => Product::where(fn ($q) => $q->where('name', 'ilike', "%{$search}%")->orWhere('sku', 'ilike', "%{$search}%"))->limit(30)->pluck('name', 'id'))
+                    ->getOptionLabelsUsing(fn (array $values) => Product::whereIn('id', $values)->pluck('name', 'id')),
+                SelectFilter::make('type')->multiple()->options(self::TYPES),
+                SelectFilter::make('warehouse_id')->label('Warehouse')->multiple()->options(fn () => Warehouse::orderBy('code')->pluck('code', 'id')),
+                SelectFilter::make('category')->label('Category')->multiple()->searchable()->options(fn () => Category::orderBy('name')->pluck('name', 'id'))
+                    ->query(fn (Builder $query, array $data) => $query->when($data['values'] ?? [], fn ($q, $v) => $q->whereIn('product_id', Product::whereIn('category_id', $v)->select('id')))),
+                SelectFilter::make('brand')->label('Brand')->multiple()->searchable()->options(fn () => Brand::orderBy('name')->pluck('name', 'id'))
+                    ->query(fn (Builder $query, array $data) => $query->when($data['values'] ?? [], fn ($q, $v) => $q->whereIn('product_id', Product::whereIn('brand_id', $v)->select('id')))),
+                ListFilters::person(self::class, 'actor_id', 'actor_name', 'By'),
             ])
             ->defaultSort('occurred_at', 'desc');
     }

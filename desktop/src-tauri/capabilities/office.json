@@ -1,0 +1,21 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "office",
+  "description": "The back office, served by the server chosen at set-up: back to set-up only. The window refuses to open any other site (see on_navigation).",
+  "windows": [
+    "main"
+  ],
+  "local": false,
+  "remote": {
+    "urls": [
+      "http://*",
+      "https://*",
+      "http://*:*",
+      "https://*:*"
+    ]
+  },
+  "permissions": [
+    "core:default",
+    "allow-open-setup"
+  ]
+}

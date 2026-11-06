@@ -34,7 +34,7 @@ it('gives a stock controller products and stock, and nothing at the top level', 
         expect($this->get($url)->status())->toBe(200, $url);
     }
     // Product pages without the Prices section (prices need a manager).
-    $this->get(ProductResource::getUrl('create'))->assertDontSee('Price list');
+    $this->get(ProductResource::getUrl('create'))->assertDontSee('One row per price list and unit');
     // Prices can be seen (read-only), not changed.
     expect(PriceListResource::canCreate())->toBeFalse();
     foreach ([SaleResource::getUrl('index'), JournalEntryResource::getUrl('index'),
@@ -54,4 +54,9 @@ it('lets a stock controller given one branch keep products up to date, but not c
     app(CatalogService::class)->saveProduct(actorFor($kofi), $product, ['name' => 'ITEM B (renamed)']);
     expect($product->fresh()->name)->toBe('ITEM B (RENAMED)');
     expect(fn () => app(CatalogService::class)->saveProduct(actorFor($kofi), $product->fresh(), ['prices' => []]))->toThrow(AccessDenied::class);
+});
+
+it('shows the Prices section on the product form to those who may change prices', function () {
+    $this->actingAs(withMfa($this->owner));
+    $this->get(ProductResource::getUrl('create'))->assertOk()->assertSee('One row per price list and unit');
 });

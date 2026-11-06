@@ -195,6 +195,20 @@ The same invoice number from the same supplier is refused, so an invoice cannot 
 
 **Stock with no invoice at all** (a gift, or goods from the owner's other shop): use a stock adjustment with the reason **Received with a cost, no supplier invoice**, and enter the cost on each line. The value waits in *Stock received, to be cleared*. **Why:** your accountant then decides what it was, such as capital or a gift, so it does not show up as profit.
 
+## 14.3d Price list: export prices
+
+**Pricing & tax → Price list** shows every product in every unit, with the price before tax, the VAT and levies, and what the customer pays.
+
+1. Choose the **price list** and narrow it with the filters: category, brand, supplier, product, active or inactive, in stock only, or priced only. For a few products, tick them on **Catalog → Products** and choose **Export prices**.
+2. Use the **columns** button to add *In stock*, *Cost* and *Margin*, or hide what you do not need. Cost and margin appear only for people allowed to set prices.
+3. Click **Export**: Excel or CSV for everything, or PDF with your logo for a customer. **Hide cost and margin before sending a list outside the business:** the file holds the columns on screen.
+
+**Why:** one list can be filtered for the need in hand, such as a wholesale customer's brands, without keeping a spreadsheet that goes out of date.
+
+**A PDF holds up to 800 rows.** A longer list says so: filter it, for example by category, or use Excel or CSV. The same applies to the **Stock ledger**, which can be filtered by date, product, type, warehouse, category, brand and person. **Why:** a PDF is laid out row by row in the server's memory, and a very long one would stop it.
+
+**Batches and expiry dates for many products:** on **Catalog → Products**, tick products and choose **Switch on batches and expiry**, or click **Switch on batches for all**. Products already on are left as they are. Stock on hand goes into a batch called OPENING with no expiry date, so it gets no expiry warnings; every new delivery then needs a batch and expiry date. It cannot be switched off once batches exist. **Why:** expiry warnings and earliest-expiry-first selling only work once products carry batches.
+
 ## 14.3a Barcode and shelf labels
 
 **Catalog → Products**: tick the products → **Print labels** (or **Print labels** on one product, or on a delivery under **Purchasing → Goods received** for what came in).

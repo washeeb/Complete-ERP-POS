@@ -1132,3 +1132,11 @@ Design:
 - `PlainError` turns a failure into plain words: the field or rule, or the exception and where in the program. Never raw database text, which holds people's data and the query; the reference finds the full error in the log. Shown to signed-in back-office users only; the sign-in page and the API say nothing more than before.
 - Tests run inside a transaction, so "numbers are taken inside the document transaction" could never fail under test; `DocumentNumbers::$outerTransactions` makes it fail there as in production, for every number in the system.
 
+## Owner's list of 2026-11-06
+- All free (owner). Stage 1 first: printing and the drawer were failing at the till.
+- **Till permissions:** Tauri refuses a remote page any app command not named in a capability, and we named none. Local set-up page: every command. The server-hosted till: only those `pos/src` calls, and a test keeps that list honest. The back office: back to set-up only.
+- **PDF limit from measurement:** 2,000 rows crashed at 512 MB; 1,000 took 27 s and 470 MB; 800 keeps a margin on a 512 MB server. Refused with what to do, not truncated, on screen lists; scheduled reports keep their note.
+- **Price list as a table page**, not a report builder: filters and Export already exist on every list. Cost and margin need `pricing.manage`.
+- **Bulk batches:** existing stock goes to OPENING with no expiry (owner chose not to add an expiry sheet); products already on are untouched.
+- **Answers for the next stages:** every return needs a manager's PIN by default (Off / Allow / Require, value limit optional). Back-office refund chosen per return. Blood pressure: fee plus a reading on the patient. Medicines rule, reasons, return slip and returns report all wanted.
+

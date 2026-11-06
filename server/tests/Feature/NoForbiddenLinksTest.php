@@ -18,6 +18,11 @@ use Illuminate\Support\Facades\DB;
  * each link the back office shows (side menu, dashboard) must open — no 403 and no error. Links the person may not use
  * are not shown. Slow (every role × every page): run with CRAWL=1.
  */
+// Every role × every page in one process: memory grows with each page the back office gains.
+if (getenv('CRAWL')) {
+    ini_set('memory_limit', '2G');
+}
+
 dataset('roles', fn () => collect(array_keys(RoleCatalog::ROLES))->reject(fn ($k) => $k === 'superadmin')
     ->flatMap(fn ($k) => $k === 'owner' ? [[$k, 'tenant']] : [[$k, 'tenant'], [$k, 'branch']])->all());
 

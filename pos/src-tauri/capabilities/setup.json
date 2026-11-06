@@ -1,0 +1,27 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "setup",
+  "description": "The local set-up page: every command.",
+  "windows": [
+    "main"
+  ],
+  "local": true,
+  "permissions": [
+    "core:default",
+    "allow-get-config",
+    "allow-set-server",
+    "allow-open-setup",
+    "allow-open-back-office",
+    "allow-set-hardware",
+    "allow-set-settings",
+    "allow-client-info",
+    "allow-list-printers",
+    "allow-printers-info",
+    "allow-print-raw",
+    "allow-open-drawer",
+    "allow-show-window",
+    "allow-save-unsent",
+    "allow-list-scale-ports",
+    "allow-read-scale"
+  ]
+}

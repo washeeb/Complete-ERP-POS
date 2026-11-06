@@ -27,6 +27,11 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 | 4 | Service desk (tickets) and asset maintenance | paid add-on — branch `service-desk` |
 | 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid add-on — branch `iot` |
 
+## Owner's list of 2026-11-06 — branch `office-returns-and-fixes`
+- Stage 1: Tauri ACL (`pos/src-tauri` and `desktop/src-tauri`: `build.rs` app manifest, capabilities `setup` local and `till` / `office` remote; Till 0.29.0, Back Office 1.0.1), PDF limit 800 rows (`Exporter::PDF_ROW_LIMIT`, measured), ledger filters, `PriceListExport`, `CatalogService::switchOnBatches`. Tests: ListExportsTest.
+- Still to do. Stage 2 returns: setting Off / Allow / Require manager's PIN, default Require on every return, with a value limit; reason per return; medicines not restocked (quarantine); back-office returns from a receipt with store, resaleable or damaged, refund by store credit, account or a chosen money account, approved by someone else; return slip; returns report. Stage 3: fee services (no stock) with readings on the patient (BP, pulse, sugar, weight), trend, slip, high-reading flag. All free. Owner's answers are in this section's PR thread and DECISIONS.
+- Ledger "exported empty": not a fault; the owner found the PDF complete on opening it again.
+
 ## Errors say what happened; supplier codes automatic — branch `supplier-terms-empty`
 - `App\Support\PlainError` + render in `bootstrap/app.php` for Livewire requests (`problem`, `reference`), shown by `layout.connection-notices`. `DocumentNumbers::$outerTransactions` = 1 in `tests/TestCase.php`, so a number taken outside a transaction fails under test. Supplier number moved inside the save; code field disabled on the form.
 

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-open-drawer"
+description = "Enables the open_drawer command without any pre-configured scope."
+commands.allow = ["open_drawer"]
+
+[[permission]]
+identifier = "deny-open-drawer"
+description = "Denies the open_drawer command without any pre-configured scope."
+commands.deny = ["open_drawer"]
