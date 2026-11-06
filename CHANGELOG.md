@@ -1,6 +1,11 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- **Manager's approval of returns** (Settings → Returns): Require (default), Allow or Off, with a value limit; a reason from a list on every return; a return slip to sign.
+- **Quarantine:** damaged and expired goods and returned medicines go to the branch's quarantine store, which no till sells from.
+- **Returns from the back office** from a sale: store credit, the customer's account, or paid from a chosen account; approved by someone else; goods to any store. *Sales → Returns* reports every return, with a warning when one person's returns stand out.
+- **Fee services and health checks** (*Pharmacy → Health checks*): a service with no stock, sold at the till; blood pressure, sugar, weight or temperature kept on the patient, printed on the receipt, with high, low and refer-now flags. Guide 14.3e and 14.3f.
 ### Fixed
 - **"Command get_config not allowed by ACL" on the desktop till**: Tauri now refuses pages served from a server unless each of the app's commands is named. The till's commands that touch hardware are now allowed for the till page: silent receipts, slips, the cash drawer, the scale and the unsent-sales backup. Till 0.29.0 and Back Office 1.0.1: install the new version on each PC.
 - **PDF export of a long list failing** (stock ledger): PDFs stop at 800 rows, measured on the server; a longer list says so and suggests filters, or Excel and CSV, which take everything. Scheduled report PDFs follow the same limit.

@@ -60,7 +60,9 @@ export type DiningTable = { id: string; code: string; area: string | null; seats
 export type Floor = { tables: DiningTable[]; stations: { code: string; name: string; auto_print: boolean }[]; orders: DiningOrder[]; server_time: string
   reservations?: Reservation[]; hold_minutes?: number }
 export type KitchenTicket = { order_id: string; number: string; label: string; kind: string; waiter: string; paid: boolean; items: DiningItem[] }
-export type Product = { id: string; sku: string; name: string; category_id?: string | null; plu?: string | null; location?: string | null; dosage?: string | null; drug?: Drug | null; station?: string | null; modifier_group_ids?: string[]; track_serials?: boolean; warranty_months?: number | null; style_id?: string | null; size?: string | null; colour?: string | null; service_minutes?: number | null; is_pack?: boolean; licence_keys?: boolean; is_container?: boolean; deposit_product_id?: string | null; deposit_per_unit?: string | null; track_stock: boolean; on_hand: string | null; expires_on?: string | null; min_qty?: string | null; tax: TaxRate[]; units: Unit[]; prices: Price[] }
+export type ReadingKind = 'bp' | 'sugar' | 'weight' | 'temperature'
+export type Reading = { systolic?: number; diastolic?: number; pulse?: number; value?: number }
+export type Product = { id: string; sku: string; name: string; reading_kind?: ReadingKind | null; category_id?: string | null; plu?: string | null; location?: string | null; dosage?: string | null; drug?: Drug | null; station?: string | null; modifier_group_ids?: string[]; track_serials?: boolean; warranty_months?: number | null; style_id?: string | null; size?: string | null; colour?: string | null; service_minutes?: number | null; is_pack?: boolean; licence_keys?: boolean; is_container?: boolean; deposit_product_id?: string | null; deposit_per_unit?: string | null; track_stock: boolean; on_hand: string | null; expires_on?: string | null; min_qty?: string | null; tax: TaxRate[]; units: Unit[]; prices: Price[] }
 export type PriceList = { id: string; code: string; name: string; prices_include_tax: boolean; is_default: boolean }
 
 export type Shift = {
@@ -113,6 +115,7 @@ export type Bootstrap = {
   price_lists: PriceList[]
   receipt_footer: string
   show_stock?: boolean
+  returns?: { approval: 'require' | 'allow' | 'off'; above_minor: number; reasons: Record<string, string> }
   auto_print_receipt?: boolean // the desktop till prints each receipt by itself
   shift_per_person?: boolean // someone else's shift open on this till: close it before selling (default on)
   idle_lock_minutes?: number // lock the till after this long untouched (0 = never)
@@ -152,7 +155,7 @@ export type PostedSale = {
   licence_keys?: { sale_line_id: string; key: string }[] // Services: software keys handed out, printed on the receipt
   fiscal?: { status: string; code: string | null; qr: string | null; mode: string; sdc?: SdcSignature | null } | null // GRA E-VAT
   kitchen?: { name: string; qty: string; note: string | null; station: string }[] // offline counter sale: ticket the till prints itself
-  kind?: 'sale' | 'return'; discount_minor?: number; points_earned?: number
+  kind?: 'sale' | 'return'; approved_by?: string | null; discount_minor?: number; points_earned?: number
   payments: { method: string; provider: string | null; amount_minor: number; tendered_minor: number; reference: string | null; status: string }[]
 }
 

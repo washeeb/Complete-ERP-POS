@@ -209,6 +209,43 @@ The same invoice number from the same supplier is refused, so an invoice cannot 
 
 **Batches and expiry dates for many products:** on **Catalog → Products**, tick products and choose **Switch on batches and expiry**, or click **Switch on batches for all**. Products already on are left as they are. Stock on hand goes into a batch called OPENING with no expiry date, so it gets no expiry warnings; every new delivery then needs a batch and expiry date. It cannot be switched off once batches exist. **Why:** expiry warnings and earliest-expiry-first selling only work once products carry batches.
 
+## 14.3e Returns: approval, quarantine and the back office
+
+**Manager's approval.** **System → Settings → Returns → Manager's approval of returns** has three choices:
+- **Require** (the default): every return needs a manager's username and PIN at the till.
+- **Allow:** a manager can approve there and then. If none does, the cashier carries on and it goes to the review queue for a manager.
+- **Off:** only returns with no receipt, or past the return period, need a PIN.
+
+To let small returns through, set **Only returns above this value need approval**. **Why:** a return is money leaving with goods coming back, so it is one of the easiest ways to take cash. Managers need their PIN set and the right to approve returns.
+
+**Every return has a reason** from a list (wrong item, damaged, expired, changed mind, doctor changed the treatment, cashier's mistake, other), so the reasons can be totalled.
+
+**Quarantine.** Damaged and expired goods, and medicines once they have left the pharmacy, do not go back on the shelf. They go to the branch's **quarantine** store, made the first time it is needed. Its stock still has a value, but no till can sell it. Dispose of it or send it back to the supplier from there, or transfer it back if it is fit to sell. Turn off **Returned medicines go to quarantine** only if your pharmacist agrees. **Why:** nobody can vouch for how a medicine was stored once it left you, so reselling it puts patients at risk.
+
+**Returns from the back office.** For a customer who comes to the office, or a mistake found later:
+1. Open the sale under **Sales → Sales** and click **Return goods**.
+2. Enter what comes back, tick **Damaged** where it applies, and choose the reason and the store.
+3. Choose **Refund as**: store credit, the customer's account, or paid from a cash, bank or MoMo account with its reference.
+4. It waits under **Sales → Back-office returns** and on a manager's dashboard. Someone other than the person who entered it clicks **Approve and refund**. Only then does stock move and the refund go out.
+
+**Why a second person always:** the money leaves with no till or drawer to count it against. The return period does not apply here, because a manager is deciding. Cash paid out of an office account does not go through a till shift, so it never affects a drawer count.
+
+**Return slip:** the till prints lines for the customer and manager to sign on the return receipt. In the back office, **Return slip** gives a PDF to sign and file.
+
+**Sales → Returns** lists every return from tills and the office, by person, reason, product, date and approval, with who approved it and where the goods went. The line at the top names anyone who did more than half of the last 30 days' returns, once there are five or more. **Why:** a pattern like that is worth a look, though it may have a good explanation, such as one person always working the return counter.
+
+## 14.3f Fee services and health checks
+
+Services you charge for, such as a blood pressure check, are sold at the till like a product, with no stock.
+
+**Set one up:** **Pharmacy → Health checks → Add a fee service**: the name, the fee, the tax, and the reading taken (blood pressure, blood sugar, weight or temperature), or none for a plain fee. Or use **Catalog → Products**: switch off stock, and set **Reading taken** under *Health check*.
+
+**At the till:** find it by name. If it has a reading, the till asks for it: top and bottom numbers and pulse for blood pressure. **Add without a reading** charges the fee and keeps no reading. Choose the customer (F4) if they are a patient of yours, so it goes on their history. The reading prints on the receipt.
+
+**The result:** the till warns when a reading is **high**, **low** or **refer now**. These follow common screening limits, such as 140/90 for high blood pressure and 180/120 to refer now. **They are a prompt to refer the person to a clinic, not a diagnosis.** Ask your pharmacist to agree them.
+
+**Pharmacy → Health checks** lists every reading by date, patient, kind and result, for people allowed to see patients. Use **Record a reading** for one taken away from a sale. Filter by patient to see their history. A reading is never changed: if one was wrong, take it again. **Why:** these are health records, so they keep what was measured, when and by whom.
+
 ## 14.3a Barcode and shelf labels
 
 **Catalog → Products**: tick the products → **Print labels** (or **Print labels** on one product, or on a delivery under **Purchasing → Goods received** for what came in).

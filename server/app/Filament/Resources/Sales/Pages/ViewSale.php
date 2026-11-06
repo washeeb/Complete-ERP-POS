@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Sales\Pages;
 
 use App\Domain\Customers\CustomerService;
+use App\Filament\Resources\OfficeReturns\OfficeReturnResource;
 use App\Filament\Resources\Sales\SaleResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\ReloadsAfterAction;
@@ -22,6 +23,7 @@ class ViewSale extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            OfficeReturnResource::returnAction(),
             Action::make('preview')->label('Print preview (copy)')->icon(Heroicon::OutlinedEye)->color('gray')
                 ->url(fn () => route('print.receipt', $this->record), shouldOpenInNewTab: true),
             Action::make('print')->label('Print copy')->icon(Heroicon::OutlinedPrinter)

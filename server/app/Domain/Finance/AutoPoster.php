@@ -194,7 +194,8 @@ final class AutoPoster
         if (! $rows) {
             return 0;
         }
-        $payments = DB::table('sale_payments')->whereIn('sale_id', array_column($rows, 'id'))->get(['sale_id', 'method', 'amount_minor'])->groupBy('sale_id');
+        $payments = DB::table('sale_payments')->whereIn('sale_id', array_column($rows, 'id'))->get(['sale_id', 'method', 'amount_minor', 'account_id'])->groupBy('sale_id');
+        $paidFrom = Account::withoutGlobalScopes()->whereIn('id', $payments->flatten(1)->pluck('account_id')->filter()->unique()->all())->get()->keyBy('id');
         $codes = DB::table('branches')->pluck('code', 'id');
         // Container deposits (net of empties bought back) per sale, when they are held as a liability rather than sales.
         $deposits = $this->depositsAsLiability($actor->tenantId) ? DB::table('sale_lines as l')->join('products as p', 'p.id', '=', 'l.product_id')
@@ -214,6 +215,11 @@ final class AutoPoster
                     $lines[] = ['account' => 'tips_payable', 'amount' => -(int) $s->tip_minor, 'branch_id' => $s->branch_id]; // owed to the waiter
                 }
                 foreach ($payments[$s->id] ?? [] as $p) {
+                    if ($p->account_id) { // a refund paid from the office: the account it was paid from, no till
+                        $lines[] = ['account' => $paidFrom[$p->account_id], 'amount' => (int) $p->amount_minor, 'branch_id' => $s->branch_id];
+
+                        continue;
+                    }
                     $key = self::TENDER[$p->method] ?? throw new DomainException("Till payment method “{$p->method}” has no account.", 'gl_account_missing');
                     $lines[] = ['account' => $key, 'amount' => (int) $p->amount_minor, 'branch_id' => $s->branch_id]
                         + ($key === 'receivables' ? ['party_type' => 'customer', 'party_id' => $s->customer_id] : []);

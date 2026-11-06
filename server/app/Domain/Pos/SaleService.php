@@ -15,6 +15,7 @@ use App\Domain\Inventory\StockLedger;
 use App\Domain\Messaging\PaymentAlerts;
 use App\Domain\Modules\ModuleService;
 use App\Domain\Payments\MomoCollections;
+use App\Domain\Pharmacy\HealthReadings;
 use App\Domain\Pharmacy\PharmacyRules;
 use App\Domain\Pharmacy\PharmacyService;
 use App\Domain\Pricing\PriceResolver;
@@ -416,6 +417,7 @@ final class SaleService
                         'pass_item' => ($l['svc']['pass'] ?? null)['item'] ?? null, 'appointment_id' => $l['svc']['appointment_id'] ?? null,
                     ]);
                 }
+                app(HealthReadings::class)->fromSale($actor, $sale, $p['lines'] ?? []);
                 foreach ($payments as $pay) {
                     if (($pay['momo_charge_id'] ?? null) && ! app(MomoCollections::class)->attach($pay['momo_charge_id'], $sale->id)) {
                         throw new DomainException('That mobile money payment was already used for another sale.', 'momo_used');

@@ -47,6 +47,8 @@ final class Look
         'count' => ['stock count'], 'transfer' => ['stock transfer'], 'receipt' => ['sales'], 'rfq' => ['requests for quotation'],
         'quote' => ['requests for quotation'], 'contract' => ['contracts and blanket orders'], 'photo' => ['profile'],
         'avatar' => ['profile'], 'dark' => ['profile'], 'theme' => ['profile'],
+        'blood' => ['health checks'], 'bp' => ['health checks'], 'pressure' => ['health checks'], 'sugar' => ['health checks'],
+        'refund' => ['returns', 'back-office returns'], 'return' => ['returns', 'back-office returns'], 'quarantine' => ['returns'],
         'price list' => ['price list'], 'prices' => ['price list'],
         'invoice' => ['direct purchases'], 'direct' => ['direct purchases'], 'consignment' => ['direct purchases', 'consignment to pay'],
         'cost' => ['cost runs', 'estimated costs'], 'revalue' => ['cost runs'], 'margin' => ['cost runs'],

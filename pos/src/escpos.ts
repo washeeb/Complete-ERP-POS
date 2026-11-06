@@ -122,6 +122,10 @@ export function receiptEscPos(sale: PostedSale, boot: Bootstrap, logo: Raster | 
     if (sale.fiscal.qr) p.qr(sale.fiscal.qr, 5).feed()
   }
   p.feed().qr(sale.receipt_no).feed()
+  if (sale.kind === 'return') { // a return slip: both sign, and it goes in the file
+    if (sale.approved_by) p.columns('Approved by', sale.approved_by)
+    p.feed().line('Customer ________________________').feed().line('Manager  ________________________')
+  }
   for (const line of footerLines(boot.receipt_footer)) p.line(line) // each message on its own line
   if (boot.license?.ref) p.line(`Ref ${boot.license.ref}`)
   // The software maker's name and contact, in bold so they read clearly on thermal paper.

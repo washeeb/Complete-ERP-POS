@@ -18,7 +18,7 @@ final class DocumentNumbers
         'employee' => 'EMP', 'employee_loan' => 'LN', 'payroll_run' => 'PAYR',
         'prescription' => 'RX', 'dining_order' => 'ORD', 'reservation' => 'RES', 'repair_job' => 'JOB', 'alteration' => 'ALT',
         'appointment' => 'APT', 'service_pass' => 'PASS', 'membership' => 'MEM',
-        'stock_adjustment' => 'ADJ', 'stock_cost_run' => 'CST', 'direct_purchase' => 'DP', 'supplier_return' => 'RTS', 'waybill' => 'WB', 'van_settlement' => 'VS',
+        'stock_adjustment' => 'ADJ', 'stock_cost_run' => 'CST', 'direct_purchase' => 'DP', 'office_return' => 'RTN', 'office_return_receipt' => 'RTR', 'supplier_return' => 'RTS', 'waybill' => 'WB', 'van_settlement' => 'VS',
         'work_order' => 'WO', 'qc_inspection' => 'QC', 'support_report' => 'SUP', 'cash_handover' => 'CH', 'stock_request' => 'SRQ', 'purchase_request' => 'PRQ', 'crm_lead' => 'LD', 'project' => 'PRJ', 'project_issue' => 'PIS', 'ticket' => 'TCK', 'maintenance_asset' => 'AST', 'maintenance_order' => 'MWO', 'iot_sensor' => 'SNS', 'iot_alarm' => 'ALM', 'crm_deal' => 'DL', 'crm_campaign' => 'CMP',
         'whatsapp_order' => 'WA'];
 

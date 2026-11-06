@@ -20,6 +20,7 @@ use App\Filament\Support\LabelsAction;
 use App\Filament\Support\QuickCreate;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\HealthReading;
 use App\Models\Industry;
 use App\Models\KitchenStation;
 use App\Models\ModifierGroup;
@@ -204,6 +205,9 @@ class ProductResource extends Resource
                     TextInput::make('consignment_bp')->label('Their share (basis points of the price before tax)')->numeric()->minValue(1)->maxValue(10000)
                         ->helperText('6000 = 60 %.'),
                 ]),
+            Section::make('Health check')->columns(3)->visible(fn () => Erp::canAnywhere('pharmacy.patients'))
+                ->description('A fee service such as a blood pressure check: switch off stock for it, and choose the reading. The till then asks for it.')
+                ->schema([Select::make('reading_kind')->label('Reading taken')->placeholder('None')->options(HealthReading::KINDS)]),
             Section::make('Services')->columns(3)->visible(fn () => ModuleService::enabledAnywhere('services'))
                 ->description('A bookable service has a duration (it appears in the appointment book). A prepaid pack is sold once and gives the customer sessions, used later at the till at no charge. Packs and licence-key products do not track stock.')
                 ->schema([

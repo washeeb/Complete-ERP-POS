@@ -1,7 +1,7 @@
 import { lineTax, sumTax, toMilli, type TaxLine } from './money'
 import { serviceAmount } from './restaurant'
 import { activePromotions, computePromotions, type Applied } from './promotions'
-import type { Price, PriceList, Product, PromotionRow, Unit } from './types'
+import type { Price, PriceList, Product, PromotionRow, Reading, Unit } from './types'
 
 export type CartLine = { key: string; product: Product; unit: Unit; qtyMilli: number; manual?: { bp?: number; price_minor?: number } | null
   markdown?: { id: string; price_minor: number } | null
@@ -15,6 +15,8 @@ export type CartLine = { key: string; product: Product; unit: Unit; qtyMilli: nu
   staff?: { id: string; name: string } | null; pass?: { id: string; item: number; number: string } | null; appointmentId?: string
   // Distribution: an automatic deposit line (containers that go with what is sold).
   autoDeposit?: boolean
+  // A health check: the reading taken (also in the note, so it prints).
+  reading?: Reading | null
   // Pharmacy: the directions given with this medicine (printed on the dosage label and the receipt).
   dosage?: string | null }
 

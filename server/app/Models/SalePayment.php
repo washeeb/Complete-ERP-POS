@@ -10,7 +10,7 @@ class SalePayment extends Model
 {
     use HasUuids;
 
-    public const METHODS = ['cash' => 'Cash', 'momo' => 'Mobile money', 'card' => 'Card (standalone terminal)', 'account' => 'On account (credit)', 'points' => 'Loyalty points', 'gift_card' => 'Gift card', 'store_credit' => 'Store credit',
+    public const METHODS = ['cash' => 'Cash', 'momo' => 'Mobile money', 'card' => 'Card (standalone terminal)', 'account' => 'On account (credit)', 'points' => 'Loyalty points', 'gift_card' => 'Gift card', 'office' => 'Paid from the office', 'store_credit' => 'Store credit',
         'deposit' => 'Booking deposit', 'aggregator' => 'Delivery app (paid by the platform)', 'trade_in' => 'Trade-in', 'nhis' => 'NHIS (claimed from the NHIA)'];
 
     /** Delivery apps whose orders the restaurant takes (paid to us by the platform later). */

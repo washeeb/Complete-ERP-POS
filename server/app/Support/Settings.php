@@ -366,6 +366,21 @@ final class Settings
             'label' => 'Returns accepted within (days, with receipt)',
             'help' => 'Within this many days a cashier can take goods back against the receipt and refund to the original payment. Without a receipt (or later): store credit only, with a supervisor PIN.',
         ],
+        'returns.manager_approval' => [
+            'type' => 'choice', 'default' => 'require', 'group' => 'Returns', 'options' => ['require' => 'Require: a manager\'s PIN on every return', 'allow' => 'Allow: the cashier goes on, and a manager reviews it afterwards', 'off' => 'Off'],
+            'label' => 'Manager\'s approval of returns',
+            'help' => 'Returns are where money leaves with goods coming back, so a second person checks them. Returns without a receipt or past the period always need a PIN.',
+        ],
+        'returns.approval_above_minor' => [
+            'type' => 'int', 'default' => 0, 'min' => 0, 'max' => 1000000000, 'group' => 'Returns',
+            'label' => 'Only returns above this value need approval (in pesewas/cents)',
+            'help' => '0 = every return. 5000 = GHS 50.',
+        ],
+        'returns.medicines_to_quarantine' => [
+            'type' => 'bool', 'default' => true, 'group' => 'Returns',
+            'label' => 'Returned medicines go to quarantine, not back on sale',
+            'help' => 'Medicines that have left the pharmacy cannot be vouched for. They go to the quarantine store with damaged and expired goods, to dispose of or send back to the supplier.',
+        ],
         'finance.year_end_month' => [
             'type' => 'int', 'default' => 12, 'min' => 1, 'max' => 12, 'group' => 'Finance',
             'label' => 'Financial year ends in month (1–12)',

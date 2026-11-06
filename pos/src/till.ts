@@ -154,6 +154,7 @@ export async function submitSale(args: {
       ...(l.markdown ? { markdown_id: l.markdown.id } : {}),
       ...(l.diningItemId ? { dining_item_id: l.diningItemId } : {}),
       ...(l.note ? { note: l.note } : {}),
+      ...(l.reading ? { reading: l.reading } : {}),
       ...(l.dosage?.trim() ? { dosage: l.dosage.trim() } : {}),
       ...(l.service ? { service_charge: true } : {}),
       ...(l.serials?.length ? { serials: l.serials } : {}),
