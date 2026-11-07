@@ -134,3 +134,28 @@ it('lets another teller take over the till in the same shift without a manager',
     $this->withToken($ama)->postJson('/api/v1/pos/shifts/open', ['opening_float_minor' => 0])->assertCreated()->assertJsonPath('shift.shift_name', 'Morning');
     expect(Shift::where('status', 'open')->sole())->opened_by->toBe($other->id)->granted_by_name->toBeNull();
 });
+
+it('needs a manager to open again after closing your own shift today, whatever the next shift is called', function () {
+    $open = fn (array $extra = []) => $this->withToken($this->token)->postJson('/api/v1/pos/shifts/open', ['opening_float_minor' => 0] + $extra);
+    $close = fn () => $this->withToken($this->token)->postJson('/api/v1/pos/shifts/close', ['counted_cash_minor' => 0]);
+
+    // Without shift names: still asked.
+    $open()->assertCreated();
+    $close()->assertOk();
+    $open()->assertStatus(422)->assertJsonPath('error', 'till_closed')->assertSee('You closed your shift on this till at 10:00 today. A manager can allow another one with their PIN and a reason.');
+
+    // With shift names: Morning closed at 14:20, Afternoon at 14:22 is still a second shift.
+    app(Settings::class)->set($this->a, 'pos.auto_shifts', true);
+    Carbon::setTestNow(Carbon::parse('2026-10-24 08:00', 'Africa/Accra'));
+    $open()->assertCreated()->assertJsonPath('shift.shift_name', 'Morning');
+    Carbon::setTestNow(Carbon::parse('2026-10-24 14:20', 'Africa/Accra'));
+    $close()->assertOk();
+    Carbon::setTestNow(Carbon::parse('2026-10-24 15:05', 'Africa/Accra'));
+    $open()->assertStatus(422)->assertJsonPath('error', 'till_closed');
+    $open(['grant' => ['username' => 'kojo', 'pin' => '7391', 'reason' => 'Covering the afternoon']])->assertCreated()->assertJsonPath('shift.shift_name', 'Afternoon');
+
+    // The next day starts afresh.
+    $close()->assertOk();
+    Carbon::setTestNow(Carbon::parse('2026-10-25 08:00', 'Africa/Accra'));
+    $open()->assertCreated();
+});

@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- **A second shift on the same day needs a manager's PIN:** someone who closed their own shift on a till today must have a manager allow another one, whatever that shift is called and whether or not shift names are on. Before, closing Morning and then opening at 14:22 (Afternoon) was allowed, which left empty shifts on the report.
 ### Changed
 - **Licence page in plain words:** what is in use beside what is allowed, "Limit reached" when a limit is full, and features, paid add-ons and industry modules by name. Head office counts as a branch, and the page now says so. A module that is not built yet says *not available yet*.
 ### Added

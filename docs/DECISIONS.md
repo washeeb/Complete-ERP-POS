@@ -1156,3 +1156,7 @@ Design:
 - The owner found the page unclear. The licence keeps short codes; `LicensePage::covers()` turns them into names for reading only. Paid add-ons get their own row, because "Finance and HR" wrongly described them.
 - `retail_wholesale` can be on a licence while its module is still planned, so the page says *not available yet* rather than implying it works. A supermarket runs on Grocery.
 - A new shop takes its first stock from the opening stock sheet, not a stock count: a count starts with no lines where nothing is on hand, and stock it adds has no cost. Guide 6.1 and `docs/grocery.md`.
+
+## Second shift on the same day needs a manager (2026-11-07)
+- A cashier closed her morning shift, signed in again two minutes later and opened an empty one; the next cashier then had to close it on handover. The rule only matched the same shift name and only ran with automatic shift names.
+- `AutoShifts::beforeOpen`: any shift the person closed on this till since the start of the local day needs a manager PIN and reason (`till_closed`), with or without shift names. Taking over from someone else stays free. Offline opening is unchanged and is reviewed as before.
