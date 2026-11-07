@@ -17,6 +17,46 @@
         } catch {}
     })();
 </script>
+<script>
+    // Lists (new look): a slim page header once scrolled; rows per page remembered on this computer, per list.
+    (() => {
+        const root = document.documentElement
+        if (!root.classList.contains('zx-new')) return
+        let slim = false, queued = false
+        const stick = () => {
+            const band = [...document.querySelectorAll('.zx-tabbar, .fi-topbar-ctn')].filter((e) => e.offsetParent !== null)
+            const bottom = Math.max(0, ...band.map((e) => e.getBoundingClientRect().bottom))
+            if (bottom > 0) root.style.setProperty('--zx-stick', bottom + 'px')
+        }
+        const scrolled = () => {
+            queued = false
+            const room = root.scrollHeight - innerHeight
+            // Hysteresis, and only with room to spare, so shrinking the header never bounces the page back.
+            if (!slim && scrollY > 60 && room > 140) { slim = true; root.classList.add('zx-slim') }
+            else if (slim && scrollY < 8) { slim = false; root.classList.remove('zx-slim') }
+            if (slim) stick()
+        }
+        addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(scrolled) } }, { passive: true })
+        // The first column gets an edge once a wide list is scrolled sideways.
+        document.addEventListener('scroll', (e) => { const c = e.target
+            if (c instanceof Element && c.classList.contains('fi-ta-content-ctn')) c.classList.toggle('zx-sideways', c.scrollLeft > 0) }, { capture: true, passive: true })
+
+        const sel = '.fi-pagination-records-per-page-select select'
+        const key = (s) => 'zx.perPage:' + location.pathname + ':' + [...document.querySelectorAll(sel)].indexOf(s)
+        document.addEventListener('change', (e) => {
+            if (e.target instanceof Element && e.target.matches(sel) && !e.target.dataset.zxRestoring) try { localStorage.setItem(key(e.target), e.target.value) } catch {}
+        }, true)
+        const restore = () => document.querySelectorAll(sel).forEach((s) => {
+            let v = null
+            try { v = localStorage.getItem(key(s)) } catch {}
+            if (!v || v === s.value || ![...s.options].some((o) => o.value === v)) return
+            s.dataset.zxRestoring = '1'; s.value = v; s.dispatchEvent(new Event('change', { bubbles: true })); delete s.dataset.zxRestoring
+        })
+        document.addEventListener('livewire:navigated', () => setTimeout(restore))
+        addEventListener('load', () => { restore(); stick() })
+        addEventListener('resize', stick)
+    })();
+</script>
 <link rel="stylesheet" href="{{ asset('css/seslabs/new-look.css') }}?v={{ @filemtime(public_path('css/seslabs/new-look.css')) }}">
 @if ($menu = \App\Support\Look::menuColor())
     <style>:root.zx-new, :root.zx-new.dark { --zx-menu: {{ $menu }}; }</style>

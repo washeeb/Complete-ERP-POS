@@ -6,8 +6,11 @@
  * the product name is this file (or BRAND_NAME in .env) plus new artwork.
  */
 return [
-    // "SES Labs" was the product's earlier name: servers installed before 2026-11 have it in .env and now show ZionEX.
-    'name' => (($n = env('BRAND_NAME')) && $n !== 'SES Labs') ? $n : 'ZionEX',
+    // Earlier names ("SES Labs", then "ZionEX") are still in older servers' .env: they show ZionEX Suite (owner 2026-11-07).
+    'name' => (($n = env('BRAND_NAME')) && ! in_array($n, ['SES Labs', 'ZionEX'], true)) ? $n : 'ZionEX Suite',
+
+    // File names (releases, backups) keep this short form, so a rename never changes what installers and restores look for.
+    'slug' => env('BRAND_SLUG', 'zionex'),
 
     'tagline' => 'The central intelligence of business',
 

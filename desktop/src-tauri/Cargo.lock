@@ -4908,7 +4908,7 @@ dependencies = [
 
 [[package]]
 name = "zionex-backoffice"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "local-ip-address",
  "mac_address",

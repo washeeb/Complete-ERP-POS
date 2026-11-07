@@ -135,7 +135,10 @@ The back office has three looks. **Tabs across the top** is the standard one:
   (for records: products, customers, orders…), **+ New** (create any record you are allowed to create, e.g. an order
   or a product, without looking for its page first) and your name with your role. Under it, a band in your menu colour
   starts with three icons, then the tabs (Insights, Sales, Purchasing, Stock, Finance, People, your industry, Setup).
-  Point at a tab and its pages open in a panel.
+  Point at a tab and its pages open in a panel. The panel always fits inside the window, however narrow.
+  - **Long lists:** the column headings stay at the top while you scroll, the first column stays put when a wide list
+    scrolls sideways, and the page title shrinks to one line with its buttons. The rows per page you choose are
+    remembered on that computer for each list. **Why:** you always know which column and which row you are reading.
   - **Clock — recent pages and Find a page:** the pages you opened last; type part of a page's name to find any page.
     The **/** key opens it from anywhere.
   - **Star — favourites:** open a page you use often, click the star, then *Add this page to favourites*. Your

@@ -20,7 +20,7 @@ export type Config = {
 }
 export type PrinterInfo = { name: string; receipt: boolean; saves_files: boolean }
 
-/** The desktop till keeps its own copy of unsent sales on the PC (Documents\SES Labs Till\Unsent sales); null in a browser. */
+/** The desktop till keeps its own copy of unsent sales on the PC (Documents\ZionEX Till\Unsent sales); null in a browser. */
 export async function saveUnsentBackup(file: Blob): Promise<string | null> {
   const t = tauri()
   return t ? t.core.invoke<string>('save_unsent', { data: await file.text() }) : null
