@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+- **Licence page in plain words:** what is in use beside what is allowed, "Limit reached" when a limit is full, and features, paid add-ons and industry modules by name. Head office counts as a branch, and the page now says so. A module that is not built yet says *not available yet*.
 ### Added
 - **Expiry sheet** (*Stock → Batches & expiry*): download the stock still in batch OPENING, fill in dates and batches on paper or in Excel, and upload. Quantities and value do not change, and rows left empty wait for later.
 ### Added

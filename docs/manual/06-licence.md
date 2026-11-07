@@ -11,6 +11,13 @@ Every installation needs a **licence key from SyncLytics** (hotline 024 563 6889
 
 Parts that are not licensed are hidden from the menus.
 
+**Reading the licence page (System → Licence):**
+
+- **In use** beside **Allowed** shows how much of the licence you are using. **Limit reached** means nothing more can be added, so ask for a new key first. Why: a new branch, till or user is refused once its limit is full.
+- **Branches** include head office. A company with head office and one shop is already using 2.
+- **Features** and **Paid add-ons** list what is included. Anything not listed stays out of the menus.
+- **Industry modules** list the kinds of business you may switch on. *Not available yet* means the licence covers it but it has not been built, so choose another module. A supermarket uses **Grocery / Supermarket**.
+
 ## 6.2 Activate
 
 1. Open the back office at `https://<server-address>/admin` (Windows) or `https://<your-domain>/admin` (Ubuntu) and sign in as the **owner** (Chapter 7, steps 1–2 explain the first sign-in and two-factor set-up).

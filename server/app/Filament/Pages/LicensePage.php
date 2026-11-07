@@ -8,6 +8,7 @@ use App\Domain\Licensing\LicenseService;
 use App\Filament\Support\Erp;
 use App\Models\License;
 use App\Models\User;
+use App\Modules\ModuleRegistry;
 use BackedEnum;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
@@ -19,6 +20,7 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use UnitEnum;
 
 /** Licence status, the installation code to send to the supplier, and where the key is entered. */
@@ -37,6 +39,12 @@ class LicensePage extends Page
     protected static ?int $navigationSort = 90;
 
     protected string $view = 'filament.pages.license';
+
+    /** Included with the system when the licence does not narrow them; everything else is named on the licence. */
+    private const STANDARD = ['finance', 'hr'];
+
+    private const FEATURES = ['finance' => 'Finance', 'hr' => 'HR and payroll', 'white_label' => 'Own branding', 'remote_access' => 'Remote access', 'integrations' => 'Integrations',
+        'crm' => 'CRM', 'projects' => 'Projects and job costing', 'service' => 'Service desk and maintenance', 'iot' => 'Sensors'];
 
     public static function canAccess(): bool
     {
@@ -73,6 +81,28 @@ class LicensePage extends Page
     {
         return ['branches' => DB::table('branches')->count(), 'devices' => DB::table('devices')->where('status', '<>', 'revoked')->count(),
             'users' => User::licensedCount()];
+    }
+
+    /** What the licence covers, in words: the licence itself holds short codes. A planned module says it is not ready. */
+    public function covers(): array
+    {
+        $s = $this->status();
+        $named = fn (array $keys) => array_map(fn ($k) => self::FEATURES[$k] ?? Str::headline($k), $keys);
+        $features = $s['features'] ?? [];
+        $registry = app(ModuleRegistry::class);
+
+        return [
+            'Features' => $s['features'] === null ? 'All standard features' : (implode(', ', $named(array_values(array_intersect($features, self::STANDARD)))) ?: 'None'),
+            'Paid add-ons' => implode(', ', $named(array_values(array_diff($features, self::STANDARD)))) ?: 'None',
+            'Industry modules' => $s['modules'] === null ? 'All' : (implode(', ', array_map(function ($key) use ($registry) {
+                if (! $registry->has($key)) {
+                    return Str::headline($key);
+                }
+                $module = $registry->get($key);
+
+                return $module->name.($module->isAvailable() ? '' : ' (not available yet)');
+            }, $s['modules'])) ?: 'None'),
+        ];
     }
 
     public function lastCheckin(): ?License
