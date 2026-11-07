@@ -11,6 +11,8 @@
     "allow-get-config",
     "allow-set-server",
     "allow-open-setup",
-    "allow-show-window"
+    "allow-show-window",
+    "allow-open-offline",
+    "allow-remember-support"
   ]
 }

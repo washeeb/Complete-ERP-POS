@@ -16,6 +16,8 @@
   },
   "permissions": [
     "core:default",
-    "allow-open-setup"
+    "allow-open-setup",
+    "allow-open-offline",
+    "allow-remember-support"
   ]
 }
