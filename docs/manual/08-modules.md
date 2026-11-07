@@ -23,9 +23,17 @@ When a company runs more than one kind of business, each kind is an **industry**
   - When you create a product or price list, choose its industry; the industry chosen at the top is filled in for you.
   - That industry's tills sell only its products.
   - Products created before industries are *shared* (sold everywhere) until you give them an industry (Catalog → Products → edit → Industry).
+- **Every product belongs to an industry.** The Industry field is required, and shows only the industries you work in. Why: an item left in "All industries" shows on every shop's tills.
+- **Shared items** are for things every shop really sells, such as carrier bags. Only someone with company-wide access can choose *Shared by all industries*. To stop them altogether, use Settings → Stock → *Products shared by every industry*.
+- **Tidying shared items:** Catalog → Shared products lists every product in no industry, with where it has stock or sales.
+  - Tick products and press **Move to suggested industry**. Products with no suggestion stay where they are.
+  - Or press **Move all to one industry**. This suits a company that traded in one industry before adding another. Stock and prices do not change.
+- **The switcher** shows only to people who cover several industries or the whole company. Everyone else is always in their own industry and does not see the others' products.
 - **Staff:**
   - give a person a role **at their branch** (People & access → Users → Grant access → Applies to: *Branch*). A pharmacist at Pharmacy Osu then sees that pharmacy only;
-  - an **industry manager** gets the role with *Applies to: Industry*, and sees every branch of that industry, and nothing of the others.
+  - an **industry manager** gets the role with *Applies to: Industry*, and sees every branch of that industry, and nothing of the others;
+  - **company-wide access** shows everything, so it is limited to managers and above. Settings → Security can limit it to the owner and SyncLytics support;
+  - **People & access → Company-wide access** lists anyone who has it but should not, because the system cannot know where they work. Press **Give a branch** for each person. Until then they keep seeing everything, so do this soon after updating.
 
 **Only what the business runs is offered.** Roles (such as *Waiter* or *Tailor*), settings sections, message templates and device types that belong to an industry appear only where that industry is switched on. A pharmacy, for example, is never offered a kitchen display.
 

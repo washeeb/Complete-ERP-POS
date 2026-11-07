@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use App\Domain\Access\AccessService;
 use App\Domain\Licensing\LicenseManager;
 use App\Domain\Support\DocumentNumbers;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
@@ -20,6 +21,7 @@ abstract class TestCase extends BaseTestCase
         }
         config(['license.dev_public_key' => self::$licenseKeys['public'], 'license.public_keys' => []]);
         LicenseManager::forget();
+        AccessService::$limitCompanyWide = false;
         DocumentNumbers::$outerTransactions = 1; // RefreshDatabase wraps each test: a number taken outside the document's own transaction must still fail
     }
 }

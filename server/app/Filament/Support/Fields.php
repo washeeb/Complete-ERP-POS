@@ -10,6 +10,7 @@ use App\Models\MaintenanceOrder;
 use App\Models\ProductUom;
 use App\Models\Project;
 use App\Models\Warehouse;
+use App\Support\IndustryContext;
 use App\Support\Qty;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Hidden;
@@ -158,6 +159,7 @@ final class Fields
     {
         return Select::make($name)->label('Product and unit')->required()->searchable()
             ->getSearchResultsUsing(fn (string $search) => ProductUom::with('product', 'uom')
+                ->whereHas('product', fn (Builder $q) => IndustryContext::productScope($q))
                 ->where(fn ($w) => $w->whereHas('product', fn (Builder $q) => $q->where('is_active', true)->where(fn ($q) => $q->where('name', 'ilike', "%{$search}%")
                     ->orWhere('sku', 'ilike', "%{$search}%")))
                     ->orWhereHas('barcodes', fn ($q) => $q->where('code', $search)))

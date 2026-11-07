@@ -1156,3 +1156,12 @@ Design:
 - The owner found the page unclear. The licence keeps short codes; `LicensePage::covers()` turns them into names for reading only. Paid add-ons get their own row, because "Finance and HR" wrongly described them.
 - `retail_wholesale` can be on a licence while its module is still planned, so the page says *not available yet* rather than implying it works. A supermarket runs on Grocery.
 - A new shop takes its first stock from the opening stock sheet, not a stock count: a count starts with no lines where nothing is on hand, and stock it adds has no cost. Guide 6.1 and `docs/grocery.md`.
+
+## Staff confined to their industry; no accidental shared products (2026-11-07)
+- Owner: "All industries" only for people who control several industries; items were being created in all industries by mistake. Cause: the Industry field was optional, an empty value meant shared, and someone with no switcher had no chosen industry, so their forms and lists covered everything.
+- `IndustryContext::selected()` now returns the only industry of someone without a company-wide grant. The switcher no longer depends on security level. Warehouse, till and legal-entity grants count towards a person's industries; a legal-entity grant no longer means every industry.
+- `CatalogService::saveProduct` decides the industry, so forms, files and every other caller get the same rule. A new product needs one; "shared" is an explicit value (`IndustryContext::SHARED`) for company-wide people. A system actor keeps the old behaviour for demo data.
+- Owner options: `catalog.shared_products` deliberate (default) or never; `access.company_wide` managers (default) or owner and support. Managers means level 4 and above, plus the read-only auditor, who looks at the whole company by nature.
+- Existing company-wide staff are listed, not changed: the system cannot know their branch, and removing access on install could stop tills. `AccessService::$limitCompanyWide` is off in tests because the `staff()` helper grants company-wide for brevity.
+- "Move all" is a product action, not a migration: which industry is right depends on the client. Suggestions use stock on hand and 12 months of sales; products used in several industries get no suggestion.
+- Price lists keep their optional industry: an empty one is the normal list for the company, and it does not put items on the wrong till.

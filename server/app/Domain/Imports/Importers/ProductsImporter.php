@@ -17,6 +17,7 @@ use App\Models\ReorderRule;
 use App\Models\TaxGroup;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
+use App\Support\IndustryContext;
 use App\Support\Money;
 use App\Support\Qty;
 use Illuminate\Database\Eloquent\Model;
@@ -150,9 +151,9 @@ class ProductsImporter extends Importer
             // Not given (e.g. a company without industries, or a call from code): shared, unless industries exist.
             $this->hasIndustries ??= Industry::licensed()->exists();
             $chosen = (string) ($options['industry'] ?? ($this->hasIndustries ? '' : 'shared'));
-            $data['industry_id'] = $chosen === 'shared' ? null : ($chosen !== '' ? $chosen : throw new DomainException('Choose which industry these products are for (on the import page).'));
+            $data['industry_id'] = $chosen !== '' ? $chosen : throw new DomainException('Choose which industry these products are for (on the import page).');
         }
-        if ($isNew && empty($options['allow_same_name']) && ($same = self::sameName($data['name'], $data['industry_id'] ?? null))) {
+        if ($isNew && empty($options['allow_same_name']) && ($same = self::sameName($data['name'], ($data['industry_id'] ?? null) === IndustryContext::SHARED ? null : ($data['industry_id'] ?? null)))) {
             throw new DomainException("A product named \"{$data['name']}\" already exists (SKU {$same}). To change it, use \"Products — update existing\"; "
                 .'to add a different product with the same name, tick "Allow names that already exist".');
         }
@@ -344,11 +345,11 @@ class ProductsImporter extends Importer
     }
 
     /** An industry by name or code; "shared" (or "all") for products every industry sells. */
-    private static function industryId(string $value): ?string
+    private static function industryId(string $value): string
     {
         $v = mb_strtolower(trim($value));
         if (in_array($v, ['shared', 'all', 'all industries'], true)) {
-            return null;
+            return IndustryContext::SHARED;
         }
 
         return Industry::licensed()->where(fn ($q) => $q->whereRaw('lower(name) = ?', [$v])->orWhereRaw('lower(code) = ?', [$v])->orWhere('module_key', $v))->value('id')

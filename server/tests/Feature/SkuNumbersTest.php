@@ -5,13 +5,14 @@ use App\Models\Industry;
 use App\Models\Product;
 use App\Models\TaxGroup;
 use App\Models\Uom;
+use App\Support\IndustryContext;
 use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
     [$this->tenant, $this->owner] = installCompany();
     setUpBranches($this->owner, [['code' => 'PH', 'name' => 'Pharmacy', 'is_hq' => true, 'tills' => 1, 'modules' => ['pharmacy']]]);
     $this->pharmacy = Industry::where('module_key', 'pharmacy')->firstOrFail();
-    $this->make = fn (string $name, ?string $industry = null, ?string $sku = null) => app(CatalogService::class)->saveProduct(actorFor($this->owner), new Product,
+    $this->make = fn (string $name, ?string $industry = IndustryContext::SHARED, ?string $sku = null) => app(CatalogService::class)->saveProduct(actorFor($this->owner), new Product,
         array_filter(['name' => $name, 'sku' => $sku, 'industry_id' => $industry, 'base_uom_id' => Uom::where('code', 'PC')->value('id'),
             'tax_group_id' => TaxGroup::where('code', 'STD')->value('id'), 'base_barcodes' => []], fn ($v) => $v !== null));
 });
