@@ -170,9 +170,8 @@ html.zx-new .fi-user-avatar, html.zx-new .fi-avatar { box-shadow: 0 0 0 2px var(
 
 /* A tab's panel: its sections side by side. */
 .zx-mega { position: absolute; left: 0; top: 100%; z-index: 30; color: var(--gray-950);
-    width: max-content; max-width: calc(100vw - 2rem); max-height: calc(100vh - 8rem); overflow: auto;
+    width: max-content; max-width: calc(100vw - 1rem); max-height: calc(100vh - 8rem); overflow: auto;
     background: var(--zx-panel); border: 1px solid var(--zx-line); border-top: 0; border-radius: 0 0 12px 12px; box-shadow: 0 16px 36px rgb(16 24 40 / .18); }
-.zx-mega.zx-right { left: auto; right: 0; }
 .dark .zx-mega { color: #fff; }
 .zx-mega-cols { display: grid; grid-template-columns: repeat(var(--cols, 1), minmax(200px, 250px)); gap: .5rem 1.75rem; padding: 1rem 1.25rem 1.1rem; }
 .zx-mega-sec ul { display: grid; gap: .05rem; }
@@ -424,3 +423,28 @@ a.zx-panel-row:hover { background: color-mix(in oklab, var(--primary-500) 8%, tr
     .zx-log, .zx-log * { visibility: visible; }
     .zx-log { position: absolute; inset: 0 auto auto 0; width: 100%; border: 0; background: #fff; color: #000; font-size: 10pt; }
 }
+
+/* ---- Lists: column headings pinned, page header slim once scrolled (owner request 2026-11-07) -------------------
+   The list scrolls inside its own box, sized to the window, so its headings stay in view, the sideways scrollbar and
+   the page controls stay on screen, and the first column stays put when a wide list scrolls sideways. Once the page
+   is scrolled, the big header becomes a one-line bar with the title and its buttons (--zx-stick: where it pins, set
+   by look-head from the menu band). */
+html.zx-new { --zx-stick: 6.6rem; --zx-slim-h: 3.25rem; }
+html.zx-new .fi-ta-content-ctn { max-height: calc(100dvh - var(--zx-stick) - var(--zx-slim-h) - 5.25rem); min-height: 12rem; overflow: auto; }
+html.zx-new .fi-ta-content-ctn:not(:has(.fi-ta-table)) { max-height: none; min-height: 0; }
+html.zx-new .fi-ta-table > thead > tr > th { position: sticky; top: 0; z-index: 3;
+    background: linear-gradient(var(--zx-head), var(--zx-head)), var(--zx-panel); box-shadow: inset 0 -1px 0 var(--zx-line); }
+html.zx-new .fi-ta-table > :is(thead, tbody) > tr > :first-child { position: sticky; left: 0; z-index: 2; background-color: var(--zx-panel); }
+html.zx-new .fi-ta-table > thead > tr > :first-child { z-index: 4; background: linear-gradient(var(--zx-head), var(--zx-head)), var(--zx-panel); }
+html.zx-new .fi-ta-table > :is(thead, tbody) > tr > .fi-ta-selection-cell { width: 3rem; min-width: 3rem; max-width: 3rem; }
+html.zx-new .fi-ta-table > :is(thead, tbody) > tr > .fi-ta-selection-cell + * { position: sticky; left: 3rem; z-index: 2; background-color: var(--zx-panel); }
+html.zx-new .fi-ta-table > thead > tr > .fi-ta-selection-cell + * { z-index: 4; background: linear-gradient(var(--zx-head), var(--zx-head)), var(--zx-panel); }
+html.zx-new .fi-ta-row:nth-child(even) > :is(:first-child, .fi-ta-selection-cell + *) { background: linear-gradient(color-mix(in srgb, var(--zx-head) 70%, transparent), color-mix(in srgb, var(--zx-head) 70%, transparent)), var(--zx-panel); }
+html.zx-new .fi-ta-content-ctn.zx-sideways .fi-ta-table > :is(thead, tbody) > tr > :is(:first-child:not(.fi-ta-selection-cell), .fi-ta-selection-cell + *) { box-shadow: 1px 0 0 var(--zx-line), 4px 0 6px -4px rgb(0 0 0 / .25); }
+html.zx-new.zx-slim .fi-header { position: sticky; top: var(--zx-stick); z-index: 20; min-height: 0; padding-block: .45rem; box-shadow: 0 6px 14px rgb(0 0 0 / .18); }
+html.zx-new.zx-slim .fi-header :is(.fi-breadcrumbs, .fi-header-subheading, .zx-hero-ic) { display: none; }
+html.zx-new.zx-slim .fi-header:has(.zx-hero-ic) > div:first-child { padding-inline-start: 0; min-height: 0; }
+html.zx-new.zx-slim .fi-header-heading { font-size: 1.05rem; line-height: 1.5rem; }
+html.zx-new.zx-slim .fi-header .fi-btn { padding-block: .3rem; }
+@media (max-width: 1023px) { html.zx-new .fi-ta-content-ctn { max-height: none; } }
+@media print { html.zx-new .fi-ta-content-ctn { max-height: none; overflow: visible; } html.zx-new.zx-slim .fi-header { position: static; } }

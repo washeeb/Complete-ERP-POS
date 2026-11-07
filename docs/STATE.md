@@ -1,7 +1,7 @@
 # State (resume file)
 
 **Phase:** all phases of the master plan built; first client (a pharmacy) live since 2026-10-19 on an Ubuntu server, with releases delivered by `release:build` and the Ubuntu installer.
-**Updated:** 2026-11-07 · every section below is merged to `main` (latest release BOMHFJLAL, installed at the first client; their one-year licence runs to 2027-10-31). The SES Licensing sync API is in that release but switched off: no licence server is deployed yet.
+**Updated:** 2026-11-07 · every section below is merged to `main` (latest release BKUIGWAAY; BOMHFJLAL was the last one confirmed installed at the first client; their one-year licence runs to 2027-10-31). The SES Licensing sync API is in that release but switched off: no licence server is deployed yet.
 
 
 

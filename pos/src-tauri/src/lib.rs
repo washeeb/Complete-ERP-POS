@@ -216,14 +216,14 @@ fn open_drawer(state: State<AppState>) -> Result<(), String> {
 const UNSENT_KEEP: usize = 48;
 
 /// A copy of the till's unsent sales (the same signed file as "Export unsent sales"), saved by the till itself every
-/// 15 minutes while any are waiting, in Documents\SES Labs Till\Unsent sales. If the PC or the browser data is lost
+/// 15 minutes while any are waiting, in Documents\ZionEX Till\Unsent sales. If the PC or the browser data is lost
 /// before the sales reach the server, the newest file is loaded in the back office. Returns the file's path.
 #[tauri::command]
 fn save_unsent(app: tauri::AppHandle, data: String) -> Result<String, String> {
     if data.len() > 64 * 1024 * 1024 || !data.starts_with('{') {
         return Err("Not a till export.".into());
     }
-    let dir = app.path().document_dir().map_err(|e| e.to_string())?.join("SES Labs Till").join("Unsent sales");
+    let dir = app.path().document_dir().map_err(|e| e.to_string())?.join("ZionEX Till").join("Unsent sales");
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_err(|e| e.to_string())?.as_millis();
     let path = dir.join(format!("unsent-{ms}.json"));

@@ -1,6 +1,12 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+- **ZionEX Suite:** the product's name everywhere: desktop app, browser tab, sign-in page, guide, e-mails and "Powered by". The desktop till is **ZionEX Till** (0.30.0) and the office app **ZionEX Suite** (1.0.2). Each installer removes the copy under its earlier name (*SES Labs Till*, *ZionEX Back Office*) and keeps its settings. Release and backup file names are unchanged.
+- **Lists:** column headings stay pinned while scrolling, the first column stays put when a wide list scrolls sideways, the page title shrinks to a one-line bar with its buttons, the page controls stay on screen, and rows per page are remembered on each computer.
+### Fixed
+- **Pharmacy rules on a grocery branch:** the branch page shows *Pharmacy rules for this branch* only on branches that run Pharmacy. They were never required; they showed on every branch once Pharmacy was on anywhere.
+- **Menu panels cut off at the window's edge** (e.g. Setup in a narrower window): a panel now moves sideways just enough to stay inside the window, and so does the + New menu.
 ### Fixed
 - **A second shift on the same day needs a manager's PIN:** someone who closed their own shift on a till today must have a manager allow another one, whatever that shift is called and whether or not shift names are on. Before, closing Morning and then opening at 14:22 (Afternoon) was allowed, which left empty shifts on the report.
 ### Changed

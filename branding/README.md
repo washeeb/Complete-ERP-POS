@@ -24,9 +24,10 @@ first wordmark made in-house; a designer's version can replace it by the steps b
 **Names that did not change with the rename, on purpose** (changing them would need every server moved and every
 desktop till reinstalled): the Ubuntu folder and services (`/var/www/seslabs`, `seslabs-*`), the Windows folder,
 scheduled tasks and firewall rule (`C:\SESLabs`, *SES Labs Web/PHP/Scheduler/Live*), the local HTTPS certificate names,
-the desktop till's Windows name and identifier (*SES Labs Till*, `app.seslabs.till`, pinned in `brand.json` as
-`tillProductName` / `tillIdentifier`; its window and everything inside it say ZionEX), its *Documents\SES Labs Till*
-folder of unsent sales, and the release file names. An older server's `.env` with `BRAND_NAME="SES Labs"` shows ZionEX.
+the desktop till's identifier (`app.seslabs.till`, pinned in `brand.json` as `tillIdentifier`, so settings and unsent
+sales survive), and the short name in release and backup file names (`brand.slug`, `zionex`). The product became
+**ZionEX Suite** on 2026-11-07: the till is *ZionEX Till* (`tillProductName`) and the office app *ZionEX Suite*; their
+installers remove the copies under the earlier names (`installer-hooks.nsh`). An older server's `.env` with `BRAND_NAME="SES Labs"` shows ZionEX.
 
 ## Changing the product's logo or name
 

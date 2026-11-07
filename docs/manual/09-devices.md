@@ -98,12 +98,12 @@ Every till, handheld and kitchen screen has a **Theme** switch at the bottom lef
 
 ### The desktop till app (silent printing, cash drawer, scale)
 
-**Name:** the desktop till shows *ZionEX Till*, but Windows lists it as **SES Labs Till** (its name before the product became ZionEX). It is kept so that tills already installed update in place, with their sales and settings. Both names mean the same app.
+**Name:** the desktop till is **ZionEX Till**. Until version 0.29 Windows listed it as *SES Labs Till*; installing 0.30 or later removes that copy by itself and keeps the server address, the printer, drawer and scale settings and any unsent sales. **Why:** one app on each till PC, under the product's name.
 
-For a Windows till PC with a receipt printer, a cash drawer or a weighing scale, install **SES Labs Till** (`SES Labs Till_<version>_x64-setup.exe`, from SyncLytics) instead of using the browser:
+For a Windows till PC with a receipt printer, a cash drawer or a weighing scale, install **ZionEX Till** (`ZionEX Till_<version>_x64-setup.exe`, from SyncLytics) instead of using the browser:
 
 1. Install the receipt printer's Windows driver (or note the IP address of a network receipt printer).
-2. Trust the server on this PC (4.9). Then run the SES Labs Till setup. On first start it asks for the **server address**: exactly what you type in a browser to open the back office, without `/admin`. For a cloud server that is its name, e.g. `https://erp.clientdomain.com`, **never its IP address** (the security certificate is for the name, so the IP is refused). For a server in the shop it is the address used in 4.9, e.g. `https://192.168.1.10`.
+2. Trust the server on this PC (4.9). Then run the ZionEX Till setup. On first start it asks for the **server address**: exactly what you type in a browser to open the back office, without `/admin`. For a cloud server that is its name, e.g. `https://erp.clientdomain.com`, **never its IP address** (the security certificate is for the name, so the IP is refused). For a server in the shop it is the address used in 4.9, e.g. `https://192.168.1.10`.
 3. **Receipt printer:** choose it from the list (or type `tcp://<printer-ip>:9100` for a network printer); tick **Open the cash drawer** if the drawer is plugged into the printer; **Print a test receipt**.
 4. **Scale:** choose its COM port and speed (usually 9600), then **Read the scale** with something on it.
 5. **Save and open the till.** The app first checks that the server answers. If it does not, it says so and stays on this page: correct the address and save again. (**Use this address anyway** keeps an address that cannot be reached yet, for example when the server is not switched on.) Then enrol and sign in as with any till (9.1).
@@ -132,13 +132,13 @@ Saving needs the server (so the change is approved and recorded). Printer, drawe
 
 **When the till starts:** a till already set up shows only *Opening the till…* for a moment, then the till (version 0.26 or later; older versions showed a white window and the set-up page first). It opens the server straight away if it answers. If the server has worked on this PC before but cannot be reached now (internet down), the till still opens and sells offline. If the saved address has **never** worked, the set-up page comes back with a message, so a wrong address can always be corrected.
 
-**Updating the app:** install the new `SES Labs Till_<version>_x64-setup.exe` over the old one. The server address, printer, drawer and scale settings are kept.
+**Updating the app:** install the new `ZionEX Till_<version>_x64-setup.exe` over the old one (also over *SES Labs Till*, the earlier name). The server address, printer, drawer and scale settings are kept.
 
 #### Starting the desktop till again from scratch
 
 Uninstalling the app keeps its settings (the server address, printer and scale), so a reinstall comes back with the same settings. To clear them:
 
-1. Close SES Labs Till (also from the system tray, if it shows there).
+1. Close ZionEX Till (also from the system tray, if it shows there).
 2. Open **PowerShell** (Start → type *PowerShell*) and run these two lines:
 
    ```powershell
@@ -146,22 +146,22 @@ Uninstalling the app keeps its settings (the server address, printer and scale),
    Remove-Item "$env:LOCALAPPDATA\app.seslabs.till" -Recurse -Force -ErrorAction SilentlyContinue
    ```
 
-3. Open SES Labs Till again (or reinstall it). It starts at the set-up page with empty fields.
+3. Open ZionEX Till again (or reinstall it). It starts at the set-up page with empty fields.
 
 **Why:** the first folder holds the till's settings; the second holds what the till app saved for working offline. Clearing both makes the PC behave like a new till. Then delete the old entry under **System → Devices** in the back office and enrol the till again (9.1).
 
 **Note:** sales not yet sent to the server are in the second folder. Clear it only when the till shows nothing waiting to send, or when the till never worked.
 
-## 9.8a The back-office desktop app (office computers)
+## 9.8a The ZionEX Suite desktop app (office computers)
 
-Office staff can use the back office in **ZionEX Back Office**, an app installed on the computer, instead of a
+Office staff can use the back office in **ZionEX Suite**, an app installed on the computer, instead of a
 browser tab. It is free with every licence. **Why:** the back office gets its own icon and window (no address bar or
 tabs to close by mistake), the server address is remembered, exports go straight into *Downloads*, and the audit log
 records which computer each change was made from.
 
 1. Trust the server on this computer first if it is on the shop network (9.3). A cloud server with a name needs
    nothing.
-2. Run `ZionEX Back Office_<version>_x64-setup.exe` (from SyncLytics). It installs for every user of the computer.
+2. Run `ZionEX Suite_<version>_x64-setup.exe` (from SyncLytics). It installs for every user of the computer.
 3. On first start it asks for the **server address**: what you type in a browser to open the back office, without
    `/admin` — for a cloud server its name, e.g. `https://erp.clientdomain.com`, **never its IP address**. Click **Save
    and open**, then sign in with your usual username and password (and your second step, as in the browser).
@@ -177,7 +177,7 @@ records which computer each change was made from.
   server address.
 - If the server cannot be reached when the app starts, it says so with **Try again** instead of an error page.
 
-**Updating:** install the new `ZionEX Back Office_<version>_x64-setup.exe` over the old one; the server address is kept.
+**Updating:** install the new `ZionEX Suite_<version>_x64-setup.exe` over the old one; the server address is kept. Version 1.0.2 replaces *ZionEX Back Office* (the earlier name) by itself, so there is one app on the computer.
 
 ## 9.8 Barcode scanner
 
@@ -258,7 +258,7 @@ Set the scale to print **EAN-13** labels starting with `21` (see Chapter 8, Groc
 
 - **Lost or stolen:** **System → Devices → Revoke** at once. Its access and every sign-in on it end immediately.
 - **Replacing a till that still has unsent sales:** on the old till press **Export unsent sales** (in the yellow banner). In the back office: **System → Sync Center → Import till file**. Then register and enrol the new device.
-- **Automatic copy (desktop till 0.27 or later):** while any sales are waiting, the desktop till saves the same file by itself every 15 minutes in **Documents → SES Labs Till → Unsent sales** on that PC, keeping the newest 48 (12 hours). **Why:** if the till PC breaks or its data is wiped before the sales reach the server, the newest file there is loaded with *Import till file*, even if nobody pressed the button. Loading a file twice is safe: sales already received are skipped.
+- **Automatic copy (desktop till 0.27 or later):** while any sales are waiting, the desktop till saves the same file by itself every 15 minutes in **Documents → ZionEX Till → Unsent sales** on that PC (*SES Labs Till* on tills older than 0.30), keeping the newest 48 (12 hours). **Why:** if the till PC breaks or its data is wiped before the sales reach the server, the newest file there is loaded with *Import till file*, even if nobody pressed the button. Loading a file twice is safe: sales already received are skipped.
 - **A shift left open overnight:** the till shows *This shift was opened on … and not closed*, and **Sales → Shifts** marks it *left open since …* in red. Close it on the till (count the cash) and open a new shift. **Why:** otherwise today's sales and cash run into yesterday's shift, and neither day balances on its own.
 - **Re-installing the same device:** register it as a new device (it gets the next receipt series letter, so receipt numbers never repeat).
 

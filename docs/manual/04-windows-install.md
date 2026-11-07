@@ -399,7 +399,7 @@ New-NetFirewallRule -DisplayName "SES Labs server" -Direction Inbound -Protocol 
 
 On the shop network (and on an Ubuntu server reached by its address, Chapter 5) the server uses **its own certificate**. A certificate is what proves to a browser that it is really talking to your server and that nobody can read along. Each till, tablet, handheld, kitchen screen and office PC must be told **once** to trust it. Without this, browsers show a warning, and the till refuses to enrol: it only uses its security functions on a trusted address.
 
-**On a Windows PC (also for the SES Labs Till and ZionEX Back Office desktop apps):** open PowerShell **as administrator** and type, with your server's address:
+**On a Windows PC (also for the ZionEX Till and ZionEX Suite desktop apps):** open PowerShell **as administrator** and type, with your server's address:
 
 ```
 Invoke-WebRequest http://192.168.1.10/ca.crt -OutFile $env:TEMP\seslabs.crt

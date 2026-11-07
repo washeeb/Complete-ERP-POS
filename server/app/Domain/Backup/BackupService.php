@@ -35,7 +35,7 @@ final class BackupService
         if (! $lock->get()) {
             throw new DomainException('A backup is already running.');
         }
-        $name = Str::slug((string) config('brand.name')).'-'.Str::slug((string) config('erp.node.id', 'node')).'-'.now()->format('Ymd-His').'.synbak';
+        $name = Str::slug((string) config('brand.slug')).'-'.Str::slug((string) config('erp.node.id', 'node')).'-'.now()->format('Ymd-His').'.synbak';
         $run = BackupRun::create(['file_name' => $name, 'status' => 'running', 'started_by' => mb_substr($by, 0, 120), 'started_at' => now()]);
         $work = $this->workDir($run->id);
         try {

@@ -85,8 +85,8 @@ The first build takes 10 to 20 minutes (Rust downloads and compiles its librarie
 
 The installers are then in:
 
-- `pos\src-tauri\target\release\bundle\nsis\SES Labs Till_<version>_x64-setup.exe`: give this one to shops.
-- `pos\src-tauri\target\release\bundle\msi\SES Labs Till_<version>_x64_en-US.msi`: for IT departments that install by policy.
+- `pos\src-tauri\target\release\bundle\nsis\ZionEX Till_<version>_x64-setup.exe`: give this one to shops.
+- `pos\src-tauri\target\release\bundle\msi\ZionEX Till_<version>_x64_en-US.msi`: for IT departments that install by policy.
 
 **If `cargo` is "not recognised":** close and reopen PowerShell (rustup adds it to the path for new windows), or run `$env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"`.
 
