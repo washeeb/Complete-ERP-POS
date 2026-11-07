@@ -1144,3 +1144,11 @@ Design:
 - **One permission for the till PIN** (`pos.return.no_receipt`, relabelled) rather than a second one, so nobody who approved returns loses that on update.
 - **Health checks:** a product with `reading_kind`, so the fee, tax, reports and receipts need nothing new. Flags are screening prompts on common limits, shown as advice; the pharmacist should agree them. Back-office access needs `pharmacy.patients`, because these are health records. A bad reading never refuses a sale: it may arrive from an offline till hours later. Immutable: taken again, not edited.
 
+## Expiry sheet (2026-11-07)
+- Stock in OPENING has no date: no warnings, and earliest-expiry-first sells it after everything dated, so old stock would sit unseen. Owner first chose no sheet, then asked for it once that was explained.
+- An importer, so Check, errors and the audit come with it. Moves use `batch_assign` inside the warehouse, as switching batches on does: no value or quantity changes, so no stock adjustments to approve, one per row otherwise.
+- A date with no batch number dates batch OPENING itself, which is per product, so it applies in every store; a batch number keeps stores apart.
+
+## Returned medicines go back on sale by default (2026-11-07)
+- Owner reversed the first choice: a returned medicine goes back on sale, and quarantine for medicines is an option (`returns.medicines_to_quarantine`, off). Damaged and expired goods still go to quarantine whatever the setting: that is the reason given for the return, not a rule about medicines.
+

@@ -2,8 +2,10 @@
 
 ## [Unreleased]
 ### Added
+- **Expiry sheet** (*Stock → Batches & expiry*): download the stock still in batch OPENING, fill in dates and batches on paper or in Excel, and upload. Quantities and value do not change, and rows left empty wait for later.
+### Added
 - **Manager's approval of returns** (Settings → Returns): Require (default), Allow or Off, with a value limit; a reason from a list on every return; a return slip to sign.
-- **Quarantine:** damaged and expired goods and returned medicines go to the branch's quarantine store, which no till sells from.
+- **Quarantine:** damaged and expired goods go to the branch's quarantine store, which no till sells from. Returned medicines go back on sale unless *Send returned medicines to quarantine* is switched on (Settings → Returns).
 - **Returns from the back office** from a sale: store credit, the customer's account, or paid from a chosen account; approved by someone else; goods to any store. *Sales → Returns* reports every return, with a warning when one person's returns stand out.
 - **Fee services and health checks** (*Pharmacy → Health checks*): a service with no stock, sold at the till; blood pressure, sugar, weight or temperature kept on the patient, printed on the receipt, with high, low and refer-now flags. Guide 14.3e and 14.3f.
 ### Fixed

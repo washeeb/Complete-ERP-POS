@@ -207,7 +207,19 @@ The same invoice number from the same supplier is refused, so an invoice cannot 
 
 **A PDF holds up to 800 rows.** A longer list says so: filter it, for example by category, or use Excel or CSV. The same applies to the **Stock ledger**, which can be filtered by date, product, type, warehouse, category, brand and person. **Why:** a PDF is laid out row by row in the server's memory, and a very long one would stop it.
 
-**Batches and expiry dates for many products:** on **Catalog → Products**, tick products and choose **Switch on batches and expiry**, or click **Switch on batches for all**. Products already on are left as they are. Stock on hand goes into a batch called OPENING with no expiry date, so it gets no expiry warnings; every new delivery then needs a batch and expiry date. It cannot be switched off once batches exist. **Why:** expiry warnings and earliest-expiry-first selling only work once products carry batches.
+**Batches and expiry dates for many products:** on **Catalog → Products**, tick products and choose **Switch on batches and expiry**, or click **Switch on batches for all**. Products already on are left as they are. Stock on hand goes into a batch called OPENING with no expiry date, so it gets no expiry warnings and sells after everything dated, until you give it a date with the expiry sheet below. Every new delivery then needs a batch and expiry date. It cannot be switched off once batches exist. **Why:** expiry warnings and earliest-expiry-first selling only work once products carry batches.
+
+**Expiry sheet: dating stock with no batch.** Stock that had no batch when batches were switched on sits in a batch called OPENING with no expiry date. It gets no expiry warnings, and it **sells last**, after everything with a date. To put that right for many products at once:
+
+1. Go to **Stock → Batches & expiry** and click **Expiry sheet**, or **System → Import data → Expiry sheet**.
+2. Click **Download your current data**. The file lists everything still in OPENING, store by store, with how much of each.
+3. On the shelf, fill in **expires_on** from the pack. Leave a row empty to come back to it later, so you can do a shelf at a time.
+   - **One date on the shelf:** the date is all you need.
+   - **Several batches:** copy the row for each one, and fill in **batch_no** and **qty** in the smallest unit (tablets, not packs). A row with no qty takes all that is left.
+4. Upload the file and click **Check** first. **Why:** it tries every row and undoes it, so you see any mistakes before anything changes.
+5. Import it, then download the list again: it now shows only what is left.
+
+Quantities and the stock value never change, so there is nothing to approve. **A date with no batch number applies in every store**, because one batch has one date; use a batch number if two stores hold different dates. If you do not know a date, use the earliest you can see on that shelf, so you are warned too early and not too late.
 
 ## 14.3e Returns: approval, quarantine and the back office
 
@@ -220,7 +232,9 @@ To let small returns through, set **Only returns above this value need approval*
 
 **Every return has a reason** from a list (wrong item, damaged, expired, changed mind, doctor changed the treatment, cashier's mistake, other), so the reasons can be totalled.
 
-**Quarantine.** Damaged and expired goods, and medicines once they have left the pharmacy, do not go back on the shelf. They go to the branch's **quarantine** store, made the first time it is needed. Its stock still has a value, but no till can sell it. Dispose of it or send it back to the supplier from there, or transfer it back if it is fit to sell. Turn off **Returned medicines go to quarantine** only if your pharmacist agrees. **Why:** nobody can vouch for how a medicine was stored once it left you, so reselling it puts patients at risk.
+**Quarantine.** Returned goods go back on the shelf, unless they are damaged or expired. Those go to the branch's **quarantine** store, made the first time it is needed. Its stock still has a value, but no till can sell it. Dispose of it or send it back to the supplier from there, or transfer it back if it is fit to sell.
+
+To treat every returned medicine this way, switch on **Send returned medicines to quarantine** in **System → Settings → Returns**. **Why:** once a medicine has left the pharmacy, nobody can vouch for how it was stored. Whether to resell it is your pharmacist's decision, so ask them. Until it is switched on, check a returned medicine before taking it back, and choose **Damaged** or **Expired** as the reason if it should not be sold.
 
 **Returns from the back office.** For a customer who comes to the office, or a mistake found later:
 1. Open the sale under **Sales → Sales** and click **Return goods**.

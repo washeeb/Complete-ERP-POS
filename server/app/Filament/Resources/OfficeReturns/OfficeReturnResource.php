@@ -75,7 +75,7 @@ class OfficeReturnResource extends Resource
     {
         return Action::make('officeReturn')->label('Return goods')->icon(Heroicon::OutlinedArrowUturnLeft)->color('warning')
             ->visible(fn (Sale $record) => $record->kind === 'sale' && $record->status === 'posted' && Erp::canAnywhere('returns.office'))
-            ->modalDescription('A manager approves it before anything changes. Goods go to the shelf, or to quarantine if damaged, expired or a medicine.')
+            ->modalDescription('A manager approves it before anything changes. Goods go back on the shelf, or to quarantine if damaged or expired.')
             ->fillForm(fn (Sale $record) => ['warehouse_id' => $record->warehouse_id, 'refund_method' => 'store_credit', 'lines' => collect(app(ReturnService::class)->returnable($record->load('lines', 'payments'))['lines'])
                 ->filter(fn ($l) => (float) $l['returnable_qty'] > 0)->map(fn ($l) => ['line_id' => $l['id'], 'name' => $l['name'], 'can' => rtrim(rtrim($l['returnable_qty'], '0'), '.').' '.$l['uom'], 'qty' => null, 'damaged' => false])->values()->all()])
             ->schema([

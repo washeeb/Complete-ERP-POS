@@ -76,6 +76,42 @@ final class InventoryService
         return $this->recorder->transaction(fn () => $this->recorder->save($actor, $batch, 'stock_batch.corrected', trim($reason)));
     }
 
+    /**
+     * Stock in batch OPENING gets its real date (the expiry sheet). With a batch number, the quantity (all that is left if
+     * none) moves into that batch, inside the warehouse: no value and no quantity changes, so no adjustment to approve.
+     * With none, batch OPENING itself takes the date, for what is left of it in every store.
+     */
+    public function dateOpeningStock(Actor $actor, Warehouse $warehouse, Product $product, string $expiresOn, string $batchNo = '', ?string $qty = null): void
+    {
+        if (! $actor->user || ! $this->authz->allows($actor->user, 'stock.adjust', $warehouse)) {
+            throw new AccessDenied;
+        }
+        $opening = StockBatch::where('product_id', $product->id)->where('batch_no', 'OPENING')->first()
+            ?? throw new DomainException("{$product->name} has no stock in batch OPENING.");
+        if ($batchNo === '' || mb_strtoupper($batchNo) === 'OPENING') {
+            $opening->expires_on = $expiresOn;
+            if ($opening->isDirty()) {
+                $this->recorder->save($actor, $opening, 'stock_batch.dated', 'Expiry sheet');
+            }
+
+            return;
+        }
+        $this->recorder->transaction(function () use ($actor, $warehouse, $product, $expiresOn, $batchNo, $qty, $opening) {
+            $left = Qty::toMilli((string) (DB::table('stock_batch_levels')->where('warehouse_id', $warehouse->id)->where('batch_id', $opening->id)->lockForUpdate()->value('on_hand') ?? '0'));
+            $milli = $qty === null ? $left : Qty::toMilli($qty);
+            if ($milli <= 0 || $milli > $left) {
+                throw new DomainException("{$product->name}: ".Qty::format($left).' left in batch OPENING in '.$warehouse->code.($qty === null ? '.' : ", so {$qty} cannot move."));
+            }
+            $to = app(StockBatches::class)->ensure($actor, $product, $batchNo, $expiresOn);
+            $base = ProductUom::where('product_id', $product->id)->where('is_base', true)->firstOrFail();
+            $this->ledger->post($actor, $warehouse, 'batch_assign', [
+                ['product' => $product, 'unit' => $base, 'qty_milli' => -$milli, 'bin_id' => false, 'batch_id' => $opening->id],
+                ['product' => $product, 'unit' => $base, 'qty_milli' => $milli, 'bin_id' => false, 'batch_id' => $to],
+            ], "Expiry sheet: batch {$batchNo}", 'product', $product->id, alreadyHappened: true);
+            $this->recorder->audit->record($actor, 'stock_batch.dated', $product, ['batch' => [null, $batchNo], 'expires_on' => [null, $expiresOn], 'qty' => [null, Qty::format($milli)]], 'Expiry sheet', $warehouse->branch_id);
+        });
+    }
+
     public function adjust(Actor $actor, Warehouse $warehouse, Product $product, ProductUom $unit, string $qty, string $type, string $reasonCode, ?string $note = null, ?string $unitCost = null,
         ?string $batchNo = null, ?string $expiresOn = null, array|string|null $serials = null): StockMovement
     {

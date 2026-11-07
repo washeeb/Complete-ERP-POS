@@ -46,8 +46,8 @@ use Illuminate\Support\Str;
  *
  * Manager's approval (owner request 2026-11-06, Settings → Returns): Require (default) needs a PIN on every return above
  * the limit; Allow lets the cashier go on and puts it in the review queue for a manager; Off leaves it to the rules above.
- * Goods that may not go back on sale (damaged, expired, medicines once they have left the pharmacy) go to the branch's
- * quarantine store: stock with a value that no till can sell, to be disposed of or sent back to the supplier.
+ * Damaged and expired goods, and medicines if Settings → Returns says so (off by default, owner 2026-11-07), go to the
+ * branch's quarantine store: stock with a value that no till can sell, to be disposed of or sent back to the supplier.
  */
 final class ReturnService
 {
