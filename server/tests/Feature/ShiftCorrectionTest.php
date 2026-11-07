@@ -32,7 +32,9 @@ it('closes a shift no till can close, from the back office, with the reason', fu
         ->and($closed->close_note)->toBe('Closed in the back office: Till reinstalled; test shift')
         ->and(AuditEvent::where('action', 'shift.closed_in_office')->exists())->toBeTrue();
     expect(fn () => $this->shifts->closeFromOffice(actorFor($this->owner), $closed, 0, 'again'))->toThrow(DomainException::class, 'already closed');
-    expect(fn () => $this->shifts->closeFromOffice(actorFor($this->teller), $this->shifts->open($this->device, $this->teller, 0), 0, 'x'))->toThrow(AccessDenied::class);
+    // Another teller's open shift (the first would need a manager to open a second one today): a teller cannot close it from the office.
+    $other = staff($this->owner, 'abena', 2, 'teller', ScopeType::Till, $this->device->till_id);
+    expect(fn () => $this->shifts->closeFromOffice(actorFor($this->teller), $this->shifts->open($this->device, $other, 0), 0, 'x'))->toThrow(AccessDenied::class);
 });
 
 it('corrects a mistyped count without editing the shift, and puts the books right', function () {
