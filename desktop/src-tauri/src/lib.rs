@@ -18,6 +18,16 @@ use tauri::{Manager, State, WebviewUrl};
 #[serde(default)]
 struct Config {
     server: Option<String>,
+    /// Who supports this installation (the server says so on every page), shown when the server cannot be reached.
+    support: Option<Support>,
+}
+
+#[derive(Default, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(default)]
+struct Support {
+    name: String,
+    phone: String,
+    email: String,
 }
 
 struct AppState {
@@ -65,6 +75,81 @@ fn set_server(app: tauri::AppHandle, state: State<AppState>, server: String) -> 
 fn open_setup(app: tauri::AppHandle) -> Result<(), String> {
     let window = app.get_webview_window("main").ok_or("no window")?;
     window.navigate(setup_url("?setup=1")).map_err(|e| e.to_string())
+}
+
+/// The server could not be reached: our own reconnect screen, which returns to `back` (on the server) once it answers.
+#[tauri::command]
+fn open_offline(app: tauri::AppHandle, back: Option<String>, reason: Option<String>) -> Result<(), String> {
+    show_offline(&app, back.as_deref().unwrap_or(""), reason.as_deref().unwrap_or("offline"))
+}
+
+fn show_offline(app: &tauri::AppHandle, back: &str, reason: &str) -> Result<(), String> {
+    let window = app.get_webview_window("main").ok_or("no window")?;
+    let mut u = setup_url("");
+    u.query_pairs_mut().append_pair("offline", reason).append_pair("back", back);
+    let _ = window.show();
+    window.navigate(u).map_err(|e| e.to_string())
+}
+
+/// The server's own support contact (a reseller's, or SyncLytics'), kept for when the server is out of reach.
+#[tauri::command]
+fn remember_support(state: State<AppState>, name: String, phone: String, email: String) -> Result<(), String> {
+    let support = Support { name: name.chars().take(80).collect(), phone: phone.chars().take(40).collect(), email: email.chars().take(120).collect() };
+    let mut cfg = state.config.lock().map_err(|e| e.to_string())?;
+    if cfg.support.as_ref() == Some(&support) {
+        return Ok(());
+    }
+    cfg.support = Some(support);
+    drop(cfg);
+    state.save()
+}
+
+/// Windows: a page of the server that failed to load (no network, the server not answering, the web server's 502 /
+/// 504 while it restarts) opens our reconnect screen instead of Edge's error page. Downloads and pages the person
+/// left on purpose are not failures.
+#[cfg(windows)]
+fn watch_connection(window: &tauri::WebviewWindow, app: tauri::AppHandle) {
+    use webview2_com::Microsoft::Web::WebView2::Win32::*;
+    use webview2_com::NavigationCompletedEventHandler;
+    use windows_core::Interface;
+    let _ = window.with_webview(move |webview| unsafe {
+        let Ok(core) = webview.controller().CoreWebView2() else { return };
+        let handler = NavigationCompletedEventHandler::create(Box::new(move |sender: Option<ICoreWebView2>, args: Option<ICoreWebView2NavigationCompletedEventArgs>| {
+            let (Some(sender), Some(args)) = (sender, args) else { return Ok(()) };
+            let mut ok = windows_core::BOOL::default();
+            args.IsSuccess(&mut ok)?;
+            let mut status = COREWEBVIEW2_WEB_ERROR_STATUS::default();
+            args.WebErrorStatus(&mut status)?;
+            let mut http = 0i32;
+            if let Ok(a2) = args.cast::<ICoreWebView2NavigationCompletedEventArgs2>() {
+                let _ = a2.HttpStatusCode(&mut http);
+            }
+            let unreachable = !ok.as_bool() && [
+                COREWEBVIEW2_WEB_ERROR_STATUS_TIMEOUT, COREWEBVIEW2_WEB_ERROR_STATUS_SERVER_UNREACHABLE, COREWEBVIEW2_WEB_ERROR_STATUS_CANNOT_CONNECT,
+                COREWEBVIEW2_WEB_ERROR_STATUS_DISCONNECTED, COREWEBVIEW2_WEB_ERROR_STATUS_HOST_NAME_NOT_RESOLVED, COREWEBVIEW2_WEB_ERROR_STATUS_CONNECTION_RESET,
+                COREWEBVIEW2_WEB_ERROR_STATUS_ERROR_HTTP_INVALID_SERVER_RESPONSE,
+            ].contains(&status);
+            let busy = matches!(http, 502 | 504);
+            if !(unreachable || busy) {
+                return Ok(());
+            }
+            let mut uri = windows_core::PWSTR::null();
+            sender.Source(&mut uri)?;
+            let source = webview2_com::take_pwstr(uri);
+            if source.starts_with("http://tauri.localhost") || source.starts_with("tauri://") {
+                return Ok(());
+            }
+            let reason = if busy { "busy" } else if status == COREWEBVIEW2_WEB_ERROR_STATUS_HOST_NAME_NOT_RESOLVED { "dns" } else { "offline" };
+            let app = app.clone();
+            // Leave the WebView2 event first, then go to the reconnect screen.
+            std::thread::spawn(move || {
+                let _ = show_offline(&app, &source, reason);
+            });
+            Ok(())
+        }));
+        let mut token = 0i64;
+        let _ = core.add_NavigationCompleted(&handler, &mut token);
+    });
 }
 
 /// The set-up page shows itself only when its form is needed; otherwise the window stays hidden until the back office is drawn.
@@ -128,7 +213,9 @@ pub fn run() {
             // Ctrl+Shift+S anywhere: back to the set-up page (to change the server address).
             let cookie = format!(
                 "try{{if(location.protocol==='https:'||location.protocol==='http:'){{document.cookie='ses_client='+encodeURIComponent({})+';path=/;max-age=31536000;SameSite=Lax'+(location.protocol==='https:'?';Secure':'')}}}}catch(e){{}}\
-                 document.addEventListener('keydown',function(e){{if(e.ctrlKey&&e.shiftKey&&(e.key==='S'||e.key==='s')){{e.preventDefault();try{{window.__TAURI__.core.invoke('open_setup')}}catch(x){{}}}}}});",
+                 document.addEventListener('keydown',function(e){{if(e.ctrlKey&&e.shiftKey&&(e.key==='S'||e.key==='s')){{e.preventDefault();try{{window.__TAURI__.core.invoke('open_setup')}}catch(x){{}}}}}});\
+                 document.addEventListener('DOMContentLoaded',function(){{try{{var m=document.querySelector('meta[name=zx-support]');if(m){{var s=JSON.parse(m.content);window.__TAURI__.core.invoke('remember_support',{{name:s.name||'',phone:s.phone||'',email:s.email||''}})}}}}catch(x){{}}}});\
+                 window.addEventListener('offline',function(){{if(location.protocol.indexOf('http')===0){{try{{window.__TAURI__.core.invoke('open_offline',{{back:location.href,reason:'offline'}})}}catch(x){{}}}}}});",
                 serde_json::to_string(&info).unwrap_or_else(|_| "\"\"".into())
             );
             let handle = app.handle().clone();
@@ -176,6 +263,10 @@ pub fn run() {
                     true
                 })
                 .build()?;
+            #[cfg(windows)]
+            if let Some(window) = app.get_webview_window("main") {
+                watch_connection(&window, app.handle().clone());
+            }
             // Never left hidden: shown after a few seconds even if the page has not finished loading.
             let late = app.handle().clone();
             std::thread::spawn(move || {
@@ -186,7 +277,7 @@ pub fn run() {
             });
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![get_config, set_server, open_setup, show_window])
+        .invoke_handler(tauri::generate_handler![get_config, set_server, open_setup, show_window, open_offline, remember_support])
         .run(tauri::generate_context!())
         .expect("error while running the back office");
 }

@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- **Reconnect screen in ZionEX Suite (desktop 1.0.3):** when the server can't be reached (no network, server not answering, busy while restarting or updating), the app shows its own screen instead of Edge's error page. It says why, retries by itself, returns to the page the person was on, and after 5 minutes shows the support contact (the server's own: SyncLytics or a reseller). It never shows the server's address.
 ### Changed
 - **Off-site backups are a paid add-on** for clients licensed from now on: copies to S3-compatible storage (AWS, Backblaze B2, Wasabi), Google Drive or another server by SFTP need `offsite_backup` on the licence. A folder (USB drive, second disk, network share) stays included. Cloud copies set up before this change keep working.
 ### Fixed

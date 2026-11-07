@@ -101,6 +101,9 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::BODY_END, fn () => auth()->check() ? view('progress.overlay') : '') // "Importing 150 of 2,000" for long work (not on the sign-in page, where it can only be refused)
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('layout.look-head'))
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('layout.connection-notices'))
+            // Who supports this installation: the desktop app keeps it, to show on its reconnect screen when the server is out of reach.
+            ->renderHook(PanelsRenderHook::HEAD_END, fn () => new HtmlString('<meta name="zx-support" content="'.e(json_encode([
+                'name' => config('brand.vendor').' support', 'phone' => (string) config('brand.support_phone'), 'email' => (string) config('brand.support_email')])).'">'))
             ->renderHook(PanelsRenderHook::TOPBAR_AFTER, fn () => Look::hasTopTabs() ? view('layout.tabbar', ['tabs' => Look::tabs()]) : '')
             ->renderHook(PanelsRenderHook::BODY_END, fn () => view('layout.sidebar-focus')) // the current menu section at the top
             ->renderHook(PanelsRenderHook::SIDEBAR_NAV_START, fn () => view('layout.menu-search')) // type to find a page in the menu

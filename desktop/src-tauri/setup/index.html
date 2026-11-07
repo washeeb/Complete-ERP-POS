@@ -15,6 +15,27 @@
     button.secondary { background: transparent; color: var(--fg); border: 1px solid var(--line); } .msg { min-height: 1.5em; } .bad { color: var(--bad); }
     .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; } :focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
     #opening { min-height: 100vh; display: grid; place-items: center; color: var(--muted); margin: 0; } [hidden] { display: none !important; }
+
+    /* Reconnect screen (owner 2026-11-07): shown instead of the browser's error page whenever the server is out of reach. */
+    .off { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; margin: 0; max-width: none;
+      background: radial-gradient(1200px 600px at 50% -10%, color-mix(in oklab, #06AAAA 18%, transparent), transparent 60%), var(--bg); }
+    .off-card { width: min(560px, 100%); background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 32px 28px;
+      box-shadow: 0 24px 60px rgb(2 6 23 / .18); text-align: center; }
+    .off-art { width: 112px; height: 112px; margin: 0 auto 12px; position: relative; display: grid; place-items: center; }
+    .off-art::before { content: ''; position: absolute; inset: 8px; border-radius: 50%; background: color-mix(in oklab, #06AAAA 16%, transparent); animation: pulse 2.4s ease-out infinite; }
+    .off-art svg { position: relative; width: 64px; height: 64px; color: #06AAAA; }
+    .off.ok .off-art::before { background: color-mix(in oklab, #16a34a 22%, transparent); } .off.ok .off-art svg { color: #16a34a; }
+    @keyframes pulse { 0% { transform: scale(.85); opacity: .9; } 100% { transform: scale(1.25); opacity: 0; } }
+    .off h1 { font-size: 1.5rem; margin: 4px 0 8px; letter-spacing: -.01em; } .off-why { margin: 0 auto 18px; max-width: 46ch; }
+    .off-status { display: inline-flex; gap: 10px; align-items: center; padding: 8px 14px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line);
+      font-size: .9rem; color: var(--muted); margin-bottom: 20px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 0 0 rgb(245 158 11 / .6); animation: ring 1.6s infinite; }
+    .off.checking .dot { background: #06AAAA; } .off.ok .dot { background: #16a34a; animation: none; }
+    @keyframes ring { 70% { box-shadow: 0 0 0 10px rgb(245 158 11 / 0); } 100% { box-shadow: 0 0 0 0 rgb(245 158 11 / 0); } }
+    .off .row { justify-content: center; } .off button { margin: 0; } .off-small { font-size: .82rem; margin: 14px 0 0; }
+    .off-help { text-align: left; margin: 22px 0 0; padding: 16px 18px; border-radius: 14px; border: 1px dashed var(--line); background: var(--bg); }
+    .off-help h2 { font-size: 1rem; margin: 0 0 6px; } .off-help p { margin: 4px 0; } .off-help a { color: inherit; font-weight: 600; }
+    @media (prefers-reduced-motion: reduce) { .off-art::before, .dot { animation: none; } }
   </style>
 </head>
 <body>
@@ -28,6 +49,27 @@
       (e.g. <code>https://erp.yourshop.com</code>), never its IP address.</p>
   </section>
   <div class="row"><button type="button" id="save">Save and open</button><button type="button" class="secondary" id="retry" hidden>Try again</button><span class="msg" id="msg" role="status"></span></div>
+</main>
+<main id="offline" class="off" hidden>
+  <div class="off-card" role="alert" aria-live="polite">
+    <div class="off-art" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path id="off-icon" d="M3 3l18 18M8.5 8.6A5 5 0 0 0 7 18h10a4 4 0 0 0 1.7-.4M20.6 15.6A4 4 0 0 0 17 10h-1.3A7 7 0 0 0 10 5.3"/>
+      </svg>
+    </div>
+    <h1 id="off-title">Can't reach your business server</h1>
+    <p class="off-why" id="off-why"></p>
+    <div class="off-status"><span class="dot"></span><span id="off-next">Checking…</span></div>
+    <div class="row"><button type="button" id="off-try">Try now</button><button type="button" class="secondary" id="off-setup">Change server</button></div>
+    <p class="off-small" id="off-back">You'll go back to the page you were on. Anything typed there and not saved may need entering again.</p>
+    <p class="off-small" id="off-meta"></p>
+    <section class="off-help" id="off-help" hidden aria-labelledby="off-help-h">
+      <h2 id="off-help-h">Still not reachable?</h2>
+      <p>Contact <strong id="sup-name"></strong>. Tell them when it stopped answering, and copy the details below for them.</p>
+      <p id="sup-links"></p>
+      <div class="row" style="justify-content:flex-start;margin-top:10px"><button type="button" class="secondary" id="off-copy">Copy the details</button><span class="msg" id="off-copied" role="status"></span></div>
+    </section>
+  </div>
 </main>
 <script>
   const T = window.__TAURI__.core;
@@ -46,12 +88,86 @@
   const unreachable = (server) => `Could not reach ${server}. Check the address and this computer's internet or network, then try again.`;
   const showForm = () => { $('opening').hidden = true; $('form').hidden = false; T.invoke('show_window').catch(() => {}); };
 
+  // --- Reconnect screen ---------------------------------------------------------------------------------------------
+  // Checks again by itself (sooner as Windows reports the network back), returns to the page the person was on, and
+  // after 5 minutes shows who to call. Owner decisions 2026-11-07.
+  const SUPPORT = { name: 'SyncLytics support', phone: '024 563 6889', email: 'info@synclyticsenterprisesystems.com' };
+  const WAITS = [5, 10, 15, 30];
+  const REASONS = {
+    offline: ['Can\'t reach your business server', 'Your server isn\'t answering. It may be restarting or being updated, or its internet may be down. This usually sorts itself out within a few minutes.'],
+    busy: ['Your server is busy for a moment', 'It is restarting or being updated. This usually takes a few minutes, and nothing you saved is lost.'],
+    dns: ['Can\'t find your business server', 'Its name can\'t be looked up just now, which usually means this computer\'s internet is down or unstable.'],
+    nonet: ['This computer is offline', 'Check the Wi-Fi or the network cable. The tills keep selling on their own; this window reconnects as soon as the network is back.'],
+  };
+  async function offline(cfg) {
+    const server = cfg.server, since = new Date(), support = cfg.support && (cfg.support.phone || cfg.support.email) ? cfg.support : SUPPORT;
+    let back = params.get('back') || '';
+    if (!back.startsWith(server + '/')) back = server + '/admin'; // only ever back to this server
+    $('opening').hidden = true; $('form').hidden = true; $('offline').hidden = false;
+    T.invoke('show_window').catch(() => {});
+    let tries = 0, wait = 0, timer = null, busy = false;
+    const time = (d) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    function words() {
+      const [title, why] = REASONS[navigator.onLine ? (params.get('offline') || 'offline') : 'nonet'] || REASONS.offline;
+      $('off-title').textContent = title; $('off-why').textContent = why;
+      $('off-meta').textContent = `Out of reach since ${time(since)}` + (tries ? ` · ${tries} ${tries === 1 ? 'try' : 'tries'}` : '');
+    }
+    function helpAfterFiveMinutes() {
+      if (Date.now() - since < 5 * 60 * 1000 || !$('off-help').hidden) return;
+      $('sup-name').textContent = support.name || SUPPORT.name;
+      const digits = (support.phone || '').replace(/\D/g, ''), intl = digits.startsWith('0') ? '233' + digits.slice(1) : digits;
+      $('sup-links').innerHTML = '';
+      const link = (href, text) => { const a = document.createElement('a'); a.href = href; a.textContent = text; $('sup-links').append(a, document.createTextNode('  ·  ')); };
+      if (intl) { link('https://wa.me/' + intl, 'WhatsApp ' + support.phone); link('tel:+' + intl, 'Call ' + support.phone); }
+      if (support.email) link('mailto:' + support.email + '?subject=' + encodeURIComponent('ZionEX Suite cannot reach the server'), support.email);
+      $('sup-links').lastChild?.remove();
+      $('off-help').hidden = false;
+    }
+    function countdown(secs) {
+      clearInterval(timer);
+      let left = secs;
+      const tick = () => {
+        $('off-next').textContent = left > 0 ? `Trying again in ${left} s` : 'Checking…';
+        if (left-- <= 0) { clearInterval(timer); check(); }
+      };
+      tick(); timer = setInterval(tick, 1000);
+    }
+    async function check() {
+      if (busy) return;
+      busy = true; clearInterval(timer); tries++;
+      $('offline').className = 'off checking'; $('off-next').textContent = 'Checking…'; words();
+      const ok = navigator.onLine && await reachable(server);
+      busy = false;
+      if (ok) {
+        $('offline').className = 'off ok';
+        $('off-title').textContent = 'Connected again';
+        $('off-why').textContent = 'Taking you back to where you were…';
+        $('off-next').textContent = 'Connected';
+        setTimeout(() => location.replace(back), 600);
+        return;
+      }
+      $('offline').className = 'off'; words(); helpAfterFiveMinutes();
+      countdown(WAITS[Math.min(wait++, WAITS.length - 1)]);
+    }
+    $('off-try').onclick = () => { wait = 0; check(); };
+    $('off-setup').onclick = () => T.invoke('open_setup');
+    $('off-copy').onclick = async () => {
+      const text = `ZionEX Suite could not reach the business server\nOut of reach since ${since.toLocaleString()}\nThis computer's network: ${navigator.onLine ? 'connected' : 'offline'}\nTries: ${tries}`;
+      try { await navigator.clipboard.writeText(text); $('off-copied').textContent = 'Copied'; } catch { $('off-copied').textContent = text; }
+    };
+    window.addEventListener('online', () => { wait = 0; check(); });
+    window.addEventListener('offline', words);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
+    words();
+    countdown(params.has('offline') ? WAITS[0] : 0);
+  }
+
   async function load() {
     const cfg = await T.invoke('get_config');
+    if (cfg.server && params.has('offline')) return offline(cfg);
     if (cfg.server && !params.has('setup')) {
       if (await reachable(cfg.server)) return T.invoke('set_server', { server: cfg.server });
-      $('retry').hidden = false;
-      say(unreachable(cfg.server), true);
+      return offline(cfg); // the saved server is out of reach at start: the same reconnect screen, not the form
     }
     showForm();
     $('server').value = cfg.server || '';

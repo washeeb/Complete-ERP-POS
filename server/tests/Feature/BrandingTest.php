@@ -157,3 +157,7 @@ it('loads the clarity styles on every back-office page: current menu item and ta
     $css = file_get_contents(public_path('css/seslabs/admin.css'));
     expect($css)->toContain('.fi-sidebar-item.fi-active')->toContain('.fi-tabs-item.fi-active')->toContain('::file-selector-button');
 });
+
+it('tells the desktop app who supports this installation, for its reconnect screen', function () {
+    $this->get('/admin/login')->assertOk()->assertSee('<meta name="zx-support"', false)->assertSee('024 563 6889', false);
+});
