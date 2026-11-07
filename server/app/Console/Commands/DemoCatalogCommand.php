@@ -15,6 +15,7 @@ use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Support\Caps;
+use App\Support\IndustryContext;
 use App\Support\TenantContext;
 use Illuminate\Console\Command;
 
@@ -108,7 +109,7 @@ class DemoCatalogCommand extends Command
                         $prices[] = ['price_list_id' => $wholesale->id, 'uom_id' => $ctn->id, 'min_qty' => '1', 'amount' => $ctnPrice];
                     }
                 }
-                $product = $catalog->saveProduct($actor, new Product, [
+                $product = $catalog->saveProduct($actor, new Product, ['industry_id' => IndustryContext::SHARED,
                     'sku' => $sku, 'name' => $name, 'category_id' => $category->id, 'brand_id' => $brandModel?->id,
                     'base_uom_id' => $pc->id, 'tax_group_id' => TaxGroup::where('code', $tax)->value('id'),
                     'track_stock' => true, 'is_active' => true, 'base_barcodes' => [$code.'00'], 'units' => $units, 'prices' => $prices,
@@ -147,7 +148,7 @@ class DemoCatalogCommand extends Command
             if (Product::where('sku', $sku)->exists()) {
                 continue;
             }
-            $product = $catalog->saveProduct($actor, new Product, [
+            $product = $catalog->saveProduct($actor, new Product, ['industry_id' => IndustryContext::SHARED,
                 'sku' => $sku, 'name' => $name, 'category_id' => $category->id, 'base_uom_id' => $pc->id, 'tax_group_id' => TaxGroup::where('code', 'EXEMPT')->value('id'),
                 'track_stock' => true, 'track_batches' => true, 'is_active' => true, 'drug_schedule' => $schedule, 'generic_name' => $generic, 'strength' => $strength,
                 'dosage_form' => $form, 'dosage' => $dosage, 'daily_use' => $daily, 'base_barcodes' => ['2009'.str_pad((string) ($i + 1), 3, '0', STR_PAD_LEFT).'00'],

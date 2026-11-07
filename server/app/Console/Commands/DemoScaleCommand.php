@@ -19,6 +19,7 @@ use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
+use App\Support\IndustryContext;
 use App\Support\TenantContext;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -68,7 +69,7 @@ class DemoScaleCommand extends Command
         $bar = $this->output->createProgressBar(max(0, $want - $have));
         for ($i = $have; $i < $want; $i++) {
             $name = self::WORDS[$i % count(self::WORDS)].self::ENDS[intdiv($i, count(self::WORDS)) % count(self::ENDS)].' '.(5 * (1 + $i % 20)).'mg '.(['tabs', 'caps', 'syrup', 'cream'][$i % 4]);
-            $p = $catalog->saveProduct($actor, new Product, ['sku' => 'SCALE-'.str_pad((string) $i, 5, '0', STR_PAD_LEFT), 'name' => $name, 'category_id' => $category->id,
+            $p = $catalog->saveProduct($actor, new Product, ['industry_id' => IndustryContext::SHARED, 'sku' => 'SCALE-'.str_pad((string) $i, 5, '0', STR_PAD_LEFT), 'name' => $name, 'category_id' => $category->id,
                 'base_uom_id' => $pc->id, 'tax_group_id' => $tax, 'track_stock' => true, 'track_batches' => true, 'is_active' => true,
                 'base_barcodes' => ['29'.str_pad((string) $i, 10, '0', STR_PAD_LEFT).'0'],
                 'prices' => [['price_list_id' => $retail->id, 'uom_id' => $pc->id, 'min_qty' => '1', 'amount' => number_format(2 + ($i % 97) * 0.75, 2, '.', '')]]], 'Sample data');
