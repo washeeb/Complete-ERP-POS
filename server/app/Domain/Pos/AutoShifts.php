@@ -65,18 +65,24 @@ final class AutoShifts
     public function beforeOpen(Device $device, User $user, Till $till, Carbon $at, ?array $grant): array
     {
         $out = ['shift_name' => null, 'granted_by_name' => null, 'grant_reason' => null];
-        if (! $this->enabled($till->branch_id, $till->tenant_id)) {
-            return $out;
-        }
-        $local = $at->copy()->setTimezone($this->timezone($till));
-        $out['shift_name'] = $this->nameAt($till->tenant_id, $local);
+        $auto = $this->enabled($till->branch_id, $till->tenant_id);
+        $timezone = $this->timezone($till);
+        $local = $at->copy()->setTimezone($timezone);
         $why = null;
-        [$from, $until] = $this->hours($till);
-        if ($from && ! self::within($local->format('H:i:s'), $from, $until)) {
-            $why = ['outside_hours', "Tills open from {$from} to {$until}. A manager can allow it with their PIN and a reason."];
-        } elseif ($out['shift_name'] && Shift::where('till_id', $till->id)->where('status', 'closed')->where('shift_name', $out['shift_name'])
-            ->where('opened_by', $user->id)->where('opened_at', '>=', $local->copy()->startOfDay()->utc())->exists()) {
-            $why = ['till_closed', "You already closed your {$out['shift_name']} shift on this till today. A manager can allow it to open again with their PIN and a reason."];
+        if ($auto) {
+            $out['shift_name'] = $this->nameAt($till->tenant_id, $local);
+            [$from, $until] = $this->hours($till);
+            if ($from && ! self::within($local->format('H:i:s'), $from, $until)) {
+                $why = ['outside_hours', "Tills open from {$from} to {$until}. A manager can allow it with their PIN and a reason."];
+            }
+        }
+        // Opening again after closing your own shift today, whatever the shift is called (owner 2026-11-07: a cashier
+        // signed back in after her morning shift and opened an empty afternoon one). Taking over from someone else is free.
+        $closed = $why ? null : Shift::where('till_id', $till->id)->where('status', 'closed')->where('opened_by', $user->id)
+            ->where('opened_at', '>=', $local->copy()->startOfDay()->utc())->orderByDesc('closed_at')->first();
+        if ($closed) {
+            $why = ['till_closed', 'You closed your shift on this till at '.$closed->closed_at->copy()->setTimezone($timezone)->format('H:i')
+                .' today. A manager can allow another one with their PIN and a reason.'];
         }
         if (! $why) {
             return $out;

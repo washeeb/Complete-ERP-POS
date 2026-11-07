@@ -319,8 +319,13 @@ it('checks mobile money per network and the card terminal at the close, and show
         ->and($report['intro']['branch'])->toContain("({$shift->branch->code})");
     app('auth')->forgetGuards();
 
-    $this->withToken($this->token)->postJson('/api/v1/pos/shifts/open', ['opening_float_minor' => 0])->assertCreated();
-    $this->withToken($this->token)->postJson('/api/v1/pos/shifts/close', ['counted_cash_minor' => 0, 'other' => ['bitcoin' => 5]])->assertStatus(422);
+    // Another cashier's own shift (the first cashier would need a manager to open a second one today).
+    $ama = staff($this->owner, 'ama', 2, 'teller', ScopeType::Till, $this->till->id);
+    app(AccessService::class)->setPin(actorFor($this->owner), $ama, '6152');
+    $amaToken = $this->withToken($this->deviceToken)->postJson('/api/v1/pos/login', ['username' => 'ama', 'pin' => '6152'])->assertOk()->json('token');
+    app('auth')->forgetGuards();
+    $this->withToken($amaToken)->postJson('/api/v1/pos/shifts/open', ['opening_float_minor' => 0])->assertCreated();
+    $this->withToken($amaToken)->postJson('/api/v1/pos/shifts/close', ['counted_cash_minor' => 0, 'other' => ['bitcoin' => 5]])->assertStatus(422);
 });
 
 it('shows returns refunded at the close, so a refund the customer never got explains the drawer being over', function () {
