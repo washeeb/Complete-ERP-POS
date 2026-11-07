@@ -1212,3 +1212,8 @@ Design:
 - The same file (hash) cannot be queued twice while waiting or running. The page polls every 2 s while its import is waiting or running.
 - Time left: seconds only under a minute (`Progress::timeLeft`, and the same in the progress card).
 - Installer (Ubuntu): the cron file is moved aside before the backup and code swap, and the script waits up to 15 minutes for `schedule:run` / `erp:*` processes of that copy's user. An EXIT trap puts it back if the update stops, and step 8 writes it again. Windows already stopped its scheduled tasks during an update.
+
+## Off-site backups as a paid add-on (2026-11-07)
+- Owner: paid for new clients only; cloud and remote destinations only; Oheneba gets it on its key (founding client). Off-site copies already existed (S3-compatible, Google Drive, SFTP, folder), so this gates them rather than building them.
+- `offsite_backup` is in `VendorLicensing::ADDON_FEATURES`: named on the licence, never implied by "all features". `Destinations::allowed()` is checked when a destination is saved (Backups page) and before each copy (`BackupService::run`, which records "not copied" so the run shows partial). The low-level `Destinations` calls stay ungated for tests and restores.
+- Grandfathering: migration `2026_12_22_100001` marks existing s3/gdrive/sftp destinations `grandfathered`. They keep copying and can be edited, but not switched to another paid type. A restore from any destination is never blocked.

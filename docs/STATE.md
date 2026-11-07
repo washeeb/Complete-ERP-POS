@@ -30,6 +30,9 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 ## Industry confinement — branch `industry-confinement`
 - `IndustryContext` (`selected`, `companyWide`, `choices`, `sharingAllowed`, `productScope`), `CatalogService::industryFor`, `SharedProducts`, `SharedProductsPage`, `CompanyWideAccess`, `AccessService::mayBeCompanyWide` and `narrow`. Settings `catalog.shared_products`, `access.company_wide`. Tests: IndustryConfinementTest.
 
+## Off-site backup add-on — branch `offsite-backups-addon`
+- `Destinations::PAID/ADDON/allowed`, `backup_destinations.grandfathered` (migration `2026_12_22_100001`), Backups page and `BackupService::run` checks, `VendorLicensing` add-on `offsite_backup`. Tests: OffsiteBackupAddonTest.
+
 ## Barcodes per industry — branch `barcodes-per-industry`
 - Migration `2026_12_21_100001_barcodes_per_industry`, `Barcode::scanned/industryOf/inSeveralIndustries`, `CatalogService::barcodeClash/moveBarcodes`, StockRows/OrderImporter/WmsController in the store's industry. Tests: BarcodesPerIndustryTest.
 ## Large imports in the background — branch `background-imports`

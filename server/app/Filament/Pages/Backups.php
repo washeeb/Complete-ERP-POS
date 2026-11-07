@@ -62,7 +62,9 @@ class Backups extends Page
     {
         $fields = [
             TextInput::make('name')->required()->maxLength(80)->helperText('e.g. "USB drive A", "Backblaze"'),
-            Select::make('type')->options(Destinations::TYPES)->required()->live(),
+            Select::make('type')->required()->live()
+                ->options(fn () => collect(Destinations::TYPES)->map(fn ($label, $type) => Destinations::allowed($type) || ! in_array($type, Destinations::PAID, true) ? $label : $label.' (paid add-on)')->all())
+                ->helperText('Cloud storage and another server are the off-site backup add-on (ask SyncLytics). A folder, such as a USB drive you take home, is always included.'),
         ];
         foreach (Destinations::FIELDS as $type => $list) {
             foreach ($list as $key => [$label, $secret]) {
@@ -112,6 +114,12 @@ class Backups extends Page
     private function saveDestination(BackupDestination $d, array $data): void
     {
         $type = $data['type'];
+        if (! Destinations::allowed($type, $d->exists ? $d : null)) {
+            Notification::make()->title('Not saved: off-site backups are a paid add-on')
+                ->body('Copies to cloud storage or another server need the off-site backup add-on on your licence (ask SyncLytics). A folder, such as a USB drive, is included.')->warning()->send();
+
+            return;
+        }
         $old = $d->exists && $d->type === $type ? ($d->config ?? []) : [];
         $config = [];
         foreach (array_keys(Destinations::FIELDS[$type]) as $k) {
