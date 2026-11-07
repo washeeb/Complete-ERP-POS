@@ -8,6 +8,7 @@ use App\Domain\Imports\Importers\CustomersImporter;
 use App\Domain\Imports\Importers\GiftCardsImporter;
 use App\Domain\Imports\Importers\LoyaltyPointsImporter;
 use App\Domain\Imports\Importers\OpeningBalancesImporter;
+use App\Domain\Imports\Importers\OpeningBatchesImporter;
 use App\Domain\Imports\Importers\OpeningStockImporter;
 use App\Domain\Imports\Importers\PricesImporter;
 use App\Domain\Imports\Importers\ProductsImporter;
@@ -51,6 +52,7 @@ final class ImportService
         'suppliers' => SuppliersImporter::class,
         'opening_stock' => OpeningStockImporter::class,
         'stock_adjustment' => StockAdjustmentImporter::class,
+        'opening_batches' => OpeningBatchesImporter::class,
         'stock_count' => StockCountImporter::class,
         'unit_changes' => UnitChangesImporter::class,
         // Data migration (Phase 14): the books and balances on the go-live date.

@@ -219,7 +219,11 @@ class BatchesExpiry extends Page
 
     protected function getHeaderActions(): array
     {
-        return [$this->addBatchAction()];
+        return [
+            Action::make('sheet')->label('Expiry sheet')->icon(Heroicon::OutlinedTableCells)->color('gray')
+                ->tooltip('Stock with no batch or expiry date: fill it in on a sheet')->url(ImportData::getUrl(['type' => 'opening_batches'])),
+            $this->addBatchAction(),
+        ];
     }
 
     private function attempt(callable $call, string $ok): bool
