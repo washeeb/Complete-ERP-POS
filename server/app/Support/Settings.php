@@ -377,9 +377,9 @@ final class Settings
             'help' => '0 = every return. 5000 = GHS 50.',
         ],
         'returns.medicines_to_quarantine' => [
-            'type' => 'bool', 'default' => true, 'group' => 'Returns',
-            'label' => 'Returned medicines go to quarantine, not back on sale',
-            'help' => 'Medicines that have left the pharmacy cannot be vouched for. They go to the quarantine store with damaged and expired goods, to dispose of or send back to the supplier.',
+            'type' => 'bool', 'default' => false, 'group' => 'Returns',
+            'label' => 'Send returned medicines to quarantine, not back on sale',
+            'help' => 'Off: a returned medicine goes back on sale, unless it is damaged or expired. On: every returned medicine goes to the quarantine store, to dispose of or send back to the supplier, because one that has left the pharmacy cannot be vouched for.',
         ],
         'finance.year_end_month' => [
             'type' => 'int', 'default' => 12, 'min' => 1, 'max' => 12, 'group' => 'Finance',

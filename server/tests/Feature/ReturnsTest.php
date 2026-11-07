@@ -57,7 +57,7 @@ beforeEach(function () {
 it('requires a manager on every return by default', function () {
     expect(Settings::DEFINITIONS['returns.manager_approval']['default'] ?? null)->toBe('require')
         ->and(array_keys(Settings::DEFINITIONS['returns.manager_approval']['options']))->toBe(['require', 'allow', 'off'])
-        ->and(Settings::DEFINITIONS['returns.medicines_to_quarantine']['default'])->toBeTrue();
+        ->and(Settings::DEFINITIONS['returns.medicines_to_quarantine']['default'])->toBeFalse();
 });
 
 it('books a back-office return with a second person, into the shelf, refunded from an account', function () {
@@ -92,8 +92,7 @@ it('refunds as store credit, and refuses more than can come back or an account r
     expect(fn () => $this->returns->submit(actorFor($it), $sale, ['lines' => [$line], 'reason_code' => 'other', 'refund_method' => 'store_credit']))->toThrow(AccessDenied::class);
 });
 
-it('sends damaged goods and medicines to quarantine, where no till sells them', function () {
-    app(Settings::class)->set($this->a, 'returns.medicines_to_quarantine', true);
+it('sends damaged goods to quarantine, where no till sells them, and medicines only when set to', function () {
     $sale = soldReceipt($this, $this->item);
     $damaged = $this->returns->approve(actorFor($this->gm), $this->returns->submit(actorFor($this->clerk), $sale,
         ['lines' => [['line_id' => $sale->lines[0]->id, 'qty' => '1', 'damaged' => true]], 'reason_code' => 'other', 'refund_method' => 'store_credit']));
@@ -105,8 +104,14 @@ it('sends damaged goods and medicines to quarantine, where no till sells them', 
     $med = $med->fresh(['units']);
     app(InventoryService::class)->adjust($this->a, $this->hq, $med, $med->units->first(), '5', 'opening', '', null, '4.00', 'B1', now()->addYear()->toDateString());
     $sold = soldReceipt($this, $med);
-    $this->returns->approve(actorFor($this->gm), $this->returns->submit(actorFor($this->clerk), $sold, ['lines' => [['line_id' => $sold->lines[0]->id, 'qty' => '1']], 'reason_code' => 'changed_mind', 'refund_method' => 'store_credit']));
-    expect(($this->qty)($med, $q))->toBe(1.0);
+    $back = fn (string $code = 'changed_mind') => $this->returns->approve(actorFor($this->gm), $this->returns->submit(actorFor($this->clerk), $sold->fresh(['lines', 'payments']), ['lines' => [['line_id' => $sold->lines[0]->id, 'qty' => '1']], 'reason_code' => $code, 'refund_method' => 'store_credit']));
+
+    // By default a returned medicine goes back on sale.
+    expect($back()->sale->lines[0]->returned_to)->toBe('shelf')->and(($this->qty)($med, $q))->toBe(0.0)->and(($this->qty)($med, $this->hq))->toBe(6.0);
+
+    // With the setting on it goes to quarantine.
+    app(Settings::class)->set($this->a, 'returns.medicines_to_quarantine', true);
+    expect($back()->sale->lines[0]->returned_to)->toBe('quarantine')->and(($this->qty)($med, $q))->toBe(1.0)->and(($this->qty)($med, $this->hq))->toBe(6.0);
 });
 
 it('shows the screens: return from a sale, approve, slip and report', function () {

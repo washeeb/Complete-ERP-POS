@@ -1144,3 +1144,6 @@ Design:
 - **One permission for the till PIN** (`pos.return.no_receipt`, relabelled) rather than a second one, so nobody who approved returns loses that on update.
 - **Health checks:** a product with `reading_kind`, so the fee, tax, reports and receipts need nothing new. Flags are screening prompts on common limits, shown as advice; the pharmacist should agree them. Back-office access needs `pharmacy.patients`, because these are health records. A bad reading never refuses a sale: it may arrive from an offline till hours later. Immutable: taken again, not edited.
 
+## Returned medicines go back on sale by default (2026-11-07)
+- Owner reversed the first choice: a returned medicine goes back on sale, and quarantine for medicines is an option (`returns.medicines_to_quarantine`, off). Damaged and expired goods still go to quarantine whatever the setting: that is the reason given for the return, not a rule about medicines.
+
