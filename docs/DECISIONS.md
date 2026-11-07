@@ -1213,6 +1213,10 @@ Design:
 - Time left: seconds only under a minute (`Progress::timeLeft`, and the same in the progress card).
 - Installer (Ubuntu): the cron file is moved aside before the backup and code swap, and the script waits up to 15 minutes for `schedule:run` / `erp:*` processes of that copy's user. An EXIT trap puts it back if the update stops, and step 8 writes it again. Windows already stopped its scheduled tasks during an update.
 
+## Import after a check (2026-11-07)
+- The owner checked 2,467 products in the background and then had no way on: the page clears the file when it is queued, and the only signal was a bell entry. `ImportService::importChecked` imports from `stored_path` with the same options and column matching (now kept in `options._mapping` for every run). It refuses a file already imported, one no longer on disk, and rows with errors unless the person chooses to skip them. Large files go to the background again.
+- `?show=<import id>` opens a result; the bell notification links there. `followBackground` (the page's 2 s poll) shows a persistent message when the run ends.
+
 ## Desktop reconnect screen (2026-11-07)
 - The owner saw Edge's "can't reach this page" inside ZionEX Suite. WebView2 shows its own error page for a failed navigation, and no page script runs there. So the app listens to WebView2 `NavigationCompleted` (webview2-com): a failure with a network status (timeout, unreachable, cannot connect, disconnected, name not resolved, reset, invalid response), or HTTP 502/504 from Caddy, opens the local page in reconnect mode with the address to return to. Downloads and cancelled navigations are not failures. A page that goes offline mid-use (`offline` event) goes there too.
 - Owner choices: return automatically (checks back off 5, 10, 15, 30 s, and run at once on `online` or when the window is shown again); support contact after 5 minutes; never show the server URL or IP. The return address must be on the saved server, otherwise the app goes back to `/admin`.

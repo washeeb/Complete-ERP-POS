@@ -22,12 +22,14 @@ use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
 use App\Domain\Support\DomainException;
+use App\Filament\Pages\ImportData;
 use App\Models\DataImport;
 use App\Models\StockAdjustment;
 use App\Models\StockCount;
 use App\Models\User;
 use App\Security\Authorizer;
 use App\Support\Progress;
+use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -157,9 +159,9 @@ final class ImportService
 
         $status = ! $commit ? 'checked' : ($keep ? 'imported' : 'failed');
 
-        return DB::transaction(function () use ($actor, $type, $fileName, $path, $status, $options, $contextId, $givenContextId, $csv, $errors, $counts, $ignored, $results, $importer, $hash, $record) {
+        return DB::transaction(function () use ($actor, $type, $fileName, $path, $status, $options, $contextId, $givenContextId, $csv, $errors, $counts, $ignored, $results, $importer, $hash, $record, $mapping) {
             $values = ['tenant_id' => $actor->tenantId, 'type' => $type, 'file_name' => mb_substr($fileName, 0, 255),
-                'stored_path' => $path, 'file_hash' => $hash, 'status' => $status, 'options' => $options, 'context_id' => $status === 'imported' ? $contextId : $givenContextId,
+                'stored_path' => $path, 'file_hash' => $hash, 'status' => $status, 'options' => $options + ($mapping ? ['_mapping' => $mapping] : []), 'context_id' => $status === 'imported' ? $contextId : $givenContextId,
                 'rows_total' => count($csv['rows']), 'rows_ok' => count($csv['rows']) - count($errors), 'rows_error' => count($errors),
                 'summary' => $counts + ['ignored_columns' => $ignored, 'results' => array_slice($results, 0, 500)],
                 'errors' => array_slice($errors, 0, 1000), 'user_id' => $actor->id, 'user_name' => $actor->name, 'completed_at' => now()];
@@ -207,12 +209,7 @@ final class ImportService
                 throw new DomainException('The person who uploaded this file no longer exists.');
             }
             auth()->setUser($user);
-            $importer = self::importer($record->type);
-            $context = $record->context_id ? match ($importer->contextType()) {
-                'stock_count' => StockCount::find($record->context_id),
-                'stock_adjustment' => StockAdjustment::find($record->context_id),
-                default => null,
-            } : null;
+            $context = self::contextOf($record);
             $done = $this->run(Actor::user($user, 'web'), $record->type, $record->stored_path, $record->file_name, $options, $context, $commit, $mapping, $record);
         } catch (Throwable $e) {
             Log::error('Background import failed', ['import' => $record->id, 'error' => $e->getMessage()]);
@@ -226,10 +223,52 @@ final class ImportService
                 'checked' => "Checked {$done->file_name}: ".($done->rows_error ? "{$done->rows_error} row(s) have errors" : 'all rows are fine'),
                 'imported' => "Imported {$done->file_name}: {$done->rows_ok} row(s)".($done->rows_error ? ", {$done->rows_error} skipped" : ''),
                 default => "Not imported: {$done->file_name}",
-            })->body('Setup → Import data shows the details.')->{$ok ? 'success' : 'danger'}()->sendToDatabase($user);
+            })->body($done->status === 'checked' && ! $done->rows_error ? 'Open it to import the file: it is already on the server.' : 'Open it for the details.')
+                ->actions([Action::make('open')->label('Open')->markAsRead()
+                    ->url(ImportData::getUrl(['type' => $done->type, 'show' => $done->id], panel: 'admin'))])
+                ->{$ok ? 'success' : 'danger'}()->sendToDatabase($user);
         }
 
         return $done;
+    }
+
+    /**
+     * Import a file that was checked, from the copy kept on the server: no second upload, the same options and column
+     * matching. Large files go to the background, as on upload.
+     */
+    public function importChecked(Actor $actor, DataImport $checked, bool $skipErrors = false): DataImport
+    {
+        if ($checked->status !== 'checked') {
+            throw new DomainException('Only a checked file can be imported from here.');
+        }
+        if (! $checked->stored_path || ! is_file($checked->stored_path)) {
+            throw new DomainException('The checked file is no longer on the server. Upload it again.');
+        }
+        if ($checked->rows_error && ! $skipErrors) {
+            throw new DomainException("{$checked->rows_error} row(s) have errors: fix them and upload the file again, or import skipping those rows.");
+        }
+        if ($done = self::alreadyImported($checked->type, $checked->file_hash, $checked->context_id)) {
+            throw new DomainException("This file was already imported on {$done->completed_at?->format('j M Y H:i')} by {$done->user_name}.");
+        }
+        $options = $checked->options ?? [];
+        $mapping = (array) ($options['_mapping'] ?? []);
+        unset($options['_commit'], $options['_mapping']);
+        $options['skip_errors'] = $skipErrors || ! empty($options['skip_errors']);
+        if ($checked->rows_total > self::$backgroundFrom) {
+            return $this->queue($actor, $checked->type, $checked->stored_path, $checked->file_name, $options, $checked->context_id, true, $mapping, $checked->rows_total);
+        }
+
+        return $this->run($actor, $checked->type, $checked->stored_path, $checked->file_name, $options, self::contextOf($checked), true, $mapping);
+    }
+
+    /** The stock count or adjustment an import goes into. */
+    private static function contextOf(DataImport $record): ?Model
+    {
+        return $record->context_id ? match (self::importer($record->type)->contextType()) {
+            'stock_count' => StockCount::find($record->context_id),
+            'stock_adjustment' => StockAdjustment::find($record->context_id),
+            default => null,
+        } : null;
     }
 
     /** A background import that stopped without finishing (the server restarted) is marked, so it never looks stuck. */

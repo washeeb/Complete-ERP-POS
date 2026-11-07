@@ -116,7 +116,7 @@
 
         @if (($r = $this->last()) && in_array($r->status, ['queued', 'running'], true))
             @php($bg = $this->background($r))
-            <div class="im-result" wire:poll.2s>
+            <div class="im-result" wire:poll.2s="followBackground">
                 <strong>{{ \App\Models\DataImport::STATUSES[$r->status] }}</strong> — {{ $r->file_name }}: {{ $bg['label'] }}@if ($bg['done']) — {{ number_format($bg['done']) }} of {{ number_format($bg['total']) }}@endif
                 <div style="height:8px;border-radius:999px;background:rgb(0 0 0 / .08);overflow:hidden;margin-top:8px"><span style="display:block;height:100%;width:{{ $bg['total'] ? min(100, round($bg['done'] * 100 / $bg['total'])) : 0 }}%;background:#06AAAA;transition:width .4s"></span></div>
                 <span class="im-desc">{{ $bg['left'] ? $bg['left'].'. ' : '' }}It runs on the server: you can keep working or close this page, and you get a notification when it is done.</span>
@@ -130,6 +130,18 @@
                 <span class="{{ $r->rows_error ? 'im-err' : '' }}">{{ $r->rows_error }} with errors</span>.
                 @if (! empty($r->summary['ignored_columns']))<br><span class="im-desc">Columns not used: {{ implode(', ', $r->summary['ignored_columns']) }}</span>@endif
                 @if ($r->rows_error)<x-filament::button size="sm" color="danger" wire:click="downloadErrors('{{ $r->id }}')">Download error report (CSV)</x-filament::button>@endif
+                @if ($r->status === 'checked')
+                    <div class="im-buttons" style="margin-top:10px">
+                        @if (! $r->rows_error)
+                            <x-filament::button icon="heroicon-o-arrow-up-tray" wire:click="importChecked('{{ $r->id }}')" wire:loading.attr="disabled"
+                                wire:confirm="Import this file now? Every row is recorded under your name in the audit log.">Import this file</x-filament::button>
+                        @elseif ($r->rows_error < $r->rows_total)
+                            <x-filament::button color="gray" icon="heroicon-o-arrow-up-tray" wire:click="importChecked('{{ $r->id }}', true)" wire:loading.attr="disabled"
+                                wire:confirm="Import the {{ $r->rows_total - $r->rows_error }} good row(s) and skip the {{ $r->rows_error }} with errors?">Import, skipping the {{ $r->rows_error }} row(s) with errors</x-filament::button>
+                        @endif
+                        <span class="im-desc">Uses the file already on the server, as checked: no need to upload it again.</span>
+                    </div>
+                @endif
                 @if ($r->status === 'imported' && $r->type === 'stock_adjustment' && $r->context_id)
                     <a class="im-link" href="{{ \App\Filament\Resources\StockAdjustments\StockAdjustmentResource::getUrl('view', ['record' => $r->context_id]) }}">Open the adjustment to approve and post it →</a>
                 @elseif ($r->status === 'imported' && $r->type === 'stock_count' && $r->context_id)
@@ -154,7 +166,8 @@
             @forelse ($this->history() as $h)
                 <tr><td>{{ $h->created_at->format('j M Y H:i') }}</td><td>{{ $h->user_name }}</td><td>{{ \App\Domain\Imports\ImportService::importer($h->type)->label() }}</td>
                     <td>{{ $h->file_name }}</td><td>{{ \App\Models\DataImport::STATUSES[$h->status] ?? $h->status }}</td><td>{{ $h->rows_total }}</td><td>{{ $h->rows_error }}</td>
-                    <td>@if ($h->rows_error)<x-filament::button size="xs" color="gray" wire:click="downloadErrors('{{ $h->id }}')">Error report</x-filament::button>@endif</td></tr>
+                    <td>@if ($h->rows_error)<x-filament::button size="xs" color="gray" wire:click="downloadErrors('{{ $h->id }}')">Error report</x-filament::button>@endif
+                        @if ($h->status === 'checked')<x-filament::button size="xs" wire:click="$set('lastId', '{{ $h->id }}')">Open</x-filament::button>@endif</td></tr>
             @empty
                 <tr><td colspan="8">No imports yet.</td></tr>
             @endforelse

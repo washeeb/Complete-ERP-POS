@@ -86,6 +86,8 @@ class ImportData extends Page
 
     public $file = null;
 
+    /** The import shown under the form; in the address (?show=…) so the bell's "Open" lands on it. */
+    #[Url(as: 'show')]
     public ?string $lastId = null;
 
     /** @var array<string, string> expected column => the file's own heading ("match columns") */
@@ -369,6 +371,47 @@ class ImportData extends Page
             $this->duplicateNote = null;
             $this->fileKey++;
         }
+    }
+
+    /** Called while a background import runs: once it is done, say so here (it is also in the bell). */
+    public function followBackground(): void
+    {
+        $r = $this->last();
+        if ($r && ! in_array($r->status, ['queued', 'running'], true)) {
+            $this->announce($r);
+        }
+    }
+
+    /** Import a checked file from the copy on the server (from the result, the history or the bell). */
+    public function importChecked(string $id, bool $skipErrors = false): void
+    {
+        try {
+            $import = Erp::run(fn ($actor) => app(ImportService::class)->importChecked($actor, DataImport::findOrFail($id), $skipErrors));
+        } catch (Halt) {
+            return;
+        }
+        $this->lastId = $import->id;
+        if ($import->status === 'queued') {
+            Notification::make()->info()->title(number_format($import->rows_total).' rows: importing in the background')
+                ->body('You can keep working or close this page. Progress shows below, and you get a notification when it is done.')->send();
+            if (function_exists('fastcgi_finish_request')) {
+                app()->terminating(fn () => Artisan::call('erp:imports'));
+            }
+
+            return;
+        }
+        $this->announce($import);
+    }
+
+    private function announce(DataImport $import): void
+    {
+        $n = $import->rows_error;
+        $note = Notification::make()->title(match ($import->status) {
+            'checked' => $n ? "Checked: {$n} row(s) have errors — nothing was imported" : "Checked: all {$import->rows_total} row(s) are fine — press “Import this file” to import it",
+            'imported' => "Imported {$import->rows_ok} row(s)".($n ? ", skipped {$n} with errors" : ''),
+            default => "Not imported: {$n} row(s) have errors. Fix them (download the error report) or import skipping those rows.",
+        });
+        ($import->status === 'imported' || ($import->status === 'checked' && ! $n) ? $note->success() : $note->danger())->persistent()->send();
     }
 
     public function last(): ?DataImport
