@@ -12,10 +12,16 @@
                leave() { clearTimeout(this.t); this.t = setTimeout(() => this.open = null, 250) },
                toggle(i) { clearTimeout(this.t); this.open = this.open === i ? null : i },
                move(d) { const t = [...$el.querySelectorAll('.zx-tab')]; const i = t.indexOf(document.activeElement); const n = t[(i + d + t.length) % t.length]; n?.focus(); if (this.open !== null && n.dataset.i !== undefined) this.open = n.dataset.i },
-               into() { this.$nextTick(() => $el.querySelector('.zx-mega:not([hidden]) a, .zx-mega:not([hidden]) button')?.focus()) } }"
+               into() { this.$nextTick(() => $el.querySelector('.zx-mega:not([hidden]) a, .zx-mega:not([hidden]) button')?.focus()) },
+               {{-- A panel opens under its tab and is moved sideways just enough to stay inside the window (never cut off). --}}
+               place(p) { p.style.left = '0px'; const r = p.getBoundingClientRect(), m = 8; let dx = 0;
+                   if (r.right > innerWidth - m) dx = innerWidth - m - r.right;
+                   if (r.left + dx < m) dx = m - r.left;
+                   p.style.left = dx + 'px' } }"
      x-on:mouseleave="leave()"
      x-on:keydown.escape.window="if (open !== null) { const i = open; open = null; $el.querySelector(`[data-i='${i}']`)?.focus() }"
-     x-on:click.outside="open = null">
+     x-on:click.outside="open = null"
+     x-on:resize.window.debounce.100ms="$el.querySelectorAll('.zx-mega').forEach((p) => p.offsetParent && place(p))">
     <ul class="zx-tabs" role="menubar">
         {{-- Recent pages: the page finder, which lists the pages opened last --}}
         <li role="none" class="zx-tab-li">
@@ -33,7 +39,7 @@
                     x-on:keydown.arrow-right.prevent="move(1)" x-on:keydown.arrow-left.prevent="move(-1)" x-on:keydown.arrow-down.prevent="open = 'fav'; into()">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" x-bind:fill="isFav ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
             </button>
-            <div class="zx-mega zx-fav" role="menu" aria-label="Favourites" x-show="open === 'fav'" x-cloak x-transition.opacity.duration.120ms x-on:mouseenter="show('fav', 0)">
+            <div class="zx-mega zx-fav" role="menu" aria-label="Favourites" x-show="open === 'fav'" x-cloak x-transition.opacity.duration.120ms x-on:mouseenter="show('fav', 0)" x-effect="open === 'fav' && $nextTick(() => place($el))">
                 <button type="button" role="menuitem" class="zx-fav-toggle" x-on:click="flip()" x-bind:disabled="busy">
                     <span x-text="isFav ? '★  Remove this page from favourites' : '☆  Add this page to favourites'"></span>
                 </button>
@@ -65,7 +71,7 @@
                     {{ $tab['label'] }}
                 </button>
                 <div class="zx-mega" role="menu" aria-label="{{ $tab['label'] }}" x-show="open === '{{ $i }}'" x-cloak x-transition.opacity.duration.120ms
-                     x-on:mouseenter="show('{{ $i }}', 0)" x-bind:class="{ 'zx-right': $el.parentElement.offsetLeft > window.innerWidth / 2 }">
+                     x-on:mouseenter="show('{{ $i }}', 0)" x-effect="open === '{{ $i }}' && $nextTick(() => place($el))">
                     <div class="zx-mega-cols" style="--cols: {{ min(4, count($tab['sections'])) }}">
                         @foreach ($tab['sections'] as $section)
                             <section class="zx-mega-sec">

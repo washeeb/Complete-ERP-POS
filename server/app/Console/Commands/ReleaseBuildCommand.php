@@ -115,7 +115,7 @@ class ReleaseBuildCommand extends Command
             File::copyDirectory(public_path('build'), $root.DIRECTORY_SEPARATOR.'public'.DIRECTORY_SEPARATOR.'build');
         }
 
-        $zip = $out.DIRECTORY_SEPARATOR.Str::slug((string) config('brand.name')).'-'.Str::slug($customer).'-'.$build.'.zip';
+        $zip = $out.DIRECTORY_SEPARATOR.Str::slug((string) config('brand.slug')).'-'.Str::slug($customer).'-'.$build.'.zip';
         $z = new ZipArchive;
         $z->open($zip, ZipArchive::CREATE | ZipArchive::OVERWRITE);
         foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS)) as $f) {
