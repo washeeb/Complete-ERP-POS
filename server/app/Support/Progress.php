@@ -17,7 +17,7 @@ final class Progress
 
     public static function start(string $label, int $total, ?string $userId = null): void
     {
-        self::put($userId, ['label' => $label, 'done' => 0, 'total' => max(0, $total), 'at' => now()->getTimestamp()]);
+        self::put($userId, ['label' => $label, 'done' => 0, 'total' => max(0, $total), 'at' => now()->getTimestamp(), 'started' => now()->getTimestamp()]);
     }
 
     /** Report how many are done (cheap: written at most about every half second, and always at the end). */
@@ -41,6 +41,19 @@ final class Progress
         if ($id = $userId ?? Auth::id()) {
             Cache::store('file')->forget("progress:{$id}");
         }
+    }
+
+    /** "About 45 s left", "About 3 min 20 s left": seconds alone only under a minute (owner 2026-11-07). */
+    public static function timeLeft(int $seconds): string
+    {
+        $seconds = max(1, $seconds);
+        if ($seconds < 60) {
+            return "About {$seconds} s left";
+        }
+        $m = intdiv($seconds, 60);
+        $s = $seconds % 60;
+
+        return "About {$m} min".($s ? " {$s} s" : '').' left';
     }
 
     /** @return array{label: string, done: int, total: int, at: int}|null */

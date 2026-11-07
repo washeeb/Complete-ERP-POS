@@ -23,9 +23,12 @@ use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
 use App\Domain\Support\DomainException;
 use App\Models\DataImport;
+use App\Models\StockAdjustment;
+use App\Models\StockCount;
 use App\Models\User;
 use App\Security\Authorizer;
 use App\Support\Progress;
+use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -67,6 +70,9 @@ final class ImportService
     /** Rows per transaction: a few seconds at most, so sales and other changes get through in between. */
     public const BATCH = 50;
 
+    /** Files with more rows than this run in the background (erp:imports), never inside a web request. */
+    public static int $backgroundFrom = 500;
+
     public function __construct(private readonly Authorizer $authz, private readonly AuditLog $audit) {}
 
     public static function importer(string $type): Importer
@@ -101,7 +107,7 @@ final class ImportService
             ->when($contextId, fn ($q) => $q->where('context_id', $contextId))->latest('completed_at')->first() : null;
     }
 
-    public function run(Actor $actor, string $type, string $path, string $fileName, array $options = [], ?Model $context = null, bool $commit = false, array $mapping = []): DataImport
+    public function run(Actor $actor, string $type, string $path, string $fileName, array $options = [], ?Model $context = null, bool $commit = false, array $mapping = [], ?DataImport $record = null): DataImport
     {
         $this->progressUser = $actor->id;
         $importer = self::importer($type);
@@ -151,18 +157,86 @@ final class ImportService
 
         $status = ! $commit ? 'checked' : ($keep ? 'imported' : 'failed');
 
-        return DB::transaction(function () use ($actor, $type, $fileName, $path, $status, $options, $contextId, $givenContextId, $csv, $errors, $counts, $ignored, $results, $importer, $hash) {
-            $import = DataImport::create(['id' => (string) Str::uuid7(), 'tenant_id' => $actor->tenantId, 'type' => $type, 'file_name' => mb_substr($fileName, 0, 255),
+        return DB::transaction(function () use ($actor, $type, $fileName, $path, $status, $options, $contextId, $givenContextId, $csv, $errors, $counts, $ignored, $results, $importer, $hash, $record) {
+            $values = ['tenant_id' => $actor->tenantId, 'type' => $type, 'file_name' => mb_substr($fileName, 0, 255),
                 'stored_path' => $path, 'file_hash' => $hash, 'status' => $status, 'options' => $options, 'context_id' => $status === 'imported' ? $contextId : $givenContextId,
                 'rows_total' => count($csv['rows']), 'rows_ok' => count($csv['rows']) - count($errors), 'rows_error' => count($errors),
                 'summary' => $counts + ['ignored_columns' => $ignored, 'results' => array_slice($results, 0, 500)],
-                'errors' => array_slice($errors, 0, 1000), 'user_id' => $actor->id, 'user_name' => $actor->name, 'completed_at' => now()]);
+                'errors' => array_slice($errors, 0, 1000), 'user_id' => $actor->id, 'user_name' => $actor->name, 'completed_at' => now()];
+            $import = $record ? tap($record->forceFill($values))->save() : DataImport::create(['id' => (string) Str::uuid7()] + $values);
             $this->audit->record($actor, $status === 'imported' ? 'data.imported' : 'data.import_checked', $import, [
                 'type' => [null, $importer->label()], 'file' => [null, $fileName], 'rows' => [null, count($csv['rows'])], 'errors' => [null, count($errors)],
             ] + array_map(fn ($n) => [null, $n], array_filter($counts)));
 
             return $import;
         });
+    }
+
+    /**
+     * A large file waits for the background run (erp:imports) instead of holding a web request open for minutes. The
+     * person sees its progress on the import page and gets a notification when it is done.
+     */
+    public function queue(Actor $actor, string $type, string $path, string $fileName, array $options, ?string $contextId, bool $commit, array $mapping, int $rows): DataImport
+    {
+        $importer = self::importer($type);
+        if (! $actor->user || ! $this->authz->allowsAnywhere($actor->user, $importer->permission())) {
+            throw new AccessDenied;
+        }
+        if (DataImport::whereIn('status', ['queued', 'running'])->where('file_hash', hash_file('sha256', $path) ?: null)->exists()) {
+            throw new DomainException('This file is already waiting or running in the background. Its progress shows below.');
+        }
+
+        return DataImport::create(['id' => (string) Str::uuid7(), 'tenant_id' => $actor->tenantId, 'type' => $type, 'file_name' => mb_substr($fileName, 0, 255),
+            'stored_path' => $path, 'file_hash' => hash_file('sha256', $path) ?: null, 'status' => 'queued', 'context_id' => $contextId,
+            'options' => $options + ['_commit' => $commit, '_mapping' => $mapping], 'rows_total' => $rows, 'rows_ok' => 0, 'rows_error' => 0,
+            'user_id' => $actor->id, 'user_name' => $actor->name]);
+    }
+
+    /** Runs one waiting import as the person who uploaded it, and tells them how it went. */
+    public function runQueued(DataImport $record): DataImport
+    {
+        $record->forceFill(['status' => 'running', 'updated_at' => now()])->save();
+        $user = User::withoutGlobalScopes()->find($record->user_id);
+        $options = $record->options ?? [];
+        $commit = (bool) ($options['_commit'] ?? false);
+        $mapping = (array) ($options['_mapping'] ?? []);
+        unset($options['_commit'], $options['_mapping']);
+        @set_time_limit(0);
+        try {
+            if (! $user) {
+                throw new DomainException('The person who uploaded this file no longer exists.');
+            }
+            auth()->setUser($user);
+            $importer = self::importer($record->type);
+            $context = $record->context_id ? match ($importer->contextType()) {
+                'stock_count' => StockCount::find($record->context_id),
+                'stock_adjustment' => StockAdjustment::find($record->context_id),
+                default => null,
+            } : null;
+            $done = $this->run(Actor::user($user, 'web'), $record->type, $record->stored_path, $record->file_name, $options, $context, $commit, $mapping, $record);
+        } catch (Throwable $e) {
+            Log::error('Background import failed', ['import' => $record->id, 'error' => $e->getMessage()]);
+            $msg = $e instanceof DomainException || $e instanceof AccessDenied ? $e->getMessage() : 'It stopped with an error, noted in the server log (reference '.$record->id.').';
+            $record->forceFill(['status' => 'failed', 'completed_at' => now(), 'errors' => [['row' => 0, 'ref' => 'whole file', 'message' => $msg, 'values' => []]], 'rows_error' => $record->rows_total])->save();
+            $done = $record;
+        }
+        if ($user) {
+            $ok = $done->status === 'imported' || ($done->status === 'checked' && ! $done->rows_error);
+            Notification::make()->title(match ($done->status) {
+                'checked' => "Checked {$done->file_name}: ".($done->rows_error ? "{$done->rows_error} row(s) have errors" : 'all rows are fine'),
+                'imported' => "Imported {$done->file_name}: {$done->rows_ok} row(s)".($done->rows_error ? ", {$done->rows_error} skipped" : ''),
+                default => "Not imported: {$done->file_name}",
+            })->body('Setup → Import data shows the details.')->{$ok ? 'success' : 'danger'}()->sendToDatabase($user);
+        }
+
+        return $done;
+    }
+
+    /** A background import that stopped without finishing (the server restarted) is marked, so it never looks stuck. */
+    public static function abandonStale(): void
+    {
+        DataImport::withoutGlobalScopes()->where('status', 'running')->where('updated_at', '<', now()->subHours(3))
+            ->update(['status' => 'failed', 'completed_at' => now(), 'errors' => json_encode([['row' => 0, 'ref' => 'whole file', 'message' => 'It stopped before finishing (the server restarted). Nothing past the last saved batch was kept: check the products, then import again.', 'values' => []]])]);
     }
 
     /** The rows in batches, each its own transaction: kept when $commit, otherwise undone. */

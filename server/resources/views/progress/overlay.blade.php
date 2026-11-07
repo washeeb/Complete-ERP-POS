@@ -14,21 +14,30 @@
         const label = box.querySelector('.ses-progress-label'), bar = box.querySelector('.ses-progress-bar'), eta = box.querySelector('.ses-progress-eta');
         let inflight = 0, wait = null, poll = null, started = 0;
         const n = (v) => Number(v).toLocaleString();
+        // Seconds alone only under a minute: "About 45 s left", "About 3 min 20 s left" (owner 2026-11-07).
+        const left = (secs) => { secs = Math.max(1, Math.round(secs)); const m = Math.floor(secs / 60), s = secs % 60;
+            return m ? `About ${m} min${s ? ` ${s} s` : ''} left` : `About ${s} s left` };
+        let seen = false;
         async function check() {
             try {
                 const r = await fetch(@js(route('progress.status')), { headers: { Accept: 'application/json' }, credentials: 'same-origin', cache: 'no-store' });
                 const p = await r.json();
-                if (!p || !p.total) return;
+                if (!p || !p.total) {
+                    // The work stopped reporting (it broke off, or the server is busy): say so rather than freeze the last figure.
+                    if (seen) eta.textContent = 'The server has not reported for a while. If no message appears, check the history before trying again.';
+                    return;
+                }
+                seen = true;
                 box.hidden = false;
                 label.textContent = `${p.label} — ${n(p.done)} of ${n(p.total)}`;
                 bar.style.width = Math.min(100, Math.round((p.done * 100) / p.total)) + '%';
                 const secs = (Date.now() - started) / 1000;
-                eta.textContent = p.done > 0 && p.done < p.total ? `About ${Math.max(1, Math.round((secs / p.done) * (p.total - p.done)))} s left. Please keep this page open.` : 'Please keep this page open.';
+                eta.textContent = p.done > 0 && p.done < p.total ? `${left((secs / p.done) * (p.total - p.done))}. Please keep this page open.` : 'Please keep this page open.';
             } catch (e) { /* the next check tries again */ }
         }
         function done() {
             if (--inflight > 0) return;
-            inflight = 0; clearTimeout(wait); clearInterval(poll); wait = poll = null; box.hidden = true;
+            inflight = 0; clearTimeout(wait); clearInterval(poll); wait = poll = null; box.hidden = true; seen = false;
         }
         Livewire.hook('request', ({ respond, fail }) => {
             if (inflight++ === 0) { started = Date.now(); wait = setTimeout(() => { check(); poll = setInterval(check, 1000) }, 900) }

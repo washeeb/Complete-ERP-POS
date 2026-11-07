@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- **Large imports cut off with "Something went wrong on the server":** files of more than 500 rows now run in the background on the server. The import page shows their progress, and a notification says when they are done. A web request was limited to a few minutes, while 2,467 products take longer to check and import.
+- **Progress card:** the time left shows seconds only under a minute (*About 3 min 20 s left*), and the card says so when the server stops reporting, instead of freezing on the last figure.
 ### Changed
 - **Opening stock as a count sheet:** the opening stock file finds each product by SKU, barcode or exact name, so a new shop's list works before products have SKUs. Rows with no quantity (not counted) are skipped instead of refused.
 ### Changed

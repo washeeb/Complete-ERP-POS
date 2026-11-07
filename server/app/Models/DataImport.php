@@ -11,7 +11,7 @@ class DataImport extends Model
 {
     use BelongsToTenant, HasUuids;
 
-    public const STATUSES = ['checked' => 'Checked (not imported)', 'imported' => 'Imported', 'failed' => 'Not imported (errors)'];
+    public const STATUSES = ['queued' => 'Waiting to start', 'running' => 'Running in the background', 'checked' => 'Checked (not imported)', 'imported' => 'Imported', 'failed' => 'Not imported (errors)'];
 
     protected $guarded = [];
 

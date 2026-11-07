@@ -19,12 +19,14 @@ use App\Models\StockCount;
 use App\Models\Warehouse;
 use App\Support\Exports\Exporter;
 use App\Support\IndustryContext;
+use App\Support\Progress;
 use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Exceptions\Halt;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Url;
 use Livewire\WithFileUploads;
@@ -321,6 +323,30 @@ class ImportData extends Page
         }
         $stored = $this->file->store('imports', 'local');
         $path = Storage::disk('local')->path($stored);
+        // A large file runs in the background, so no web time limit can cut it off; the page follows its progress.
+        $rows = count(SheetFile::read($path, $this->file->getClientOriginalName(), $this->mapping)['rows'] ?? []);
+        if ($rows > ImportService::$backgroundFrom) {
+            try {
+                $queued = Erp::run(fn ($actor) => app(ImportService::class)->queue($actor, $this->type, $path, $this->file->getClientOriginalName(),
+                    $this->options() + ['import_again' => $this->importAgain], $this->contextModel()?->getKey(), $commit, $this->mapping, $rows));
+            } catch (Halt) {
+                return;
+            }
+            $this->lastId = $queued->id;
+            Notification::make()->info()->title(number_format($rows).' rows: '.($commit ? 'importing' : 'checking').' in the background')
+                ->body('You can keep working or close this page. Progress shows below, and you get a notification when it is done.')->send();
+            $this->file = null;
+            $this->preview = null;
+            $this->mapping = [];
+            $this->importAgain = false;
+            $this->duplicateNote = null;
+            $this->fileKey++;
+            if (function_exists('fastcgi_finish_request')) {
+                app()->terminating(fn () => Artisan::call('erp:imports')); // start now, after the page has its answer
+            }
+
+            return;
+        }
         try {
             $import = Erp::run(fn ($actor) => app(ImportService::class)->run($actor, $this->type, $path, $this->file->getClientOriginalName(),
                 $this->options() + ['import_again' => $this->importAgain], $this->contextModel(), $commit, $this->mapping));
@@ -348,6 +374,19 @@ class ImportData extends Page
     public function last(): ?DataImport
     {
         return $this->lastId ? DataImport::find($this->lastId) : null;
+    }
+
+    /** A background import's progress for the page: "Importing … 1,200 of 2,467", "About 3 min left". */
+    public function background(DataImport $import): array
+    {
+        $p = Progress::live($import->user_id);
+        if ($import->status === 'queued' || ! $p) {
+            return ['label' => $import->status === 'queued' ? 'Waiting to start (within a minute)' : 'Starting…', 'done' => 0, 'total' => $import->rows_total, 'left' => null];
+        }
+        $secs = now()->getTimestamp() - (int) ($p['started'] ?? $p['at']);
+        $left = $p['done'] > 0 && $p['done'] < $p['total'] ? Progress::timeLeft((int) round($secs / $p['done'] * ($p['total'] - $p['done']))) : null;
+
+        return ['label' => $p['label'], 'done' => $p['done'], 'total' => $p['total'], 'left' => $left];
     }
 
     public function history()
