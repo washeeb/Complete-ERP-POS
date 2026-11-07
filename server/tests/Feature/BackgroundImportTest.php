@@ -58,3 +58,25 @@ it('shows the time left in seconds only under a minute', function () {
         ->and(Progress::timeLeft(200))->toBe('About 3 min 20 s left')
         ->and(Progress::timeLeft(120))->toBe('About 2 min left');
 });
+
+it('imports a checked file from the copy on the server, without uploading it again', function () {
+    $page = Livewire::test(ImportData::class, ['type' => 'products', 'industry' => $this->grocery->id])->set('file', ($this->csv)())->call('check');
+    Artisan::call('erp:imports');
+    $checked = DataImport::sole();
+    expect($checked->status)->toBe('checked')
+        ->and($this->owner->notifications()->latest()->first()->data['actions'][0]['url'])->toContain('show='.$checked->id);
+
+    // The page that started it says it is done, and offers the import.
+    $page->call('followBackground')->assertNotified('Checked: all 3 row(s) are fine — press “Import this file” to import it')->assertSee('Import this file');
+
+    // The bell's link opens the same result; importing uses the stored file (large: in the background again).
+    Livewire::withQueryParams(['type' => 'products', 'show' => $checked->id])->test(ImportData::class)->assertSee('Import this file')
+        ->call('importChecked', $checked->id)->assertSee('Waiting to start');
+    Artisan::call('erp:imports');
+    expect(DataImport::where('status', 'imported')->sole()->rows_ok)->toBe(3)
+        ->and(Product::whereIn('name', ['RICE 5KG', 'OIL 1L', 'SUGAR 1KG'])->count())->toBe(3);
+
+    // Not twice.
+    Livewire::test(ImportData::class, ['type' => 'products'])->call('importChecked', $checked->id)->assertNotified();
+    expect(DataImport::where('status', 'imported')->count())->toBe(1);
+});

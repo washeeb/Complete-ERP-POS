@@ -1212,3 +1212,7 @@ Design:
 - The same file (hash) cannot be queued twice while waiting or running. The page polls every 2 s while its import is waiting or running.
 - Time left: seconds only under a minute (`Progress::timeLeft`, and the same in the progress card).
 - Installer (Ubuntu): the cron file is moved aside before the backup and code swap, and the script waits up to 15 minutes for `schedule:run` / `erp:*` processes of that copy's user. An EXIT trap puts it back if the update stops, and step 8 writes it again. Windows already stopped its scheduled tasks during an update.
+
+## Import after a check (2026-11-07)
+- The owner checked 2,467 products in the background and then had no way on: the page clears the file when it is queued, and the only signal was a bell entry. `ImportService::importChecked` imports from `stored_path` with the same options and column matching (now kept in `options._mapping` for every run). It refuses a file already imported, one no longer on disk, and rows with errors unless the person chooses to skip them. Large files go to the background again.
+- `?show=<import id>` opens a result; the bell notification links there. `followBackground` (the page's 2 s poll) shows a persistent message when the run ends.

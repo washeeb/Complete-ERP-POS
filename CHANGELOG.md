@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 ### Fixed
+- **After a background check there was no way to import the file:** the result now has **Import this file** (or *Import, skipping the rows with errors*), which uses the copy already on the server. *Import history* has **Open** for checked files. When a background import or check finishes, the page shows a message, and the bell's notification has an **Open** button to the result.
+### Fixed
 - **Large imports cut off with "Something went wrong on the server":** files of more than 500 rows now run in the background on the server. The import page shows their progress, and a notification says when they are done. A web request was limited to a few minutes, while 2,467 products take longer to check and import.
 - **Errors in the server log during an update** ("bootstrap/cache must be present", "Class view does not exist"): the Ubuntu installer now pauses the scheduled tasks while it replaces the code, waits for running ones (a background import included) to finish, and starts them again at the end, or if the update stops.
 - **Progress card:** the time left shows seconds only under a minute (*About 3 min 20 s left*), and the card says so when the server stops reporting, instead of freezing on the last figure.
