@@ -22,7 +22,7 @@ The server is then reached over **https** only:
 
 The firewall is switched on with only SSH, 80 and 443 open (443 also for HTTP/3).
 
-Running it again with a newer ZIP updates the software and keeps your data, `.env` and keys. An older installation that used nginx is moved to the new web server (Caddy) automatically.
+Running it again with a newer ZIP updates the software and keeps your data, `.env` and keys. During an update the scheduled tasks pause while the files are replaced, and start again at the end. If a large import is running, the update waits for it (up to 15 minutes). **Why:** a task that starts while files are being replaced fails and fills the log with errors. An older installation that used nginx is moved to the new web server (Caddy) automatically.
 
 **A shared server for small clients (SyncLytics staff).** The standard is **one server per client**. For small businesses that are just starting, several clients can share one server, each as its **own separate copy** of the system on its own internet name:
 
