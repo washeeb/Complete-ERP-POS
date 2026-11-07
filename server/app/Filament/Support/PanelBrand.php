@@ -50,7 +50,8 @@ final class PanelBrand
     public static function industryCompany(User $user): ?string
     {
         $options = IndustryContext::options($user);
-        $id = IndustryContext::selected() ?? ($options->count() === 1 ? $options->keys()->first() : null);
+        // The switch at the top belongs to whoever is signed in, not to the person asked about.
+        $id = ($user->is(auth()->user()) ? IndustryContext::selected() : null) ?? ($options->count() === 1 ? $options->keys()->first() : null);
         $entityId = $id ? Industry::whereKey($id)->value('legal_entity_id') : null;
 
         return $entityId ? LegalEntity::whereKey($entityId)->value('name') : null;

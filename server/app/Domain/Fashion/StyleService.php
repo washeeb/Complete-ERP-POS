@@ -10,6 +10,7 @@ use App\Domain\Support\Recorder;
 use App\Models\Barcode;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Industry;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\Style;
@@ -99,7 +100,7 @@ final class StyleService
                         continue;
                     }
                     $sku = mb_substr($style->code.'-'.self::skuPart($colour).'-'.self::skuPart($size), 0, 40);
-                    $p = $this->catalog->saveProduct($actor, new Product, $shared + ['sku' => $sku, 'base_uom_id' => $pc->id, 'track_stock' => true,
+                    $p = $this->catalog->saveProduct($actor, new Product, $shared + ['sku' => $sku, 'industry_id' => Industry::where('module_key', 'fashion')->value('id'), 'base_uom_id' => $pc->id, 'track_stock' => true,
                         'base_barcodes' => [$this->barcode($actor->tenantId, $sku)], 'units' => [],
                         'prices' => $style->price_minor !== null ? [['price_list_id' => $list->id, 'uom_id' => $pc->id, 'min_qty' => '1',
                             'amount' => Money::format($style->price_minor, $list->currency_code)]] : []]);

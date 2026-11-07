@@ -366,6 +366,16 @@ final class Settings
             'label' => 'Returns accepted within (days, with receipt)',
             'help' => 'Within this many days a cashier can take goods back against the receipt and refund to the original payment. Without a receipt (or later): store credit only, with a supervisor PIN.',
         ],
+        'catalog.shared_products' => [
+            'type' => 'choice', 'default' => 'deliberate', 'group' => 'Stock', 'options' => ['deliberate' => 'Allow: someone with company-wide access can choose it', 'never' => 'Never: every product belongs to one industry'],
+            'label' => 'Products shared by every industry',
+            'help' => 'A shared product shows on every industry\'s tills, so it is never the default. Allow it for things sold everywhere, such as carrier bags. Never means an item sold in two industries is created in each.',
+        ],
+        'access.company_wide' => [
+            'type' => 'choice', 'default' => 'managers', 'group' => 'Security', 'options' => ['managers' => 'Managers and above', 'owner' => 'Owner and SyncLytics support only'],
+            'label' => 'Who can have company-wide access',
+            'help' => 'Company-wide access shows every industry and branch. Everyone else is given a branch or an industry. People & access → Company-wide access lists anyone who has it but should not.',
+        ],
         'returns.manager_approval' => [
             'type' => 'choice', 'default' => 'require', 'group' => 'Returns', 'options' => ['require' => 'Require: a manager\'s PIN on every return', 'allow' => 'Allow: the cashier goes on, and a manager reviews it afterwards', 'off' => 'Off'],
             'label' => 'Manager\'s approval of returns',

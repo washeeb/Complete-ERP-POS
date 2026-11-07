@@ -8,6 +8,7 @@ use App\Filament\Resources\DirectPurchases\Pages\CreateDirectPurchase;
 use App\Filament\Resources\DirectPurchases\Pages\EditDirectPurchase;
 use App\Filament\Resources\DirectPurchases\Pages\ListDirectPurchases;
 use App\Filament\Resources\DirectPurchases\Pages\ViewDirectPurchase;
+use App\Filament\Resources\Products\ProductResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
@@ -147,6 +148,7 @@ class DirectPurchaseResource extends Resource
         return Fields::productUnit('product_uom_id', buying: true)->live()
             ->createOptionForm([
                 TextInput::make('name')->label('Name')->required()->maxLength(160),
+                ProductResource::industryField(),
                 Select::make('base_uom_id')->label('Sold in (smallest unit)')->required()->options(fn () => Uom::orderBy('name')->pluck('name', 'id')),
                 Select::make('pack_uom_id')->label('Bought in (optional)')->options(fn () => Uom::orderBy('name')->pluck('name', 'id'))
                     ->helperText('e.g. sold in tablets, bought in boxes.'),
@@ -162,7 +164,7 @@ class DirectPurchaseResource extends Resource
     private static function addProduct(array $data): string
     {
         $pack = ! empty($data['pack_uom_id']) && (float) ($data['pack_factor'] ?? 0) > 1 && $data['pack_uom_id'] !== $data['base_uom_id'];
-        $product = Erp::run(fn ($actor) => app(CatalogService::class)->saveProduct($actor, new Product, ['sku' => app(CatalogService::class)->nextSku($actor->tenantId, null), 'name' => $data['name'],
+        $product = Erp::run(fn ($actor) => app(CatalogService::class)->saveProduct($actor, new Product, ['name' => $data['name'], 'industry_id' => $data['industry_id'] ?? null,
             'base_uom_id' => $data['base_uom_id'], 'tax_group_id' => $data['tax_group_id'], 'track_stock' => true, 'is_active' => true, 'track_batches' => (bool) ($data['track_batches'] ?? false),
             'buying_uom_id' => $pack ? $data['pack_uom_id'] : null, 'units' => $pack ? [['uom_id' => $data['pack_uom_id'], 'factor' => (string) $data['pack_factor'], 'barcodes' => [], 'is_sellable' => true, 'is_purchasable' => true]] : []]));
 

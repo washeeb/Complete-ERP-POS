@@ -26,6 +26,7 @@ use App\Models\TaxRate;
 use App\Models\Uom;
 use App\Security\Authorizer;
 use App\Support\Caps;
+use App\Support\IndustryContext;
 use App\Support\Money;
 use App\Support\Progress;
 use App\Support\Qty;
@@ -161,6 +162,7 @@ final class CatalogService
             if ($product->industry_id === $industryId) {
                 continue;
             }
+            $this->assertIndustryChange($actor, $product->industry_id, $industryId);
             $product->industry_id = $industryId;
             if (self::systemSku($product->sku)) {
                 $product->sku = $this->nextSku($actor->tenantId, $industryId); // a system-given SKU follows the industry's series
@@ -172,6 +174,77 @@ final class CatalogService
         return $moved;
     }
 
+    /**
+     * The industry a saved product belongs to. A new product always gets one: from the form or file, or the only one it
+     * can be. Being shared is a deliberate choice, never what an empty field means (owner decision 2026-11-07).
+     */
+    private function industryFor(Actor $actor, Product $product, array $data, ?string $was): ?string
+    {
+        if ($product->exists && ! array_key_exists('industry_id', $data)) {
+            return $was;
+        }
+        $wanted = (string) ($data['industry_id'] ?? '');
+        $shared = $wanted === IndustryContext::SHARED;
+        if ($actor->user === null) {
+            return $shared || $wanted === '' ? null : $wanted; // the system itself: demo data and repairs
+        }
+        if ($product->exists && ($wanted === '' || ($shared ? $was === null : $wanted === $was))) {
+            return $was; // not changed
+        }
+        $inUse = Industry::inUse()->pluck('id')->all();
+        if ($shared || $wanted === '') {
+            if ($inUse === []) {
+                return null; // a company that does not use industries
+            }
+        }
+        if ($wanted === '') {
+            $own = array_values(array_intersect($inUse, IndustryContext::options($actor->user)->keys()->all())) ?: $inUse;
+            if (count($own) === 1) {
+                return $own[0];
+            }
+            throw new DomainException('Choose which industry this product belongs to.');
+        }
+        $to = $shared ? null : $wanted;
+        if ($product->exists) {
+            $this->assertIndustryChange($actor, $was, $to);
+        } else {
+            $this->assertIndustryAllowed($actor, $to);
+        }
+
+        return $to;
+    }
+
+    private function assertIndustryAllowed(Actor $actor, ?string $industryId): void
+    {
+        $user = $actor->user;
+        if ($user === null) {
+            return;
+        }
+        if ($industryId === null) {
+            if (! IndustryContext::sharingAllowed($user)) {
+                throw new DomainException(IndustryContext::companyWide($user) ? 'Products shared by every industry are switched off. Choose one industry.'
+                    : 'Only someone with company-wide access can share a product between industries. Choose your industry.');
+            }
+
+            return;
+        }
+        if (! array_key_exists($industryId, IndustryContext::choices($user))) {
+            throw new DomainException('You can only work with products in your own industry.');
+        }
+    }
+
+    private function assertIndustryChange(Actor $actor, ?string $from, ?string $to): void
+    {
+        $user = $actor->user;
+        if ($user === null) {
+            return;
+        }
+        if ($from === null ? ! IndustryContext::companyWide($user) : ! array_key_exists($from, IndustryContext::choices($user))) {
+            throw new DomainException('You can only move products that belong to your own industry.');
+        }
+        $this->assertIndustryAllowed($actor, $to);
+    }
+
     public function saveProduct(Actor $actor, Product $product, array $data, ?string $reason = null): Product
     {
         $this->require($actor, 'catalog.manage');
@@ -181,6 +254,7 @@ final class CatalogService
         }
 
         $data = Caps::keys($data, ['name', 'generic_name', 'strength', 'dosage_form', 'dosage']); // one uniform list
+        $industry = $this->industryFor($actor, $product, $data, $product->exists ? $product->getOriginal('industry_id') : null);
         $product->fill(array_intersect_key($data, array_flip(['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'buying_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu', 'location',
             'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'dosage', 'daily_use', 'nhis_price_minor', 'fda_reg_no', 'station', 'reading_kind', 'track_serials', 'warranty_months', 'consignor_id', 'consignment_bp',
             'service_minutes', 'commission_bp', 'licence_keys',
@@ -190,7 +264,7 @@ final class CatalogService
         if ($product->daily_use !== null && (float) $product->daily_use > 1000) {
             throw new DomainException('Used a day: the amount one patient takes a day, in the base unit (e.g. 1 or 2 tablets).');
         }
-        $product->industry_id = $product->industry_id ?: null; // null = shared by every industry (products from before industries)
+        $product->industry_id = $industry; // null = shared by every industry
         // Distribution: returnable containers (crates, bottles, gas cylinders) and the container sold with each unit.
         $product->deposit_product_id = $product->deposit_product_id ?: null;
         if ($product->deposit_product_id) {
