@@ -16,6 +16,6 @@ class BackupDestination extends Model
 
     protected function casts(): array
     {
-        return ['config' => 'encrypted:array', 'is_active' => 'boolean', 'last_ok_at' => 'datetime', 'keep' => 'integer'];
+        return ['config' => 'encrypted:array', 'is_active' => 'boolean', 'grandfathered' => 'boolean', 'last_ok_at' => 'datetime', 'keep' => 'integer'];
     }
 }

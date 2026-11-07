@@ -2,7 +2,9 @@
 
 namespace App\Domain\Backup;
 
+use App\Domain\Licensing\LicenseManager;
 use App\Domain\Support\DomainException;
+use App\Models\BackupDestination;
 use GuzzleHttp\Psr7\Utils;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -20,6 +22,21 @@ final class Destinations
 {
     public const TYPES = ['folder' => 'Folder (USB drive, second disk, network share)', 's3' => 'S3-compatible storage (Backblaze B2, Wasabi, AWS)',
         'gdrive' => 'Google Drive', 'sftp' => 'Another server (SFTP)'];
+
+    /**
+     * Copies that leave the premises: cloud storage and another server. A paid add-on for clients licensed from
+     * 2026-11-07; a folder (USB drive, second disk, network share) stays free, so every client can keep a copy.
+     */
+    public const PAID = ['s3', 'gdrive', 'sftp'];
+
+    public const ADDON = 'offsite_backup';
+
+    /** Whether this type may be used here: free, licensed, or a destination set up before it became paid. */
+    public static function allowed(string $type, ?BackupDestination $existing = null): bool
+    {
+        return ! in_array($type, self::PAID, true) || app(LicenseManager::class)->hasAddon(self::ADDON)
+            || ($existing && $existing->grandfathered && $existing->type === $type);
+    }
 
     /** Settings each type needs: key => [label, secret?] */
     public const FIELDS = [

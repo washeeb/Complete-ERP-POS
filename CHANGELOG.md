@@ -3,6 +3,8 @@
 ## [Unreleased]
 ### Added
 - **Reconnect screen in ZionEX Suite (desktop 1.0.3):** when the server can't be reached (no network, server not answering, busy while restarting or updating), the app shows its own screen instead of Edge's error page. It says why, retries by itself, returns to the page the person was on, and after 5 minutes shows the support contact (the server's own: SyncLytics or a reseller). It never shows the server's address.
+### Changed
+- **Off-site backups are a paid add-on** for clients licensed from now on: copies to S3-compatible storage (AWS, Backblaze B2, Wasabi), Google Drive or another server by SFTP need `offsite_backup` on the licence. A folder (USB drive, second disk, network share) stays included. Cloud copies set up before this change keep working.
 ### Fixed
 - **Large imports cut off with "Something went wrong on the server":** files of more than 500 rows now run in the background on the server. The import page shows their progress, and a notification says when they are done. A web request was limited to a few minutes, while 2,467 products take longer to check and import.
 - **Errors in the server log during an update** ("bootstrap/cache must be present", "Class view does not exist"): the Ubuntu installer now pauses the scheduled tasks while it replaces the code, waits for running ones (a background import included) to finish, and starts them again at the end, or if the update stops.

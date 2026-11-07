@@ -32,6 +32,8 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 
 ## Desktop reconnect screen — branch `desktop-offline-screen`
 - `desktop/src-tauri/src/lib.rs` (`watch_connection`, `open_offline`, `remember_support`, Support in config), `setup/index.html` reconnect mode, capabilities and build.rs commands, `zx-support` meta in AdminPanelProvider. ZionEX Suite 1.0.3.
+## Off-site backup add-on — branch `offsite-backups-addon`
+- `Destinations::PAID/ADDON/allowed`, `backup_destinations.grandfathered` (migration `2026_12_22_100001`), Backups page and `BackupService::run` checks, `VendorLicensing` add-on `offsite_backup`. Tests: OffsiteBackupAddonTest.
 
 ## Barcodes per industry — branch `barcodes-per-industry`
 - Migration `2026_12_21_100001_barcodes_per_industry`, `Barcode::scanned/industryOf/inSeveralIndustries`, `CatalogService::barcodeClash/moveBarcodes`, StockRows/OrderImporter/WmsController in the store's industry. Tests: BarcodesPerIndustryTest.
