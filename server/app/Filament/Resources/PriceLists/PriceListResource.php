@@ -54,7 +54,7 @@ class PriceListResource extends SimpleCatalogResource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('code')->required()->maxLength(20)->regex('/^[A-Za-z0-9_]{1,20}$/')->disabledOn('edit'),
+            TextInput::make('code')->helperText('Made from the name (Staff price → STAFF_PRICE). Product files use it for this list\'s price column.')->disabled()->dehydrated(false)->placeholder('Given automatically when saved'),
             TextInput::make('name')->required()->maxLength(80),
             Toggle::make('prices_include_tax')->label('Prices include tax')->default(true)
                 ->helperText('Retail shelf prices normally include tax. Cannot change once the list has prices.'),

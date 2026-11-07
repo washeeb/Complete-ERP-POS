@@ -124,12 +124,11 @@ class SetupWizard extends Page
                 Step::make('Branches & modules')->icon(Heroicon::OutlinedBuildingStorefront)->schema([
                     Text::make(new HtmlString('Each branch gets a main warehouse and the tills you ask for. <strong>Industry modules</strong> are chosen per branch; ones not released yet are <em>reserved</em> and switch on when their phase ships — they are never shown as working before then.')),
                     Repeater::make('branches')->label('Branches')->minItems(1)->maxItems(50)->reorderable(false)
-                        ->itemLabel(fn (array $state) => trim(($state['code'] ?? '').' · '.($state['name'] ?? '')))
+                        ->itemLabel(fn (array $state) => trim((string) ($state['name'] ?? '')))
                         ->schema([
                             Grid::make(4)->schema([
-                                TextInput::make('code')->required()->maxLength(6)->regex('/^[A-Za-z0-9]{1,6}$/')
-                                    ->helperText('1–6 letters/digits, used in receipt numbers'),
-                                TextInput::make('name')->required()->maxLength(120)->columnSpan(2),
+                                TextInput::make('name')->required()->maxLength(120)->columnSpan(3)
+                                    ->helperText('Its code (used in receipt numbers) is made from the name.'),
                                 TextInput::make('tills')->label('Tills')->numeric()->minValue(0)->maxValue(50)->default(1)->required(),
                             ]),
                             Toggle::make('is_hq')->label('Head office (exactly one)'),

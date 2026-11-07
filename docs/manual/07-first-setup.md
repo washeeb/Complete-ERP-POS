@@ -36,7 +36,12 @@ The wizard opens by itself the first time.
 2. **Company** — trading name, country, base currency and time zone. Optionally the **legal entity**: registered name, **TIN** and **VAT number**, needed for VAT invoices (you can add it later under *Company*).
 3. **Your brand** (optional) — the company **logo**, a **square icon** and the **brand colour** (leave the colour empty and it is taken from the logo). You can do this later under *Company → Branding* (below).
 4. **Branches & modules** — one row per branch:
-   - **Code** (1–6 letters/digits, e.g. `HQ`, `KSI`). It appears in every receipt number and **cannot be changed later**.
+   - **Codes the system gives:** branches, stores (`PHAOSU-W1`), tills (`T01`), vans (`V01`), departments, price lists and
+     tax groups (`STAFF_PRICE`), kitchen stations, routes, work centres, recipes, styles, asset classes and membership plans
+     all get their code from the name or the next number, and keep it. **Why:** no two can clash, and receipts, files and
+     reports that use them never break. Codes that match something real stay yours to type, with the next one suggested:
+     account numbers, shelf bin labels and table numbers. Unit codes (PC, BOX) are typed as before.
+   - The branch's **code** is made from its name (*Pharmacy Osu* → `PHAOSU`). **Why:** it appears in every receipt number, so the system makes sure it is unique and never changes it.
    - **Name**, the number of **tills**, and whether it is the **head office** (exactly one).
    - **Modules** for that branch (Grocery, Pharmacy, Restaurant, Electronics, Fashion, Services, Online Storefront…). You can change these later (Chapter 8).
 5. Click **Finish setup**.

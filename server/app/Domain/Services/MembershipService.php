@@ -19,6 +19,7 @@ use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\Tenant;
 use App\Security\Authorizer;
+use App\Support\Codes;
 use App\Support\Money;
 use Illuminate\Support\Carbon;
 
@@ -54,8 +55,8 @@ final class MembershipService
         } elseif (array_key_exists('price_minor', $data)) {
             $plan->price_minor = (int) $data['price_minor'];
         }
-        $plan->code = strtoupper(trim((string) $plan->code));
         $plan->name = trim((string) $plan->name);
+        $plan->code = $plan->exists ? $plan->getOriginal('code') : (strtoupper(trim((string) $plan->code)) ?: Codes::fromName($plan->name, MembershipPlan::pluck('code'), 10, fallback: 'PLAN'));
         $plan->interval_months = (int) ($plan->interval_months ?: 1);
         if (! preg_match('/^[A-Z0-9][A-Z0-9_-]{0,29}$/', $plan->code) || $plan->name === '') {
             throw new DomainException('Enter a code (letters, digits, dash) and a name.');

@@ -17,6 +17,7 @@ use App\Models\Style;
 use App\Models\TaxGroup;
 use App\Models\Uom;
 use App\Security\Authorizer;
+use App\Support\Codes;
 use App\Support\Ean13;
 use App\Support\Money;
 
@@ -33,7 +34,9 @@ final class StyleService
     public function save(Actor $actor, Style $style, array $data): Style
     {
         $this->require($actor);
-        $code = strtoupper(trim((string) ($data['code'] ?? $style->code)));
+        // The style code starts its SKUs (CODE-COLOUR-SIZE), so it is given once and never changes.
+        $code = $style->exists ? $style->code : (strtoupper(trim((string) ($data['code'] ?? '')))
+            ?: Codes::fromName((string) ($data['name'] ?? ''), Style::pluck('code'), 10, fallback: 'STYLE'));
         if (! preg_match('/^[A-Z0-9][A-Z0-9._-]{0,29}$/', $code)) {
             throw new DomainException('Style code: letters, digits, dot, dash or underscore (up to 30).');
         }

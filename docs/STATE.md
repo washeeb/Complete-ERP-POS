@@ -30,6 +30,9 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 ## Industry confinement — branch `industry-confinement`
 - `IndustryContext` (`selected`, `companyWide`, `choices`, `sharingAllowed`, `productScope`), `CatalogService::industryFor`, `SharedProducts`, `SharedProductsPage`, `CompanyWideAccess`, `AccessService::mayBeCompanyWide` and `narrow`. Settings `catalog.shared_products`, `access.company_wide`. Tests: IndustryConfinementTest.
 
+## Codes given by the system — branch `automatic-codes`
+- `App\Support\Codes` (`fromName`, `numbered`, `after`) used by OrgService (branches, stores, tills), VanService, HrService, BomService, RouteService, MembershipService, RestaurantSetup, StyleService, AssetService, CatalogService (price lists, tax groups), IndustryService and the vendor Create pages. Typed with suggestions: accounts, bins, tables. Tests: AutomaticCodesTest.
+
 ## Owner's list of 2026-11-06 — merged (PRs #148, #149, release BKKN6UX7G)
 - Stage 1: Tauri ACL (`pos/src-tauri` and `desktop/src-tauri`: `build.rs` app manifest, capabilities `setup` local and `till` / `office` remote; Till 0.29.0, Back Office 1.0.1), PDF limit 800 rows (`Exporter::PDF_ROW_LIMIT`, measured), ledger filters, `PriceListExport`, `CatalogService::switchOnBatches`. Tests: ListExportsTest.
 - Stage 2 returns: `ReturnService` (`book`, `fromOffice`, REASONS, quarantine store `warehouses.is_quarantine`, settings `returns.manager_approval`, `approval_above_minor`, `medicines_to_quarantine`), `OfficeReturns`, `OfficeReturnResource`, `ReturnsReport` (with `slip`), `ReturnScreen.tsx`. Sales now allow null till, device, shift and seq for back-office returns; `sale_payments.account_id` with AutoPoster paying from that account. Medicines go back on sale by default; `returns.medicines_to_quarantine` turns quarantine on (owner 2026-11-07). Tests: ReturnsTest, PosSaleTest. `installCompany` in tests turns approval off.

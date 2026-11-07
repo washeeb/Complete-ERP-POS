@@ -23,7 +23,7 @@ class WarehousesRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('code')->required()->maxLength(10)->regex('/^[A-Za-z0-9-]{1,10}$/'),
+            TextInput::make('code')->disabled()->dehydrated(false)->placeholder('Given automatically when saved'),
             TextInput::make('name')->required()->maxLength(120),
             Toggle::make('is_active')->default(true),
         ]);

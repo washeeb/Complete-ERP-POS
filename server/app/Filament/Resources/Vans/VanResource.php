@@ -79,7 +79,7 @@ class VanResource extends Resource
         return $schema->columns(3)->components([
             Select::make('branch_id')->label('Branch')->required()->live()->disabledOn('edit')
                 ->options(fn () => Branch::orderBy('code')->pluck('name', 'id')),
-            TextInput::make('code')->label('Van code')->required()->maxLength(10)->disabledOn('edit')->helperText('Also the till code on receipts, e.g. V01.'),
+            TextInput::make('code')->label('Van code')->helperText('V01, V02…; also the till code on its receipts.')->disabled()->dehydrated(false)->placeholder('Given automatically when saved'),
             TextInput::make('name')->required()->maxLength(80)->placeholder('Kumasi van 1'),
             TextInput::make('vehicle_reg')->label('Registration')->maxLength(20)->placeholder('GR 1234-24'),
             Select::make('rep_user_id')->label('Rep')->searchable()->options(fn () => User::where('is_active', true)->orderBy('name')->pluck('name', 'id')),

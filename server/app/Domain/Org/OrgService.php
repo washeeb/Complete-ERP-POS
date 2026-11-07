@@ -17,6 +17,7 @@ use App\Models\Tenant;
 use App\Models\Till;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
+use App\Support\Codes;
 use App\Support\Settings;
 
 /** Company, legal entity, branches, warehouses and tills — including the first-run setup wizard. */
@@ -55,7 +56,7 @@ final class OrgService
         if (count(array_filter($branches, fn ($b) => ! empty($b['is_hq']))) !== 1) {
             throw new DomainException('Mark exactly one branch as head office (HQ).');
         }
-        $codes = array_map(fn ($b) => strtoupper(trim($b['code'])), $branches);
+        $codes = array_values(array_filter(array_map(fn ($b) => strtoupper(trim((string) ($b['code'] ?? ''))), $branches))); // empty = given from the name
         if (count($codes) !== count(array_unique($codes))) {
             throw new DomainException('Branch codes must be unique.');
         }
@@ -79,7 +80,7 @@ final class OrgService
 
             foreach ($branches as $b) {
                 $branch = $this->createBranch($actor, [
-                    'code' => $b['code'], 'name' => $b['name'], 'is_hq' => ! empty($b['is_hq']),
+                    'code' => $b['code'] ?? '', 'name' => $b['name'], 'is_hq' => ! empty($b['is_hq']),
                     'legal_entity_id' => $entity?->id, 'address' => $b['address'] ?? null, 'phone' => $b['phone'] ?? null,
                 ], (int) ($b['tills'] ?? 1), bootstrap: true);
 
@@ -101,7 +102,9 @@ final class OrgService
         if ($tills < 0 || $tills > 50) {
             throw new DomainException('A branch can start with 0 to 50 tills.');
         }
-        $code = strtoupper(trim($data['code']));
+        // Given from the name (Pharmacy Osu → PHAOSU) unless one is passed in; it starts receipt numbers, so it never changes.
+        $code = strtoupper(trim((string) ($data['code'] ?? '')))
+            ?: Codes::fromName((string) ($data['name'] ?? ''), Branch::withoutGlobalScopes()->where('tenant_id', $actor->tenantId)->pluck('code'), 6, fallback: 'BR');
         if (! preg_match('/^[A-Z0-9]{1,6}$/', $code)) {
             throw new DomainException('Branch code: 1–6 letters or digits (it appears in receipt numbers).');
         }
@@ -165,7 +168,9 @@ final class OrgService
         $branch = Branch::findOrFail($data['branch_id'] ?? $warehouse->branch_id);
         $this->require($actor, 'setup.company.manage', $branch);
         $warehouse->fill(array_intersect_key($data, array_flip(['branch_id', 'code', 'name', 'is_active'])));
-        $warehouse->code = strtoupper($warehouse->code);
+        // The system's code: the branch's next store (PHAOSU-W2); a code already given never changes.
+        $warehouse->code = $warehouse->exists ? $warehouse->getOriginal('code') : (strtoupper(trim((string) $warehouse->code))
+            ?: Codes::numbered($branch->code.'-W', Warehouse::withoutGlobalScopes()->where('tenant_id', $actor->tenantId)->pluck('code'), 1));
         $warehouse->tenant_id = $actor->tenantId;
 
         $saved = $this->recorder->save($actor, $warehouse, $warehouse->exists ? 'warehouse.updated' : 'warehouse.created', branchId: $branch->id);
@@ -183,7 +188,9 @@ final class OrgService
             throw new DomainException('A till sells from a warehouse in its own branch.');
         }
         $till->fill(array_intersect_key($data, array_flip(['branch_id', 'warehouse_id', 'code', 'name', 'is_active'])));
-        $till->code = strtoupper($till->code);
+        // The branch's next till (T03); it is part of receipt numbers, so it never changes.
+        $till->code = $till->exists ? $till->getOriginal('code') : (strtoupper(trim((string) $till->code))
+            ?: Codes::numbered('T', Till::withoutGlobalScopes()->where('branch_id', $branch->id)->pluck('code')));
         $till->tenant_id = $actor->tenantId;
 
         return $this->recorder->save($actor, $till, $till->exists ? 'till.updated' : 'till.created', branchId: $branch->id);

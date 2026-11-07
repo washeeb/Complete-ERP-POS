@@ -55,8 +55,8 @@ final class QuickCreate
                 fn ($actor, array $d) => app(SupplierService::class)->save($actor, new Supplier, ['code' => $d['code'], 'name' => $d['name'], 'phone' => $d['phone'] ?? null, 'email' => $d['email'] ?? null])],
             'customer' => ['customers.manage', [TextInput::make('name')->required()->maxLength(255)->caps(), TextInput::make('phone')->tel()->maxLength(30), TextInput::make('email')->email()->maxLength(255)],
                 fn ($actor, array $d) => app(CustomerService::class)->save($actor, new Customer, ['name' => $d['name'], 'phone' => $d['phone'] ?? null, 'email' => $d['email'] ?? null])],
-            'department' => ['hr.manage', [TextInput::make('code')->required()->maxLength(20), TextInput::make('name')->required()->maxLength(120)],
-                fn ($actor, array $d) => app(HrService::class)->saveDepartment($actor, new Department, $d['code'], $d['name'])],
+            'department' => ['hr.manage', [TextInput::make('name')->required()->maxLength(120)],
+                fn ($actor, array $d) => app(HrService::class)->saveDepartment($actor, new Department, '', $d['name'])],
         };
 
         return $select

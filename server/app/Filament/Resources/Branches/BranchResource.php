@@ -87,9 +87,8 @@ class BranchResource extends Resource
     {
         return $schema->components([
             Grid::make(2)->schema([
-                TextInput::make('code')->required()->maxLength(6)->regex('/^[A-Za-z0-9]{1,6}$/')
-                    ->helperText('Appears in receipt and invoice numbers. Cannot be changed later.')
-                    ->disabledOn('edit'),
+                TextInput::make('code')->disabled()->dehydrated(false)->placeholder('Given automatically when saved')
+                    ->helperText('Made from the name (Pharmacy Osu → PHAOSU). Appears in receipt and invoice numbers, so it never changes.'),
                 TextInput::make('name')->required()->maxLength(120),
                 Select::make('legal_entity_id')->label('Legal entity')->options(fn () => LegalEntity::pluck('name', 'id')),
                 Select::make('industry_id')->label('Industry')->options(fn () => Industry::licensed()->orderBy('sort')->pluck('name', 'id'))

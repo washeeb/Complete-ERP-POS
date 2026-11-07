@@ -59,7 +59,7 @@ class WorkCentreResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->columns(2)->components([
-            TextInput::make('code')->required()->maxLength(20),
+            TextInput::make('code')->disabled()->dehydrated(false)->placeholder('Given automatically when saved'),
             TextInput::make('name')->required()->maxLength(255),
             Select::make('branch_id')->label('Branch')->required()->options(fn () => Branch::orderBy('code')->pluck('name', 'id')),
             TextInput::make('hourly_rate')->label('Cost per hour (labour + overhead)')->numeric()->minValue(0)->default(0)
