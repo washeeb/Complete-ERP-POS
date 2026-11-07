@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+- **Off-site backups are a paid add-on** for clients licensed from now on: copies to S3-compatible storage (AWS, Backblaze B2, Wasabi), Google Drive or another server by SFTP need `offsite_backup` on the licence. A folder (USB drive, second disk, network share) stays included. Cloud copies set up before this change keep working.
 ### Fixed
 - **After a background check there was no way to import the file:** the result now has **Import this file** (or *Import, skipping the rows with errors*), which uses the copy already on the server. *Import history* has **Open** for checked files. When a background import or check finishes, the page shows a message, and the bell's notification has an **Open** button to the result.
 ### Fixed

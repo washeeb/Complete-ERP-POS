@@ -77,6 +77,8 @@ The server keeps the last 7 itself. Add at least one place **outside the server*
 | **Google Drive** | OAuth client ID and secret, a refresh token, and the Drive folder ID (from a Google Cloud project in **your** Google account — your IT person sets this up once) | Businesses already on Google Workspace |
 | **Another server (SFTP)** | Address, port, user, password or private key, folder | Head office or a hosting account |
 
+**Which are included:** a **folder** (a USB drive you take home, a second disk, a network share) is always included. **S3-compatible storage, Google Drive and another server (SFTP)** are the **off-site backup** add-on on the licence (System → Licence → *Paid add-ons*); without it, those types show *(paid add-on)* and cannot be saved. Copies a company set up before 7 November 2026 keep working without the add-on. **Why:** every client can always keep a copy away from the server on a drive; copies to the cloud are a service SyncLytics supports and charges for.
+
 **Keep the newest …** says how many backups each destination keeps; older ones there are deleted automatically.
 
 ![System → Backups](img/backups.png)

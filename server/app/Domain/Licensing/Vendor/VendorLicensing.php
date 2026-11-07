@@ -30,10 +30,11 @@ final class VendorLicensing
         'crm' => 'CRM (paid add-on: leads, deals on a pipeline, follow-ups with reminders, campaigns by SMS, WhatsApp and e-mail)',
         'projects' => 'Projects and job costing (paid add-on: projects, tasks, milestones, timesheets, costs from stock, bills, expenses and time, invoicing, profit per project)',
         'service' => 'Service desk and maintenance (paid add-on: tickets from WhatsApp, e-mail, the web and staff with deadlines; equipment register, maintenance plans and work orders)',
-        'iot' => 'Sensors (paid add-on: fridge, cold-room, freezer and room temperature and humidity, power and doors; alarms by WhatsApp / SMS, temperature log for inspections)'];
+        'iot' => 'Sensors (paid add-on: fridge, cold-room, freezer and room temperature and humidity, power and doors; alarms by WhatsApp / SMS, temperature log for inspections)',
+        'offsite_backup' => 'Off-site backups (paid add-on: encrypted copies to cloud storage — AWS S3, Backblaze B2, Wasabi, Google Drive — or another server by SFTP; a folder or USB drive is always included)'];
 
     /** Paid add-ons: only when ticked by name; "all features" does not include them (owner decisions 2026-10-20, 2026-11-02). */
-    public const ADDON_FEATURES = ['remote_access', 'integrations', 'crm', 'projects', 'service', 'iot'];
+    public const ADDON_FEATURES = ['remote_access', 'integrations', 'crm', 'projects', 'service', 'iot', 'offsite_backup'];
 
     public function __construct(private readonly AuditLog $audit, private readonly VendorBilling $billing) {}
 
