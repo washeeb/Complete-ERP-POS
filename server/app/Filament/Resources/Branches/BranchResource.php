@@ -102,7 +102,8 @@ class BranchResource extends Resource
                     ->helperText('Inactive branches keep their history but cannot trade.'),
                 TextInput::make('reason')->label('Reason for change')->maxLength(255)->visibleOn('edit')->dehydrated(),
             ]),
-            Section::make('Pharmacy rules for this branch')->visibleOn('edit')->visible(fn () => ModuleService::enabledAnywhere('pharmacy'))->collapsible()
+            // Only on a branch that runs Pharmacy (owner 2026-11-07: a grocery branch was shown pharmacy rules).
+            Section::make('Pharmacy rules for this branch')->visibleOn('edit')->visible(fn ($record) => $record && app(ModuleService::class)->isEnabled($record, 'pharmacy'))->collapsible()
                 ->description('Empty = the company setting (System → Settings → Pharmacy). Set a value only where this branch works differently, e.g. a shop without a pharmacist on duty.')
                 ->columns(2)->schema(self::ownSettingFields('pharmacy.')),
             Section::make('Tills at this branch')->visibleOn('edit')->collapsible()->collapsed()

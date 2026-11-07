@@ -20,7 +20,8 @@
                 <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 <span>New</span>
             </button>
-            <div class="zx-new-menu" x-show="o" x-cloak x-transition.opacity.duration.120ms role="menu" aria-label="Create new">
+            <div class="zx-new-menu" x-show="o" x-cloak x-transition.opacity.duration.120ms role="menu" aria-label="Create new"
+                 x-effect="o && $nextTick(() => { $el.style.translate = ''; const l = $el.getBoundingClientRect().left; if (l < 8) $el.style.translate = (8 - l) + 'px 0' })">
                 @foreach ($create as $group => $items)
                     <section>
                         <h3>{{ $group }}</h3>

@@ -7,6 +7,7 @@ use App\Domain\Inventory\InventoryService;
 use App\Domain\Support\DomainException;
 use App\Filament\Pages\CompanyWideAccess;
 use App\Filament\Pages\SharedProductsPage;
+use App\Filament\Resources\Branches\BranchResource;
 use App\Filament\Resources\Products\Pages\CreateProduct;
 use App\Filament\Resources\Products\Pages\EditProduct;
 use App\Filament\Resources\Products\Pages\ListProducts;
@@ -174,4 +175,10 @@ it('asks staff with several branches of one industry nothing, and head office ch
     $branch = Branch::where('code', 'HQ')->first();
     $hq = staff($this->owner, 'buyer', 3, 'stock_controller', ScopeType::Branch, $branch->id);
     expect(array_keys(IndustryContext::choices($hq)))->toContain($this->pharmacy->id, $this->grocery->id)->not->toContain(IndustryContext::SHARED);
+});
+
+it('shows pharmacy rules only on a branch that runs Pharmacy', function () {
+    $this->actingAs(withMfa($this->owner), 'web');
+    $this->get(BranchResource::getUrl('edit', ['record' => $this->b['P1']]))->assertOk()->assertSee('Pharmacy rules for this branch');
+    $this->get(BranchResource::getUrl('edit', ['record' => $this->b['G1']]))->assertOk()->assertDontSee('Pharmacy rules for this branch');
 });

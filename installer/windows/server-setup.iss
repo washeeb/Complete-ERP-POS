@@ -8,7 +8,7 @@
   #define Slug "SESLabs"
 #endif
 #ifndef Display
-  #define Display "ZionEX"
+  #define Display "ZionEX Suite"
 #endif
 #ifndef Brand
   #define Brand "SES Labs"
