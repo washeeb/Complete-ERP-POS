@@ -124,7 +124,7 @@ class ImportData extends Page
     /** @return array<string, string> the industries an industry import can go to, and "shared" */
     public function industries(): array
     {
-        return Industry::licensed()->orderBy('sort')->pluck('name', 'id')->all() + ['shared' => 'Shared by all industries'];
+        return IndustryContext::choices(Erp::user());
     }
 
     /** The import belongs to one industry and the company has industries: the page asks which. */

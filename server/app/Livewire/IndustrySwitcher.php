@@ -9,7 +9,8 @@ use Livewire\Component;
 
 /**
  * "All industries / Pharmacy / Grocery …" at the top of the back office: every screen then shows only that industry's
- * branches, stock, prices, purchasing, sales and reports. Shown to people who can see more than one industry.
+ * branches, stock, prices, purchasing, sales and reports. Shown only to people who cover several industries, or the
+ * whole company. Everyone else stays in their own.
  */
 class IndustrySwitcher extends Component
 {
@@ -31,12 +32,7 @@ class IndustrySwitcher extends Component
         $user = Erp::user();
         $options = $user ? IndustryContext::options($user) : collect();
 
-        return view('livewire.industry-switcher', ['options' => $options, 'show' => $options->count() > 1 || ($options->count() === 1 && $this->allVisible())]);
-    }
-
-    /** People with company-wide reach also have "All industries" (and head office), so one industry is still a choice. */
-    private function allVisible(): bool
-    {
-        return Erp::branchIds('sales.view') === null || Erp::user()?->security_level >= 5;
+        // With company-wide reach, one industry is still a choice: "All industries" adds head office.
+        return view('livewire.industry-switcher', ['options' => $options, 'show' => $options->count() > 1 || ($options->isNotEmpty() && IndustryContext::companyWide($user))]);
     }
 }

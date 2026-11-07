@@ -41,7 +41,7 @@ final class Look
     ];
 
     /** Words people type for pages named otherwise (the menu search and the page finder). */
-    public const MENU_WORDS = ['po' => ['purchase order'], 'grn' => ['goods received'], 'momo' => ['mobile money', 'till shifts'],
+    public const MENU_WORDS = ['shared' => ['shared products'], 'industry' => ['shared products'], 'company-wide' => ['company-wide access'], 'access' => ['company-wide access'], 'po' => ['purchase order'], 'grn' => ['goods received'], 'momo' => ['mobile money', 'till shifts'],
         'adjust' => ['stock adjustment'], 'expiry' => ['batches & expiry', 'expiry & returns'], 'staff' => ['users'],
         'password' => ['users'], 'pin' => ['users'], 'vat' => ['tax', 'e-vat'], 'reorder' => ['what to order', 'reorder levels'],
         'count' => ['stock count'], 'transfer' => ['stock transfer'], 'receipt' => ['sales'], 'rfq' => ['requests for quotation'],

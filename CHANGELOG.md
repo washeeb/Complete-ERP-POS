@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 ### Changed
+- **Staff stay in their own industry:** the industry switcher shows only for company-wide people and those covering several industries. Everyone else is always in their own industry, and other industries' products no longer appear in their lists, links or product pickers.
+- **Every product belongs to an industry:** Industry is now required, and only your own industries are offered. An empty field no longer means "All industries". Sharing a product is a deliberate choice for company-wide people, and can be switched off in Settings.
+- **Company-wide access has a rule:** managers and above by default, or owner and SyncLytics support only (Settings → Security).
+### Added
+- **Shared products** (*Catalog*): products in no industry, with a suggested industry from their stock and sales. Move the suggested ones, or move all to one industry.
+- **Company-wide access** (*People & access*): lists anyone who has it but should not, and gives them a branch or industry.
+### Changed
 - **Licence page in plain words:** what is in use beside what is allowed, "Limit reached" when a limit is full, and features, paid add-ons and industry modules by name. Head office counts as a branch, and the page now says so. A module that is not built yet says *not available yet*.
 ### Added
 - **Expiry sheet** (*Stock → Batches & expiry*): download the stock still in batch OPENING, fill in dates and batches on paper or in Excel, and upload. Quantities and value do not change, and rows left empty wait for later.
