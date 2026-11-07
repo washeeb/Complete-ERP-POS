@@ -61,7 +61,8 @@ class IndustryResource extends Resource
             ->mapWithKeys(fn ($m) => [$m->key => $m->name])->all();
 
         return $schema->components([
-            TextInput::make('code')->required()->maxLength(10)->regex('/^[A-Za-z0-9]{1,10}$/')->helperText('Short, e.g. PHARM'),
+            TextInput::make('code')->disabled()->dehydrated(false)->placeholder('Given automatically when saved')
+                ->helperText('Starts the codes of this industry\'s new products (e.g. GROCER-000001). It never changes.'),
             TextInput::make('name')->required()->maxLength(120),
             Select::make('module_key')->label('Industry module its branches run')->required()->options($modules),
             Select::make('legal_entity_id')->label('Books (legal entity)')->options(fn () => LegalEntity::where('is_active', true)->where('is_primary', false)->pluck('name', 'id'))
