@@ -28,6 +28,28 @@ final class StockRows
         throw new DomainException($sku !== '' || $code !== '' ? 'Unknown product '.($sku ?: $code).'.' : 'Give the SKU or the barcode.');
     }
 
+    /**
+     * Go-live sheets often list products without a barcode, before they have SKUs: then the exact name (spaces and case
+     * ignored) finds it, among the warehouse's industry and the shared products. Two products with that name: refused.
+     *
+     * @return array{0: Product, 1: ?ProductUom}
+     */
+    public static function productOrName(array $row, Warehouse $warehouse): array
+    {
+        $name = trim((string) preg_replace('/\s+/', ' ', (string) ($row['name'] ?? '')));
+        if (trim((string) ($row['sku'] ?? '')) !== '' || trim((string) ($row['barcode'] ?? '')) !== '' || $name === '') {
+            return self::product($row);
+        }
+        $industry = DB::table('branches')->where('id', $warehouse->branch_id)->value('industry_id');
+        $found = Product::whereRaw("lower(regexp_replace(name, '\\s+', ' ', 'g')) = ?", [mb_strtolower($name)])
+            ->when($industry, fn ($q) => $q->where(fn ($w) => $w->whereNull('industry_id')->orWhere('industry_id', $industry)))->limit(2)->get();
+        if ($found->count() !== 1) {
+            throw new DomainException($found->isEmpty() ? "No product is named {$name}." : "More than one product is named {$name}: give its SKU or barcode.");
+        }
+
+        return [$found->first(), null];
+    }
+
     /** The unit named in the row (code), else the one found by barcode, else the base unit. */
     public static function unit(Product $product, array $row, ?ProductUom $fromBarcode = null): ProductUom
     {

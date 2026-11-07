@@ -334,3 +334,20 @@ it('loads opening stock with several batches of one medicine, each with its expi
     $late = $this->imports->run($this->o, 'opening_stock', importCsvFile([['warehouse', 'sku', 'qty', 'batch_no', 'expires_on'], [$wh, 'AMOX', '5', 'B4', '2028-01-31']]), 'o.csv', [], null, false);
     expect($late->errors[0]['message'])->toContain('use an adjustment instead');
 });
+
+it('loads opening stock by barcode or exact name, and skips products not counted', function () {
+    makeProduct($this->owner, 'SOAP-1', 'Jumbo soap 300g', retail: '10.00', baseBarcode: '6181100537536');
+    makeProduct($this->owner, 'BAG-1', 'Carrier bag', retail: '1.00');
+    makeProduct($this->owner, 'CUP-1', 'Toy car', retail: '25.00');
+    makeProduct($this->owner, 'CUP-2', 'Toy  car', retail: '25.00');
+    makeProduct($this->owner, 'PEN-1', 'Pen', retail: '2.00');
+    $done = $this->imports->run($this->o, 'opening_stock', importCsvFile([['warehouse', 'sku', 'barcode', 'name', 'qty', 'unit_cost'],
+        [$this->wh->code, '', '6181100537536', 'JUMBO SOAP - 300G', '12', '6.00'],
+        [$this->wh->code, '', '', 'carrier  BAG', '50', '0.50'],
+        [$this->wh->code, '', '', 'Pen', '', '1.00'],
+        [$this->wh->code, '', '', 'Toy car', '3', '15.00']]), 'count.csv', ['skip_errors' => true], null, true);
+
+    expect(skuOnHand($this->wh, 'SOAP-1'))->toBe('12.000')->and(skuOnHand($this->wh, 'BAG-1'))->toBe('50.000')
+        ->and($done->summary['unchanged'])->toBe(1)
+        ->and(collect($done->errors)->pluck('message')->implode(' '))->toContain('More than one product is named Toy car');
+});

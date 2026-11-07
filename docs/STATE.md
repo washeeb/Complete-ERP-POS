@@ -30,6 +30,9 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 ## Industry confinement — branch `industry-confinement`
 - `IndustryContext` (`selected`, `companyWide`, `choices`, `sharingAllowed`, `productScope`), `CatalogService::industryFor`, `SharedProducts`, `SharedProductsPage`, `CompanyWideAccess`, `AccessService::mayBeCompanyWide` and `narrow`. Settings `catalog.shared_products`, `access.company_wide`. Tests: IndustryConfinementTest.
 
+## Opening stock by barcode or name — branch `opening-stock-by-name`
+- `StockRows::productOrName`, `OpeningStockImporter` (barcode and name columns; empty qty skipped). Test in DataExchangeTest.
+
 ## Codes given by the system — branch `automatic-codes`
 - `App\Support\Codes` (`fromName`, `numbered`, `after`) used by OrgService (branches, stores, tills), VanService, HrService, BomService, RouteService, MembershipService, RestaurantSetup, StyleService, AssetService, CatalogService (price lists, tax groups), IndustryService and the vendor Create pages. Typed with suggestions: accounts, bins, tables. Tests: AutomaticCodesTest.
 
