@@ -204,3 +204,11 @@ it('gives grocery its own menu: markdowns at grocery stores and the scale items'
     IndustryContext::set($this->pharmacy->id);
     expect(GroceryMarkdowns::canAccess())->toBeFalse()->and(ScaleItems::canAccess())->toBeFalse();
 });
+
+it('gives a new industry its code from the name, never a taken one, and keeps it', function () {
+    $svc = app(IndustryService::class);
+    $first = $svc->save(actorFor($this->owner), new Industry, ['name' => 'Bakery', 'module_key' => 'restaurant']);
+    $second = $svc->save(actorFor($this->owner), new Industry, ['name' => 'Bakery Two', 'module_key' => 'restaurant']);
+    expect($first->code)->toBe('BAKERY')->and($second->code)->toBe('BAKER2')
+        ->and($svc->save(actorFor($this->owner), $first, ['name' => 'Bread', 'module_key' => 'restaurant', 'code' => 'XX'])->code)->toBe('BAKERY');
+});

@@ -1156,3 +1156,6 @@ Design:
 - The owner found the page unclear. The licence keeps short codes; `LicensePage::covers()` turns them into names for reading only. Paid add-ons get their own row, because "Finance and HR" wrongly described them.
 - `retail_wholesale` can be on a licence while its module is still planned, so the page says *not available yet* rather than implying it works. A supermarket runs on Grocery.
 - A new shop takes its first stock from the opening stock sheet, not a stock count: a count starts with no lines where nothing is on hand, and stock it adds has no cost. Guide 6.1 and `docs/grocery.md`.
+
+## Industry codes given by the system (2026-11-07)
+- Owner expected the code to be automatic, as supplier codes are. `IndustryService::nextCode`: the first six letters or digits of the name, with a number replacing the last characters if taken. It is fixed after saving because it starts new SKUs; existing SKUs never change anyway. Branches that switch on a module still create their industry by themselves.
