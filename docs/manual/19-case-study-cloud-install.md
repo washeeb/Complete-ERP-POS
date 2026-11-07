@@ -120,7 +120,7 @@ The site answered over HTTPS straight away, with a Let's Encrypt certificate val
 | Check | Where | Expected |
 |---|---|---|
 | Server health | System → Health | Scheduler OK, backups OK, *PHP code cache: On*, HTTPS OK |
-| A backup outside Contabo | System → Backups → add a second destination (Chapter 12.2) | Contabo's own backup is with the same provider; a second place protects against losing both |
+| A backup outside Contabo | System → Backups → add a second destination (Chapter 12.2; cloud storage needs the off-site backup add-on) | Contabo's own backup is with the same provider; a second place protects against losing both |
 | Firewall | Contabo panel and the server (`ufw status`) | Only SSH (22), 80 and 443 open; 443 for both TCP and UDP (HTTP/3) |
 | Remote login | Your PC | Move from the password to an SSH key, and restrict port 22 to your office if possible |
 | Tills | Each till device | Pair it (Chapter 9); it keeps selling if the internet drops. In the desktop till the server address is `https://erp.clientdomain.com`. Here the server's IP address was typed first, so the till could not connect; the settings were cleared (9.7) and the name entered. Newer till versions check the address before saving. |

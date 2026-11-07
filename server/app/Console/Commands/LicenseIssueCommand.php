@@ -19,7 +19,7 @@ class LicenseIssueCommand extends Command
         {--branches= : maximum branches (blank = unlimited)}
         {--devices= : maximum tills and devices}
         {--users= : maximum active users}
-        {--features= : comma list of finance,hr,white_label (blank = all except white_label, which must be named to hide "Powered by")}
+        {--features= : comma list of finance,hr,white_label and add-ons such as integrations,crm,offsite_backup (blank = all standard features; add-ons and white_label must be named)}
         {--modules= : comma list of industry modules (blank = all)}
         {--grace=14 : grace days after expiry}
         {--checkin=30 : days the installation may go without reaching the licence server (0 = no check-in)}

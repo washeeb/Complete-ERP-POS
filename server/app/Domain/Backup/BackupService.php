@@ -67,6 +67,11 @@ final class BackupService
 
             $results = [];
             foreach (BackupDestination::where('is_active', true)->get() as $d) {
+                if (! Destinations::allowed($d->type, $d)) { // the off-site add-on lapsed: say so in the run, keep the local copy
+                    $results[] = ['id' => $d->id, 'name' => $d->name, 'ok' => false, 'error' => 'Not copied: off-site backups are a paid add-on, not in this licence.'];
+
+                    continue;
+                }
                 try {
                     Destinations::put($d->type, $d->config, $out, $name);
                     $this->prune($d);

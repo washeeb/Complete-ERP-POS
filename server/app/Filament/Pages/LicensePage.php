@@ -44,7 +44,7 @@ class LicensePage extends Page
     private const STANDARD = ['finance', 'hr'];
 
     private const FEATURES = ['finance' => 'Finance', 'hr' => 'HR and payroll', 'white_label' => 'Own branding', 'remote_access' => 'Remote access', 'integrations' => 'Integrations',
-        'crm' => 'CRM', 'projects' => 'Projects and job costing', 'service' => 'Service desk and maintenance', 'iot' => 'Sensors'];
+        'crm' => 'CRM', 'projects' => 'Projects and job costing', 'service' => 'Service desk and maintenance', 'iot' => 'Sensors', 'offsite_backup' => 'Off-site backups'];
 
     public static function canAccess(): bool
     {
