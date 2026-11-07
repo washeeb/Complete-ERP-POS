@@ -1199,3 +1199,9 @@ Design:
 ## Opening stock by barcode or name (2026-11-07)
 - A new shop's stock sheet lists products before they have SKUs, many without barcodes. `StockRows::productOrName` uses the SKU, then the barcode, then the exact name (spaces and case ignored) among the warehouse's industry and shared products. Two products with that name are refused, never guessed. Only the opening stock file matches by name; adjustments and counts still need an SKU or barcode.
 - An empty or zero quantity is skipped, so one sheet can list every product and be uploaded after the count. A product left out can be loaded later the same way.
+
+## Barcodes unique per industry (2026-11-07)
+- Six supermarket products were refused because the pharmacy had products with the same pack barcode. The owner chose separate products per industry (own name, price and stock) over one shared product.
+- `barcodes.industry_id` is the product's industry (null = shared), backfilled by migration. The unique index is `(tenant_id, code, COALESCE(industry_id, zero))`. The service also refuses a code that is on a shared product, or on any product when the new one is shared, because a shared product sells everywhere.
+- Lookups take the industry from where the scan happens: the warehouse's branch for stock files and supplier orders, the handheld's branch for WMS (its offline catalogue is now limited to that industry and shared products), and the till's branch, whose catalogue was already limited. With no industry (head office) a code on several products is ambiguous, and the file asks for the SKU.
+- `moveToIndustry` and a changed industry on save move the barcodes with the product, in the same transaction, refusing a code already used in the new industry.

@@ -15,15 +15,18 @@ use Illuminate\Support\Facades\DB;
 final class StockRows
 {
     /** A product by SKU, or by any of its barcodes. @return array{0: Product, 1: ?ProductUom} the unit when found by barcode */
-    public static function product(array $row): array
+    public static function product(array $row, ?Warehouse $warehouse = null): array
     {
         $sku = strtoupper(trim((string) ($row['sku'] ?? '')));
         if ($sku !== '' && ($p = Product::where('sku', $sku)->first())) {
             return [$p, null];
         }
         $code = Importer::barcode((string) ($row['barcode'] ?? ''));
-        if ($code !== '' && ($b = Barcode::where('code', $code)->first())) {
+        if ($code !== '' && ($b = Barcode::scanned($code, Barcode::industryOf($warehouse)))) { // the store's industry first
             return [Product::findOrFail($b->product_id), ProductUom::with('uom')->find($b->product_uom_id)];
+        }
+        if ($code !== '' && Barcode::inSeveralIndustries($code)) {
+            throw new DomainException("Barcode {$code} is on products in several industries: give the SKU.");
         }
         throw new DomainException($sku !== '' || $code !== '' ? 'Unknown product '.($sku ?: $code).'.' : 'Give the SKU or the barcode.');
     }
@@ -38,7 +41,7 @@ final class StockRows
     {
         $name = trim((string) preg_replace('/\s+/', ' ', (string) ($row['name'] ?? '')));
         if (trim((string) ($row['sku'] ?? '')) !== '' || trim((string) ($row['barcode'] ?? '')) !== '' || $name === '') {
-            return self::product($row);
+            return self::product($row, $warehouse);
         }
         $industry = DB::table('branches')->where('id', $warehouse->branch_id)->value('industry_id');
         $found = Product::whereRaw("lower(regexp_replace(name, '\\s+', ' ', 'g')) = ?", [mb_strtolower($name)])

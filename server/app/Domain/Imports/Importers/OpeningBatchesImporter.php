@@ -63,7 +63,7 @@ final class OpeningBatchesImporter extends Importer
             return 'unchanged';
         }
         $warehouse = StockRows::warehouse(self::need($row, 'warehouse', 'the warehouse'));
-        [$product] = StockRows::product($row);
+        [$product] = StockRows::product($row, $warehouse);
         $this->inventory->dateOpeningStock($actor, $warehouse, $product, substr(self::date($row['expires_on'], 'expires_on'), 0, 10), trim((string) ($row['batch_no'] ?? '')),
             self::has($row, 'qty') ? self::number($row['qty'], 'qty') : null);
 

@@ -107,7 +107,7 @@ final class StockAdjustmentImporter extends Importer
         if (! self::has($row, 'qty')) {
             return 'unchanged';
         }
-        [$product, $fromBarcode] = StockRows::product($row);
+        [$product, $fromBarcode] = StockRows::product($row, $context instanceof StockAdjustment ? $context->warehouse : null);
         $unit = StockRows::unit($product, $row, $fromBarcode);
         $qty = self::number($row['qty'], 'qty');
         $modeText = strtolower(trim((string) ($row['mode'] ?? '')));

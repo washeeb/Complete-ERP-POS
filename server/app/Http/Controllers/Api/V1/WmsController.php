@@ -12,6 +12,7 @@ use App\Domain\Support\Actor;
 use App\Http\Controllers\Controller;
 use App\Models\Barcode;
 use App\Models\Bin;
+use App\Models\Branch;
 use App\Models\Device;
 use App\Models\Product;
 use App\Models\ProductUom;
@@ -85,7 +86,8 @@ class WmsController extends Controller
         if ($warehouseId && ($bin = Bin::where('warehouse_id', $warehouseId)->where('code', strtoupper($code))->first())) {
             return response()->json(['type' => 'bin', 'bin' => ['id' => $bin->id, 'code' => $bin->code, 'name' => $bin->name]]);
         }
-        $unit = ($b = Barcode::where('code', $code)->first()) ? ProductUom::find($b->product_uom_id)
+        $industry = Branch::withoutGlobalScopes()->whereKey($this->device($request)->branch_id)->value('industry_id'); // the handheld's branch
+        $unit = ($b = Barcode::scanned($code, $industry)) ? ProductUom::find($b->product_uom_id)
             : (($p = Product::where('sku', strtoupper($code))->first()) ? ProductUom::where('product_id', $p->id)->where('is_base', true)->first() : null);
         if (! $unit) {
             return response()->json(['error' => 'not_found', 'detail' => "Nothing found for “{$code}”."], 404);
@@ -101,8 +103,11 @@ class WmsController extends Controller
     public function catalog(Request $request): JsonResponse
     {
         $w = Warehouse::where('branch_id', $this->device($request)->branch_id)->findOrFail((string) $request->query('warehouse_id'));
-        $barcodes = Barcode::query()->get(['product_uom_id', 'code'])->groupBy('product_uom_id');
-        $units = ProductUom::with('product', 'uom')->whereHas('product', fn ($q) => $q->where('is_active', true)->where('track_stock', true))->get();
+        // Only the branch's industry and shared products, so a barcode both shops use means this shop's product.
+        $industry = Branch::withoutGlobalScopes()->whereKey($w->branch_id)->value('industry_id');
+        $mine = fn ($q) => $q->when($industry, fn ($x) => $x->where(fn ($y) => $y->whereNull('industry_id')->orWhere('industry_id', $industry)));
+        $barcodes = Barcode::query()->tap($mine)->get(['product_uom_id', 'code'])->groupBy('product_uom_id');
+        $units = ProductUom::with('product', 'uom')->whereHas('product', fn ($q) => $mine($q->where('is_active', true)->where('track_stock', true)))->get();
 
         return response()->json([
             'warehouse_id' => $w->id, 'generated_at' => now()->toIso8601String(),

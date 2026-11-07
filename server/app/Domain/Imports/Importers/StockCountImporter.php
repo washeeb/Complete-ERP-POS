@@ -68,7 +68,7 @@ final class StockCountImporter extends Importer
         if (! self::has($row, 'counted_qty')) {
             return 'unchanged';
         }
-        [$product, $fromBarcode] = StockRows::product($row);
+        [$product, $fromBarcode] = StockRows::product($row, $context->warehouse);
         $unit = StockRows::unit($product, $row, $fromBarcode);
         $binId = self::has($row, 'bin') ? (Bin::where('warehouse_id', $context->warehouse_id)->where('code', strtoupper($row['bin']))->value('id')
             ?? throw new DomainException("Unknown bin {$row['bin']} in this warehouse.")) : null;

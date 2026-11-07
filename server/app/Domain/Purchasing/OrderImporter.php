@@ -9,6 +9,7 @@ use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Models\AiDocument;
+use App\Models\Barcode;
 use App\Models\Product;
 use App\Models\ProductUom;
 use App\Models\PurchaseOrder;
@@ -16,7 +17,6 @@ use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -37,6 +37,9 @@ final class OrderImporter
         'unit' => ['unit', 'uom', 'pack', 'unit_of_measure'],
         'cost' => ['unit_cost', 'cost', 'unit_price', 'price', 'rate'],
     ];
+
+    /** The store the order is for: barcodes are read in its industry. */
+    private ?Warehouse $warehouse = null;
 
     public function __construct(private readonly PurchaseOrderService $orders, private readonly AiGateway $gateway, private readonly Authorizer $authz) {}
 
@@ -68,6 +71,8 @@ final class OrderImporter
             throw new DomainException('No lines found. The file needs a heading row with a product column (SKU, barcode or product name) and a Qty column.');
         }
 
+        $this->warehouse = $warehouse;
+
         return $this->draft($actor, $supplier, $warehouse, $rows, 'Imported from '.mb_substr($fileName, 0, 120));
     }
 
@@ -79,6 +84,7 @@ final class OrderImporter
     public function fromProforma(Actor $actor, Warehouse $warehouse, ?Supplier $supplier, string $path, string $fileName): array
     {
         $this->allow($actor, $warehouse);
+        $this->warehouse = $warehouse;
         $disk = Storage::disk('local');
         $mime = $disk->mimeType($path) ?: '';
         if (! in_array($mime, InvoiceScanner::TYPES, true) || $disk->size($path) > 10 * 1024 * 1024) {
@@ -179,7 +185,7 @@ final class OrderImporter
             }
         }
         foreach (array_filter([$r['barcode'], ctype_digit($r['sku']) ? $r['sku'] : '']) as $code) {
-            $id = DB::table('barcodes')->where('tenant_id', $supplier->tenant_id)->where('code', $code)->value('product_id');
+            $id = Barcode::scanned($code, Barcode::industryOf($this->warehouse))?->product_id; // the ordering store's industry first
             if ($id && ($p = $active()->find($id))) {
                 return $p;
             }
