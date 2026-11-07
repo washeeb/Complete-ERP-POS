@@ -32,6 +32,8 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 
 ## Barcodes per industry — branch `barcodes-per-industry`
 - Migration `2026_12_21_100001_barcodes_per_industry`, `Barcode::scanned/industryOf/inSeveralIndustries`, `CatalogService::barcodeClash/moveBarcodes`, StockRows/OrderImporter/WmsController in the store's industry. Tests: BarcodesPerIndustryTest.
+## Large imports in the background — branch `background-imports`
+- `ImportService::queue/runQueued/abandonStale`, `$backgroundFrom` (500), `erp:imports` (every minute, own lock), DataImport statuses `queued`/`running`, page progress (`ImportData::background`), `Progress::timeLeft`, progress card stale message. Tests: BackgroundImportTest.
 
 ## Opening stock by barcode or name — branch `opening-stock-by-name`
 - `StockRows::productOrName`, `OpeningStockImporter` (barcode and name columns; empty qty skipped). Test in DataExchangeTest.

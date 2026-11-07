@@ -1,6 +1,10 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- **Large imports cut off with "Something went wrong on the server":** files of more than 500 rows now run in the background on the server. The import page shows their progress, and a notification says when they are done. A web request was limited to a few minutes, while 2,467 products take longer to check and import.
+- **Errors in the server log during an update** ("bootstrap/cache must be present", "Class view does not exist"): the Ubuntu installer now pauses the scheduled tasks while it replaces the code, waits for running ones (a background import included) to finish, and starts them again at the end, or if the update stops.
+- **Progress card:** the time left shows seconds only under a minute (*About 3 min 20 s left*), and the card says so when the server stops reporting, instead of freezing on the last figure.
 ### Changed
 - **The same barcode in each industry:** the pharmacy and the supermarket can each have their own product for an item both sell, with the pack's barcode. Tills, handhelds, stock files and supplier order files read a barcode in their own shop's industry. A barcode is still unique within an industry, and a shared product's barcode stays on that product alone. Moving a product to another industry takes its barcodes along, or is refused if one is already used there.
 ### Changed

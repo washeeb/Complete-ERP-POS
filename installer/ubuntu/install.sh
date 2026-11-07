@@ -105,6 +105,20 @@ if [ -n "$ZIP" ]; then
   SRC="$(dirname "$(find /tmp/${SLUG}-release -maxdepth 3 -name artisan -path '*server/artisan' | head -1)")/.."
 fi
 [ -f "$SRC/server/artisan" ] || die "no server/artisan in the release"
+# An update: the scheduled tasks pause while the code is replaced (why: a task starting halfway through finds files
+# missing and fails, e.g. "bootstrap/cache must be present"). Running ones finish first, a background import included.
+CRON_FILE="/etc/cron.d/${SLUG}"
+CRON_PAUSED="/root/${SLUG}.cron.paused"
+if [ -f "$CRON_FILE" ]; then
+  say "   Pausing scheduled tasks during the update (why: so none starts while files are replaced)"
+  mv -f "$CRON_FILE" "$CRON_PAUSED"
+  trap 'if [ -f "$CRON_PAUSED" ] && [ ! -f "$CRON_FILE" ]; then mv -f "$CRON_PAUSED" "$CRON_FILE"; fi' EXIT # put back if the update stops
+  for i in $(seq 1 180); do
+    pgrep -u "$APP_USER" -f "artisan (schedule:run|erp:|license:|vendor:)" >/dev/null 2>&1 || break
+    [ "$i" = 1 ] && say "   Waiting for running tasks to finish (a large import can take a few minutes)"
+    sleep 5
+  done
+fi
 # An update: back up the business first, with the version still installed, so a failed update can be undone.
 if [ -f "$DIR/server/.env" ] && [ -f "$DIR/server/artisan" ] && [ "${SKIP_BACKUP:-0}" != 1 ]; then
   say "   Backing up before the update (why: so the update can be undone)"
@@ -337,6 +351,7 @@ systemctl restart caddy # restart, not reload: the admin endpoint is off
 
 say "8/10 Scheduler and live updates (why: posting, sync, messages, backups, reports run every minute)"
 echo "* * * * * ${APP_USER} cd ${DIR}/server && php artisan schedule:run >> /dev/null 2>&1" > /etc/cron.d/${SLUG}
+rm -f "/root/${SLUG}.cron.paused" # the scheduled tasks run again
 cat > /etc/systemd/system/${SLUG}-reverb.service <<UNIT
 [Unit]
 Description=${SLUG} live updates (Reverb)
