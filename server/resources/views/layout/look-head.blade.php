@@ -24,7 +24,7 @@
         if (!root.classList.contains('zx-new')) return
         let slim = false, queued = false
         const stick = () => {
-            const band = [...document.querySelectorAll('.zx-tabbar, .fi-topbar-ctn')].filter((e) => e.offsetParent !== null)
+            const band = [...document.querySelectorAll('nav[aria-label="Main menu"], .fi-topbar-ctn')].filter((e) => e.offsetParent !== null)
             const bottom = Math.max(0, ...band.map((e) => e.getBoundingClientRect().bottom))
             if (bottom > 0) root.style.setProperty('--zx-stick', bottom + 'px')
         }
