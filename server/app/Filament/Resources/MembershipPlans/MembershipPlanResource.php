@@ -61,7 +61,7 @@ class MembershipPlanResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->columns(3)->components([
-            TextInput::make('code')->required()->maxLength(30),
+            TextInput::make('code')->disabled()->dehydrated(false)->placeholder('Given automatically when saved'),
             TextInput::make('name')->required()->maxLength(255)->columnSpan(2),
             TextInput::make('price')->label('Price per period')->required()->numeric()->minValue(0.01)->prefix(fn () => Erp::user()?->tenant->currency_code)
                 ->helperText('Including tax when your default price list includes tax.'),

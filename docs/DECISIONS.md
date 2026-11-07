@@ -1180,3 +1180,12 @@ Design:
 - Existing company-wide staff are listed, not changed: the system cannot know their branch, and removing access on install could stop tills. `AccessService::$limitCompanyWide` is off in tests because the `staff()` helper grants company-wide for brevity.
 - "Move all" is a product action, not a migration: which industry is right depends on the client. Suggestions use stock on hand and 12 months of sales; products used in several industries get no suggestion.
 - Price lists keep their optional industry: an empty one is the normal list for the company, and it does not put items on the wrong till.
+
+## Codes given by the system (2026-11-07)
+- Owner: branch codes and every similar code automatic, "once and for all". `App\Support\Codes`:
+  - `fromName`: one word keeps its start; several words share the length (PHAOSU); `glue` keeps words apart for price lists and tax groups, whose code names a file column (`price_staff_price`). A taken code gets a number at the end.
+  - `numbered`: a series after the highest used (T03, V01, PHAOSU-W2). Gaps are not reused, so a code never comes back.
+  - `after`: a suggestion only, for typed codes.
+- Services make the code when none is given and keep a saved code even if another is sent, because codes start receipt numbers, SKUs and file columns. Forms show the field read-only. Imports, tests and sync can still pass a code. The licence app's sync still requires one: SES Licensing sends its own.
+- Owner chose to keep typed: account numbers (the accountant's plan), bins (the shelf label), table numbers, units, bank and card numbers. The form suggests the next table, bin or account number in the type or heading.
+- Industry codes use the same rule ("Bakery Two" → BAKTWO, not BAKER2). Existing codes are untouched.

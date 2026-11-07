@@ -71,7 +71,7 @@ class TaxGroupResource extends SimpleCatalogResource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('code')->required()->maxLength(20)->regex('/^[A-Za-z0-9_]{1,20}$/')->disabledOn('edit'),
+            TextInput::make('code')->helperText('Made from the name. Product files may use it.')->disabled()->dehydrated(false)->placeholder('Given automatically when saved'),
             TextInput::make('name')->required()->maxLength(80),
             CheckboxList::make('rate_ids')->label('Taxes charged')
                 ->options(fn () => TaxRate::orderBy('sort')->get()->mapWithKeys(fn ($r) => [$r->id => "{$r->name} (".number_format($r->rate_bp / 100, 2).'%)']))

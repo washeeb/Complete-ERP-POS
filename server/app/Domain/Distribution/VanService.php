@@ -13,6 +13,7 @@ use App\Models\StockTransfer;
 use App\Models\Till;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Support\Codes;
 
 /**
  * Vans (owner decision: each van is a warehouse). A van is a warehouse of its branch with its own till, so the rep's
@@ -42,7 +43,9 @@ final class VanService
         }
 
         return $this->recorder->transaction(function () use ($actor, $branch, $data, $home) {
-            $van = $this->org->saveWarehouse($actor, new Warehouse, ['branch_id' => $branch->id, 'code' => $data['code'], 'name' => $data['name'], 'is_active' => true]);
+            // Vans are numbered V01, V02… (also the till code on the van's receipts).
+            $code = strtoupper(trim((string) ($data['code'] ?? ''))) ?: Codes::numbered('V', Warehouse::withoutGlobalScopes()->where('tenant_id', $actor->tenantId)->pluck('code'));
+            $van = $this->org->saveWarehouse($actor, new Warehouse, ['branch_id' => $branch->id, 'code' => $code, 'name' => $data['name'], 'is_active' => true]);
             $van->forceFill(['is_van' => true, 'vehicle_reg' => mb_strtoupper(trim((string) ($data['vehicle_reg'] ?? ''))) ?: null,
                 'rep_user_id' => $data['rep_user_id'] ?? null, 'home_warehouse_id' => $home->id]);
             $this->recorder->save($actor, $van, 'van.created', branchId: $branch->id);

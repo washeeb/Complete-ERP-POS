@@ -50,7 +50,7 @@ class AssetClassResource extends Resource
         $acc = fn (string $type) => fn () => FinanceUi::accounts(withControl: false, types: [$type]);
 
         return $schema->columns(2)->components([
-            TextInput::make('code')->required()->maxLength(20),
+            TextInput::make('code')->disabled()->dehydrated(false)->placeholder('Given automatically when saved'),
             TextInput::make('name')->required()->maxLength(255),
             TextInput::make('life_months')->label('Useful life (months)')->required()->numeric()->minValue(1),
             Select::make('cost_account_id')->label('Asset account (cost)')->required()->options($acc('asset')),

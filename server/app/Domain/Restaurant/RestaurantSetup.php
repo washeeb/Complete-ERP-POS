@@ -14,6 +14,7 @@ use App\Models\ModifierGroup;
 use App\Models\ModifierOption;
 use App\Models\Product;
 use App\Security\Authorizer;
+use App\Support\Codes;
 
 /** Restaurant set-up (owner decision 2026-10-17): kitchen stations, the floor plan, and modifier groups. */
 final class RestaurantSetup
@@ -25,9 +26,11 @@ final class RestaurantSetup
     {
         $branch = Branch::findOrFail($data['branch_id'] ?? $s->branch_id);
         $this->require($actor, $branch);
-        $code = strtoupper(trim((string) ($data['code'] ?? $s->code)));
+        // Products name their station by this code, so it is given once (Kitchen → KITCHEN) and never changes.
+        $code = $s->exists ? $s->code : (strtoupper(trim((string) ($data['code'] ?? '')))
+            ?: Codes::fromName((string) ($data['name'] ?? ''), KitchenStation::where('branch_id', $branch->id)->pluck('code'), 10, fallback: 'STATION'));
         if (! preg_match('/^[A-Z0-9_-]{1,20}$/', $code) || trim((string) ($data['name'] ?? $s->name)) === '') {
-            throw new DomainException('Enter a short code (e.g. KITCHEN, BAR) and a name.');
+            throw new DomainException('Enter the station\'s name (e.g. Kitchen, Bar).');
         }
         if (KitchenStation::where('branch_id', $branch->id)->where('code', $code)->when($s->exists, fn ($q) => $q->whereKeyNot($s->id))->exists()) {
             throw new DomainException("{$branch->code} already has a station {$code}.");

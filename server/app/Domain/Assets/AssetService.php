@@ -13,6 +13,7 @@ use App\Models\AssetClass;
 use App\Models\Branch;
 use App\Models\FixedAsset;
 use App\Security\Authorizer;
+use App\Support\Codes;
 use App\Support\Qty;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -42,10 +43,11 @@ final class AssetService
             }
             $accounts[$field] = $a->id;
         }
-        if ((int) ($data['life_months'] ?? 0) < 1 || trim((string) ($data['code'] ?? '')) === '' || trim((string) ($data['name'] ?? '')) === '') {
-            throw new DomainException('Give a code, a name and a useful life in months.');
+        if ((int) ($data['life_months'] ?? 0) < 1 || trim((string) ($data['name'] ?? '')) === '') {
+            throw new DomainException('Give a name and a useful life in months.');
         }
-        $class->forceFill(['tenant_id' => $actor->tenantId, 'code' => mb_strtoupper(trim($data['code'])), 'name' => trim($data['name']),
+        $code = $class->exists ? $class->code : (mb_strtoupper(trim((string) ($data['code'] ?? ''))) ?: Codes::fromName($data['name'], AssetClass::pluck('code'), 8, fallback: 'ASSET'));
+        $class->forceFill(['tenant_id' => $actor->tenantId, 'code' => $code, 'name' => trim($data['name']),
             'life_months' => (int) $data['life_months']] + $accounts);
 
         return $this->recorder->save($actor, $class, $class->exists ? 'asset_class.updated' : 'asset_class.created');

@@ -70,7 +70,7 @@ class KitchenStationResource extends Resource
         return $schema->columns(2)->components([
             Select::make('branch_id')->label('Branch')->required()->disabledOn('edit')
                 ->options(fn () => Branch::when(Erp::branchIds('restaurant.manage') !== null, fn ($q) => $q->whereIn('id', Erp::branchIds('restaurant.manage')))->orderBy('code')->pluck('name', 'id')),
-            TextInput::make('code')->required()->maxLength(20)->placeholder('KITCHEN')->helperText('Products name their station by this code.'),
+            TextInput::make('code')->helperText('Made from the name (Kitchen → KITCHEN). Products name their station by this code.')->disabled()->dehydrated(false)->placeholder('Given automatically when saved'),
             TextInput::make('name')->required()->maxLength(255),
             Toggle::make('auto_print')->label('Print tickets (no screen)')->inline(false)
                 ->helperText('The kitchen device at this station prints each new ticket instead of only showing it.'),

@@ -17,6 +17,7 @@ use App\Models\LeaveRequest;
 use App\Models\LeaveType;
 use App\Models\PayrollProfile;
 use App\Security\Authorizer;
+use App\Support\Codes;
 use Illuminate\Support\Carbon;
 
 /**
@@ -77,9 +78,9 @@ final class HrService
     public function saveDepartment(Actor $actor, Department $d, string $code, string $name): Department
     {
         $this->require($actor, 'hr.manage');
-        $code = strtoupper(trim($code));
-        if ($code === '' || trim($name) === '') {
-            throw new DomainException('Enter a code and a name.');
+        $code = $d->exists ? $d->code : (strtoupper(trim($code)) ?: Codes::fromName($name, Department::pluck('code'), 6, fallback: 'DEPT'));
+        if (trim($name) === '') {
+            throw new DomainException('Enter the department\'s name.');
         }
         if (Department::where('code', $code)->when($d->exists, fn ($q) => $q->whereKeyNot($d->id))->exists()) {
             throw new DomainException('That code is already used.');

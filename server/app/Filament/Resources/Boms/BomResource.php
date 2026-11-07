@@ -90,7 +90,7 @@ class BomResource extends Resource
     {
         return $schema->columns(1)->components([
             Section::make()->columns(4)->schema([
-                TextInput::make('code')->required()->maxLength(30)->helperText('e.g. BREAD-800'),
+                TextInput::make('code')->disabled()->dehydrated(false)->placeholder('Given automatically when saved'),
                 Select::make('product_id')->label('Makes')->required()->searchable()->columnSpan(2)
                     ->getSearchResultsUsing(fn (string $search) => Product::where('is_active', true)->where('track_stock', true)
                         ->where(fn ($q) => $q->where('name', 'ilike', "%{$search}%")->orWhere('sku', 'ilike', "%{$search}%"))->orderBy('name')->limit(30)->get()

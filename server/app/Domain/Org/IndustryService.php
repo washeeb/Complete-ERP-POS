@@ -13,6 +13,7 @@ use App\Models\LegalEntity;
 use App\Models\Tenant;
 use App\Modules\ModuleRegistry;
 use App\Security\Authorizer;
+use App\Support\Codes;
 use App\Support\Settings;
 
 /**
@@ -181,13 +182,7 @@ final class IndustryService
     /** A free code from the name: its first six letters or digits (GROCER), then GROCE2, GROCE3… if taken. */
     public static function nextCode(string $tenantId, string $name): string
     {
-        $base = substr((string) preg_replace('/[^A-Z0-9]/', '', strtoupper($name)), 0, 6) ?: 'IND';
-        $taken = Industry::withoutGlobalScopes()->where('tenant_id', $tenantId)->pluck('code')->all();
-        for ($n = 1, $code = $base; in_array($code, $taken, true); $code = substr($base, 0, 6 - strlen((string) $n)).$n) {
-            $n++;
-        }
-
-        return $code;
+        return Codes::fromName($name, Industry::withoutGlobalScopes()->where('tenant_id', $tenantId)->pluck('code'), 6, fallback: 'IND');
     }
 
     /** @return list<string> industry modules (not add-ons) switched on for the branch */

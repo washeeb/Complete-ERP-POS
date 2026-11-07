@@ -8,6 +8,7 @@ use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
 use App\Filament\Support\GlobalSearch;
 use App\Models\Account;
+use App\Support\Codes;
 use App\Support\RequestMemo;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -16,6 +17,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -78,10 +81,12 @@ class AccountResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->columns(2)->components([
-            TextInput::make('code')->required()->maxLength(20),
+            TextInput::make('code')->required()->maxLength(20)->helperText('Your accountant\'s numbering. The next free number in the type or heading is suggested.'),
             TextInput::make('name')->required()->maxLength(255),
-            Select::make('type')->required()->options(Account::TYPES),
-            Select::make('parent_id')->label('Under heading')->options(fn () => Account::where('is_header', true)->orderBy('code')->get()->mapWithKeys(fn ($a) => [$a->id => $a->label()])),
+            Select::make('type')->required()->options(Account::TYPES)->live()
+                ->afterStateUpdated(fn ($state, Get $get, Set $set) => blank($get('code')) && $state ? $set('code', Codes::after(Account::where('type', $state)->where('is_header', false)->pluck('code'))) : null),
+            Select::make('parent_id')->label('Under heading')->options(fn () => Account::where('is_header', true)->orderBy('code')->get()->mapWithKeys(fn ($a) => [$a->id => $a->label()]))->live()
+                ->afterStateUpdated(fn ($state, Get $get, Set $set) => $state && ($next = Codes::after(Account::where('parent_id', $state)->pluck('code'))) && (blank($get('code')) || $get('code') === Codes::after(Account::where('type', $get('type'))->where('is_header', false)->pluck('code'))) ? $set('code', $next) : null),
             Toggle::make('is_header')->label('Heading (groups other accounts; nothing posts to it)'),
             Toggle::make('is_active')->label('Active')->default(true),
             Select::make('system_key')->label('Used by automatic posting for')->columnSpanFull()

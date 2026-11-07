@@ -73,7 +73,7 @@ class StyleResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->columns(3)->components([
-            TextInput::make('code')->label('Style code')->required()->maxLength(30)->helperText('SKUs become CODE-COLOUR-SIZE.'),
+            TextInput::make('code')->label('Style code')->helperText('Made from the name; SKUs become CODE-COLOUR-SIZE.')->disabled()->dehydrated(false)->placeholder('Given automatically when saved'),
             TextInput::make('name')->required()->maxLength(255)->columnSpan(2),
             QuickCreate::on(Select::make('category_id')->label('Category')->options(fn () => Category::orderBy('name')->pluck('name', 'id')), 'category'),
             QuickCreate::on(Select::make('brand_id')->label('Brand')->options(fn () => Brand::orderBy('name')->pluck('name', 'id')), 'brand'),

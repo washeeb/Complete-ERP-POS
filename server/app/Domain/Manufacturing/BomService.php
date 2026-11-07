@@ -14,6 +14,7 @@ use App\Models\Product;
 use App\Models\ProductUom;
 use App\Models\WorkCentre;
 use App\Security\Authorizer;
+use App\Support\Codes;
 use App\Support\Money;
 use App\Support\Qty;
 use Illuminate\Support\Facades\DB;
@@ -43,8 +44,8 @@ final class BomService
         $this->requireSetup($actor, $branch);
         $centre->fill(array_intersect_key($data, array_flip(['code', 'name', 'is_active'])));
         $centre->branch_id = $branch->id;
-        $centre->code = strtoupper(trim((string) $centre->code));
         $centre->name = trim((string) $centre->name);
+        $centre->code = $centre->exists ? $centre->getOriginal('code') : (strtoupper(trim((string) $centre->code)) ?: Codes::fromName($centre->name, WorkCentre::pluck('code'), 8, fallback: 'WC'));
         if (! preg_match('/^[A-Z0-9][A-Z0-9_-]{0,19}$/', $centre->code) || $centre->name === '') {
             throw new DomainException('Enter a work centre code (letters, digits, dash) and a name.');
         }
@@ -82,7 +83,8 @@ final class BomService
         if (! $product->track_stock) {
             throw new DomainException("{$product->name} is not stock-tracked, so it cannot be made.");
         }
-        $code = strtoupper(trim((string) ($data['code'] ?? $bom->code)));
+        $code = $bom->exists ? $bom->code : (strtoupper(trim((string) ($data['code'] ?? '')))
+            ?: (Bom::where('product_id', $product->id)->value('code') ?? Codes::fromName($product->name, Bom::pluck('code'), 10, fallback: 'BOM')));
         if (! preg_match('/^[A-Z0-9][A-Z0-9_.-]{0,29}$/', $code)) {
             throw new DomainException('Enter a BOM code (letters, digits, dash, dot).');
         }

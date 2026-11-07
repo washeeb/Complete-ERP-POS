@@ -20,6 +20,7 @@ use App\Models\User;
 use App\Models\Visit;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
+use App\Support\Codes;
 use App\Support\Money;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -50,8 +51,8 @@ final class RouteService
             throw new AccessDenied;
         }
         $route->fill(array_intersect_key($data, array_flip(['code', 'name', 'van_warehouse_id', 'rep_user_id', 'is_active'])));
-        $route->code = strtoupper(trim((string) $route->code));
         $route->name = trim((string) $route->name);
+        $route->code = $route->exists ? $route->getOriginal('code') : (strtoupper(trim((string) $route->code)) ?: Codes::fromName($route->name, SalesRoute::pluck('code'), 8, fallback: 'ROUTE'));
         if (! preg_match('/^[A-Z0-9][A-Z0-9_-]{0,19}$/', $route->code) || $route->name === '') {
             throw new DomainException('Enter a route code (letters, digits, dash) and a name.');
         }

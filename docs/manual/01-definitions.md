@@ -24,7 +24,7 @@ You do not need to remember these. Come back to this page whenever a word is unc
 | **Branch** | One shop, restaurant, pharmacy or warehouse location. One branch is the **head office** (HQ). |
 | **Warehouse** | A place where stock is kept. Every branch has a main warehouse; you can add more (store room, cold room, van). |
 | **Till (in the set-up)** | A selling point at a branch, for example *Till 1*. A device is assigned to one till. |
-| **Branch code** | 1–6 letters or digits, such as `HQ` or `KSI`. It appears in receipt numbers and cannot be changed later. |
+| **Branch code** | Up to 6 letters or digits, made by the system from the branch name (*Pharmacy Osu* → `PHAOSU`). It appears in receipt numbers and never changes. |
 | **User** | A person who signs in. Back-office users sign in with email, password and a second factor. Cashiers sign in on the till with a **username and PIN**. |
 | **Role** | A set of permissions, such as *Cashier*, *Supervisor*, *Branch Manager* or *Accountant*. You give people roles. |
 | **Scope** | Where a role applies: the whole company, one branch, one warehouse or one till. A cashier with a till scope can sell only on that till. |

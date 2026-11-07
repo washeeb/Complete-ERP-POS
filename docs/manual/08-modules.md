@@ -226,7 +226,7 @@ When an industry is first switched on, the system creates its company under **Co
 
 ### Sales & Distribution (vans, routes, reps)
 
-1. **Distribution → Vans → New van:** branch, van code (e.g. `V01`), name, registration, rep and the warehouse it is loaded from. The van is created as a warehouse **with its own till**.
+1. **Distribution → Vans → New van:** branch, name (the van code `V01`, `V02`… is given automatically), registration, rep and the warehouse it is loaded from. The van is created as a warehouse **with its own till**.
 2. Register the rep's phone as a **POS till** device on that van's till and enrol it (Chapter 9.4/9.5). It works **fully offline**.
 3. Give the rep the **Van Sales Rep** role at the branch and a PIN; in **HR & payroll → Employees** set their **Commission %** if they earn commission.
 4. **Routes:** Distribution → Routes → New route — the van, rep, weekdays and customers in visiting order.

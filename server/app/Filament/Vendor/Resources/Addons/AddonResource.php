@@ -45,7 +45,7 @@ class AddonResource extends Resource
 
         return $schema->columns(1)->components([
             Section::make()->columns(3)->schema(array_values(array_filter([
-                TextInput::make('code')->required()->maxLength(20)->unique(ignoreRecord: true),
+                TextInput::make('code')->helperText('Made from the name.')->disabled()->dehydrated(false)->placeholder('Given automatically when saved'),
                 TextInput::make('name')->required()->maxLength(80),
                 Toggle::make('is_active')->label('Offered')->default(true)->inline(false),
                 $isPlan ? Textarea::make('description')->maxLength(500)->columnSpanFull() : null,

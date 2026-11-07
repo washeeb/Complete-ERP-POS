@@ -43,12 +43,12 @@ class DepartmentResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return $schema->columns(2)->components([TextInput::make('code')->required()->maxLength(20), TextInput::make('name')->required()->maxLength(255)]);
+        return $schema->columns(2)->components([TextInput::make('code')->disabled()->dehydrated(false)->placeholder('Given automatically when saved'), TextInput::make('name')->required()->maxLength(255)]);
     }
 
     public static function save(Department $d, array $data): Department
     {
-        return Erp::run(fn ($actor) => app(HrService::class)->saveDepartment($actor, $d, (string) $data['code'], (string) $data['name']));
+        return Erp::run(fn ($actor) => app(HrService::class)->saveDepartment($actor, $d, (string) ($data['code'] ?? ''), (string) $data['name']));
     }
 
     public static function table(Table $table): Table

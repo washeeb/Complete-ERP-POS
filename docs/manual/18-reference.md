@@ -104,7 +104,7 @@ After changing `.env`, run `php artisan optimize`.
 The checklist lives in the software: **System → Go-live** (Chapter 17) shows each step in order and ticks most of them by itself. Before the go-live day also confirm:
 
 - [ ] Licence **Active** with the right modules and limits; two-step sign-in for every manager, recovery codes stored safely.
-- [ ] Branch, warehouse and till codes correct (they cannot change later); tax groups checked by your accountant.
+- [ ] Branch names right (their codes are made from them and never change); tax groups checked by your accountant.
 - [ ] Every user with the right role and scope; PINs set; IT Admin without business roles.
 - [ ] Every till enrolled, printing, opening the drawer, and tested **offline**.
 - [ ] Nightly backup running, copied off the server, and a **restore practised** (Chapter 12.3); **System → Health** all green.

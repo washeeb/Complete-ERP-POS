@@ -209,6 +209,6 @@ it('gives a new industry its code from the name, never a taken one, and keeps it
     $svc = app(IndustryService::class);
     $first = $svc->save(actorFor($this->owner), new Industry, ['name' => 'Bakery', 'module_key' => 'restaurant']);
     $second = $svc->save(actorFor($this->owner), new Industry, ['name' => 'Bakery Two', 'module_key' => 'restaurant']);
-    expect($first->code)->toBe('BAKERY')->and($second->code)->toBe('BAKER2')
+    expect($first->code)->toBe('BAKERY')->and($second->code)->toBe('BAKTWO')
         ->and($svc->save(actorFor($this->owner), $first, ['name' => 'Bread', 'module_key' => 'restaurant', 'code' => 'XX'])->code)->toBe('BAKERY');
 });

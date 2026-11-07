@@ -26,6 +26,7 @@ use App\Models\TaxRate;
 use App\Models\Uom;
 use App\Security\Authorizer;
 use App\Support\Caps;
+use App\Support\Codes;
 use App\Support\IndustryContext;
 use App\Support\Money;
 use App\Support\Progress;
@@ -600,7 +601,9 @@ final class CatalogService
         $this->require($actor, 'pricing.manage');
         $list->fill(array_intersect_key($data, array_flip(['code', 'name', 'prices_include_tax', 'is_default', 'pos_selectable', 'branch_id', 'is_active', 'industry_id'])));
         $list->industry_id = $list->industry_id ?: null;
-        $list->code = strtoupper(trim($list->code));
+        // Names its column in product files (price_retail), so it is given once from the name and never changes.
+        $list->code = $list->exists ? $list->getOriginal('code') : (strtoupper(trim((string) $list->code))
+            ?: Codes::fromName((string) $list->name, PriceList::withoutGlobalScopes()->where('tenant_id', $actor->tenantId)->pluck('code'), 20, '_', 'LIST'));
         $list->tenant_id = $actor->tenantId;
         $list->currency_code ??= $actor->user->tenant->currency_code;
         if ($list->exists && $list->getOriginal('is_default') && ! $list->is_default) {
@@ -631,7 +634,8 @@ final class CatalogService
     {
         $this->require($actor, 'pricing.manage');
         $group->fill(array_intersect_key($data, array_flip(['code', 'name'])));
-        $group->code = strtoupper(trim($group->code));
+        $group->code = $group->exists ? $group->getOriginal('code') : (strtoupper(trim((string) $group->code))
+            ?: Codes::fromName((string) $group->name, TaxGroup::withoutGlobalScopes()->where('tenant_id', $actor->tenantId)->pluck('code'), 20, '_', 'TAX'));
         $group->tenant_id = $actor->tenantId;
 
         return $this->recorder->transaction(function () use ($actor, $group, $rateIds) {

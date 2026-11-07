@@ -68,7 +68,7 @@ class SalesRouteResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->columns(3)->components([
-            TextInput::make('code')->required()->maxLength(20),
+            TextInput::make('code')->disabled()->dehydrated(false)->placeholder('Given automatically when saved'),
             TextInput::make('name')->required()->maxLength(255)->columnSpan(2),
             Select::make('branch_id')->label('Branch')->required()->live()->options(fn () => Branch::orderBy('code')->pluck('name', 'id')),
             Select::make('van_warehouse_id')->label('Van')->options(fn (Get $get) => Warehouse::where('is_van', true)->when($get('branch_id'), fn ($q, $b) => $q->where('branch_id', $b))->orderBy('code')->pluck('name', 'id')),

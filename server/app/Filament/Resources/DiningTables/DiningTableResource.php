@@ -8,12 +8,15 @@ use App\Filament\Resources\DiningTables\Pages\ListDiningTables;
 use App\Filament\Support\Erp;
 use App\Models\Branch;
 use App\Models\DiningTable;
+use App\Support\Codes;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -69,9 +72,11 @@ class DiningTableResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->columns(3)->components([
-            Select::make('branch_id')->label('Branch')->required()->disabledOn('edit')
-                ->options(fn () => Branch::when(Erp::branchIds('restaurant.manage') !== null, fn ($q) => $q->whereIn('id', Erp::branchIds('restaurant.manage')))->orderBy('code')->pluck('name', 'id')),
-            TextInput::make('code')->label('Table')->required()->maxLength(20),
+            Select::make('branch_id')->label('Branch')->required()->disabledOn('edit')->live()
+                ->options(fn () => Branch::when(Erp::branchIds('restaurant.manage') !== null, fn ($q) => $q->whereIn('id', Erp::branchIds('restaurant.manage')))->orderBy('code')->pluck('name', 'id'))
+                // The next table number is suggested; the number on the table itself is what counts, so it can be changed.
+                ->afterStateUpdated(fn ($state, Get $get, Set $set) => blank($get('code')) && $state ? $set('code', Codes::after(DiningTable::where('branch_id', $state)->pluck('code')) ?? '1') : null),
+            TextInput::make('code')->label('Table')->required()->maxLength(20)->helperText('The number on the table. The next one is suggested.'),
             TextInput::make('area')->maxLength(60)->placeholder('Inside, Terrace, Bar…'),
             TextInput::make('seats')->numeric()->required()->default(4)->minValue(1)->maxValue(60),
             TextInput::make('pos_x')->label('Column on the floor view')->numeric()->default(0)->minValue(0)->maxValue(99),

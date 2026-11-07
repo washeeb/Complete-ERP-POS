@@ -10,6 +10,7 @@ use App\Models\Bin;
 use App\Models\Product;
 use App\Models\ProductUom;
 use App\Models\Warehouse;
+use App\Support\Codes;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
@@ -18,6 +19,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -73,10 +76,11 @@ class BinResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->columns(2)->components([
-            Select::make('warehouse_id')->label('Warehouse')->required()->disabledOn('edit')
+            Select::make('warehouse_id')->label('Warehouse')->required()->disabledOn('edit')->live()
                 ->options(fn () => Warehouse::where('use_bins', true)->orderBy('code')->get()->mapWithKeys(fn ($w) => [$w->id => "{$w->code} · {$w->name}"]))
+                ->afterStateUpdated(fn ($state, Get $get, Set $set) => blank($get('code')) && $state ? $set('code', Codes::after(Bin::where('warehouse_id', $state)->pluck('code')) ?? 'A-01-01') : null)
                 ->helperText('Only warehouses with bins switched on are listed.'),
-            TextInput::make('code')->required()->maxLength(30)->helperText('Aisle-bay-level, e.g. A-01-02. Print it as a barcode on the shelf.'),
+            TextInput::make('code')->required()->maxLength(30)->helperText('Aisle-bay-level, e.g. A-01-02, as on the shelf label. The next one is suggested.'),
             TextInput::make('name')->maxLength(255),
             TextInput::make('pick_order')->label('Pick order')->numeric()->minValue(0)->default(100)
                 ->helperText('Sales and transfers take stock from lower numbers first.'),

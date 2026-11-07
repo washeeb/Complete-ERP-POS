@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+- **Codes given by the system:** branches (Pharmacy Osu → PHAOSU), stores (PHAOSU-W2), tills (T03), vans (V01), departments, price lists and tax groups (STAFF_PRICE), kitchen stations, routes, work centres, recipes, styles, asset classes, membership plans, and the licence app's clients, plans and add-ons. The code field is read-only and never changes. Account numbers, shelf bins and table numbers stay typed, with the next one suggested.
 ### Fixed
 - **A second shift on the same day needs a manager's PIN:** someone who closed their own shift on a till today must have a manager allow another one, whatever that shift is called and whether or not shift names are on. Before, closing Morning and then opening at 14:22 (Afternoon) was allowed, which left empty shifts on the report.
 ### Changed
