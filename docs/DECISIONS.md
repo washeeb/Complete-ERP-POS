@@ -1149,3 +1149,6 @@ Design:
 - An importer, so Check, errors and the audit come with it. Moves use `batch_assign` inside the warehouse, as switching batches on does: no value or quantity changes, so no stock adjustments to approve, one per row otherwise.
 - A date with no batch number dates batch OPENING itself, which is per product, so it applies in every store; a batch number keeps stores apart.
 
+## Returned medicines go back on sale by default (2026-11-07)
+- Owner reversed the first choice: a returned medicine goes back on sale, and quarantine for medicines is an option (`returns.medicines_to_quarantine`, off). Damaged and expired goods still go to quarantine whatever the setting: that is the reason given for the return, not a rule about medicines.
+
