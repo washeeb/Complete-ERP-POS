@@ -27,7 +27,7 @@ final class OpeningStockImporter extends Importer
 
     public function description(): string
     {
-        return 'One row per product and warehouse: the quantity counted at go-live and its cost per unit (used for stock value and cost of sales). '
+        return 'One row per product and warehouse: the quantity counted at go-live and its cost per unit (used for stock value and cost of sales). The product is found by SKU, barcode or exact name. Rows with no quantity are skipped. '
             .'Batch-tracked products: one row per batch with its expiry. A product that already has stock history in that warehouse is refused — use a stock adjustment.';
     }
 
@@ -40,7 +40,9 @@ final class OpeningStockImporter extends Importer
     {
         return [
             ['name' => 'warehouse', 'required' => true, 'help' => 'Warehouse code (Company → Branches → Warehouses).', 'example' => 'HQ-MAIN'],
-            ['name' => 'sku', 'required' => true, 'help' => 'Product SKU.', 'example' => 'RICE-5KG'],
+            ['name' => 'sku', 'required' => false, 'help' => 'Product SKU. Or leave it empty and give the barcode, or the exact product name.', 'example' => 'RICE-5KG'],
+            ['name' => 'barcode', 'required' => false, 'help' => 'Barcode, instead of the SKU. Format the column as Text in Excel.', 'example' => ''],
+            ['name' => 'name', 'required' => false, 'help' => 'Exact product name, for products with neither SKU nor barcode yet (it must match one product).', 'example' => ''],
             ['name' => 'qty', 'required' => true, 'help' => 'Quantity on hand, in the unit below.', 'example' => '40'],
             ['name' => 'unit', 'required' => false, 'help' => 'Unit code. Empty = base unit.', 'example' => 'PC'],
             ['name' => 'unit_cost', 'required' => false, 'help' => 'Cost of one unit (what you paid, before VAT you can reclaim).', 'example' => '95.00'],
@@ -51,14 +53,18 @@ final class OpeningStockImporter extends Importer
 
     public function reference(array $row): string
     {
-        return trim(($row['warehouse'] ?? '').' '.($row['sku'] ?? ''));
+        return trim(($row['warehouse'] ?? '').' '.(($row['sku'] ?? '') ?: (($row['barcode'] ?? '') ?: ($row['name'] ?? ''))));
     }
 
     public function apply(Actor $actor, array $row, array $options, ?Model $context): string
     {
+        // A count sheet lists every product; one not counted (or counted as none) has nothing to open with.
+        if (! self::has($row, 'qty') || (float) self::number($row['qty'], 'qty') == 0.0) {
+            return 'unchanged';
+        }
         $warehouse = StockRows::warehouse(self::need($row, 'warehouse', 'the warehouse'));
-        [$product] = StockRows::product($row);
-        $unit = StockRows::unit($product, $row);
+        [$product, $fromBarcode] = StockRows::productOrName($row, $warehouse);
+        $unit = StockRows::unit($product, $row, $fromBarcode);
         $this->inventory->adjust($actor, $warehouse, $product, $unit, self::number(self::need($row, 'qty', 'the quantity'), 'qty'), 'opening', '', 'CSV import',
             self::has($row, 'unit_cost') ? self::number($row['unit_cost'], 'unit_cost') : null, $row['batch_no'] ?? null,
             self::has($row, 'expires_on') ? substr(self::date($row['expires_on'], 'expires_on'), 0, 10) : null);
