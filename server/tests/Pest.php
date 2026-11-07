@@ -16,6 +16,7 @@ use App\Models\TaxGroup;
 use App\Models\Uom;
 use App\Models\User;
 use App\Security\ScopeType;
+use App\Support\IndustryContext;
 use App\Support\Settings;
 use App\Support\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -101,7 +102,7 @@ function makeProduct(User $owner, string $sku, string $name, string $retail, ?ar
 
     return app(CatalogService::class)->saveProduct(actorFor($owner), new Product, [
         'sku' => $sku, 'name' => $name, 'base_uom_id' => $pc->id, 'tax_group_id' => TaxGroup::where('code', $tax)->value('id'),
-        'track_stock' => true, 'is_active' => true, 'base_barcodes' => [$code], 'units' => $units, 'prices' => $prices,
+        'track_stock' => true, 'is_active' => true, 'base_barcodes' => [$code], 'units' => $units, 'prices' => $prices, 'industry_id' => IndustryContext::SHARED,
     ]);
 }
 

@@ -496,25 +496,31 @@ Design:
 ## A stock row from the start (2026-10-19)
 - Every stock-tracked product gets a stock row at 0 in each store of its industry (shared products: every store) when it is saved, when a store is created, when sync brings a product, after test trading is cleared, and once for existing data (migration). `ZeroStock::ensure` only inserts (`ON CONFLICT DO NOTHING`).
 - "Stock has moved" (base unit and unit sizes locked) is now `Product::hasMoved()` from the movements, no longer "has a stock row".
+
 ## No double posting (2026-10-19)
 - Three layers: the button that started a request cannot be clicked until it finishes (Livewire's `data-loading`, one CSS rule for the whole back office); forms that stay on the page clear after posting (imports, timesheets, bank reconciliation; Filament create pages already redirect and modals close); and imports keep the file's SHA-256 so the same file into the same type (and the same stock count or adjustment) is refused unless *Import it again* is ticked. Till sales were already idempotent (sale id and device sequence).
 
 ## Moving and deleting catalogue lists (2026-10-19)
 - Moving products saves each product like an edit (`CatalogService::moveProducts`): audited, synced, nothing else changes. Merging duplicates = move all, then delete the empty one.
 - Delete only when unused (`deleteSimple`): products, sub-categories, styles and promotions for categories; products and styles for brands; product units for units. Foreign keys stay `restrict`, so anything missed is refused too. A `*.deleted` outbox event lets branch servers delete it as well, unless something there still uses it (`Replication::DELETABLE`).
+
 ## Editing keeps one record; adding from where you are (2026-10-19)
 - Every edit screen's uniqueness checks exclude the record itself (checked: SKU, codes, phone, coupons, bins…). The product barcode check now also allows a barcode to move between units of the *same* product; a changed base unit renames the base `product_uoms` row instead of adding a second one.
 - Inline creation (`App\Filament\Support\QuickCreate`) calls the same domain services as each record's own screen, so permissions, validation and the audit log are identical; the "+" only shows to people allowed to create that kind of record. Tax groups are not created inline (they need their rates).
+
 ## Correcting a base unit (2026-10-19)
 - After stock has moved the base unit may be **renamed, never converted**: the base `product_uoms` row keeps its id (prices, barcodes and stock follow) and only its unit changes; documents keep the unit code they printed. Refused when the product already has that unit as a pack size, or when stock is in fractions the new unit cannot hold. Converting (1 pack = 10 pieces) stays a new unit under *Other units*.
+
 ## Till details, calculator and waybills (2026-10-19)
 - **Owner answers:** calculator on the till (F1, *Use as amount* on payment), a change breakdown, and in the back office; sale comment, walk-in name/phone, industry extras and a per-branch "ask before payment" setting; waybills for deliveries, transfers, returns to suppliers and goods from suppliers.
 - **Walk-ins stay walk-ins:** their name and phone sit on the sale (`walk_in_name`, `walk_in_phone`, normalised to +233); *Save as customer* creates a customer without changing the posted sale. Industry details are a whitelisted `extras` JSON (age, sex, weight, pregnancy, guests, next visit), validated on the server.
 - **The calculator never uses eval:** a small parser (till and back office alike); percent works like a shop calculator (`200 + 10%` = 220).
 - **One waybill document for all four flows** (`waybills`, `WB`), with the goods copied from the source as sent. Proof of delivery by the office (signed copy / photo) or by the receiver through a random 40-character link in the QR code (no sign-in, throttled, valid only while the goods are on the way, cleared once used). Permissions follow what is carried: deliveries `sales.deliver`, transfers `stock.transfer`, returns `stock.expiry`, inbound `stock.receive`.
+
 ## Top search covers the whole back office (2026-10-19)
 - Every main list declares its searchable columns and result details (`App\Filament\Support\GlobalSearch` trait); Filament only offers results from lists the person may open. A result opens the record's page, else its list searched for it, so lists without a page are still reachable.
 - Customer phone search normalises 024… to +233… like the stored numbers.
+
 ## Licence generator (2026-10-18)
 - **Owner answers:** a vendor panel in this codebase (`/vendor`), only on the licence server; the signing key lives there (password + authenticator to use it); plans + add-ons with per-licence overrides; billing and payments, renewal reminders, a usage and health dashboard from the check-ins, and a licence certificate.
 - **Left out of client builds, not just switched off:** `release:build` deletes the panel, its screens, prints and routes; the panel provider is registered only when `LICENSE_SERVER=true` and the class exists. The licensing domain (`app/Domain/Licensing/Vendor`) stays because installations share the code that verifies keys.
@@ -621,6 +627,7 @@ Design:
 - **Excel is the default download** for templates and current data: `XlsxWriter` writes digit strings of 12+ digits, and any with a leading zero, as text.
 - **CSV cells** `0…` and 12+ digit numbers are written `="…"` (Excel keeps them as text); `CsvFile::unformula` reads them back everywhere.
 - **Restoring zeros only with proof:** a 7- or 11-digit code becomes EAN-8 / UPC-A only when the padded code's GS1 check digit is right. A 12-digit code stays as it is (a valid UPC-A, which is also how scanners send it). Shortened scientific numbers are refused, never guessed.
+
 ## Desktop till start-up and build PC recovery (2026-10-15)
 - **Start on the local set-up page, not the server.** The page checks `<server>/up` (no-cors, 8 s) and opens the till when it answers. `till.json` gains `verified` (the server answered at least once); a verified server opens even when unreachable, so offline selling is unchanged. A never-verified one stays on the set-up page. *Use this address anyway* saves without the check, for a server not yet switched on.
 - **Uninstall keeps settings** (Tauri's default; `%APPDATA%\app.seslabs.till` and `%LOCALAPPDATA%\app.seslabs.till`). Kept on purpose: the WebView folder holds unsent offline sales. The manual says how to clear both.
@@ -1085,6 +1092,7 @@ Design:
 ## IotTest clock pinned at mid-day (2026-11-05)
 - The alarm test moves the clock on about 49 minutes and expects one `iot_days` row, so it failed when started shortly before midnight. Pinned to today at 12:00 for the whole file. Today rather than a fixed date, because the test licence is issued relative to now.
 - The pin is the first line of `beforeEach`, not the top of the test: moving the clock back after set-up puts the users created there in the future and the alarm test's notification check fails. Product code unchanged: one day row per day is correct.
+
 ## SES Licensing: offline generator and sync (2026-11-04)
 - Owner: a separate desktop app issues licences offline and syncs both ways with the licence server, the server being master. The ERP keeps only the verifying side and the sync API; the app has its own private repository and is never shipped.
 - Same key format and package rules as `VendorLicensing`, pinned both ways by test vectors (`LicenseSyncVectorTest` here, `license.rs` there), so the ERP accepts its keys unchanged.
@@ -1159,3 +1167,12 @@ Design:
 
 ## Industry codes given by the system (2026-11-07)
 - Owner expected the code to be automatic, as supplier codes are. `IndustryService::nextCode`: the first six letters or digits of the name, with a number replacing the last characters if taken. It is fixed after saving because it starts new SKUs; existing SKUs never change anyway. Branches that switch on a module still create their industry by themselves.
+
+## Staff confined to their industry; no accidental shared products (2026-11-07)
+- Owner: "All industries" only for people who control several industries; items were being created in all industries by mistake. Cause: the Industry field was optional, an empty value meant shared, and someone with no switcher had no chosen industry, so their forms and lists covered everything.
+- `IndustryContext::selected()` now returns the only industry of someone without a company-wide grant. The switcher no longer depends on security level. Warehouse, till and legal-entity grants count towards a person's industries; a legal-entity grant no longer means every industry.
+- `CatalogService::saveProduct` decides the industry, so forms, files and every other caller get the same rule. A new product needs one; "shared" is an explicit value (`IndustryContext::SHARED`) for company-wide people. A system actor keeps the old behaviour for demo data.
+- Owner options: `catalog.shared_products` deliberate (default) or never; `access.company_wide` managers (default) or owner and support. Managers means level 4 and above, plus the read-only auditor, who looks at the whole company by nature.
+- Existing company-wide staff are listed, not changed: the system cannot know their branch, and removing access on install could stop tills. `AccessService::$limitCompanyWide` is off in tests because the `staff()` helper grants company-wide for brevity.
+- "Move all" is a product action, not a migration: which industry is right depends on the client. Suggestions use stock on hand and 12 months of sales; products used in several industries get no suggestion.
+- Price lists keep their optional industry: an empty one is the normal list for the company, and it does not put items on the wrong till.

@@ -24,6 +24,7 @@ use App\Security\SecurityLevel;
 use App\Support\Dashboard\Panels;
 use App\Support\Look;
 use App\Support\NotifyPrefs;
+use App\Support\Settings;
 use App\Support\UserPrefs;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
@@ -36,6 +37,12 @@ final class AccessService
 {
     /** Where the profile page leaves a new photo until it is saved (then cleaned into ProfilePhoto::DIR). */
     public const PHOTO_UPLOADS = 'avatar-uploads';
+
+    /** Lowest level treated as a manager for company-wide access; read-only auditors look at the whole company by nature. */
+    private const MANAGER_LEVEL = 4;
+
+    /** Most tests set up staff company-wide for brevity; the test of this rule switches it back on. */
+    public static bool $limitCompanyWide = true;
 
     public function __construct(private readonly Recorder $recorder, private readonly Authorizer $authz) {}
 
@@ -364,6 +371,9 @@ final class AccessService
             throw new DomainException("{$role->name} is L{$role->security_level}; {$user->name} is only cleared to L{$user->security_level}.");
         }
         $this->assertLevelGrantable($actor, $role->security_level);
+        if (self::$limitCompanyWide && in_array($scopeType, [ScopeType::Tenant, ScopeType::LegalEntity], true) && ! self::mayBeCompanyWide($role)) {
+            throw new DomainException("{$role->name} can't have company-wide access. Give it for a branch or an industry.");
+        }
         if ($expiresAt && ! $reason) {
             throw new DomainException('Temporary access needs a reason.');
         }
@@ -403,6 +413,35 @@ final class AccessService
         $this->authz->forget($user);
 
         return $assignment;
+    }
+
+    /** The rule on who can see the whole company (Settings → Security). */
+    public static function mayBeCompanyWide(Role $role): bool
+    {
+        if (in_array($role->key, ['owner', 'superadmin'], true)) {
+            return true;
+        }
+        if (app(Settings::class)->get('access.company_wide', $role->tenant_id) === 'owner') {
+            return false;
+        }
+
+        return $role->security_level >= self::MANAGER_LEVEL || $role->key === 'auditor';
+    }
+
+    /** Replaces company-wide access with the same role over a branch or industry, as one step. */
+    public function narrow(Actor $actor, RoleAssignment $assignment, ScopeType $scopeType, string $scopeId): RoleAssignment
+    {
+        if (! in_array($scopeType, [ScopeType::Branch, ScopeType::Industry], true)) {
+            throw new DomainException('Choose a branch or an industry.');
+        }
+
+        return $this->recorder->transaction(function () use ($actor, $assignment, $scopeType, $scopeId) {
+            $reason = "Limited to one {$scopeType->value}";
+            $new = $this->grant($actor, $assignment->user, $assignment->role, $scopeType, $scopeId, $assignment->limits ?? [], $assignment->expires_at, $assignment->reason ?? $reason);
+            $this->revoke($actor, $assignment, $reason);
+
+            return $new;
+        });
     }
 
     public function revoke(Actor $actor, RoleAssignment $assignment, string $reason): void

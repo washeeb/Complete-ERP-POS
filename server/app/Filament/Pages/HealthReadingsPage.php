@@ -9,6 +9,7 @@ use App\Filament\Support\FinanceUi;
 use App\Filament\Support\ListFilters;
 use App\Models\Customer;
 use App\Models\HealthReading;
+use App\Models\Industry;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\TaxGroup;
@@ -93,7 +94,7 @@ class HealthReadingsPage extends Page implements HasTable
     {
         $list = PriceList::where('is_default', true)->firstOrFail();
         $uom = Uom::firstOrCreate(['code' => 'SVC'], ['name' => 'Service', 'decimals' => 0]);
-        $product = app(CatalogService::class)->saveProduct($actor, new Product, ['name' => $data['name'], 'base_uom_id' => $uom->id, 'tax_group_id' => $data['tax_group_id'], 'track_stock' => false, 'is_active' => true,
+        $product = app(CatalogService::class)->saveProduct($actor, new Product, ['name' => $data['name'], 'industry_id' => Industry::where('module_key', 'pharmacy')->value('id'), 'base_uom_id' => $uom->id, 'tax_group_id' => $data['tax_group_id'], 'track_stock' => false, 'is_active' => true,
             'reading_kind' => ($data['reading_kind'] ?? null) ?: null, 'prices' => [['price_list_id' => $list->id, 'uom_id' => $uom->id, 'min_qty' => '1', 'amount' => (string) $data['price']]]]);
 
         return $product;

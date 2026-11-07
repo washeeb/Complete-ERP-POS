@@ -135,10 +135,7 @@ class ProductResource extends Resource
                 TextInput::make('sku')->label('SKU')->disabled()->dehydrated(false)->placeholder('Given automatically when saved')
                     ->helperText('Set by the system so no two products share one; it never changes.'),
                 TextInput::make('name')->required()->maxLength(160)->caps()->columnSpan(2),
-                Select::make('industry_id')->label('Industry')->options(fn () => Industry::licensed()->orderBy('sort')->pluck('name', 'id'))
-                    ->default(fn () => IndustryContext::selected())->placeholder('All industries (shared)')
-                    ->visible(fn () => Industry::exists())
-                    ->helperText('Each industry has its own catalogue: its tills and screens show only its products. Shared items are sold by every industry.'),
+                self::industryField(),
                 TextInput::make('location')->label('Location / shelf')->maxLength(60)->placeholder('e.g. Shelf B2')
                     ->helperText('Where it is kept: shows on the stock and count sheets and in the till\'s search.'),
                 QuickCreate::on(Select::make('category_id')->label('Category')->options(fn () => Category::where('is_active', true)->orderBy('name')->pluck('name', 'id'))->searchable(), 'category'),
@@ -368,9 +365,11 @@ class ProductResource extends Resource
                 IconColumn::make('is_active')->boolean()->label('For sale'),
             ])
             ->modifyQueryUsing(fn (Builder $query) => $query->with('category', 'industry', 'baseUom', 'units', 'prices', 'stockLevels')
-                // The industry chosen at the top: its own products and the shared ones.
-                ->when(IndustryContext::selected(), fn ($q, $id) => $q->where(fn ($w) => $w->whereNull('industry_id')->orWhere('industry_id', $id))))
+            )
             ->filters([
+                SelectFilter::make('industry')->label('Industry')->visible(fn () => Industry::licensed()->exists())
+                    ->options(fn () => Industry::licensed()->orderBy('sort')->pluck('name', 'id')->all() + [IndustryContext::SHARED => 'Shared by all industries'])
+                    ->query(fn (Builder $query, array $data) => $query->when($data['value'] ?? null, fn ($q, $v) => $v === IndustryContext::SHARED ? $q->whereNull('industry_id') : $q->where('industry_id', $v))),
                 SelectFilter::make('category_id')->label('Category')->options(fn () => Category::orderBy('name')->pluck('name', 'id')),
                 TernaryFilter::make('is_active')->label('For sale'),
                 SelectFilter::make('drug_schedule')->label('Medicine schedule')->options(Product::SCHEDULES + ['none' => 'Not a medicine'])
@@ -464,14 +463,37 @@ class ProductResource extends Resource
                 BulkAction::make('moveIndustry')->label('Move to industry')->icon(Heroicon::OutlinedArrowsRightLeft)
                     ->visible(fn () => Industry::licensed()->exists() && Erp::canAnywhere('catalog.manage'))
                     ->schema([Select::make('industry')->label('Move the ticked products to')->required()
-                        ->options(fn () => Industry::licensed()->orderBy('sort')->pluck('name', 'id')->all() + ['shared' => 'Shared by all industries'])])
+                        ->options(fn () => IndustryContext::choices(Erp::user()))])
                     ->action(function (Collection $records, array $data) {
                         @set_time_limit(1800);
-                        $n = Erp::run(fn ($actor) => app(CatalogService::class)->moveToIndustry($actor, $records, $data['industry'] === 'shared' ? null : $data['industry']));
+                        $n = Erp::run(fn ($actor) => app(CatalogService::class)->moveToIndustry($actor, $records, $data['industry'] === IndustryContext::SHARED ? null : $data['industry']));
                         Notification::make()->success()->title("{$n} product(s) moved")->send();
                     })
                     ->deselectRecordsAfterCompletion(),
             ]);
+    }
+
+    /** Which industry a product belongs to: required, and only what this person may choose. Used wherever a product is added. */
+    /** Screens, links and search stay inside the person's own industries. */
+    public static function getEloquentQuery(): Builder
+    {
+        return IndustryContext::productScope(parent::getEloquentQuery());
+    }
+
+    public static function industryField(): Select
+    {
+        $choices = fn ($record = null) => IndustryContext::choices(Erp::user())
+            + ($record instanceof Product && $record->exists && $record->industry_id === null ? [IndustryContext::SHARED => 'Shared by all industries'] : []);
+
+        return Select::make('industry_id')->label('Industry')->required()->options($choices)
+            ->default(function () use ($choices) {
+                $ids = array_keys(array_diff_key($choices(), [IndustryContext::SHARED => true]));
+
+                return IndustryContext::selected() ?? (count($ids) === 1 ? $ids[0] : null);
+            })
+            ->formatStateUsing(fn ($state, $record) => $record instanceof Product && $record->exists ? ($state ?: IndustryContext::SHARED) : $state)
+            ->visible(fn () => Industry::licensed()->exists())
+            ->helperText('Each industry has its own catalogue: its tills and screens show only its products. Shared items are sold by every industry.');
     }
 
     /** The Change the unit form: convert by pack size (default) or correct a wrong label. */
