@@ -14,6 +14,12 @@ Tick **Batches and expiry dates** on a product (Catalog → Products) for anythi
 
 ## Grocery module (switch on per branch: Company → Modules)
 
+### Stock for a new shop
+
+Load a new shop's first stock with **System → Import data → Opening stock**, not a stock count. Give each product its quantity and cost, plus its batch and expiry if it has batches.
+
+Why: a stock count compares what you count with what the system holds. In a new shop the system holds nothing, so the count sheet is empty, and stock added by a count has no cost. That leaves the stock value and cost of sales wrong. Use stock counts once the shop is trading.
+
 ### Weighed items (scale labels)
 
 1. Give each item weighed on the label scale its **scale code (PLU)** on the product. Sell it in **kilograms** (a unit with 3 decimals).

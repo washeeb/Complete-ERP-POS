@@ -287,3 +287,13 @@ it('does not count the practice company\'s logins against the licensed users', f
     staff($this->owner, 'u2', 2); // the owner, u1 and u2: 3
     expect(fn () => staff($this->owner, 'u3', 2))->toThrow(LicenseException::class, 'allows 3 active users');
 });
+
+it('says what the licence covers in words, not codes, and when a limit is reached', function () {
+    relicense(['branches' => 2, 'features' => ['finance', 'hr', 'crm', 'iot'], 'modules' => ['pharmacy', 'grocery', 'retail_wholesale']]);
+    $this->actingAs(withMfa($this->owner))->get(LicensePage::getUrl())->assertOk()
+        ->assertSeeInOrder(['Branches, including head office', 'Limit reached'])
+        ->assertSeeInOrder(['Features', 'Finance, HR and payroll'])
+        ->assertSeeInOrder(['Paid add-ons', 'CRM, Sensors'])
+        ->assertSeeInOrder(['Industry modules', 'Pharmacy', 'Grocery / Supermarket', 'Retail &amp; Wholesale (not available yet)'], false)
+        ->assertDontSee('retail_wholesale');
+});

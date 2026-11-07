@@ -15,12 +15,14 @@
         @if ($s['state'] !== 'unlicensed')
             @php($u = $this->usage())
             <table class="lic-t">
-                <tr><th>In use</th><th>Licensed</th></tr>
-                @foreach (['branches' => 'Branches', 'devices' => 'Tills and devices', 'users' => 'Active users'] as $k => $label)
-                    <tr><td>{{ $label }}: {{ $u[$k] }}</td><td>{{ $s['limits'][$k] ?? 'unlimited' }}</td></tr>
+                <tr><th></th><th>In use</th><th>Allowed</th><th></th></tr>
+                @foreach (['branches' => 'Branches, including head office', 'devices' => 'Tills and devices', 'users' => 'Active users'] as $k => $label)
+                    @php($max = $s['limits'][$k] ?? null)
+                    <tr><td>{{ $label }}</td><td>{{ $u[$k] }}</td><td>{{ $max ?? 'Unlimited' }}</td><td>@if ($max !== null && $u[$k] >= $max)<strong>Limit reached</strong>@endif</td></tr>
                 @endforeach
-                <tr><td>Finance and HR</td><td>{{ $s['features'] === null ? 'all' : (implode(', ', $s['features']) ?: 'none') }}</td></tr>
-                <tr><td>Industry modules</td><td>{{ $s['modules'] === null ? 'all' : (implode(', ', $s['modules']) ?: 'none') }}</td></tr>
+                @foreach ($this->covers() as $label => $covered)
+                    <tr><td>{{ $label }}</td><td colspan="3">{{ $covered }}</td></tr>
+                @endforeach
             </table>
             @if ($lc = $this->lastCheckin())
                 <p class="lic-muted">Last confirmed with the licence server: {{ $lc->last_checkin_at?->format('j M Y H:i') ?? 'never' }}</p>
