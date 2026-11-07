@@ -1169,6 +1169,9 @@ Design:
 - A cashier closed her morning shift, signed in again two minutes later and opened an empty one; the next cashier then had to close it on handover. The rule only matched the same shift name and only ran with automatic shift names.
 - `AutoShifts::beforeOpen`: any shift the person closed on this till since the start of the local day needs a manager PIN and reason (`till_closed`), with or without shift names. Taking over from someone else stays free. Offline opening is unchanged and is reviewed as before.
 
+## Industry codes given by the system (2026-11-07)
+- Owner expected the code to be automatic, as supplier codes are. `IndustryService::nextCode`: the first six letters or digits of the name, with a number replacing the last characters if taken. It is fixed after saving because it starts new SKUs; existing SKUs never change anyway. Branches that switch on a module still create their industry by themselves.
+
 ## Staff confined to their industry; no accidental shared products (2026-11-07)
 - Owner: "All industries" only for people who control several industries; items were being created in all industries by mistake. Cause: the Industry field was optional, an empty value meant shared, and someone with no switcher had no chosen industry, so their forms and lists covered everything.
 - `IndustryContext::selected()` now returns the only industry of someone without a company-wide grant. The switcher no longer depends on security level. Warehouse, till and legal-entity grants count towards a person's industries; a legal-entity grant no longer means every industry.

@@ -4,6 +4,7 @@
 ### Fixed
 - **A second shift on the same day needs a manager's PIN:** someone who closed their own shift on a till today must have a manager allow another one, whatever that shift is called and whether or not shift names are on. Before, closing Morning and then opening at 14:22 (Afternoon) was allowed, which left empty shifts on the report.
 ### Changed
+- **Industry codes are automatic:** a new industry gets its code from its name (Bakery → BAKERY, then BAKER2 if taken), and it never changes. The code starts the industry's product codes.
 - **Staff stay in their own industry:** the industry switcher shows only for company-wide people and those covering several industries. Everyone else is always in their own industry, and other industries' products no longer appear in their lists, links or product pickers.
 - **Every product belongs to an industry:** Industry is now required, and only your own industries are offered. An empty field no longer means "All industries". Sharing a product is a deliberate choice for company-wide people, and can be switched off in Settings.
 - **Company-wide access has a rule:** managers and above by default, or owner and SyncLytics support only (Settings → Security).

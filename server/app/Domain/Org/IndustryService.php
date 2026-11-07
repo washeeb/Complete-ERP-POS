@@ -27,11 +27,15 @@ final class IndustryService
     public function save(Actor $actor, Industry $industry, array $data): Industry
     {
         $this->require($actor);
-        $code = strtoupper(trim((string) ($data['code'] ?? '')));
         $name = trim((string) ($data['name'] ?? ''));
+        if ($name === '') {
+            throw new DomainException('Give the industry a name.');
+        }
+        // The code starts the SKUs of the industry's new products (GROCER-000001), so the system gives it and keeps it.
+        $code = $industry->exists ? $industry->code : (strtoupper(trim((string) ($data['code'] ?? ''))) ?: self::nextCode($actor->tenantId, $name));
         $module = (string) ($data['module_key'] ?? $industry->module_key ?? '');
-        if ($code === '' || ! preg_match('/^[A-Z0-9]{1,10}$/', $code) || $name === '') {
-            throw new DomainException('Give the industry a short code (letters and digits) and a name.');
+        if (! preg_match('/^[A-Z0-9]{1,10}$/', $code)) {
+            throw new DomainException('An industry code is letters and digits, at most 10.');
         }
         if (! $this->modules->has($module) || ! $this->modules->get($module)->definesIndustry()) {
             throw new DomainException('Choose the industry module its branches run.');
@@ -161,7 +165,7 @@ final class IndustryService
         }
         $industry = Industry::withoutGlobalScopes()->where('tenant_id', $branch->tenant_id)->where('module_key', $moduleKey)->orderBy('sort')->first();
         if (! $industry) {
-            $industry = new Industry(['code' => strtoupper(substr(preg_replace('/[^a-z]/', '', $moduleKey), 0, 6)), 'name' => $module->name,
+            $industry = new Industry(['code' => self::nextCode($branch->tenant_id, $moduleKey), 'name' => $module->name,
                 'module_key' => $moduleKey, 'sort' => Industry::withoutGlobalScopes()->where('tenant_id', $branch->tenant_id)->count() + 1, 'is_active' => true]);
             $industry->tenant_id = $branch->tenant_id;
             $this->recorder->save($actor, $industry, 'industry.created');
@@ -172,6 +176,18 @@ final class IndustryService
         if ($industry->legal_entity_id) {
             $this->syncEntity($actor, $branch, $industry);
         }
+    }
+
+    /** A free code from the name: its first six letters or digits (GROCER), then GROCE2, GROCE3… if taken. */
+    public static function nextCode(string $tenantId, string $name): string
+    {
+        $base = substr((string) preg_replace('/[^A-Z0-9]/', '', strtoupper($name)), 0, 6) ?: 'IND';
+        $taken = Industry::withoutGlobalScopes()->where('tenant_id', $tenantId)->pluck('code')->all();
+        for ($n = 1, $code = $base; in_array($code, $taken, true); $code = substr($base, 0, 6 - strlen((string) $n)).$n) {
+            $n++;
+        }
+
+        return $code;
     }
 
     /** @return list<string> industry modules (not add-ons) switched on for the branch */
