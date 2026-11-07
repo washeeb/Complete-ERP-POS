@@ -175,7 +175,7 @@ records which computer each change was made from.
   shows your own server.
 - **F5** reloads the page; **Ctrl + / Ctrl −** zoom; **Ctrl+Shift+S** goes back to the set-up page to change the
   server address.
-- If the server cannot be reached when the app starts, it says so with **Try again** instead of an error page.
+- **When the server can't be reached** (at start, or while working: the internet drops, the server restarts or is being updated), the app shows its own **reconnect screen** instead of an error page. It says what is wrong (this computer is offline, the server is busy, or it isn't answering), tries again by itself (sooner as soon as the network is back), and returns to the page you were on once the server answers. **Try now** checks straight away. After 5 minutes it shows how to reach support, with WhatsApp, phone and e-mail, and **Copy the details** to send them. The server's address is never shown. **Why:** staff see a calm, clear screen and need do nothing; anything typed on the page and not saved may need entering again. Version 1.0.3 or later.
 
 **Updating:** install the new `ZionEX Suite_<version>_x64-setup.exe` over the old one; the server address is kept. Version 1.0.2 replaces *ZionEX Back Office* (the earlier name) by itself, so there is one app on the computer.
 

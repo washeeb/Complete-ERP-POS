@@ -4908,7 +4908,7 @@ dependencies = [
 
 [[package]]
 name = "zionex-backoffice"
-version = "1.0.2"
+version = "1.0.3"
 dependencies = [
  "local-ip-address",
  "mac_address",
@@ -4918,6 +4918,8 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-opener",
  "url",
+ "webview2-com",
+ "windows-core",
 ]
 
 [[package]]

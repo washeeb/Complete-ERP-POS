@@ -1,6 +1,6 @@
 [package]
 name = "zionex-backoffice"
-version = "1.0.2"
+version = "1.0.3"
 description = "The ZionEX back office as a desktop app for Windows"
 authors = ["SyncLytics"]
 edition = "2021"
@@ -21,6 +21,11 @@ serde_json = "1"
 url = "2"
 mac_address = "1"
 local-ip-address = "0.6"
+
+# Windows: to see a page that failed to load (no network, server not answering) and show our own reconnect screen.
+[target.'cfg(windows)'.dependencies]
+webview2-com = "0.39"
+windows-core = "0.62"
 
 [profile.release]
 codegen-units = 1

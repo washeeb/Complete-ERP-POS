@@ -1212,3 +1212,8 @@ Design:
 - The same file (hash) cannot be queued twice while waiting or running. The page polls every 2 s while its import is waiting or running.
 - Time left: seconds only under a minute (`Progress::timeLeft`, and the same in the progress card).
 - Installer (Ubuntu): the cron file is moved aside before the backup and code swap, and the script waits up to 15 minutes for `schedule:run` / `erp:*` processes of that copy's user. An EXIT trap puts it back if the update stops, and step 8 writes it again. Windows already stopped its scheduled tasks during an update.
+
+## Desktop reconnect screen (2026-11-07)
+- The owner saw Edge's "can't reach this page" inside ZionEX Suite. WebView2 shows its own error page for a failed navigation, and no page script runs there. So the app listens to WebView2 `NavigationCompleted` (webview2-com): a failure with a network status (timeout, unreachable, cannot connect, disconnected, name not resolved, reset, invalid response), or HTTP 502/504 from Caddy, opens the local page in reconnect mode with the address to return to. Downloads and cancelled navigations are not failures. A page that goes offline mid-use (`offline` event) goes there too.
+- Owner choices: return automatically (checks back off 5, 10, 15, 30 s, and run at once on `online` or when the window is shown again); support contact after 5 minutes; never show the server URL or IP. The return address must be on the saved server, otherwise the app goes back to `/admin`.
+- Support contact comes from the server (`<meta name="zx-support">`: brand vendor, phone, e-mail), so a reseller's clients see the reseller. The app keeps it (`remember_support`) for when the server is out of reach, and falls back to SyncLytics'.

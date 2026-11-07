@@ -30,6 +30,9 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 ## Industry confinement — branch `industry-confinement`
 - `IndustryContext` (`selected`, `companyWide`, `choices`, `sharingAllowed`, `productScope`), `CatalogService::industryFor`, `SharedProducts`, `SharedProductsPage`, `CompanyWideAccess`, `AccessService::mayBeCompanyWide` and `narrow`. Settings `catalog.shared_products`, `access.company_wide`. Tests: IndustryConfinementTest.
 
+## Desktop reconnect screen — branch `desktop-offline-screen`
+- `desktop/src-tauri/src/lib.rs` (`watch_connection`, `open_offline`, `remember_support`, Support in config), `setup/index.html` reconnect mode, capabilities and build.rs commands, `zx-support` meta in AdminPanelProvider. ZionEX Suite 1.0.3.
+
 ## Barcodes per industry — branch `barcodes-per-industry`
 - Migration `2026_12_21_100001_barcodes_per_industry`, `Barcode::scanned/industryOf/inSeveralIndustries`, `CatalogService::barcodeClash/moveBarcodes`, StockRows/OrderImporter/WmsController in the store's industry. Tests: BarcodesPerIndustryTest.
 ## Large imports in the background — branch `background-imports`
