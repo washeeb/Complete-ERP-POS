@@ -1,6 +1,6 @@
 [package]
 name = "erp-till"
-version = "0.30.0"
+version = "0.30.1"
 description = "The till app for Windows with silent receipt printing, cash drawer and scale"
 authors = ["SyncLytics"]
 edition = "2021"

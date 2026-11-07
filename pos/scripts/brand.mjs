@@ -43,7 +43,7 @@ function ico(images) {
 }
 
 // Back office and server-served pages.
-for (const f of ['mark.svg', 'logo.svg', 'logo-dark.svg']) copyFileSync(join(src, f), join(out.server, f))
+for (const f of ['mark.svg', 'mark-flat.svg', 'mark-mono.svg', 'logo.svg', 'logo-dark.svg', 'logo-mono.svg']) copyFileSync(join(src, f), join(out.server, f))
 copyFileSync(join(src, 'mark.svg'), join(out.server, 'favicon.svg'))
 writeFileSync(join(out.server, 'favicon-32.png'), await png(mark, 32))
 writeFileSync(join(out.server, 'apple-touch-icon.png'), await png(mark, 180, { pad: 0.06, background: brand.tile }))
@@ -75,18 +75,21 @@ const conf = JSON.parse(readFileSync(confPath, 'utf8'))
 Object.assign(conf, { productName: brand.tillProductName ?? `${brand.name} Till`, identifier: brand.tillIdentifier ?? `app.${slug}.till` })
 for (const w of conf.app?.windows ?? []) w.title = brand.tillTitle ?? `${brand.name} Till`
 const company = brand.company ?? brand.name
-Object.assign(conf.bundle, { publisher: company, copyright: `Copyright © ${company}`, shortDescription: `${brand.name} till`,
-  longDescription: `The ${brand.name} till with silent receipt printing (ESC/POS), cash drawer and scale support. It opens the till from your business server.` })
+Object.assign(conf.bundle, { publisher: company, copyright: `Copyright © ${company}`, shortDescription: brand.tillTitle ?? `${brand.name} Till`,
+  longDescription: `The ${brand.tillTitle ?? `${brand.name} Till`} app, with silent receipt printing (ESC/POS), cash drawer and scale support. It opens the till from your business server.` })
 writeFileSync(confPath, JSON.stringify(conf, null, 2) + '\n')
 
-// Desktop till: Tauri generates every platform icon from one 1024 px PNG.
-writeFileSync(join(out.tauri, 'app-icon.png'), await png(mark, 1024))
+// Desktop apps (the till and ZionEX Suite): Tauri generates every platform icon from one 1024 px PNG.
+const icon = await png(mark, 1024)
 await browser.close()
-try {
-  execFileSync(process.platform === 'win32' ? 'npx.cmd tauri icon app-icon.png' : 'npx tauri icon app-icon.png', { cwd: out.tauri, stdio: 'inherit', shell: true })
-  rmSync(join(out.tauri, 'icons/android'), { recursive: true, force: true }) // Windows only: no phone icons
-  rmSync(join(out.tauri, 'icons/ios'), { recursive: true, force: true })
-} catch {
-  console.warn('tauri icon failed — run "npx tauri icon app-icon.png" in pos/src-tauri')
+for (const dir of [out.tauri, join(root, 'desktop/src-tauri')]) {
+  writeFileSync(join(dir, 'app-icon.png'), icon)
+  try {
+    execFileSync(process.execPath, [join(here, '../node_modules/@tauri-apps/cli/tauri.js'), 'icon', 'app-icon.png'], { cwd: dir, stdio: 'inherit' }) // the till's Tauri tool serves both
+    rmSync(join(dir, 'icons/android'), { recursive: true, force: true }) // Windows only: no phone icons
+    rmSync(join(dir, 'icons/ios'), { recursive: true, force: true })
+  } catch {
+    console.warn(`tauri icon failed — run "npx tauri icon app-icon.png" in ${dir}`)
+  }
 }
 console.log(`Product brand "${brand.name}" written to server/public/brand, pos/public, pos/src-tauri/icons, installer/windows/app.ico`)

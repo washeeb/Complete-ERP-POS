@@ -1,6 +1,6 @@
 [package]
 name = "zionex-backoffice"
-version = "1.0.3"
+version = "1.0.4"
 description = "The ZionEX back office as a desktop app for Windows"
 authors = ["SyncLytics"]
 edition = "2021"

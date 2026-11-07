@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 160" role="img" aria-label="ZionEX">
+  <!-- ZionEX logo for dark backgrounds: as logo.svg, with "Zion" light and the tile edged so it shows on navy. -->
+  <g transform="translate(0 5) scale(0.293)">
+    <rect x="8" y="8" width="496" height="496" rx="112" fill="#031E4C" stroke="#5FB7C9" stroke-width="12"/>
+    <path d="M146 146 H366 L146 366 H366" fill="none" stroke="#FFFFFF" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="256" cy="256" r="44" fill="#06AAAA" stroke="#031E4C" stroke-width="14"/>
+    <circle cx="146" cy="146" r="22" fill="#06AAAA"/>
+    <circle cx="366" cy="366" r="22" fill="#06AAAA"/>
+  </g>
+  <g fill="none" stroke-width="17" stroke-linecap="round" stroke-linejoin="round">
+    <g stroke="#E8EEF6">
+      <path d="M192 38 H262 L192 122 H264"/>
+      <path d="M296 70 V122"/>
+      <circle cx="350" cy="96" r="27"/>
+      <path d="M408 70 V122 M408 96 A26 26 0 0 1 460 96 V122"/>
+    </g>
+    <g stroke="#3FBFC4">
+      <path d="M560 38 H502 V122 H560 M502 80 H550"/>
+      <path d="M590 38 L656 122 M656 38 L590 122"/>
+    </g>
+  </g>
+  <circle cx="296" cy="44" r="10" fill="#E8EEF6"/>
+</svg>
