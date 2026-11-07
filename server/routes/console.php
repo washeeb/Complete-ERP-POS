@@ -11,6 +11,7 @@ Artisan::command('inspire', function () {
 
 // Node sync with head office / branch servers (does nothing until peers are configured).
 Schedule::command('erp:sync')->everyMinute()->withoutOverlapping(10)->runInBackground();
+Schedule::command('erp:imports')->everyMinute()->runInBackground(); // large imports waiting in the background (its own lock: one at a time)
 
 // Live updates, store pushes and incoming store orders (each run loops ~55 s).
 Schedule::command('erp:relay')->everyMinute()->withoutOverlapping(2)->runInBackground();

@@ -1199,3 +1199,10 @@ Design:
 ## Opening stock by barcode or name (2026-11-07)
 - A new shop's stock sheet lists products before they have SKUs, many without barcodes. `StockRows::productOrName` uses the SKU, then the barcode, then the exact name (spaces and case ignored) among the warehouse's industry and shared products. Two products with that name are refused, never guessed. Only the opening stock file matches by name; adjustments and counts still need an SKU or barcode.
 - An empty or zero quantity is skipped, so one sheet can list every product and be uploaded after the count. A product left out can be loaded later the same way.
+
+## Large imports in the background (2026-11-07)
+- A supermarket's 2,467 products failed with "Something went wrong on the server". Import checks the whole file and then imports it, two passes of about 2 minutes each on the client's server, and Caddy gives a request 5 minutes (`read_timeout 300s`). The progress card froze because it kept the last figure when the server stopped reporting.
+- Files over `ImportService::$backgroundFrom` (500 rows) are saved as a `queued` DataImport and run by `erp:imports`, the same `run()` updating that record. It is scheduled every minute with its own cache lock (one at a time) and also started straight after the upload where PHP-FPM can finish the response first (`fastcgi_finish_request`). No queue worker is needed, so Ubuntu, Windows and Docker installs work unchanged. The person gets a database notification. A `running` import untouched for 3 hours is marked failed. Smaller files stay instant.
+- The same file (hash) cannot be queued twice while waiting or running. The page polls every 2 s while its import is waiting or running.
+- Time left: seconds only under a minute (`Progress::timeLeft`, and the same in the progress card).
+- Installer (Ubuntu): the cron file is moved aside before the backup and code swap, and the script waits up to 15 minutes for `schedule:run` / `erp:*` processes of that copy's user. An EXIT trap puts it back if the update stops, and step 8 writes it again. Windows already stopped its scheduled tasks during an update.
