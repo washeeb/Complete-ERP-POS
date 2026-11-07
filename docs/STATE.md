@@ -30,6 +30,8 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 ## Industry confinement — branch `industry-confinement`
 - `IndustryContext` (`selected`, `companyWide`, `choices`, `sharingAllowed`, `productScope`), `CatalogService::industryFor`, `SharedProducts`, `SharedProductsPage`, `CompanyWideAccess`, `AccessService::mayBeCompanyWide` and `narrow`. Settings `catalog.shared_products`, `access.company_wide`. Tests: IndustryConfinementTest.
 
+## Barcodes per industry — branch `barcodes-per-industry`
+- Migration `2026_12_21_100001_barcodes_per_industry`, `Barcode::scanned/industryOf/inSeveralIndustries`, `CatalogService::barcodeClash/moveBarcodes`, StockRows/OrderImporter/WmsController in the store's industry. Tests: BarcodesPerIndustryTest.
 ## Large imports in the background — branch `background-imports`
 - `ImportService::queue/runQueued/abandonStale`, `$backgroundFrom` (500), `erp:imports` (every minute, own lock), DataImport statuses `queued`/`running`, page progress (`ImportData::background`), `Progress::timeLeft`, progress card stale message. Tests: BackgroundImportTest.
 

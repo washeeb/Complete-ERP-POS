@@ -168,7 +168,10 @@ final class CatalogService
             if (self::systemSku($product->sku)) {
                 $product->sku = $this->nextSku($actor->tenantId, $industryId); // a system-given SKU follows the industry's series
             }
-            $this->recorder->save($actor, $product, 'product.updated', 'Moved to another industry');
+            $this->recorder->transaction(function () use ($actor, $product) {
+                $this->recorder->save($actor, $product, 'product.updated', 'Moved to another industry');
+                $this->moveBarcodes($product);
+            });
             $moved++;
         }
 
@@ -373,6 +376,9 @@ final class CatalogService
                 $product->created_by = $actor->id;
             }
             $this->recorder->save($actor, $product, $isNew ? 'product.created' : 'product.updated', $reason);
+            if (! $isNew && $product->wasChanged('industry_id')) {
+                $this->moveBarcodes($product);
+            }
 
             $summary = [];
             if (array_key_exists('units', $data) || $isNew || $oldBaseUom) {
@@ -764,6 +770,26 @@ final class CatalogService
         return $changes;
     }
 
+    /** Another unit's barcode that this product may not share: in the same industry, or either of them shared. */
+    private function barcodeClash(string $code, Product $product, ?string $exceptUomId = null): ?Barcode
+    {
+        return Barcode::where('code', $code)->when($exceptUomId, fn ($q) => $q->where('product_uom_id', '!=', $exceptUomId))
+            ->when($product->industry_id, fn ($q, $industry) => $q->where(fn ($w) => $w->whereNull('industry_id')->orWhere('industry_id', $industry)))
+            ->with('product')->first();
+    }
+
+    /** A product moved to another industry takes its barcodes along, unless one is already used there. */
+    private function moveBarcodes(Product $product): void
+    {
+        foreach (Barcode::where('product_id', $product->id)->get() as $b) {
+            $clash = $this->barcodeClash($b->code, $product);
+            if ($clash && $clash->product_id !== $product->id) {
+                throw new DomainException("{$product->name}: barcode {$b->code} already belongs to {$clash->product->name} ({$clash->product->sku}) there.");
+            }
+        }
+        Barcode::where('product_id', $product->id)->update(['industry_id' => $product->industry_id]);
+    }
+
     private function syncBarcodes(Actor $actor, Product $product, ProductUom $pu, array $codes, array &$changes): void
     {
         $codes = array_values(array_unique(array_filter(array_map(fn ($c) => trim((string) $c), $codes))));
@@ -771,7 +797,8 @@ final class CatalogService
             if (! preg_match('/^[A-Za-z0-9\-.]{3,64}$/', $code)) {
                 throw new DomainException("Barcode “{$code}” has invalid characters.");
             }
-            $clash = Barcode::where('code', $code)->where('product_uom_id', '!=', $pu->id)->with('product')->first();
+            // Unique within an industry; a shared product's code stands alone (owner 2026-11-07).
+            $clash = $this->barcodeClash($code, $product, $pu->id);
             if ($clash && $clash->product_id !== $product->id) {
                 throw new DomainException("Barcode {$code} already belongs to {$clash->product->name} ({$clash->product->sku}).");
             }
@@ -782,7 +809,7 @@ final class CatalogService
         }
         $current = $pu->barcodes()->pluck('code')->all();
         foreach (array_diff($codes, $current) as $code) {
-            $b = new Barcode(['product_id' => $product->id, 'product_uom_id' => $pu->id, 'code' => $code]);
+            $b = new Barcode(['product_id' => $product->id, 'product_uom_id' => $pu->id, 'industry_id' => $product->industry_id, 'code' => $code]);
             $b->tenant_id = $actor->tenantId;
             $b->save();
             $changes[] = "+barcode {$code}";

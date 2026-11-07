@@ -24,6 +24,7 @@ When a company runs more than one kind of business, each kind is an **industry**
   - That industry's tills sell only its products.
   - Products created before industries are *shared* (sold everywhere) until you give them an industry (Catalog → Products → edit → Industry).
 - **Every product belongs to an industry.** The Industry field is required, and shows only the industries you work in. Why: an item left in "All industries" shows on every shop's tills.
+- **The same item in two shops** (Lactogen at the pharmacy and at the supermarket): each industry has its own product, with its own name, price and stock, and both keep the barcode on the pack. A till, a handheld and a stock file read the barcode in their own shop's industry. Within one industry a barcode is still on one product only. **Why:** each shop prices and names its goods its own way, while the scanner still knows which product is meant. At head office (no industry) a barcode on two shops' products is refused: give the SKU instead.
 - **Shared items** are for things every shop really sells, such as carrier bags. Only someone with company-wide access can choose *Shared by all industries*. To stop them altogether, use Settings → Stock → *Products shared by every industry*.
 - **Tidying shared items:** Catalog → Shared products lists every product in no industry, with where it has stock or sales.
   - Tick products and press **Move to suggested industry**. Products with no suggestion stay where they are.

@@ -6,6 +6,8 @@
 - **Errors in the server log during an update** ("bootstrap/cache must be present", "Class view does not exist"): the Ubuntu installer now pauses the scheduled tasks while it replaces the code, waits for running ones (a background import included) to finish, and starts them again at the end, or if the update stops.
 - **Progress card:** the time left shows seconds only under a minute (*About 3 min 20 s left*), and the card says so when the server stops reporting, instead of freezing on the last figure.
 ### Changed
+- **The same barcode in each industry:** the pharmacy and the supermarket can each have their own product for an item both sell, with the pack's barcode. Tills, handhelds, stock files and supplier order files read a barcode in their own shop's industry. A barcode is still unique within an industry, and a shared product's barcode stays on that product alone. Moving a product to another industry takes its barcodes along, or is refused if one is already used there.
+### Changed
 - **Opening stock as a count sheet:** the opening stock file finds each product by SKU, barcode or exact name, so a new shop's list works before products have SKUs. Rows with no quantity (not counted) are skipped instead of refused.
 ### Changed
 - **Codes given by the system:** branches (Pharmacy Osu → PHAOSU), stores (PHAOSU-W2), tills (T03), vans (V01), departments, price lists and tax groups (STAFF_PRICE), kitchen stations, routes, work centres, recipes, styles, asset classes, membership plans, and the licence app's clients, plans and add-ons. The code field is read-only and never changes. Account numbers, shelf bins and table numbers stay typed, with the next one suggested.
