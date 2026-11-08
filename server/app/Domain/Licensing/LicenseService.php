@@ -89,7 +89,7 @@ final class LicenseService
             'installation_id' => DB::table('system_meta')->where('key', 'installation_id')->value('value'),
             'fingerprint' => MachineFingerprint::get(),
             'build_id' => $m['build_id'], 'tampered' => ! $m['ok'], 'problems' => array_slice($m['problems'], 0, 20),
-            'counts' => ['branches' => DB::table('branches')->count(), 'devices' => DB::table('devices')->where('status', 'active')->count(),
+            'counts' => ['branches' => DB::table('branches')->whereNull('archived_at')->count(), 'devices' => DB::table('devices')->where('status', 'active')->count(),
                 'users' => User::licensedCount()],
             'version' => (string) config('app.version', 'dev'), 'nonce' => Str::random(24), 'sent_at' => now()->toIso8601String(),
         ];

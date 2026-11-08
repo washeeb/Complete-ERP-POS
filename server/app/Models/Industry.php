@@ -20,7 +20,7 @@ class Industry extends Model
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean', 'sort' => 'integer'];
+        return ['is_active' => 'boolean', 'sort' => 'integer', 'archived_at' => 'datetime'];
     }
 
     /** Active industries whose module the licence covers (pickers for branches, products and price lists). */

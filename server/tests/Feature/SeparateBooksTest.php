@@ -7,6 +7,7 @@ use App\Domain\Finance\JournalService;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Inventory\StockRequestService;
 use App\Domain\Inventory\TransferService;
+use App\Domain\Org\ArchiveService;
 use App\Domain\Org\IndustryService;
 use App\Domain\Org\OrgService;
 use App\Domain\Support\DomainException;
@@ -57,8 +58,8 @@ it('keeps one primary company, and gives a registered industry its own books and
         ->and($this->b['P1']->fresh()->legalEntity->tin)->toBe('C0000000001');
     expect(fn () => app(OrgService::class)->saveLegalEntity(actorFor($this->owner), $this->group->fresh(), ['is_primary' => false]))
         ->toThrow(DomainException::class, 'always one');
-    expect(fn () => app(OrgService::class)->saveLegalEntity(actorFor($this->owner), $this->pharmaCo->fresh(), ['is_active' => false]))
-        ->toThrow(DomainException::class, 'in use');
+    expect(fn () => app(ArchiveService::class)->archive(actorFor($this->owner), $this->pharmaCo->fresh(), 'Not needed'))
+        ->toThrow(DomainException::class, 'cannot be archived yet');
 });
 
 it('balances every entry inside each company and books what they owe each other', function () {

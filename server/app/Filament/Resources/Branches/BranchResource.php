@@ -8,6 +8,7 @@ use App\Filament\Resources\Branches\Pages\EditBranch;
 use App\Filament\Resources\Branches\Pages\ListBranches;
 use App\Filament\Resources\Branches\RelationManagers\TillsRelationManager;
 use App\Filament\Resources\Branches\RelationManagers\WarehousesRelationManager;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\GlobalSearch;
 use App\Models\Branch;
@@ -19,7 +20,6 @@ use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -90,7 +90,7 @@ class BranchResource extends Resource
                 TextInput::make('code')->disabled()->dehydrated(false)->placeholder('Given automatically when saved')
                     ->helperText('Made from the name (Pharmacy Osu → PHAOSU). Appears in receipt and invoice numbers, so it never changes.'),
                 TextInput::make('name')->required()->maxLength(120),
-                Select::make('legal_entity_id')->label('Legal entity')->options(fn () => LegalEntity::pluck('name', 'id')),
+                Select::make('legal_entity_id')->label('Legal entity')->options(fn ($state) => LegalEntity::choices($state)),
                 Select::make('industry_id')->label('Industry')->options(fn () => Industry::licensed()->orderBy('sort')->pluck('name', 'id'))
                     ->placeholder('Company-level (head office, central warehouse)')->visibleOn('edit')
                     ->helperText('One industry per branch: switching its industry module on (Company → Modules) sets it too.'),
@@ -98,8 +98,6 @@ class BranchResource extends Resource
                 TextInput::make('address')->maxLength(255)->columnSpanFull(),
                 TextInput::make('tills')->label('Tills to create')->numeric()->minValue(0)->maxValue(50)->default(1)
                     ->required()->visibleOn('create')->dehydrated(),
-                Toggle::make('is_active')->label('Active')->default(true)->visibleOn('edit')
-                    ->helperText('Inactive branches keep their history but cannot trade.'),
                 TextInput::make('reason')->label('Reason for change')->maxLength(255)->visibleOn('edit')->dehydrated(),
             ]),
             // Only on a branch that runs Pharmacy (owner 2026-11-07: a grocery branch was shown pharmacy rules).
@@ -153,11 +151,12 @@ class BranchResource extends Resource
                     ->state(fn (Branch $r) => $r->modules->where('status', '!=', 'disabled')
                         ->map(fn ($m) => (app(ModuleRegistry::class)->has($m->module_key) ? app(ModuleRegistry::class)->get($m->module_key)->name : $m->module_key)
                             .($m->status === 'reserved' ? ' (reserved)' : ''))->implode(', ')),
-                IconColumn::make('is_active')->label('Active')->boolean(),
+                ArchiveUi::column(),
             ])
             ->modifyQueryUsing(fn (Builder $query) => $query->with('modules'))
             ->defaultSort('code')
-            ->recordActions([EditAction::make()]);
+            ->filters([ArchiveUi::filter()])
+            ->recordActions([EditAction::make(), ArchiveUi::archive('branch'), ArchiveUi::restore()]);
     }
 
     public static function getRelations(): array

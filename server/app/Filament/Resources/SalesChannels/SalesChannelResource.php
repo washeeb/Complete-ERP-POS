@@ -93,7 +93,7 @@ class SalesChannelResource extends Resource
                     ->helperText('Marketplaces (Jumia, Glovo, Bolt Food, WhatsApp) are planned and appear here once their connectors exist.'),
                 TextInput::make('name')->required()->maxLength(80),
                 Select::make('branch_id')->label('Fulfilling branch')->required()->live()
-                    ->options(fn () => Branch::orderBy('code')->pluck('name', 'id'))
+                    ->options(fn ($state) => Branch::choices($state))
                     ->afterStateUpdated(fn ($set) => $set('warehouse_id', null)),
                 Select::make('warehouse_id')->label('Stock from warehouse')->required()
                     ->options(fn (Get $get) => Warehouse::where('branch_id', $get('branch_id'))->orderBy('name')->pluck('name', 'id')),

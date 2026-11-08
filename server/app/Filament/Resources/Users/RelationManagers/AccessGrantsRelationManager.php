@@ -74,10 +74,10 @@ class AccessGrantsRelationManager extends RelationManager
                             ->options(collect(ScopeType::cases())->mapWithKeys(fn ($s) => [$s->value => $s->label()])),
                         Select::make('scope_id')->label('Which one')->required(fn (Get $get) => $get('scope_type') && $get('scope_type') !== 'tenant')
                             ->visible(fn (Get $get) => $get('scope_type') && $get('scope_type') !== 'tenant')
-                            ->options(fn (Get $get) => match ($get('scope_type')) {
-                                'legal_entity' => LegalEntity::pluck('name', 'id'),
+                            ->options(fn (Get $get, $state) => match ($get('scope_type')) {
+                                'legal_entity' => LegalEntity::choices($state),
                                 'industry' => Industry::licensed()->orderBy('sort')->pluck('name', 'id'),
-                                'branch' => Branch::orderBy('code')->get()->mapWithKeys(fn ($b) => [$b->id => "{$b->code} · {$b->name}"]),
+                                'branch' => Branch::choices($state, 'both'),
                                 'warehouse' => Warehouse::orderBy('code')->get()->mapWithKeys(fn ($w) => [$w->id => "{$w->code} · {$w->name}"]),
                                 'till' => Till::with('branch')->get()->mapWithKeys(fn ($t) => [$t->id => "{$t->branch->code}-{$t->code} · {$t->name}"]),
                                 default => [],

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Industries;
 use App\Domain\Modules\ModuleService;
 use App\Domain\Org\IndustryService;
 use App\Filament\Resources\Industries\Pages\ListIndustries;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Models\Industry;
 use App\Models\LegalEntity;
@@ -14,11 +15,9 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -65,11 +64,10 @@ class IndustryResource extends Resource
                 ->helperText('Starts the codes of this industry\'s new products (e.g. GROCER-000001). It never changes.'),
             TextInput::make('name')->required()->maxLength(120),
             Select::make('module_key')->label('Industry module its branches run')->required()->options($modules),
-            Select::make('legal_entity_id')->label('Books (legal entity)')->options(fn () => LegalEntity::where('is_active', true)->where('is_primary', false)->pluck('name', 'id'))
+            Select::make('legal_entity_id')->label('Books (legal entity)')->options(fn ($state) => LegalEntity::choices($state, withHeadOffice: false))
                 ->placeholder('The head office company (one set of books)')
                 ->helperText('Only when this industry is registered as its own company (Company → Legal entities). Its branches then keep separate books and print that company\'s name and TIN. Change it at the start of a financial year.'),
             TextInput::make('sort')->label('Order')->numeric()->integer()->default(0),
-            Toggle::make('is_active')->label('In use')->default(true),
         ]);
     }
 
@@ -84,11 +82,12 @@ class IndustryResource extends Resource
                 TextColumn::make('module_key')->label('Module')->formatStateUsing(fn (string $state) => app(ModuleRegistry::class)->has($state) ? app(ModuleRegistry::class)->get($state)->name : $state),
                 TextColumn::make('branches_count')->counts('branches')->label('Branches'),
                 TextColumn::make('legalEntity.name')->label('Books')->placeholder('The company'),
-                IconColumn::make('is_active')->boolean()->label('In use'),
+                ArchiveUi::column(),
             ])
             ->defaultSort('sort')
+            ->filters([ArchiveUi::filter()])
             ->headerActions([CreateAction::make()->label('New industry')->using(fn (array $data) => $save(null, $data))->visible(fn () => Erp::can('setup.company.manage'))])
-            ->recordActions([EditAction::make()->using(fn (Industry $record, array $data) => $save($record, $data))]);
+            ->recordActions([EditAction::make()->using(fn (Industry $record, array $data) => $save($record, $data)), ArchiveUi::archive('industry'), ArchiveUi::restore()]);
     }
 
     public static function getPages(): array

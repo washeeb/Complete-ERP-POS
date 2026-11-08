@@ -97,7 +97,7 @@ class CompanyWideAccess extends Page implements HasTable
                         Select::make('scope_id')->label('Which one')->required()->searchable()
                             ->options(fn (Get $get) => $get('scope_type') === ScopeType::Industry->value
                                 ? Industry::licensed()->orderBy('sort')->pluck('name', 'id')
-                                : Branch::orderBy('code')->get()->mapWithKeys(fn ($b) => [$b->id => "{$b->code} · {$b->name}"])),
+                                : Branch::choices(null, 'both')),
                     ])
                     ->action(fn (RoleAssignment $record, array $data) => Erp::run(fn ($actor) => app(AccessService::class)
                         ->narrow($actor, $record, ScopeType::from($data['scope_type']), $data['scope_id']), 'Access changed')),
