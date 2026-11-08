@@ -1,7 +1,7 @@
 {{-- Progress of long work (imports, bulk changes): shown when a request runs for more than a second and reports a count. --}}
 <div id="ses-progress" hidden role="status" aria-live="polite"
     style="position:fixed;right:16px;bottom:16px;z-index:60;min-width:280px;max-width:min(420px,calc(100vw - 32px));padding:12px 14px;border-radius:12px;background:#031E4C;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.25);font-size:.875rem">
-    <div class="ses-progress-label" style="font-weight:600;margin-bottom:8px">Working…</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;--zx-ink:#e5e7eb;--zx-mist:#1e4e5a">@include('branding.loader', ['size' => 22])<div class="ses-progress-label" style="font-weight:600">Working…</div></div>
     <div style="height:8px;border-radius:999px;background:rgba(255,255,255,.2);overflow:hidden">
         <span class="ses-progress-bar" style="display:block;height:100%;width:0;background:#06AAAA;transition:width .4s"></span>
     </div>

@@ -27,6 +27,9 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 | 4 | Service desk (tickets) and asset maintenance | paid add-on — branch `service-desk` |
 | 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid add-on — branch `iot` |
 
+## ZionEX loader — branch `logo-loader`
+- `branding/product/loader.svg` (one source) → `pos/scripts/brand-loader.mjs` (`npm run brand:loader`, also in `npm run brand`) copies it to `server/public/brand`, `pos/src/assets` and the opening pages (`pos/index.html`, both `src-tauri/setup/index.html`, between `<!-- zx-loader -->` markers). Back office: `App\Support\Loader`, `branding/loader` view, `layout/page-loader` (Navigation API, 0.5 s delay), progress card. Till: `LogoLoader.tsx`. Till 0.30.3, Suite 1.0.6. Test: LogoLoaderTest.
+
 ## Industry confinement — branch `industry-confinement`
 - `IndustryContext` (`selected`, `companyWide`, `choices`, `sharingAllowed`, `productScope`), `CatalogService::industryFor`, `SharedProducts`, `SharedProductsPage`, `CompanyWideAccess`, `AccessService::mayBeCompanyWide` and `narrow`. Settings `catalog.shared_products`, `access.company_wide`. Tests: IndustryConfinementTest.
 

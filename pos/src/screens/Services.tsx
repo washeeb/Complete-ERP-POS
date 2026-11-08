@@ -3,6 +3,7 @@ import { services as api } from '../api'
 import { byStaff, coveringItems, hhmm, isService, slots } from '../services'
 import type { CartLine } from '../cart'
 import type { Appointment, Product, Services, ServicePass, StaffMember, TillCustomer } from '../types'
+import { LogoLoader } from './LogoLoader'
 
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e))
 const today = () => new Date().toLocaleDateString('en-CA')
@@ -125,7 +126,7 @@ export function PassesScreen({ customer, products, lines, onUse, onClose }: {
       <div className="card wide">
         <div className="row spread"><h2>{customer.name}: prepaid passes</h2><button type="button" onClick={onClose}>Back</button></div>
         {error && <p className="error" role="alert">{error}</p>}
-        {passes === null && !error && <p className="muted">Loading…</p>}
+        {passes === null && !error && <LogoLoader variant="small" size={28} />}
         {passes?.length === 0 && <p className="muted">No passes with sessions left.</p>}
         {passes?.map((p) => (
           <section key={p.id} aria-label={p.name}>
