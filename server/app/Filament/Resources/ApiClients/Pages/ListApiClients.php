@@ -32,7 +32,7 @@ class ListApiClients extends ListRecords
                     TextInput::make('name')->label('System (e.g. "Website", "Delivery partner")')->required()->maxLength(120),
                     CheckboxList::make('scopes')->options(array_map(fn ($s) => $s[0], ApiClients::SCOPES))->required()->columns(2),
                     Select::make('user_id')->label('Acts as')->required()->searchable()->options(fn () => User::where('is_active', true)->orderBy('name')->pluck('name', 'id')),
-                    Select::make('branch_id')->label('Only this branch (optional)')->options(fn () => Branch::orderBy('code')->pluck('name', 'id')),
+                    Select::make('branch_id')->label('Only this branch (optional)')->options(fn ($state) => Branch::choices($state)),
                 ])
                 ->action(function (array $data) {
                     $r = Erp::run(fn ($actor) => app(ApiClients::class)->create($actor, $data), 'API client created');

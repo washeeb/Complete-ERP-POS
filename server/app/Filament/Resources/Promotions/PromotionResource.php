@@ -140,7 +140,7 @@ class PromotionResource extends Resource
                 CheckboxList::make('days')->options([1 => 'Mon', 2 => 'Tue', 3 => 'Wed', 4 => 'Thu', 5 => 'Fri', 6 => 'Sat', 7 => 'Sun'])->columns(7)->columnSpanFull(),
                 TimePicker::make('time_from')->label('Happy hour from')->seconds(false),
                 TimePicker::make('time_to')->label('to')->seconds(false),
-                Select::make('branch_ids')->label('Branches')->multiple()->options(fn () => Branch::orderBy('code')->pluck('name', 'id')),
+                Select::make('branch_ids')->label('Branches')->multiple()->options(fn ($state) => Branch::choices($state)),
                 Select::make('price_list_ids')->label('Price lists')->multiple()->options(fn () => PriceList::orderBy('name')->pluck('name', 'id')),
             ]),
         ]);

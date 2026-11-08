@@ -120,7 +120,7 @@ class IotSensorResource extends Resource
                         $set('max_humidity', $maxH);
                     }),
                 Select::make('branch_id')->label('Branch')->required()->options(fn () => Branch::where('is_active', true)->orderBy('code')->pluck('name', 'id'))
-                    ->default(fn () => Branch::orderByDesc('is_hq')->orderBy('code')->value('id')),
+                    ->default(fn () => Branch::where('is_active', true)->orderByDesc('is_hq')->orderBy('code')->value('id')),
                 Select::make('asset_id')->label('Equipment (for breakdown work orders)')->placeholder('—')->searchable()
                     ->options(fn () => MaintenanceAsset::where('owner', 'own')->where('status', '<>', 'retired')->orderBy('number')->get()->mapWithKeys(fn ($a) => [$a->id => "{$a->number} {$a->name}"])),
             ]),

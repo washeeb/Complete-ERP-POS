@@ -30,7 +30,7 @@ class ListSupportAccessGrants extends ListRecords
                 ->visible(fn () => Erp::can('support.access.grant'))
                 ->schema([
                     Radio::make('level')->label('Support may')->required()->default('control')->options(SupportAccessGrant::LEVELS),
-                    Select::make('branch_id')->label('Devices of')->placeholder('Every branch')->options(fn () => Branch::orderBy('code')->pluck('name', 'id')),
+                    Select::make('branch_id')->label('Devices of')->placeholder('Every branch')->options(fn ($state) => Branch::choices($state)),
                     Select::make('until')->label('For')->required()->default('2')->live()->options([
                         '1' => '1 hour', '2' => '2 hours', '4' => '4 hours', '8' => 'The working day (8 hours)', '24' => '24 hours', 'report' => 'Until a problem report is closed',
                     ]),

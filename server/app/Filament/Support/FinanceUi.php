@@ -46,7 +46,7 @@ final class FinanceUi
 
     public static function branches(): array
     {
-        return Branch::orderBy('code')->get()->mapWithKeys(fn ($b) => [$b->id => "{$b->code} · {$b->name}"])->all();
+        return Branch::choices(null, 'both');
     }
 
     public static function hq(): ?string

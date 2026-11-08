@@ -77,9 +77,10 @@ class LicensePage extends Page
         return (new Writer(new ImageRenderer(new RendererStyle(220, 2), new SvgImageBackEnd)))->writeString($this->installationCode());
     }
 
+    /** Archived branches do not count: they free their place. */
     public function usage(): array
     {
-        return ['branches' => DB::table('branches')->count(), 'devices' => DB::table('devices')->where('status', '<>', 'revoked')->count(),
+        return ['branches' => DB::table('branches')->whereNull('archived_at')->count(), 'devices' => DB::table('devices')->where('status', '<>', 'revoked')->count(),
             'users' => User::licensedCount()];
     }
 

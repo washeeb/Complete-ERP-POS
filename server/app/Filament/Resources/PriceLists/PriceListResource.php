@@ -63,7 +63,7 @@ class PriceListResource extends SimpleCatalogResource
             Select::make('industry_id')->label('Industry')->options(fn () => Industry::licensed()->orderBy('sort')->pluck('name', 'id'))
                 ->default(fn () => IndustryContext::selected())->placeholder('All industries (shared)')->visible(fn () => Industry::exists()),
             Select::make('branch_id')->label('Only at branch')->placeholder('All branches')
-                ->options(fn () => Branch::orderBy('code')->get()->mapWithKeys(fn ($b) => [$b->id => "{$b->code} · {$b->name}"])),
+                ->options(fn ($state) => Branch::choices($state, 'both')),
             Toggle::make('is_active')->default(true),
         ]);
     }

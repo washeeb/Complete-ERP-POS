@@ -144,7 +144,7 @@ class GoLive extends Page
                         'dry_run' => 'A full simulated week in the practice company before any real shop.']),
                 DatePicker::make('go_live_on')->label('Go-live date (opening balances are “as of” this date)'),
                 DatePicker::make('parallel_until')->label('Parallel run until')->visible(fn ($get) => $get('cutover_mode') === 'parallel'),
-                Select::make('pilot_branch_ids')->label('Pilot branch(es)')->multiple()->options(fn () => Branch::orderBy('code')->get()->mapWithKeys(fn ($b) => [$b->id => "{$b->code} · {$b->name}"]))
+                Select::make('pilot_branch_ids')->label('Pilot branch(es)')->multiple()->options(fn ($state) => Branch::choices($state, 'both'))
                     ->helperText('Empty = all branches.'),
                 TextInput::make('support_email')->label('Support e-mail (problem reports and the evening pilot report)')->email(),
                 TextInput::make('pilot_report_time')->label('Pilot report time (HH:MM)')->default('19:00'),
@@ -190,7 +190,7 @@ class GoLive extends Page
         return Action::make('parallelDay')->label('Enter a day of the old system')->icon(Heroicon::OutlinedPlus)
             ->modalDescription('The old system’s end-of-day totals for one branch. This system’s totals for the same day are filled in for you.')
             ->schema([
-                Select::make('branch_id')->label('Branch')->options(fn () => Branch::orderBy('code')->get()->mapWithKeys(fn ($b) => [$b->id => "{$b->code} · {$b->name}"]))->required(),
+                Select::make('branch_id')->label('Branch')->options(fn ($state) => Branch::choices($state, 'both'))->required(),
                 DatePicker::make('day')->default(now()->toDateString())->required()->maxDate(now()),
                 TextInput::make('old_sales')->label('Old system: total sales')->required()->numeric(),
                 TextInput::make('old_cash')->label('Old system: cash')->numeric(),
