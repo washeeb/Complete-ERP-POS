@@ -24,6 +24,18 @@ export const SIGNED_OUT = 'Your sign-in on this till has ended. Enter your usern
 /** No call waits longer than this: on a slow network the till carries on (offline queue) instead of hanging. */
 export const DEFAULT_WAIT_MS = 20_000
 
+/**
+ * A signal that gives up after ms. AbortSignal.timeout where the browser has it; otherwise a timer, because the desktop
+ * till runs on the PC's own WebView2, which can be years old on a PC whose updates are off (owner 2026-11-08: a new
+ * supermarket till could not enrol, every request failing as "Cannot reach the server", while Edge on it worked).
+ */
+export function timeoutSignal(ms: number): AbortSignal {
+  if (typeof AbortSignal.timeout === 'function') return AbortSignal.timeout(ms)
+  const c = new AbortController()
+  setTimeout(() => c.abort(new DOMException('The operation timed out.', 'TimeoutError')), ms)
+  return c.signal
+}
+
 async function call<T>(path: string, init: RequestInit & { auth?: 'device' | 'session' | 'none'; timeoutMs?: number } = {}): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json', 'Content-Type': 'application/json' }
   const auth = init.auth ?? 'session'
@@ -35,10 +47,13 @@ async function call<T>(path: string, init: RequestInit & { auth?: 'device' | 'se
   let res: Response
   const { timeoutMs, ...request } = init
   try {
-    res = await fetch(`/api/v1/${path}`, { ...request, headers, signal: request.signal ?? AbortSignal.timeout(timeoutMs ?? DEFAULT_WAIT_MS) })
+    res = await fetch(`/api/v1/${path}`, { ...request, headers, signal: request.signal ?? timeoutSignal(timeoutMs ?? DEFAULT_WAIT_MS) })
   } catch (e) {
     const slow = e instanceof DOMException && (e.name === 'TimeoutError' || e.name === 'AbortError')
-    throw new ApiError('network', slow ? 'The server is slow to answer; the till carries on and sends it shortly.' : 'Cannot reach the server. Check the network cable or Wi-Fi.', 0)
+    // The browser's own reason goes in brackets after the plain words, so support can tell a network that is down
+    // ("Failed to fetch") from a request the till could not build or that something on the PC blocked.
+    const why = !slow && e instanceof Error && e.message ? ` (${e.message})` : ''
+    throw new ApiError('network', slow ? 'The server is slow to answer; the till carries on and sends it shortly.' : `Cannot reach the server. Check the network cable or Wi-Fi.${why}`, 0)
   }
   // A proxy in front of a stopped app server answers 502/503/504: for the till that is the server being down.
   if (GATEWAY_DOWN.includes(res.status)) throw new ApiError('network', 'The server is not answering.', res.status)

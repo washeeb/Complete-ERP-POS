@@ -16,4 +16,14 @@ describe('clientHeader', () => {
     await clientHeader()
     expect(invoke).toHaveBeenCalledTimes(1)
   })
+
+  it('sends only characters a header can carry, keeping the name exact', async () => {
+    const invoke = vi.fn().mockResolvedValue({ computer: 'KOFI’S-CAISSE-ÉTÉ', app: 'ZionEX Till 0.30.3' })
+    ;(globalThis as { __TAURI__?: unknown }).__TAURI__ = { core: { invoke } }
+    const { clientHeader } = await import('./clientInfo')
+    const header = (await clientHeader())!
+    expect(/^[\x20-\x7e]*$/.test(header)).toBe(true)
+    expect(() => new Headers({ 'X-SES-Client': header })).not.toThrow()
+    expect(JSON.parse(header).computer).toBe('KOFI’S-CAISSE-ÉTÉ')
+  })
 })
