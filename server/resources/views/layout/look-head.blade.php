@@ -23,9 +23,14 @@
         const root = document.documentElement
         if (!root.classList.contains('zx-new')) return
         let slim = false, queued = false
+        // Where things pin: the bottom of the bars across the top of the window (the top bar, and the tab band when it
+        // is there). Only bars count: the side menu is also a "Main menu" but runs down the side, so anything taller
+        // than a quarter of the window is left out, and the result is capped (owner 2026-11-08: in the side-menu look
+        // the whole menu was measured, pinning the title halfway down and squashing lists).
         const stick = () => {
-            const band = [...document.querySelectorAll('nav[aria-label="Main menu"], .fi-topbar-ctn')].filter((e) => e.offsetParent !== null)
-            const bottom = Math.max(0, ...band.map((e) => e.getBoundingClientRect().bottom))
+            const bars = [...document.querySelectorAll('nav[aria-label="Main menu"], .fi-topbar-ctn')].map((e) => e.getBoundingClientRect())
+                .filter((r) => r.height > 0 && r.height < innerHeight / 4 && r.top < 160 && r.bottom > 0)
+            const bottom = Math.min(160, Math.max(0, ...bars.map((r) => r.bottom)))
             if (bottom > 0) root.style.setProperty('--zx-stick', bottom + 'px')
         }
         const scrolled = () => {
