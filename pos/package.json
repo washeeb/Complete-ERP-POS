@@ -13,6 +13,7 @@
     "e2e": "playwright test",
     "manual": "node scripts/manual.mjs",
     "manual:screens": "node scripts/manual-screens.mjs",
+    "check:layout": "node scripts/layout-check.mjs",
     "training": "node scripts/training.mjs",
     "pentest": "node scripts/training.mjs pentest ^0[12]-",
     "brand": "node scripts/brand.mjs",

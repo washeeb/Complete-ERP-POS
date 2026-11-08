@@ -1,6 +1,11 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- **Side-menu look: lists squashed and the title bar pinned halfway down the page** (since the pinned list headings). The top-bar measurement took the side menu's whole height; it now counts only bars across the top. The profile page's sticky contents list and jump links follow the same measurement.
+- **Desktop apps showing the old icon** on the desktop and taskbar: Windows kept it in its icon cache. The installers now refresh the cache (ZionEX Suite 1.0.5, ZionEX Till 0.30.2).
+### Added
+- **Layout check** (`npm run check:layout` in pos): signs in to the dev server and checks every look at desktop and laptop sizes for squashed lists, misplaced title bars, sideways scrolling and menus outside the window.
 ### Changed
 - **New ZionEX artwork:** the Modules mark (a grid of modules like an ERP dashboard, the Z's diagonal in teal) and the name in Sora Bold, in navy and teal. New favicons, browser and home-screen icons, installer icons, and icons for ZionEX Till 0.30.1 and ZionEX Suite 1.0.4. One-colour versions for receipts and print. The brand guide is in `branding/README.md`.
 ### Added
