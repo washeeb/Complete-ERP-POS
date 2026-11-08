@@ -8,6 +8,7 @@ import { confirmLeave, useLeaveWarning } from '../unsaved'
 import { act, cachedGet, discard, lookupLocal, updateCopy, waiting, type ActResult } from '../wmsOffline'
 import { CameraScan } from './CameraScan'
 import type { WmsBin, WmsBootstrap, WmsCatalog, WmsCount, WmsOrder, WmsTransfer, WmsUnit, WmsWarehouse } from '../types'
+import { LogoLoader } from './LogoLoader'
 
 /**
  * Warehouse handheld (scanner phone): receive purchase orders, put away into bins, receive transfers, count.
@@ -96,7 +97,7 @@ export function Handheld({ onLogout }: { onLogout: () => void }) {
 
   const wh = boot?.warehouses.find((w) => w.id === whId) ?? null
   if (error && !boot) return <div className="card narrow"><p className="error">{error}</p><button onClick={onLogout}>Sign out</button></div>
-  if (!boot) return <p className="center muted">Loading…</p>
+  if (!boot) return <LogoLoader variant="page" />
   const ctx: Ctx | null = wh ? { wh, catalog, online, refresh: refreshQueue, dirty: setUnsaved } : null
 
   return (
@@ -192,7 +193,7 @@ function Receive({ ctx, done }: { ctx: Ctx; done: (message: string) => void }) {
     return (
       <section className="card">
         <h2>Receive delivery</h2>
-        {orders === null ? <p className="muted">Loading orders…</p> : orders.length === 0 ? <p className="muted">No approved orders waiting for {wh.code}.</p> : (
+        {orders === null ? <LogoLoader variant="small" size={28} text="Loading orders…" /> : orders.length === 0 ? <p className="muted">No approved orders waiting for {wh.code}.</p> : (
           <ul className="hh-list">
             {orders.map((o) => (
               <li key={o.id}><button onClick={() => { setPo(o); setNow({}) }}><strong>{o.number}</strong> · {o.supplier}{o.expected_on ? <span className="muted"> · due {o.expected_on}</span> : null}</button></li>
@@ -325,7 +326,7 @@ function Transfers({ ctx, done }: { ctx: Ctx; done: (message: string) => void })
     return (
       <section className="card">
         <h2>Receive transfer</h2>
-        {list === null ? <p className="muted">Loading…</p> : list.length === 0 ? <p className="muted">Nothing in transit to {wh.code}.</p> : (
+        {list === null ? <LogoLoader variant="small" size={28} /> : list.length === 0 ? <p className="muted">Nothing in transit to {wh.code}.</p> : (
           <ul className="hh-list">{list.map((x) => <li key={x.id}><button onClick={() => { setT(x); setGot({}) }}><strong>{x.number}</strong> from {x.from}</button></li>)}</ul>
         )}
         {note && <p className="error">{note}</p>}
@@ -414,7 +415,7 @@ function Count({ ctx, done: finish }: { ctx: Ctx; done: (message: string) => voi
     return (
       <section className="card">
         <h2>Count stock</h2>
-        {counts === null ? <p className="muted">Loading…</p> : (
+        {counts === null ? <LogoLoader variant="small" size={28} /> : (
           <ul className="hh-list">{counts.map((x) => <li key={x.id}><button onClick={() => setC(x)}><strong>{x.number}</strong>{x.bin ? ` · bin ${x.bin}` : ' · whole warehouse'}</button></li>)}
             {counts.length === 0 && <li className="muted">No count open.</li>}</ul>
         )}

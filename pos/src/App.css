@@ -262,6 +262,14 @@ form.scan input { flex: 1; min-width: 0; }
 .spinner { width: 18px; height: 18px; flex: none; border: 3px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 0.9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 3s; } }
+/* ZionEX loader (LogoLoader): the Modules mark coming together, in the till's colours. */
+:root { --zx-ink: #031E4C; --zx-mist: #BFEDEA; --zx-teal: #06AAAA; }
+:root[data-theme="dark"] { --zx-ink: #e5e7eb; --zx-mist: #1e4e5a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --zx-ink: #e5e7eb; --zx-mist: #1e4e5a; } }
+.logo-loader { display: grid; justify-items: center; gap: 12px; padding: 24px 0; color: var(--muted); }
+.logo-loader.page { min-height: 70vh; place-content: center; }
+.logo-loader.small { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+.logo-loader svg { display: block; }
 .camera-scan { max-width: 520px; width: 100%; display: grid; gap: 10px; }
 .camera-view { width: 100%; max-height: 60vh; border-radius: 10px; background: #000; object-fit: cover; }
 

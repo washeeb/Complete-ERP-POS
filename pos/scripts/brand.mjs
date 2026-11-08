@@ -92,4 +92,5 @@ for (const dir of [out.tauri, join(root, 'desktop/src-tauri')]) {
     console.warn(`tauri icon failed — run "npx tauri icon app-icon.png" in ${dir}`)
   }
 }
+await import('./brand-loader.mjs') // the loader animation, same source everywhere
 console.log(`Product brand "${brand.name}" written to server/public/brand, pos/public, pos/src-tauri/icons, installer/windows/app.ico`)

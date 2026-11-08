@@ -7,6 +7,7 @@ import { describeChoices, groupsFor, heldCourses, kitchenNote, minutesSince, mod
 import { BookingsPanel, DeliveryDialog, WasteDialog } from './RestaurantExtras'
 import type { DiningItem, DiningOrder, DiningTable, Floor as FloorData, Product, Restaurant } from '../types'
 import { SignedIn } from './SignedIn'
+import { LogoLoader } from './LogoLoader'
 
 const COURSES = ['Now', 'Starter', 'Main', 'Dessert'] as const
 const STATUS: Record<DiningItem['status'], string> = { held: 'Waiting', fired: 'In kitchen', ready: 'Ready', served: 'Served', void: 'Voided' }
@@ -132,7 +133,7 @@ export function FloorView({ products, money, onOpenBill, onClose }: {
           </div>
         </div>
         {error && <p className="error" role="alert">{error}</p>}
-        {!floor ? <p className="muted">Loading the floor…</p> : (
+        {!floor ? <LogoLoader text="Loading the floor…" /> : (
           <>
             {areas.map((area) => (
               <section key={area}>

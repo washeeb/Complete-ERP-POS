@@ -64,6 +64,18 @@ sales survive), and the short name in release and backup file names (`brand.slug
 **ZionEX Suite** on 2026-11-07: the till is *ZionEX Till* (`tillProductName`) and the office app *ZionEX Suite*; their
 installers remove the copies under the earlier names (`installer-hooks.nsh`). An older server's `.env` with `BRAND_NAME="SES Labs"` shows ZionEX.
 
+### The loader
+
+`product/loader.svg` is the ZionEX loader: the Modules mark coming together. A wave runs across the nine modules from
+the top left, and the Z's diagonal lights as one as it passes. It is the only loading animation in the product:
+- in the back office, when a page takes more than half a second to open and on the progress card;
+- in the till, while it starts and on its loading lists;
+- on the opening screens of ZionEX Till and ZionEX Suite.
+
+Pages inline it, so their theme can set `--zx-ink` (navy, or light grey on dark), `--zx-mist` and `--zx-teal`. It
+stands still, gently fading, for people whose device asks for less motion. After changing it, run
+`npm run brand:loader` in `pos/` (also part of `npm run brand`) to copy it everywhere.
+
 ## Changing the product's logo or name
 
 1. Replace the placeholders in `branding/product/`:
