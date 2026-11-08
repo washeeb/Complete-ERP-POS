@@ -15,9 +15,17 @@ final class Progress
 {
     private const TTL = 900;
 
-    public static function start(string $label, int $total, ?string $userId = null): void
+    /** Tests only: sees every figure written (work inside a run clears its figure at the end). */
+    public static ?\Closure $onPut = null;
+
+    /**
+     * $background: the work runs on the server without anyone waiting on the request (a queued import). Its own page
+     * shows it; the progress card leaves it alone, so a slow page refresh does not pop up someone else's figures.
+     */
+    public static function start(string $label, int $total, ?string $userId = null, bool $background = false): void
     {
-        self::put($userId, ['label' => $label, 'done' => 0, 'total' => max(0, $total), 'at' => now()->getTimestamp(), 'started' => now()->getTimestamp()]);
+        self::put($userId, ['label' => $label, 'done' => 0, 'total' => max(0, $total), 'at' => now()->getTimestamp(),
+            'started' => now()->getTimestamp(), 'background' => $background]);
     }
 
     /** Report how many are done (cheap: written at most about every half second, and always at the end). */
@@ -64,12 +72,22 @@ final class Progress
         return $id ? Cache::store('file')->get("progress:{$id}") : null;
     }
 
-    /** What the progress card shows: nothing when the work stopped reporting (finished, or broke off) 20 s ago. */
+    /**
+     * What the progress card and the import page show: nothing when the work stopped reporting (finished, or broke off)
+     * 20 s ago. "left" is worked out here from when the work started, so every place shows the same time left.
+     */
     public static function live(?string $userId = null): ?array
     {
         $p = self::current($userId);
+        if (! $p || ($p['at'] ?? 0) < now()->getTimestamp() - 20) {
+            return null;
+        }
+        $secs = now()->getTimestamp() - (int) ($p['started'] ?? $p['at']);
+        $p['left'] = $p['done'] > 0 && $p['done'] < $p['total'] && $secs > 0
+            ? self::timeLeft((int) round($secs / $p['done'] * ($p['total'] - $p['done']))) : null;
+        $p['background'] = (bool) ($p['background'] ?? false);
 
-        return $p && ($p['at'] ?? 0) >= now()->getTimestamp() - 20 ? $p : null;
+        return $p;
     }
 
     /**
@@ -98,6 +116,9 @@ final class Progress
     {
         if ($id = $userId ?? Auth::id()) {
             Cache::store('file')->put("progress:{$id}", $value, self::TTL);
+            if (self::$onPut) {
+                (self::$onPut)($value);
+            }
         }
     }
 }

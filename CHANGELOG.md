@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Fixed
+- **Progress card popping up during a background import** with other figures than the page and "About 2 s left. Please keep this page open". The card now shows only work the page is waiting on; a background import shows on its own page. The time left is worked out on the server, so every place shows the same figure. The page no longer repeats the file name and shows the percentage.
 - **Side-menu look: lists squashed and the title bar pinned halfway down the page** (since the pinned list headings). The top-bar measurement took the side menu's whole height; it now counts only bars across the top. The profile page's sticky contents list and jump links follow the same measurement.
 - **Desktop apps showing the old icon** on the desktop and taskbar: Windows kept it in its icon cache. The installers now refresh the cache (ZionEX Suite 1.0.5, ZionEX Till 0.30.2).
 ### Added
