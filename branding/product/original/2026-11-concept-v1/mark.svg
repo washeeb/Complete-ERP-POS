@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ZionEX">
+  <!-- ZionEX mark: a Z whose stroke runs through a central node (the business's central intelligence), its corners
+       linked like a network. Navy tile, white Z, teal nodes. -->
+  <rect x="8" y="8" width="496" height="496" rx="112" fill="#031E4C"/>
+  <path d="M146 146 H366 L146 366 H366" fill="none" stroke="#FFFFFF" stroke-width="46" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="256" cy="256" r="44" fill="#06AAAA" stroke="#031E4C" stroke-width="14"/>
+  <circle cx="146" cy="146" r="22" fill="#06AAAA"/>
+  <circle cx="366" cy="366" r="22" fill="#06AAAA"/>
+</svg>

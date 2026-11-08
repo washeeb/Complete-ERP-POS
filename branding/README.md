@@ -11,15 +11,50 @@ The client's brand leads; a small "Powered by <product>" stays unless the licenc
 
 ## The ZionEX logo
 
-The product is **ZionEX** — *The central intelligence of business* — **powered by SES Labs**, the SyncLytics division that builds it (`brand.division`; renamed from SES Labs on 2026-11-01). Receipts and prints say *ZionEX · Powered by SES Labs*; beside the logo it is *Powered by SES Labs*. The logo is a
-first wordmark made in-house; a designer's version can replace it by the steps below.
+The product is **ZionEX** — *The central intelligence of business* — **powered by SES Labs**, the SyncLytics division that builds it (`brand.division`; renamed from SES Labs on 2026-11-01). Receipts and prints say *ZionEX · Powered by SES Labs*; beside the logo it is *Powered by SES Labs*. The artwork (owner's choices, 2026-11-07) is the **Modules** mark with the name in **Sora Bold**:
 
-- `product/mark.svg` — the icon: a white **Z** on a navy rounded tile (`#031E4C`), its stroke running through a teal
-  node (`#06AAAA`) at the centre, with teal nodes at two corners: the business's central intelligence, linked like a
-  network. Readable at 16 px.
-- `product/logo.svg` — the mark and the name, drawn as strokes (no font needed): *Zion* in navy, *EX* in teal.
-- `product/logo-dark.svg` — the same for dark backgrounds (*Zion* light, the tile edged in light teal).
-- `product/original/` — the earlier SES Labs artwork, kept for the record only.
+- **The mark:** a 3 × 3 grid of rounded modules, like the dashboard of an ERP: every part of the business in one place.
+  The Z's diagonal is teal (the flow that joins them), its top and bottom rows solid, and the two spare modules faint
+  (room for what the business adds next).
+- **The name:** *Zion* in navy, *EX* in teal, set in **Sora** (SIL Open Font License, so usable in a logo) and turned
+  into shapes, so no font is needed anywhere.
+
+Made from one source: `branding/make-artwork.py` (the mark and lock-ups) and `branding/wordmark.json` (the lettering,
+made once from the font by `make-wordmark.py`). Edit those, run `python branding/make-artwork.py`, then `npm run brand`
+in the pos folder for every icon (browser, installers, the till and ZionEX Suite desktop apps). `concepts/` keeps the
+directions that were tried.
+
+**Colours**
+
+| | Hex | Use |
+|---|---|---|
+| Navy | `#031E4C` (tile gradient from `#0A3172`) | *Zion*, the solid modules, the app tile, the product colour (`brand.php` `color`) |
+| Teal | `#06AAAA` (light `#3FD0C9` on dark) | *EX*, the diagonal, accents and progress |
+| Mist | `#BFEDEA` | The spare modules on light backgrounds only |
+
+**Files** (`product/`)
+
+- `mark.svg` — the app icon: the modules on a navy tile. Favicons, installers, the desktop apps, home-screen icons.
+  Readable at 16 px.
+- `mark-flat.svg` — the mark without a tile, for light backgrounds (documents, the web, merchandise).
+- `mark-mono.svg`, `logo-mono.svg` — one colour (`currentColor`, black by default; the spare modules as outlines):
+  receipts, stamps, embroidery, fax.
+- `logo.svg` — the horizontal lock-up for light backgrounds: the mark, then *ZionEX*.
+- `logo-dark.svg` — the same for dark backgrounds (white modules and *Zion*, light teal *EX*).
+- `brand-sheet.png` — every variant on one page, for review.
+
+**Using it**
+
+- **Clear space:** keep at least one module's width empty around the logo.
+- **Minimum size:** the lock-up at least 120 px (25 mm) wide; below that use the mark alone. The mark on its tile works
+  from 16 px.
+- **Don't** stretch it, recolour single modules, add shadows or outlines, put the light logo on a dark background (use
+  `logo-dark.svg`), or set *ZionEX* in another font.
+- The full product name is **ZionEX Suite**; the logo carries *ZionEX*, and "Suite" is written in text beside it where
+  needed (window titles, installers).
+
+- `product/original/` — earlier artwork, kept for the record only: the SES Labs logos and the first ZionEX wordmark
+  (`2026-11-concept-v1/`, the lettering the owner first liked).
 
 **Names that did not change with the rename, on purpose** (changing them would need every server moved and every
 desktop till reinstalled): the Ubuntu folder and services (`/var/www/seslabs`, `seslabs-*`), the Windows folder,

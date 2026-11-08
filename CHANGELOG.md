@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+- **New ZionEX artwork:** the Modules mark (a grid of modules like an ERP dashboard, the Z's diagonal in teal) and the name in Sora Bold, in navy and teal. New favicons, browser and home-screen icons, installer icons, and icons for ZionEX Till 0.30.1 and ZionEX Suite 1.0.4. One-colour versions for receipts and print. The brand guide is in `branding/README.md`.
 ### Added
 - **Reconnect screen in ZionEX Suite (desktop 1.0.3):** when the server can't be reached (no network, server not answering, busy while restarting or updating), the app shows its own screen instead of Edge's error page. It says why, retries by itself, returns to the page the person was on, and after 5 minutes shows the support contact (the server's own: SyncLytics or a reseller). It never shows the server's address.
 ### Changed

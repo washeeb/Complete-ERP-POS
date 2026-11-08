@@ -29,10 +29,12 @@ return [
     'support_email' => env('BRAND_SUPPORT_EMAIL') ?: (env('BRAND_VENDOR') ? null : 'info@synclyticsenterprisesystems.com'),
 
     // The product's colour (back office before a client chooses theirs; online shop accents).
-    'color' => '#031E4C',
+    'color' => '#031E4C', // navy; the artwork's teal is #06AAAA (branding/product/brand.json)
 
     'logo' => '/brand/logo.svg',
     'logo_dark' => '/brand/logo-dark.svg',
     'mark' => '/brand/mark.svg',
+    'mark_flat' => '/brand/mark-flat.svg',
+    'logo_mono' => '/brand/logo-mono.svg',
     'favicon' => '/brand/favicon.svg',
 ];

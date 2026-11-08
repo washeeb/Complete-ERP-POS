@@ -1226,3 +1226,8 @@ Design:
 - Owner: paid for new clients only; cloud and remote destinations only; Oheneba gets it on its key (founding client). Off-site copies already existed (S3-compatible, Google Drive, SFTP, folder), so this gates them rather than building them.
 - `offsite_backup` is in `VendorLicensing::ADDON_FEATURES`: named on the licence, never implied by "all features". `Destinations::allowed()` is checked when a destination is saved (Backups page) and before each copy (`BackupService::run`, which records "not copied" so the run shows partial). The low-level `Destinations` calls stay ungated for tests and restores.
 - Grandfathering: migration `2026_12_22_100001` marks existing s3/gdrive/sftp destinations `grandfathered`. They keep copying and can be edited, but not switched to another paid type. A restore from any destination is never blocked.
+
+## ZionEX artwork (2026-11-07)
+- Four rounds with the owner: his concepts (slanted Z, orange), three tech directions, three ERP directions in navy and teal (liked Hubtel's friendliness), six versions of the Modules mark, then twelve typefaces. Chosen: Modules with a teal diagonal (C), the name in Sora Bold, navy and teal. Every round is kept in `branding/concepts/`.
+- The artwork is generated: `make-artwork.py` draws the mark and lock-ups; `wordmark.json` holds the lettering as shapes, made once from Sora (OFL) by `make-wordmark.py` with fonttools. No font is shipped or needed. `npm run brand` now also makes the ZionEX Suite desktop icons and calls the till's Tauri tool directly.
+- One-colour versions draw the spare modules as outlines, because without tints the grid would otherwise read as an "I".
