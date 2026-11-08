@@ -124,7 +124,7 @@ class CustomerResource extends Resource
                 TextInput::make('tax_no')->label('TIN / Ghana Card')->maxLength(40),
                 Select::make('price_list_id')->label('Price list')->placeholder('Company default')
                     ->options(fn () => PriceList::where('is_active', true)->orderBy('name')->pluck('name', 'id')),
-                Select::make('home_branch_id')->label('Home branch')->options(fn () => Branch::orderBy('code')->pluck('name', 'id')),
+                Select::make('home_branch_id')->label('Home branch')->options(fn ($state) => Branch::choices($state)),
                 Textarea::make('address')->columnSpan(2),
                 TagsInput::make('tags')->placeholder('e.g. wholesale, VIP'),
                 Toggle::make('is_active')->label('Active')->default(true)->inline(false),
@@ -219,7 +219,7 @@ class CustomerResource extends Resource
             Action::make('pay')->label('Record payment')->icon(Heroicon::OutlinedBanknotes)->color('success')
                 ->visible(fn () => Erp::canAnywhere('receivables.collect'))
                 ->schema([
-                    Select::make('branch_id')->label('Received at')->required()->options(fn () => Branch::orderBy('code')->pluck('name', 'id'))
+                    Select::make('branch_id')->label('Received at')->required()->options(fn ($state) => Branch::choices($state))
                         ->default(fn () => Branch::where('is_hq', true)->value('id')),
                     TextInput::make('amount')->required()->numeric()->minValue(0.01),
                     Select::make('method')->required()->options(ReceivablesService::METHODS)->live(),

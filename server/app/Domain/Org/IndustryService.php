@@ -53,7 +53,7 @@ final class IndustryService
         }
         $industry->fill(['code' => $code, 'name' => mb_substr($name, 0, 120), 'module_key' => $module,
             'legal_entity_id' => $entity, 'sort' => (int) ($data['sort'] ?? $industry->sort ?? 0),
-            'is_active' => (bool) ($data['is_active'] ?? true)]);
+            'is_active' => (bool) ($industry->is_active ?? true)]); // archiving changes it (ArchiveService)
         $industry->tenant_id ??= $actor->tenantId;
 
         return $this->recorder->transaction(function () use ($actor, $industry) {

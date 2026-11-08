@@ -61,7 +61,7 @@ class WorkCentreResource extends Resource
         return $schema->columns(2)->components([
             TextInput::make('code')->disabled()->dehydrated(false)->placeholder('Given automatically when saved'),
             TextInput::make('name')->required()->maxLength(255),
-            Select::make('branch_id')->label('Branch')->required()->options(fn () => Branch::orderBy('code')->pluck('name', 'id')),
+            Select::make('branch_id')->label('Branch')->required()->options(fn ($state) => Branch::choices($state)),
             TextInput::make('hourly_rate')->label('Cost per hour (labour + overhead)')->numeric()->minValue(0)->default(0)
                 ->helperText('Wages of the people at this machine plus its running costs (power, wear), per hour. Charged to every order worked here.'),
             TextInput::make('hours_per_day')->label('Hours it runs a day')->numeric()->minValue(0)->maxValue(24)->default(8),

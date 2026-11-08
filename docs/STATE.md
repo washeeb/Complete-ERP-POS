@@ -27,6 +27,9 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 | 4 | Service desk (tickets) and asset maintenance | paid add-on — branch `service-desk` |
 | 5 | IoT: fridge / cold-room sensors with alerts and a regulator's log | paid add-on — branch `iot` |
 
+## Archive industries, legal entities and branches (free) — branch `archive-org`
+- `ArchiveService` (`blockers`, `archive`, `restore`), migration `2026_12_23_100001_archive_org_units` (`archived_at/by`, `archive_reason`, branch `archived_children`; rows already switched off marked archived), `ArchiveUi` (column, filter, actions), `Branch::choices` / `LegalEntity::choices` in the pickers that give something a branch or company. Licence counts leave archived branches out. Test: ArchiveOrgTest.
+
 ## Industry confinement — branch `industry-confinement`
 - `IndustryContext` (`selected`, `companyWide`, `choices`, `sharingAllowed`, `productScope`), `CatalogService::industryFor`, `SharedProducts`, `SharedProductsPage`, `CompanyWideAccess`, `AccessService::mayBeCompanyWide` and `narrow`. Settings `catalog.shared_products`, `access.company_wide`. Tests: IndustryConfinementTest.
 

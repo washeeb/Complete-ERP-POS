@@ -23,7 +23,22 @@ class Branch extends Model
 
     protected function casts(): array
     {
-        return ['is_hq' => 'boolean', 'is_active' => 'boolean', 'settings' => 'array'];
+        return ['is_hq' => 'boolean', 'is_active' => 'boolean', 'settings' => 'array', 'archived_at' => 'datetime', 'archived_children' => 'array'];
+    }
+
+    /**
+     * Branches to choose from: those in use, plus any already on the record being edited, so an older record still
+     * shows its branch after it was archived. $label: name, code or both ("PHAOSU · Pharmacy Osu").
+     */
+    public static function choices(mixed $keep = null, string $label = 'name'): array
+    {
+        $keep = array_values(array_filter((array) $keep, fn ($v) => is_string($v) && $v !== ''));
+
+        return self::query()->where(fn ($q) => $q->where('is_active', true)->when($keep, fn ($q) => $q->orWhereIn('id', $keep)))
+            ->orderBy('code')->get()
+            ->mapWithKeys(fn (self $b) => [$b->id => match ($label) {
+                'code' => $b->code, 'both' => "{$b->code} · {$b->name}", default => $b->name,
+            }.($b->archived_at ? ' (archived)' : '')])->all();
     }
 
     public function industry(): BelongsTo

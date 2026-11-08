@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- **Archive industries, legal entities and branches** created by mistake, never used, or closed. An archived one leaves every list people choose from, while its history stays complete. A reason is required. Archiving refuses, saying what to do first, while it is still in use: a branch with stock, transfers on the way, open shifts or enrolled devices; an industry with branches in use; a legal entity with industries or branches, or the head office company. A branch's stores and tills are switched off with it, and **Restore** brings back exactly those. Archived branches do not count towards the licence. The lists show only those in use unless the filter asks for archived ones. The old *Active* / *In use* switches are replaced by Archive.
 ### Fixed
 - **Side-menu look: lists squashed and the title bar pinned halfway down the page** (since the pinned list headings). The top-bar measurement took the side menu's whole height; it now counts only bars across the top. The profile page's sticky contents list and jump links follow the same measurement.
 - **Desktop apps showing the old icon** on the desktop and taskbar: Windows kept it in its icon cache. The installers now refresh the cache (ZionEX Suite 1.0.5, ZionEX Till 0.30.2).

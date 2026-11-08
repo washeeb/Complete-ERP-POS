@@ -40,6 +40,18 @@ When a company runs more than one kind of business, each kind is an **industry**
 
 **Menus follow the choice.** With an industry chosen, only its own module menus show (for example *Pharmacy* but not *Restaurant*). With *All industries*, every installed industry's menus show. Grocery's menu has **Markdowns** (near-expiry stickers and expired write-offs at the grocery stores) and **Scale items** (the weighed products to load into the scales).
 
+### Archiving a branch, industry or legal entity
+
+Use **Archive** for a branch, industry or legal entity that was created by mistake, was never used, or has closed. It is on the lists under *Company → Branches*, *Company → Industries* and *Company → Legal entities*.
+- **Why:** an archived one leaves every list people choose from, so nobody gives it new products, staff, price lists or sales by mistake. Its history stays complete: past sales, stock, books and the audit log keep showing it. Nothing is deleted.
+- **Give the reason** (for example *created by mistake* or *branch closed*). The reason, the date and who archived it show when you point at *Archived* on the list.
+- **It refuses while something still depends on it**, and says what to do first:
+  - **A branch:** not while it is the head office, still holds stock, has transfers on the way, has an open till shift, or has devices still enrolled. Revoke a till only after it has sent all its sales (*System → Devices*). When a branch is archived, its stores and tills are switched off with it.
+  - **An industry:** only when no branch in use runs it.
+  - **A legal entity:** never the head office company, and only when no industry or branch in use keeps its books there.
+- **Archived branches do not count** towards the number of branches in your licence.
+- The lists show only those in use. To see archived ones, use the filter (*Show → Archived only*). **Restore** brings one back as it was, including the stores and tills that were switched off with it. Restore an industry or legal entity before a branch that belongs to it.
+
 **Check:** choose *Pharmacy* at the top. *Stock → Stock on hand* shows only the pharmacy branches, and *Catalog → Products* shows only pharmacy (and shared) products. Choose *All industries* to go back.
 
 ### Stock between branches and industries

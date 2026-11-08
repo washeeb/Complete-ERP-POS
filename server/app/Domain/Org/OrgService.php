@@ -112,7 +112,7 @@ final class OrgService
             throw new DomainException("Branch code {$code} is already used.");
         }
 
-        app(LicenseManager::class)->assertWithin('branches', Branch::count(), 'branches');
+        app(LicenseManager::class)->assertWithin('branches', Branch::whereNull('archived_at')->count(), 'branches'); // archived ones free their place
 
         return $this->recorder->transaction(function () use ($actor, $data, $code, $tills) {
             $branch = new Branch(array_intersect_key($data, array_flip(['legal_entity_id', 'name', 'is_hq', 'address', 'phone', 'timezone'])));
@@ -139,7 +139,7 @@ final class OrgService
     public function updateBranch(Actor $actor, Branch $branch, array $data, ?string $reason = null): Branch
     {
         $this->require($actor, 'setup.company.manage', $branch);
-        $branch->fill(array_intersect_key($data, array_flip(['name', 'address', 'phone', 'timezone', 'is_active', 'legal_entity_id'])));
+        $branch->fill(array_intersect_key($data, array_flip(['name', 'address', 'phone', 'timezone', 'legal_entity_id'])));
         if (array_key_exists('settings', $data)) { // the branch's own values for settings that allow it; null = the company setting
             $own = [];
             foreach ((array) $data['settings'] as $key => $value) {
@@ -222,12 +222,12 @@ final class OrgService
         }
         $first = ! LegalEntity::when($entity->exists, fn ($q) => $q->whereKeyNot($entity->getKey()))->exists();
         $primary = $first || (bool) ($data['is_primary'] ?? $entity->is_primary);
-        $active = (bool) ($data['is_active'] ?? $entity->is_active ?? true);
+        $active = (bool) ($entity->is_active ?? true); // archiving changes it (ArchiveService)
         if ($entity->exists && $entity->is_primary && ! $primary) {
             throw new DomainException('Make another legal entity the head office company instead; there is always one.');
         }
-        if (! $active && ($primary || Industry::where('legal_entity_id', $entity->id)->exists() || Branch::where('legal_entity_id', $entity->id)->where('is_active', true)->exists())) {
-            throw new DomainException('This legal entity is in use (head office, an industry or a branch). Move them first.');
+        if (! $active && $primary) {
+            throw new DomainException('This legal entity is archived. Restore it before making it the head office company.');
         }
         $entity->fill(['name' => mb_substr($name, 0, 150), 'registration_no' => ($data['registration_no'] ?? $entity->registration_no) ?: null, 'tin' => $tin ?: null,
             'vat_no' => ($data['vat_no'] ?? $entity->vat_no) ?: null, 'address' => ($data['address'] ?? $entity->address) ?: null,

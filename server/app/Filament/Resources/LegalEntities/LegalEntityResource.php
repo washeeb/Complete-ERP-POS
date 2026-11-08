@@ -4,6 +4,7 @@ namespace App\Filament\Resources\LegalEntities;
 
 use App\Domain\Org\OrgService;
 use App\Filament\Resources\LegalEntities\Pages\ListLegalEntities;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Models\LegalEntity;
 use BackedEnum;
@@ -66,7 +67,6 @@ class LegalEntityResource extends Resource
             TextInput::make('address')->maxLength(255),
             Toggle::make('is_primary')->label('Head office company')
                 ->helperText('Lines without a branch, and branches without a company of their own, are booked here.'),
-            Toggle::make('is_active')->label('In use')->default(true),
         ]);
     }
 
@@ -80,11 +80,12 @@ class LegalEntityResource extends Resource
                 TextColumn::make('tin')->label('TIN')->placeholder('—'),
                 TextColumn::make('vat_no')->label('VAT number')->placeholder('—'),
                 IconColumn::make('is_primary')->label('Head office')->boolean()->falseIcon(null),
-                IconColumn::make('is_active')->label('In use')->boolean(),
+                ArchiveUi::column(),
             ])
             ->defaultSort('name')
+            ->filters([ArchiveUi::filter()])
             ->headerActions([CreateAction::make()->label('New legal entity')->using(fn (array $data) => $save(null, $data))->visible(fn () => Erp::can('setup.company.manage'))])
-            ->recordActions([EditAction::make()->using(fn (LegalEntity $record, array $data) => $save($record, $data))]);
+            ->recordActions([EditAction::make()->using(fn (LegalEntity $record, array $data) => $save($record, $data)), ArchiveUi::archive('legal entity'), ArchiveUi::restore()]);
     }
 
     public static function getPages(): array
