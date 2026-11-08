@@ -29,6 +29,10 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 
 ## Archive industries, legal entities and branches (free) — branch `archive-org`
 - `ArchiveService` (`blockers`, `archive`, `restore`), migration `2026_12_23_100001_archive_org_units` (`archived_at/by`, `archive_reason`, branch `archived_children`; rows already switched off marked archived), `ArchiveUi` (column, filter, actions), `Branch::choices` / `LegalEntity::choices` in the pickers that give something a branch or company. Licence counts leave archived branches out. Test: ArchiveOrgTest.
+## ZionEX loader — branch `logo-loader`
+- `branding/product/loader.svg` (one source) → `pos/scripts/brand-loader.mjs` (`npm run brand:loader`, also in `npm run brand`) copies it to `server/public/brand`, `pos/src/assets` and the opening pages (`pos/index.html`, both `src-tauri/setup/index.html`, between `<!-- zx-loader -->` markers). Back office: `App\Support\Loader`, `branding/loader` view, `layout/page-loader` (Navigation API, 0.5 s delay), progress card. Till: `LogoLoader.tsx`. Till 0.30.3, Suite 1.0.6. Test: LogoLoaderTest.
+## Progress card vs background imports — branch `progress-popup`
+- `Progress::start(..., background:)`, `Progress::live` adds `left` and `background`; `ImportService::$inBackground` set by `runQueued`; overlay ignores background work and uses the server's `left`. Tests in BackgroundImportTest.
 
 ## Industry confinement — branch `industry-confinement`
 - `IndustryContext` (`selected`, `companyWide`, `choices`, `sharingAllowed`, `productScope`), `CatalogService::industryFor`, `SharedProducts`, `SharedProductsPage`, `CompanyWideAccess`, `AccessService::mayBeCompanyWide` and `narrow`. Settings `catalog.shared_products`, `access.company_wide`. Tests: IndustryConfinementTest.

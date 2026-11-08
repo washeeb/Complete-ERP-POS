@@ -210,12 +210,15 @@ final class ImportService
             }
             auth()->setUser($user);
             $context = self::contextOf($record);
+            $this->inBackground = true;
             $done = $this->run(Actor::user($user, 'web'), $record->type, $record->stored_path, $record->file_name, $options, $context, $commit, $mapping, $record);
         } catch (Throwable $e) {
             Log::error('Background import failed', ['import' => $record->id, 'error' => $e->getMessage()]);
             $msg = $e instanceof DomainException || $e instanceof AccessDenied ? $e->getMessage() : 'It stopped with an error, noted in the server log (reference '.$record->id.').';
             $record->forceFill(['status' => 'failed', 'completed_at' => now(), 'errors' => [['row' => 0, 'ref' => 'whole file', 'message' => $msg, 'values' => []]], 'rows_error' => $record->rows_total])->save();
             $done = $record;
+        } finally {
+            $this->inBackground = false;
         }
         if ($user) {
             $ok = $done->status === 'imported' || ($done->status === 'checked' && ! $done->rows_error);
@@ -336,10 +339,13 @@ final class ImportService
 
     private ?string $progressUser = null;
 
+    /** Set while a queued import runs: its progress shows on the import page, not in the progress card. */
+    private bool $inBackground = false;
+
     private function pass(string $label, int $total): void
     {
         $this->progressDone = 0;
-        Progress::start($label, $total, $this->progressUser);
+        Progress::start($label, $total, $this->progressUser, $this->inBackground);
     }
 
     private function applyRows(Actor $actor, Importer $importer, string $type, array $rows, array $options, ?Model $context, array &$results, array &$errors, array &$counts): void

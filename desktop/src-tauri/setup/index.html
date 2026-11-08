@@ -14,7 +14,9 @@
     button { font: inherit; padding: 10px 16px; border-radius: 8px; border: 0; background: var(--accent); color: var(--bg); cursor: pointer; margin-right: 8px; }
     button.secondary { background: transparent; color: var(--fg); border: 1px solid var(--line); } .msg { min-height: 1.5em; } .bad { color: var(--bad); }
     .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; } :focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
-    #opening { min-height: 100vh; display: grid; place-items: center; color: var(--muted); margin: 0; } [hidden] { display: none !important; }
+    #opening { min-height: 100vh; display: grid; place-content: center; justify-items: center; gap: 14px; color: var(--muted); margin: 0; }
+    /* The ZionEX loader (branding/product/loader.svg, copied in by npm run brand:loader), in this page's colours. */
+    @media (prefers-color-scheme: dark) { #opening { --zx-ink: #e2e8f0; --zx-mist: #1e4e5a; } } [hidden] { display: none !important; }
 
     /* Reconnect screen (owner 2026-11-07): shown instead of the browser's error page whenever the server is out of reach. */
     .off { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; margin: 0; max-width: none;
@@ -39,7 +41,7 @@
   </style>
 </head>
 <body>
-<p id="opening" role="status">Opening the back office…</p>
+<div id="opening" role="status"><!-- zx-loader --><svg xmlns="http://www.w3.org/2000/svg" class="zx-loader" viewBox="0 0 64 64" width="48" height="48" aria-hidden="true" focusable="false"> <style> .zx-loader rect { transform-box: fill-box; transform-origin: center; animation: zx-wave 1.6s cubic-bezier(.45, 0, .55, 1) infinite both; } .zx-loader .n { fill: var(--zx-ink, #031E4C); } .zx-loader .m { fill: var(--zx-mist, #BFEDEA); } .zx-loader .z { fill: var(--zx-teal, #06AAAA); animation-name: zx-wave-z; } .zx-loader .d1 { animation-delay: .13s; } .zx-loader .d2 { animation-delay: .26s; } .zx-loader .d3 { animation-delay: .39s; } .zx-loader .d4 { animation-delay: .52s; } @keyframes zx-wave { 0%, 100% { transform: scale(.55); opacity: .3; } 38%, 58% { transform: scale(1); opacity: 1; } } @keyframes zx-wave-z { 0%, 100% { transform: scale(.82); opacity: .7; } 38%, 58% { transform: scale(1.08); opacity: 1; } } @media (prefers-reduced-motion: reduce) { .zx-loader rect, .zx-loader .z { animation: zx-breathe 2.4s ease-in-out infinite; transform: none; } @keyframes zx-breathe { 50% { opacity: .55; } } } </style> <rect class="n" x="4" y="4" width="16" height="16" rx="4.5"/> <rect class="n d1" x="24" y="4" width="16" height="16" rx="4.5"/> <rect class="z d2" x="44" y="4" width="16" height="16" rx="4.5"/> <rect class="m d1" x="4" y="24" width="16" height="16" rx="4.5"/> <rect class="z d2" x="24" y="24" width="16" height="16" rx="4.5"/> <rect class="m d3" x="44" y="24" width="16" height="16" rx="4.5"/> <rect class="z d2" x="4" y="44" width="16" height="16" rx="4.5"/> <rect class="n d3" x="24" y="44" width="16" height="16" rx="4.5"/> <rect class="n d4" x="44" y="44" width="16" height="16" rx="4.5"/> </svg><!-- /zx-loader --><span>Opening the back office…</span></div>
 <main id="form" hidden>
   <h1>ZionEX Suite</h1>
   <p>Connect this computer to your business server. You sign in with your usual username and password.</p>

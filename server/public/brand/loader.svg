@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="zx-loader" viewBox="0 0 64 64" width="48" height="48" aria-hidden="true" focusable="false">
+  <!-- ZionEX loader: the Modules mark coming together. A wave runs across the nine modules from the top left; the Z's
+       diagonal (teal) lights as one as the wave crosses it. One source for the back office, the till and ZionEX Suite
+       (pos/scripts/brand.mjs copies it). Inline it so the page's theme reaches it: --zx-ink / --zx-mist / --zx-teal.
+       Movement stops for people who ask their device for less motion. No ids, so it can be on a page several times. -->
+  <style>
+    .zx-loader rect { transform-box: fill-box; transform-origin: center; animation: zx-wave 1.6s cubic-bezier(.45, 0, .55, 1) infinite both; }
+    .zx-loader .n { fill: var(--zx-ink, #031E4C); }
+    .zx-loader .m { fill: var(--zx-mist, #BFEDEA); }
+    .zx-loader .z { fill: var(--zx-teal, #06AAAA); animation-name: zx-wave-z; }
+    .zx-loader .d1 { animation-delay: .13s; } .zx-loader .d2 { animation-delay: .26s; } .zx-loader .d3 { animation-delay: .39s; } .zx-loader .d4 { animation-delay: .52s; }
+    @keyframes zx-wave { 0%, 100% { transform: scale(.55); opacity: .3; } 38%, 58% { transform: scale(1); opacity: 1; } }
+    @keyframes zx-wave-z { 0%, 100% { transform: scale(.82); opacity: .7; } 38%, 58% { transform: scale(1.08); opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) {
+      .zx-loader rect, .zx-loader .z { animation: zx-breathe 2.4s ease-in-out infinite; transform: none; }
+      @keyframes zx-breathe { 50% { opacity: .55; } }
+    }
+  </style>
+  <rect class="n" x="4" y="4" width="16" height="16" rx="4.5"/>
+  <rect class="n d1" x="24" y="4" width="16" height="16" rx="4.5"/>
+  <rect class="z d2" x="44" y="4" width="16" height="16" rx="4.5"/>
+  <rect class="m d1" x="4" y="24" width="16" height="16" rx="4.5"/>
+  <rect class="z d2" x="24" y="24" width="16" height="16" rx="4.5"/>
+  <rect class="m d3" x="44" y="24" width="16" height="16" rx="4.5"/>
+  <rect class="z d2" x="4" y="44" width="16" height="16" rx="4.5"/>
+  <rect class="n d3" x="24" y="44" width="16" height="16" rx="4.5"/>
+  <rect class="n d4" x="44" y="44" width="16" height="16" rx="4.5"/>
+</svg>

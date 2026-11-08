@@ -41,7 +41,6 @@ it('runs a large file in the background, shows it waiting, and tells the person 
 it('checks a large file in the background without saving anything', function () {
     Livewire::test(ImportData::class, ['type' => 'products', 'industry' => $this->grocery->id])->set('file', ($this->csv)())->call('check');
     Artisan::call('erp:imports');
-    fwrite(STDERR, json_encode(DataImport::sole()->errors));
     expect(DataImport::sole()->status)->toBe('checked')->and(Product::count())->toBe(0);
 });
 
@@ -79,4 +78,31 @@ it('imports a checked file from the copy on the server, without uploading it aga
     // Not twice.
     Livewire::test(ImportData::class, ['type' => 'products'])->call('importChecked', $checked->id)->assertNotified();
     expect(DataImport::where('status', 'imported')->count())->toBe(1);
+});
+
+it('keeps a background import out of the progress card, with the same time left as its page', function () {
+    // Owner 2026-11-08: the card popped up during the page's 2-second refresh with the import's figures and "About 2 s left".
+    Progress::start('Checking products.csv', 2467, $this->owner->id, background: true);
+    $this->travel(60)->seconds();
+    Progress::tick(1000, null, $this->owner->id);
+    $status = $this->getJson(route('progress.status'))->assertOk()->json();
+    expect($status['background'])->toBeTrue()->and($status['left'])->toBe('About 1 min 28 s left');
+
+    // Work someone waits on still shows in the card.
+    Progress::start('Changing the unit of products', 10, $this->owner->id);
+    expect($this->getJson(route('progress.status'))->json('background'))->toBeFalse();
+});
+
+it('records the background flag while a queued import runs', function () {
+    Livewire::test(ImportData::class, ['type' => 'products', 'industry' => $this->grocery->id])->set('file', ($this->csv)())->call('import');
+    $seen = null;
+    Progress::$onPut = function (array $p) use (&$seen) {
+        $seen ??= $p['background'] ?? null;
+    };
+    try {
+        Artisan::call('erp:imports');
+    } finally {
+        Progress::$onPut = null;
+    }
+    expect($seen)->toBeTrue();
 });

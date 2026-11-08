@@ -14,6 +14,7 @@ import { Sell } from './screens/Sell'
 import type { Bootstrap, PostedSale, Product } from './types'
 import { setSignedInName } from './screens/SignedIn'
 import { IdleLock } from './screens/IdleLock'
+import { LogoLoader } from './screens/LogoLoader'
 
 // Screens only some devices use load when needed (a till never downloads the kitchen screen at start-up).
 const Handheld = lazy(() => import('./screens/Handheld').then((m) => ({ default: m.Handheld })))
@@ -231,7 +232,7 @@ export default function App() {
       {boot && !['loading', 'enroll', 'login', 'kitchen', 'handheld', 'error'].includes(stage) && (
         <IdleLock key={boot.user.id} minutes={boot.idle_lock_minutes ?? 0} user={boot.user} onSignOut={logout} />
       )}
-      {stage === 'loading' && <p className="center muted">Loading…</p>}
+      {stage === 'loading' && <LogoLoader variant="page" text="Starting the till…" />}
       {stage === 'enroll' && <Enroll onDone={load} />}
       {stage === 'login' && <Login onDone={load} />}
       {stage === 'open-shift' && boot && <OpenShift boot={boot} online={online} onDone={load} onLogout={logout} />}
@@ -247,8 +248,8 @@ export default function App() {
           }} />
       )}
       {stage === 'receipt' && boot && receipt && <Receipt sale={receipt} boot={boot} onNew={() => setStage('sell')} />}
-      {stage === 'handheld' && <Suspense fallback={<p className="muted center">Loading…</p>}><Handheld onLogout={logout} /></Suspense>}
-      {stage === 'kitchen' && <Suspense fallback={<p className="muted center">Loading…</p>}><Kitchen /></Suspense>}
+      {stage === 'handheld' && <Suspense fallback={<LogoLoader variant="page" />}><Handheld onLogout={logout} /></Suspense>}
+      {stage === 'kitchen' && <Suspense fallback={<LogoLoader variant="page" />}><Kitchen /></Suspense>}
       {stage === 'settings' && boot && <TillSettings boot={boot} online={online} onClose={() => setStage('sell')} />}
       {stage === 'handover' && boot?.shift && <Handover boot={boot} onClose={() => setStage('close-shift')} onLogout={logout} />}
       {stage === 'close-shift' && boot && (

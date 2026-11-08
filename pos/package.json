@@ -17,6 +17,7 @@
     "training": "node scripts/training.mjs",
     "pentest": "node scripts/training.mjs pentest ^0[12]-",
     "brand": "node scripts/brand.mjs",
+    "brand:loader": "node scripts/brand-loader.mjs",
     "desktop:build": "cd ../desktop && node ../pos/node_modules/@tauri-apps/cli/tauri.js build"
   },
   "dependencies": {
