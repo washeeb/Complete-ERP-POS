@@ -117,8 +117,9 @@
         @if (($r = $this->last()) && in_array($r->status, ['queued', 'running'], true))
             @php($bg = $this->background($r))
             <div class="im-result" wire:poll.2s="followBackground">
-                <strong>{{ \App\Models\DataImport::STATUSES[$r->status] }}</strong> — {{ $r->file_name }}: {{ $bg['label'] }}@if ($bg['done']) — {{ number_format($bg['done']) }} of {{ number_format($bg['total']) }}@endif
-                <div style="height:8px;border-radius:999px;background:rgb(0 0 0 / .08);overflow:hidden;margin-top:8px"><span style="display:block;height:100%;width:{{ $bg['total'] ? min(100, round($bg['done'] * 100 / $bg['total'])) : 0 }}%;background:#06AAAA;transition:width .4s"></span></div>
+                {{-- The label already names the file ("Checking stock.xlsx"), so it is not repeated. --}}
+                <strong>{{ \App\Models\DataImport::STATUSES[$r->status] }}</strong> — {{ $bg['done'] ? $bg['label'] : $r->file_name.': '.$bg['label'] }}@if ($bg['done']) — {{ number_format($bg['done']) }} of {{ number_format($bg['total']) }} ({{ $bg['total'] ? min(100, (int) floor($bg['done'] * 100 / $bg['total'])) : 0 }}%)@endif
+                <div style="height:8px;border-radius:999px;background:rgb(0 0 0 / .08);overflow:hidden;margin-top:8px"><span style="display:block;height:100%;width:{{ $bg['total'] ? min(100, floor($bg['done'] * 100 / $bg['total'])) : 0 }}%;background:#06AAAA;transition:width .4s"></span></div>
                 <span class="im-desc">{{ $bg['left'] ? $bg['left'].'. ' : '' }}It runs on the server: you can keep working or close this page, and you get a notification when it is done.</span>
             </div>
         @elseif ($r)
