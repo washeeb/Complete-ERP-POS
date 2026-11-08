@@ -426,10 +426,8 @@ class ImportData extends Page
         if ($import->status === 'queued' || ! $p) {
             return ['label' => $import->status === 'queued' ? 'Waiting to start (within a minute)' : 'Starting…', 'done' => 0, 'total' => $import->rows_total, 'left' => null];
         }
-        $secs = now()->getTimestamp() - (int) ($p['started'] ?? $p['at']);
-        $left = $p['done'] > 0 && $p['done'] < $p['total'] ? Progress::timeLeft((int) round($secs / $p['done'] * ($p['total'] - $p['done']))) : null;
 
-        return ['label' => $p['label'], 'done' => $p['done'], 'total' => $p['total'], 'left' => $left];
+        return ['label' => $p['label'], 'done' => $p['done'], 'total' => $p['total'], 'left' => $p['left']];
     }
 
     public function history()
