@@ -11,7 +11,11 @@ export function clientHeader(): Promise<string | null> {
   const t = (globalThis as { __TAURI__?: Tauri }).__TAURI__
   if (!t) return Promise.resolve(null)
   cached ??= t.core.invoke<Record<string, string>>('client_info')
-    .then((info) => JSON.stringify(Object.fromEntries(Object.entries(info).filter(([, v]) => v))))
+    // Plain ASCII only: a header cannot carry other characters, so a computer named "Kofi’s PC" or "CAISSE-ÉTÉ" would
+    // stop every request before it leaves (owner 2026-11-08: a new till could not enrol, "Cannot reach the server").
+    // JSON \u escapes keep the name exact for the server.
+    .then((info) => JSON.stringify(Object.fromEntries(Object.entries(info).filter(([, v]) => v)))
+      .replace(/[^\x20-\x7e]/g, (c) => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0')))
     .catch(() => null) // an older desktop app without the command
   return cached
 }
