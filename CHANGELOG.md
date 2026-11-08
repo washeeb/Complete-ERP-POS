@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 ### Fixed
-- **A new desktop till could not enrol ("Cannot reach the server") although its internet worked.** The till sends the computer's name with each request; a name with a character a request header cannot carry (such as *’*) stopped every request before it left. The name is now sent in plain ASCII and arrives unchanged. *Cannot reach the server* now adds the browser's own reason in brackets, so support can tell a network problem from anything else.
+- **A new desktop till could not enrol ("Cannot reach the server") although its internet worked.** The till sends the computer's name with each request; a name with a character a request header cannot carry (such as *’*) stopped every request before it left. The name is now sent in plain ASCII and arrives unchanged. The till also no longer needs a recent WebView2 (Windows' built-in web engine, which the desktop till runs on and which can be years old on a PC whose updates are off): its request time limit used a feature older versions lack, and every request failed the same way. *Cannot reach the server* now adds the browser's own reason in brackets, so support can tell a network problem from anything else.
 ### Added
 - **ZionEX loader:** the Modules mark coming together, as the one loading animation everywhere. It shows in the back office when a page takes more than half a second to open (never for downloads or quick pages), on the sign-in page, on the progress card, while the till starts and on its loading lists, and on the opening screens of ZionEX Till 0.30.3 and ZionEX Suite 1.0.6. It follows light and dark, and stands still for people who ask their device for less motion.
 ### Fixed
