@@ -26,7 +26,7 @@ export async function cachedGet<T>(key: string, fetch: () => Promise<T>): Promis
   } catch (e) {
     if (!(e instanceof ApiError && (e.code === 'network' || e.code === 'signed_out'))) throw e
     const copy = (await db.cache.get(`wms:${key}`)) as { data: T; savedAt: string } | undefined
-    if (!copy) throw new ApiError('network', 'The server cannot be reached and this handheld has no copy yet. Connect it once to the network.', 0)
+    if (!copy) throw new ApiError('network', 'No connection, and this handheld has no copy yet. Connect it once to the network.', 0)
     return { data: copy.data, offline: true, savedAt: copy.savedAt }
   }
 }

@@ -51,7 +51,7 @@ export function SendReceipt({ sale, channels }: { sale: PostedSale; channels: ('
   const [note, setNote] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   if (!channels.length) return null
-  if (sale.status === 'queued') return <p className="small no-print">Digital receipt: available once this sale reaches the server.</p>
+  if (sale.status === 'queued') return null // offered once the sale is sent; the till says nothing about it
   const send = async () => {
     setBusy(true)
     setNote(null)
@@ -184,7 +184,6 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
           <p>{when} · {sale.cashier}</p>
           {sale.order_number && <p className="strong">Order {sale.order_number.slice(-3)}</p>}
         </header>
-        {sale.status === 'queued' && <p className="small">Recorded on this till while offline — sent to the server automatically.</p>}
         <hr />
         <table className="receipt-items">
           <thead>
@@ -248,7 +247,6 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
         <footer className="center">
           <ReceiptQr text={sale.receipt_no} />
           {footerLines(boot.receipt_footer).map((line) => <p key={line} className="receipt-footer">{line}</p>)}
-          {boot.license?.ref && <p className="receipt-ref">Ref {boot.license.ref}</p>}
           {boot.brand?.powered_by && <p className="receipt-credit">{boot.brand.powered_by}</p>}
           {(boot.brand?.credit ?? []).map((line) => <p key={line} className="receipt-credit">{line}</p>)}
         </footer>

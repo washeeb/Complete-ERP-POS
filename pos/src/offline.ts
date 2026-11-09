@@ -38,10 +38,10 @@ export async function offlineSignIn(username: string, pin: string): Promise<Offl
   const grant = asSigned(rec)
   const device = await getDevice()
   if (!grant || grant.device_id !== device?.deviceId) {
-    throw new Error('You have not signed in on this till while it was online. Sign in once with the server available.')
+    throw new Error('Sign in once on this till while it is connected; after that you can sign in offline.')
   }
   if (Date.parse(grant.expires_at) < Date.now()) {
-    throw new Error('Your offline sign-in on this till has expired. Sign in again when the server is available.')
+    throw new Error('Your offline sign-in on this till has expired. Sign in again when the till is connected.')
   }
   if (!(await pinMatches(grant, pin))) throw new Error('Wrong username or PIN.')
   return grant
@@ -98,11 +98,11 @@ export async function sendQueue(onResult?: (r: QueueResult) => void): Promise<Se
         body,
       })
     } catch {
-      return { sent, refused, error: 'Server not reachable — will retry.' }
+      return { sent, refused, error: 'No connection — will retry.' }
     }
-    if (GATEWAY_DOWN.includes(res.status)) return { sent, refused, error: 'Server not answering — will retry.' }
+    if (GATEWAY_DOWN.includes(res.status)) return { sent, refused, error: 'No connection — will retry.' }
     const json = await res.json().catch(() => ({}))
-    if (!res.ok) return { sent, refused, error: json.detail ?? `Server answered ${res.status}` }
+    if (!res.ok) return { sent, refused, error: json.detail ?? 'Not sent — will retry.' }
     for (const r of json.results as QueueResult[]) {
       onResult?.(r)
       const item = batch.find((q) => q.id === r.id)

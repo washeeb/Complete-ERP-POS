@@ -39,6 +39,8 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 
 ## Archive everywhere (free) — branch `archive-everywhere`
 - `ArchiveRules` (kinds, permission, switch: replaced / kept / none, checks), `ArchiveService` generalised (`allowed`, branch children by archived_at), `Concerns\Archivable` (forces is_active off while archived, `inUse` scope), migration `2026_12_24_100001_archive_everywhere`, `ArchiveUi::apply` on 31 lists, archived left out of the product, department, role and equipment pickers. Test: ArchiveEverywhereTest.
+## Till and receipt wording — branch `till-privacy`
+- Receipts (screen, ESC/POS, server print), slips and `print/layout` without connection notes or the visible `Ref`; bootstrap `license` reduced to read-only + a plain message; till messages without "server"; `ApiError.detail` (browser reason) shown only on the enrol screen. Tests: slip.test.ts, LicensingTest.
 
 ## Industry confinement — branch `industry-confinement`
 - `IndustryContext` (`selected`, `companyWide`, `choices`, `sharingAllowed`, `productScope`), `CatalogService::industryFor`, `SharedProducts`, `SharedProductsPage`, `CompanyWideAccess`, `AccessService::mayBeCompanyWide` and `narrow`. Settings `catalog.shared_products`, `access.company_wide`. Tests: IndustryConfinementTest.

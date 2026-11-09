@@ -73,7 +73,6 @@
     <div class="center small">
         {{-- Each typed line, and each sentence, on its own line (as on the till). --}}
         @foreach (preg_split('/\R|(?<=[.!?])\s+(?=[A-Z])/u', (string) $footer, -1, PREG_SPLIT_NO_EMPTY) as $line)<p style="margin:2px 0">{{ trim($line) }}</p>@endforeach
-        <p class="muted">Ref {{ \App\Domain\Licensing\Watermark::reference() }}</p>
         {{-- The software maker: bold and black, so it reads clearly. --}}
         @if ($brand['powered_by'])<p style="font-weight:700;color:#000">{{ $brand['powered_by'] }}</p>@endif
         @foreach ($brand['credit'] ?? [] as $line)<div style="font-weight:700;color:#000">{{ $line }}</div>@endforeach

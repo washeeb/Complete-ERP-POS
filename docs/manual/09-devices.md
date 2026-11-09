@@ -68,7 +68,7 @@ Browsers allow a web app to use its **security functions** (the till's own signi
 
 6. A cashier signs in with **username and PIN**, counts the drawer and **opens the shift**.
 
-**Check:** sell an item and print the receipt. Then pull out the network cable (or switch off Wi-Fi): the top shows *working offline*, and you can still sell. Plug it back in: the yellow banner disappears as the sale is sent.
+**Check:** sell an item and print the receipt. Then pull out the network cable (or switch off Wi-Fi): the bottom shows *No network — selling continues*, and you can still sell. **Why the till says so little:** tellers and customers see the screen and the receipt, so connection details, licence details and technical errors stay in the back office. Plug it back in: the yellow banner disappears as the sale is sent.
 
 ## 9.5 Tablet (Android)
 

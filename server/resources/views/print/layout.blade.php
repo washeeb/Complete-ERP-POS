@@ -52,7 +52,8 @@
         <div class="right">@yield('heading')</div>
     </header>
     @yield('content')
-    <p class="wm">Ref {{ \App\Domain\Licensing\Watermark::reference() }}@if ($brand['powered_by']) · {{ $brand['powered_by'] }}@endif @foreach ($brand['credit'] ?? [] as $line) · {{ $line }}@endforeach</p>
+    {{-- Customers and suppliers read these: no licence reference in sight (owner 2026-11-09). The company name above carries it hidden. --}}
+    <p class="wm">@if ($brand['powered_by']){{ $brand['powered_by'] }}@endif @foreach ($brand['credit'] ?? [] as $line) · {{ $line }}@endforeach</p>
 </div>
 </body>
 </html>

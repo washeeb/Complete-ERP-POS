@@ -65,7 +65,7 @@ test('clocks in online and out offline from the sign-in screen', async ({ page }
   await page.getByLabel('Username').fill('esi')
   await page.getByLabel('PIN', { exact: true }).fill('482613')
   await page.getByRole('button', { name: 'Clock out' }).click()
-  await expect(page.getByText(/Esi clocked out at .*saved on this till/)).toBeVisible()
+  await expect(page.getByText(/Esi clocked out at \d/)).toBeVisible() // nothing about the server on the till (owner 2026-11-09)
   s.up = true
   await expect.poll(() => s.queued.filter((e) => (e as { type: string }).type === 'clock').length, { timeout: 30_000 }).toBe(1)
   expect((s.queued[0] as { payload: { kind: string } }).payload.kind).toBe('out')

@@ -45,7 +45,7 @@ export async function currentGrant(): Promise<OfflineGrant> {
   // The sign-in ended (it lasts 12 hours from the last use): say so, so the cashier signs in again instead of guessing.
   if (!session) throw new ApiError('signed_out', SIGNED_OUT, 401)
   const g = await grantFor(session.userId)
-  if (!g) throw new Error('The server is not answering, and this till cannot keep the sale offline for you yet (sign in once while the server answers to allow that). Try again in a moment.')
+  if (!g) throw new Error('No connection, and this till cannot keep sales for you offline yet (sign in once while it is connected). Try again in a moment.')
   return g
 }
 
@@ -104,7 +104,7 @@ export async function closeShift(countedMinor: number, note: string, online: boo
       queued = true
     }
   }
-  if (!local) throw new Error('This till does not know which shift is open. Reconnect to the server to close it.')
+  if (!local) throw new Error('This till does not know which shift is open. Close it when the till is connected.')
   const closedAt = new Date().toISOString()
   await enqueue({ id: uuidv7(), type: 'shift_close', grant: await currentGrant(),
     payload: { shift_id: local.shiftId, counted_cash_minor: countedMinor, note: note || null, closed_at: closedAt, denoms, other } })
@@ -205,7 +205,7 @@ export async function submitSale(args: {
 
   // Going into the offline queue with a manual discount: a supervisor must confirm it here (PIN against their offline sign-in).
   if ((cart.lines.some((l) => l.manual) || (args.saleDiscountBp ?? 0) > 0) && !args.offlineApproverId) {
-    throw new ApiError('offline_approval_needed', 'The server cannot be reached: a supervisor must approve the discount here.', 0)
+    throw new ApiError('offline_approval_needed', 'No connection: a supervisor must approve the discount here.', 0)
   }
   const receiptNo = `${boot.branch.code}-${boot.till!.code}${boot.device.receipt_series ?? ''}-${String(args.seq).padStart(6, '0')}`
   await enqueue({ id: payload.id, type: 'sale', grant: await currentGrant(), payload, receiptNo })

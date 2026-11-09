@@ -1265,3 +1265,9 @@ Design:
 - The checks protect what history and money depend on: stock, balances, open shifts, enrolled devices (unsent sales), open orders and jobs, the only owner, standard roles, accounts the system posts to or a sub-ledger owns.
 - The migration marks rows already switched off as archived only where the switch meant "in use" (a product not for sale is not archived).
 - A branch takes only its stores and tills that were in use, marking them archived with the branch reason; restoring brings back exactly those.
+
+## What tills and receipts show (2026-11-09)
+- The owner: receipts showed "Recorded on this till while offline — sent to the server automatically", and the till showed "Digital receipt: available once this sale reaches the server". Such details are not for customers or tellers; sensitive information stays in the back office.
+- Paper (till receipt on screen and ESC/POS, server receipt, drawer slips, the print layout for invoices, statements and orders): no connection state and no visible licence reference. This changes the 2026-10-15 decision: the reference stays hidden as zero-width characters in the company name on server-printed documents (`license:trace` still reads it), and the till no longer receives it at all, so till receipts carry none. Back-office exports keep the visible `Ref`; only staff read them.
+- Till screens: plain words without "server", queue counts, error codes or the audit log. The licence status sent to the till is only whether selling is blocked, with one plain line; warnings about the end date stay in the back office.
+- The browser's technical reason for a failed request (added on 2026-11-08 to find the enrolment problem, which turned out to be an out-of-date Windows) is kept apart and shown only on the enrol screen, which an administrator uses.
