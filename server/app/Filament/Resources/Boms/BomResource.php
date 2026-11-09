@@ -13,6 +13,7 @@ use App\Filament\Resources\WorkOrders\WorkOrderResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\IndustryScope;
 use App\Filament\Support\MiniTable;
 use App\Models\Bom;
 use App\Models\BomLine;
@@ -83,7 +84,7 @@ class BomResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with('product')->withCount('lines');
+        return IndustryScope::product(parent::getEloquentQuery()->with('product')->withCount('lines'));
     }
 
     public static function form(Schema $schema): Schema

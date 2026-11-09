@@ -13,6 +13,7 @@ use App\Domain\Support\Recorder;
 use App\Models\Barcode;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Concerns\BelongsToIndustry;
 use App\Models\Industry;
 use App\Models\ModifierGroup;
 use App\Models\Price;
@@ -450,13 +451,20 @@ final class CatalogService
     public function saveSimple(Actor $actor, Model $model, array $data, string $permission = 'catalog.manage'): Model
     {
         $this->require($actor, $permission);
-        $model->fill($data);
+        $owned = in_array(BelongsToIndustry::class, class_uses_recursive($model), true);
+        if ($owned) { // categories and brands belong to an industry (owner 2026-11-09)
+            IndustryContext::assign($model, $data, user: $actor->user);
+            $model->industry_id ??= $model->exists ? null : IndustryContext::defaultId();
+        }
+        $model->fill(array_diff_key($data, ['industry_id' => true]));
         $model->tenant_id = $actor->tenantId;
         // One of each: the same category (under the same parent), brand or unit code twice is refused, whoever adds it.
         $other = fn ($q) => $q->when($model->exists, fn ($w) => $w->whereKeyNot($model->getKey()));
         if ($model instanceof Category || $model instanceof Brand) {
             $model->name = Caps::upper((string) $model->name);
-            $same = $model::query()->whereRaw('lower(name) = ?', [mb_strtolower($model->name)])->tap($other)
+            // Within its own industry: the same name may exist in another industry.
+            $same = $model::withoutIndustryScope()->whereRaw('lower(name) = ?', [mb_strtolower($model->name)])->tap($other)
+                ->where(fn ($q) => $model->industry_id ? $q->where('industry_id', $model->industry_id) : $q->whereNull('industry_id'))
                 ->when($model instanceof Category, fn ($q) => $model->parent_id ? $q->where('parent_id', $model->parent_id) : $q->whereNull('parent_id'))->exists();
             if ($same) {
                 throw new DomainException(($model instanceof Category ? 'Category' : 'Brand')." {$model->name} already exists.");

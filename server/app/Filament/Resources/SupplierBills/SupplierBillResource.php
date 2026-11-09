@@ -10,6 +10,7 @@ use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
 use App\Filament\Support\GlobalSearch;
+use App\Filament\Support\IndustryScope;
 use App\Filament\Support\QuickCreate;
 use App\Models\GoodsReceipt;
 use App\Models\Supplier;
@@ -96,7 +97,7 @@ class SupplierBillResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with('supplier');
+        return IndustryScope::branches(parent::getEloquentQuery()->with('supplier'));
     }
 
     public static function getNavigationBadge(): ?string

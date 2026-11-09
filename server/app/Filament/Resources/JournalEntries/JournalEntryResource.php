@@ -8,6 +8,7 @@ use App\Filament\Resources\JournalEntries\Pages\ViewJournalEntry;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
 use App\Filament\Support\GlobalSearch;
+use App\Filament\Support\IndustryScope;
 use App\Models\JournalEntry;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -25,12 +26,19 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 /** Every posted journal: automatic ones from the other modules and those typed by finance. */
 class JournalEntryResource extends Resource
 {
+    /** Follows the industry in view (owner 2026-11-09: every industry independent). */
+    public static function getEloquentQuery(): Builder
+    {
+        return IndustryScope::journal(parent::getEloquentQuery());
+    }
+
     use GlobalSearch;
 
     protected static ?string $recordTitleAttribute = 'number';

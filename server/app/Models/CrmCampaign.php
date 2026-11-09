@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToIndustry;
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** One message to many customers (CRM): only to those who agreed to that channel. */
 class CrmCampaign extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use BelongsToIndustry, BelongsToTenant, HasUuids;
 
     public const CHANNELS = ['sms' => 'SMS', 'whatsapp' => 'WhatsApp', 'email' => 'E-mail'];
 

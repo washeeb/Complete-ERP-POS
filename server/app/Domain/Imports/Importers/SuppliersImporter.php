@@ -59,14 +59,22 @@ final class SuppliersImporter extends Importer
         return (string) ($row['code'] ?? '') ?: (string) ($row['name'] ?? '');
     }
 
+    /** Customers and suppliers belong to an industry (owner 2026-11-09): the import page asks which. */
+    public function industryScoped(): bool
+    {
+        return true;
+    }
+
     public function apply(Actor $actor, array $row, array $options, ?Model $context): string
     {
+        $industry = (string) ($options['industry'] ?? ''); // an industry id, or "shared"
         if (self::has($row, 'code')) {
             $code = strtoupper(trim($row['code']));
             $supplier = Supplier::where('code', $code)->first();
         } else {
             $name = self::need($row, 'name', 'the code or the name');
-            $supplier = Supplier::whereRaw('lower(name) = ?', [mb_strtolower(trim($name))])->first();
+            $supplier = Supplier::whereRaw('lower(name) = ?', [mb_strtolower(trim($name))]) // this industry's, or a shared one
+                ->when($industry !== '' && $industry !== 'shared', fn ($q) => $q->where(fn ($w) => $w->where('industry_id', $industry)->orWhereNull('industry_id')))->first();
             $code = $supplier?->code ?? self::codeFrom($name);
         }
         $data = ['code' => $code];
@@ -86,6 +94,9 @@ final class SuppliersImporter extends Importer
         if (self::has($row, 'active')) {
             $data['is_active'] = self::bool($row['active'], 'active');
         }
+        if (! isset($supplier) && $industry !== '') {
+            $data['industry_id'] = $industry;
+        }
         $this->suppliers->save($actor, $supplier ?? new Supplier, $data);
 
         return $supplier ? 'updated' : 'created';
@@ -96,7 +107,7 @@ final class SuppliersImporter extends Importer
     {
         $base = substr(trim((string) preg_replace('/[^A-Z0-9]+/', '-', strtoupper(Str::ascii($name))), '-'), 0, 16) ?: 'SUP';
         $code = rtrim($base, '-');
-        for ($i = 2; Supplier::where('code', $code)->exists(); $i++) {
+        for ($i = 2; Supplier::withoutIndustryScope()->where('code', $code)->exists(); $i++) {
             $code = rtrim($base, '-')."-{$i}";
         }
 

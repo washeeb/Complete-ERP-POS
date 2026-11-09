@@ -9,6 +9,7 @@ use App\Filament\Resources\SupplierPayments\Pages\ListSupplierPayments;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
 use App\Filament\Support\GlobalSearch;
+use App\Filament\Support\IndustryScope;
 use App\Models\Account;
 use App\Models\Branch;
 use App\Models\Supplier;
@@ -83,7 +84,7 @@ class SupplierPaymentResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with('supplier', 'account');
+        return IndustryScope::branches(parent::getEloquentQuery()->with('supplier', 'account'));
     }
 
     public static function payAction(?Supplier $supplier = null): Action

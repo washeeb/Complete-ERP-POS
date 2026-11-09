@@ -6,6 +6,7 @@ use App\Filament\Resources\MoneyTransfers\Pages\ListMoneyTransfers;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
 use App\Filament\Support\GlobalSearch;
+use App\Filament\Support\IndustryScope;
 use App\Models\MoneyTransfer;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -65,7 +66,7 @@ class MoneyTransferResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with('fromAccount', 'toAccount');
+        return IndustryScope::branches(parent::getEloquentQuery()->with('fromAccount', 'toAccount'));
     }
 
     public static function table(Table $table): Table

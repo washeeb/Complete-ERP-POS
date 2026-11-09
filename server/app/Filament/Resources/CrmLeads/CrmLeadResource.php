@@ -12,6 +12,7 @@ use App\Filament\Resources\Customers\CustomerResource;
 use App\Filament\Support\CrmUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\IndustryScope;
 use App\Models\CrmLead;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -72,7 +73,7 @@ class CrmLeadResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return CrmUi::scope(parent::getEloquentQuery()->with(['owner', 'branch', 'customer']));
+        return IndustryScope::branches(CrmUi::scope(parent::getEloquentQuery()->with(['owner', 'branch', 'customer'])));
     }
 
     public static function form(Schema $schema): Schema

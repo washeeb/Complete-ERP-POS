@@ -10,6 +10,7 @@ use App\Filament\Resources\Promotions\Pages\ListPromotions;
 use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\GlobalSearch;
+use App\Filament\Support\IndustryField;
 use App\Models\Branch;
 use App\Models\Category;
 use App\Models\PriceList;
@@ -113,6 +114,7 @@ class PromotionResource extends Resource
         return $schema->columns(1)->components([
             Section::make()->columns(3)->schema([
                 TextInput::make('name')->required()->maxLength(255)->helperText('Shown on the receipt.')->columnSpan(2),
+                IndustryField::make(),
                 Toggle::make('is_active')->label('Running')->default(true)->inline(false),
                 Select::make('type')->options(PromotionEngine::TYPES)->required()->live()->columnSpan(2),
                 TextInput::make('coupon_code')->label('Coupon code')->maxLength(30)->visible($is('coupon'))->required($is('coupon')),

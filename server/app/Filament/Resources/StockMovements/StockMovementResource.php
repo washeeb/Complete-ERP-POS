@@ -5,6 +5,7 @@ namespace App\Filament\Resources\StockMovements;
 use App\Filament\Resources\StockLevels\StockLevelResource;
 use App\Filament\Resources\StockMovements\Pages\ListStockMovements;
 use App\Filament\Support\Erp;
+use App\Filament\Support\IndustryScope;
 use App\Filament\Support\ListFilters;
 use App\Models\Brand;
 use App\Models\Category;
@@ -64,8 +65,8 @@ class StockMovementResource extends Resource
     {
         $ids = StockLevelResource::warehouseIds();
 
-        return parent::getEloquentQuery()->with('product', 'warehouse', 'uom')
-            ->when($ids !== null, fn ($q) => $q->whereIn('warehouse_id', $ids));
+        return IndustryScope::branches(parent::getEloquentQuery()->with('product', 'warehouse', 'uom')
+            ->when($ids !== null, fn ($q) => $q->whereIn('warehouse_id', $ids)));
     }
 
     public static function table(Table $table): Table

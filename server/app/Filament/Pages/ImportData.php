@@ -128,7 +128,12 @@ class ImportData extends Page
     /** @return array<string, string> the industries an industry import can go to, and "shared" */
     public function industries(): array
     {
-        return IndustryContext::choices(Erp::user());
+        $choices = IndustryContext::choices(Erp::user());
+        if (in_array($this->type, ['customers', 'customer_balances'], true)) {
+            unset($choices[IndustryContext::SHARED]); // a customer belongs to one industry (owner 2026-11-09)
+        }
+
+        return $choices;
     }
 
     /** The import belongs to one industry and the company has industries: the page asks which. */

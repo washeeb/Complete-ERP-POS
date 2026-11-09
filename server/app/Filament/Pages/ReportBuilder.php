@@ -10,6 +10,7 @@ use App\Filament\Support\ExportsPage;
 use App\Models\Branch;
 use App\Models\SavedReport;
 use App\Models\User;
+use App\Support\IndustryContext;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
@@ -212,7 +213,7 @@ class ReportBuilder extends Page
                     Repeater::make('recipients')->columns(2)->defaultItems(0)->addActionLabel('Add recipient')->visible(fn (Get $get) => ($get('schedule') ?? 'none') !== 'none')->schema([
                         Select::make('type')->options(['email' => 'E-mail (with the file)', 'whatsapp' => 'WhatsApp (a note)', 'user' => 'A person (back-office bell)'])->required()->live(),
                         TextInput::make('to')->required()->visible(fn (Get $get) => $get('type') !== 'user'),
-                        Select::make('to')->label('Person')->options(fn () => User::where('is_active', true)->orderBy('name')->pluck('name', 'id'))->visible(fn (Get $get) => $get('type') === 'user'),
+                        Select::make('to')->label('Person')->options(fn () => IndustryContext::userScope(User::where('is_active', true))->orderBy('name')->pluck('name', 'id'))->visible(fn (Get $get) => $get('type') === 'user'),
                     ]),
                 ])
                 ->action(function (array $data) use ($saved) {

@@ -6,6 +6,7 @@ use App\Domain\Customers\StoredValues;
 use App\Filament\Resources\Customers\CustomerResource;
 use App\Filament\Resources\StoredValues\Pages\ListStoredValues;
 use App\Filament\Support\Erp;
+use App\Filament\Support\IndustryScope;
 use App\Filament\Support\QuickCreate;
 use App\Models\Customer;
 use App\Models\StoredValue;
@@ -21,6 +22,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
@@ -29,6 +31,12 @@ use UnitEnum;
 /** Gift cards and store credit: balances, history, and selling a gift card. */
 class StoredValueResource extends Resource
 {
+    /** Follows the industry in view (owner 2026-11-09: every industry independent). */
+    public static function getEloquentQuery(): Builder
+    {
+        return IndustryScope::owner(parent::getEloquentQuery(), 'customer');
+    }
+
     protected static ?string $model = StoredValue::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedGift;

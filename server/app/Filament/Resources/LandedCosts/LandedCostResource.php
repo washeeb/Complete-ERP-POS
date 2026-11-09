@@ -6,6 +6,7 @@ use App\Domain\Purchasing\LandedCostService;
 use App\Filament\Resources\LandedCosts\Pages\ListLandedCosts;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\IndustryScope;
 use App\Filament\Support\MiniTable;
 use App\Models\GoodsReceipt;
 use App\Models\LandedCost;
@@ -113,7 +114,7 @@ class LandedCostResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with('charges');
+        return IndustryScope::branches(parent::getEloquentQuery()->with('charges'));
     }
 
     public static function getPages(): array

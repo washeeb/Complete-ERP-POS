@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Archivable;
+use App\Models\Concerns\BelongsToIndustry;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasOriginNode;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** Choices offered with a dish ("Cooking: rare / medium / well done", "Extras: cheese +5.00"). */
 class ModifierGroup extends Model
 {
-    use Archivable, BelongsToTenant, HasOriginNode, HasUuids;
+    use Archivable, BelongsToIndustry, BelongsToTenant, HasOriginNode, HasUuids;
 
     protected $guarded = [];
 

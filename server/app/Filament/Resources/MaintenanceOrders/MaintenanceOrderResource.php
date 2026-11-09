@@ -11,6 +11,7 @@ use App\Filament\Resources\MaintenanceOrders\Pages\ViewMaintenanceOrder;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\IndustryScope;
 use App\Filament\Support\ServiceUi;
 use App\Models\MaintenanceAsset;
 use App\Models\MaintenanceOrder;
@@ -85,7 +86,7 @@ class MaintenanceOrderResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return ServiceUi::maintenance(parent::getEloquentQuery()->with(['asset', 'assignee']));
+        return IndustryScope::branches(ServiceUi::maintenance(parent::getEloquentQuery()->with(['asset', 'assignee'])));
     }
 
     public static function form(Schema $schema): Schema

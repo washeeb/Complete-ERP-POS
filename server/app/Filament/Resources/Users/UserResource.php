@@ -12,6 +12,7 @@ use App\Filament\Support\GlobalSearch;
 use App\Filament\Support\LocalAvatars;
 use App\Models\User;
 use App\Security\SecurityLevel;
+use App\Support\IndustryContext;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
@@ -76,7 +77,8 @@ class UserResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         // Users are not tenant-scoped by a global scope (auth needs them first), so filter here.
-        return parent::getEloquentQuery()->where('tenant_id', Erp::user()?->tenant_id);
+        // An industry shows only its own staff; company-wide people only under "All industries" (owner 2026-11-09).
+        return IndustryContext::userScope(parent::getEloquentQuery()->where('tenant_id', Erp::user()?->tenant_id));
     }
 
     public static function form(Schema $schema): Schema

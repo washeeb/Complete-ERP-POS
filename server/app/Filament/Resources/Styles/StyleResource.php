@@ -11,6 +11,7 @@ use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\IndustryField;
 use App\Filament\Support\QuickCreate;
 use App\Models\Brand;
 use App\Models\Category;
@@ -76,6 +77,7 @@ class StyleResource extends Resource
         return $schema->columns(3)->components([
             TextInput::make('code')->label('Style code')->helperText('Made from the name; SKUs become CODE-COLOUR-SIZE.')->disabled()->dehydrated(false)->placeholder('Given automatically when saved'),
             TextInput::make('name')->required()->maxLength(255)->columnSpan(2),
+            IndustryField::make(),
             QuickCreate::on(Select::make('category_id')->label('Category')->options(fn () => Category::orderBy('name')->pluck('name', 'id')), 'category'),
             QuickCreate::on(Select::make('brand_id')->label('Brand')->options(fn () => Brand::orderBy('name')->pluck('name', 'id')), 'brand'),
             Select::make('tax_group_id')->label('Tax')->required()->options(fn () => TaxGroup::orderBy('name')->pluck('name', 'id'))

@@ -9,6 +9,7 @@ use App\Filament\Resources\Tickets\Pages\CreateTicket;
 use App\Filament\Resources\Tickets\Pages\ListTickets;
 use App\Filament\Resources\Tickets\Pages\ViewTicket;
 use App\Filament\Support\Erp;
+use App\Filament\Support\IndustryScope;
 use App\Filament\Support\ServiceUi;
 use App\Models\Branch;
 use App\Models\Customer;
@@ -86,7 +87,7 @@ class TicketResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return ServiceUi::tickets(parent::getEloquentQuery()->with(['customer', 'assignee']));
+        return IndustryScope::branches(ServiceUi::tickets(parent::getEloquentQuery()->with(['customer', 'assignee'])));
     }
 
     public static function form(Schema $schema): Schema

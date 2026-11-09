@@ -9,6 +9,7 @@ use App\Domain\Support\Recorder;
 use App\Models\Branch;
 use App\Models\Promotion;
 use App\Security\Authorizer;
+use App\Support\IndustryContext;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 
@@ -29,6 +30,7 @@ final class PromotionService
         if (trim((string) ($data['name'] ?? $p->name)) === '') {
             throw new DomainException('Give the promotion a name customers will see on the receipt.');
         }
+        IndustryContext::assign($p, $data, user: $actor->user);
         $p->fill(array_intersect_key($data, array_flip(['name', 'product_ids', 'category_ids', 'value_bp', 'value_minor', 'buy_qty', 'get_qty', 'bundle_qty',
             'min_spend_minor', 'price_list_ids', 'branch_ids', 'days', 'time_from', 'time_to', 'starts_at', 'ends_at', 'is_active'])));
         $p->type = $type;

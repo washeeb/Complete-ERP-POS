@@ -10,6 +10,7 @@ use App\Filament\Resources\MaintenanceAssets\RelationManagers\OrdersRelationMana
 use App\Filament\Resources\MaintenanceAssets\RelationManagers\PlansRelationManager;
 use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
+use App\Filament\Support\IndustryScope;
 use App\Filament\Support\ServiceUi;
 use App\Models\Branch;
 use App\Models\Customer;
@@ -78,7 +79,7 @@ class MaintenanceAssetResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return ServiceUi::maintenance(parent::getEloquentQuery()->with(['branch', 'customer']));
+        return IndustryScope::branches(ServiceUi::maintenance(parent::getEloquentQuery()->with(['branch', 'customer'])));
     }
 
     public static function form(Schema $schema): Schema

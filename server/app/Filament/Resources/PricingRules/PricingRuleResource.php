@@ -6,6 +6,7 @@ use App\Domain\Pricing\PricingRules;
 use App\Filament\Resources\PricingRules\Pages\ListPricingRules;
 use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
+use App\Filament\Support\IndustryScope;
 use App\Filament\Support\SimpleCatalogResource;
 use App\Models\Category;
 use App\Models\PriceList;
@@ -28,6 +29,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
@@ -37,6 +39,12 @@ use UnitEnum;
  */
 class PricingRuleResource extends SimpleCatalogResource
 {
+    /** Follows the industry in view (owner 2026-11-09: every industry independent). */
+    public static function getEloquentQuery(): Builder
+    {
+        return IndustryScope::product(parent::getEloquentQuery());
+    }
+
     protected static ?string $model = PricingRule::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCalculator;
