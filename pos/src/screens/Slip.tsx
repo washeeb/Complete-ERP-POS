@@ -14,7 +14,6 @@ function SlipPaper({ slip, boot }: { slip: DrawerSlip; boot: Bootstrap }) {
       <table className="slip-rows"><tbody>
         {slipRows(slip, boot).map(([label, value]) => <tr key={label}><th scope="row">{label}</th><td>{value}</td></tr>)}
       </tbody></table>
-      {slip.queued && <p className="small">Saved on the till offline; sent when the server is back.</p>}
       {slipSignatures(slip).map((who) => <p key={who} className="signature">{who}<span className="sign-line" /></p>)}
     </div>
   )

@@ -27,7 +27,7 @@ export function Enroll({ onDone }: { onDone: () => void }) {
       await db.kv.put({ id: 'device', deviceId: r.device_id, token: r.token, privateKey, enrolledAt: new Date().toISOString(), kind: r.kind })
       onDone()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Enrolment failed.')
+      setError(err instanceof ApiError ? err.message + (err.detail ? ` (${err.detail})` : '') : 'Enrolment failed.')
     } finally {
       setBusy(false)
     }
@@ -107,7 +107,7 @@ export function Login({ onDone, deviceName }: { onDone: () => void; deviceName?:
     try {
       const r = await clock(username, pin, kind)
       const time = new Date(r.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-      setClocked(`${r.name} clocked ${kind} at ${time}${r.offline ? ' (saved on this till; sent when the server is back)' : ''}.`)
+      setClocked(`${r.name} clocked ${kind} at ${time}.`)
       setUsername('')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Clocking failed.')
@@ -323,7 +323,7 @@ function LendVault({ boot, online, onLent, onBack, onLogout }: { boot: Bootstrap
       <p className="who-band" style={{ background: personColor(boot.user.id) }}>{boot.user.name}</p>
       {!onBack && <p>You have no vault on {boot.till?.name ?? 'this till'} today. Each person sells only from their own vault.</p>}
       <p className="muted">A manager can lend you another person's vault for today (they are away, or you cover their shift). Otherwise ask for a vault of your own (Cash → Shifts and vaults).</p>
-      {!online && <p className="error">Lending a vault needs the server. Try again when the till is online.</p>}
+      {!online && <p className="error">Lending a vault needs a connection. Try again when the status says Connected.</p>}
       {others.length === 0 ? <p className="muted">There is no other vault at this branch.</p> : (
         <>
           <label>Vault<select value={vaultId} onChange={(e) => setVaultId(e.target.value)}>
@@ -381,7 +381,7 @@ export function CloseShift({ boot, online, onClosed, onCancel }: { boot: Bootstr
     return (
       <div className="card narrow">
         <h1>Shift closed</h1>
-        {result.provisional && <p className="banner warn">Worked out on this till while offline; the server confirms it when the till reconnects.</p>}
+        {result.provisional && <p className="banner warn">These figures are provisional until the till is back online.</p>}
         {result.expected === null ? (
           <>
             <dl className="totals"><dt>You counted</dt><dd>{money(result.counted)}</dd></dl>

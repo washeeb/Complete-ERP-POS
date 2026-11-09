@@ -127,7 +127,6 @@ export function receiptEscPos(sale: PostedSale, boot: Bootstrap, logo: Raster | 
     p.feed().line('Customer ________________________').feed().line('Manager  ________________________')
   }
   for (const line of footerLines(boot.receipt_footer)) p.line(line) // each message on its own line
-  if (boot.license?.ref) p.line(`Ref ${boot.license.ref}`)
   // The software maker's name and contact, in bold so they read clearly on thermal paper.
   p.bold(true)
   if (boot.brand?.powered_by) p.line(boot.brand.powered_by)

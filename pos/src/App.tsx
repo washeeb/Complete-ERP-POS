@@ -28,8 +28,8 @@ type Stage = 'loading' | 'enroll' | 'login' | 'open-shift' | 'handover' | 'sell'
 
 const LABELS: Record<ConnectionState, string> = {
   online: 'Connected',
-  'server-down': 'Server not answering — working offline',
-  offline: 'No network — working offline',
+  'server-down': 'Offline — selling continues',
+  offline: 'No network — selling continues',
 }
 
 /** How often the desktop till saves its own copy of unsent sales while any are waiting. */
@@ -102,7 +102,7 @@ export default function App() {
       setProducts(p)
       setCatalogVersion(version)
       if (!b.till) {
-        setError('This device is not assigned to a till. Ask an administrator to assign it under System → Devices.')
+        setError('This device is not set up as a till yet. Ask your administrator.')
         return setStage('error')
       }
       // One shift per person: another person's shift still open here is closed (counted) before this person opens their own.
@@ -117,7 +117,7 @@ export default function App() {
         return setStage('login')
       }
       setError(e instanceof ApiError && e.code === 'network'
-        ? 'This till has never loaded the catalog. Connect it to the server once before selling offline.'
+        ? 'This till is not ready yet. Connect it to the internet once, then try again.'
         : e instanceof Error ? e.message : String(e))
       setStage('error')
     }
@@ -227,7 +227,7 @@ export default function App() {
         <div className="banner practice no-print" role="status">PRACTICE — nothing here is real: made-up sales, no money, nothing sent to GRA or customers.</div>
       )}
       {boot?.license?.message && (
-        <div className={`banner no-print ${boot.license.read_only ? 'bad' : 'warn'}`} role="alert">{boot.license.read_only ? 'Read-only: ' : ''}{boot.license.message}</div>
+        <div className={`banner no-print ${boot.license.read_only ? 'bad' : 'warn'}`} role="alert">{boot.license.message}</div>
       )}
       {boot && !['loading', 'enroll', 'login', 'kitchen', 'handheld', 'error'].includes(stage) && (
         <IdleLock key={boot.user.id} minutes={boot.idle_lock_minutes ?? 0} user={boot.user} onSignOut={logout} />
@@ -321,7 +321,7 @@ function ReportProblem({ screen, online, queued }: { screen: string; online: boo
       setResult(`Thank you — problem ${r.number} is recorded${r.sent ? ' and support has been told' : ''}.`)
       setText('')
     } catch (err) {
-      setError(err instanceof ApiError && err.code !== 'network' ? err.message : 'No connection to the server: tell your supervisor, or try again when the status says Connected.')
+      setError(err instanceof ApiError && err.code !== 'network' ? err.message : 'No connection: tell your supervisor, or try again when the status says Connected.')
     } finally {
       setBusy(false)
     }
