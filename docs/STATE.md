@@ -51,6 +51,9 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 ## Print in the desktop apps, same window — branch `print-same-window`
 - Suite: `tauri_plugin_opener::Builder::new().open_js_links_on_click(false)`; `on_new_window` navigates the main window to the server's page and denies the pop-up (both apps). Print pages (`print/receipt`, `print/layout`, `print/labels`) have a Back / Close button (`data-zx-leave`). ZionEX Suite 1.0.8, ZionEX Till 0.30.5.
 
+## Owner's list of 2026-11-09 — branch `owner-list-11-09`
+- `Branding::receiptCredit` one line, printed before `powered_by` (till Receipt.tsx, escpos.ts, print/receipt, print/layout). `Look::SUBGROUPS` / `subgroups()` (tab panels `zx-mega-sub`, side menu `zx-sn-g`; one-section tabs become columns). `--zx-topbar-h` pins the tab band under the top bar. Slim header keeps its lost height as `margin-bottom` (`--zx-slim-keep`). `StockCostRuns::replaceExisting` + *Replace their costs too* + preview description. Tests: StockCostRunsTest, BrandingTest, escpos.test.ts.
+
 ## Industry confinement — branch `industry-confinement`
 - `IndustryContext` (`selected`, `companyWide`, `choices`, `sharingAllowed`, `productScope`), `CatalogService::industryFor`, `SharedProducts`, `SharedProductsPage`, `CompanyWideAccess`, `AccessService::mayBeCompanyWide` and `narrow`. Settings `catalog.shared_products`, `access.company_wide`. Tests: IndustryConfinementTest.
 

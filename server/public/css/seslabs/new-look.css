@@ -156,7 +156,7 @@ html.zx-new .fi-user-avatar, html.zx-new .fi-avatar { box-shadow: 0 0 0 2px var(
 .dark .zx-new-menu a:hover { color: var(--primary-200); }
 
 /* ---- The menu band (tabs across the top), in the menu colour --------------------------------------------------- */
-.zx-tabbar { position: sticky; top: 0; z-index: 25; background: var(--zx-menu); color: var(--zx-menu-text); box-shadow: 0 2px 6px rgb(0 0 0 / .14); }
+.zx-tabbar { position: sticky; top: var(--zx-topbar-h, 4rem); z-index: 25; background: var(--zx-menu); color: var(--zx-menu-text); box-shadow: 0 2px 6px rgb(0 0 0 / .14); }
 .zx-tabs { display: flex; flex-wrap: wrap; padding-inline: clamp(.25rem, 1.5vw, 1.25rem) clamp(.5rem, 2vw, 1.5rem); }
 .zx-tab-li { position: relative; }
 .zx-tab { display: inline-flex; align-items: center; height: 2.6rem; padding: 0 .95rem; font-size: .875rem; font-weight: 500; letter-spacing: .005em;
@@ -442,6 +442,9 @@ html.zx-new .fi-ta-table > :is(thead, tbody) > tr > .fi-ta-selection-cell + * { 
 html.zx-new .fi-ta-table > thead > tr > .fi-ta-selection-cell + * { z-index: 4; background: linear-gradient(var(--zx-head), var(--zx-head)), var(--zx-panel); }
 html.zx-new .fi-ta-row:nth-child(even) > :is(:first-child, .fi-ta-selection-cell + *) { background: linear-gradient(color-mix(in srgb, var(--zx-head) 70%, transparent), color-mix(in srgb, var(--zx-head) 70%, transparent)), var(--zx-panel); }
 html.zx-new .fi-ta-content-ctn.zx-sideways .fi-ta-table > :is(thead, tbody) > tr > :is(:first-child:not(.fi-ta-selection-cell), .fi-ta-selection-cell + *) { box-shadow: 1px 0 0 var(--zx-line), 4px 0 6px -4px rgb(0 0 0 / .25); }
+/* The height the header loses when slim stays as space under it (look-head), so nothing below moves, the browser does not
+   shift the scroll to compensate, and the header does not switch back and forth while scrolling (owner 2026-11-09). */
+html.zx-new.zx-slim .fi-header { margin-bottom: var(--zx-slim-keep, 0px); }
 html.zx-new.zx-slim .fi-header { position: sticky; top: var(--zx-stick); z-index: 20; min-height: 0; padding-block: .45rem; box-shadow: 0 6px 14px rgb(0 0 0 / .18); }
 html.zx-new.zx-slim .fi-header :is(.fi-breadcrumbs, .fi-header-subheading, .zx-hero-ic) { display: none; }
 html.zx-new.zx-slim .fi-header:has(.zx-hero-ic) > div:first-child { padding-inline-start: 0; min-height: 0; }
@@ -449,3 +452,9 @@ html.zx-new.zx-slim .fi-header-heading { font-size: 1.05rem; line-height: 1.5rem
 html.zx-new.zx-slim .fi-header .fi-btn { padding-block: .3rem; }
 @media (max-width: 1023px) { html.zx-new .fi-ta-content-ctn { max-height: none; } }
 @media print { html.zx-new .fi-ta-content-ctn { max-height: none; overflow: visible; } html.zx-new.zx-slim .fi-header { position: static; } }
+
+/* Related pages under small headings inside a menu section (Look::SUBGROUPS, owner 2026-11-09). */
+.zx-mega-sub { margin: .55rem .5rem .15rem; padding-top: .45rem; border-top: 1px solid color-mix(in oklab, currentColor 12%, transparent); font-size: .75rem; font-weight: 600; color: var(--zx-muted); }
+.zx-mega-h + .zx-mega-sub, .zx-mega-sec > .zx-mega-sub:first-child { margin-top: .1rem; padding-top: 0; border-top: 0; }
+.zx-sn-g { margin: .35rem 0 .05rem; padding: 0 1.25rem 0 3.45rem; font-size: .7rem; font-weight: 600; color: var(--zx-menu-muted); }
+

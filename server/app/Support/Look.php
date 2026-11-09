@@ -40,6 +40,81 @@ final class Look
         'Setup' => ['Company', 'Messages', 'System'],
     ];
 
+    /**
+     * Related pages together, under small headings, inside a menu section (owner 2026-11-09: the till pages were
+     * scattered between the other Sales pages). By the label shown in the menu; a page not listed keeps its place at the
+     * end of its section, under "Other" when the section has headings, so nothing ever drops out of the menu.
+     */
+    public const SUBGROUPS = [
+        'Sales' => [
+            'Till' => ['Till sales', 'Till shifts', 'Till drawer', 'Review queue'],
+            'Orders & invoices' => ['Quotes & orders', 'Invoices', 'Payments received'],
+            'Returns' => ['Returns', 'Back-office returns'],
+            'Customers' => ['Customers', 'Aged receivables', 'Gift cards & credit'],
+        ],
+        'Purchasing' => [
+            'Ordering' => ['Purchase requests', 'Requests for quotation', 'Purchase orders', 'Direct purchases', 'Contracts and blanket orders'],
+            'Receiving' => ['Goods received', 'Landed costs', 'Invoices from suppliers'],
+            'Reordering' => ['What to order', 'Reorder levels', 'Suggested levels'],
+            'Suppliers' => ['Suppliers', 'Consignment to pay', 'Spend analytics'],
+        ],
+        'Stock' => [
+            'On hand' => ['My day', 'Stock on hand', 'Stock ledger', 'Bins'],
+            'Moving stock' => ['Transfers', 'Stock requests', 'Waybills', 'Returns to suppliers'],
+            'Counting' => ['Stock counts', 'Stock adjustments', 'Shrink'],
+            'Expiry' => ['Batches & expiry', 'Expiry & returns', 'Slow & dead stock'],
+            'Costs' => ['Cost runs', 'Estimated costs'],
+        ],
+        'Pricing & tax' => [
+            'Prices' => ['Price Lists', 'Price list', 'Prices to review', 'Pricing rules', 'Promotions'],
+            'Tax' => ['Tax groups', 'Tax Rates'],
+        ],
+        'Finance' => [
+            'Books' => ['Journals', 'Chart of accounts', 'Reports', 'Month-end', 'Budgets'],
+            'Bank & cash' => ['Bank & cash', 'Money moved'],
+            'Suppliers' => ['Supplier bills', 'Supplier payments', 'Aged payables', 'Withholding tax'],
+            'Spending & assets' => ['Expense claims', 'Fixed assets'],
+            'Tax & exports' => ['GRA E-VAT', 'Export to QuickBooks / Xero / Sage'],
+        ],
+        'System' => [
+            'Getting started' => ['Go-live', 'Modules', 'Settings', 'Import data (CSV / Excel)', 'Licence'],
+            'Devices' => ['Devices', 'Computers'],
+            'Connections' => ['Messaging', 'Mobile money', 'Integrations', 'API clients', 'Sync Center'],
+            'Safety & support' => ['Backups', 'Health', 'Audit log', 'Problem reports', 'Support access'],
+        ],
+    ];
+
+    /**
+     * A section's pages in their headed groups. @param list<array{label: string}> $items
+     *
+     * @return list<array{label: ?string, items: list<array<string, mixed>>}>
+     */
+    public static function subgroups(string $section, array $items): array
+    {
+        $plan = self::SUBGROUPS[$section] ?? null;
+        if ($plan === null) {
+            return [['label' => null, 'items' => $items]];
+        }
+        $groups = [];
+        $placed = [];
+        foreach ($plan as $heading => $labels) {
+            $in = array_values(array_filter($items, fn ($i) => in_array($i['label'], $labels, true)));
+            usort($in, fn ($a, $b) => array_search($a['label'], $labels, true) <=> array_search($b['label'], $labels, true));
+            if ($in !== []) {
+                $groups[] = ['label' => $heading, 'items' => $in];
+                foreach ($in as $i) {
+                    $placed[$i['url']] = true;
+                }
+            }
+        }
+        $rest = array_values(array_filter($items, fn ($i) => ! isset($placed[$i['url']])));
+        if ($rest !== []) {
+            $groups[] = ['label' => $groups === [] ? null : 'Other', 'items' => $rest];
+        }
+
+        return count($groups) === 1 ? [['label' => null, 'items' => $groups[0]['items']]] : $groups;
+    }
+
     /** Words people type for pages named otherwise (the menu search and the page finder). */
     public const MENU_WORDS = ['shared' => ['shared products'], 'industry' => ['shared products'], 'company-wide' => ['company-wide access'], 'access' => ['company-wide access'], 'po' => ['purchase order'], 'grn' => ['goods received'], 'momo' => ['mobile money', 'till shifts'],
         'adjust' => ['stock adjustment'], 'expiry' => ['batches & expiry', 'expiry & returns'], 'staff' => ['users'],
@@ -191,14 +266,15 @@ final class Look
             if ($label === '') {
                 $home = array_merge($home, $items);
             } else {
-                $sectionsByGroup[$label] = ['label' => $label, 'items' => $items];
+                $groups = self::subgroups($label, $items);
+                $sectionsByGroup[$label] = ['label' => $label, 'items' => array_merge(...array_column($groups, 'items')), 'groups' => $groups];
             }
         }
 
         // The home page has its own house icon on the band; other pages without a section (e.g. Today) go first in the
         // first tab as "Overview", or in a Home tab of their own when the person has no other tab to hold them.
         $home = array_values(array_filter($home, fn ($i) => $i['url'] !== self::homeUrl()));
-        $overview = $home === [] ? [] : ['label' => 'Overview', 'items' => $home];
+        $overview = $home === [] ? [] : ['label' => 'Overview', 'items' => $home, 'groups' => [['label' => null, 'items' => $home]]];
 
         $tabs = [];
         $placed = [];
@@ -209,6 +285,10 @@ final class Look
                     $sections[] = $sectionsByGroup[$g];
                     $placed[$g] = true;
                 }
+            }
+            // A tab holding one section with headed groups (Purchasing, Finance): each group becomes a column.
+            if (count($sections) === 1 && $sections[0]['label'] === $tab && count($sections[0]['groups']) > 1) {
+                $sections = array_map(fn ($g) => ['label' => $g['label'], 'items' => $g['items'], 'groups' => [['label' => null, 'items' => $g['items']]]], $sections[0]['groups']);
             }
             if ($sections !== []) {
                 // A tab holding a single section takes its name (e.g. a pharmacy sees "Pharmacy", not "Industries").

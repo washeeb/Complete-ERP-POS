@@ -26,7 +26,11 @@
                     @if (count($tab['sections']) > 1)
                         <p class="zx-sn-h">{{ $section['label'] }}</p>
                     @endif
-                    @foreach ($section['items'] as $item)
+                    @foreach ($section['groups'] ?? [['label' => null, 'items' => $section['items']]] as $group)
+                    @if ($group['label'])
+                        <p class="zx-sn-g">{{ $group['label'] }}</p>
+                    @endif
+                    @foreach ($group['items'] as $item)
                         <a href="{{ $item['url'] }}" @class(['zx-sn-sub', 'zx-active' => $item['active']]) @if ($item['active']) aria-current="page" @endif>
                             @if ($item['icon'])
                                 <x-filament::icon :icon="$item['icon']" class="zx-sn-subic" />
@@ -36,6 +40,7 @@
                                 <span class="zx-badge">{{ $item['badge'] }}</span>
                             @endif
                         </a>
+                    @endforeach
                     @endforeach
                 @endforeach
             </div>

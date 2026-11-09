@@ -129,8 +129,8 @@ export function receiptEscPos(sale: PostedSale, boot: Bootstrap, logo: Raster | 
   for (const line of footerLines(boot.receipt_footer)) p.line(line) // each message on its own line
   // The software maker's name and contact, in bold so they read clearly on thermal paper.
   p.bold(true)
-  if (boot.brand?.powered_by) p.line(boot.brand.powered_by)
   for (const line of boot.brand?.credit ?? []) p.line(line)
+  if (boot.brand?.powered_by) p.line(boot.brand.powered_by)
   p.bold(false)
   return p.cut()
 }

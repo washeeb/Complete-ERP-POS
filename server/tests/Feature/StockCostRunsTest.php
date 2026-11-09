@@ -90,6 +90,17 @@ it('skips what has a real cost unless told to replace it, and lists what it cann
     expect((float) ($this->avg)($real))->toBe(1000.0)->and(($this->books)())->toBe(5000);
 });
 
+it('says why a run for chosen products has nothing to do, and replaces their costs on request', function () {
+    // Owner 2026-11-09: a run for some products showed 0 lines, because those products already had a cost.
+    $real = makeProduct($this->owner, 'REAL', 'Real cost', retail: '14.00')->fresh(['units']);
+    ($this->stockUp)($real, '5', '7.00');
+    $run = $this->runs->prepare($this->a, ['method' => 'divide', 'value' => '1.4', 'product_ids' => [$real->id]]);
+    expect($run->lines_count)->toBe(0)->and($run->already_costed_count)->toBe(1)->and($run->overwrite)->toBeFalse();
+
+    $run = $this->runs->replaceExisting($this->a, $run);
+    expect($run->overwrite)->toBeTrue()->and($run->lines_count)->toBe(1)->and($run->stock_value_minor)->toBe(1500);
+});
+
 it('runs on a selection, with a factor per category or brand', function () {
     $a = makeProduct($this->owner, 'AAA', 'First', retail: '14.00')->fresh(['units']);
     $b = makeProduct($this->owner, 'BBB', 'Second', retail: '16.00')->fresh(['units']);

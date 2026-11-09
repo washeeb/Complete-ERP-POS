@@ -53,7 +53,7 @@
     </header>
     @yield('content')
     {{-- Customers and suppliers read these: no licence reference in sight (owner 2026-11-09). The company name above carries it hidden. --}}
-    <p class="wm">@if ($brand['powered_by']){{ $brand['powered_by'] }}@endif @foreach ($brand['credit'] ?? [] as $line) · {{ $line }}@endforeach</p>
+    <p class="wm">@foreach ($brand['credit'] ?? [] as $line){{ $line }} · @endforeach{{ $brand['powered_by'] }}</p>
 </div>
 </body>
 </html>

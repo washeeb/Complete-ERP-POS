@@ -1,6 +1,13 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+- **Receipts:** the software maker's number and website are one line (*024 563 6889 · synclyticsenterprisesystems.com*) just above *ZionEX Suite · Powered by SES Labs*; no *Software by SyncLytics*. On the till's receipt, the receipt printer, the server's printed receipt and printed documents.
+- **Menus grouped:** related pages sit together under small headings inside each menu section (Sales: Till, Orders & invoices, Returns, Customers; Purchasing, Stock, Pricing & tax, Finance and System likewise). A tab with one section shows its groups as columns. Same in the side-menu look.
+- **The top bar is pinned too:** the bar with search, industry and your name now stays at the top with the menu band under it (the band used to slide over it).
+### Fixed
+- **The page flickered while scrolling** on pages a little taller than the window: the title banner turned slim, the browser shifted the scroll to make up for the lost height, and the banner switched back. The lost height now stays as space under the slim banner, so nothing moves.
+- **A cost run for chosen products showed nothing to do** when those products already had a cost (it only fills in missing costs unless told otherwise). The preview now says so, and **Replace their costs too** works the run out again replacing them.
 ### Fixed
 - **Print preview and Print copy still did nothing in ZionEX Suite 1.0.7.** The app's link-opening plugin caught every click on a link that opens a new tab and tried to send it to the normal browser, which is not allowed for the server's own pages, so the click was lost before the app's new-window rule saw it. ZionEX Suite 1.0.8 turns that off: the server's pages (print previews, printouts, statements, invoices) open in the same window, where Print works, and their **Back** button returns to where you were; other sites still open in the normal browser. ZionEX Till 0.30.5 does the same. Tested by driving the real app, not only a browser.
 ### Fixed

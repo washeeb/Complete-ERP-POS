@@ -82,8 +82,8 @@ final class Branding
     }
 
     /**
-     * Who made the software and how to reach them, under "Powered by" on receipts: short lines that fit a 58 mm roll.
-     * None with a white-label licence.
+     * How to reach the software maker, one line just above "ZionEX Suite · Powered by SES Labs" on receipts (owner
+     * 2026-11-09: no "Software by …"; number and website on one line). None with a white-label licence.
      *
      * @return list<string>
      */
@@ -95,7 +95,9 @@ final class Branding
         $phone = config('brand.support_phone');
         $web = ($w = config('brand.website')) ? preg_replace('#^https?://(www\.)?#', '', rtrim($w, '/')) : null;
 
-        return array_values(array_filter(['Software by '.config('brand.vendor').($phone ? ": {$phone}" : ''), $web]));
+        $line = implode(' · ', array_filter([$phone, $web]));
+
+        return $line === '' ? [] : [$line];
     }
 
     // --- a client company ----------------------------------------------------------------------------------------------
