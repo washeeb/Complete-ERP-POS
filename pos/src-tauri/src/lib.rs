@@ -300,15 +300,17 @@ pub fn run() {
                         let _ = window.show();
                     }
                 })
-                // A link that opens a new window (a printed copy, a statement): the server's own pages open in a window of
-                // their own, where Print works; nothing else opens on a till. Without this the web view drops such links.
+                // A link that opens a new window (a printed copy, a statement): the server's own pages open in this
+                // window, where Print works and the page's Back button returns; nothing else opens on a till. Without
+                // this the web view drops such links.
                 .on_new_window(move |u, _features| {
                     let server = popups.state::<AppState>().config.lock().ok().and_then(|c| c.server.clone());
                     if server.is_some_and(|s| u.as_str().starts_with(&s)) {
-                        NewWindowResponse::Allow
-                    } else {
-                        NewWindowResponse::Deny
+                        if let Some(w) = popups.get_webview_window("main") {
+                            let _ = w.navigate(u);
+                        }
                     }
+                    NewWindowResponse::Deny
                 })
                 .on_navigation(move |u| {
                     if is_local(u) {

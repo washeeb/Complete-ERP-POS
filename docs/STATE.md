@@ -48,6 +48,9 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 ## Archive dialog button; new windows in the desktop apps — branch `fix-archive-print`
 - `ArchiveUi::archive` `modalSubmitAction(fn (Action $action, …))` (Filament injects the dialog's button only as `$action`), label Archive; test in ArchiveEverywhereTest. `on_new_window` in `desktop/src-tauri` and `pos/src-tauri` lib.rs (server pages: Allow; other: opener / Deny). ZionEX Suite 1.0.7, ZionEX Till 0.30.4.
 
+## Print in the desktop apps, same window — branch `print-same-window`
+- Suite: `tauri_plugin_opener::Builder::new().open_js_links_on_click(false)`; `on_new_window` navigates the main window to the server's page and denies the pop-up (both apps). Print pages (`print/receipt`, `print/layout`, `print/labels`) have a Back / Close button (`data-zx-leave`). ZionEX Suite 1.0.8, ZionEX Till 0.30.5.
+
 ## Industry confinement — branch `industry-confinement`
 - `IndustryContext` (`selected`, `companyWide`, `choices`, `sharingAllowed`, `productScope`), `CatalogService::industryFor`, `SharedProducts`, `SharedProductsPage`, `CompanyWideAccess`, `AccessService::mayBeCompanyWide` and `narrow`. Settings `catalog.shared_products`, `access.company_wide`. Tests: IndustryConfinementTest.
 
