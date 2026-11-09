@@ -33,12 +33,20 @@
             const bottom = Math.min(160, Math.max(0, ...bars.map((r) => r.bottom)))
             if (bottom > 0) root.style.setProperty('--zx-stick', bottom + 'px')
         }
+        // The tab band pins just under the top bar, so both stay in view (owner 2026-11-09: "pin the menu bar also").
+        const topbar = () => { const t = document.querySelector('.fi-topbar-ctn'); if (t) root.style.setProperty('--zx-topbar-h', t.offsetHeight + 'px') }
+        topbar(); addEventListener('resize', topbar); document.addEventListener('DOMContentLoaded', topbar)
         const scrolled = () => {
             queued = false
             const room = root.scrollHeight - innerHeight
-            // Hysteresis, and only with room to spare, so shrinking the header never bounces the page back.
-            if (!slim && scrollY > 60 && room > 140) { slim = true; root.classList.add('zx-slim') }
-            else if (slim && scrollY < 8) { slim = false; root.classList.remove('zx-slim') }
+            // Hysteresis, and only with room to spare. The height the header loses stays as space under it, so nothing
+            // below moves: otherwise the browser shifts the scroll by that much to keep the content still, lands back near
+            // the top, the header grows again, and the page flickers while scrolling (owner 2026-11-09).
+            if (!slim && scrollY > 60 && room > 140) {
+                const h = document.querySelector('.fi-header'), before = h ? h.offsetHeight : 0
+                slim = true; root.classList.add('zx-slim')
+                root.style.setProperty('--zx-slim-keep', Math.max(0, before - (h ? h.offsetHeight : 0)) + 'px')
+            } else if (slim && scrollY < 8) { slim = false; root.classList.remove('zx-slim'); root.style.removeProperty('--zx-slim-keep') }
             if (slim) stick()
         }
         addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(scrolled) } }, { passive: true })

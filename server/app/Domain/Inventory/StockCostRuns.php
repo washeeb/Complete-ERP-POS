@@ -158,6 +158,24 @@ final class StockCostRuns
         });
     }
 
+    /**
+     * A run that left products alone because they already had a cost: replace their costs too, and work it out again
+     * (owner 2026-11-09: a run for chosen products showed nothing to do, because those products already had a cost).
+     */
+    public function replaceExisting(Actor $actor, StockCostRun $run): StockCostRun
+    {
+        $this->require($actor, 'stock.cost.manage');
+        $this->mustBeOpen($run);
+
+        return $this->recorder->transaction(function () use ($actor, $run) {
+            $run->overwrite = true;
+            $this->recorder->save($actor, $run, 'stock_cost_run.updated', 'Also replace costs products already have');
+            $this->store($run, $this->plan($run));
+
+            return $run->fresh();
+        });
+    }
+
     public function submit(Actor $actor, StockCostRun $run): StockCostRun
     {
         $this->require($actor, 'stock.cost.manage');

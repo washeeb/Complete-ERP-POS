@@ -125,7 +125,8 @@ class StockCostRunResource extends Resource
                 Select::make('supplier_ids')->label('Suppliers')->multiple()->searchable()->options(fn () => Supplier::orderBy('name')->pluck('name', 'id')),
                 Select::make('warehouse_ids')->label('Stores')->multiple()->options(fn () => Fields::warehouses('stock.cost.manage')),
                 Toggle::make('overwrite')->label('Also replace costs products already have')->default(false)->columnSpanFull()
-                    ->helperText('Off: only products with no cost are filled in, and real costs from deliveries stay. On: their real cost is lost from the average.'),
+                    ->helperText('Off: only products with no cost are filled in, and real costs from deliveries stay. On: their real cost is lost from the average. '
+                        .'To re-cost products you chose, switch this on.'),
             ]),
             Section::make('The books')->columns(2)->schema([
                 DatePicker::make('effective_on')->label('Date in the books')->required()->default(fn () => self::defaultDate())->helperText('Usually the go-live date. It must be in an open month.'),
@@ -143,24 +144,28 @@ class StockCostRunResource extends Resource
         $money = fn ($state) => FinanceUi::money((int) $state);
 
         return $schema->components([
-            Section::make(fn (StockCostRun $r) => $r->status === 'posted' || $r->status === 'reversed' ? 'What it did' : 'Preview: nothing has changed yet')->columns(4)->schema([
-                TextEntry::make('stock_value_minor')->label('Added to stock value')->formatStateUsing($money)->weight('bold'),
-                TextEntry::make('catch_up_minor')->label('Cost of past sales')->formatStateUsing($money),
-                TextEntry::make('lines_count')->label('Lines')->helperText('A product in each store'),
-                TextEntry::make('skipped_count')->label('Skipped')->helperText('Listed below, with the reason'),
-                TextEntry::make('already_costed_count')->label('Already had a cost')->helperText('Left as they are'),
-                TextEntry::make('factor')->label('Factor')->state(fn (StockCostRun $r) => StockCostRun::factorLabel($r->method, $r->value_bp)
-                    .collect($r->overrides ?? [])->map(fn ($o) => ', '.$o['name'].' '.StockCostRun::factorLabel($r->method, $o['value_bp']))->implode('')),
-                TextEntry::make('tax_mode')->label('VAT and levies')->formatStateUsing(fn ($state) => StockCostRun::TAX_MODES[$state] ?? $state),
-                TextEntry::make('priceList.name')->label('Prices from'),
-                TextEntry::make('effective_on')->label('Date in the books')->date('j M Y'),
-                TextEntry::make('account.name')->label('Against account')->placeholder('The usual accounts'),
-                TextEntry::make('status')->badge()->formatStateUsing(fn ($state) => StockCostRun::STATUSES[$state] ?? $state),
-                TextEntry::make('created_by_name')->label('Prepared by'),
-                TextEntry::make('posted_by_name')->label('Posted by')->placeholder('—'),
-                TextEntry::make('reason')->label('Reason')->placeholder('—'),
-                TextEntry::make('note')->label('Note')->placeholder('—')->columnSpan(2),
-            ]),
+            Section::make(fn (StockCostRun $r) => $r->status === 'posted' || $r->status === 'reversed' ? 'What it did' : 'Preview: nothing has changed yet')->columns(4)
+                // Say plainly why a run has nothing to do, and what to press (owner 2026-11-09).
+                ->description(fn (StockCostRun $r) => $r->isOpen() && (int) $r->lines_count === 0 && (int) $r->already_costed_count > 0 && ! $r->overwrite
+                    ? "Nothing to do: the {$r->already_costed_count} product line(s) chosen already have a cost, and this run only fills in missing costs. To give them a new cost, press \"Replace their costs too\"."
+                    : null)->schema([
+                        TextEntry::make('stock_value_minor')->label('Added to stock value')->formatStateUsing($money)->weight('bold'),
+                        TextEntry::make('catch_up_minor')->label('Cost of past sales')->formatStateUsing($money),
+                        TextEntry::make('lines_count')->label('Lines')->helperText('A product in each store'),
+                        TextEntry::make('skipped_count')->label('Skipped')->helperText('Listed below, with the reason'),
+                        TextEntry::make('already_costed_count')->label('Already had a cost')->helperText('Left as they are'),
+                        TextEntry::make('factor')->label('Factor')->state(fn (StockCostRun $r) => StockCostRun::factorLabel($r->method, $r->value_bp)
+                            .collect($r->overrides ?? [])->map(fn ($o) => ', '.$o['name'].' '.StockCostRun::factorLabel($r->method, $o['value_bp']))->implode('')),
+                        TextEntry::make('tax_mode')->label('VAT and levies')->formatStateUsing(fn ($state) => StockCostRun::TAX_MODES[$state] ?? $state),
+                        TextEntry::make('priceList.name')->label('Prices from'),
+                        TextEntry::make('effective_on')->label('Date in the books')->date('j M Y'),
+                        TextEntry::make('account.name')->label('Against account')->placeholder('The usual accounts'),
+                        TextEntry::make('status')->badge()->formatStateUsing(fn ($state) => StockCostRun::STATUSES[$state] ?? $state),
+                        TextEntry::make('created_by_name')->label('Prepared by'),
+                        TextEntry::make('posted_by_name')->label('Posted by')->placeholder('—'),
+                        TextEntry::make('reason')->label('Reason')->placeholder('—'),
+                        TextEntry::make('note')->label('Note')->placeholder('—')->columnSpan(2),
+                    ]),
         ]);
     }
 
@@ -194,6 +199,13 @@ class StockCostRunResource extends Resource
             Action::make('recalculate')->label('Work it out again')->icon(Heroicon::OutlinedArrowPath)->color('gray')
                 ->visible(fn (StockCostRun $record) => $record->isOpen() && Erp::canAnywhere('stock.cost.manage'))
                 ->action(fn (StockCostRun $record) => Erp::run(fn ($actor) => $svc()->recalculate($actor, $record), 'Worked out again')),
+            // Nothing to do because the products already had a cost: replace theirs too, without starting again.
+            Action::make('replaceExisting')->label('Replace their costs too')->icon(Heroicon::OutlinedArrowsRightLeft)->color('warning')
+                ->visible(fn (StockCostRun $record) => $record->isOpen() && ! $record->overwrite && $record->already_costed_count > 0 && Erp::canAnywhere('stock.cost.manage'))
+                ->requiresConfirmation()->modalHeading('Replace the costs these products already have?')
+                ->modalDescription(fn (StockCostRun $record) => "The {$record->already_costed_count} product line(s) that already had a cost get the cost worked out from the price. "
+                    .'Their real cost from deliveries is lost from the average, and the difference goes to Stock losses when posted. Nothing changes until it is posted.')
+                ->action(fn (StockCostRun $record) => Erp::run(fn ($actor) => $svc()->replaceExisting($actor, $record), 'Worked out again, replacing their costs')),
             Action::make('submit')->label('Send for approval')->icon(Heroicon::OutlinedPaperAirplane)
                 ->visible(fn (StockCostRun $record) => $record->status === 'draft' && Erp::canAnywhere('stock.cost.manage') && $svc()->twoPeople($record->tenant_id))
                 ->requiresConfirmation()->action(fn (StockCostRun $record) => Erp::run(fn ($actor) => $svc()->submit($actor, $record), 'Sent for approval')),

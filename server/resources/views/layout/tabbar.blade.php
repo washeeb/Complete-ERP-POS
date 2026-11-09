@@ -78,8 +78,12 @@
                                 @if (count($tab['sections']) > 1 || $section['label'] !== $tab['label'])
                                     <h3 class="zx-mega-h">{{ $section['label'] }}</h3>
                                 @endif
+                                @foreach ($section['groups'] ?? [['label' => null, 'items' => $section['items']]] as $group)
+                                @if ($group['label'])
+                                    <p class="zx-mega-sub">{{ $group['label'] }}</p>
+                                @endif
                                 <ul>
-                                    @foreach ($section['items'] as $item)
+                                    @foreach ($group['items'] as $item)
                                         <li role="none">
                                             <a role="menuitem" href="{{ $item['url'] }}" @class(['zx-mega-a', 'zx-active' => $item['active']]) @if ($item['active']) aria-current="page" @endif
                                                x-on:click="open = null">
@@ -94,6 +98,7 @@
                                         </li>
                                     @endforeach
                                 </ul>
+                                @endforeach
                             </section>
                         @endforeach
                     </div>

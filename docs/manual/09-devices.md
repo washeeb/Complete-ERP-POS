@@ -179,6 +179,8 @@ records which computer each change was made from.
 
 **Updating:** install the new `ZionEX Suite_<version>_x64-setup.exe` over the old one; the server address is kept. Version 1.0.2 replaces *ZionEX Back Office* (the earlier name) by itself, so there is one app on the computer. From 1.0.5 the installer also refreshes Windows' icon cache, so the new icon shows at once. From 1.0.8 (and ZionEX Till 0.30.5), buttons that open a page in a new window, such as **Print preview** and **Print copy**, open it in the same window, where you can print; the page's **Back** button returns to where you were. Earlier versions ignored them. From 1.0.6 (and ZionEX Till 0.30.3) the app shows the ZionEX loader, the logo's squares coming together, while it opens, so you can see it is working and not frozen. If a taskbar pin still shows the old icon, it points to the old app: unpin it and pin ZionEX Suite again from the Start menu.
 
+**The menus (office computers and browsers):** the top bar (search, industry, **+ New**, your name) and the menu band under it stay at the top of the window while you scroll, so the menus are always one click away. Inside each menu, related pages are grouped under small headings, for example under *Sales*: *Till* (till sales, till shifts, till drawer, review queue), *Orders & invoices*, *Returns* and *Customers*. **Why:** pages that belong together are found together.
+
 ## 9.8 Barcode scanner
 
 **Tablets and phones without a scanner** use the camera: the 📷 button beside the till's search box (Chrome on Android). Hold the barcode steady in the frame; the item is added as if scanned.

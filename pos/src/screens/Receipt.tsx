@@ -247,8 +247,8 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
         <footer className="center">
           <ReceiptQr text={sale.receipt_no} />
           {footerLines(boot.receipt_footer).map((line) => <p key={line} className="receipt-footer">{line}</p>)}
-          {boot.brand?.powered_by && <p className="receipt-credit">{boot.brand.powered_by}</p>}
           {(boot.brand?.credit ?? []).map((line) => <p key={line} className="receipt-credit">{line}</p>)}
+          {boot.brand?.powered_by && <p className="receipt-credit">{boot.brand.powered_by}</p>}
         </footer>
       </div>
       {sale.status === 'queued' && (sale.kitchen?.length ?? 0) > 0 && (
