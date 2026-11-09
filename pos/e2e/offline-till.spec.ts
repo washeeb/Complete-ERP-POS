@@ -115,7 +115,7 @@ test('sells online, keeps selling with the server down, then sends the signed qu
 
   // The server goes down.
   s.up = false
-  await expect(page.getByText('Server not answering — working offline')).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByText('Offline — selling continues')).toBeVisible({ timeout: 20_000 })
 
   // Sign out and back in: the PIN unlocks the grant offline; a wrong PIN is refused.
   await page.getByRole('button', { name: 'Sign out' }).click()
@@ -127,15 +127,16 @@ test('sells online, keeps selling with the server down, then sends the signed qu
   await page.getByRole('button', { name: 'OK' }).click()
 
   await sellOneMilo(page)
-  await expect(page.getByText('Recorded on this till while offline')).toBeVisible()
+  await expect(page.getByLabel(/^Receipt /)).toBeVisible()
+  await expect(page.getByText(/while offline|sent to the server/)).toHaveCount(0) // nothing about the connection on the receipt
   await expect(page.getByText('Receipt HQ-T01A-000002')).toBeVisible()
   await page.getByRole('button', { name: 'New sale' }).click()
-  await expect(page.getByText(/1 item\(s\) saved on this till/)).toBeVisible()
+  await expect(page.getByText(/1 sale\(s\) kept on this till/)).toBeVisible()
   expect(s.syncBodies).toHaveLength(0)
 
   // The server comes back: the queue is sent, signed, and the banner clears.
   s.up = true
-  await expect(page.getByText(/saved on this till/)).toBeHidden({ timeout: 30_000 })
+  await expect(page.getByText(/kept on this till/)).toBeHidden({ timeout: 30_000 })
   expect(s.syncBodies.length).toBeGreaterThan(0)
   const sent = JSON.parse(s.syncBodies[0].body)
   expect(sent.events.map((e: { type: string }) => e.type)).toEqual(['sale'])
@@ -231,7 +232,8 @@ test('a slow server does not hold up the receipt: the till carries on and sends 
   await sellOneMilo(page)
   await expect(page.getByText('Receipt HQ-T01A-000001')).toBeVisible({ timeout: 8_000 })
   expect(Date.now() - started).toBeLessThan(8_000) // a few seconds at most, not the server's 15
-  await expect(page.getByText('Recorded on this till while offline')).toBeVisible()
+  await expect(page.getByLabel(/^Receipt /)).toBeVisible()
+  await expect(page.getByText(/while offline|sent to the server/)).toHaveCount(0) // nothing about the connection on the receipt
 
   // The sale still reaches the server, from the queue.
   s.slowSalesMs = 0
