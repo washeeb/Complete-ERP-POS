@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Categories;
 
 use App\Filament\Resources\Categories\Pages\ListCategories;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\GlobalSearch;
 use App\Filament\Support\SimpleCatalogResource;
 use App\Models\Category;
@@ -10,10 +11,8 @@ use App\Models\Product;
 use BackedEnum;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -53,18 +52,16 @@ class CategoryResource extends SimpleCatalogResource
             TextInput::make('name')->required()->maxLength(120)->caps(),
             Select::make('parent_id')->label('Inside category')
                 ->options(fn (?Category $record) => Category::when($record, fn ($q) => $q->whereKeyNot($record->id))->orderBy('name')->pluck('name', 'id')),
-            Toggle::make('is_active')->default(true),
         ]);
     }
 
     public static function table(Table $table): Table
     {
-        return static::crudTable($table->columns([
+        return ArchiveUi::apply(static::crudTable($table->columns([
             TextColumn::make('name')->searchable()->sortable(),
             TextColumn::make('parent.name')->label('Inside'),
             TextColumn::make('products_count')->label('Products')->state(fn ($record) => Product::where('category_id', $record->id)->count()),
-            IconColumn::make('is_active')->boolean()->label('Active'),
-        ])->defaultSort('name'));
+        ])->defaultSort('name')));
     }
 
     public static function getPages(): array

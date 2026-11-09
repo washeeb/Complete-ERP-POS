@@ -11,6 +11,7 @@ use App\Filament\Resources\Suppliers\Pages\CreateSupplier;
 use App\Filament\Resources\Suppliers\Pages\EditSupplier;
 use App\Filament\Resources\Suppliers\Pages\ListSuppliers;
 use App\Filament\Resources\Suppliers\RelationManagers\DocumentsRelationManager;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
@@ -36,10 +37,8 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -113,7 +112,6 @@ class SupplierResource extends Resource
                 TextInput::make('return_days_before_expiry')->label('Takes back expiring stock up to (days before expiry)')->numeric()->minValue(0)->maxValue(730)
                     ->helperText('Leave empty if they take nothing back. For example 90: stock can go back until 90 days before it expires (Stock → Expiry & returns shows it).'),
                 Textarea::make('address')->columnSpan(2),
-                Toggle::make('is_active')->label('Active')->default(true)->inline(false),
                 Textarea::make('notes')->columnSpanFull(),
             ]),
             Section::make('How they are paid')->columns(3)
@@ -145,7 +143,7 @@ class SupplierResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
+        return ArchiveUi::apply($table
             ->columns([
                 TextColumn::make('code')->searchable()->sortable(),
                 TextColumn::make('name')->searchable()->description(fn (Supplier $r) => $r->contact_name),
@@ -163,9 +161,8 @@ class SupplierResource extends Resource
                 TextColumn::make('owed')->label('We owe')->alignEnd()->visible(fn () => Erp::canAnywhere('payables.view') && config('erp.node.role') !== 'branch')
                     ->state(fn (Supplier $r) => (int) DB::table('supplier_balances')->where('supplier_id', $r->id)->value('balance_minor'))
                     ->formatStateUsing(fn ($state) => $state ? FinanceUi::money((int) $state) : '—'),
-                IconColumn::make('is_active')->boolean()->label('Active'),
             ])
-            ->filters([TernaryFilter::make('is_active')->label('Active')->default(true), SelectFilter::make('status')->options(Supplier::STATUSES)])
+            ->filters([SelectFilter::make('status')->options(Supplier::STATUSES)])
             ->recordActions([
                 EditAction::make(),
                 Action::make('approve')->label('Approve')->icon(Heroicon::OutlinedCheckCircle)->color('success')
@@ -220,7 +217,7 @@ class SupplierResource extends Resource
                     ->action(fn (Supplier $r, array $data) => Erp::run(fn ($actor) => app(SupplierPaymentService::class)->opening($actor, $r, FinanceUi::toMinor($data['amount']),
                         $data['as_of'], $data['due_on'] ?? null, $data['reference'] ?? null), 'Opening balance recorded')),
             ])
-            ->defaultSort('name');
+            ->defaultSort('name'));
     }
 
     /** @param array<string, mixed> $c */

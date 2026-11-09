@@ -6,6 +6,7 @@ use App\Domain\Hr\HrService;
 use App\Filament\Resources\Employees\Pages\CreateEmployee;
 use App\Filament\Resources\Employees\Pages\EditEmployee;
 use App\Filament\Resources\Employees\Pages\ListEmployees;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
 use App\Filament\Support\GlobalSearch;
@@ -127,7 +128,7 @@ class EmployeeResource extends Resource
             ]),
             Section::make('Job')->columns(3)->schema([
                 Select::make('branch_id')->label('Branch')->required()->options(fn () => FinanceUi::branches())->default(fn () => FinanceUi::hq()),
-                QuickCreate::on(Select::make('department_id')->label('Department')->options(fn () => Department::orderBy('name')->pluck('name', 'id')), 'department'),
+                QuickCreate::on(Select::make('department_id')->label('Department')->options(fn ($state) => Department::where(fn ($q) => $q->whereNull('archived_at')->orWhere('id', $state))->orderBy('name')->pluck('name', 'id')), 'department'),
                 TextInput::make('job_title')->maxLength(255),
                 Select::make('employment_type')->required()->options(Employee::TYPES)->default('permanent'),
                 DatePicker::make('hire_date')->label('Start date')->required()->default(now()),
@@ -159,7 +160,7 @@ class EmployeeResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
+        return ArchiveUi::apply($table
             ->columns([
                 TextColumn::make('number')->searchable()->sortable(),
                 TextColumn::make('name')->searchable()->description(fn (Employee $r) => $r->job_title),
@@ -172,7 +173,7 @@ class EmployeeResource extends Resource
             ->filters([SelectFilter::make('status')->options(['active' => 'Active', 'terminated' => 'Left'])->default('active'),
                 SelectFilter::make('branch_id')->label('Branch')->options(fn () => FinanceUi::branches())])
             ->defaultSort('number')
-            ->recordActions([EditAction::make(), self::terminateAction()]);
+            ->recordActions([EditAction::make(), self::terminateAction()]));
     }
 
     public static function terminateAction(): Action

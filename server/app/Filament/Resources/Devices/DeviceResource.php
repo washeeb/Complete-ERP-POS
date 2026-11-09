@@ -7,6 +7,7 @@ use App\Domain\Remote\DeviceHealth;
 use App\Domain\Remote\RemoteAccess;
 use App\Filament\Resources\Devices\Pages\CreateDevice;
 use App\Filament\Resources\Devices\Pages\ListDevices;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\GlobalSearch;
 use App\Models\Branch;
@@ -98,7 +99,7 @@ class DeviceResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
+        return ArchiveUi::apply($table
             ->columns([
                 TextColumn::make('name')->searchable(),
                 TextColumn::make('kind')->formatStateUsing(fn ($state) => Device::KINDS[$state] ?? $state),
@@ -158,7 +159,7 @@ class DeviceResource extends Resource
                     ->schema([TextInput::make('reason')->required()->maxLength(255)->placeholder('Lost, stolen, replaced…')])
                     ->action(fn (Device $record, array $data) => Erp::run(fn ($actor) => app(DeviceService::class)
                         ->revoke($actor, $record, $data['reason']), 'Device revoked')),
-            ]);
+            ]));
     }
 
     public static function showCode(Device $device, string $code): void

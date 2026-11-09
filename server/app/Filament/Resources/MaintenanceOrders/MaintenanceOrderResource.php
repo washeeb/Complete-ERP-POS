@@ -93,7 +93,7 @@ class MaintenanceOrderResource extends Resource
         return $schema->columns(1)->components([
             Section::make()->columns(3)->schema([
                 Select::make('asset_id')->label('Equipment')->required()->searchable()->default(fn () => request()->query('asset'))
-                    ->options(fn () => ServiceUi::maintenance(MaintenanceAsset::query())->where('status', '<>', 'retired')->orderBy('number')->get()->mapWithKeys(fn ($a) => [$a->id => "{$a->number} {$a->name}"])),
+                    ->options(fn () => ServiceUi::maintenance(MaintenanceAsset::query())->whereNull('archived_at')->where('status', '<>', 'retired')->orderBy('number')->get()->mapWithKeys(fn ($a) => [$a->id => "{$a->number} {$a->name}"])),
                 Select::make('kind')->options(MaintenanceOrder::KINDS)->default('breakdown')->required()->selectablePlaceholder(false),
                 Select::make('priority')->options(['urgent' => 'Urgent', 'high' => 'High', 'normal' => 'Normal', 'low' => 'Low'])->default('normal')->selectablePlaceholder(false),
                 TextInput::make('title')->label('What is to be done')->required()->maxLength(255)->columnSpan(2),

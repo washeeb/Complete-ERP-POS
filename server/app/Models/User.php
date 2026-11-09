@@ -6,6 +6,7 @@ use App\Domain\Licensing\LicenseManager;
 use App\Domain\Licensing\Vendor\VendorLicensing;
 use App\Domain\Support\Actor;
 use App\Domain\Support\Recorder;
+use App\Models\Concerns\Archivable;
 use App\Models\Concerns\HasOriginNode;
 use App\Security\Authorizer;
 use App\Security\SecurityLevel;
@@ -34,7 +35,7 @@ use Spatie\LaravelPasskeys\Models\Concerns\InteractsWithPasskeys;
 class User extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery, HasAvatar, HasPasskeys
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, HasOriginNode, HasUuids, InteractsWithPasskeys, Notifiable;
+    use Archivable, HasApiTokens, HasFactory, HasOriginNode, HasUuids, InteractsWithPasskeys, Notifiable;
 
     protected $fillable = ['name', 'username', 'email', 'password', 'security_level', 'is_active'];
 

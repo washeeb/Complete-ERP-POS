@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Bins;
 
 use App\Domain\Inventory\BinService;
 use App\Filament\Resources\Bins\Pages\ListBins;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Models\Bin;
@@ -17,13 +18,11 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -84,7 +83,6 @@ class BinResource extends Resource
             TextInput::make('name')->maxLength(255),
             TextInput::make('pick_order')->label('Pick order')->numeric()->minValue(0)->default(100)
                 ->helperText('Sales and transfers take stock from lower numbers first.'),
-            Toggle::make('is_active')->label('Active')->default(true),
         ]);
     }
 
@@ -92,7 +90,7 @@ class BinResource extends Resource
     {
         $save = fn (Bin $bin, array $data) => Erp::run(fn ($actor) => app(BinService::class)->saveBin($actor, $bin, $data), 'Saved');
 
-        return $table
+        return ArchiveUi::apply($table
             ->columns([
                 TextColumn::make('code')->searchable()->sortable()->description(fn (Bin $record) => $record->name),
                 TextColumn::make('warehouse.code')->label('Warehouse'),
@@ -101,7 +99,6 @@ class BinResource extends Resource
                 TextColumn::make('contents')->label('Holds')->state(fn (Bin $record) => DB::table('stock_bin_levels')->join('products', 'products.id', '=', 'stock_bin_levels.product_id')
                     ->where('bin_id', $record->id)->where('on_hand', '<>', 0)->orderBy('products.name')->limit(4)->get(['products.name', 'on_hand'])
                     ->map(fn ($r) => Fields::qty($r->on_hand).' '.$r->name)->implode(', ') ?: 'empty')->wrap(),
-                IconColumn::make('is_active')->boolean()->label('Active'),
             ])
             ->filters([SelectFilter::make('warehouse_id')->label('Warehouse')->options(fn () => Warehouse::where('use_bins', true)->pluck('code', 'id'))])
             ->defaultSort('pick_order')
@@ -125,7 +122,7 @@ class BinResource extends Resource
                 EditAction::make()->using(fn (Bin $record, array $data): Model => $save($record, $data)),
             ])
             ->emptyStateHeading('No bins')
-            ->emptyStateDescription('Switch bins on for a warehouse with “Bins on/off”; its receiving bin is created for you.');
+            ->emptyStateDescription('Switch bins on for a warehouse with “Bins on/off”; its receiving bin is created for you.'));
     }
 
     public static function getPages(): array

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\MessageTemplates;
 use App\Domain\Messaging\Templates;
 use App\Domain\Modules\ModuleService;
 use App\Filament\Resources\MessageTemplates\Pages\ListMessageTemplates;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Models\Message;
 use App\Models\MessageTemplate;
@@ -83,7 +84,7 @@ class MessageTemplateResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->defaultSort('key')
+        return ArchiveUi::apply($table->defaultSort('key')
             ->columns([
                 TextColumn::make('key')->label('Message')->formatStateUsing(fn ($state) => Templates::DEFAULTS[$state][0] ?? $state)->searchable(),
                 TextColumn::make('channel')->badge()->formatStateUsing(fn ($state) => Message::CHANNELS[$state] ?? $state),
@@ -91,7 +92,7 @@ class MessageTemplateResource extends Resource
                 IconColumn::make('is_active')->label('On')->boolean(),
             ])
             ->filters([SelectFilter::make('channel')->options(Message::CHANNELS)])
-            ->recordActions([EditAction::make()->using(fn (MessageTemplate $record, array $data) => Erp::run(fn ($actor) => app(Templates::class)->save($actor, $record, $data)))]);
+            ->recordActions([EditAction::make()->using(fn (MessageTemplate $record, array $data) => Erp::run(fn ($actor) => app(Templates::class)->save($actor, $record, $data)))]));
     }
 
     public static function getPages(): array

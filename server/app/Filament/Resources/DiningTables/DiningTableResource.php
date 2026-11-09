@@ -5,6 +5,7 @@ namespace App\Filament\Resources\DiningTables;
 use App\Domain\Modules\ModuleService;
 use App\Domain\Restaurant\RestaurantSetup;
 use App\Filament\Resources\DiningTables\Pages\ListDiningTables;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Models\Branch;
 use App\Models\DiningTable;
@@ -13,13 +14,11 @@ use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -81,23 +80,21 @@ class DiningTableResource extends Resource
             TextInput::make('seats')->numeric()->required()->default(4)->minValue(1)->maxValue(60),
             TextInput::make('pos_x')->label('Column on the floor view')->numeric()->default(0)->minValue(0)->maxValue(99),
             TextInput::make('pos_y')->label('Row on the floor view')->numeric()->default(0)->minValue(0)->maxValue(99),
-            Toggle::make('is_active')->label('In use')->default(true)->inline(false),
         ]);
     }
 
     public static function table(Table $table): Table
     {
-        return $table->defaultSort('code')
+        return ArchiveUi::apply($table->defaultSort('code')
             ->columns([
                 TextColumn::make('branch.code')->label('Branch'),
                 TextColumn::make('code')->label('Table')->searchable(),
                 TextColumn::make('area')->placeholder('—'),
                 TextColumn::make('seats'),
                 TextColumn::make('position')->label('Floor view')->state(fn (DiningTable $r) => "column {$r->pos_x}, row {$r->pos_y}"),
-                IconColumn::make('is_active')->label('In use')->boolean(),
             ])
             ->filters([SelectFilter::make('branch_id')->label('Branch')->relationship('branch', 'name')])
-            ->recordActions([EditAction::make()->using(fn (DiningTable $record, array $data) => Erp::run(fn ($actor) => app(RestaurantSetup::class)->saveTable($actor, $record, $data)))]);
+            ->recordActions([EditAction::make()->using(fn (DiningTable $record, array $data) => Erp::run(fn ($actor) => app(RestaurantSetup::class)->saveTable($actor, $record, $data)))]));
     }
 
     public static function getPages(): array

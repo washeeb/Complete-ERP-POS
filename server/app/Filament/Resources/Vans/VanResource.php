@@ -7,6 +7,7 @@ use App\Domain\Distribution\VanSettlementService;
 use App\Domain\Modules\ModuleService;
 use App\Filament\Resources\Vans\Pages\ListVans;
 use App\Filament\Resources\VanSettlements\VanSettlementResource;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Models\Branch;
@@ -22,7 +23,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -90,7 +90,7 @@ class VanResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->defaultSort('code')
+        return ArchiveUi::apply($table->defaultSort('code')
             ->columns([
                 TextColumn::make('code')->searchable(),
                 TextColumn::make('name')->searchable(),
@@ -98,7 +98,6 @@ class VanResource extends Resource
                 TextColumn::make('rep_user_id')->label('Rep')->formatStateUsing(fn ($state) => User::whereKey($state)->value('name'))->placeholder('—'),
                 TextColumn::make('home_warehouse_id')->label('Loaded from')->formatStateUsing(fn ($state) => Warehouse::whereKey($state)->value('code')),
                 TextColumn::make('stock')->label('Stock on board')->state(fn (Warehouse $r) => number_format((float) DB::table('stock_levels')->where('warehouse_id', $r->id)->sum('on_hand'), 0).' units'),
-                IconColumn::make('is_active')->label('In use')->boolean(),
             ])
             ->recordActions([
                 ActionGroup::make([
@@ -111,7 +110,7 @@ class VanResource extends Resource
                             $livewire->redirect(VanSettlementResource::getUrl('view', ['record' => $s]));
                         }),
                 ])->label('Van')->button()->color('gray'),
-            ]);
+            ]));
     }
 
     private static function moveAction(string $name, string $label, bool $unload): Action

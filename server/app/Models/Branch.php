@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Archivable;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasOriginNode;
 use App\Security\Authorizer;
@@ -17,7 +18,7 @@ class Branch extends Model
         static::saved(fn () => app(Authorizer::class)->forgetBranches()); // its company / industry, remembered for permission checks
     }
 
-    use BelongsToTenant, HasOriginNode, HasUuids;
+    use Archivable, BelongsToTenant, HasOriginNode, HasUuids;
 
     protected $fillable = ['legal_entity_id', 'industry_id', 'code', 'name', 'is_hq', 'address', 'phone', 'timezone', 'is_active'];
 

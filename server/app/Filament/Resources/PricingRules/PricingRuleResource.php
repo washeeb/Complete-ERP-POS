@@ -4,6 +4,7 @@ namespace App\Filament\Resources\PricingRules;
 
 use App\Domain\Pricing\PricingRules;
 use App\Filament\Resources\PricingRules\Pages\ListPricingRules;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\SimpleCatalogResource;
 use App\Models\Category;
@@ -112,7 +113,7 @@ class PricingRuleResource extends SimpleCatalogResource
             'amount' => isset($data['amount_minor']) ? $data['amount_minor'] / 100 : null,
         ];
 
-        return $table
+        return ArchiveUi::apply($table
             ->columns([
                 TextColumn::make('scope')->label('Applies to')->formatStateUsing(fn (PricingRule $r) => match ($r->scope) {
                     'category' => 'Category: '.$r->category?->name, 'product' => 'Product: '.$r->product?->name, default => 'Whole company'
@@ -136,7 +137,7 @@ class PricingRuleResource extends SimpleCatalogResource
                         Notification::make()->success()->title("{$r['applied']} price(s) set, {$r['suggested']} waiting for review")->send();
                     }),
             ])
-            ->recordActions([EditAction::make()->mutateRecordDataUsing($fill)->using(fn (PricingRule $record, array $data) => $save($record, $data))]);
+            ->recordActions([EditAction::make()->mutateRecordDataUsing($fill)->using(fn (PricingRule $record, array $data) => $save($record, $data))]));
     }
 
     public static function getPages(): array

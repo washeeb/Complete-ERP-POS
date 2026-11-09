@@ -114,7 +114,7 @@ class TicketResource extends Resource
             ]),
             Section::make('Where and who')->columns(3)->schema([
                 Select::make('asset_id')->label('Equipment it is about')->searchable()->placeholder('—')
-                    ->options(fn () => MaintenanceAsset::where('status', '<>', 'retired')->orderBy('number')->get()->mapWithKeys(fn ($a) => [$a->id => "{$a->number} {$a->name}"])),
+                    ->options(fn () => MaintenanceAsset::whereNull('archived_at')->where('status', '<>', 'retired')->orderBy('number')->get()->mapWithKeys(fn ($a) => [$a->id => "{$a->number} {$a->name}"])),
                 Select::make('branch_id')->label('Branch')->placeholder('—')->options(fn () => Branch::where('is_active', true)->orderBy('code')->pluck('name', 'id')),
                 Select::make('assigned_to')->label('Give it to')->placeholder('—')->options(fn () => ServiceUi::people('helpdesk.work'))->visible(fn () => ! $staffOnly()),
             ]),
@@ -187,7 +187,7 @@ class TicketResource extends Resource
             Action::make('workOrder')->label('Work order')->icon(Heroicon::OutlinedWrenchScrewdriver)->color('gray')
                 ->visible(fn (Ticket $t) => $t->isOpen() && ServiceUi::can('maintenance.work'))
                 ->schema([Select::make('asset_id')->label('Equipment')->required()->searchable()->default(fn (Ticket $t) => $t->asset_id)
-                    ->options(fn () => MaintenanceAsset::where('status', '<>', 'retired')->orderBy('number')->get()->mapWithKeys(fn ($a) => [$a->id => "{$a->number} {$a->name}"]))])
+                    ->options(fn () => MaintenanceAsset::whereNull('archived_at')->where('status', '<>', 'retired')->orderBy('number')->get()->mapWithKeys(fn ($a) => [$a->id => "{$a->number} {$a->name}"]))])
                 ->action(function (Ticket $record, array $data, $livewire) {
                     $o = Erp::run(fn ($actor) => app(Maintenance::class)->fromTicket($actor, $record, $data['asset_id']), 'Work order opened');
                     $livewire->redirect(MaintenanceOrderResource::getUrl('view', ['record' => $o]));

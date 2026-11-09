@@ -12,6 +12,7 @@ use App\Filament\Resources\Customers\Pages\CreateCustomer;
 use App\Filament\Resources\Customers\Pages\EditCustomer;
 use App\Filament\Resources\Customers\Pages\ListCustomers;
 use App\Filament\Resources\Customers\Pages\ViewCustomer;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\GlobalSearch;
 use App\Models\Branch;
@@ -127,7 +128,6 @@ class CustomerResource extends Resource
                 Select::make('home_branch_id')->label('Home branch')->options(fn ($state) => Branch::choices($state)),
                 Textarea::make('address')->columnSpan(2),
                 TagsInput::make('tags')->placeholder('e.g. wholesale, VIP'),
-                Toggle::make('is_active')->label('Active')->default(true)->inline(false),
                 Textarea::make('notes')->columnSpanFull(),
             ]),
             Section::make('Marketing consent')->description('Only tick what the customer agreed to. Every change is kept with who recorded it, when and how.')
@@ -259,7 +259,7 @@ class CustomerResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
+        return ArchiveUi::apply($table
             ->columns([
                 TextColumn::make('code')->searchable()->sortable(),
                 TextColumn::make('name')->searchable()->description(fn (Customer $record) => $record->contact_name),
@@ -275,7 +275,7 @@ class CustomerResource extends Resource
                 Filter::make('credit')->label('Credit customers')->query(fn (Builder $q) => $q->whereNotNull('credit_limit_minor')),
             ])
             ->defaultSort('name')
-            ->recordActions([ViewAction::make(), EditAction::make()]);
+            ->recordActions([ViewAction::make(), EditAction::make()]));
     }
 
     public static function getPages(): array

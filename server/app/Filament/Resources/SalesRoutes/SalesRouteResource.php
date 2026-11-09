@@ -5,6 +5,7 @@ namespace App\Filament\Resources\SalesRoutes;
 use App\Domain\Distribution\RouteService;
 use App\Domain\Modules\ModuleService;
 use App\Filament\Resources\SalesRoutes\Pages\ListSalesRoutes;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Models\Branch;
 use App\Models\Customer;
@@ -17,12 +18,10 @@ use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -74,7 +73,6 @@ class SalesRouteResource extends Resource
             Select::make('van_warehouse_id')->label('Van')->options(fn (Get $get) => Warehouse::where('is_van', true)->when($get('branch_id'), fn ($q, $b) => $q->where('branch_id', $b))->orderBy('code')->pluck('name', 'id')),
             Select::make('rep_user_id')->label('Rep')->searchable()->options(fn () => User::where('is_active', true)->orderBy('name')->pluck('name', 'id')),
             CheckboxList::make('days')->label('Runs on')->options(SalesRoute::DAYS)->columns(7)->columnSpanFull(),
-            Toggle::make('is_active')->label('In use')->default(true),
             Repeater::make('stops')->label('Customers, in visiting order')->simple(
                 Select::make('customer_id')->required()->searchable()
                     ->getSearchResultsUsing(fn (string $search) => Customer::where('is_active', true)->where(fn ($q) => $q->where('name', 'ilike', "%{$search}%")->orWhere('phone', 'like', "%{$search}%")->orWhere('code', 'ilike', "%{$search}%"))
@@ -96,7 +94,7 @@ class SalesRouteResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->defaultSort('code')
+        return ArchiveUi::apply($table->defaultSort('code')
             ->columns([
                 TextColumn::make('code')->searchable(),
                 TextColumn::make('name')->searchable(),
@@ -104,10 +102,9 @@ class SalesRouteResource extends Resource
                 TextColumn::make('van_warehouse_id')->label('Van')->formatStateUsing(fn ($state) => Warehouse::whereKey($state)->value('code'))->placeholder('—'),
                 TextColumn::make('rep_user_id')->label('Rep')->formatStateUsing(fn ($state) => User::whereKey($state)->value('name'))->placeholder('—'),
                 TextColumn::make('stops_count')->label('Customers')->counts('stops'),
-                IconColumn::make('is_active')->label('In use')->boolean(),
             ])
             ->recordActions([EditAction::make()->mutateRecordDataUsing(fn (array $data, SalesRoute $record) => $data + self::toFormData($record))
-                ->using(fn (SalesRoute $record, array $data) => Erp::run(fn ($actor) => app(RouteService::class)->save($actor, $record, self::toDomain($data))))]);
+                ->using(fn (SalesRoute $record, array $data) => Erp::run(fn ($actor) => app(RouteService::class)->save($actor, $record, self::toDomain($data))))]));
     }
 
     public static function getPages(): array

@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Added
+- **Archive everywhere** (owner request): devices (once revoked), stores and vans, tills, bins, products, categories, price lists, pricing rules, promotions, styles, users, employees (once they have left), departments, roles, customers, suppliers, accounts, bank accounts, tax rates, tables, kitchen stations, choice groups, membership plans, messages, sales channels, routes, work centres, equipment, sensors and CRM stages can be archived and restored, as branches, industries and legal entities can. Each needs a reason and refuses, saying what to do first, while still in use. An archived record leaves the lists people choose from and the tills, while its history stays. The *Active* / *In use* switches are replaced by Archive; switches with their own meaning (*For sale*, *Running*, *Offered*) stay. Records already switched off are shown as archived.
 ### Fixed
 - **A new desktop till could not enrol ("Cannot reach the server") although its internet worked.** The till sends the computer's name with each request; a name with a character a request header cannot carry (such as *’*) stopped every request before it left. The name is now sent in plain ASCII and arrives unchanged. The till also no longer needs a recent WebView2 (Windows' built-in web engine, which the desktop till runs on and which can be years old on a PC whose updates are off): its request time limit used a feature older versions lack, and every request failed the same way. *Cannot reach the server* now adds the browser's own reason in brackets, so support can tell a network problem from anything else.
 ### Added

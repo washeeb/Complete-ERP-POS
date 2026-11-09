@@ -6,6 +6,7 @@ use App\Domain\Banking\BankingService;
 use App\Domain\Banking\StatementCsv;
 use App\Filament\Pages\BankReconciliation;
 use App\Filament\Resources\BankAccounts\Pages\ListBankAccounts;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
 use App\Models\Account;
@@ -18,7 +19,6 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -76,7 +76,6 @@ class BankAccountResource extends Resource
             Select::make('account_id')->label('Ledger account')->options(fn () => collect(FinanceUi::accounts(withControl: false, types: ['asset']))->all())
                 ->helperText('Leave blank to create a new ledger account with the code below.'),
             TextInput::make('code')->label('New ledger account code')->maxLength(20)->visibleOn('create'),
-            Toggle::make('is_active')->label('Active')->default(true),
         ]);
     }
 
@@ -132,7 +131,7 @@ class BankAccountResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
+        return ArchiveUi::apply($table
             ->columns([
                 TextColumn::make('name')->searchable()->description(fn (BankAccount $r) => trim(($r->provider ?? '').' '.($r->number ?? ''))),
                 TextColumn::make('kind')->badge()->formatStateUsing(fn ($state) => BankAccount::KINDS[$state] ?? $state),
@@ -148,7 +147,7 @@ class BankAccountResource extends Resource
                     ->url(fn (BankAccount $r) => BankReconciliation::getUrl(['bank' => $r->id])),
                 self::importAction(),
                 EditAction::make()->using(fn (BankAccount $record, array $data) => Erp::run(fn ($actor) => app(BankingService::class)->saveAccount($actor, $record, $data))),
-            ]);
+            ]));
     }
 
     public static function getPages(): array

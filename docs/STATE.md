@@ -37,6 +37,9 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 ## Till enrolment: computer-name header — branch `till-enrol-fix`
 - `pos/src/clientInfo.ts` escapes non-ASCII in `X-SES-Client`; `api.ts` `timeoutSignal` (falls back from `AbortSignal.timeout` for old WebView2); `api.ts` adds the browser's reason to "Cannot reach the server". Test in clientInfo.test.ts. Served by the server: no new till installer.
 
+## Archive everywhere (free) — branch `archive-everywhere`
+- `ArchiveRules` (kinds, permission, switch: replaced / kept / none, checks), `ArchiveService` generalised (`allowed`, branch children by archived_at), `Concerns\Archivable` (forces is_active off while archived, `inUse` scope), migration `2026_12_24_100001_archive_everywhere`, `ArchiveUi::apply` on 31 lists, archived left out of the product, department, role and equipment pickers. Test: ArchiveEverywhereTest.
+
 ## Industry confinement — branch `industry-confinement`
 - `IndustryContext` (`selected`, `companyWide`, `choices`, `sharingAllowed`, `productScope`), `CatalogService::industryFor`, `SharedProducts`, `SharedProductsPage`, `CompanyWideAccess`, `AccessService::mayBeCompanyWide` and `narrow`. Settings `catalog.shared_products`, `access.company_wide`. Tests: IndustryConfinementTest.
 

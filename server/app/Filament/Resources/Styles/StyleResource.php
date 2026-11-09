@@ -7,6 +7,7 @@ use App\Domain\Fashion\StyleService;
 use App\Domain\Modules\ModuleService;
 use App\Filament\Resources\Styles\Pages\ListStyles;
 use App\Filament\Resources\Styles\Pages\ViewStyle;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
@@ -116,7 +117,7 @@ class StyleResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->defaultSort('code')
+        return ArchiveUi::apply($table->defaultSort('code')
             ->columns([
                 TextColumn::make('code')->searchable(),
                 TextColumn::make('name')->searchable(),
@@ -126,7 +127,7 @@ class StyleResource extends Resource
             ])
             ->filters([SelectFilter::make('season')->options(fn () => Style::whereNotNull('season')->distinct()->orderBy('season')->pluck('season', 'season'))])
             ->recordActions([ViewAction::make(), EditAction::make()->using(fn (Style $record, array $data) => Erp::run(fn ($actor) => app(StyleService::class)->save($actor, $record, $data)))
-                ->mutateRecordDataUsing(fn (array $data, Style $record) => $data + ['price' => $record->price_minor === null ? null : $record->price_minor / 100])]);
+                ->mutateRecordDataUsing(fn (array $data, Style $record) => $data + ['price' => $record->price_minor === null ? null : $record->price_minor / 100])]));
     }
 
     /** @return list<Action> */
