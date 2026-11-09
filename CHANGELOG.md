@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 ### Fixed
+- **Print preview and Print copy still did nothing in ZionEX Suite 1.0.7.** The app's link-opening plugin caught every click on a link that opens a new tab and tried to send it to the normal browser, which is not allowed for the server's own pages, so the click was lost before the app's new-window rule saw it. ZionEX Suite 1.0.8 turns that off: the server's pages (print previews, printouts, statements, invoices) open in the same window, where Print works, and their **Back** button returns to where you were; other sites still open in the normal browser. ZionEX Till 0.30.5 does the same. Tested by driving the real app, not only a browser.
+### Fixed
 - **Archive did nothing:** the Archive button inside the dialog was a copy of the row's button, so pressing it only opened the dialog again. The dialog now has its own **Archive** button, on every list.
 - **Print preview, Print copy and other links that open a new window did nothing in the desktop apps:** Windows' web view drops such links unless the app says what to do. ZionEX Suite 1.0.7 and ZionEX Till 0.30.4 open the server's own pages (print previews, printouts, statements, invoices, certificates) in a window of their own, where Print works; other sites open in the normal browser (Suite) or not at all (Till). In a web browser these always worked.
 ### Changed

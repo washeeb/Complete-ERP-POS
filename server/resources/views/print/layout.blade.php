@@ -40,7 +40,7 @@
 </head>
 <body>
 <div class="page">
-    <p class="no-print"><button onclick="window.print()">Print / Save as PDF</button></p>
+    <p class="no-print"><button onclick="window.print()">Print / Save as PDF</button> <button type="button" data-zx-leave onclick="history.length > 1 ? history.back() : window.close()">Close</button><script>document.querySelectorAll('[data-zx-leave]').forEach((b) => { if (history.length > 1) b.textContent = 'Back' })</script></p>
     @php($brand = \App\Domain\Branding\Branding::forTenant(\App\Models\Tenant::find($tenantId ?? auth()->user()?->tenant_id)))
     <header style="border-bottom-color: {{ $brand['color'] }}">
         <div class="brand-block">

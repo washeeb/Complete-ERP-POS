@@ -32,6 +32,7 @@
 <body>
 <div class="bar">
     <button class="primary" onclick="window.print()">Print</button>
+    <button type="button" data-zx-leave onclick="history.length > 1 ? history.back() : window.close()">Close</button><script>document.querySelectorAll('[data-zx-leave]').forEach((b) => { if (history.length > 1) b.textContent = 'Back' })</script>
     <span>{{ count($labels) }} label(s) · {{ $layoutLabel }}. In the print window set <strong>Margins: none</strong> and <strong>Scale: 100%</strong>{{ $roll ? ', and choose the label printer' : '' }}. Try one sheet on plain paper first.</span>
     <a href="{{ url()->previous() }}">Back</a>
 </div>

@@ -201,7 +201,9 @@ fn free_path(dir: &std::path::Path, name: &str) -> PathBuf {
 
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_opener::init())
+        // Not the plugin's own handling of new-tab links: it swallowed clicks on the server's print links (they are
+        // not allowed to open outside), so Print preview did nothing. on_new_window below decides instead.
+        .plugin(tauri_plugin_opener::Builder::new().open_js_links_on_click(false).build())
         .setup(|app| {
             let path = app.path().app_config_dir()?.join("backoffice.json");
             let config: Config = fs::read(&path).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default();
@@ -249,13 +251,17 @@ pub fn run() {
                     false
                 })
                 // Links that open a new window (print preview, print copy, statements, invoices, certificates): the
-                // server's own pages open in a window of their own, signed in, where Print works; other sites open in the
-                // normal browser. Without this the web view drops every such link (owner 2026-11-09: "Print preview and
-                // Print buttons not working").
+                // server's own pages open in this window, where Print works and the page's Back button returns; other
+                // sites open in the normal browser. Without this the web view drops every such link (owner 2026-11-09:
+                // "Print preview and Print buttons not working"). Windows' own pop-up (Allow) did not open on the
+                // owner's PC, so the page is shown here instead.
                 .on_new_window(move |u, _features| {
                     let server = popups.state::<AppState>().config.lock().ok().and_then(|c| c.server.clone());
                     if server.as_deref().is_some_and(|s| u.as_str() == s || u.as_str().starts_with(&format!("{s}/"))) {
-                        return NewWindowResponse::Allow;
+                        if let Some(w) = popups.get_webview_window("main") {
+                            let _ = w.navigate(u);
+                        }
+                        return NewWindowResponse::Deny;
                     }
                     if matches!(u.scheme(), "http" | "https" | "mailto" | "tel") {
                         let _ = tauri_plugin_opener::open_url(u.as_str(), None::<&str>);

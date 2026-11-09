@@ -29,7 +29,7 @@
     </style>
 </head>
 <body>
-<p class="no-print"><button onclick="window.print()">Print copy</button><button onclick="window.close()">Close</button></p>
+<p class="no-print"><button onclick="window.print()">Print copy</button><button type="button" data-zx-leave onclick="history.length > 1 ? history.back() : window.close()">Close</button><script>document.querySelectorAll('[data-zx-leave]').forEach((b) => { if (history.length > 1) b.textContent = 'Back' })</script></p>
 <div class="receipt">
     <div class="center">
         @if ($brand['logo_url'])<img class="logo" src="{{ \App\Domain\Branding\Branding::logoDataUri($sale->tenant_id) }}" alt="">@endif
