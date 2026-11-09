@@ -207,15 +207,15 @@ export function TillSettings({ boot, online, onClose }: { boot: Bootstrap; onlin
       {note && <p className={note.bad ? 'error' : 'ok'} role="status">{note.text}</p>}
       <div className="row">
         <button type="button" onClick={onClose}>Back</button>
-        <button type="button" className="primary big" disabled={!online} title={online ? '' : 'Needs the server'} onClick={() => setAsking('save')}>Save (manager’s PIN)</button>
+        <button type="button" className="primary big" disabled={!online} title={online ? '' : 'Needs a connection'} onClick={() => setAsking('save')}>Save (manager’s PIN)</button>
       </div>
-      {!online && <p className="muted small">Saving needs the server, so that the change is approved and recorded.</p>}
+      {!online && <p className="muted small">Saving needs a connection. Try again when the status says Connected.</p>}
 
       {asking && (
         <div className="modal" role="dialog" aria-modal="true" aria-label="Manager approval">
           <form className="card pay" onSubmit={confirm}>
             <h2>{asking === 'drawer' ? 'Open the drawer (test)' : 'Save the till settings'}</h2>
-            <p className="muted small">A manager approves with their username and PIN. It is recorded in the audit log.</p>
+            <p className="muted small">A manager approves with their username and PIN.</p>
             <SignedIn />
             <label>Manager’s username<input autoComplete="off" autoFocus autoCapitalize="none" value={approval.username} onChange={(e) => setApproval({ ...approval, username: e.target.value })} required /></label>
             <label>Manager’s PIN<input type="text" className="pin-mask" autoComplete="off" inputMode="numeric" value={approval.pin} onChange={(e) => setApproval({ ...approval, pin: e.target.value.replace(/\D/g, '').slice(0, 8) })} required /></label>

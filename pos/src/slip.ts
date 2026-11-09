@@ -47,7 +47,6 @@ export function slipEscPos(s: DrawerSlip, boot: Bootstrap, width = WIDTH): EscPo
     if (label.length + value.length + 1 > p.width) p.line(`${label}:`).line(`  ${value}`) // long text on its own line
     else p.columns(label, value)
   }
-  if (s.queued) p.line('Saved on the till offline; sent when the server is back.')
   p.rule()
   for (const who of slipSignatures(s)) p.feed(2).line(`${who}:`).line('Signature ________________________________')
   return p.cut()

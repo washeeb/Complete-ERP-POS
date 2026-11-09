@@ -229,7 +229,7 @@ it('watermarks printed documents with a hidden reference that can be read back',
     $customer = newCustomer($this);
     $html = $this->actingAs($this->owner)->get(route('print.statement', ['customer' => $customer->id, 'from' => now()->startOfMonth()->toDateString(),
         'to' => now()->toDateString()]))->assertOk()->getContent();
-    expect(Watermark::reveal($html))->toContain($ref)->and($html)->toContain("Ref {$ref}");
+    expect(Watermark::reveal($html))->toContain($ref)->and($html)->not->toContain("Ref {$ref}"); // hidden only (owner 2026-11-09)
 });
 
 it('builds a stamped, signed release whose manifest matches the delivered files', function () {

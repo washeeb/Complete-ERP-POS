@@ -598,9 +598,8 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
         <div className={`banner ${queue.review ? 'bad' : 'warn'}`} role="status">
           <span>
             {!online && <strong>Working offline. </strong>}
-            {queue.pending > 0 && `${queue.pending} item(s) saved on this till, waiting to reach the server${queue.sending ? ' — sending…' : '.'} `}
-            {queue.review > 0 && `${queue.review} item(s) were refused by the server — show a supervisor (they are in the back-office Review queue). `}
-            {queue.lastError && !queue.sending && <span className="small">({queue.lastError})</span>}
+            {queue.pending > 0 && `${queue.pending} sale(s) kept on this till${queue.sending ? ' — sending…' : ', sent automatically.'} `}
+            {queue.review > 0 && `${queue.review} item(s) need a supervisor. `}
           </span>
           <span className="row">
             {queue.pending > 0 && <button type="button" onClick={onSendNow} disabled={queue.sending}>Send now</button>}
@@ -719,7 +718,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
         onSave={(d) => { setDetails(d); setDetailsPrompt(null) }} onCancel={() => setDetailsPrompt(null)} />}
       {rxPrompt && pharmacy && (
         <PrescriptionForm message={rxPrompt.message} level={rxPrompt.level ?? 'approve'} initial={rx} lines={lines} products={products} customer={customer} pharmacy={pharmacy}
-          offline={!online} busy={busy} onPickPatient={() => setPicking(true)}
+          busy={busy} onPickPatient={() => setPicking(true)}
           onSwap={(line, alt) => setLines((l) => addToCart(setQty(l, line.key, 0), alt, alt.units.find((u) => u.is_base) ?? alt.units[0], line.qtyMilli))}
           onConfirm={confirmRx} onCancel={() => setRxPrompt(null)} />
       )}
@@ -773,8 +772,8 @@ type Rx = { details: RxDetails; approval?: { username: string; pin: string }; of
  * Pharmacy: before payment for prescription-only or controlled medicines — the patient, the prescription, the allergy and
  * interaction warnings, generic substitutes, and the pharmacist's username and PIN (empty when the pharmacist is signed in here).
  */
-function PrescriptionForm({ message, level, initial, lines, products, customer, pharmacy, offline, busy, onPickPatient, onSwap, onConfirm, onCancel }: {
-  message: string; level: RxLevel; initial: Rx | null; lines: CartLine[]; products: Product[]; customer: TillCustomer | null; pharmacy: Pharmacy; offline: boolean; busy: boolean
+function PrescriptionForm({ message, level, initial, lines, products, customer, pharmacy, busy, onPickPatient, onSwap, onConfirm, onCancel }: {
+  message: string; level: RxLevel; initial: Rx | null; lines: CartLine[]; products: Product[]; customer: TillCustomer | null; pharmacy: Pharmacy; busy: boolean
   onPickPatient: () => void; onSwap: (line: CartLine, alt: Product) => void
   onConfirm: (d: RxDetails, pharmacist: { username: string; pin: string } | null) => void; onCancel: () => void
 }) {
@@ -836,9 +835,9 @@ function PrescriptionForm({ message, level, initial, lines, products, customer, 
           </div>
         </>}
         {level === 'approve' ? (
-          <p className="muted small">Pharmacist approval{offline ? ' (checked on this till while offline)' : ''} — leave empty if you are the pharmacist.</p>
+          <p className="muted small">Pharmacist approval — leave empty if you are the pharmacist.</p>
         ) : (
-          <p className="muted small">A pharmacist may approve now (optional){offline ? ', checked on this till while offline' : ''}; otherwise the sale {pharmacy.rules?.after === 'signoff' ? 'waits for a pharmacist to sign it off' : 'is recorded as sold without a pharmacist'}.</p>
+          <p className="muted small">A pharmacist may approve now (optional); otherwise the sale {pharmacy.rules?.after === 'signoff' ? 'waits for a pharmacist to sign it off' : 'is recorded as sold without a pharmacist'}.</p>
         )}
         <div className="row">
           <SignedIn />

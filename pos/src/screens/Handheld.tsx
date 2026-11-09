@@ -120,7 +120,7 @@ export function Handheld({ onLogout }: { onLogout: () => void }) {
       {flash && mode === 'home' && <p className="banner" role="status">{flash}</p>}
       {mode === 'home' && queue.refused.length > 0 && (
         <section className="card">
-          <h2>Refused by the server</h2>
+          <h2>Not accepted</h2>
           <p className="muted small">Fix the cause (or ask a manager), then send again. Discard only what you have done again correctly.</p>
           <ul className="hh-list small">{queue.refused.map((r) => (
             <li key={r.seq}><strong>{r.label}</strong> — {r.error} <button className="link" onClick={() => { discard(r.seq).then(refreshQueue) }}>Discard</button></li>
@@ -281,7 +281,7 @@ function PutAway({ ctx }: { ctx: Ctx }) {
     <section className="card">
       <h2>Put away / move</h2>
       <BinSelect bins={wh.bins} value={from} onChange={setFrom} label="From bin" />
-      {contents === null ? <p className="muted small">Bin contents show when the server can be reached.</p>
+      {contents === null ? <p className="muted small">Bin contents show when the handheld is connected.</p>
         : <ul className="hh-list small">{contents.map((c) => <li key={c.sku}>{q(c.on_hand)} × {c.name}</li>)}{contents.length === 0 && <li className="muted">Empty</li>}</ul>}
       <ScanBox onScan={scan} label="Scan the product, then the shelf label" />
       {unit && (

@@ -44,7 +44,7 @@ export async function recordDrawer(online: boolean, body: DrawerBody): Promise<{
   }
   if (!result) {
     if ((body.kind === 'drop' || body.approval) && !body.approved_by) {
-      throw new ApiError('offline_approval_needed', 'The server cannot be reached: the supervisor approves here with their PIN.', 0)
+      throw new ApiError('offline_approval_needed', 'No connection: the supervisor approves here with their PIN.', 0)
     }
     const { approval: _pinStaysHere, ...payload } = body // a supervisor's PIN never goes into the queue
     void _pinStaysHere

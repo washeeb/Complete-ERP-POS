@@ -26,6 +26,6 @@ describe('drawer slips', () => {
     const text = ascii(slipEscPos(payout, boot).toBytes())
     expect(text).toContain('PAY-OUT (EXPENSE)')
     expect(text).toContain('For:\n  Taxi to the bank')
-    expect(text).toContain('Saved on the till offline')
+    expect(text).not.toContain('offline') // nothing about the connection on paper (owner 2026-11-09)
   })
 })

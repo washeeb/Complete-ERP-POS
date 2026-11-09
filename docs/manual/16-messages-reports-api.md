@@ -93,7 +93,7 @@ Customers send their list, or a photo of their prescription, to your WhatsApp Bu
 
 ## 16.5 Digital receipts at the till
 
-After a sale, under the receipt: choose **SMS**, **WhatsApp** or **E-mail**, type the number or address, **Send receipt**. Only the channels switched on in Messages → Templates appear. A sale made offline can be sent once the till is back online.
+After a sale, under the receipt: choose **SMS**, **WhatsApp** or **E-mail**, type the number or address, **Send receipt**. Only the channels switched on in Messages → Templates appear. A sale made offline shows no send option until the till is back online and has sent it; the cashier sees nothing about this and simply sends it later if the customer still wants it.
 
 ## 16.6 Reports you build yourself
 

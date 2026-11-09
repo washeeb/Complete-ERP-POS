@@ -10,11 +10,14 @@ export type ShiftGrant = { username: string; pin: string; reason: string }
 export class ApiError extends Error {
   code: string
   status: number
+  /** Technical reason (the browser's), for the set-up screen and problem reports only. */
+  detail?: string
 
-  constructor(code: string, message: string, status: number) {
+  constructor(code: string, message: string, status: number, detail?: string) {
     super(message)
     this.code = code
     this.status = status
+    this.detail = detail
   }
 }
 
@@ -50,18 +53,18 @@ async function call<T>(path: string, init: RequestInit & { auth?: 'device' | 'se
     res = await fetch(`/api/v1/${path}`, { ...request, headers, signal: request.signal ?? timeoutSignal(timeoutMs ?? DEFAULT_WAIT_MS) })
   } catch (e) {
     const slow = e instanceof DOMException && (e.name === 'TimeoutError' || e.name === 'AbortError')
-    // The browser's own reason goes in brackets after the plain words, so support can tell a network that is down
-    // ("Failed to fetch") from a request the till could not build or that something on the PC blocked.
+    // The browser's own reason is kept apart (detail): shown only on the set-up screen, where an administrator
+    // works; tellers and customers see plain words (owner 2026-11-09).
     const why = !slow && e instanceof Error && e.message ? ` (${e.message})` : ''
-    throw new ApiError('network', slow ? 'The server is slow to answer; the till carries on and sends it shortly.' : `Cannot reach the server. Check the network cable or Wi-Fi.${why}`, 0)
+    throw new ApiError('network', slow ? 'The connection is slow; the till carries on and sends it shortly.' : 'No connection. Check the network cable or Wi-Fi.', 0, why.slice(2, -1) || undefined)
   }
   // A proxy in front of a stopped app server answers 502/503/504: for the till that is the server being down.
-  if (GATEWAY_DOWN.includes(res.status)) throw new ApiError('network', 'The server is not answering.', res.status)
+  if (GATEWAY_DOWN.includes(res.status)) throw new ApiError('network', 'No connection right now. Try again in a moment.', res.status)
   const body = await res.json().catch(() => ({}))
   if (!res.ok) {
     if (res.status === 401 && auth === 'session') await db.kv.delete('session')
     if (res.status === 401 && auth === 'session' && !body.error) throw new ApiError('signed_out', SIGNED_OUT, 401)
-    const detail = body.detail ?? body.message ?? `Server error (${res.status})`
+    const detail = body.detail ?? body.message ?? 'Something went wrong. Try again, or tell your supervisor.'
     throw new ApiError(body.error ?? (res.status === 422 ? 'validation' : 'server'), detail, res.status)
   }
   return body as T
@@ -90,12 +93,12 @@ export const api = {
     try {
       res = await fetch('/api/v1/pos/catalog', { headers })
     } catch {
-      throw new ApiError('network', 'Cannot reach the server.', 0)
+      throw new ApiError('network', 'No connection.', 0)
     }
     if (res.status === 304) return null
-    if (GATEWAY_DOWN.includes(res.status)) throw new ApiError('network', 'The server is not answering.', res.status)
+    if (GATEWAY_DOWN.includes(res.status)) throw new ApiError('network', 'No connection right now. Try again in a moment.', res.status)
     const body = await res.json().catch(() => ({}))
-    if (!res.ok) throw new ApiError(body.error ?? 'server', body.detail ?? `Server error (${res.status})`, res.status)
+    if (!res.ok) throw new ApiError(body.error ?? 'server', body.detail ?? 'Something went wrong. Try again, or tell your supervisor.', res.status)
     return body as { version: string; generated_at: string; products: Product[]; promotions?: PromotionRow[]; utc_offset_minutes?: number; grocery?: Grocery | null; pharmacy?: Pharmacy | null; restaurant?: Restaurant | null; electronics?: boolean; fashion?: Fashion | null; services?: Services | null }
   },
   /** Stock left, next expiry and low-stock minimum per product at this till's store (ETag); null = unchanged. */
