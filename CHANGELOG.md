@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- **Archive did nothing:** the Archive button inside the dialog was a copy of the row's button, so pressing it only opened the dialog again. The dialog now has its own **Archive** button, on every list.
+- **Print preview, Print copy and other links that open a new window did nothing in the desktop apps:** Windows' web view drops such links unless the app says what to do. ZionEX Suite 1.0.7 and ZionEX Till 0.30.4 open the server's own pages (print previews, printouts, statements, invoices, certificates) in a window of their own, where Print works; other sites open in the normal browser (Suite) or not at all (Till). In a web browser these always worked.
 ### Changed
 - **Every industry on its own** (owner request: the supermarket's categories and users showed in the pharmacy). Customers, suppliers, categories, brands, promotions, styles, choice groups and campaigns now belong to an industry; suppliers, categories, brands and promotions can be shared on purpose. Every back-office list, pick list, import and till sees only the industries in view. The users list shows an industry's own staff, with company-wide people only under *All industries*. Branch-based lists that ignored the industry (CRM, projects, tickets, maintenance, supplier bills and payments, direct purchases, landed costs, stock movements, office returns, fixed assets, money transfers, service passes, work centres, sales channels, routes), lists that follow a product, customer or supplier, and journal entries now follow it too. Existing records were sorted by use: categories and brands used by both industries were copied, one per industry.
 ### Added

@@ -11,7 +11,7 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
-use tauri::webview::{DownloadEvent, PageLoadEvent};
+use tauri::webview::{DownloadEvent, NewWindowResponse, PageLoadEvent};
 use tauri::{Manager, State, WebviewUrl};
 
 #[derive(Default, Serialize, Deserialize, Clone)]
@@ -219,6 +219,7 @@ pub fn run() {
                 serde_json::to_string(&info).unwrap_or_else(|_| "\"\"".into())
             );
             let handle = app.handle().clone();
+            let popups = app.handle().clone();
             tauri::WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
                 .initialization_script(&cookie)
                 .title(app.package_info().name.clone())
@@ -246,6 +247,20 @@ pub fn run() {
                         let _ = tauri_plugin_opener::open_url(u.as_str(), None::<&str>);
                     }
                     false
+                })
+                // Links that open a new window (print preview, print copy, statements, invoices, certificates): the
+                // server's own pages open in a window of their own, signed in, where Print works; other sites open in the
+                // normal browser. Without this the web view drops every such link (owner 2026-11-09: "Print preview and
+                // Print buttons not working").
+                .on_new_window(move |u, _features| {
+                    let server = popups.state::<AppState>().config.lock().ok().and_then(|c| c.server.clone());
+                    if server.as_deref().is_some_and(|s| u.as_str() == s || u.as_str().starts_with(&format!("{s}/"))) {
+                        return NewWindowResponse::Allow;
+                    }
+                    if matches!(u.scheme(), "http" | "https" | "mailto" | "tel") {
+                        let _ = tauri_plugin_opener::open_url(u.as_str(), None::<&str>);
+                    }
+                    NewWindowResponse::Deny
                 })
                 // Exports and documents go straight into Downloads (never overwriting a file), then open.
                 .on_download(move |_webview, event| {
