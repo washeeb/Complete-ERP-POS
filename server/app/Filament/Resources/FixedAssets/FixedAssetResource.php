@@ -9,6 +9,7 @@ use App\Filament\Resources\FixedAssets\Pages\ViewFixedAsset;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
 use App\Filament\Support\GlobalSearch;
+use App\Filament\Support\IndustryScope;
 use App\Models\Account;
 use App\Models\AssetClass;
 use App\Models\FixedAsset;
@@ -84,7 +85,7 @@ class FixedAssetResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with('assetClass', 'branch');
+        return IndustryScope::branches(parent::getEloquentQuery()->with('assetClass', 'branch'));
     }
 
     public static function form(Schema $schema): Schema

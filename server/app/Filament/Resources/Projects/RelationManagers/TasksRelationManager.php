@@ -9,6 +9,7 @@ use App\Models\ProjectTask;
 use App\Models\TimeEntry;
 use App\Models\User;
 use App\Security\Authorizer;
+use App\Support\IndustryContext;
 use Filament\Actions\CreateAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
@@ -35,7 +36,7 @@ class TasksRelationManager extends RelationManager
         return $schema->columns(2)->components([
             TextInput::make('name')->required()->maxLength(255)->columnSpanFull(),
             Select::make('assigned_to')->label('Who does it')->placeholder('—')
-                ->options(fn () => User::where('is_active', true)->orderBy('name')->get()->filter(fn ($u) => app(Authorizer::class)->allows($u, 'projects.time', $p->branch))->pluck('name', 'id')),
+                ->options(fn () => IndustryContext::userScope(User::where('is_active', true))->orderBy('name')->get()->filter(fn ($u) => app(Authorizer::class)->allows($u, 'projects.time', $p->branch))->pluck('name', 'id')),
             Select::make('status')->options(ProjectTask::STATUSES)->default('todo')->selectablePlaceholder(false),
             DatePicker::make('due_on')->label('Due'),
             TextInput::make('estimate_hours')->label('Hours planned')->numeric()->minValue(0),

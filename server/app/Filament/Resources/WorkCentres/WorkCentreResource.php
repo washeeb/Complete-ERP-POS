@@ -8,6 +8,7 @@ use App\Filament\Resources\WorkCentres\Pages\ListWorkCentres;
 use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\IndustryScope;
 use App\Models\Branch;
 use App\Models\WorkCentre;
 use BackedEnum;
@@ -19,12 +20,19 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 /** Work centres: where production work is done, what an hour there costs (labour and overhead), and how many hours a day it runs. */
 class WorkCentreResource extends Resource
 {
+    /** Follows the industry in view (owner 2026-11-09: every industry independent). */
+    public static function getEloquentQuery(): Builder
+    {
+        return IndustryScope::branches(parent::getEloquentQuery());
+    }
+
     protected static ?string $model = WorkCentre::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;

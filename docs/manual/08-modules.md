@@ -40,6 +40,18 @@ When a company runs more than one kind of business, each kind is an **industry**
 
 **Menus follow the choice.** With an industry chosen, only its own module menus show (for example *Pharmacy* but not *Restaurant*). With *All industries*, every installed industry's menus show. Grocery's menu has **Markdowns** (near-expiry stickers and expired write-offs at the grocery stores) and **Scale items** (the weighed products to load into the scales).
 
+### Each industry on its own
+
+Every industry works as its own business. People in the pharmacy never see the supermarket's records, and the other way round, on any screen, pick list or till.
+- **Belong to one industry:** products, categories, brands, customers, suppliers, promotions, styles, choice groups and campaigns. Everything with a branch (sales, stock, purchasing, shifts, staff, CRM, projects, maintenance, supplier bills and payments, stock movements, fixed assets, routes and sales channels) follows its branch. Journal entries show in an industry when they have lines in it.
+- **Customers** belong to one industry. Someone who shops at both is a customer of each, with a separate account and credit. The same phone number may be used once in each industry.
+- **Suppliers, categories, brands and promotions** belong to an industry, or are marked **Shared by all industries** on purpose, for example a distributor that serves both. Only people with company-wide access can share, and only when sharing is allowed (*System → Settings → Catalogue*).
+- **Users:** with an industry chosen, *People → Users* lists only that industry's staff. The owner and other company-wide people show only under *All industries*.
+- **Who chooses:** someone working in one industry never chooses; what they create is in their industry. People covering several industries, or the whole company, see an **Industry** field on the form, and the import page asks which industry a file is for. A till always works in its own branch's industry.
+- **Shared by the company, on purpose:** tax rates, units, roles, departments, the chart of accounts and bank accounts, message templates and CRM stages. These are the company's own set-up, not either shop's.
+- **When this was introduced** (November 2026), existing records were sorted by use: a category or brand went to the industry of its products, and one used by both was copied, one per industry, with each product moved to its own industry's copy. A customer went to where they bought; a supplier to the industry it supplies (shared if it supplies both). To move one, edit it and change *Industry*.
+- **Why:** the pharmacy and the supermarket are different businesses. Mixing their lists leads to mistakes, such as a pharmacy product put in a supermarket category or the wrong customer charged, and shows each shop's staff what is not theirs.
+
 ### Archiving a branch, industry or legal entity
 
 Use **Archive** for a branch, industry or legal entity that was created by mistake, was never used, or has closed. It is on the lists under *Company → Branches*, *Company → Industries* and *Company → Legal entities*.

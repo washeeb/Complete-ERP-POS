@@ -13,6 +13,7 @@ use App\Models\SupplierProduct;
 use App\Models\Tenant;
 use App\Security\Authorizer;
 use App\Support\Caps;
+use App\Support\IndustryContext;
 use App\Support\Money;
 use App\Support\Qty;
 
@@ -39,7 +40,7 @@ final class SupplierService
         if ($code !== '' && ! preg_match('/^[A-Z0-9][A-Z0-9\-]{0,19}$/', $code)) {
             throw new DomainException('Supplier codes use letters, digits and dashes (up to 20).');
         }
-        if ($code !== '' && Supplier::where('code', $code)->when($supplier->exists, fn ($q) => $q->whereKeyNot($supplier->id))->exists()) {
+        if ($code !== '' && Supplier::withoutIndustryScope()->where('code', $code)->when($supplier->exists, fn ($q) => $q->whereKeyNot($supplier->id))->exists()) {
             throw new DomainException("Supplier code {$code} is already used.");
         }
         if (trim((string) ($data['name'] ?? $supplier->name)) === '') {
@@ -48,6 +49,7 @@ final class SupplierService
         $currency = Tenant::find($actor->tenantId)->currency_code;
 
         return $this->recorder->transaction(function () use ($actor, $supplier, $data, $code, $currency) {
+            IndustryContext::assign($supplier, $data, user: $actor->user); // its industry, or shared on purpose (owner 2026-11-09)
             $supplier->fill(array_intersect_key($data, array_flip(['name', 'contact_name', 'phone', 'email', 'tax_no', 'address',
                 'payment_terms_days', 'lead_time_days', 'return_days_before_expiry', 'is_active', 'notes', 'supply_kind', ...Supplier::BANK_FIELDS])));
             if (! array_key_exists($supplier->supply_kind ?? 'goods', Supplier::SUPPLY_KINDS)) {

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Categories;
 use App\Filament\Resources\Categories\Pages\ListCategories;
 use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\GlobalSearch;
+use App\Filament\Support\IndustryField;
 use App\Filament\Support\SimpleCatalogResource;
 use App\Models\Category;
 use App\Models\Product;
@@ -50,6 +51,7 @@ class CategoryResource extends SimpleCatalogResource
     {
         return $schema->components([
             TextInput::make('name')->required()->maxLength(120)->caps(),
+            IndustryField::make(),
             Select::make('parent_id')->label('Inside category')
                 ->options(fn (?Category $record) => Category::when($record, fn ($q) => $q->whereKeyNot($record->id))->orderBy('name')->pluck('name', 'id')),
         ]);

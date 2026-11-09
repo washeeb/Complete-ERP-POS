@@ -8,6 +8,7 @@ use App\Filament\Resources\MembershipPlans\Pages\ListMembershipPlans;
 use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\IndustryScope;
 use App\Models\MembershipPlan;
 use App\Models\Product;
 use BackedEnum;
@@ -23,12 +24,19 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 /** Membership and subscription plans: price per period, how often, and the sessions included each period. */
 class MembershipPlanResource extends Resource
 {
+    /** Follows the industry in view (owner 2026-11-09: every industry independent). */
+    public static function getEloquentQuery(): Builder
+    {
+        return IndustryScope::product(parent::getEloquentQuery());
+    }
+
     protected static ?string $model = MembershipPlan::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedIdentification;

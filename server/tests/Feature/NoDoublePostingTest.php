@@ -5,6 +5,7 @@ use App\Domain\Support\DomainException;
 use App\Filament\Pages\ImportData;
 use App\Models\Customer;
 use App\Models\DataImport;
+use App\Models\Industry;
 use Filament\Facades\Filament;
 use Illuminate\Http\UploadedFile;
 use Livewire\Livewire;
@@ -31,7 +32,7 @@ it('refuses to import the same file a second time unless asked to', function () 
 it('starts the import page clean after an import, and warns before the same file goes in again', function () {
     Filament::setCurrentPanel(Filament::getPanel('admin'));
     $this->actingAs(withMfa($this->owner));
-    $page = Livewire::test(ImportData::class)->set('type', 'customers')
+    $page = Livewire::test(ImportData::class)->set('type', 'customers')->set('industry', Industry::value('id')) // customers belong to an industry
         ->set('file', UploadedFile::fake()->createWithContent('customers.csv', $this->csv))->call('import');
     expect($page->get('file'))->toBeNull()->and($page->get('preview'))->toBeNull()->and($page->get('fileKey'))->toBe(1);
 

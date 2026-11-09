@@ -8,6 +8,7 @@ use App\Domain\Purchasing\SupplierPortal;
 use App\Filament\Resources\SupplierBills\SupplierBillResource;
 use App\Filament\Resources\SupplierInvoices\Pages\ListSupplierInvoices;
 use App\Filament\Support\Erp;
+use App\Filament\Support\IndustryScope;
 use App\Models\Branch;
 use App\Models\SupplierBill;
 use App\Models\SupplierInvoice;
@@ -126,7 +127,7 @@ class SupplierInvoiceResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with(['supplier', 'purchaseOrder', 'bill']);
+        return IndustryScope::owner(parent::getEloquentQuery()->with(['supplier', 'purchaseOrder', 'bill']), 'supplier');
     }
 
     public static function getPages(): array

@@ -10,6 +10,7 @@ use App\Filament\Resources\SalesChannels\Pages\EditSalesChannel;
 use App\Filament\Resources\SalesChannels\Pages\ListSalesChannels;
 use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
+use App\Filament\Support\IndustryScope;
 use App\Http\Controllers\StorefrontController;
 use App\Models\Branch;
 use App\Models\ChannelJob;
@@ -31,12 +32,19 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 /** Online channels (spec §5): the built-in shop and connected stores, with their sync health. */
 class SalesChannelResource extends Resource
 {
+    /** Follows the industry in view (owner 2026-11-09: every industry independent). */
+    public static function getEloquentQuery(): Builder
+    {
+        return IndustryScope::branches(parent::getEloquentQuery());
+    }
+
     protected static ?string $model = SalesChannel::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedGlobeAlt;

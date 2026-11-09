@@ -9,6 +9,7 @@ use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
 use App\Models\RepTarget;
 use App\Models\User;
+use App\Support\IndustryContext;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
@@ -57,7 +58,7 @@ class RepTargetResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->columns(3)->components([
-            Select::make('user_id')->label('Rep')->required()->searchable()->options(fn () => User::where('is_active', true)->orderBy('name')->pluck('name', 'id')),
+            Select::make('user_id')->label('Rep')->required()->searchable()->options(fn () => IndustryContext::userScope(User::where('is_active', true))->orderBy('name')->pluck('name', 'id')),
             TextInput::make('year')->required()->numeric()->default(now()->year),
             Select::make('month')->required()->options(collect(range(1, 12))->mapWithKeys(fn ($m) => [$m => now()->setMonth($m)->format('F')]))->default(now()->month),
             TextInput::make('target')->label('Sales target (before tax)')->required()->numeric()->minValue(0),

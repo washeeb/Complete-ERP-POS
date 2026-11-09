@@ -7,11 +7,13 @@ use App\Domain\Modules\ModuleService;
 use App\Filament\Resources\SalesRoutes\Pages\ListSalesRoutes;
 use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
+use App\Filament\Support\IndustryScope;
 use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\SalesRoute;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Support\IndustryContext;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\CheckboxList;
@@ -24,12 +26,19 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 /** Sales routes: the customers a van visits, in order, and the days it runs. */
 class SalesRouteResource extends Resource
 {
+    /** Follows the industry in view (owner 2026-11-09: every industry independent). */
+    public static function getEloquentQuery(): Builder
+    {
+        return IndustryScope::branches(parent::getEloquentQuery());
+    }
+
     protected static ?string $model = SalesRoute::class;
 
     protected static ?string $slug = 'routes';
@@ -71,7 +80,7 @@ class SalesRouteResource extends Resource
             TextInput::make('name')->required()->maxLength(255)->columnSpan(2),
             Select::make('branch_id')->label('Branch')->required()->live()->options(fn ($state) => Branch::choices($state)),
             Select::make('van_warehouse_id')->label('Van')->options(fn (Get $get) => Warehouse::where('is_van', true)->when($get('branch_id'), fn ($q, $b) => $q->where('branch_id', $b))->orderBy('code')->pluck('name', 'id')),
-            Select::make('rep_user_id')->label('Rep')->searchable()->options(fn () => User::where('is_active', true)->orderBy('name')->pluck('name', 'id')),
+            Select::make('rep_user_id')->label('Rep')->searchable()->options(fn () => IndustryContext::userScope(User::where('is_active', true))->orderBy('name')->pluck('name', 'id')),
             CheckboxList::make('days')->label('Runs on')->options(SalesRoute::DAYS)->columns(7)->columnSpanFull(),
             Repeater::make('stops')->label('Customers, in visiting order')->simple(
                 Select::make('customer_id')->required()->searchable()

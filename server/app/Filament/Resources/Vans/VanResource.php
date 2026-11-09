@@ -13,6 +13,7 @@ use App\Filament\Support\Fields;
 use App\Models\Branch;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Support\IndustryContext;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -82,7 +83,7 @@ class VanResource extends Resource
             TextInput::make('code')->label('Van code')->helperText('V01, V02…; also the till code on its receipts.')->disabled()->dehydrated(false)->placeholder('Given automatically when saved'),
             TextInput::make('name')->required()->maxLength(80)->placeholder('Kumasi van 1'),
             TextInput::make('vehicle_reg')->label('Registration')->maxLength(20)->placeholder('GR 1234-24'),
-            Select::make('rep_user_id')->label('Rep')->searchable()->options(fn () => User::where('is_active', true)->orderBy('name')->pluck('name', 'id')),
+            Select::make('rep_user_id')->label('Rep')->searchable()->options(fn () => IndustryContext::userScope(User::where('is_active', true))->orderBy('name')->pluck('name', 'id')),
             Select::make('home_warehouse_id')->label('Loaded from (warehouse)')->required()
                 ->options(fn (Get $get) => Warehouse::where('is_van', false)->when($get('branch_id'), fn ($q, $b) => $q->where('branch_id', $b))->orderBy('code')->pluck('name', 'id')),
         ]);

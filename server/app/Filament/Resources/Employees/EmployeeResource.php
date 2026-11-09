@@ -14,6 +14,7 @@ use App\Filament\Support\QuickCreate;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\User;
+use App\Support\IndustryContext;
 use App\Support\Money;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -124,7 +125,7 @@ class EmployeeResource extends Resource
                 TextInput::make('ghana_card_no')->label('Ghana Card no. (TIN)')->maxLength(30),
                 TextInput::make('ssnit_no')->label('SSNIT no.')->maxLength(30),
                 Select::make('user_id')->label('Their sign-in (for clocking in and self-service)')->searchable()
-                    ->options(fn () => User::where('is_active', true)->orderBy('name')->get()->mapWithKeys(fn ($u) => [$u->id => "{$u->name} ({$u->username})"])),
+                    ->options(fn () => IndustryContext::userScope(User::where('is_active', true))->orderBy('name')->get()->mapWithKeys(fn ($u) => [$u->id => "{$u->name} ({$u->username})"])),
             ]),
             Section::make('Job')->columns(3)->schema([
                 Select::make('branch_id')->label('Branch')->required()->options(fn () => FinanceUi::branches())->default(fn () => FinanceUi::hq()),

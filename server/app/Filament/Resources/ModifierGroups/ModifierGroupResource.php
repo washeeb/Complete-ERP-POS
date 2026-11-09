@@ -7,6 +7,7 @@ use App\Domain\Restaurant\RestaurantSetup;
 use App\Filament\Resources\ModifierGroups\Pages\ListModifierGroups;
 use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
+use App\Filament\Support\IndustryField;
 use App\Models\ModifierGroup;
 use App\Models\Product;
 use BackedEnum;
@@ -64,6 +65,7 @@ class ModifierGroupResource extends Resource
     {
         return $schema->columns(4)->components([
             TextInput::make('name')->required()->maxLength(255)->columnSpan(2)->placeholder('Spice level, Sides, Extras…'),
+            IndustryField::make(),
             TextInput::make('min_choices')->label('Choose at least')->numeric()->required()->default(0)->minValue(0)->helperText('1 = the waiter must choose'),
             TextInput::make('max_choices')->label('Choose at most')->numeric()->required()->default(1)->minValue(1),
             Toggle::make('is_active')->label('Offered')->default(true)->inline(false),

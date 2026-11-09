@@ -10,6 +10,7 @@ use App\Filament\Resources\PurchaseAgreements\Pages\ViewPurchaseAgreement;
 use App\Filament\Resources\PurchaseOrders\PurchaseOrderResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
+use App\Filament\Support\IndustryScope;
 use App\Filament\Support\MiniTable;
 use App\Models\PurchaseAgreement;
 use App\Models\PurchaseOrder;
@@ -37,6 +38,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\HtmlString;
@@ -45,6 +47,12 @@ use UnitEnum;
 /** Contracts (agreed prices for a period) and blanket orders (agreed prices with quantities or a value to draw down). */
 class PurchaseAgreementResource extends Resource
 {
+    /** Follows the industry in view (owner 2026-11-09: every industry independent). */
+    public static function getEloquentQuery(): Builder
+    {
+        return IndustryScope::owner(parent::getEloquentQuery(), 'supplier');
+    }
+
     protected static ?string $model = PurchaseAgreement::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentCheck;

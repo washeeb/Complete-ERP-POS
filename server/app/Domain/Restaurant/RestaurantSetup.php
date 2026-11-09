@@ -15,6 +15,7 @@ use App\Models\ModifierOption;
 use App\Models\Product;
 use App\Security\Authorizer;
 use App\Support\Codes;
+use App\Support\IndustryContext;
 
 /** Restaurant set-up (owner decision 2026-10-17): kitchen stations, the floor plan, and modifier groups. */
 final class RestaurantSetup
@@ -76,6 +77,7 @@ final class RestaurantSetup
         if (! $actor->user || ! $this->authz->allowsAnywhere($actor->user, 'restaurant.manage')) {
             throw new AccessDenied;
         }
+        IndustryContext::assign($g, $data, user: $actor->user);
         $name = trim((string) ($data['name'] ?? $g->name));
         $min = (int) ($data['min_choices'] ?? $g->min_choices ?? 0);
         $max = (int) ($data['max_choices'] ?? $g->max_choices ?? 1);

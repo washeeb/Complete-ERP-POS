@@ -6,6 +6,7 @@ use App\Domain\Modules\ModuleService;
 use App\Domain\Services\PassService;
 use App\Filament\Resources\ServicePasses\Pages\ListServicePasses;
 use App\Filament\Support\Erp;
+use App\Filament\Support\IndustryScope;
 use App\Models\ServicePass;
 use App\Models\ServicePassUse;
 use BackedEnum;
@@ -56,7 +57,7 @@ class ServicePassResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with('customer:id,name,phone');
+        return IndustryScope::branches(parent::getEloquentQuery()->with('customer:id,name,phone'));
     }
 
     public static function table(Table $table): Table

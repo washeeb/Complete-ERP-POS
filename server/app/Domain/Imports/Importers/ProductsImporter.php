@@ -162,7 +162,9 @@ class ProductsImporter extends Importer
         }
         foreach (['category' => Category::class, 'brand' => Brand::class] as $col => $class) {
             if (self::has($row, $col)) {
-                $data[$col.'_id'] = $this->named($actor, $class, $row[$col], ! empty($options['create_missing']), $col);
+                // In the product's own industry (owner 2026-11-09): the supermarket's categories are not the pharmacy's.
+                $industry = $data['industry_id'] ?? $product?->industry_id;
+                $data[$col.'_id'] = $this->named($actor, $class, $row[$col], ! empty($options['create_missing']), $col, $industry === IndustryContext::SHARED ? null : $industry);
             }
         }
         if (self::has($row, 'tax_group') || $isNew) {
@@ -330,10 +332,13 @@ class ProductsImporter extends Importer
     }
 
     /** A category or brand by name (created if allowed). */
-    private function named(Actor $actor, string $class, string $name, bool $create, string $what): string
+    private function named(Actor $actor, string $class, string $name, bool $create, string $what, ?string $industry = null): string
     {
         $name = trim($name);
-        $found = $class::whereRaw('lower(name) = ?', [mb_strtolower($name)])->value('id');
+        // The product's industry first, then a shared one of that name.
+        $found = $class::withoutIndustryScope()->whereRaw('lower(name) = ?', [mb_strtolower($name)])
+            ->where(fn ($q) => $industry ? $q->where('industry_id', $industry)->orWhereNull('industry_id') : $q->whereNull('industry_id'))
+            ->orderByRaw('industry_id IS NULL')->value('id');
         if ($found) {
             return $found;
         }
@@ -341,7 +346,7 @@ class ProductsImporter extends Importer
             throw new DomainException("Unknown {$what} \"{$name}\".");
         }
 
-        return $this->catalog->saveSimple($actor, new $class, ['name' => $name] + ($class === Category::class ? [] : []))->getKey();
+        return $this->catalog->saveSimple($actor, new $class, ['name' => $name, 'industry_id' => $industry ?? IndustryContext::SHARED])->getKey();
     }
 
     /** An industry by name or code; "shared" (or "all") for products every industry sells. */

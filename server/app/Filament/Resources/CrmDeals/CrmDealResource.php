@@ -11,6 +11,7 @@ use App\Filament\Resources\CustomerOrders\CustomerOrderResource;
 use App\Filament\Support\CrmUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\IndustryScope;
 use App\Models\CrmDeal;
 use App\Models\CrmLead;
 use App\Models\CrmStage;
@@ -73,7 +74,7 @@ class CrmDealResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return CrmUi::scope(parent::getEloquentQuery()->with(['stage', 'customer', 'lead', 'owner', 'order']));
+        return IndustryScope::branches(CrmUi::scope(parent::getEloquentQuery()->with(['stage', 'customer', 'lead', 'owner', 'order'])));
     }
 
     public static function form(Schema $schema): Schema

@@ -15,6 +15,7 @@ use App\Filament\Resources\Customers\Pages\ViewCustomer;
 use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\GlobalSearch;
+use App\Filament\Support\IndustryField;
 use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\PatientProfile;
@@ -119,6 +120,7 @@ class CustomerResource extends Resource
             Section::make()->columns(3)->schema([
                 Select::make('type')->options(Customer::TYPES)->default('individual')->required(),
                 TextInput::make('name')->required()->maxLength(255)->caps()->columnSpan(2),
+                IndustryField::make(shareable: false),
                 TextInput::make('phone')->tel()->maxLength(30)->helperText('Ghana numbers are stored as +233…'),
                 TextInput::make('email')->email()->maxLength(255),
                 TextInput::make('contact_name')->label('Contact person')->maxLength(255)->caps(),

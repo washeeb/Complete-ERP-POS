@@ -63,11 +63,20 @@ final class CustomersImporter extends Importer
         return (string) ($row['code'] ?? '') ?: (string) ($row['name'] ?? $row['phone'] ?? '');
     }
 
+    /** Customers and suppliers belong to an industry (owner 2026-11-09): the import page asks which. */
+    public function industryScoped(): bool
+    {
+        return true;
+    }
+
     public function apply(Actor $actor, array $row, array $options, ?Model $context): string
     {
-        $customer = self::has($row, 'code') ? Customer::where('code', strtoupper($row['code']))->first() : null;
+        // Only this industry's customers are matched: the same person may be a customer of each industry.
+        $industry = ($i = (string) ($options['industry'] ?? '')) !== '' && $i !== 'shared' ? $i : null;
+        $mine = fn ($q) => $industry ? $q->where('industry_id', $industry) : $q;
+        $customer = self::has($row, 'code') ? Customer::where('code', strtoupper($row['code']))->tap($mine)->first() : null;
         if (! $customer && self::has($row, 'phone') && ($phone = CustomerService::normalisePhone($row['phone']))) {
-            $customer = Customer::where('phone', $phone)->first();
+            $customer = Customer::where('phone', $phone)->tap($mine)->first();
         }
         $isNew = ! $customer;
         $data = [];
@@ -91,6 +100,9 @@ final class CustomersImporter extends Importer
         if ($isNew && ($limit !== null || $terms !== null)) {
             $data['credit_limit_minor'] = $limit;
             $data['payment_terms_days'] = $terms ?? 0;
+        }
+        if ($isNew && $industry) {
+            $data['industry_id'] = $industry;
         }
         $saved = $this->customers->save($actor, $customer ?? new Customer, $data, 'CSV import');
         if (! $isNew && ($limit !== null || $terms !== null)

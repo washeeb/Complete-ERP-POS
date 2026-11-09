@@ -16,6 +16,7 @@ use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
 use App\Filament\Support\GlobalSearch;
+use App\Filament\Support\IndustryField;
 use App\Models\Supplier;
 use App\Support\Money;
 use BackedEnum;
@@ -103,6 +104,7 @@ class SupplierResource extends Resource
             Section::make()->columns(3)->schema([
                 TextInput::make('code')->placeholder('Given by the system')->disabled()->dehydrated(false),
                 TextInput::make('name')->required()->maxLength(255)->caps()->columnSpan(2),
+                IndustryField::make(),
                 TextInput::make('contact_name')->label('Contact person')->maxLength(255)->caps(),
                 TextInput::make('phone')->tel()->maxLength(30),
                 TextInput::make('email')->email()->maxLength(255),

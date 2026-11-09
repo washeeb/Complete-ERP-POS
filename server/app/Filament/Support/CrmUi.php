@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\CrmActivity;
 use App\Models\User;
 use App\Security\Authorizer;
+use App\Support\IndustryContext;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
@@ -51,7 +52,7 @@ final class CrmUi
     {
         $authz = app(Authorizer::class);
 
-        return User::where('is_active', true)->orderBy('name')->get()->filter(fn (User $u) => $authz->allowsAnywhere($u, 'crm.manage'))->pluck('name', 'id')->all();
+        return IndustryContext::userScope(User::where('is_active', true))->orderBy('name')->get()->filter(fn (User $u) => $authz->allowsAnywhere($u, 'crm.manage'))->pluck('name', 'id')->all();
     }
 
     /** "Follow-up" on a lead, deal or customer row: something to do later, or a note of what just happened. */

@@ -13,6 +13,7 @@ use App\Filament\Resources\Projects\RelationManagers\TasksRelationManager;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\IndustryScope;
 use App\Filament\Support\ProjectUi;
 use App\Models\Customer;
 use App\Models\Product;
@@ -20,6 +21,7 @@ use App\Models\Project;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
+use App\Support\IndustryContext;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -79,7 +81,7 @@ class ProjectResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return ProjectUi::scope(parent::getEloquentQuery()->with(['customer', 'manager']));
+        return IndustryScope::branches(ProjectUi::scope(parent::getEloquentQuery()->with(['customer', 'manager'])));
     }
 
     public static function form(Schema $schema): Schema
@@ -98,7 +100,7 @@ class ProjectResource extends Resource
                     ->required(fn (Get $get) => $get('billing') !== 'internal')->default(fn () => request()->query('customer')),
                 Select::make('branch_id')->label('Branch')->options(fn () => ProjectUi::branches())->default(fn () => array_key_first(ProjectUi::branches()))->required(),
                 Select::make('manager_id')->label('Project manager')->default(fn () => Erp::user()?->id)
-                    ->options(fn () => User::where('is_active', true)->orderBy('name')->get()->filter(fn ($u) => app(Authorizer::class)->allowsAnywhere($u, 'projects.view'))->pluck('name', 'id')),
+                    ->options(fn () => IndustryContext::userScope(User::where('is_active', true))->orderBy('name')->get()->filter(fn ($u) => app(Authorizer::class)->allowsAnywhere($u, 'projects.view'))->pluck('name', 'id')),
                 DatePicker::make('starts_on')->label('Starts'),
                 DatePicker::make('ends_on')->label('Due to finish'),
                 $money('budget_cost', 'Budget (what it should cost)'),

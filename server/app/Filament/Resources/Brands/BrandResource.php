@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Brands;
 
 use App\Filament\Resources\Brands\Pages\ListBrands;
 use App\Filament\Support\GlobalSearch;
+use App\Filament\Support\IndustryField;
 use App\Filament\Support\SimpleCatalogResource;
 use App\Models\Brand;
 use App\Models\Product;
@@ -46,7 +47,7 @@ class BrandResource extends SimpleCatalogResource
 
     public static function form(Schema $schema): Schema
     {
-        return $schema->components([TextInput::make('name')->required()->maxLength(120)->caps()]);
+        return $schema->components([TextInput::make('name')->required()->maxLength(120)->caps(), IndustryField::make()]);
     }
 
     public static function table(Table $table): Table

@@ -10,6 +10,7 @@ use App\Filament\Resources\OfficeReturns\Pages\ViewOfficeReturn;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\IndustryScope;
 use App\Filament\Support\MiniTable;
 use App\Models\OfficeReturn;
 use App\Models\Sale;
@@ -32,12 +33,19 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 /** Sales → Back-office returns: entered from a receipt, approved by someone else. See App\Domain\Pos\OfficeReturns. */
 class OfficeReturnResource extends Resource
 {
+    /** Follows the industry in view (owner 2026-11-09: every industry independent). */
+    public static function getEloquentQuery(): Builder
+    {
+        return IndustryScope::branches(parent::getEloquentQuery());
+    }
+
     protected static ?string $model = OfficeReturn::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowUturnLeft;

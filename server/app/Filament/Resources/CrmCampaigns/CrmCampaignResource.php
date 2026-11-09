@@ -8,6 +8,7 @@ use App\Filament\Resources\CrmCampaigns\Pages\EditCrmCampaign;
 use App\Filament\Resources\CrmCampaigns\Pages\ListCrmCampaigns;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
+use App\Filament\Support\IndustryField;
 use App\Models\Branch;
 use App\Models\CrmCampaign;
 use App\Models\Customer;
@@ -78,6 +79,7 @@ class CrmCampaignResource extends Resource
         return $schema->columns(1)->components([
             Section::make('Message')->columns(2)->schema([
                 TextInput::make('name')->label('Campaign name (for you)')->required()->maxLength(255)->placeholder('e.g. December offers'),
+                IndustryField::make(),
                 Radio::make('channel')->label('Send by')->options(CrmCampaign::CHANNELS)->default('sms')->inline()->required()->live(),
                 TextInput::make('subject')->label('E-mail subject')->maxLength(255)->visible(fn (Get $get) => $get('channel') === 'email')->required(fn (Get $get) => $get('channel') === 'email'),
                 TextInput::make('whatsapp_template')->label('WhatsApp template name')->maxLength(80)->visible(fn (Get $get) => $get('channel') === 'whatsapp')

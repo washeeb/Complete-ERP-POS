@@ -7,11 +7,13 @@ use App\Domain\Support\Actor;
 use App\Domain\Support\DocumentNumbers;
 use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
+use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\PriceList;
 use App\Models\Tenant;
 use App\Security\Authorizer;
 use App\Support\Caps;
+use App\Support\IndustryContext;
 use App\Support\Money;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -36,8 +38,17 @@ final class CustomerService
         if (trim((string) ($data['name'] ?? $customer->name)) === '') {
             throw new DomainException('Enter the customer’s name.');
         }
+        IndustryContext::assign($customer, $data, shareable: false, user: $actor->user); // each industry has its own customers (owner 2026-11-09)
+        if (! $customer->exists) {
+            // The form asks people who cover several industries. Code that does not say: the home branch's industry, else the
+            // industry in view or the person's only one; else shared (integrations and the like).
+            $customer->industry_id ??= (! empty($data['home_branch_id']) ? Branch::whereKey($data['home_branch_id'])->value('industry_id') : null)
+                ?? IndustryContext::defaultId();
+        }
         $phone = isset($data['phone']) ? self::normalisePhone((string) $data['phone']) : $customer->phone;
-        if ($phone && Customer::where('phone', $phone)->when($customer->exists, fn ($q) => $q->whereKeyNot($customer->id))->exists()) {
+        // One customer per phone number within an industry: the same person may be a customer of each industry.
+        if ($phone && Customer::withoutIndustryScope()->where('phone', $phone)->where('industry_id', $customer->industry_id)
+            ->when($customer->exists, fn ($q) => $q->whereKeyNot($customer->id))->exists()) {
             throw new DomainException("Another customer already has the phone number {$phone}.", 'duplicate_phone');
         }
         if (isset($data['email']) && $data['email'] !== '' && $data['email'] !== null && ! filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
@@ -61,7 +72,7 @@ final class CustomerService
             if ($isNew) {
                 $customer->tenant_id = $actor->tenantId;
                 $customer->code = strtoupper(trim((string) ($data['code'] ?? ''))) ?: $this->numbers->next($actor->tenantId, 'customer');
-                if (Customer::where('code', $customer->code)->exists()) {
+                if (Customer::withoutIndustryScope()->where('code', $customer->code)->exists()) {
                     throw new DomainException("Customer code {$customer->code} is already used.");
                 }
                 $customer->consents ??= [];

@@ -6,6 +6,7 @@ use App\Domain\Modules\ModuleService;
 use App\Filament\Resources\SerialNumbers\Pages\ListSerialNumbers;
 use App\Filament\Resources\SerialNumbers\Pages\ViewSerialNumber;
 use App\Filament\Support\Erp;
+use App\Filament\Support\IndustryScope;
 use App\Models\Customer;
 use App\Models\Sale;
 use App\Models\SerialNumber;
@@ -20,6 +21,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -28,6 +30,12 @@ use UnitEnum;
 /** Every serial / IMEI number: where it is, who bought it, its warranty and its history (read from the stock ledger). */
 class SerialNumberResource extends Resource
 {
+    /** Follows the industry in view (owner 2026-11-09: every industry independent). */
+    public static function getEloquentQuery(): Builder
+    {
+        return IndustryScope::product(parent::getEloquentQuery());
+    }
+
     protected static ?string $model = SerialNumber::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedQrCode;

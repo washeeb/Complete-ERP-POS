@@ -25,6 +25,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
+use App\Support\IndustryContext;
 use App\Support\NotifyPrefs;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -451,6 +452,7 @@ final class Crm
         if ($c->exists && ! in_array($c->status, ['draft', 'scheduled'], true)) {
             throw new DomainException('This campaign has gone out: copy it to send again.');
         }
+        IndustryContext::assign($c, $d, user: $actor->user);
         $channel = $d['channel'] ?? $c->channel;
         if (! isset(CrmCampaign::CHANNELS[$channel])) {
             throw new DomainException('Choose SMS, WhatsApp or e-mail.');
