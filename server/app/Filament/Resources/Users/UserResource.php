@@ -6,6 +6,7 @@ use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\Pages\EditUser;
 use App\Filament\Resources\Users\Pages\ListUsers;
 use App\Filament\Resources\Users\RelationManagers\AccessGrantsRelationManager;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\GlobalSearch;
 use App\Filament\Support\LocalAvatars;
@@ -15,7 +16,6 @@ use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
@@ -23,7 +23,6 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -100,8 +99,6 @@ class UserResource extends Resource
                     ->label(fn (string $operation) => $operation === 'create' ? 'Password' : 'New password (leave blank to keep)')
                     ->required(fn (string $operation) => $operation === 'create')
                     ->rule(Password::min(12))->dehydrated(fn ($state) => filled($state)),
-                Toggle::make('is_active')->label('Active')->visibleOn('edit')
-                    ->helperText('Deactivating signs the person out everywhere, including tills.'),
                 TextInput::make('reason')->label('Reason for change')->maxLength(255)->visibleOn('edit')->dehydrated(),
             ]),
         ]);
@@ -109,7 +106,7 @@ class UserResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
+        return ArchiveUi::apply($table
             ->columns([
                 ImageColumn::make('photo')->label('')->circular()->imageSize(32)
                     ->state(fn (User $r) => $r->getFilamentAvatarUrl() ?? LocalAvatars::svgDataUri($r->name)),
@@ -125,12 +122,10 @@ class UserResource extends Resource
                         'app' => 'App', 'code' => 'Code', 'password' => 'Password only', default => $r->requiresMfa() ? 'App (company rule)' : 'Password (company rule)',
                     }),
                 IconColumn::make('has_pin')->label('PIN')->boolean()->state(fn (User $r) => $r->pin_hash !== null),
-                IconColumn::make('is_active')->label('Active')->boolean(),
                 TextColumn::make('last_login_at')->label('Last till sign-in')->since()->toggleable(),
             ])
-            ->filters([TernaryFilter::make('is_active')->label('Active')])
             ->defaultSort('name')
-            ->recordActions([EditAction::make()]);
+            ->recordActions([EditAction::make()]));
     }
 
     public static function getRelations(): array

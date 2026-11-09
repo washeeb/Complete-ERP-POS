@@ -8,6 +8,7 @@ use App\Filament\Resources\MaintenanceAssets\Pages\EditMaintenanceAsset;
 use App\Filament\Resources\MaintenanceAssets\Pages\ListMaintenanceAssets;
 use App\Filament\Resources\MaintenanceAssets\RelationManagers\OrdersRelationManager;
 use App\Filament\Resources\MaintenanceAssets\RelationManagers\PlansRelationManager;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\ServiceUi;
 use App\Models\Branch;
@@ -111,7 +112,7 @@ class MaintenanceAssetResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
+        return ArchiveUi::apply($table
             ->columns([
                 TextColumn::make('number')->label('No.')->searchable()->color('gray'),
                 TextColumn::make('name')->searchable(['name', 'serial_no', 'make', 'model'])->weight('bold')->wrap()
@@ -134,7 +135,7 @@ class MaintenanceAssetResource extends Resource
                 SelectFilter::make('category')->options(MaintenanceAsset::CATEGORIES),
             ])
             ->emptyStateHeading('No equipment yet')
-            ->emptyStateDescription('Add what you look after — generators, fridges, vehicles, tills — and customers’ equipment under warranty or contract.');
+            ->emptyStateDescription('Add what you look after — generators, fridges, vehicles, tills — and customers’ equipment under warranty or contract.'));
     }
 
     /** "Report a breakdown" and "New meter reading" on the equipment's page. */

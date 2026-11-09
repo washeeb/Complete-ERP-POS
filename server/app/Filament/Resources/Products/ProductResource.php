@@ -13,6 +13,7 @@ use App\Filament\Resources\Products\Pages\CreateProduct;
 use App\Filament\Resources\Products\Pages\EditProduct;
 use App\Filament\Resources\Products\Pages\ListProducts;
 use App\Filament\Resources\StockCostRuns\StockCostRunResource;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
 use App\Filament\Support\GlobalSearch;
@@ -339,7 +340,7 @@ class ProductResource extends Resource
     {
         $default = PriceList::where('is_default', true)->first();
 
-        return $table
+        return ArchiveUi::apply($table
             ->columns([
                 // Search matches SKU, name, or an exact barcode (scan into the search box).
                 TextColumn::make('sku')->label('SKU')->sortable()->searchable(query: fn (Builder $query, string $search) => $query
@@ -470,7 +471,7 @@ class ProductResource extends Resource
                         Notification::make()->success()->title("{$n} product(s) moved")->send();
                     })
                     ->deselectRecordsAfterCompletion(),
-            ]);
+            ]));
     }
 
     /** Which industry a product belongs to: required, and only what this person may choose. Used wherever a product is added. */

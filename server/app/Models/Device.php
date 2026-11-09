@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Domain\Modules\ModuleService;
+use App\Models\Concerns\Archivable;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasOriginNode;
 use App\Support\ClientInfo;
@@ -13,7 +14,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class Device extends Model
 {
-    use BelongsToTenant, HasApiTokens, HasOriginNode, HasUuids;
+    use Archivable, BelongsToTenant, HasApiTokens, HasOriginNode, HasUuids;
 
     public const KINDS = ['pos' => 'POS till', 'handheld' => 'Handheld scanner', 'kiosk' => 'Self-checkout kiosk', 'kds' => 'Kitchen display'];
 

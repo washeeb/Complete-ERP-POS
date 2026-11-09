@@ -12,20 +12,20 @@ use App\Models\Device;
 use App\Models\Industry;
 use App\Models\LegalEntity;
 use App\Models\Till;
+use App\Models\User;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Archiving industries, legal entities and branches made by mistake, never used, or closed (owner request 2026-11-08):
- * they leave every list people choose from, so nothing new is assigned to them, while their history stays complete
- * (sales, stock, books and audit keep pointing at them). Restore brings one back as it was.
+ * Archiving what was made by mistake, is no longer used, or has closed (owner requests 2026-11-08 and 2026-11-09):
+ * industries, legal entities and branches, and every other record that cannot be deleted because history points at it
+ * (ArchiveRules lists them). An archived record leaves the lists people choose from, so nothing new is given to it,
+ * while sales, stock, books and the audit log keep showing it. Restore brings it back.
  *
- * Archiving refuses while something still depends on the record, and says what to do first: a branch with stock, open
- * shifts, transfers on the way or tills still enrolled (a till may hold sales it has not sent yet); an industry with
- * branches in use; a legal entity with industries or branches in use, or the head office company. A branch's
- * warehouses and tills are switched off with it, and restoring turns back on exactly the ones it switched off.
+ * Archiving needs a reason and refuses while something still depends on the record, saying what to do first. A
+ * branch takes its stores and tills with it, and restoring brings back exactly those.
  */
 final class ArchiveService
 {
@@ -38,8 +38,20 @@ final class ArchiveService
             $record instanceof Branch => $this->branchBlockers($record),
             $record instanceof Industry => $this->industryBlockers($record),
             $record instanceof LegalEntity => $this->entityBlockers($record),
-            default => throw new DomainException('Only industries, legal entities and branches are archived this way.'),
+            ArchiveRules::supports($record) => ArchiveRules::blockers($record),
+            default => throw new DomainException('This is not archived this way.'),
         };
+    }
+
+    /** May this person archive or restore it? (for showing the buttons) */
+    public function allowed(?User $user, Model $record): bool
+    {
+        if (! $user || ! ArchiveRules::supports($record)) {
+            return false;
+        }
+        [, , $permission, , $scoped] = ArchiveRules::of($record);
+
+        return $scoped ? $this->authz->allows($user, $permission, ArchiveRules::branchOf($record)) : $this->authz->allowsAnywhere($user, $permission);
     }
 
     public function archive(Actor $actor, Model $record, string $reason): Model
@@ -47,7 +59,7 @@ final class ArchiveService
         $this->require($actor, $record);
         $reason = trim($reason);
         if (mb_strlen($reason) < 3) {
-            throw new DomainException('Say why it is archived (for example "created by mistake" or "branch closed").');
+            throw new DomainException('Say why it is archived (for example "created by mistake" or "no longer used").');
         }
         if ($record->archived_at) {
             throw new DomainException('It is already archived.');
@@ -57,21 +69,33 @@ final class ArchiveService
         }
 
         return $this->recorder->transaction(function () use ($actor, $record, $reason) {
+            $branchId = ArchiveRules::branchOf($record)?->id;
             $off = [];
-            if ($record instanceof Branch) {
+            if ($record instanceof Branch) { // its stores and tills go with it
                 foreach ([Warehouse::class => 'warehouses', Till::class => 'tills'] as $class => $key) {
-                    $ids = $class::where('branch_id', $record->id)->where('is_active', true)->pluck('id')->all();
+                    $ids = $class::where('branch_id', $record->id)->whereNull('archived_at')->where('is_active', true)->pluck('id')->all(); // only those in use
                     foreach ($class::whereIn('id', $ids)->get() as $child) {
-                        $child->is_active = false;
-                        $this->recorder->save($actor, $child, class_basename($class) === 'Till' ? 'till.updated' : 'warehouse.updated', "Branch archived: {$reason}", $record->id);
+                        $child->forceFill(['archived_at' => now(), 'archived_by' => $actor->user?->id, 'archive_reason' => mb_substr("Branch archived: {$reason}", 0, 255)]);
+                        $this->recorder->save($actor, $child, ArchiveRules::of($child)[1].'.archived', "Branch archived: {$reason}", $record->id);
                     }
                     $off[$key] = $ids;
                 }
             }
-            $record->forceFill(['is_active' => false, 'archived_at' => now(), 'archived_by' => $actor->user?->id,
-                'archive_reason' => mb_substr($reason, 0, 255)] + ($record instanceof Branch ? ['archived_children' => $off ?: null] : []));
+            $fill = ['archived_at' => now(), 'archived_by' => $actor->user?->id, 'archive_reason' => mb_substr($reason, 0, 255)];
+            if ($this->hasSwitch($record)) {
+                $fill['is_active'] = false;
+            }
+            if ($record instanceof Branch) {
+                $fill['archived_children'] = $off ?: null;
+            }
+            $record->forceFill($fill);
+            $saved = $this->recorder->save($actor, $record, ArchiveRules::of($record)[1].'.archived', $reason, $branchId);
+            if ($record instanceof User) {
+                $record->tokens()->delete(); // signed out everywhere, including tills
+                $this->authz->forget($record);
+            }
 
-            return $this->recorder->save($actor, $record, $this->event($record).'.archived', $reason, $record instanceof Branch ? $record->id : null);
+            return $saved;
         });
     }
 
@@ -81,31 +105,55 @@ final class ArchiveService
         if (! $record->archived_at) {
             throw new DomainException('It is not archived.');
         }
-        $parent = match (true) {
+        $parents = match (true) {
             $record instanceof Branch => [$record->industry, $record->legalEntity],
             $record instanceof Industry => [$record->legalEntity],
+            $record instanceof Warehouse, $record instanceof Till => [$record->branch],
             default => [],
         };
-        if ($record instanceof Branch) { // it takes a place in the licence again
-            app(LicenseManager::class)->assertWithin('branches', Branch::whereNull('archived_at')->count(), 'branches');
-        }
-        foreach (array_filter($parent) as $p) {
+        foreach (array_filter($parents) as $p) {
             if ($p->archived_at) {
                 throw new DomainException("Restore {$p->name} first: it is archived too.");
             }
         }
+        if ($record instanceof Branch) { // it takes a place in the licence again
+            app(LicenseManager::class)->assertWithin('branches', Branch::whereNull('archived_at')->count(), 'branches');
+        }
+        if ($record instanceof User) {
+            app(LicenseManager::class)->assertWithin('users', User::licensedCount(), 'active users');
+        }
 
         return $this->recorder->transaction(function () use ($actor, $record, $reason) {
-            foreach ($record instanceof Branch ? [Warehouse::class => 'warehouses', Till::class => 'tills'] : [] as $class => $key) {
+            $branchId = ArchiveRules::branchOf($record)?->id;
+            foreach ($record instanceof Branch ? [Warehouse::class => 'warehouses', Till::class => 'tills'] : [] as $key) {
+                $class = $key === 'tills' ? Till::class : Warehouse::class;
                 foreach ($class::whereIn('id', (array) ($record->archived_children[$key] ?? []))->get() as $child) {
-                    $child->is_active = true;
-                    $this->recorder->save($actor, $child, class_basename($class) === 'Till' ? 'till.updated' : 'warehouse.updated', 'Branch restored', $record->id);
+                    $child->forceFill(['archived_at' => null, 'archived_by' => null, 'archive_reason' => null, 'is_active' => true]);
+                    $this->recorder->save($actor, $child, ArchiveRules::of($child)[1].'.restored', 'Branch restored', $record->id);
                 }
             }
-            $record->forceFill(['is_active' => true, 'archived_at' => null, 'archived_by' => null, 'archive_reason' => null] + ($record instanceof Branch ? ['archived_children' => null] : []));
+            $fill = ['archived_at' => null, 'archived_by' => null, 'archive_reason' => null];
+            // Where Archive replaced an "in use" switch, restoring switches it back on; a switch with its own meaning
+            // (for sale, running, offered) stays off for the person to decide.
+            if ($this->hasSwitch($record) && ArchiveRules::of($record)[3] === 'replaced') {
+                $fill['is_active'] = true;
+            }
+            if ($record instanceof Branch) {
+                $fill['archived_children'] = null;
+            }
+            $record->forceFill($fill);
+            $saved = $this->recorder->save($actor, $record, ArchiveRules::of($record)[1].'.restored', $reason, $branchId);
+            if ($record instanceof User) {
+                $this->authz->forget($record);
+            }
 
-            return $this->recorder->save($actor, $record, $this->event($record).'.restored', $reason, $record instanceof Branch ? $record->id : null);
+            return $saved;
         });
+    }
+
+    private function hasSwitch(Model $record): bool
+    {
+        return ArchiveRules::of($record)[3] !== 'none';
     }
 
     private function branchBlockers(Branch $branch): array
@@ -157,18 +205,9 @@ final class ArchiveService
         return $why;
     }
 
-    private function event(Model $record): string
-    {
-        return match (true) {
-            $record instanceof Branch => 'branch',
-            $record instanceof Industry => 'industry',
-            default => 'legal_entity',
-        };
-    }
-
     private function require(Actor $actor, Model $record): void
     {
-        if (! $actor->user || ! $this->authz->allows($actor->user, 'setup.company.manage', $record instanceof Branch ? $record : null)) {
+        if (! $this->allowed($actor->user, $record)) {
             throw new AccessDenied;
         }
     }

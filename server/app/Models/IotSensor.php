@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Archivable;
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** A sensor: on a fridge, cold room, freezer or in a room, or watching the power or a door. */
 class IotSensor extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use Archivable, BelongsToTenant, HasUuids;
 
     /** kind => [label, lowest, highest °C, lowest, highest humidity %] it starts with */
     public const KINDS = [

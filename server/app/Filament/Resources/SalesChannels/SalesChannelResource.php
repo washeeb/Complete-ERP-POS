@@ -8,6 +8,7 @@ use App\Domain\Channels\Reconciler;
 use App\Filament\Resources\SalesChannels\Pages\CreateSalesChannel;
 use App\Filament\Resources\SalesChannels\Pages\EditSalesChannel;
 use App\Filament\Resources\SalesChannels\Pages\ListSalesChannels;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Http\Controllers\StorefrontController;
 use App\Models\Branch;
@@ -118,7 +119,7 @@ class SalesChannelResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
+        return ArchiveUi::apply($table
             ->columns([
                 TextColumn::make('name')->description(fn (SalesChannel $r) => app(ConnectorRegistry::class)->label($r->type)),
                 TextColumn::make('branch.name')->label('Branch'),
@@ -164,7 +165,7 @@ class SalesChannelResource extends Resource
                 ]),
             ])
             ->emptyStateHeading('No online channels yet')
-            ->emptyStateDescription('Add the built-in shop, or connect a WooCommerce or Shopify store.');
+            ->emptyStateDescription('Add the built-in shop, or connect a WooCommerce or Shopify store.'));
     }
 
     public static function getPages(): array

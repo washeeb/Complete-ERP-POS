@@ -37,6 +37,8 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 ## Till enrolment: computer-name header — branch `till-enrol-fix`
 - `pos/src/clientInfo.ts` escapes non-ASCII in `X-SES-Client`; `api.ts` `timeoutSignal` (falls back from `AbortSignal.timeout` for old WebView2); `api.ts` adds the browser's reason to "Cannot reach the server". Test in clientInfo.test.ts. Served by the server: no new till installer.
 
+## Archive everywhere (free) — branch `archive-everywhere`
+- `ArchiveRules` (kinds, permission, switch: replaced / kept / none, checks), `ArchiveService` generalised (`allowed`, branch children by archived_at), `Concerns\Archivable` (forces is_active off while archived, `inUse` scope), migration `2026_12_24_100001_archive_everywhere`, `ArchiveUi::apply` on 31 lists, archived left out of the product, department, role and equipment pickers. Test: ArchiveEverywhereTest.
 ## Till and receipt wording — branch `till-privacy`
 - Receipts (screen, ESC/POS, server print), slips and `print/layout` without connection notes or the visible `Ref`; bootstrap `license` reduced to read-only + a plain message; till messages without "server"; `ApiError.detail` (browser reason) shown only on the enrol screen. Tests: slip.test.ts, LicensingTest.
 

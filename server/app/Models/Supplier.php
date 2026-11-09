@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Archivable;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasOriginNode;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Supplier extends Model
 {
-    use BelongsToTenant, HasOriginNode, HasUuids;
+    use Archivable, BelongsToTenant, HasOriginNode, HasUuids;
 
     protected $fillable = ['code', 'name', 'contact_name', 'phone', 'email', 'tax_no', 'address', 'payment_terms_days', 'currency_code', 'lead_time_days', 'return_days_before_expiry', 'is_active', 'notes',
         'supply_kind', 'bank_name', 'bank_branch', 'bank_account_name', 'bank_account_no', 'momo_number'];

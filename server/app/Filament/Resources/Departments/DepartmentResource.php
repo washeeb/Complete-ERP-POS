@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Departments;
 
 use App\Domain\Hr\HrService;
 use App\Filament\Resources\Departments\Pages\ListDepartments;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Models\Department;
 use Filament\Actions\EditAction;
@@ -53,8 +54,8 @@ class DepartmentResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->columns([TextColumn::make('code'), TextColumn::make('name')])
-            ->recordActions([EditAction::make()->using(fn (Department $record, array $data) => self::save($record, $data))]);
+        return ArchiveUi::apply($table->columns([TextColumn::make('code'), TextColumn::make('name')])
+            ->recordActions([EditAction::make()->using(fn (Department $record, array $data) => self::save($record, $data))]));
     }
 
     public static function getPages(): array

@@ -159,7 +159,7 @@ final class Fields
     {
         return Select::make($name)->label('Product and unit')->required()->searchable()
             ->getSearchResultsUsing(fn (string $search) => ProductUom::with('product', 'uom')
-                ->whereHas('product', fn (Builder $q) => IndustryContext::productScope($q))
+                ->whereHas('product', fn (Builder $q) => IndustryContext::productScope($q)->whereNull('products.archived_at')) // archived products are not picked
                 ->where(fn ($w) => $w->whereHas('product', fn (Builder $q) => $q->where('is_active', true)->where(fn ($q) => $q->where('name', 'ilike', "%{$search}%")
                     ->orWhere('sku', 'ilike', "%{$search}%")))
                     ->orWhereHas('barcodes', fn ($q) => $q->where('code', $search)))
@@ -192,7 +192,7 @@ final class Fields
 
     public static function departmentField(string $name = 'department_id'): Select
     {
-        return Select::make($name)->label('Department (cost centre)')->placeholder('—')->options(fn () => Department::orderBy('name')->pluck('name', 'id'));
+        return Select::make($name)->label('Department (cost centre)')->placeholder('—')->options(fn ($state) => Department::where(fn ($q) => $q->whereNull('archived_at')->orWhere('id', $state))->orderBy('name')->pluck('name', 'id'));
     }
 
     /** The project a cost is for (Projects add-on): open projects only; hidden without the add-on. */

@@ -8,6 +8,7 @@ use App\Filament\Resources\IotSensors\Pages\EditIotSensor;
 use App\Filament\Resources\IotSensors\Pages\ListIotSensors;
 use App\Filament\Resources\IotSensors\RelationManagers\AlarmsRelationManager;
 use App\Filament\Resources\IotSensors\RelationManagers\ChecksRelationManager;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Models\Branch;
 use App\Models\IotConnection;
@@ -110,7 +111,6 @@ class IotSensorResource extends Resource
             Section::make('Now')->columns(4)->hiddenOn('create')->schema(fn (?IotSensor $record) => $record ? self::now($record) : []),
             Section::make()->columns(3)->schema([
                 TextInput::make('name')->required()->maxLength(255)->columnSpan(2)->placeholder('e.g. Vaccine fridge, dispensary'),
-                Toggle::make('is_active')->label('In use')->default(true)->inline(false)->hiddenOn('create'),
                 Select::make('kind')->label('It watches')->options(collect(IotSensor::KINDS)->map(fn ($k) => $k[0]))->default('fridge')->required()->live()->selectablePlaceholder(false)
                     ->afterStateUpdated(function ($state, callable $set) {
                         [, $min, $max, $minH, $maxH] = IotSensor::KINDS[$state] ?? IotSensor::KINDS['fridge'];
@@ -122,7 +122,7 @@ class IotSensorResource extends Resource
                 Select::make('branch_id')->label('Branch')->required()->options(fn () => Branch::where('is_active', true)->orderBy('code')->pluck('name', 'id'))
                     ->default(fn () => Branch::where('is_active', true)->orderByDesc('is_hq')->orderBy('code')->value('id')),
                 Select::make('asset_id')->label('Equipment (for breakdown work orders)')->placeholder('—')->searchable()
-                    ->options(fn () => MaintenanceAsset::where('owner', 'own')->where('status', '<>', 'retired')->orderBy('number')->get()->mapWithKeys(fn ($a) => [$a->id => "{$a->number} {$a->name}"])),
+                    ->options(fn () => MaintenanceAsset::whereNull('archived_at')->where('owner', 'own')->where('status', '<>', 'retired')->orderBy('number')->get()->mapWithKeys(fn ($a) => [$a->id => "{$a->number} {$a->name}"])),
             ]),
             Section::make('Range')->columns(4)->visible(fn (Get $get) => ! in_array($get('kind'), ['power', 'door'], true))->schema([
                 TextInput::make('min_temp')->label('Lowest °C')->numeric()->default(2.0),
@@ -170,7 +170,7 @@ class IotSensorResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
+        return ArchiveUi::apply($table
             ->columns([
                 TextColumn::make('name')->searchable()->weight('bold')->description(fn (IotSensor $s) => $s->branch?->name.' · '.(IotSensor::KINDS[$s->kind][0] ?? $s->kind)),
                 TextColumn::make('reading')->label('Now')->state(fn (IotSensor $s) => match (true) {
@@ -194,7 +194,7 @@ class IotSensorResource extends Resource
                 SelectFilter::make('branch_id')->label('Branch')->options(fn () => Branch::orderBy('code')->pluck('name', 'id')),
             ])
             ->emptyStateHeading('No sensors yet')
-            ->emptyStateDescription('Add a sensor for each fridge, cold room, freezer or store room you want watched.');
+            ->emptyStateDescription('Add a sensor for each fridge, cold room, freezer or store room you want watched.'));
     }
 
     /** "Record a check" and the sensor's address. */

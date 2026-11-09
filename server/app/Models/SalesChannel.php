@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Archivable;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasOriginNode;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** An online sales channel: the built-in storefront, a WooCommerce or Shopify store, or a generic REST receiver. */
 class SalesChannel extends Model
 {
-    use BelongsToTenant, HasOriginNode, HasUuids;
+    use Archivable, BelongsToTenant, HasOriginNode, HasUuids;
 
     protected $fillable = ['type', 'name', 'branch_id', 'warehouse_id', 'price_list_id', 'safety_stock', 'base_url', 'status', 'settings'];
 

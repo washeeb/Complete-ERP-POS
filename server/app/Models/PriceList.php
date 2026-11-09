@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Archivable;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasOriginNode;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PriceList extends Model
 {
-    use BelongsToTenant, HasOriginNode, HasUuids;
+    use Archivable, BelongsToTenant, HasOriginNode, HasUuids;
 
     protected $fillable = ['code', 'name', 'currency_code', 'prices_include_tax', 'is_default', 'pos_selectable', 'branch_id', 'is_active', 'industry_id'];
 

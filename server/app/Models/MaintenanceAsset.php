@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Archivable;
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** A piece of equipment that is looked after: the company's own (generator, fridge, van…) or a customer's. */
 class MaintenanceAsset extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use Archivable, BelongsToTenant, HasUuids;
 
     public const CATEGORIES = ['generator' => 'Generator', 'fridge' => 'Fridge or cold room', 'air_conditioner' => 'Air conditioner', 'vehicle' => 'Vehicle',
         'till' => 'Till, printer or scanner', 'computer' => 'Computer or network', 'machine' => 'Machine', 'building' => 'Building', 'other' => 'Other'];

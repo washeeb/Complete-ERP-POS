@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Archivable;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasOriginNode;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /** A pricing rule: how a selling price follows the latest cost (App\Domain\Pricing\PricingRules). */
 class PricingRule extends Model
 {
-    use BelongsToTenant, HasOriginNode, HasUuids;
+    use Archivable, BelongsToTenant, HasOriginNode, HasUuids;
 
     public const SCOPES = ['company' => 'The whole company', 'category' => 'A category (and the categories under it)', 'product' => 'One product'];
 

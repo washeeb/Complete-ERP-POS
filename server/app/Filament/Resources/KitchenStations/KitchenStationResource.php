@@ -5,6 +5,7 @@ namespace App\Filament\Resources\KitchenStations;
 use App\Domain\Modules\ModuleService;
 use App\Domain\Restaurant\RestaurantSetup;
 use App\Filament\Resources\KitchenStations\Pages\ListKitchenStations;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Models\Branch;
 use App\Models\KitchenStation;
@@ -74,21 +75,19 @@ class KitchenStationResource extends Resource
             TextInput::make('name')->required()->maxLength(255),
             Toggle::make('auto_print')->label('Print tickets (no screen)')->inline(false)
                 ->helperText('The kitchen device at this station prints each new ticket instead of only showing it.'),
-            Toggle::make('is_active')->label('In use')->default(true)->inline(false),
         ]);
     }
 
     public static function table(Table $table): Table
     {
-        return $table->defaultSort('code')
+        return ArchiveUi::apply($table->defaultSort('code')
             ->columns([
                 TextColumn::make('branch.code')->label('Branch'),
                 TextColumn::make('code'),
                 TextColumn::make('name'),
                 IconColumn::make('auto_print')->label('Prints tickets')->boolean(),
-                IconColumn::make('is_active')->label('In use')->boolean(),
             ])
-            ->recordActions([EditAction::make()->using(fn (KitchenStation $record, array $data) => Erp::run(fn ($actor) => app(RestaurantSetup::class)->saveStation($actor, $record, $data)))]);
+            ->recordActions([EditAction::make()->using(fn (KitchenStation $record, array $data) => Erp::run(fn ($actor) => app(RestaurantSetup::class)->saveStation($actor, $record, $data)))]));
     }
 
     public static function getPages(): array

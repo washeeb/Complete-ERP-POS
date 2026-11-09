@@ -7,6 +7,7 @@ use App\Filament\Resources\Customers\CustomerResource;
 use App\Filament\Resources\Promotions\Pages\CreatePromotion;
 use App\Filament\Resources\Promotions\Pages\EditPromotion;
 use App\Filament\Resources\Promotions\Pages\ListPromotions;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\GlobalSearch;
 use App\Models\Branch;
@@ -148,7 +149,7 @@ class PromotionResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
+        return ArchiveUi::apply($table
             ->columns([
                 TextColumn::make('name')->searchable()->description(fn (Promotion $record) => $record->coupon_code ? "Code {$record->coupon_code}" : null),
                 TextColumn::make('type')->badge()->formatStateUsing(fn ($state) => PromotionEngine::TYPES[$state] ?? $state),
@@ -159,7 +160,7 @@ class PromotionResource extends Resource
                 IconColumn::make('is_active')->boolean()->label('Running'),
             ])
             ->filters([SelectFilter::make('type')->options(PromotionEngine::TYPES), TernaryFilter::make('is_active')->label('Running')->default(true)])
-            ->recordActions([EditAction::make()]);
+            ->recordActions([EditAction::make()]));
     }
 
     public static function describe(Promotion $p): string

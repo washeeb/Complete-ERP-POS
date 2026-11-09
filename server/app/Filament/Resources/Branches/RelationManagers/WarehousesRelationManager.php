@@ -3,15 +3,14 @@
 namespace App\Filament\Resources\Branches\RelationManagers;
 
 use App\Domain\Org\OrgService;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Models\Warehouse;
 use Filament\Actions\CreateAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -25,17 +24,15 @@ class WarehousesRelationManager extends RelationManager
         return $schema->components([
             TextInput::make('code')->disabled()->dehydrated(false)->placeholder('Given automatically when saved'),
             TextInput::make('name')->required()->maxLength(120),
-            Toggle::make('is_active')->default(true),
         ]);
     }
 
     public function table(Table $table): Table
     {
-        return $table
+        return ArchiveUi::apply($table
             ->columns([
                 TextColumn::make('code'),
                 TextColumn::make('name'),
-                IconColumn::make('is_active')->boolean()->label('Active'),
             ])
             ->pushHeaderActions([
                 CreateAction::make()->using(fn (array $data): Model => Erp::run(fn ($actor) => app(OrgService::class)
@@ -44,6 +41,6 @@ class WarehousesRelationManager extends RelationManager
             ->recordActions([
                 EditAction::make()->using(fn (Warehouse $record, array $data): Model => Erp::run(fn ($actor) => app(OrgService::class)
                     ->saveWarehouse($actor, $record, $data))),
-            ]);
+            ]));
     }
 }

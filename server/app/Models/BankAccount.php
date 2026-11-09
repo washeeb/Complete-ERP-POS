@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Archivable;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasOriginNode;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /** A bank, mobile money or cash account the company holds, tied to its general-ledger account. */
 class BankAccount extends Model
 {
-    use BelongsToTenant, HasOriginNode, HasUuids;
+    use Archivable, BelongsToTenant, HasOriginNode, HasUuids;
 
     public const KINDS = ['bank' => 'Bank', 'momo' => 'Mobile money', 'cash' => 'Cash / petty cash'];
 

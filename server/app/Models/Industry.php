@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Domain\Licensing\LicenseManager;
+use App\Models\Concerns\Archivable;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasOriginNode;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /** An industry of the company (Pharmacy, Grocery, …): its branches, its own catalogue and prices, its own dashboard. */
 class Industry extends Model
 {
-    use BelongsToTenant, HasOriginNode, HasUuids;
+    use Archivable, BelongsToTenant, HasOriginNode, HasUuids;
 
     protected $fillable = ['code', 'name', 'module_key', 'legal_entity_id', 'sort', 'is_active'];
 

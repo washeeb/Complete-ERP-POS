@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Roles;
 use App\Filament\Resources\Roles\Pages\CreateRole;
 use App\Filament\Resources\Roles\Pages\EditRole;
 use App\Filament\Resources\Roles\Pages\ListRoles;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\GlobalSearch;
 use App\Models\Permission;
@@ -107,7 +108,7 @@ class RoleResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table
+        return ArchiveUi::apply($table
             ->columns([
                 TextColumn::make('name')->searchable()->sortable(),
                 TextColumn::make('security_level')->label('Level')->formatStateUsing(fn ($state) => 'L'.$state)->sortable(),
@@ -116,7 +117,7 @@ class RoleResource extends Resource
                 IconColumn::make('is_system')->label('Seeded')->boolean(),
             ])
             ->defaultSort('security_level', 'desc')
-            ->recordActions([EditAction::make()]);
+            ->recordActions([EditAction::make()]));
     }
 
     public static function getPages(): array

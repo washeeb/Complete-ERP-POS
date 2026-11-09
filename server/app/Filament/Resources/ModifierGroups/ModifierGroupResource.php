@@ -5,6 +5,7 @@ namespace App\Filament\Resources\ModifierGroups;
 use App\Domain\Modules\ModuleService;
 use App\Domain\Restaurant\RestaurantSetup;
 use App\Filament\Resources\ModifierGroups\Pages\ListModifierGroups;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Models\ModifierGroup;
 use App\Models\Product;
@@ -80,7 +81,7 @@ class ModifierGroupResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->defaultSort('name')->modifyQueryUsing(fn ($query) => $query->with('options'))
+        return ArchiveUi::apply($table->defaultSort('name')->modifyQueryUsing(fn ($query) => $query->with('options'))
             ->columns([
                 TextColumn::make('name')->searchable(),
                 TextColumn::make('rule')->label('Choose')->state(fn (ModifierGroup $r) => $r->min_choices === $r->max_choices ? (string) $r->min_choices : "{$r->min_choices}–{$r->max_choices}"),
@@ -89,7 +90,7 @@ class ModifierGroupResource extends Resource
             ])
             ->recordActions([EditAction::make()
                 ->mutateRecordDataUsing(fn (array $data, ModifierGroup $record) => $data + ['options' => $record->options->map(fn ($o) => ['id' => $o->id, 'name' => $o->name, 'product_id' => $o->product_id])->all()])
-                ->using(fn (ModifierGroup $record, array $data) => Erp::run(fn ($actor) => app(RestaurantSetup::class)->saveModifierGroup($actor, $record, $data)))]);
+                ->using(fn (ModifierGroup $record, array $data) => Erp::run(fn ($actor) => app(RestaurantSetup::class)->saveModifierGroup($actor, $record, $data)))]));
     }
 
     public static function getPages(): array

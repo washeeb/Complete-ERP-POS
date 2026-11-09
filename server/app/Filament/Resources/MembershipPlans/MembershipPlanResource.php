@@ -5,6 +5,7 @@ namespace App\Filament\Resources\MembershipPlans;
 use App\Domain\Modules\ModuleService;
 use App\Domain\Services\MembershipService;
 use App\Filament\Resources\MembershipPlans\Pages\ListMembershipPlans;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
 use App\Models\MembershipPlan;
@@ -84,7 +85,7 @@ class MembershipPlanResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->defaultSort('code')
+        return ArchiveUi::apply($table->defaultSort('code')
             ->columns([
                 TextColumn::make('code')->searchable(),
                 TextColumn::make('name')->searchable(),
@@ -95,7 +96,7 @@ class MembershipPlanResource extends Resource
                 IconColumn::make('is_active')->label('Offered')->boolean(),
             ])
             ->recordActions([EditAction::make()->mutateRecordDataUsing(fn (array $data, MembershipPlan $record) => $data + ['price' => $record->price_minor / 100])
-                ->using(fn (MembershipPlan $record, array $data) => Erp::run(fn ($actor) => app(MembershipService::class)->savePlan($actor, $record, $data)))]);
+                ->using(fn (MembershipPlan $record, array $data) => Erp::run(fn ($actor) => app(MembershipService::class)->savePlan($actor, $record, $data)))]));
     }
 
     public static function getPages(): array

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Accounts;
 
 use App\Domain\Finance\AccountService;
 use App\Filament\Resources\Accounts\Pages\ListAccounts;
+use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
 use App\Filament\Support\GlobalSearch;
@@ -21,7 +22,6 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -88,7 +88,6 @@ class AccountResource extends Resource
             Select::make('parent_id')->label('Under heading')->options(fn () => Account::where('is_header', true)->orderBy('code')->get()->mapWithKeys(fn ($a) => [$a->id => $a->label()]))->live()
                 ->afterStateUpdated(fn ($state, Get $get, Set $set) => $state && ($next = Codes::after(Account::where('parent_id', $state)->pluck('code'))) && (blank($get('code')) || $get('code') === Codes::after(Account::where('type', $get('type'))->where('is_header', false)->pluck('code'))) ? $set('code', $next) : null),
             Toggle::make('is_header')->label('Heading (groups other accounts; nothing posts to it)'),
-            Toggle::make('is_active')->label('Active')->default(true),
             Select::make('system_key')->label('Used by automatic posting for')->columnSpanFull()
                 ->options(fn () => collect(AccountService::systemKeys(Erp::user()->tenant_id))->map(fn ($k) => $k[0])->all())
                 ->helperText('Moving a purpose here takes it away from the account that had it.'),
@@ -102,7 +101,7 @@ class AccountResource extends Resource
         $balances = fn () => RequestMemo::get('account-balances', fn () => DB::table('journal_lines')->groupBy('account_id')->selectRaw('account_id, SUM(amount_minor) AS s')->pluck('s', 'account_id'));
         $purposes = fn () => RequestMemo::get('account-purposes', fn () => AccountService::systemKeys(Erp::user()->tenant_id));
 
-        return $table
+        return ArchiveUi::apply($table
             ->columns([
                 TextColumn::make('code')->searchable()->sortable()->weight(fn (Account $record) => $record->is_header ? 'bold' : null),
                 TextColumn::make('name')->searchable()->weight(fn (Account $record) => $record->is_header ? 'bold' : null)
@@ -113,7 +112,6 @@ class AccountResource extends Resource
                 TextColumn::make('balance')->label('Balance (Dr + / Cr −)')->alignEnd()
                     ->state(fn (Account $record) => $record->is_header ? null : (int) ($balances()[$record->id] ?? 0))
                     ->formatStateUsing(fn ($state) => FinanceUi::money((int) $state))->placeholder(''),
-                IconColumn::make('is_active')->label('Active')->boolean(),
             ])
             ->filters([SelectFilter::make('type')->options(Account::TYPES)])
             ->defaultSort('code')
@@ -122,7 +120,7 @@ class AccountResource extends Resource
                 Action::make('ledger')->label('Ledger')->icon(Heroicon::OutlinedBookOpen)->color('gray')->visible(fn (Account $record) => ! $record->is_header)
                     ->url(fn (Account $record) => route('filament.admin.pages.financial-reports', ['report' => 'ledger', 'account' => $record->id])),
                 EditAction::make()->using(fn (Account $record, array $data) => Erp::run(fn ($actor) => app(AccountService::class)->save($actor, $record, $data))),
-            ]);
+            ]));
     }
 
     public static function getPages(): array

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Archivable;
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 /** A step of the sales pipeline (CRM): open steps in order, then won and lost. */
 class CrmStage extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use Archivable, BelongsToTenant, HasUuids;
 
     public const KINDS = ['open' => 'In progress', 'won' => 'Won', 'lost' => 'Lost'];
 
