@@ -12,6 +12,7 @@ use App\Filament\Resources\Customers\Pages\ListCustomers;
 use App\Filament\Resources\Devices\Pages\ListDevices;
 use App\Filament\Resources\Products\Pages\ListProducts;
 use App\Filament\Resources\Users\Pages\ListUsers;
+use App\Filament\Support\ArchiveUi;
 use App\Models\Category;
 use App\Models\Concerns\Archivable;
 use App\Models\Customer;
@@ -114,4 +115,13 @@ it('lists only those in use unless asked, with Archive and Restore on the row', 
     expect($c->fresh()->archived_at)->toBeNull();
     Livewire::test(ListUsers::class)->assertSuccessful();
     expect(fn () => $this->archive->archive($this->a, $p->fresh(), 'Again'))->toThrow(DomainException::class, 'already archived');
+});
+
+it('gives the Archive dialog its own Archive button, not a copy of the row button', function () {
+    // Owner 2026-11-09: pressing Archive in the dialog did nothing; the dialog's button was the row action itself.
+    $c = app(CustomerService::class)->save($this->a, new Customer, ['name' => 'Kwesi', 'phone' => '0203334445']);
+    $this->actingAs(withMfa($this->owner), 'web');
+    $action = ArchiveUi::archive()->record($c);
+    $submit = $action->getModalSubmitAction();
+    expect($submit->getName())->not->toBe('archive')->and($submit->getLabel())->toBe('Archive')->and($submit->isDisabled())->toBeFalse();
 });

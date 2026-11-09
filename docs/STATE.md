@@ -45,6 +45,9 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 ## Every industry independent — branch `industry-independence`
 - `Concerns\BelongsToIndustry` (global scope from `IndustryContext::visibleIds`: chosen industry, the person's own, or the till's branch; default industry on create; `withoutIndustryScope()` for codes and duplicates) on Customer, Supplier, Category, Brand, Promotion, Style, ModifierGroup, CrmCampaign; `IndustryContext::assign/defaultId/userScope`; `IndustryField` on their forms; `IndustryScope` (branches / product / owner / journal) on 26 lists; imports ask the industry for customers and suppliers, and products' missing categories go to the product's industry. `IndustryContext::assign` checks the acting user's choices (imports run without a signed-in person). Migration `2026_12_25_100001_industry_owned_records` (backfill by use, split shared categories/brands, brand names unique per industry). Test: IndustryIndependenceTest.
 
+## Archive dialog button; new windows in the desktop apps — branch `fix-archive-print`
+- `ArchiveUi::archive` `modalSubmitAction(fn (Action $action, …))` (Filament injects the dialog's button only as `$action`), label Archive; test in ArchiveEverywhereTest. `on_new_window` in `desktop/src-tauri` and `pos/src-tauri` lib.rs (server pages: Allow; other: opener / Deny). ZionEX Suite 1.0.7, ZionEX Till 0.30.4.
+
 ## Industry confinement — branch `industry-confinement`
 - `IndustryContext` (`selected`, `companyWide`, `choices`, `sharingAllowed`, `productScope`), `CatalogService::industryFor`, `SharedProducts`, `SharedProductsPage`, `CompanyWideAccess`, `AccessService::mayBeCompanyWide` and `narrow`. Settings `catalog.shared_products`, `access.company_wide`. Tests: IndustryConfinementTest.
 

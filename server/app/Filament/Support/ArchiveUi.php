@@ -68,7 +68,8 @@ final class ArchiveUi
                 ? 'It cannot be archived yet. '.implode(' ', $why)
                 : 'It leaves every list people choose from, so nothing new is given this '.($what ?? ArchiveRules::of($r)[0]).'. Its history stays: '
                     .'past sales, stock, books and the audit log keep showing it. You can restore it at any time.')
-            ->modalSubmitAction(fn (Action $a, Model $r) => $a->disabled((bool) app(ArchiveService::class)->blockers($r)))
+            ->modalSubmitActionLabel('Archive')
+            ->modalSubmitAction(fn (Action $action, Model $record) => $action->disabled((bool) app(ArchiveService::class)->blockers($record))) // "$action" is the dialog's own button
             ->schema([TextInput::make('reason')->label('Why')->required()->minLength(3)->maxLength(255)
                 ->placeholder('e.g. created by mistake, no longer used')
                 ->visible(fn (?Model $record) => $record && ! app(ArchiveService::class)->blockers($record))])

@@ -14,6 +14,7 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
+use tauri::webview::NewWindowResponse;
 use tauri::webview::PageLoadEvent;
 use tauri::{Manager, State, WebviewUrl};
 
@@ -276,6 +277,7 @@ pub fn run() {
 
             // The window may only show the local set-up page or the chosen server.
             let handle = app.handle().clone();
+            let popups = app.handle().clone();
             // Every page gets a cookie saying which computer this is, so the back office opened here records it too
             // (the till also sends it in a header). The server reads it as what the computer reports, not as proof.
             let info = machine(&app.package_info().version.to_string()).to_string();
@@ -296,6 +298,16 @@ pub fn run() {
                 .on_page_load(|window, payload| {
                     if payload.event() == PageLoadEvent::Finished && !is_local(payload.url()) {
                         let _ = window.show();
+                    }
+                })
+                // A link that opens a new window (a printed copy, a statement): the server's own pages open in a window of
+                // their own, where Print works; nothing else opens on a till. Without this the web view drops such links.
+                .on_new_window(move |u, _features| {
+                    let server = popups.state::<AppState>().config.lock().ok().and_then(|c| c.server.clone());
+                    if server.is_some_and(|s| u.as_str().starts_with(&s)) {
+                        NewWindowResponse::Allow
+                    } else {
+                        NewWindowResponse::Deny
                     }
                 })
                 .on_navigation(move |u| {
