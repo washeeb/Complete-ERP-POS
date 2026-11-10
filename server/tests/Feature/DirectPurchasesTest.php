@@ -20,6 +20,7 @@ use App\Filament\Resources\DirectPurchases\Pages\EditDirectPurchase;
 use App\Filament\Resources\DirectPurchases\Pages\ListDirectPurchases;
 use App\Filament\Resources\DirectPurchases\Pages\ViewDirectPurchase;
 use App\Models\Account;
+use App\Models\AuditEvent;
 use App\Models\DirectPurchase;
 use App\Models\Price;
 use App\Models\ProductUom;
@@ -116,6 +117,38 @@ it('lets stock staff enter and a manager approve above the limit, and nobody app
 
     $it = staff($this->owner, 'itperson', 4, 'it_admin', ScopeType::Tenant, $this->tenant->id);
     expect(fn () => $this->svc->save(actorFor($it), new DirectPurchase, ['warehouse_id' => $this->hq->id]))->toThrow(AccessDenied::class);
+});
+
+it('lets the preparer or an approver correct it while it waits for approval, and keeps it waiting', function () {
+    // Owner 2026-11-10: a mistake found when posting meant typing the whole purchase again.
+    app(Settings::class)->set($this->a, 'purchasing.direct_approval_minor', 50000);
+    $store = staff($this->owner, 'storeman', 2, 'storekeeper', ScopeType::Tenant, $this->tenant->id);
+    $other = staff($this->owner, 'storeman2', 2, 'storekeeper', ScopeType::Tenant, $this->tenant->id);
+    $gm = withMfa(staff($this->owner, 'gm', 5, 'branch_manager', ScopeType::Tenant, $this->tenant->id));
+    $data = fn (string $qty, string $batch) => ['supplier_id' => $this->supplier->id, 'warehouse_id' => $this->hq->id, 'invoice_no' => 'PSI-20', 'invoice_date' => now()->toDateString(),
+        'settlement' => 'credit', 'lines' => [['product_uom_id' => $this->base->id, 'qty' => $qty, 'unit_price' => '195.36', 'batch_no' => $batch]]];
+    $doc = $this->svc->submit(actorFor($store), $this->svc->save(actorFor($store), new DirectPurchase, $data('5', 'B-1')));
+
+    // The one who prepared it corrects a quantity; it stays waiting.
+    $doc = $this->svc->save(actorFor($store), $doc->fresh(), $data('6', 'B-1'));
+    expect($doc->status)->toBe('submitted')->and((float) $doc->lines()->first()->qty)->toBe(6.0)
+        ->and(AuditEvent::where('action', 'direct_purchase.corrected')->where('subject_id', $doc->id)->exists())->toBeTrue();
+
+    // The Edit button shows for them, and for an approver; not for someone else.
+    $this->actingAs(withMfa($store), 'web');
+    expect(DirectPurchaseResource::canEdit($doc->fresh()))->toBeTrue();
+    $this->actingAs(withMfa($other), 'web');
+    expect(DirectPurchaseResource::canEdit($doc->fresh()))->toBeFalse();
+    $this->actingAs($gm, 'web');
+    expect(DirectPurchaseResource::canEdit($doc->fresh()))->toBeTrue();
+
+    // Someone else at the same level cannot; an approver can, and can still approve it.
+    expect(fn () => $this->svc->save(actorFor($other), $doc->fresh(), $data('7', 'B-1')))->toThrow(AccessDenied::class);
+    $doc = $this->svc->save(actorFor($gm), $doc->fresh(), $data('6', 'B-2'));
+    expect($doc->lines()->first()->batch_no)->toBe('B-2')->and($this->svc->post(actorFor($gm), $doc->fresh())->status)->toBe('posted');
+
+    // Posted: locked.
+    expect(fn () => $this->svc->save(actorFor($gm), $doc->fresh(), $data('9', 'B-2')))->toThrow(DomainException::class, 'can no longer be changed');
 });
 
 it('takes consignment in at no cost, owes the agreed cost when sold, and refuses own stock', function () {

@@ -132,6 +132,10 @@ final class ReorderService
                 'move_qty' => $move, 'move_from_id' => $move ? $from['warehouse_id'] : null, 'move_from' => $move ? $from['name'] : null,
                 'base_uom_id' => $base[$productId]->id ?? null, 'base_uom_code' => $base[$productId]->code ?? null];
         }
+        // By name, then code: the database gives the products in no set order, so the list (and what falls on which page)
+        // changed between visits (found 2026-11-10, when a test of page 2 failed now and then).
+        // Natural order, as people count: "ITEM 2" before "ITEM 10".
+        usort($out, fn ($a, $b) => strnatcasecmp($a['name'], $b['name']) ?: strnatcasecmp((string) $a['sku'], (string) $b['sku']));
 
         return $out;
     }

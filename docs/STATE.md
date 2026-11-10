@@ -57,6 +57,9 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 ## Industry pricing; plain words — branch `industry-pricing`
 - `Authorizer::industryIds/allowsForIndustry` (industry, branch or legal-entity grants), `Erp::canForIndustry`; CatalogService product prices and `savePriceList`, PricingRules (`requirePricing(?industry)`, follow-all on own industries, approve/dismiss per suggestion), `SimpleCatalogResource::$industryPricing` (price lists, pricing rules), PricesToReview. `App\Support\Plain` (limits, field, value, action, record, source) on the access list, grant form (four fields) and audit log. Test: IndustryPricingTest.
 
+## Correct a direct purchase waiting for approval — branch `direct-purchase-edit`
+- `DirectPurchases::save` allows `submitted` for `mayCorrect` (preparer / sender with purchasing.direct, or purchasing.direct.approve at the store), audit `direct_purchase.corrected`; `DirectPurchaseResource::canEdit`; edit page subheading. Test in DirectPurchasesTest.
+
 ## Industry confinement — branch `industry-confinement`
 - `IndustryContext` (`selected`, `companyWide`, `choices`, `sharingAllowed`, `productScope`), `CatalogService::industryFor`, `SharedProducts`, `SharedProductsPage`, `CompanyWideAccess`, `AccessService::mayBeCompanyWide` and `narrow`. Settings `catalog.shared_products`, `access.company_wide`. Tests: IndustryConfinementTest.
 

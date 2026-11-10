@@ -63,9 +63,18 @@ final class DirectPurchases
     public function save(Actor $actor, DirectPurchase $doc, array $d): DirectPurchase
     {
         $warehouse = Warehouse::find($d['warehouse_id'] ?? null) ?? throw new DomainException('Choose the store.');
-        $this->require($actor, 'purchasing.direct', $warehouse);
-        if ($doc->exists && $doc->status !== 'draft') {
-            throw new DomainException("{$doc->number} is no longer a draft.");
+        // Waiting for approval, it can still be corrected (owner 2026-11-10: no typing it all again): by whoever made or
+        // sent it, or by an approver for the store. It stays waiting; the correction is audited.
+        $correcting = $doc->exists && $doc->status === 'submitted';
+        if ($correcting) {
+            if (! $this->mayCorrect($actor, $doc, $warehouse)) {
+                throw new AccessDenied('Only the person who prepared it, or an approver for the store, can correct it while it waits for approval.');
+            }
+        } else {
+            $this->require($actor, 'purchasing.direct', $warehouse);
+            if ($doc->exists && $doc->status !== 'draft') {
+                throw new DomainException("{$doc->number} is {$this->statusWord($doc)}: it can no longer be changed.");
+            }
         }
         $supplier = Supplier::find($d['supplier_id'] ?? null) ?? throw new DomainException('Choose the supplier.');
         $settlement = (string) ($d['settlement'] ?? '');
@@ -100,7 +109,7 @@ final class DirectPurchases
         }
         $printed = isset($d['printed_total']) && $d['printed_total'] !== '' ? Money::toMinor((string) $d['printed_total'], $currency) : null;
 
-        return $this->recorder->transaction(function () use ($actor, $doc, $d, $warehouse, $supplier, $settlement, $invoice, $date, $inclusive, $account, $list, $lines, $printed, $currency) {
+        return $this->recorder->transaction(function () use ($actor, $doc, $d, $warehouse, $supplier, $settlement, $invoice, $date, $inclusive, $account, $list, $lines, $printed, $currency, $correcting) {
             $new = ! $doc->exists;
             if ($new) {
                 $doc->forceFill(['tenant_id' => $actor->tenantId, 'number' => $this->numbers->next($actor->tenantId, 'direct_purchase'), 'status' => 'draft',
@@ -112,7 +121,11 @@ final class DirectPurchases
                 'method' => $settlement === 'paid' ? $d['method'] : null, 'reference' => $settlement === 'paid' ? (mb_substr(trim((string) ($d['reference'] ?? '')), 0, 80) ?: null) : null,
                 'attachments' => array_values($d['attachments'] ?? []), 'note' => trim((string) ($d['note'] ?? '')) ?: null,
                 'net_minor' => array_sum(array_column($lines, 'net_minor')), 'tax_minor' => array_sum(array_column($lines, 'tax_minor')), 'total_minor' => array_sum(array_column($lines, 'total_minor'))]);
-            $this->recorder->save($actor, $doc, $new ? 'direct_purchase.created' : 'direct_purchase.updated', "{$invoice} from {$supplier->name}", $warehouse->branch_id);
+            $this->recorder->save($actor, $doc, match (true) {
+                $new => 'direct_purchase.created',
+                $correcting => 'direct_purchase.corrected',
+                default => 'direct_purchase.updated',
+            }, $correcting ? "Corrected while waiting for approval ({$invoice} from {$supplier->name})" : "{$invoice} from {$supplier->name}", $warehouse->branch_id);
             DirectPurchaseLine::where('direct_purchase_id', $doc->id)->delete();
             foreach ($lines as $l) {
                 (new DirectPurchaseLine)->forceFill($l + ['tenant_id' => $doc->tenant_id, 'direct_purchase_id' => $doc->id])->save();
@@ -344,6 +357,23 @@ final class DirectPurchases
         if ($price?->amount_minor !== $l->new_price_minor) {
             $this->pricing->setPrice($actor, $l->product, $unit, $list, $price, $l->new_price_minor, "From {$doc->number} ({$doc->invoice_no})", 'price.set_on_purchase');
         }
+    }
+
+    /** Waiting for approval: who may still correct it. */
+    public function mayCorrect(Actor $actor, DirectPurchase $doc, ?Warehouse $warehouse = null): bool
+    {
+        $warehouse ??= $doc->warehouse;
+        if (! $actor->user || $doc->status !== 'submitted' || ! $warehouse) {
+            return false;
+        }
+        $own = in_array($actor->id, array_filter([$doc->created_by, $doc->submitted_by]), true) && $this->authz->allows($actor->user, 'purchasing.direct', $warehouse);
+
+        return $own || $this->authz->allows($actor->user, 'purchasing.direct.approve', $warehouse);
+    }
+
+    private function statusWord(DirectPurchase $doc): string
+    {
+        return mb_strtolower(DirectPurchase::STATUSES[$doc->status] ?? $doc->status);
     }
 
     private function require(Actor $actor, string $permission, Warehouse $warehouse): void

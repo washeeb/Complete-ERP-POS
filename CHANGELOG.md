@@ -1,6 +1,10 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- **What to order** lists products by name (2 before 10). Before, the order came from the database and could change between visits, so a product could move to another page.
+### Changed
+- **A direct purchase waiting for approval can be corrected** (owner request: a mistake found when posting meant typing it all again). The person who entered or sent it, or an approver for the store, presses **Edit**, corrects it and saves; it stays waiting for approval, and the audit log records the correction. Posted and cancelled purchases stay locked.
 ### Changed
 - **Price managers for a branch or an industry price their own industry** (owner request: a Price Manager for the supermarket branch could not see the price screens). They work on their industry's product prices, own price lists, pricing rules and prices to review. Company price lists, the default list and tax set-up still need the permission for the whole company.
 - **Plain words instead of technical names:** role limits read *Approves orders up to GH₵ 20,000 · Gives discounts up to 25%* (not *po_approve_minor: 2000000*), and are entered in cedis and percent. The audit log shows actions, records, where from, and changes in words (*Price: GH₵ 4.00 → GH₵ 5.00*, *Yes/No*).

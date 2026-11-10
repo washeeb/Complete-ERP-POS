@@ -85,9 +85,14 @@ class DirectPurchaseResource extends Resource
         return Erp::canAnywhere('purchasing.direct');
     }
 
+    /** A draft; or, waiting for approval, by whoever prepared it or an approver (corrections without typing it again). */
     public static function canEdit(Model $record): bool
     {
-        return $record->status === 'draft' && Erp::canAnywhere('purchasing.direct');
+        return match ($record->status) {
+            'draft' => Erp::canAnywhere('purchasing.direct'),
+            'submitted' => ($actor = Erp::actor()) !== null && app(DirectPurchases::class)->mayCorrect($actor, $record),
+            default => false,
+        };
     }
 
     public static function canDelete(Model $record): bool
