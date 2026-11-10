@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- **What to order** lists products by name (2 before 10). Before, the order came from the database and could change between visits, so a product could move to another page.
 ### Changed
 - **A direct purchase waiting for approval can be corrected** (owner request: a mistake found when posting meant typing it all again). The person who entered or sent it, or an approver for the store, presses **Edit**, corrects it and saves; it stays waiting for approval, and the audit log records the correction. Posted and cancelled purchases stay locked.
 ### Changed

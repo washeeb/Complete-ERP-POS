@@ -145,10 +145,12 @@ it('shows a long What to order list a page at a time, keeping ticks from earlier
 
     $page = Livewire::test(ReorderSuggestions::class);
     expect($page->instance()->getTableRecords())->toHaveCount(25); // 31 lines: 25 now, the rest on page 2
+    // In name order, always: ITEM 01 first, ITEM 30 on page 2 (the order used to depend on the database).
+    expect($page->instance()->getTableRecords()->first()['name'])->toBe('ITEM 1');
     $last = $extra->last();
     $page->call('gotoPage', 2, 'page');
     expect($page->instance()->getTableRecords()->keys())->toContain($last->id);
-    // Milo ticked on page 1 and the last item on page 2: both are ordered.
+    // Ticked on different visits to the list: both are ordered.
     $page->callTableBulkAction('order', [$this->milo->id, $last->id])->assertNotified('1 draft purchase order(s) created');
     expect(PurchaseOrder::sole()->lines)->toHaveCount(2); // one supplier, both lines
 });

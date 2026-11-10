@@ -1304,3 +1304,6 @@ Design:
 ## Correcting a direct purchase before it is posted (2026-11-10)
 - The owner: a direct purchase waiting for approval could not be edited, so a mistake found when posting (here a batch already recorded with another expiry) meant entering it all again. Nothing reaches stock or the books until posting, so correcting is safe. Who: whoever entered or sent it (with the direct-purchase right at the store), or an approver for the store. It stays waiting for approval, no second sending; the change is audited as `direct_purchase.corrected`.
 - Separation of duties is unchanged: the preparer and sender still cannot approve their own. An approver who corrects someone else's purchase may still approve it: the correction is theirs and on the record, and requiring a third person in a small shop would leave the purchase stuck.
+
+## What to order: a fixed order (2026-11-10)
+- Found while checking a CI failure on another change: the What to order list took products from the database without an ORDER BY, so their order (and what fell on which page) was whatever PostgreSQL returned; a test of page 2 failed now and then. The list is now in natural name order, then code. The other paged lists (suggested levels, expiry, sign-offs) already had an order.
