@@ -24,6 +24,13 @@ class EditDirectPurchase extends EditRecord
             'supplier_sku' => $l->supplier_sku, 'sell_uom_id' => $l->sell_uom_id, 'new_price' => $plain($l->new_price_minor)])->all()];
     }
 
+    public function getSubheading(): ?string
+    {
+        return $this->record->status === 'submitted'
+            ? 'Waiting for approval: correct what is wrong and save. It stays waiting for approval, and the correction is recorded in the audit log.'
+            : null;
+    }
+
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
         return Erp::run(fn ($actor) => app(DirectPurchases::class)->save($actor, $record, $data));

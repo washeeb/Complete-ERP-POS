@@ -184,6 +184,7 @@ Goods often arrive with an invoice and no purchase order, such as a wholesaler's
    - **New selling price:** type it to change the price, and choose the unit it is for (box or tablet). The line shows the margin and how many times the cost it is. Leave it empty to keep today's price.
 6. Click **Create**. Nothing has changed yet. The page shows the totals and anything to check: a total that differs from the invoice, goods that expire soon, or a thin margin.
 7. **Post**, or **Send for approval** when it is above the limit. A manager (not the person who entered it) then posts it, and it shows on their dashboard. **Why:** receiving goods with no order is an easy way to hide missing stock or fake a purchase, so larger ones get a second look. Set the limit in **System → Settings → Purchasing** (default GHS 500).
+8. **Found a mistake before it is posted?** (a wrong quantity, price, batch or expiry, often shown when posting) Open the purchase and press **Edit**. While it waits for approval, the person who entered or sent it, or an approver for that store, can correct it; it stays waiting for approval, so there is no need to send it again. **Why:** nothing has happened in the stock or the books until it is posted, so a correction costs nothing, and the audit log records who changed what. Once posted, a purchase is final: correct it with a return to the supplier or a stock adjustment.
 
 The same invoice number from the same supplier is refused, so an invoice cannot be entered or paid twice. Expired batches are refused.
 
