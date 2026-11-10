@@ -272,6 +272,8 @@ If your selling prices come from what you pay (for example *cost × 1.40*), let 
 
 **On the product form**, the *Prices* part says which rule sets the price and the latest cost, and warns in red when a price is below the cost.
 
+**A price you set yourself stays.** A price typed on the product form, loaded from a price file, or set as the *new selling price* on a direct purchase is your decision: the rules do not change it, or suggest changing it, until a **newer delivery** of that product brings a new cost. Then the rule works it out again as usual. **Why:** the rules exist to follow costs, not to undo a price you chose for that same delivery.
+
 **Note:** only the standard price of each unit (from quantity 1, no dates) is set by a rule; bulk prices and dated promotions stay as you typed them. With branch servers, prices are set at head office: deliveries posted at a branch are priced within the hour after they reach head office.
 
 **Tip:** need people to set rules? They need a manager role with *Change prices, price lists and tax set-up* for the whole company.

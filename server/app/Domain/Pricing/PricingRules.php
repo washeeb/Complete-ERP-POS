@@ -103,19 +103,19 @@ final class PricingRules
     /** @return array{cost: float, source: string}|null the cost of one base unit, in minor units */
     public function latestCost(Product $product): ?array
     {
-        $line = DB::table('goods_receipt_lines as l')->join('goods_receipts as g', 'g.id', '=', 'l.goods_receipt_id')
-            ->where('g.tenant_id', $product->tenant_id)->where('g.status', 'posted')->where('l.product_id', $product->id)
-            ->orderByDesc('g.posted_at')->orderByDesc('g.id')->orderByDesc('l.line_no')->first(['l.id', 'l.net_minor', 'l.qty', 'l.factor', 'g.number']);
+        $lineId = Price::latestDeliveryLineId((string) $product->tenant_id, (string) $product->id);
+        $line = $lineId ? DB::table('goods_receipt_lines as l')->join('goods_receipts as g', 'g.id', '=', 'l.goods_receipt_id')
+            ->where('l.id', $lineId)->first(['l.id', 'l.net_minor', 'l.qty', 'l.factor', 'g.number']) : null;
         if ($line && (float) $line->qty > 0) {
             $landed = (int) DB::table('landed_cost_lines')->where('goods_receipt_line_id', $line->id)->sum('allocated_minor');
             $base = (float) $line->qty * (float) ($line->factor ?: 1);
 
-            return ['cost' => ($line->net_minor + $landed) / $base, 'source' => $line->number.($landed ? ' with freight' : '')];
+            return ['cost' => ($line->net_minor + $landed) / $base, 'source' => $line->number.($landed ? ' with freight' : ''), 'line' => $line->id];
         }
         $avg = DB::table('stock_levels')->where('tenant_id', $product->tenant_id)->where('product_id', $product->id)->where('on_hand', '>', 0)
             ->selectRaw('SUM(on_hand * avg_cost_minor) / NULLIF(SUM(on_hand), 0) AS c')->value('c');
 
-        return $avg ? ['cost' => (float) $avg, 'source' => 'average cost of the stock'] : null;
+        return $avg ? ['cost' => (float) $avg, 'source' => 'average cost of the stock', 'line' => null] : null;
     }
 
     /** The price the rule gives one unit (factor = base units in it), as stored on the list (its own tax treatment). */
@@ -185,6 +185,14 @@ final class PricingRules
                     }
                     $price = Price::where('price_list_id', $list->id)->where('product_uom_id', $unit->id)->where('min_qty', 1)->whereNull('starts_at')->whereNull('ends_at')->first();
                     $current = $price?->amount_minor;
+                    // A price someone set on purpose with this cost already in (product form, price file, a direct purchase's
+                    // new selling price) stands until a newer delivery brings a new cost (owner 2026-11-10).
+                    if ($price?->set_by_hand_at && $price->set_by_hand_cost_line_id === $cost['line']) {
+                        PriceSuggestion::where('product_uom_id', $unit->id)->where('price_list_id', $list->id)->where('status', 'pending')
+                            ->update(['status' => 'dismissed', 'decided_by_name' => 'Price set by hand after this cost', 'decided_at' => now()]);
+
+                        continue;
+                    }
                     if ($current === $target) {
                         PriceSuggestion::where('product_uom_id', $unit->id)->where('price_list_id', $list->id)->where('status', 'pending')
                             ->update(['status' => 'dismissed', 'decided_by_name' => 'Already at this price', 'decided_at' => now()]);
@@ -269,11 +277,17 @@ final class PricingRules
         return $n;
     }
 
-    public function setPrice(Actor $actor, Product $product, ProductUom $unit, PriceList $list, ?Price $price, int $amount, string $reason, string $action = 'price.set_by_rule'): void
+    /** $byHand: set on purpose (a direct purchase's new price), so the rules leave it until a newer delivery. */
+    public function setPrice(Actor $actor, Product $product, ProductUom $unit, PriceList $list, ?Price $price, int $amount, string $reason, string $action = 'price.set_by_rule', bool $byHand = false): void
     {
         $price ??= new Price;
         $price->fill(['price_list_id' => $list->id, 'product_id' => $product->id, 'product_uom_id' => $unit->id, 'min_qty' => '1', 'amount_minor' => $amount, 'starts_at' => null, 'ends_at' => null]);
         $price->tenant_id = $product->tenant_id;
+        if ($byHand) {
+            $price->markSetByHand();
+        } else {
+            $price->set_by_hand_at = $price->set_by_hand_cost_line_id = null;
+        }
         $price->updated_by = $actor->id;
         $this->recorder->save($actor, $price, $action, mb_substr($reason, 0, 250));
         PriceSuggestion::where('product_uom_id', $unit->id)->where('price_list_id', $list->id)->where('status', 'pending')

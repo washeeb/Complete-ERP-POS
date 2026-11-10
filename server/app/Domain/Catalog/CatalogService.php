@@ -880,6 +880,9 @@ final class CatalogService
             ]);
             $price->tenant_id = $actor->tenantId;
             $price->updated_by = $actor->id;
+            if ($price->isDirty('amount_minor') || ! $price->exists) {
+                $price->markSetByHand(); // set on purpose: the pricing rules leave it until a newer delivery
+            }
             if ($price->isDirty()) {
                 if ($price->exists) {
                     $price->version++;
