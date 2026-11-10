@@ -85,7 +85,10 @@ For each staff member:
    A person's own **security level** must be at least the role's (e.g. Stock Controller L3, Warehouse Manager L4); raise
    the level on the user's page first if the role is refused. **Products** (create and edit, categories, brands, units)
    need Stock Controller, Warehouse Manager or a manager role — for one branch or the whole company; there is one product
-   list for all branches. **Prices** need a manager role (*Change prices, price lists and tax set-up*), for the whole company.
+   list for all branches. **Prices** need a manager role (*Change prices, price lists and tax set-up*). Given for a branch
+   or an industry, it prices that industry: its products, its own price lists, pricing rules and prices to review
+   (a supermarket price manager prices the supermarket, never the pharmacy). Company price lists (such as Retail),
+   the default list and **tax** set-up need it for the whole company. **Why:** each shop sets its own prices; tax is the company's.
 3. For anyone who sells or clocks in on a till: **Set POS PIN** (4–8 digits; simple PINs like 1234 are refused).
 4. **How the person signs in to the back office** (on the user's page):
    - **Company rule** (default): the authenticator app from the level set under System → Settings → Security (L3 unless you change it), password only below it;
@@ -98,6 +101,8 @@ For each staff member:
 **Why:** people see and do only what their role allows, only where it applies. A cashier with access to *Till 1* cannot sell on *Till 2* or open the back office.
 
 **Tip:** For temporary cover (e.g. a supervisor on leave), grant access **with an end date and a reason**: it stops by itself.
+
+**Limits (optional):** when granting a role you may set its limits in cedis and percent: *Approves orders up to*, *Approves expenses up to*, *Lets a customer go over their credit by up to*, *Gives discounts up to*. Leave them empty to use the role's usual limits. The user's list of access shows them the same way.
 
 **The SyncLytics support account:** the list may show *SyncLytics support (Superadmin)* at level L7. SyncLytics adds it on your server so support can help you; nobody in the company can change it. It always signs in with an authenticator app, it does not count as one of your licensed users, and the owner and general manager get a notification each time it signs in. Everything it does is in the audit log (System → Audit log).
 

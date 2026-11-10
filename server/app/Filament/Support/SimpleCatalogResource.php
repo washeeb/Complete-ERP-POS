@@ -24,6 +24,15 @@ abstract class SimpleCatalogResource extends Resource
 
     protected static string $managePermission = 'catalog.manage';
 
+    /** Price lists and pricing rules: an industry's price managers work on their industry's (owner 2026-11-09). */
+    protected static bool $industryPricing = false;
+
+    /** The industry a record belongs to, for $industryPricing (null = company-level). */
+    public static function recordIndustry(Model $record): ?string
+    {
+        return $record->getAttribute('industry_id');
+    }
+
     /** Unused ones can be deleted (categories, brands, units). */
     protected static bool $deletable = false;
 
@@ -42,7 +51,7 @@ abstract class SimpleCatalogResource extends Resource
 
     public static function canEdit(Model $record): bool
     {
-        return self::allowed(static::$managePermission);
+        return static::$industryPricing ? Erp::canForIndustry(static::$managePermission, static::recordIndustry($record)) : self::allowed(static::$managePermission);
     }
 
     /**
@@ -51,7 +60,7 @@ abstract class SimpleCatalogResource extends Resource
      */
     private static function allowed(string $permission): bool
     {
-        return str_starts_with($permission, 'catalog.') ? Erp::canAnywhere($permission) : Erp::can($permission);
+        return str_starts_with($permission, 'catalog.') || static::$industryPricing ? Erp::canAnywhere($permission) : Erp::can($permission);
     }
 
     public static function canDelete(Model $record): bool

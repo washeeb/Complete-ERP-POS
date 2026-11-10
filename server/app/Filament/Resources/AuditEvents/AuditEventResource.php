@@ -7,6 +7,7 @@ use App\Filament\Support\Erp;
 use App\Models\AuditEvent;
 use App\Models\Computer;
 use App\Support\ClientInfo;
+use App\Support\Plain;
 use BackedEnum;
 use Filament\Actions\ViewAction;
 use Filament\Infolists\Components\KeyValueEntry;
@@ -73,11 +74,11 @@ class AuditEventResource extends Resource
             Grid::make(3)->schema([
                 TextEntry::make('seq')->label('#'),
                 TextEntry::make('occurred_at')->dateTime(),
-                TextEntry::make('action'),
+                TextEntry::make('action')->formatStateUsing(fn (string $state) => Plain::action($state))->helperText(fn (AuditEvent $r) => $r->action),
                 TextEntry::make('actor_name')->asPerson('actor_id')->label('By'),
-                TextEntry::make('source'),
+                TextEntry::make('source')->label('From')->formatStateUsing(fn (?string $state) => Plain::source($state)),
                 TextEntry::make('origin_node')->label('Node'),
-                TextEntry::make('subject_type')->label('Record'),
+                TextEntry::make('subject_type')->label('Record')->formatStateUsing(fn (?string $state) => Plain::record($state)),
                 TextEntry::make('subject_id')->label('Record id')->copyable(),
                 TextEntry::make('ip')->label('IP address')->placeholder('—')->url(fn (AuditEvent $r) => ClientInfo::lookupUrl($r->ip), shouldOpenInNewTab: true)
                     ->helperText(fn (AuditEvent $r) => ClientInfo::lookupUrl($r->ip) ? 'Click to see roughly where this address is (opens ipinfo.io).' : null),
@@ -90,9 +91,10 @@ class AuditEventResource extends Resource
                 TextEntry::make('client.app')->label('App')->placeholder('—'),
                 TextEntry::make('reason')->placeholder('—')->columnSpanFull(),
                 KeyValueEntry::make('changes_flat')->label('Changes (before → after)')->columnSpanFull()
-                    ->state(fn (AuditEvent $r) => collect($r->changes)->map(fn ($pair) => is_array($pair) && count($pair) === 2
-                        ? json_encode($pair[0], JSON_UNESCAPED_UNICODE).' → '.json_encode($pair[1], JSON_UNESCAPED_UNICODE)
-                        : json_encode($pair))->all()),
+                    // Field names and values in words: "Price: GH₵ 4.00 → GH₵ 5.00", not "price_minor: 400 → 500".
+                    ->state(fn (AuditEvent $r) => collect($r->changes)->mapWithKeys(fn ($pair, $key) => [Plain::field((string) $key) => is_array($pair) && count($pair) === 2 && array_is_list($pair)
+                        ? Plain::value((string) $key, $pair[0]).' → '.Plain::value((string) $key, $pair[1])
+                        : Plain::value((string) $key, $pair)])->all()),
                 TextEntry::make('hash')->fontFamily('mono')->columnSpanFull(),
             ]),
         ]);
@@ -105,9 +107,9 @@ class AuditEventResource extends Resource
                 TextColumn::make('seq')->label('#')->sortable(),
                 TextColumn::make('occurred_at')->label('When')->dateTime()->sortable(),
                 TextColumn::make('actor_name')->asPerson('actor_id')->label('By')->searchable(),
-                TextColumn::make('action')->badge()->searchable(),
-                TextColumn::make('subject_type')->label('Record'),
-                TextColumn::make('source'),
+                TextColumn::make('action')->badge()->searchable()->formatStateUsing(fn (string $state) => Plain::action($state)),
+                TextColumn::make('subject_type')->label('Record')->formatStateUsing(fn (?string $state) => Plain::record($state)),
+                TextColumn::make('source')->label('From')->formatStateUsing(fn (?string $state) => Plain::source($state)),
                 TextColumn::make('client')->label('Computer')->placeholder('—')->wrap()->toggleable()
                     ->state(fn (AuditEvent $r) => ClientInfo::summary($r->client)),
                 TextColumn::make('ip')->label('IP address')->placeholder('—')->searchable()->toggleable(),

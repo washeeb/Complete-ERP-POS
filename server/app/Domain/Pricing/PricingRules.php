@@ -39,7 +39,6 @@ final class PricingRules
 
     public function saveRule(Actor $actor, PricingRule $rule, array $d): PricingRule
     {
-        $this->requirePricing($actor);
         $scope = (string) ($d['scope'] ?? 'company');
         $method = (string) ($d['method'] ?? 'multiply');
         if (! isset(PricingRule::SCOPES[$scope]) || ! isset(PricingRule::METHODS[$method])) {
@@ -68,6 +67,12 @@ final class PricingRules
             'on_change' => isset(PricingRule::ON_CHANGE[$d['on_change'] ?? '']) ? $d['on_change'] : 'rise_auto',
             'is_active' => (bool) ($d['is_active'] ?? true), 'updated_by_name' => $actor->name,
         ]);
+        // A rule for a product or category is its industry's; a rule for the whole list is the list's industry's.
+        $this->requirePricing($actor, match ($scope) {
+            'product' => Product::whereKey($rule->product_id)->value('industry_id'),
+            'category' => Category::whereKey($rule->category_id)->value('industry_id'),
+            default => $list->industry_id,
+        });
         $twin = PricingRule::where('scope', $scope)->where('price_list_id', $list->id)->where('is_active', true)
             ->where('category_id', $rule->category_id)->where('product_id', $rule->product_id)->when($rule->exists, fn ($q) => $q->whereKeyNot($rule->id))->exists();
         if ($twin && $rule->is_active) {
@@ -210,8 +215,12 @@ final class PricingRules
     /** Every product with a rule, now (e.g. after a rule is set up or changed). */
     public function followAll(Actor $actor): array
     {
-        $this->requirePricing($actor);
-        $ids = Product::where('is_active', true)->pluck('id');
+        $mine = $actor->user ? $this->authz->industryIds($actor->user, 'pricing.manage') : [];
+        if ($mine === []) {
+            throw new AccessDenied('Pricing rules need the pricing permission.');
+        }
+        // An industry's price manager applies the rules to their own industry's products only.
+        $ids = Product::where('is_active', true)->when($mine !== null, fn ($q) => $q->whereIn('industry_id', $mine))->pluck('id');
         $total = ['applied' => 0, 'suggested' => 0];
         foreach ($ids->chunk(200) as $chunk) {
             $r = $this->recorder->transaction(fn () => $this->follow($actor, $chunk->all(), 'pricing rules applied by '.$actor->name));
@@ -225,7 +234,6 @@ final class PricingRules
     /** A manager accepts suggested prices. */
     public function approve(Actor $actor, iterable $suggestions): int
     {
-        $this->requirePricing($actor);
 
         return $this->recorder->transaction(function () use ($actor, $suggestions) {
             $n = 0;
@@ -234,6 +242,7 @@ final class PricingRules
                 if (! $s || $s->status !== 'pending') {
                     continue;
                 }
+                $this->requirePricing($actor, $s->product?->industry_id);
                 $price = Price::where('price_list_id', $s->price_list_id)->where('product_uom_id', $s->product_uom_id)->where('min_qty', 1)->whereNull('starts_at')->whereNull('ends_at')->first();
                 $this->setPrice($actor, $s->product, $s->productUom, $s->priceList, $price, $s->suggested_minor, $s->reason.' · approved by '.$actor->name);
                 $s->forceFill(['status' => 'applied', 'decided_by_name' => $actor->name, 'decided_at' => now()])->save();
@@ -246,11 +255,11 @@ final class PricingRules
 
     public function dismiss(Actor $actor, iterable $suggestions): int
     {
-        $this->requirePricing($actor);
         $n = 0;
         foreach ($suggestions as $s) {
             $s = $s instanceof PriceSuggestion ? $s : PriceSuggestion::find($s);
             if ($s && $s->status === 'pending') {
+                $this->requirePricing($actor, $s->product?->industry_id);
                 $s->forceFill(['status' => 'dismissed', 'decided_by_name' => $actor->name, 'decided_at' => now()])->save();
                 $this->recorder->audit->record($actor, 'price_suggestion.dismissed', $s, ['suggested' => [$s->suggested_minor, null]]);
                 $n++;
@@ -284,10 +293,11 @@ final class PricingRules
         return true;
     }
 
-    private function requirePricing(Actor $actor): void
+    /** For an industry's products, lists and rules: its price managers; null (company-level): company-wide ones. */
+    private function requirePricing(Actor $actor, ?string $industryId = null): void
     {
-        if (! $actor->user || ! $this->authz->allows($actor->user, 'pricing.manage')) {
-            throw new AccessDenied('Pricing rules need the pricing permission (company-wide).');
+        if (! $actor->user || ! $this->authz->allowsForIndustry($actor->user, 'pricing.manage', $industryId)) {
+            throw new AccessDenied($industryId ? 'This needs the pricing permission for this industry.' : 'This needs the pricing permission for the whole company.');
         }
     }
 }

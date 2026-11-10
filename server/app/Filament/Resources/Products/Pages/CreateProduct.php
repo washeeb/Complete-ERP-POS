@@ -15,8 +15,8 @@ class CreateProduct extends CreateRecord
 
     protected function handleRecordCreation(array $data): Model
     {
-        if (! Erp::can('pricing.manage')) {
-            unset($data['prices']);
+        if (! Erp::canAnywhere('pricing.manage')) {
+            unset($data['prices']); // the service checks the product's industry
         }
 
         return Erp::run(fn ($actor) => app(CatalogService::class)->saveProduct($actor, new Product, $data));

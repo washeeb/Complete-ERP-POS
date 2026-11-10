@@ -71,6 +71,46 @@ final class Authorizer
         return $ok;
     }
 
+    /**
+     * Industries the user holds the permission for: null = every industry (a company-wide grant), [] = none. A grant for
+     * an industry, for a branch of it, or for the company that keeps its books counts (owner 2026-11-09: a supermarket
+     * price manager prices the supermarket). Warehouse and till grants do not reach an industry.
+     *
+     * @return list<string>|null
+     */
+    public function industryIds(User $user, string $permission): ?array
+    {
+        $grants = $this->grants($user, $permission);
+        if ($grants->contains(fn ($g) => $g['scope'] === ScopeType::Tenant->value.':'.$user->tenant_id)) {
+            return null;
+        }
+        $ids = [];
+        foreach ($grants as $g) {
+            [$type, $id] = explode(':', $g['scope'], 2);
+            $ids = array_merge($ids, match ($type) {
+                ScopeType::Industry->value => [$id],
+                ScopeType::Branch->value => array_filter([Branch::withoutGlobalScopes()->whereKey($id)->value('industry_id')]),
+                ScopeType::LegalEntity->value => array_merge(Industry::withoutGlobalScopes()->where('legal_entity_id', $id)->pluck('id')->all(),
+                    Branch::withoutGlobalScopes()->where('legal_entity_id', $id)->whereNotNull('industry_id')->pluck('industry_id')->all()),
+                default => [],
+            });
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    /** For a record of an industry (null = shared or company-level: needs a company-wide grant). */
+    public function allowsForIndustry(User $user, string $permission, ?string $industryId): bool
+    {
+        $ids = $this->industryIds($user, $permission);
+        $ok = $ids === null || ($industryId !== null && in_array($industryId, $ids, true));
+        if (! $ok) {
+            AccessReason::denied($permission, null);
+        }
+
+        return $ok;
+    }
+
     /** Highest limit across grants covering the target; null when no grant covers it. Missing limit key = 0. */
     public function limit(User $user, string $permission, Model $target, string $limitKey): ?int
     {

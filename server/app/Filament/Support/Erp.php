@@ -35,6 +35,14 @@ final class Erp
         return $user !== null && app(Authorizer::class)->allows($user, $permission, $target);
     }
 
+    /** For an industry's record (its price lists, product prices…); null = company-level, needs a company-wide grant. */
+    public static function canForIndustry(string $permission, ?string $industryId): bool
+    {
+        $user = self::user();
+
+        return $user !== null && app(Authorizer::class)->allowsForIndustry($user, $permission, $industryId);
+    }
+
     /** For showing a menu item; every write re-checks the exact scope in the domain service. */
     public static function canAnywhere(string $permission): bool
     {
