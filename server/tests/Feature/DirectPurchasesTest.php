@@ -136,11 +136,11 @@ it('lets the preparer or an approver correct it while it waits for approval, and
 
     // The Edit button shows for them, and for an approver; not for someone else.
     $this->actingAs(withMfa($store), 'web');
-    expect(App\Filament\Resources\DirectPurchases\DirectPurchaseResource::canEdit($doc->fresh()))->toBeTrue();
+    expect(DirectPurchaseResource::canEdit($doc->fresh()))->toBeTrue();
     $this->actingAs(withMfa($other), 'web');
-    expect(App\Filament\Resources\DirectPurchases\DirectPurchaseResource::canEdit($doc->fresh()))->toBeFalse();
+    expect(DirectPurchaseResource::canEdit($doc->fresh()))->toBeFalse();
     $this->actingAs($gm, 'web');
-    expect(App\Filament\Resources\DirectPurchases\DirectPurchaseResource::canEdit($doc->fresh()))->toBeTrue();
+    expect(DirectPurchaseResource::canEdit($doc->fresh()))->toBeTrue();
 
     // Someone else at the same level cannot; an approver can, and can still approve it.
     expect(fn () => $this->svc->save(actorFor($other), $doc->fresh(), $data('7', 'B-1')))->toThrow(AccessDenied::class);
