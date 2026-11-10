@@ -254,12 +254,13 @@ final class CatalogService
     {
         $this->require($actor, 'catalog.manage');
         $pricesGiven = array_key_exists('prices', $data);
-        if ($pricesGiven && ! $this->authz->allows($actor->user, 'pricing.manage')) {
-            throw new AccessDenied('Changing prices needs the pricing permission.');
-        }
 
         $data = Caps::keys($data, ['name', 'generic_name', 'strength', 'dosage_form', 'dosage']); // one uniform list
         $industry = $this->industryFor($actor, $product, $data, $product->exists ? $product->getOriginal('industry_id') : null);
+        // Prices of an industry's product: its price managers, or company-wide ones (owner 2026-11-09).
+        if ($pricesGiven && ! $this->authz->allowsForIndustry($actor->user, 'pricing.manage', $industry)) {
+            throw new AccessDenied('Changing prices needs the pricing permission for this industry.');
+        }
         $product->fill(array_intersect_key($data, array_flip(['sku', 'name', 'description', 'category_id', 'brand_id', 'base_uom_id', 'buying_uom_id', 'tax_group_id', 'track_stock', 'is_active', 'track_batches', 'plu', 'location',
             'drug_schedule', 'generic_name', 'strength', 'dosage_form', 'dosage', 'daily_use', 'nhis_price_minor', 'fda_reg_no', 'station', 'reading_kind', 'track_serials', 'warranty_months', 'consignor_id', 'consignment_bp',
             'service_minutes', 'commission_bp', 'licence_keys',
@@ -612,9 +613,18 @@ final class CatalogService
     /** Exactly one default list; currency is the company's (multi-currency lists arrive with Finance). */
     public function savePriceList(Actor $actor, PriceList $list, array $data): PriceList
     {
-        $this->require($actor, 'pricing.manage');
+        $was = $list->exists ? $list->getOriginal('industry_id') : null;
         $list->fill(array_intersect_key($data, array_flip(['code', 'name', 'prices_include_tax', 'is_default', 'pos_selectable', 'branch_id', 'is_active', 'industry_id'])));
         $list->industry_id = $list->industry_id ?: null;
+        // An industry's own list: its price managers; a company list (and the default): company-wide ones.
+        foreach (array_unique([$was, $list->industry_id]) as $industry) {
+            if (! $actor->user || ! $this->authz->allowsForIndustry($actor->user, 'pricing.manage', $list->exists || $industry !== null ? $industry : null)) {
+                throw new AccessDenied('This price list needs the pricing permission for its industry (a company-wide list: for the whole company).');
+            }
+        }
+        if ($list->is_default && ! $this->authz->allows($actor->user, 'pricing.manage')) {
+            throw new AccessDenied('The default price list is the company\'s: it needs the pricing permission for the whole company.');
+        }
         // Names its column in product files (price_retail), so it is given once from the name and never changes.
         $list->code = $list->exists ? $list->getOriginal('code') : (strtoupper(trim((string) $list->code))
             ?: Codes::fromName((string) $list->name, PriceList::withoutGlobalScopes()->where('tenant_id', $actor->tenantId)->pluck('code'), 20, '_', 'LIST'));

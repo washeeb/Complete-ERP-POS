@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 ### Changed
+- **Price managers for a branch or an industry price their own industry** (owner request: a Price Manager for the supermarket branch could not see the price screens). They work on their industry's product prices, own price lists, pricing rules and prices to review. Company price lists, the default list and tax set-up still need the permission for the whole company.
+- **Plain words instead of technical names:** role limits read *Approves orders up to GH₵ 20,000 · Gives discounts up to 25%* (not *po_approve_minor: 2000000*), and are entered in cedis and percent. The audit log shows actions, records, where from, and changes in words (*Price: GH₵ 4.00 → GH₵ 5.00*, *Yes/No*).
+### Changed
 - **Receipts:** the software maker's number and website are one line (*024 563 6889 · synclyticsenterprisesystems.com*) just above *ZionEX Suite · Powered by SES Labs*; no *Software by SyncLytics*. On the till's receipt, the receipt printer, the server's printed receipt and printed documents.
 - **Menus grouped:** related pages sit together under small headings inside each menu section (Sales: Till, Orders & invoices, Returns, Customers; Purchasing, Stock, Pricing & tax, Finance and System likewise). A tab with one section shows its groups as columns. Same in the side-menu look.
 - **The top bar is pinned too:** the bar with search, industry and your name now stays at the top with the menu band under it (the band used to slide over it).

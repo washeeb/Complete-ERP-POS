@@ -54,6 +54,9 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 ## Owner's list of 2026-11-09 — branch `owner-list-11-09`
 - `Branding::receiptCredit` one line, printed before `powered_by` (till Receipt.tsx, escpos.ts, print/receipt, print/layout). `Look::SUBGROUPS` / `subgroups()` (tab panels `zx-mega-sub`, side menu `zx-sn-g`; one-section tabs become columns). `--zx-topbar-h` pins the tab band under the top bar. Slim header keeps its lost height as `margin-bottom` (`--zx-slim-keep`). `StockCostRuns::replaceExisting` + *Replace their costs too* + preview description. Tests: StockCostRunsTest, BrandingTest, escpos.test.ts.
 
+## Industry pricing; plain words — branch `industry-pricing`
+- `Authorizer::industryIds/allowsForIndustry` (industry, branch or legal-entity grants), `Erp::canForIndustry`; CatalogService product prices and `savePriceList`, PricingRules (`requirePricing(?industry)`, follow-all on own industries, approve/dismiss per suggestion), `SimpleCatalogResource::$industryPricing` (price lists, pricing rules), PricesToReview. `App\Support\Plain` (limits, field, value, action, record, source) on the access list, grant form (four fields) and audit log. Test: IndustryPricingTest.
+
 ## Industry confinement — branch `industry-confinement`
 - `IndustryContext` (`selected`, `companyWide`, `choices`, `sharingAllowed`, `productScope`), `CatalogService::industryFor`, `SharedProducts`, `SharedProductsPage`, `CompanyWideAccess`, `AccessService::mayBeCompanyWide` and `narrow`. Settings `catalog.shared_products`, `access.company_wide`. Tests: IndustryConfinementTest.
 

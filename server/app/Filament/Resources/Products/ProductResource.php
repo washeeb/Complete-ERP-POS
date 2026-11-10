@@ -253,7 +253,7 @@ class ProductResource extends Resource
                             TagsInput::make('barcodes')->label('Barcodes'),
                         ]),
                 ]),
-            Section::make('Prices')->visible(fn () => Erp::can('pricing.manage'))
+            Section::make('Prices')->visible(fn (?Product $record) => $record ? Erp::canForIndustry('pricing.manage', $record->industry_id) : Erp::canAnywhere('pricing.manage'))
                 ->description('One row per price list and unit. Add rows with a minimum quantity for bulk prices, or with dates for a promotion.')
                 ->schema([
                     Text::make(fn (?Product $record) => $record ? self::pricingNote($record) : 'After saving, the pricing rules (Pricing & tax → Pricing rules) set this product\'s prices from its cost.')

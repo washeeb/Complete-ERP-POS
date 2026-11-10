@@ -65,7 +65,7 @@ class EditProduct extends EditRecord
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        if (! Erp::can('pricing.manage')) {
+        if (! Erp::canForIndustry('pricing.manage', $record->industry_id)) {
             unset($data['prices']); // never wipe prices someone can't see
         }
 

@@ -6,12 +6,12 @@ use App\Domain\Pricing\PricingRules;
 use App\Filament\Resources\PricingRules\Pages\ListPricingRules;
 use App\Filament\Support\ArchiveUi;
 use App\Filament\Support\Erp;
-use App\Filament\Support\IndustryScope;
 use App\Filament\Support\SimpleCatalogResource;
 use App\Models\Category;
 use App\Models\PriceList;
 use App\Models\PricingRule;
 use App\Models\Product;
+use App\Support\IndustryContext;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
@@ -42,7 +42,13 @@ class PricingRuleResource extends SimpleCatalogResource
     /** Follows the industry in view (owner 2026-11-09: every industry independent). */
     public static function getEloquentQuery(): Builder
     {
-        return IndustryScope::product(parent::getEloquentQuery());
+        // Rules of the industries in view: by their product, their category, or the list a whole-list rule sets.
+        $ids = IndustryContext::visibleIds();
+
+        return parent::getEloquentQuery()->when($ids !== null, fn ($q) => $q->where(fn ($w) => $w
+            ->whereHas('product', fn ($p) => $p->whereIn('industry_id', $ids))
+            ->orWhereHas('category', fn ($c) => $c->withoutGlobalScope('industry')->whereIn('industry_id', $ids))
+            ->orWhere(fn ($x) => $x->where('scope', 'company')->whereHas('priceList', fn ($l) => $l->whereIn('industry_id', $ids)))));
     }
 
     protected static ?string $model = PricingRule::class;
@@ -60,6 +66,18 @@ class PricingRuleResource extends SimpleCatalogResource
     protected static string $viewPermission = 'pricing.manage';
 
     protected static string $managePermission = 'pricing.manage';
+
+    protected static bool $industryPricing = true;
+
+    /** A rule for a product or category is its industry's; one for a whole list, the list's. */
+    public static function recordIndustry(Model $record): ?string
+    {
+        return match ($record->scope) {
+            'product' => $record->product?->industry_id,
+            'category' => $record->category?->industry_id,
+            default => $record->priceList?->industry_id,
+        };
+    }
 
     public static function form(Schema $schema): Schema
     {

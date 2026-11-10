@@ -52,6 +52,8 @@ class PriceListResource extends SimpleCatalogResource
 
     protected static string $managePermission = 'pricing.manage';
 
+    protected static bool $industryPricing = true;
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([

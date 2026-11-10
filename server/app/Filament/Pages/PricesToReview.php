@@ -6,6 +6,7 @@ use App\Domain\Pricing\PricingRules;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
 use App\Models\PriceSuggestion;
+use App\Security\Authorizer;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
@@ -43,12 +44,20 @@ class PricesToReview extends Page implements HasTable
 
     public static function canAccess(): bool
     {
-        return Erp::can('pricing.manage');
+        return Erp::canAnywhere('pricing.manage');
+    }
+
+    /** Suggestions for products of the industries this person prices (all for company-wide ones). */
+    private static function mine()
+    {
+        $ids = ($u = Erp::user()) ? app(Authorizer::class)->industryIds($u, 'pricing.manage') : [];
+
+        return PriceSuggestion::query()->where('status', 'pending')->when($ids !== null, fn ($q) => $q->whereHas('product', fn ($p) => $p->whereIn('industry_id', $ids)));
     }
 
     public static function getNavigationBadge(): ?string
     {
-        $n = PriceSuggestion::where('status', 'pending')->count();
+        $n = self::mine()->count();
 
         return $n ? (string) $n : null;
     }
@@ -63,7 +72,7 @@ class PricesToReview extends Page implements HasTable
         $rules = app(PricingRules::class);
 
         return $table
-            ->query(PriceSuggestion::query()->where('status', 'pending')->with(['product', 'productUom.uom', 'priceList']))
+            ->query(self::mine()->with(['product', 'productUom.uom', 'priceList']))
             ->columns([
                 TextColumn::make('product.name')->label('Product')->searchable()->description(fn (PriceSuggestion $s) => $s->product?->sku),
                 TextColumn::make('productUom.uom.code')->label('Unit'),

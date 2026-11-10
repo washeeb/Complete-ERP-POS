@@ -9,16 +9,18 @@ use App\Models\Industry;
 use App\Models\LegalEntity;
 use App\Models\Role;
 use App\Models\RoleAssignment;
+use App\Models\Tenant;
 use App\Models\Till;
 use App\Models\Warehouse;
 use App\Security\RoleCatalog;
 use App\Security\ScopeType;
+use App\Support\Plain;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Fieldset;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -45,7 +47,7 @@ class AccessGrantsRelationManager extends RelationManager
                 TextColumn::make('role.name')->label('Role'),
                 TextColumn::make('scope')->label('Applies to')->state(fn (RoleAssignment $r) => $r->scopeLabel()),
                 TextColumn::make('limits')->label('Limits')
-                    ->state(fn (RoleAssignment $r) => collect($r->limits ?? [])->map(fn ($v, $k) => "{$k}: {$v}")->implode(', ') ?: '—'),
+                    ->state(fn (RoleAssignment $r) => Plain::limits($r->limits, self::currency()))->wrap(),
                 TextColumn::make('status')->badge()->state(fn (RoleAssignment $r) => match (true) {
                     $r->revoked_at !== null => 'Revoked',
                     $r->expires_at?->isPast() => 'Expired',
@@ -82,8 +84,13 @@ class AccessGrantsRelationManager extends RelationManager
                                 'till' => Till::with('branch')->get()->mapWithKeys(fn ($t) => [$t->id => "{$t->branch->code}-{$t->code} · {$t->name}"]),
                                 default => [],
                             })->searchable(),
-                        KeyValue::make('limits')->label('Limits (optional)')->keyLabel('Limit')->valueLabel('Whole number')
-                            ->helperText('e.g. discount_pct = 10, refund_minor = 50000 (pesewas). Leave empty to use the role defaults.'),
+                        // In cedis and percent, not pesewas and key names (owner 2026-11-09). Empty: the role's usual limit.
+                        Fieldset::make('Limits (optional: empty uses the role\'s usual limits)')->columns(2)->schema([
+                            TextInput::make('limit_po')->label('Approves orders up to')->numeric()->minValue(0)->prefix(fn () => self::symbol()),
+                            TextInput::make('limit_expense')->label('Approves expenses up to')->numeric()->minValue(0)->prefix(fn () => self::symbol()),
+                            TextInput::make('limit_credit')->label('Lets a customer go over their credit by up to')->numeric()->minValue(0)->prefix(fn () => self::symbol()),
+                            TextInput::make('limit_discount')->label('Gives discounts up to')->numeric()->minValue(0)->maxValue(100)->suffix('%'),
+                        ]),
                         DateTimePicker::make('expires_at')->label('Temporary until (optional)')->minDate(now()),
                         TextInput::make('reason')->label('Reason')->maxLength(255)
                             ->required(fn (Get $get) => filled($get('expires_at')))
@@ -91,7 +98,12 @@ class AccessGrantsRelationManager extends RelationManager
                     ])
                     ->action(function (array $data) {
                         $type = ScopeType::from($data['scope_type']);
-                        $limits = collect($data['limits'] ?? [])->map(fn ($v) => (int) $v)->all();
+                        $limits = array_filter([
+                            'po_approve_minor' => filled($data['limit_po'] ?? null) ? (int) round((float) $data['limit_po'] * 100) : null,
+                            'expense_approve_minor' => filled($data['limit_expense'] ?? null) ? (int) round((float) $data['limit_expense'] * 100) : null,
+                            'credit_override_minor' => filled($data['limit_credit'] ?? null) ? (int) round((float) $data['limit_credit'] * 100) : null,
+                            'discount_bp' => filled($data['limit_discount'] ?? null) ? (int) round((float) $data['limit_discount'] * 100) : null,
+                        ], fn ($v) => $v !== null);
                         Erp::run(fn ($actor) => app(AccessService::class)->grant(
                             $actor, $this->getOwnerRecord(), Role::findOrFail($data['role_id']), $type,
                             $type === ScopeType::Tenant ? $actor->tenantId : $data['scope_id'], $limits,
@@ -107,5 +119,15 @@ class AccessGrantsRelationManager extends RelationManager
                     ->action(fn (RoleAssignment $record, array $data) => Erp::run(fn ($actor) => app(AccessService::class)
                         ->revoke($actor, $record, $data['reason']), 'Access revoked')),
             ]);
+    }
+
+    private static function currency(): string
+    {
+        return once(fn () => (string) (Tenant::whereKey(Erp::user()?->tenant_id)->value('currency_code') ?: 'GHS'));
+    }
+
+    private static function symbol(): string
+    {
+        return ['GHS' => 'GH₵', 'NGN' => '₦', 'KES' => 'KSh', 'USD' => '$', 'EUR' => '€', 'GBP' => '£'][self::currency()] ?? self::currency();
     }
 }
