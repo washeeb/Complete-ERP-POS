@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 ### Fixed
+- **Direct purchases' selling prices were undone by the pricing rules** (owner report: Cytotec set to 10.00 a tablet, back to 5.00). The rules looked again at the same delivery's cost, suggested cost × 1.40, and approving the suggestions put the old figures back (a rule set to raise prices by itself would even have raised a lower price without asking). A price set on purpose (product form, price file, a direct purchase's new price) now stands until a newer delivery brings a new cost. The update puts back, once, every direct purchase price a rule undid from that purchase's own delivery (recorded in the audit log as *price restored*), and dismisses suggestions that would undo a price set by hand.
+### Fixed
 - **What to order** lists products by name (2 before 10). Before, the order came from the database and could change between visits, so a product could move to another page.
 ### Changed
 - **A direct purchase waiting for approval can be corrected** (owner request: a mistake found when posting meant typing it all again). The person who entered or sent it, or an approver for the store, presses **Edit**, corrects it and saves; it stays waiting for approval, and the audit log records the correction. Posted and cancelled purchases stay locked.

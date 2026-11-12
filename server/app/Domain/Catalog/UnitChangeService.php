@@ -126,7 +126,7 @@ final class UnitChangeService
                 foreach (Price::where('product_uom_id', $old->id)->where('min_qty', 1)->get() as $p) {
                     (new Price)->forceFill(['tenant_id' => $p->tenant_id, 'price_list_id' => $p->price_list_id, 'product_id' => $product->id, 'product_uom_id' => $target->id,
                         'min_qty' => '1', 'amount_minor' => (int) round($p->amount_minor / $f), 'starts_at' => $p->starts_at, 'ends_at' => $p->ends_at,
-                        'updated_by' => $actor->id])->save();
+                        'updated_by' => $actor->id, 'set_by_hand_at' => $p->set_by_hand_at, 'set_by_hand_cost_line_id' => $p->set_by_hand_cost_line_id])->save();
                 }
             }
 

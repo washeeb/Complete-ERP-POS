@@ -355,7 +355,10 @@ final class DirectPurchases
         $unit = ProductUom::findOrFail($l->sell_uom_id);
         $price = Price::where('price_list_id', $list->id)->where('product_uom_id', $unit->id)->where('min_qty', 1)->whereNull('starts_at')->whereNull('ends_at')->first();
         if ($price?->amount_minor !== $l->new_price_minor) {
-            $this->pricing->setPrice($actor, $l->product, $unit, $list, $price, $l->new_price_minor, "From {$doc->number} ({$doc->invoice_no})", 'price.set_on_purchase');
+            $this->pricing->setPrice($actor, $l->product, $unit, $list, $price, $l->new_price_minor, "From {$doc->number} ({$doc->invoice_no})", 'price.set_on_purchase', byHand: true);
+        } else {
+            $price->markSetByHand(); // the same price, chosen again: the rules leave it
+            $price->saveQuietly();
         }
     }
 

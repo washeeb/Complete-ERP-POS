@@ -9,7 +9,10 @@ use App\Domain\Finance\AutoPoster;
 use App\Domain\Finance\GlCheck;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Inventory\StockAdjustmentService;
+use App\Domain\Pricing\PriceRepair;
+use App\Domain\Pricing\PricingRules;
 use App\Domain\Purchasing\DirectPurchases;
+use App\Domain\Purchasing\GoodsReceiptService;
 use App\Domain\Purchasing\SupplierService;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\DomainException;
@@ -23,6 +26,9 @@ use App\Models\Account;
 use App\Models\AuditEvent;
 use App\Models\DirectPurchase;
 use App\Models\Price;
+use App\Models\PriceList;
+use App\Models\PriceSuggestion;
+use App\Models\PricingRule;
 use App\Models\ProductUom;
 use App\Models\Supplier;
 use App\Models\SupplierProduct;
@@ -31,6 +37,7 @@ use App\Models\Warehouse;
 use App\Security\ScopeType;
 use App\Support\Settings;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -230,4 +237,61 @@ it('edits a draft, shows what to check, and adds a product with its pack size on
     $bought = ($this->doc)(['invoice_no' => 'PSI-8', 'settlement' => 'credit'], ['product_uom_id' => $unit->id, 'qty' => '1', 'unit_price' => '209.00', 'batch_no' => 'B835886',
         'expires_on' => now()->addYears(2)->toDateString(), 'sell_uom_id' => ProductUom::where('product_id', $unit->product_id)->where('is_base', true)->value('id'), 'new_price' => '10.00']);
     expect(DirectPurchases::margin($bought->lines()->with('unit', 'sellUnit')->first()))->toBe(65); // 60 tablets at 3.48, sold at 10
+});
+
+it('keeps a direct purchase\'s selling price: the pricing rules do not undo it from the same delivery', function () {
+    // Owner 2026-11-10: Cytotec was set to 10.00 a tablet on a direct purchase; the rule (cost x 1.40) later suggested
+    // 5.00 from that same delivery, and approving the suggestions put 5.00 back. Every purchase price was undone.
+    $this->actingAs(withMfa($this->owner), 'web');
+    $tablet = Uom::firstOrCreate(['code' => 'TAB'], ['name' => 'Tablet', 'decimals' => 0]);
+    $box = Uom::firstOrCreate(['code' => 'BOX'], ['name' => 'Box', 'decimals' => 0]);
+    $add = new ReflectionMethod(DirectPurchaseResource::class, 'addProduct');
+    $pack = ProductUom::find($add->invoke(null, ['name' => 'Misoprostol 200mcg', 'base_uom_id' => $tablet->id, 'pack_uom_id' => $box->id, 'pack_factor' => 60,
+        'tax_group_id' => $this->med->tax_group_id, 'track_batches' => true]));
+    $base = ProductUom::where('product_id', $pack->product_id)->where('is_base', true)->first();
+    $retail = PriceList::where('is_default', true)->first();
+    $priceNow = fn () => Price::where('price_list_id', $retail->id)->where('product_uom_id', $base->id)->where('min_qty', 1)->value('amount_minor');
+    app(PricingRules::class)->saveRule($this->a, new PricingRule, ['scope' => 'company', 'price_list_id' => $retail->id, 'method' => 'multiply', 'value' => '1.40', 'on_change' => 'rise_auto']);
+
+    $doc = ($this->doc)(['invoice_no' => 'PSI-586040'], ['product_uom_id' => $pack->id, 'qty' => '1', 'unit_price' => '209.00', 'batch_no' => '002',
+        'expires_on' => now()->addYears(2)->toDateString(), 'sell_uom_id' => $base->id, 'new_price' => '10.00', 'tax_group_id' => null]);
+    $this->svc->post($this->a, $doc->fresh());
+    expect($priceNow())->toBe(1000);
+
+    // The scheduled rules job looks at recent deliveries, this one included: it leaves the price alone.
+    $this->travel(2)->hours();
+    Artisan::call('erp:pricing-rules', ['--hours' => 24]);
+    expect($priceNow())->toBe(1000)->and(PriceSuggestion::where('product_uom_id', $base->id)->where('status', 'pending')->count())->toBe(0);
+
+    // A newer delivery brings a new cost: the rule works again (here it rises, so it applies by itself).
+    $this->travel(1)->days();
+    app(GoodsReceiptService::class)->receive($this->a, null, ['warehouse_id' => $this->hq->id, 'supplier_id' => $this->supplier->id, 'supplier_ref' => 'PSI-2',
+        'lines' => [['product_uom_id' => $pack->id, 'qty' => '1', 'unit_cost_minor' => 60000, 'batch_no' => '003', 'expires_on' => now()->addYears(2)->toDateString()]]], authorised: true);
+    expect($priceNow())->toBe(1400); // 600.00 / 60 = 10.00 a tablet, x 1.40
+});
+
+it('puts back direct purchase prices the rules undid, once, and only those', function () {
+    $this->actingAs(withMfa($this->owner), 'web');
+    $retail = PriceList::where('is_default', true)->first();
+    $doc = ($this->doc)(['invoice_no' => 'PSI-9001'], ['new_price' => '320.00']);
+    $doc = $this->svc->post($this->a, $doc->fresh());
+    $price = Price::where('price_list_id', $retail->id)->where('product_uom_id', $this->base->id)->where('min_qty', 1)->first();
+    expect($price->amount_minor)->toBe(32000);
+
+    // What happened before this fix: an approved rule suggestion from the same delivery replaced it.
+    $grn = $doc->goodsReceipt->number;
+    $this->travel(1)->days();
+    app(PricingRules::class)->setPrice($this->a, $this->med, $this->base, $retail, $price->fresh(), 25000, "Cost went down ({$grn}); Cost × 1.40 · approved by Ama Owner");
+    expect($price->fresh()->amount_minor)->toBe(25000)->and($price->fresh()->set_by_hand_at)->toBeNull();
+
+    $repair = app(PriceRepair::class);
+    expect($repair->restoreDirectPurchasePrices($this->tenant->id))->toBe(1)
+        ->and($price->fresh()->amount_minor)->toBe(32000)->and($price->fresh()->set_by_hand_at)->not->toBeNull()
+        ->and($price->fresh()->set_by_hand_cost_line_id)->toBe($doc->goodsReceipt->lines()->value('id')) // priced on that delivery
+        ->and(AuditEvent::where('action', 'price.restored')->where('subject_id', $price->id)->exists())->toBeTrue()
+        ->and($repair->restoreDirectPurchasePrices($this->tenant->id))->toBe(0); // once
+
+    // A price someone changed by hand after the rule is a choice: left alone.
+    app(CatalogService::class)->saveProduct($this->a, $this->med->fresh(), ['prices' => [['price_list_id' => $retail->id, 'uom_id' => $this->base->uom_id, 'min_qty' => '1', 'amount' => '280.00']]]);
+    expect($repair->restoreDirectPurchasePrices($this->tenant->id))->toBe(0)->and($price->fresh()->amount_minor)->toBe(28000);
 });
