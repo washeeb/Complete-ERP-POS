@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 ### Fixed
+- **A stalled connection no longer freezes a form** (owner report: a direct purchase stuck at 5 lines; reloading worked but lost what was typed). A request that went out and got no answer held every later one on the page, so buttons stayed grey with no message. After a minute without an answer the page now stops waiting, keeps what was typed and says *No answer from the server*; work that reports its progress (imports, bulk changes) is never cut off while it reports. On every back-office page.
+### Fixed
 - **Direct purchases' selling prices were undone by the pricing rules** (owner report: Cytotec set to 10.00 a tablet, back to 5.00). The rules looked again at the same delivery's cost, suggested cost × 1.40, and approving the suggestions put the old figures back (a rule set to raise prices by itself would even have raised a lower price without asking). A price set on purpose (product form, price file, a direct purchase's new price) now stands until a newer delivery brings a new cost. The update puts back, once, every direct purchase price a rule undid from that purchase's own delivery (recorded in the audit log as *price restored*), and dismisses suggestions that would undo a price set by hand.
 ### Fixed
 - **What to order** lists products by name (2 before 10). Before, the order came from the database and could change between visits, so a product could move to another page.
