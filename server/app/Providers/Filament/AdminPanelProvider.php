@@ -98,6 +98,7 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::BODY_START, fn () => view('license.banner'))
             ->renderHook(PanelsRenderHook::BODY_START, fn () => view('launch.practice-banner'))
             ->renderHook(PanelsRenderHook::BODY_START, fn () => view('remote.support-banner'))
+            ->renderHook(PanelsRenderHook::BODY_START, fn () => view('access.owner-technical-banner')) // the owner still holds technical access: hand it over
             ->renderHook(PanelsRenderHook::BODY_END, fn () => view('layout.page-loader')) // the ZionEX loader while the next page opens
             ->renderHook(PanelsRenderHook::BODY_END, fn () => auth()->check() ? view('progress.overlay') : '') // "Importing 150 of 2,000" for long work (not on the sign-in page, where it can only be refused)
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('layout.look-head'))

@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Access\AccessService;
+use App\Domain\Access\SupportAccount;
 use App\Domain\Catalog\CatalogService;
 use App\Domain\Licensing\LicenseService;
 use App\Domain\Licensing\Vendor\LicenseIssuer;
@@ -13,6 +14,7 @@ use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\Role;
 use App\Models\TaxGroup;
+use App\Models\Tenant;
 use App\Models\Uom;
 use App\Models\User;
 use App\Security\ScopeType;
@@ -124,6 +126,12 @@ function staff(User $owner, string $username, int $level, ?string $roleKey = nul
 }
 
 /** Pretend the person already set up their authenticator, so MFA doesn't block the screen under test. */
+/** The SyncLytics support account (Superadmin): once it or an IT Admin exists, users and access are theirs, not the owner's. */
+function supportAccount(User $owner): User
+{
+    return app(SupportAccount::class)->ensure(Tenant::findOrFail($owner->tenant_id), 'support@synclytics.test', 'SyncLytics Support', 'a-long-support-password')[0];
+}
+
 function withMfa(User $user): User
 {
     $user->forceFill(['app_authentication_secret' => 'JBSWY3DPEHPK3PXP'])->saveQuietly();

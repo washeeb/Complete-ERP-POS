@@ -135,6 +135,7 @@ it('opens a device on the remote support relay only for those allowed, and logs 
     // Staff: the add-on plus the permission; a view-only person cannot take control.
     activateTestLicense(['features' => ['finance', 'remote_access']]);
     LicenseManager::forget();
+    $clerk = staff($this->owner, 'ama', 2); // before IT Admin exists: after that, the owner no longer adds users
     $it = staff($this->owner, 'it', 4, 'it_admin', ScopeType::Tenant, $this->tenant->id);
     $this->actingAs($it)->get(route('remote.connect', [$device, 'control']))->assertOk()
         ->assertSee('https://remote.example.test/?gotodevicename=TILL-01&amp;viewmode=11', false)
@@ -142,7 +143,6 @@ it('opens a device on the remote support relay only for those allowed, and logs 
     Filament::setCurrentPanel(Filament::getPanel('admin'));
     Livewire::test(ListDevices::class)->assertTableActionVisible('view_screen', $device)->assertTableActionVisible('take_control', $device)
         ->assertActionVisible('remote_agent');
-    $clerk = staff($this->owner, 'ama', 2);
     $this->actingAs($clerk)->get(route('remote.connect', [$device, 'view']))->assertForbidden();
 
     // Support: only while the owner's grant is in force, and only at its level.

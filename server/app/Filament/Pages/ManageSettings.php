@@ -50,7 +50,7 @@ class ManageSettings extends Page
 
     public static function canAccess(): bool
     {
-        return Erp::can('admin.settings.manage');
+        return Erp::can('settings.business') || Erp::can('admin.settings.manage');
     }
 
     public function mount(): void
@@ -78,6 +78,10 @@ class ManageSettings extends Page
                 default => TextInput::make(self::field($key))->label($def['label'])->helperText($def['help'])
                     ->numeric()->integer()->required()->minValue($def['min'])->maxValue($def['max']),
             };
+            // Settings this person may not change show, greyed, with who changes them (owner decision 2026-11-13).
+            if (! Settings::mayChange($key, Erp::user())) {
+                $field->disabled()->dehydrated(false)->hint(Settings::who($key) === 'superadmin' ? 'Changed by SyncLytics support' : (Settings::who($key) === 'technical' ? 'Changed by IT' : 'Changed by the owner'));
+            }
             // While searching, only the settings that match show (hidden ones keep their value when saving).
             $groups[$def['group']][] = $field->visible(fn () => $this->matches($key));
             $keys[$def['group']][] = $key;
@@ -132,8 +136,8 @@ class ManageSettings extends Page
         $settings = app(Settings::class);
         Erp::run(fn ($actor) => app(Recorder::class)->transaction(function () use ($actor, $data, $settings) {
             foreach (array_keys(Settings::DEFINITIONS) as $key) {
-                if (! array_key_exists(self::field($key), $data)) {
-                    continue; // a hidden section (industry not switched on here) keeps its value
+                if (! array_key_exists(self::field($key), $data) || ! Settings::mayChange($key, Erp::user())) {
+                    continue; // a hidden section (industry not switched on here), or one this person may not change, keeps its value
                 }
                 if ($data[self::field($key)] != $settings->get($key, $actor->tenantId)) {
                     $settings->set($actor, $key, $data[self::field($key)], $data['reason'] ?? null);

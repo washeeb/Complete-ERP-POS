@@ -33,7 +33,7 @@ When a company runs more than one kind of business, each kind is an **industry**
 - **Staff:**
   - give a person a role **at their branch** (People & access → Users → Grant access → Applies to: *Branch*). A pharmacist at Pharmacy Osu then sees that pharmacy only;
   - an **industry manager** gets the role with *Applies to: Industry*, and sees every branch of that industry, and nothing of the others;
-  - **company-wide access** shows everything, so it is limited to managers and above. Settings → Security can limit it to the owner and SyncLytics support;
+  - **company-wide access** shows everything, so it is limited to managers and above. IT can limit it to the owner and SyncLytics support (Settings → Security);
   - **People & access → Company-wide access** lists anyone who has it but should not, because the system cannot know where they work. Press **Give a branch** for each person. Until then they keep seeing everything, so do this soon after updating.
 
 **Only what the business runs is offered.** Roles (such as *Waiter* or *Tailor*), settings sections, message templates and device types that belong to an industry appear only where that industry is switched on. A pharmacy, for example, is never offered a kitchen display.

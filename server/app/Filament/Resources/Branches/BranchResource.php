@@ -127,7 +127,8 @@ class BranchResource extends Resource
                 'bool' => Select::make($field)->options(['1' => 'Yes', '0' => 'No'])->placeholder('Company: '.($company ? 'Yes' : 'No')),
                 default => TextInput::make($field)->numeric()->minValue($def['min'] ?? null)->maxValue($def['max'] ?? null)->placeholder('Company: '.$company),
             };
-            $fields[array_key_last($fields)]->label($def['label'])->helperText($def['help']);
+            $fields[array_key_last($fields)]->label($def['label'])->helperText($def['help'])
+                ->disabled(fn () => ! Settings::mayChange($key, Erp::user()))->hint(fn () => Settings::mayChange($key, Erp::user()) ? null : (Settings::who($key) === 'superadmin' ? 'Changed by SyncLytics support' : 'Changed by IT'));
         }
 
         return $fields;

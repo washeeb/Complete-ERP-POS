@@ -23,8 +23,8 @@ it('resets the owner\'s authenticator on the server, with an audit row', functio
 });
 
 it('lets someone who manages users reset someone below them, never themselves or someone above', function () {
+    $cashier = withMfa(staff($this->owner, 'cash', 2)); // before IT Admin: after that the owner no longer adds users
     $manager = withMfa(staff($this->owner, 'mgr', 4, 'it_admin')); // manages users
-    $cashier = withMfa(staff($this->owner, 'cash', 2));
     $access = app(AccessService::class);
 
     $access->resetMfa(actorFor($manager), $cashier, 'New phone');
@@ -33,9 +33,11 @@ it('lets someone who manages users reset someone below them, never themselves or
         ->and(fn () => $access->resetMfa(actorFor($manager), $this->owner, 'Above me'))->toThrow(AccessDenied::class)
         ->and($this->owner->fresh()->app_authentication_secret)->not->toBeNull();
 
+    // On the user's page too (IT looks after users; the owner sees them but no longer resets sign-ins).
+    $cashier = withMfa($cashier->fresh());
     Filament::setCurrentPanel(Filament::getPanel('admin'));
-    $this->actingAs($this->owner, 'web');
-    Livewire::test(EditUser::class, ['record' => $manager->id])
+    $this->actingAs($manager, 'web');
+    Livewire::test(EditUser::class, ['record' => $cashier->id])
         ->callAction('resetMfa', ['reason' => 'Lost phone'])->assertHasNoActionErrors();
-    expect($manager->fresh()->app_authentication_secret)->toBeNull();
+    expect($cashier->fresh()->app_authentication_secret)->toBeNull();
 });

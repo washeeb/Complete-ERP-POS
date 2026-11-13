@@ -128,7 +128,8 @@
     {"key": "pos.shift.grant", "label": "Let a till open outside trading hours, or open again after its shift closed (with a reason)", "min_level": 3},
     {"key": "support.access.grant", "label": "Give SyncLytics support access to this company's devices for a set time", "min_level": 5, "technical": false},
     {"key": "admin.modules.manage", "label": "Enable or disable modules per branch", "min_level": 4, "technical": true},
-    {"key": "admin.settings.manage", "label": "Change system settings", "min_level": 4, "technical": true},
+    {"key": "admin.settings.manage", "label": "Change technical settings (security and sign-in rules, devices, AI service, integrations), backups and system health", "min_level": 4, "technical": true},
+    {"key": "settings.business", "label": "Change business settings (receipts, approvals, stock, tills, purchasing, taxes)", "min_level": 5},
     {"key": "audit.verify", "label": "Verify the audit hash chain", "min_level": 4, "technical": true},
     {"key": "insights.view", "label": "See forecasts, stock health, customer and pricing insights, cash-flow forecast and alerts", "min_level": 3},
     {"key": "insights.loss_prevention", "label": "See loss-prevention risk scores for cashiers and shifts", "min_level": 4},
@@ -139,7 +140,7 @@
     {"key": "messaging.view", "label": "See the message log (SMS, WhatsApp, e-mail)", "min_level": 3},
     {"key": "messaging.templates", "label": "Change message wording and switch customer messages on or off", "min_level": 4},
     {"key": "messaging.manage", "label": "Set up the SMS and WhatsApp providers", "min_level": 4, "technical": true},
-    {"key": "api.manage", "label": "Create API keys and webhooks for other systems", "min_level": 5},
+    {"key": "api.manage", "label": "Create API keys and webhooks for other systems", "min_level": 4, "technical": true},
     {"key": "golive.manage", "label": "Plan going live: migration checklist, parallel run, practice company, pilot reports", "min_level": 5},
     {"key": "support.view", "label": "See and close problem reports sent by staff", "min_level": 4, "technical": true}
   ]

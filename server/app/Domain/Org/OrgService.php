@@ -146,8 +146,14 @@ final class OrgService
                 if (! in_array($key, Settings::branchKeys(), true)) {
                     throw new DomainException('That setting cannot differ by branch.');
                 }
-                if ($value !== null && $value !== '') {
-                    $own[$key] = Settings::valid($key, $value);
+                $before = $branch->settings[$key] ?? null;
+                $after = $value === null || $value === '' ? null : Settings::valid($key, $value);
+                // Who may change it is the same as for the company setting (owner decision 2026-11-13).
+                if ($after != $before && $actor->user && ! Settings::mayChange($key, $actor->user)) {
+                    throw new DomainException('“'.Settings::DEFINITIONS[$key]['label'].'” is changed by '.(Settings::who($key) === 'superadmin' ? 'SyncLytics support.' : 'IT.'));
+                }
+                if ($after !== null) {
+                    $own[$key] = $after;
                 }
             }
             $branch->settings = $own ?: null;

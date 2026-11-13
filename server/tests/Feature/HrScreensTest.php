@@ -77,7 +77,8 @@ it('lets staff request leave and see payslips themselves, and managers approve i
 });
 
 it('keeps HR and payroll from people without access, including IT admin', function () {
-    foreach ([staff($this->owner, 'it', 4, 'it_admin'), staff($this->owner, 'cash', 2, 'teller')] as $u) {
+    $teller = staff($this->owner, 'cash', 2, 'teller'); // before IT Admin: after that the owner no longer adds users
+    foreach ([staff($this->owner, 'it', 4, 'it_admin'), $teller] as $u) {
         $this->flushSession();
         $this->actingAs(withMfa($u));
         $this->get(EmployeeResource::getUrl())->assertForbidden();

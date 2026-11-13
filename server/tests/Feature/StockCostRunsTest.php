@@ -151,10 +151,10 @@ it('needs a second person by default, and the right permission', function () {
     $run = $this->runs->submit($this->a, $run);
     expect(fn () => $this->runs->post($this->a, $run))->toThrow(DomainException::class, 'nobody approves');
 
+    $gm = withMfa(staff($this->owner, 'gm', 5, 'general_manager', ScopeType::Tenant, $this->tenant->id)); // before IT Admin
     $it = staff($this->owner, 'itperson', 4, 'it_admin', ScopeType::Tenant, $this->tenant->id);
     expect(fn () => $this->runs->prepare(actorFor($it), ['method' => 'divide', 'value' => '1.4']))->toThrow(AccessDenied::class);
 
-    $gm = withMfa(staff($this->owner, 'gm', 5, 'general_manager', ScopeType::Tenant, $this->tenant->id));
     expect($this->runs->post(actorFor($gm), $run)->status)->toBe('posted');
 });
 

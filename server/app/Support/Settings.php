@@ -12,43 +12,49 @@ use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
 use App\Models\Branch;
 use App\Models\Setting;
+use App\Models\User;
+use App\Security\Authorizer;
 use InvalidArgumentException;
 
 /**
  * Tenant settings with defaults declared here. The admin Settings page is generated from
  * DEFINITIONS, so adding a definition is all it takes to make a setting editable.
  * Only add a setting together with the code that reads it.
+ *
+ * 'who' says who may change it (owner decision 2026-11-13): business (the default, permission settings.business, the
+ * owner), 'technical' (admin.settings.manage: IT Admin and SyncLytics support) or 'superadmin' (the SyncLytics support
+ * account only: the switches over support's own access). Everyone who opens Settings sees them all.
  */
 final class Settings
 {
     public const DEFINITIONS = [
         'support.share_health' => [
-            'type' => 'bool', 'default' => true, 'group' => 'Security',
+            'type' => 'bool', 'who' => 'technical', 'default' => true, 'group' => 'Security',
             'label' => 'Share system health with SyncLytics support',
             'help' => 'Every hour this server tells SyncLytics support how it is doing: the checks on System → Health (backups, disk, memory, scheduler…), tills with problems and open problem reports — never sales, customers, prices or stock. Support then sees a problem before you have to call. Off: nothing is sent (the daily licence check stays).',
         ],
         'security.support_account' => [
-            'type' => 'bool', 'default' => true, 'group' => 'Security',
+            'type' => 'bool', 'who' => 'superadmin', 'default' => true, 'group' => 'Security',
             'label' => 'The SyncLytics support account may sign in',
             'help' => 'Off: the support account (People & access → Users, "SyncLytics support") cannot sign in until you switch it on again — for example while no support is needed. You are told each time it signs in.',
         ],
         'security.mfa_from_level' => [
-            'type' => 'int', 'default' => 3, 'min' => 1, 'max' => 7, 'group' => 'Security',
+            'type' => 'int', 'who' => 'technical', 'default' => 3, 'min' => 1, 'max' => 7, 'group' => 'Security',
             'label' => 'Require two-factor sign-in from security level',
             'help' => 'People at this level or above must set up an authenticator app before they can use the back office. Spec default: L3 (supervisors).',
         ],
         'security.pin_max_attempts' => [
-            'type' => 'int', 'default' => 5, 'min' => 3, 'max' => 10, 'group' => 'Security',
+            'type' => 'int', 'who' => 'technical', 'default' => 5, 'min' => 3, 'max' => 10, 'group' => 'Security',
             'label' => 'Wrong POS PINs before the PIN is locked',
             'help' => 'After this many wrong PINs in a row the person cannot sign in to a till by PIN until the lockout ends.',
         ],
         'security.pin_lockout_minutes' => [
-            'type' => 'int', 'default' => 15, 'min' => 1, 'max' => 1440, 'group' => 'Security',
+            'type' => 'int', 'who' => 'technical', 'default' => 15, 'min' => 1, 'max' => 1440, 'group' => 'Security',
             'label' => 'POS PIN lockout (minutes)',
             'help' => 'How long a locked PIN stays locked. A manager can also reset it from the user record.',
         ],
         'security.offline_grant_hours' => [
-            'type' => 'int', 'default' => 72, 'min' => 4, 'max' => 336, 'group' => 'Security',
+            'type' => 'int', 'who' => 'technical', 'default' => 72, 'min' => 4, 'max' => 336, 'group' => 'Security',
             'label' => 'Offline till sign-in lasts (hours)',
             'help' => 'After signing in online, a person can keep using that till without the server for this long. Shorter is safer; longer suits branches with poor connections. Sales made after it runs out are still kept, and flagged for review.',
         ],
@@ -88,7 +94,7 @@ final class Settings
             'help' => 'For everyone who has not chosen for themselves (each person can choose under their profile, top right → Profile). The new look (the default) puts the menu in tabs across the top, like a desktop program, with denser lists; the new side menu is a dark menu that folds to icons; Classic is the original layout.',
         ],
         'remote.consent' => [
-            'type' => 'choice', 'default' => 'outside_hours', 'group' => 'Remote access', 'branch' => true,
+            'type' => 'choice', 'who' => 'superadmin', 'default' => 'outside_hours', 'group' => 'Remote access', 'branch' => true,
             'options' => ['outside_hours' => 'Unattended outside trading hours; during trading the person at the device accepts', 'unattended' => 'Always unattended (a banner shows who is connected)', 'ask' => 'Always ask the person at the device'],
             'label' => 'Remote connections to tills and computers',
             'help' => 'Who may connect without someone at the device clicking Accept. Every connection shows a banner on the device and is in the audit log. A branch can choose differently (Company → Branches).',
@@ -122,7 +128,7 @@ final class Settings
             'label' => 'Customers can report a problem on a web page',
             'help' => 'A web page where customers describe a problem with their name and phone or e-mail; it becomes a ticket. Its link is under Service desk → Tickets → “Where tickets come from”: put it on your website, receipts or a QR code.',
         ],
-        'service.email_key' => ['type' => 'string', 'default' => '', 'max' => 64, 'group' => 'Service desk and maintenance', 'label' => 'Key for e-mails to tickets',
+        'service.email_key' => ['type' => 'string', 'who' => 'technical', 'default' => '', 'max' => 64, 'group' => 'Service desk and maintenance', 'label' => 'Key for e-mails to tickets',
             'help' => 'To turn e-mails to your support address into tickets: type a long secret here (letters and numbers, at least 24), then have your e-mail provider (e.g. Mailgun, SendGrid, Postmark) forward incoming mail to the address shown under Service desk → Tickets → “Where tickets come from”. Replies quoting the ticket number join its conversation. Empty: off.'],
         'service.close_after_days' => ['type' => 'int', 'default' => 7, 'min' => 1, 'max' => 60, 'group' => 'Service desk and maintenance', 'label' => 'Close resolved tickets after (days)',
             'help' => 'A resolved ticket the customer does not come back on closes by itself; until then, their reply reopens it.'],
@@ -227,7 +233,7 @@ final class Settings
             'help' => 'A till session this long or longer is a Straight day, whatever time it opened.',
         ],
         'remote.agent_link' => [
-            'type' => 'string', 'default' => '', 'max' => 500, 'group' => 'Remote access',
+            'type' => 'string', 'who' => 'technical', 'default' => '', 'max' => 500, 'group' => 'Remote access',
             'label' => 'Remote support agent install link',
             'help' => 'The invitation link of this company’s device group on the remote support relay (installation guide, chapter 20). It is shown under System → Devices → Install remote support, to open on each till, computer and handheld.',
         ],
@@ -274,50 +280,50 @@ final class Settings
             'help' => 'In daily mode, the till sales are sent after this time each day (and anything left over is sent the next day).',
         ],
         'ai.provider' => [
-            'type' => 'choice', 'default' => 'off', 'group' => 'AI', 'options' => ['off' => 'Off — built-in insights only', 'ollama' => 'Local model (Ollama on your server, free)', 'claude' => 'Claude (cloud, within the monthly budget)',
+            'type' => 'choice', 'who' => 'technical', 'default' => 'off', 'group' => 'AI', 'options' => ['off' => 'Off — built-in insights only', 'ollama' => 'Local model (Ollama on your server, free)', 'claude' => 'Claude (cloud, within the monthly budget)',
                 'cloud' => 'Another cloud model (Google Gemini, Groq, OpenRouter, Mistral, OpenAI; several have free plans)'],
             'label' => 'AI assistant',
             'help' => 'Forecasts, alerts and insights always work without AI. The copilot, invoice scanning and product descriptions need a model: a local one (Ollama, nothing leaves your servers), Claude, or another cloud service chosen below.',
         ],
         'ai.cloud_service' => [
-            'type' => 'choice', 'default' => 'gemini', 'group' => 'AI',
+            'type' => 'choice', 'who' => 'technical', 'default' => 'gemini', 'group' => 'AI',
             'options' => ['gemini' => 'Google Gemini (free plan)', 'groq' => 'Groq (free plan)', 'openrouter' => 'OpenRouter (free models)', 'mistral' => 'Mistral (free plan)',
                 'openai' => 'OpenAI', 'custom' => 'Other OpenAI-compatible service (address below)'],
             'label' => 'Other cloud model: service',
             'help' => 'Used when the AI assistant is "Another cloud model". Its API key goes in the server settings (.env: AI_CLOUD_API_KEY), never on screen. Free plans limit how many questions a day; the cloud budget below applies to Claude only.',
         ],
         'ai.cloud_model' => [
-            'type' => 'string', 'default' => '', 'max' => 120, 'group' => 'AI',
+            'type' => 'string', 'who' => 'technical', 'default' => '', 'max' => 120, 'group' => 'AI',
             'label' => 'Other cloud model: model name',
             'help' => 'Leave empty for the service\'s usual model. Services rename their models from time to time: copy the exact name from the service\'s model list. For the copilot it must support tools (function calling).',
         ],
         'ai.cloud_vision_model' => [
-            'type' => 'string', 'default' => '', 'max' => 120, 'group' => 'AI',
+            'type' => 'string', 'who' => 'technical', 'default' => '', 'max' => 120, 'group' => 'AI',
             'label' => 'Other cloud model: model for reading invoices (images)',
             'help' => 'Leave empty for the service\'s usual one, or the same as above when that model reads images.',
         ],
         'ai.cloud_url' => [
-            'type' => 'string', 'default' => '', 'max' => 200, 'group' => 'AI',
+            'type' => 'string', 'who' => 'technical', 'default' => '', 'max' => 200, 'group' => 'AI',
             'label' => 'Other cloud model: service address',
             'help' => 'Only for "Other OpenAI-compatible service": the address ending in /v1 (the part before /chat/completions).',
         ],
         'ai.ollama_url' => [
-            'type' => 'string', 'default' => 'http://127.0.0.1:11434', 'max' => 200, 'group' => 'AI',
+            'type' => 'string', 'who' => 'technical', 'default' => 'http://127.0.0.1:11434', 'max' => 200, 'group' => 'AI',
             'label' => 'Ollama address',
             'help' => 'Where the local model runs (see the installation guide, AI chapter).',
         ],
         'ai.ollama_model' => [
-            'type' => 'string', 'default' => 'qwen2.5:7b', 'max' => 80, 'group' => 'AI',
+            'type' => 'string', 'who' => 'technical', 'default' => 'qwen2.5:7b', 'max' => 80, 'group' => 'AI',
             'label' => 'Local model for questions and writing',
             'help' => 'Must support tools (function calling), e.g. qwen2.5:7b or llama3.1:8b.',
         ],
         'ai.ollama_vision_model' => [
-            'type' => 'string', 'default' => 'qwen2.5vl:7b', 'max' => 80, 'group' => 'AI',
+            'type' => 'string', 'who' => 'technical', 'default' => 'qwen2.5vl:7b', 'max' => 80, 'group' => 'AI',
             'label' => 'Local model for reading invoices (images)',
             'help' => 'A vision model, e.g. qwen2.5vl:7b or llama3.2-vision.',
         ],
         'ai.claude_model' => [
-            'type' => 'string', 'default' => 'claude-sonnet-5-5', 'max' => 80, 'group' => 'AI',
+            'type' => 'string', 'who' => 'technical', 'default' => 'claude-sonnet-5-5', 'max' => 80, 'group' => 'AI',
             'label' => 'Claude model',
             'help' => 'Used only when the AI assistant is set to Claude and the API key is in the server settings (.env: ANTHROPIC_API_KEY).',
         ],
@@ -372,7 +378,7 @@ final class Settings
             'help' => 'A shared product shows on every industry\'s tills, so it is never the default. Allow it for things sold everywhere, such as carrier bags. Never means an item sold in two industries is created in each.',
         ],
         'access.company_wide' => [
-            'type' => 'choice', 'default' => 'managers', 'group' => 'Security', 'options' => ['managers' => 'Managers and above', 'owner' => 'Owner and SyncLytics support only'],
+            'type' => 'choice', 'who' => 'technical', 'default' => 'managers', 'group' => 'Security', 'options' => ['managers' => 'Managers and above', 'owner' => 'Owner and SyncLytics support only'],
             'label' => 'Who can have company-wide access',
             'help' => 'Company-wide access shows every industry and branch. Everyone else is given a branch or an industry. People & access → Company-wide access lists anyone who has it but should not.',
         ],
@@ -417,7 +423,7 @@ final class Settings
             'help' => '5000 = GHS 50.00 per bill.',
         ],
         'grocery.scale_prefixes' => [
-            'type' => 'string', 'default' => '21', 'max' => 40, 'group' => 'Grocery',
+            'type' => 'string', 'who' => 'technical', 'default' => '21', 'max' => 40, 'group' => 'Grocery',
             'label' => 'Scale label barcodes start with',
             'help' => 'EAN-13 labels from the scales: prefix (2 digits), the product\'s 5-digit scale code (PLU), the weight in grams (5 digits), check digit. Several prefixes: 21,22.',
         ],
@@ -432,7 +438,7 @@ final class Settings
             'help' => '"7:30,3:50" = 30 % off when 7 days or fewer are left, 50 % at 3 days. A manager applies them.',
         ],
         'grocery.esl_webhook_url' => [
-            'type' => 'string', 'default' => '', 'max' => 255, 'group' => 'Grocery',
+            'type' => 'string', 'who' => 'technical', 'default' => '', 'max' => 255, 'group' => 'Grocery',
             'label' => 'Electronic shelf labels: price update address',
             'help' => 'If you use electronic shelf labels, their gateway\'s web address. Price changes are sent there as they happen. Leave blank if you do not.',
         ],
@@ -503,7 +509,7 @@ final class Settings
             'help' => '5000 = GHS 50.00. Waste worth more than this (at cost) is approved by a manager’s PIN when it is recorded.',
         ],
         'restaurant.sms_webhook_url' => [
-            'type' => 'string', 'default' => '', 'max' => 255, 'group' => 'Restaurant',
+            'type' => 'string', 'who' => 'technical', 'default' => '', 'max' => 255, 'group' => 'Restaurant',
             'label' => 'SMS gateway address (booking messages)',
             'help' => 'Booking confirmations and reminders are posted here as {"to", "message", "reference"} for your SMS provider to send. Leave blank for no SMS.',
         ],
@@ -625,7 +631,7 @@ final class Settings
             'help' => 'Sent by the SMS gateway below to customers whose phone number is on the appointment.',
         ],
         'services.sms_webhook_url' => [
-            'type' => 'string', 'default' => '', 'max' => 255, 'group' => 'Services',
+            'type' => 'string', 'who' => 'technical', 'default' => '', 'max' => 255, 'group' => 'Services',
             'label' => 'SMS gateway address for appointment messages',
             'help' => 'Leave empty to use the restaurant one. The address of your SMS provider (or a small bridge to it) that accepts {"to", "message", "reference"}.',
         ],
@@ -640,7 +646,7 @@ final class Settings
             'help' => 'Printed on every till receipt, e.g. a thank-you line and the returns policy. Each line here, and each sentence, prints on its own line.',
         ],
         'security.device_enrollment_hours' => [
-            'type' => 'int', 'default' => 24, 'min' => 1, 'max' => 168, 'group' => 'Devices',
+            'type' => 'int', 'who' => 'technical', 'default' => 24, 'min' => 1, 'max' => 168, 'group' => 'Devices',
             'label' => 'Device enrolment code valid for (hours)',
             'help' => 'A new till must be enrolled with its one-time code within this time, or the code must be re-issued.',
         ],
@@ -650,6 +656,24 @@ final class Settings
     private array $cache = [];
 
     public function __construct(private readonly Recorder $recorder) {}
+
+    /** Who may change a setting: 'business', 'technical' or 'superadmin'. */
+    public static function who(string $key): string
+    {
+        return self::DEFINITIONS[$key]['who'] ?? 'business';
+    }
+
+    /** May this person change the setting (see 'who' above)? */
+    public static function mayChange(string $key, User $user): bool
+    {
+        $authz = app(Authorizer::class);
+
+        return match (self::who($key)) {
+            'superadmin' => $user->isSupport(),
+            'technical' => $authz->allows($user, 'admin.settings.manage'),
+            default => $authz->allows($user, 'settings.business'),
+        };
+    }
 
     public function get(string $key, ?string $tenantId): mixed
     {

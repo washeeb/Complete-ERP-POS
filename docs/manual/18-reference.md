@@ -6,20 +6,27 @@ A person's **security level** is the highest level of role they can ever be give
 
 | Level | Typical people |
 |---|---|
-| L6 · Owner | Owner / director (everything) |
+| L6 · Owner | Owner / director (everything to run the business; see below) |
 | L5 · Executive | General Manager, Finance Manager |
 | L4 · Manager | Branch Manager, Accountant, HR Manager, Warehouse Manager, Pharmacist, IT Admin |
 | L3 · Supervisor | Supervisor, Stock Controller, Payroll Officer, Marketing |
 | L2 · Staff | Cashier, Storekeeper, Waiter, Tailor, Repair Technician, Stylist / Therapist, Sales Rep |
 | L1 · Restricted | Auditor (read-only), Kitchen Staff |
 
-**IT Admin** manages users, devices, modules and settings, but gets **no** access to sales, money or stock unless the owner also gives them a business role.
+**IT Admin** manages users, devices, modules and the technical settings, but gets **no** access to sales, money or stock. An IT Admin account can never also be an owner's account.
+
+**The Owner runs the business; the technical side is done by IT Admin and SyncLytics support.** The Owner role keeps every business permission (selling, buying, stock, prices, money, people's pay, approvals, reports, the business settings) and can **see** every user and what they may do (People & access → Users, Who can do what), but cannot add users, change roles, enrol devices, change the technical settings, run sync or take control of devices. Those are done by the **IT Admin** and by **SyncLytics support** (Superadmin). **Why:** if someone gets the owner's password or sits at the owner's computer, they still cannot give themselves or others access, switch off security, or reach the system's settings.
+
+- This happens by itself as soon as SyncLytics support or an IT Admin is set up in the company. Until then the owner keeps the technical side, and a brown banner at the top asks to hand it over. **Why:** a company is never left with nobody able to add a user.
+- The owner's account and an IT account stay separate: an owner cannot also be given IT Admin, and an IT Admin cannot also be an owner.
+- The last IT administrator cannot be removed until another one (or the SyncLytics support account) exists, so somebody can always add users and fix access.
+- **Settings** are split. The owner changes the **business** ones (receipts, approvals, stock, tills, purchasing, taxes, loyalty…). IT changes the **technical** ones (two-step sign-in level, PIN lock-outs, offline sign-in, device enrolment, company-wide access rule, AI service, shelf-label, scale and SMS gateway addresses, sharing health with support). Two belong to SyncLytics support alone: *The SyncLytics support account may sign in* and *Remote connections to tills and computers*. Everyone who opens Settings sees them all; the ones you cannot change are greyed, with who changes them.
 
 ## 18.2 Roles provided
 
 Owner · General Manager · Finance Manager · Accountant · Auditor · HR Manager · Payroll Officer · Purchasing Officer · Purchase Approver · Warehouse Manager · Storekeeper · Stock Controller (products and stock: create and edit products, categories and brands, stock adjustments, counts, receiving and transfers, reorder levels, bins, purchase requests; prices can be seen, not changed; no approvals, sales or money. It can be given for one branch: the person then works on stock at that branch and keeps the shared product list up to date for everyone; prices stay with managers) · Picker / Packer · Branch Manager · Supervisor · Teller (sells at a till; called Cashier before version 0.30) · Cashier (issues floats, receives the tellers' cash) · Income Controller (accounts: receives the day, decides differences, banks the cash) · Sales Rep · Van Sales Rep · Customer Service · Marketing · E-commerce Manager · Delivery Rider · Production Manager · Machine Operator · Quality Inspector · Pharmacist · Pharmacy Technician · Waiter / Bartender · Kitchen Staff · Repair Technician · Tailor · Stylist / Therapist · IT Admin.
 
-You can change what a role allows under **People & access → Roles** (you can only add permissions you hold yourself).
+IT Admin or SyncLytics support changes what a role allows under **People & access → Roles** (only permissions they hold themselves can be added, and the Owner role never gets technical ones back).
 
 ## 18.3 Settings in `.env`
 
