@@ -60,6 +60,9 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 ## Correct a direct purchase waiting for approval — branch `direct-purchase-edit`
 - `DirectPurchases::save` allows `submitted` for `mayCorrect` (preparer / sender with purchasing.direct, or purchasing.direct.approve at the store), audit `direct_purchase.corrected`; `DirectPurchaseResource::canEdit`; edit page subheading. Test in DirectPurchasesTest.
 
+## Stalled requests — branch `stalled-requests`
+- `resources/views/layout/connection-notices.blade.php`: first script (also in debug mode) arms a 60 s timer per Livewire request (`interceptRequest` onSend); no answer and no progress reported (`progress.status`) → `request.controller.abort()` (Livewire's failure path frees the component queue) and a persistent notice; `request.zxNoAnswer` keeps the usual "Could not reach" notice quiet. `window.zxRequestLimit` shortens it for browser tests. Page test in DirectPurchasesTest.
+
 ## Prices set by hand stay — branch `prices-set-by-hand`
 - `prices.set_by_hand_at` + `set_by_hand_cost_line_id` (the latest delivery line when set; indexed, no FK — prices reach branches apart from deliveries) (migration `2026_12_26_100001_prices_set_by_hand`: backfill, then `PriceRepair::restoreDirectPurchasePrices` / `dismissSuggestionsOverHandPrices` per tenant). Set by `CatalogService` price writes and `DirectPurchases::newPrice` (`setPrice(byHand: true)`); cleared by rule writes; `Price::markSetByHand()`; `PricingRules::follow` skips a price set by hand while the latest cost line is still the one it was set on (`latestCost` has `line`). Tests in DirectPurchasesTest.
 

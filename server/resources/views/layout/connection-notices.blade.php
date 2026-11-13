@@ -5,6 +5,46 @@
      Something the person clicked that did not reach the server is always said, as are server answers (signed out,
      being updated, an error). Requests cut off because the page is being left are not failures. In debug mode
      Livewire's own error window shows instead (as with Filament's). --}}
+{{-- A request that never gets an answer (the line stalled without breaking: no error, no reply) holds every later
+     request of the page behind it, so buttons stay greyed and nothing happens until the page is reloaded, losing what
+     was typed (owner 2026-11-12: a direct purchase stuck at 5 lines). After a minute without an answer it is cut off
+     as a dropped connection: Livewire frees the page, the entries stay, and the person is told. Work that reports its
+     progress (imports, bulk changes) is never cut off while it reports. Kept in debug mode too. --}}
+<script>
+    (() => {
+        const LIMIT = 60000;
+        const progress = @js(auth()->check() ? route('progress.status') : null);
+        const working = async () => {
+            if (!progress) return false;
+            try {
+                const r = await fetch(progress, { headers: { Accept: 'application/json' }, credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(5000) });
+                const p = await r.json();
+                return !!(p && p.total && !p.background);
+            } catch { return false }
+        };
+        document.addEventListener('livewire:init', () => Livewire.interceptRequest(({ request, onSend, onResponse, onFailure, onFinish, onCancel }) => {
+            let timer = null;
+            const stop = () => { clearTimeout(timer); timer = null };
+            const arm = () => {
+                timer = setTimeout(async () => {
+                    if (!timer) return;
+                    if (await working()) return arm();
+                    if (!timer) return;
+                    request.zxNoAnswer = true;
+                    request.controller.abort(); // reaches Livewire as a failed request: the page is free again
+                    new FilamentNotification().title('No answer from the server')
+                        .body('The connection stalled, so the page stopped waiting. What you typed is still here: try again. If you were saving, check whether it was saved before saving again.')
+                        .danger().persistent().send();
+                }, window.zxRequestLimit || LIMIT); // zxRequestLimit: tests only
+            };
+            onSend(arm);
+            onResponse(stop);
+            onFailure(stop);
+            onFinish(stop);
+            onCancel(stop);
+        }));
+    })();
+</script>
 @unless (app()->hasDebugModeEnabled())
 <script>
     (() => {
@@ -41,7 +81,7 @@
                 told = false;
             });
             onFailure(() => {
-                if (leaving) return;
+                if (leaving || request.zxNoAnswer) return; // the stalled request: already said
                 misses++;
                 if (clicked) { told = true; return say(N.clicked) }
                 if (told || misses < 2) return;
