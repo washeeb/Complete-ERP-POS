@@ -272,9 +272,10 @@ it('lets the owner grant roles on a licence without HR, without granting what th
         ->and(app(Authorizer::class)->allows($cashier->fresh(), 'leave.request', $till))->toBeFalse();
 
     // Someone who may grant roles but holds no HR rights (IT Admin) still cannot hand out an HR role.
+    $yaw = staff($this->owner, 'yaw', 4); // before IT Admin: after that the owner no longer adds users
     $itAdmin = staff($this->owner, 'esi', 4, 'it_admin');
     app(Authorizer::class)->forget();
-    expect(fn () => $access->grant(actorFor($itAdmin), staff($this->owner, 'yaw', 4), Role::where('key', 'hr_manager')->first(), ScopeType::Tenant, $this->tenant->id))
+    expect(fn () => $access->grant(actorFor($itAdmin), $yaw, Role::where('key', 'hr_manager')->first(), ScopeType::Tenant, $this->tenant->id))
         ->toThrow(AccessDenied::class, 'hold all of its permissions');
 });
 

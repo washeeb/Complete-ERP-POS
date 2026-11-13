@@ -313,6 +313,10 @@ final class AccessService
         if ($technical && $perms->contains(fn ($p) => ! $p->is_technical)) {
             throw new DomainException('A technical role (such as IT Admin) cannot hold business permissions.');
         }
+        if (($attributes['key'] ?? $role->key) === 'owner' && $perms->contains(fn ($p) => $p->is_technical && ! in_array($p->key, OwnerSeparation::OWNER_MAY_SEE, true))
+            && OwnerSeparation::hasTechnicalAdmin($actor->tenantId)) {
+            throw new DomainException('The Owner role runs the business. Users, roles, devices and system settings are looked after by IT Admin and SyncLytics support, so a stolen owner sign-in cannot reach them.');
+        }
         foreach ($perms as $p) {
             if ($p->min_level > $level) {
                 throw new DomainException("“{$p->label}” needs at least L{$p->min_level}; this role is L{$level}.");
@@ -370,6 +374,13 @@ final class AccessService
         if ($role->security_level > $user->security_level) {
             throw new DomainException("{$role->name} is L{$role->security_level}; {$user->name} is only cleared to L{$user->security_level}.");
         }
+        // Owner and technical access stay on different accounts: stolen owner details must not reach the technical side.
+        if ($role->is_technical && OwnerSeparation::isOwnerAccount($user)) {
+            throw new DomainException("{$user->name} is an owner. Technical access goes on a separate account (an IT person, or SyncLytics support).");
+        }
+        if ($role->key === 'owner' && RoleAssignment::withoutGlobalScopes()->where('user_id', $user->id)->whereNull('revoked_at')->whereHas('role', fn ($q) => $q->withoutGlobalScopes()->where('is_technical', true))->exists()) {
+            throw new DomainException("{$user->name} has technical (IT) access. An owner's account cannot also be an IT account: use separate accounts.");
+        }
         $this->assertLevelGrantable($actor, $role->security_level);
         if (self::$limitCompanyWide && in_array($scopeType, [ScopeType::Tenant, ScopeType::LegalEntity], true) && ! self::mayBeCompanyWide($role)) {
             throw new DomainException("{$role->name} can't have company-wide access. Give it for a branch or an industry.");
@@ -411,6 +422,9 @@ final class AccessService
 
         $this->recorder->save($actor, $assignment, $expiresAt ? 'access.granted_temporary' : 'access.granted', $reason);
         $this->authz->forget($user);
+        if ($role->key === 'it_admin') {
+            app(OwnerSeparation::class)->apply($actor->tenantId, "IT Admin given to {$user->name}: the owner's technical access moves to them");
+        }
 
         return $assignment;
     }
@@ -455,6 +469,13 @@ final class AccessService
             throw new DomainException('Revoking access needs a reason.');
         }
         $this->assertLevelGrantable($actor, $assignment->role->security_level);
+        // Someone must always be able to add users and fix access: never revoke the last technical administrator.
+        if (in_array($assignment->role->key, ['it_admin', 'superadmin'], true)
+            && ! RoleAssignment::withoutGlobalScopes()->where('tenant_id', $assignment->tenant_id)->where('id', '<>', $assignment->id)->whereNull('revoked_at')
+                ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+                ->whereHas('role', fn ($q) => $q->withoutGlobalScopes()->whereIn('key', ['it_admin', 'superadmin']))->exists()) {
+            throw new DomainException('This is the last IT administrator. Give IT Admin to someone else (or set up the SyncLytics support account) first, so somebody can still add users and fix access.');
+        }
 
         $assignment->revoked_at = now();
         $assignment->revoked_by = $actor->id;

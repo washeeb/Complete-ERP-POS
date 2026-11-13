@@ -2,6 +2,7 @@
 
 namespace App\Security;
 
+use App\Domain\Access\OwnerSeparation;
 use App\Domain\Support\Actor;
 use App\Domain\Support\Outbox;
 use App\Models\Permission;
@@ -54,6 +55,10 @@ final class AccessCatalogSync
                 $defaults = RoleCatalog::defaultsFor($key, $all);
                 // A brand-new role gets all its defaults; an existing one only gets newly introduced permissions.
                 $attach = $isNewRole ? $defaults : array_values(array_intersect($defaults, $newPermissionKeys));
+                if ($key === 'owner' && ! $isNewRole && OwnerSeparation::hasTechnicalAdmin($tenantId)) {
+                    // Once IT Admin or SyncLytics support looks after the technical side, new technical permissions skip the owner.
+                    $attach = array_values(array_diff($attach, OwnerSeparation::forbiddenForOwner()));
+                }
                 if ($attach) {
                     $role->permissions()->syncWithoutDetaching($attach);
                 }

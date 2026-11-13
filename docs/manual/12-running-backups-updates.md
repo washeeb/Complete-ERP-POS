@@ -33,7 +33,7 @@ questions like "what did Ama take by mobile money last week?" in a few clicks, a
 
 **Today — the owner's phone view** (top of the menu; anyone with *receive the daily summary*): the day on one screen that reads well on a phone and updates every minute — sales against the same day last week, cash / mobile money / card, till closes and cash over or short, what needs attention (server health, refused till work, approvals, expiring stock; tap to open), and per branch the sales, tills still open, who closed the day and whether the deposit is on the bank statement. **Yesterday** is one tap away. On the phone, open the back office, go to **Today**, then the browser menu → **Add to Home screen**: it opens like an app. **Why:** the owner sees the business from anywhere in ten seconds, without the full back office.
 
-**The SyncLytics support account** can be switched off by the company: **System → Settings → Security → The SyncLytics support account may sign in**. Switch it back on when you want support to look at something.
+**The SyncLytics support account** is switched on and off only by SyncLytics support (**System → Settings → Security → The SyncLytics support account may sign in**). **Why:** support looks after the technical side; a stolen owner sign-in must not be able to lock support out. The owner is told each time support signs in, and everything it does is in the audit log.
 
 ### Who did what, and from which computer
 

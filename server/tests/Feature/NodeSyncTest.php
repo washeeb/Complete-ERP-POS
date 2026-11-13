@@ -140,7 +140,7 @@ beforeEach(function () {
     $this->it = staff($this->owner, 'itadmin', 4, 'it_admin');
 
     // --- pair the branch server with HQ ------------------------------------------------------------
-    $pair = app(NodeSetup::class)->addBranchNode(actorFor($this->owner), 'B01', 'Branch A server');
+    $pair = app(NodeSetup::class)->addBranchNode(actorFor($this->it), 'B01', 'Branch A server'); // IT pairs servers, not the owner
     Nodes::$hqPeerId = $pair['peer']->id;
     Nodes::on('B01', function () use ($pair) {
         app(AccessCatalogSync::class)->syncPermissions(); // what `migrate --seed` does on a branch server
@@ -158,9 +158,9 @@ afterEach(function () {
 function branchSale(callable $items): Sale
 {
     return Nodes::on('B01', function () use ($items) {
-        $owner = User::where('username', 'like', 'owner%')->first();
+        $it = User::where('username', 'itadmin')->first(); // IT pairs tills, not the owner
         $till = Till::whereHas('branch', fn ($q) => $q->where('code', 'BA'))->orderBy('code')->first();
-        $device = Device::first() ?? app(DeviceService::class)->register(actorFor($owner),
+        $device = Device::first() ?? app(DeviceService::class)->register(actorFor($it),
             ['branch_id' => $till->branch_id, 'till_id' => $till->id, 'name' => 'Branch till', 'kind' => 'pos'])[0];
         $device->forceFill(['status' => 'active'])->save();
         $cashier = User::where('username', 'kofi')->first();
@@ -286,10 +286,13 @@ it('flags negative stock when HQ and the branch both took the last unit', functi
 it('keeps going when one event cannot be applied, and applies it once the cause is fixed (partial failure)', function () {
     // HQ runs newer code with a permission the branch server does not know yet.
     DB::table('permissions')->insert(['key' => 'future.feature', 'module' => 'core', 'label' => 'Future', 'min_level' => 1, 'is_technical' => false, 'created_at' => now(), 'updated_at' => now()]);
-    DB::table('permission_role')->insert(['role_id' => Role::where('key', 'owner')->value('id'), 'permission_key' => 'future.feature']);
+    $support = supportAccount($this->owner); // roles are changed by IT or SyncLytics support, not the owner
+    foreach (['owner', 'superadmin'] as $key) {
+        DB::table('permission_role')->insert(['role_id' => Role::where('key', $key)->value('id'), 'permission_key' => 'future.feature']);
+    }
     app(Authorizer::class)->forget();
     $role = Role::where('key', 'supervisor')->first();
-    app(AccessService::class)->saveRole(actorFor($this->owner), $role, [], [...$role->permissionKeys(), 'future.feature']);
+    app(AccessService::class)->saveRole(actorFor($support), $role, [], [...$role->permissionKeys(), 'future.feature']);
     app(CatalogService::class)->saveProduct(actorFor($this->owner), $this->bread, ['name' => 'SLICED BREAD']);
 
     $r = branchSync();
@@ -340,9 +343,10 @@ it('receives an HQ purchase order on the branch server and brings the GRN, order
     $po = app(PurchaseOrderService::class)->saveDraft(actorFor($this->owner), new PurchaseOrder,
         ['supplier_id' => $supplier->id, 'warehouse_id' => $this->whA->id, 'lines' => [['product_uom_id' => $ctn->id, 'qty' => '2', 'unit_cost' => '600.00']]]);
     app(PurchaseOrderService::class)->submit(actorFor($this->owner), $po);
-    $approver = staff($this->owner, 'gm', 5, 'general_manager');
+    $support = supportAccount($this->owner); // with IT set up, new staff come from IT or support, not the owner
+    $approver = staff($support, 'gm', 5, 'general_manager');
     app(PurchaseOrderService::class)->approve(actorFor($approver), $po->fresh());
-    staff($this->owner, 'yaw', 2, 'storekeeper', ScopeType::Branch, $this->branches['BA']->id);
+    staff($support, 'yaw', 2, 'storekeeper', ScopeType::Branch, $this->branches['BA']->id);
     branchSync(); // the order, supplier and the storekeeper reach the branch server
 
     $grnId = Nodes::on('B01', function () use ($po) {
@@ -371,7 +375,7 @@ it('relays a branch server’s stock and warehouse events to the other branch se
     expect($relayed->pluck('aggregate_type')->unique()->values()->all())->toBe(['stock_movement_batch']) // sales themselves go up only
         ->and(collect(app(SyncServer::class)->serve(SyncPeer::find(Nodes::$hqPeerId), 0, 1000)['events'])->pluck('id'))->not->toContain($relayed->first()->id);
 
-    $other = app(NodeSetup::class)->addBranchNode(actorFor($this->owner), 'B02', 'Branch B server')['peer'];
+    $other = app(NodeSetup::class)->addBranchNode(actorFor($this->it), 'B02', 'Branch B server')['peer'];
     expect(collect(app(SyncServer::class)->serve($other, 0, 1000)['events'])->pluck('id'))->toContain($relayed->first()->id);
 });
 

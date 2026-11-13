@@ -61,6 +61,7 @@ final class SupportAccount
                 $this->recorder->save($actor, $grant, 'access.granted', 'SyncLytics support account');
             }
             $this->authz->forget($user);
+            app(OwnerSeparation::class)->apply($tenant->id, 'SyncLytics support account set up: the owner\'s technical access moves to it');
             $this->notifier->toPermission($tenant->id, 'support.access.grant', null, $isNew ? 'SyncLytics support account added' : 'SyncLytics support account changed',
                 "{$name} ({$email}) can sign in to support your business. It always uses an authenticator app, and you are told each time it signs in.", null, [$user->id], topic: 'security');
 

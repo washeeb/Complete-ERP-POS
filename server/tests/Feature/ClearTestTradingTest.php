@@ -92,3 +92,11 @@ it('refuses once the company has gone live', function () {
     expect(fn () => app(TestTradingReset::class)->clear(actorFor($this->owner)))->toThrow(DomainException::class, 'gone live');
     expect(DB::table('sales')->count())->toBe(1);
 });
+
+it('finds a line table\'s rows through its required link, every time', function () {
+    // sale_payments has no tenant_id: its sale says whose it is. Its optional link (a mobile money charge) is often empty;
+    // taking that one, now and then, left the payments behind and the sales could not be removed.
+    $scoped = new ReflectionMethod(TestTradingReset::class, 'scoped');
+    $sql = $scoped->invoke(app(TestTradingReset::class), 'sale_payments', $this->tenant->id)->toSql();
+    expect($sql)->toContain('"sale_id" in')->not->toContain('momo_charge_id');
+});

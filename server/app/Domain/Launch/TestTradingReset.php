@@ -138,6 +138,8 @@ final class TestTradingReset
 
             return DB::table($table)->whereIn($col, DB::table($parent)->where('tenant_id', $tenantId)->select('id'));
         }
+        // A required link (a payment must have its sale) says whose a row is; an optional one may be empty (links() lists
+        // required ones first: taking an optional one left payments behind and the sales could not go, now and then).
         foreach ($this->links() as $l) {
             if ($l->tbl === $table && $l->target !== $table && Schema::hasColumn($l->target, 'tenant_id') && in_array($l->target, self::TABLES, true)) {
                 return DB::table($table)->whereIn($l->col, DB::table($l->target)->where('tenant_id', $tenantId)->select('id'));
@@ -204,6 +206,7 @@ final class TestTradingReset
             SELECT c.conrelid::regclass::text AS tbl, a.attname AS col, c.confrelid::regclass::text AS target, a.attnotnull AS notnull
             FROM pg_constraint c JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = ANY (c.conkey)
             WHERE c.contype = 'f'
+            ORDER BY a.attnotnull DESC, c.conrelid::regclass::text, a.attname
             SQL);
     }
 }
