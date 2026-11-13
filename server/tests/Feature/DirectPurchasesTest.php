@@ -205,6 +205,13 @@ it('reads every page of an invoice into the form, with lots and expiry, and keep
         ->and($form['lines'][1]['product_uom_id'])->toBeNull()->and($form['lines'][1]['read_as'])->toBe('KY LUBRICATING JELLY 82G')->and($form['attachments'])->toHaveCount(2);
 });
 
+it('stops waiting for a request that gets no answer, so a stalled line does not freeze the form', function () {
+    // Owner 2026-11-12: stuck at 5 lines until a reload, which lost what was typed. The page cuts such a request off
+    // after a minute (layout/connection-notices), keeps the entries and says so; work that reports progress goes on.
+    $page = $this->actingAs(withMfa($this->owner), 'web')->get(DirectPurchaseResource::getUrl('create'))->assertOk();
+    $page->assertSee('No answer from the server')->assertSee('request.controller.abort()', false)->assertSee('progress-status', false);
+});
+
 it('shows the screens: enter, view, post, list and consignment to pay', function () {
     $this->actingAs(withMfa($this->owner), 'web');
     Livewire::test(CreateDirectPurchase::class)->fillForm(['supplier_id' => $this->supplier->id, 'invoice_no' => 'PSI-7', 'invoice_date' => now()->toDateString(), 'warehouse_id' => $this->hq->id,
