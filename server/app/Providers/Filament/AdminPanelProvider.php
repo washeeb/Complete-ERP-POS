@@ -12,6 +12,7 @@ use App\Filament\Support\PanelBrand;
 use App\Http\Middleware\BlockSiteCopiers;
 use App\Http\Middleware\EnforceLicense;
 use App\Http\Middleware\RedirectToSetupWizard;
+use App\Http\Middleware\SignOutWhenIdle;
 use App\Http\Middleware\TrackComputer;
 use App\Security\SignInCode;
 use App\Support\Dashboard\Panels;
@@ -103,6 +104,7 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(PanelsRenderHook::BODY_END, fn () => auth()->check() ? view('progress.overlay') : '') // "Importing 150 of 2,000" for long work (not on the sign-in page, where it can only be refused)
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('layout.look-head'))
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('layout.connection-notices'))
+            ->renderHook(PanelsRenderHook::BODY_END, fn () => view('access.idle')) // IT and support: the page signs itself out when idle
             // Who supports this installation: the desktop app keeps it, to show on its reconnect screen when the server is out of reach.
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => new HtmlString('<meta name="zx-support" content="'.e(json_encode([
                 'name' => config('brand.vendor').' support', 'phone' => (string) config('brand.support_phone'), 'email' => (string) config('brand.support_email')])).'">'))
@@ -132,6 +134,7 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
                 EnforceLicense::class,
                 RedirectToSetupWizard::class,
-            ]);
+            ])
+            ->authMiddleware([SignOutWhenIdle::class], isPersistent: true); // IT and support: signed out after 15 idle minutes
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Domain\Access\OwnerSeparation;
+use App\Domain\Access\SignInGuard;
 use App\Domain\Licensing\LicenseManager;
 use App\Domain\Licensing\Vendor\VendorLicensing;
 use App\Domain\Support\Actor;
@@ -124,7 +126,9 @@ class User extends Authenticatable implements FilamentUser, HasAppAuthentication
 
     public function requiresMfa(): bool
     {
-        if ($this->isSupport()) {
+        // The owner, IT and SyncLytics support always, whatever the company rule says (owner decision 2026-11-13; the rule
+        // is a technical setting, so it must not be able to switch this off).
+        if ($this->isSupport() || OwnerSeparation::isOwnerAccount($this) || SignInGuard::isTechnical($this)) {
             return true;
         }
 

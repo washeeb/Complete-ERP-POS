@@ -452,6 +452,9 @@ final class AccessService
             throw new DomainException("{$role->name} is L{$role->security_level}; {$user->name} is only cleared to L{$user->security_level}.");
         }
         // Owner and technical access stay on different accounts: stolen owner details must not reach the technical side.
+        if ($role->is_technical && $user->signin_method === 'code') {
+            throw new DomainException("{$user->name} signs in with a code by WhatsApp or e-mail. IT accounts sign in with the authenticator app or a passkey: change how they sign in first.");
+        }
         if ($role->is_technical && OwnerSeparation::isOwnerAccount($user)) {
             throw new DomainException("{$user->name} is an owner. Technical access goes on a separate account (an IT person, or SyncLytics support).");
         }
@@ -630,6 +633,9 @@ final class AccessService
         $user->signin_method = $user->signin_method ?: 'default';
         if (! array_key_exists($user->signin_method, User::SIGNIN_METHODS)) {
             throw new DomainException('Choose how the person signs in.');
+        }
+        if ($user->signin_method === 'code' && $user->exists && SignInGuard::isTechnical($user)) {
+            throw new DomainException('IT accounts sign in with the authenticator app or a passkey, not a code by WhatsApp or e-mail.');
         }
         if ($user->signin_method === 'password' && $user->security_level > User::PASSWORD_ONLY_MAX_LEVEL) {
             throw new DomainException('Password only is for staff up to level L'.User::PASSWORD_ONLY_MAX_LEVEL.' (supervisors). Managers and above approve money and access, so they sign in with a second step.');

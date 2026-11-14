@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Changed
+- **Sign-in protection** (owner decision). The owner, IT Admin and SyncLytics support always need a second step, whatever the company rule. IT and support sign in with the authenticator app or a passkey (not a code by message) and are signed out after 15 minutes without a click or key. The owner and IT are told, on the bell and by e-mail, when their account signs in on a new computer or phone, with **This wasn't me**: it signs the account out everywhere and (unless unticked) locks it until SyncLytics support calls; support is told at once.
 ### Security
 - **Laravel 13.42.0** (from 13.34.0) and its supporting libraries: fixes advisory GHSA-63hm-g96r-2m2q (output injection in concurrent tasks).
 ### Changed
