@@ -12,6 +12,7 @@ use App\Filament\Resources\Devices\Pages\CreateDevice;
 use App\Filament\Resources\Roles\RoleResource;
 use App\Filament\Resources\Users\Pages\CreateUser;
 use App\Filament\Resources\Users\UserResource;
+use App\Models\AccessRequest;
 use App\Models\Branch;
 use App\Models\Device;
 use App\Models\User;
@@ -114,12 +115,12 @@ it('shows a rule violation as a message instead of saving', function () {
     Livewire::test(CreateUser::class)
         ->fillForm(['name' => 'Big Boss', 'username' => 'bigboss', 'email' => 'bb@demo.test',
             'security_level' => 4, 'password' => 'long-enough-password'])
-        ->call('create');
-    // The level picker only offers up to the creator's level; the service is the backstop.
-    expect(User::where('username', 'bigboss')->exists())->toBeTrue();
+        ->call('create')->assertNotified('Sent for approval');
+    // IT's new user waits for the owner (owner decision 2026-11-13); a rule broken is still said at once.
+    expect(User::where('username', 'bigboss')->exists())->toBeFalse()->and(AccessRequest::where('kind', 'user.create')->count())->toBe(1);
 
     expect(fn () => app(AccessService::class)->createUser(actorFor($it), ['name' => 'X', 'username' => 'x', 'email' => 'x@demo.test',
-        'password' => 'long-enough-password', 'security_level' => 5]))->toThrow(AccessDenied::class);
+        'password' => 'long-enough-password', 'security_level' => 7]))->toThrow(AccessDenied::class);
 });
 
 it('registers a device and reveals its code once', function () {

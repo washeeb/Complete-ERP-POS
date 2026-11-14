@@ -3,11 +3,13 @@
 namespace App\Domain\Access;
 
 use App\Domain\Licensing\LicenseManager;
+use App\Domain\Messaging\Notifier;
 use App\Domain\Messaging\Phone;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
+use App\Models\AccessRequest;
 use App\Models\Branch;
 use App\Models\Industry;
 use App\Models\LegalEntity;
@@ -44,14 +46,29 @@ final class AccessService
     /** Most tests set up staff company-wide for brevity; the test of this rule switches it back on. */
     public static bool $limitCompanyWide = true;
 
+    /** The request being carried out after approval: its asker's permission counts, and the approver's authority. */
+    private ?AccessRequest $approving = null;
+
     public function __construct(private readonly Recorder $recorder, private readonly Authorizer $authz) {}
+
+    /** Carry out an approved access request (AccessRequests::approve). */
+    public function asApproved(AccessRequest $request, \Closure $do): mixed
+    {
+        $this->approving = $request;
+        try {
+            return $do();
+        } finally {
+            $this->approving = null;
+        }
+    }
 
     public function createUser(Actor $actor, array $data): User
     {
         $this->require($actor, 'admin.users.manage');
         $level = (int) $data['security_level'];
-        $this->assertLevelGrantable($actor, $level);
-        app(LicenseManager::class)->assertWithin('users', User::licensedCount(), 'active users');
+        if ($level >= SecurityLevel::Platform->value) {
+            throw new AccessDenied("You can't work with level L{$level}.");
+        }
 
         $user = new User;
         $user->forceFill([
@@ -68,14 +85,31 @@ final class AccessService
         ]);
         $this->assertSignIn($user);
         $this->assertUnique($user);
+        $this->viaApproval($actor, 'user.create', ['password' => Hash::isHashed((string) $data['password']) ? $data['password'] : Hash::make($data['password'])]
+            + array_intersect_key($data, array_flip(['name', 'username', 'email', 'security_level', 'phone', 'signin_method'])),
+            "Add the user {$user->name} ({$user->username}, level L{$level}).");
+        $this->assertLevelGrantable($actor, $level);
+        app(LicenseManager::class)->assertWithin('users', User::licensedCount(), 'active users');
 
-        return $this->recorder->save($actor, $user, 'user.created');
+        $saved = $this->recorder->save($actor, $user, 'user.created', $this->approvalNote());
+        $this->tellOwner($actor, "added the user {$user->name} ({$user->username}, L{$level}).");
+
+        return $saved;
     }
 
     public function updateUser(Actor $actor, User $user, array $data, ?string $reason = null): User
     {
         $this->require($actor, 'admin.users.manage');
         $this->assertSameTenant($actor, $user);
+        if ($user->id !== $actor->id && ! $this->approving) {
+            $this->assertLevelGrantable($actor, $user->security_level); // never an account above your own, even with approval
+        }
+        $changed = self::sensitiveChanges($user, $data);
+        if ($changed) {
+            $this->viaApproval($actor, 'user.update', ['data' => (! empty($data['password']) && ! Hash::isHashed((string) $data['password']) ? ['password' => Hash::make($data['password'])] : [])
+                + array_intersect_key($data, array_flip(['name', 'username', 'email', 'security_level', 'is_active', 'phone', 'signin_method', 'password'])), 'reason' => $reason],
+                "Change {$user->name}: ".implode(', ', $changed).'.', $user);
+        }
         if ($user->id !== $actor->id) {
             $this->assertLevelGrantable($actor, $user->security_level); // can't edit someone above you
         }
@@ -99,8 +133,11 @@ final class AccessService
         }
         $this->assertSignIn($user);
         $this->assertUnique($user);
-        $this->recorder->save($actor, $user, 'user.updated', $reason);
+        $this->recorder->save($actor, $user, 'user.updated', $this->approvalNote($reason));
         $this->authz->forget($user);
+        if ($changed) {
+            $this->tellOwner($actor, "changed {$user->name}: ".implode(', ', $changed).'.');
+        }
 
         if (! $user->is_active) {
             $user->tokens()->delete(); // signed-out everywhere, including tills
@@ -207,23 +244,33 @@ final class AccessService
         return $user->ui_favourites;
     }
 
-    public function setPin(Actor $actor, User $user, string $pin): void
+    /** $hashed: $pin is already a hash (an approved request; the PIN itself is never kept). */
+    public function setPin(Actor $actor, User $user, string $pin, bool $hashed = false): void
     {
+        if (! $hashed) {
+            if (! preg_match('/^\d{4,8}$/', $pin)) {
+                throw new DomainException('A PIN is 4 to 8 digits.');
+            }
+            if (in_array($pin, ['0000', '1111', '1234', '12345', '123456', '000000', '4321'], true)) {
+                throw new DomainException('That PIN is too easy to guess.');
+            }
+        }
         if ($user->id !== $actor->id) {
             $this->require($actor, 'admin.users.manage');
             $this->assertSameTenant($actor, $user);
+            if (! $this->approving) {
+                $this->assertLevelGrantable($actor, $user->security_level); // never an account above your own, even with approval
+            }
+            $this->viaApproval($actor, 'user.pin', ['pin_hash' => $hashed ? $pin : Hash::make($pin)], "Set a new till PIN for {$user->name}.", $user);
             $this->assertLevelGrantable($actor, $user->security_level);
         }
-        if (! preg_match('/^\d{4,8}$/', $pin)) {
-            throw new DomainException('A PIN is 4 to 8 digits.');
-        }
-        if (in_array($pin, ['0000', '1111', '1234', '12345', '123456', '000000', '4321'], true)) {
-            throw new DomainException('That PIN is too easy to guess.');
-        }
-        $user->pin_hash = Hash::make($pin);
+        $user->pin_hash = $hashed ? $pin : Hash::make($pin);
         $user->pin_failed_attempts = 0;
         $user->pin_locked_until = null;
-        $this->recorder->save($actor, $user, 'user.pin_set');
+        $this->recorder->save($actor, $user, 'user.pin_set', $this->approvalNote());
+        if ($user->id !== $actor->id) {
+            $this->tellOwner($actor, "set a new till PIN for {$user->name}.");
+        }
     }
 
     /**
@@ -239,6 +286,13 @@ final class AccessService
             if ($user->id === $actor->id) {
                 throw new DomainException('You cannot reset your own two-step sign-in. Ask a manager, or SyncLytics support.');
             }
+            if (trim($reason) === '') {
+                throw new DomainException('Say why (for the audit log).');
+            }
+            if (! $this->approving) {
+                $this->assertLevelGrantable($actor, $user->security_level); // never an account above your own, even with approval
+            }
+            $this->viaApproval($actor, 'user.reset_mfa', ['reason' => trim($reason)], "Reset {$user->name}'s two-step sign-in ({$reason}).", $user);
             $this->assertLevelGrantable($actor, $user->security_level);
         }
         if (trim($reason) === '') {
@@ -246,9 +300,10 @@ final class AccessService
         }
         $user->forceFill(['app_authentication_secret' => null, 'app_authentication_recovery_codes' => null, 'remember_token' => null]);
         $this->recorder->transaction(function () use ($actor, $user, $reason) {
-            $this->recorder->save($actor, $user, 'user.mfa_reset', mb_substr(trim($reason), 0, 255));
+            $this->recorder->save($actor, $user, 'user.mfa_reset', mb_substr($this->approvalNote(trim($reason)), 0, 255));
             DB::table('sessions')->where('user_id', $user->id)->delete();
         });
+        $this->tellOwner($actor, "reset {$user->name}'s two-step sign-in ({$reason}).");
     }
 
     /** The prefix of a staff card's code, so a till can tell a scanned card from a typed username. */
@@ -299,6 +354,22 @@ final class AccessService
         if ($role->exists) {
             $this->assertSameTenant($actor, $role);
         }
+        if (Permission::whereIn('key', $permissionKeys)->count() !== count(array_unique($permissionKeys))) {
+            throw new DomainException('Unknown permission selected.');
+        }
+        $before = $role->exists ? $role->permissionKeys() : [];
+        if (! $this->approving && AccessRequests::needsApproval($actor)) {
+            foreach (array_diff($permissionKeys, $before) as $key) {
+                if ($this->isTechnical($key) && ! $this->authz->allows($actor->user, $key)) {
+                    throw new AccessDenied('You can only add permissions you hold company-wide yourself.');
+                }
+            }
+        }
+        $labels = fn (array $keys) => Permission::whereIn('key', $keys)->orderBy('label')->pluck('label')->implode('; ');
+        $this->viaApproval($actor, 'role.save', ['role_id' => $role->exists ? $role->id : null, 'permissions' => array_values($permissionKeys), 'reason' => $reason,
+            'attributes' => array_intersect_key($attributes, array_flip(['key', 'name', 'description', 'default_limits', 'security_level', 'is_technical']))],
+            ($role->exists ? "Change the role {$role->name}" : 'Add the role '.($attributes['name'] ?? '?'))
+            .(($added = array_diff($permissionKeys, $before)) ? '. Adds: '.$labels($added) : '').(($removed = array_diff($before, $permissionKeys)) ? '. Removes: '.$labels($removed) : '').'.');
         $level = (int) ($attributes['security_level'] ?? $role->security_level);
         $this->assertLevelGrantable($actor, $level);
         if ($role->exists) {
@@ -339,7 +410,7 @@ final class AccessService
                 $role->tenant_id = $actor->tenantId;
             }
             $permsChanged = array_diff($permissionKeys, $before) || array_diff($before, $permissionKeys);
-            $this->recorder->save($actor, $role, $role->exists ? 'role.updated' : 'role.created', $reason);
+            $this->recorder->save($actor, $role, $role->exists ? 'role.updated' : 'role.created', $this->approvalNote($reason));
             if ($permsChanged) {
                 $role->permissions()->sync($permissionKeys);
                 $this->recorder->audit->record($actor, 'role.permissions_changed', $role, [
@@ -370,6 +441,12 @@ final class AccessService
 
         if ($user->id === $actor->id) {
             throw new DomainException('You cannot grant access to yourself. Ask another administrator.');
+        }
+        if (AccessRequests::needsApproval($actor) && ! $this->approving) {
+            $where = $scopeType === ScopeType::Tenant ? 'the whole company' : ($this->resolveScope($actor, $scopeType, $scopeId)->name ?? $scopeType->label());
+            $this->viaApproval($actor, 'access.grant', ['role_id' => $role->id, 'scope_type' => $scopeType->value, 'scope_id' => $scopeType === ScopeType::Tenant ? $actor->tenantId : $scopeId,
+                'limits' => $limits, 'expires_at' => $expiresAt?->toIso8601String(), 'reason' => $reason],
+                "Give {$user->name} the role {$role->name} for {$where}".($expiresAt ? ' until '.$expiresAt->format('j M Y H:i') : '').'.', $user);
         }
         if ($role->security_level > $user->security_level) {
             throw new DomainException("{$role->name} is L{$role->security_level}; {$user->name} is only cleared to L{$user->security_level}.");
@@ -420,8 +497,9 @@ final class AccessService
         $assignment->granted_by = $actor->id;
         $assignment->granted_by_name = $actor->name;
 
-        $this->recorder->save($actor, $assignment, $expiresAt ? 'access.granted_temporary' : 'access.granted', $reason);
+        $this->recorder->save($actor, $assignment, $expiresAt ? 'access.granted_temporary' : 'access.granted', $this->approvalNote($reason));
         $this->authz->forget($user);
+        $this->tellOwner($actor, "gave {$user->name} the role {$role->name}.");
         if ($role->key === 'it_admin') {
             app(OwnerSeparation::class)->apply($actor->tenantId, "IT Admin given to {$user->name}: the owner's technical access moves to them");
         }
@@ -482,15 +560,68 @@ final class AccessService
         $assignment->revoke_reason = $reason;
         $this->recorder->save($actor, $assignment, 'access.revoked', $reason);
         $this->authz->forget($assignment->user);
+        $this->tellOwner($actor, "took the role {$assignment->role->name} away from {$assignment->user->name} ({$reason}).");
     }
 
     // --- rules -------------------------------------------------------------
 
     private function require(Actor $actor, string $permission): void
     {
-        if (! $actor->user || ! $this->authz->allows($actor->user, $permission)) {
+        $user = $this->approving ? $this->approving->requester : $actor->user; // approved: the asker had to be allowed to ask
+        if (! $user || ! $this->authz->allows($user, $permission)) {
             throw new AccessDenied;
         }
+    }
+
+    /** IT Admin's access changes wait for the owner or SyncLytics support (AccessRequests). */
+    private function viaApproval(Actor $actor, string $kind, array $payload, string $summary, ?User $subject = null): void
+    {
+        if ($this->approving || ! AccessRequests::needsApproval($actor)) {
+            return;
+        }
+        throw new SentForApproval(app(AccessRequests::class)->submit($actor, $kind, $payload, $summary, $subject));
+    }
+
+    /** The audit reason of an approved change names who asked. */
+    private function approvalNote(?string $reason = null): ?string
+    {
+        if (! $this->approving) {
+            return $reason;
+        }
+
+        return trim(($reason ? $reason.' · ' : '').'Asked by '.$this->approving->requested_by_name);
+    }
+
+    /** SyncLytics support changes access directly; the owner is told each time (owner decision 2026-11-13). */
+    private function tellOwner(Actor $actor, string $what): void
+    {
+        if (! $actor->user?->isSupport()) {
+            return;
+        }
+        app(Notifier::class)->toPermission($actor->tenantId, 'settings.business', null, 'SyncLytics support changed access',
+            "{$actor->name} {$what}", null, [$actor->id], topic: 'security');
+    }
+
+    /** @return list<string> what in a user change gives power or opens the account: these wait for approval */
+    public static function sensitiveChanges(User $user, array $data): array
+    {
+        $out = [];
+        foreach (['email' => 'e-mail', 'username' => 'username', 'phone' => 'phone', 'signin_method' => 'how they sign in'] as $k => $label) {
+            if (array_key_exists($k, $data) && (string) ($data[$k] ?? '') !== (string) ($user->{$k} ?? '')) {
+                $out[] = $label;
+            }
+        }
+        if (array_key_exists('security_level', $data) && (int) $data['security_level'] !== (int) $user->security_level) {
+            $out[] = "level L{$user->security_level} → L{$data['security_level']}";
+        }
+        if (! empty($data['password'])) {
+            $out[] = 'password';
+        }
+        if (! empty($data['is_active']) && ! $user->is_active) {
+            $out[] = 'switched back on';
+        }
+
+        return $out;
     }
 
     /** The sign-in method is one of the known ones; password only is for low-risk staff; a WhatsApp number must look right. */
@@ -520,13 +651,25 @@ final class AccessService
 
     private function holdsCompanyWide(Actor $actor, string $permission): bool
     {
+        if ($this->approving && $this->isTechnical($permission)) { // approved: technical parts come from the IT person who asked
+            return $this->authz->allows($this->approving->requester, $permission);
+        }
+
         return $actor->user === null || $this->authz->allows($actor->user, $permission);
+    }
+
+    private function isTechnical(string $permission): bool
+    {
+        return (bool) Permission::where('key', $permission)->value('is_technical');
     }
 
     private function actorHolds(Actor $actor, string $permission, Model $scope): bool
     {
         if ($actor->user === null) {
             return true; // installer bootstrap only (no human can be the actor yet)
+        }
+        if ($this->approving && $this->isTechnical($permission)) { // approved: technical parts come from the IT person who asked
+            return $scope instanceof Tenant ? $this->authz->holds($this->approving->requester, $permission) : $this->authz->holds($this->approving->requester, $permission, $scope);
         }
 
         return $scope instanceof Tenant

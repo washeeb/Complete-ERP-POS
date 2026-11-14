@@ -6,6 +6,7 @@ use App\Domain\Access\AccessService;
 use App\Filament\Resources\Roles\RoleResource;
 use App\Filament\Support\Erp;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Support\Exceptions\Halt;
 use Illuminate\Database\Eloquent\Model;
 
 class EditRole extends EditRecord
@@ -21,7 +22,14 @@ class EditRole extends EditRecord
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        return Erp::run(fn ($actor) => app(AccessService::class)
+        $role = Erp::run(fn ($actor) => app(AccessService::class)
             ->saveRole($actor, $record, $data, $data['permissions'] ?? [], $data['reason'] ?? null));
+        if ($role === null) { // IT Admin: sent for approval; the role stays as it is until then
+            $this->redirect(RoleResource::getUrl('edit', ['record' => $record]));
+
+            throw new Halt;
+        }
+
+        return $role;
     }
 }
