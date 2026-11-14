@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Security
+- **Laravel 13.42.0** (from 13.34.0) and its supporting libraries: fixes advisory GHSA-63hm-g96r-2m2q (output injection in concurrent tasks).
 ### Changed
 - **IT Admin asks; the owner or SyncLytics support approves** (owner decision). New users, new sign-in details or level, giving access, role changes, till PINs and two-step resets by IT Admin wait under **People & access → Access requests** (and on *My approvals*); the owner and support are notified, approve or turn down with a reason, and the change is made in the approver's name. Unanswered requests lapse after 72 hours. Taking access away happens at once. SyncLytics support changes access directly and the owner is told each time. Passwords and PINs in requests are stored only as hashes.
 ### Fixed
