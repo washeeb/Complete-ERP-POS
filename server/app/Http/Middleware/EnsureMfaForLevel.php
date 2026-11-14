@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Domain\Access\SignInGuard;
 use App\Models\User;
 use App\Security\Passkeys\PasskeyLoginController;
 use Closure;
@@ -27,6 +28,11 @@ class EnsureMfaForLevel
         }
         if ($request->session()->get(PasskeyLoginController::SESSION_KEY) === $user->id) {
             return $next($request);
+        }
+        // IT and SyncLytics support: the authenticator app or a passkey, not a WhatsApp or e-mail code alone (a code by
+        // message can be intercepted; owner decision 2026-11-13).
+        if (SignInGuard::isStrict($user)) {
+            return filled($user->app_authentication_secret) ? $next($request) : redirect()->guest(Filament::getSetUpRequiredMultiFactorAuthenticationUrl());
         }
         if (MultiFactorChallenge::make()->hasEnabledProviders($user)) {
             return $next($request);

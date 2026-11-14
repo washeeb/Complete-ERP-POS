@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Access\AccessService;
+use App\Domain\Access\SignInGuard;
 use App\Domain\Crm\Crm;
 use App\Domain\Purchasing\OrderSender;
 use App\Domain\Support\Actor;
@@ -112,6 +113,17 @@ Route::get('po/{po}', function (string $po) {
 })->name('purchase-order.pdf')->whereUuid('po')->middleware(['signed', 'throttle:30,1']);
 
 // Someone stops campaign e-mails from the link in one (CRM): no sign-in, a signed link. The page asks first, so mail
+// "This wasn't me" (owner decision 2026-11-13): from the new-computer notice or e-mail. The link shows the page; the
+// button signs the account out everywhere (scanners opening links change nothing). Signed, 7 days.
+Route::get('account/not-me/{user}/{computer}', fn (string $user) => view('access.not-me', ['done' => false, 'name' => User::withoutGlobalScopes()->findOrFail($user)->name, 'locked' => false]))
+    ->name('account.not-me')->whereUuid(['user', 'computer'])->middleware(['signed', 'throttle:20,1']);
+Route::post('account/not-me/{user}/{computer}', function (Request $request, string $user, string $computer) {
+    $user = User::withoutGlobalScopes()->findOrFail($user);
+    app(SignInGuard::class)->notMe($user, $computer, $request->boolean('lock'));
+
+    return view('access.not-me', ['done' => true, 'name' => $user->name, 'locked' => $request->boolean('lock')]);
+})->whereUuid(['user', 'computer'])->middleware(['signed', 'throttle:20,1']);
+
 // scanners opening links do not unsubscribe people; the button posts.
 Route::get('u/{kind}/{id}/{channel}', fn (string $kind, string $id, string $channel) => view('crm-unsubscribe', ['done' => false, 'company' => null]))
     ->name('crm.unsubscribe')->where(['kind' => 'customer|lead', 'channel' => 'email|sms|whatsapp'])->whereUuid('id')->middleware(['signed', 'throttle:30,1']);

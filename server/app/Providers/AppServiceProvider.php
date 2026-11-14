@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Domain\Access\SignInGuard;
 use App\Domain\Access\SupportAccount;
 use App\Domain\Modules\EnabledModules;
 use App\Domain\Support\Actor;
@@ -101,6 +102,9 @@ class AppServiceProvider extends ServiceProvider
         };
         Event::listen(Login::class, function (Login $e) use ($signIn) {
             if ($e->guard === 'web') {
+                if ($e->user instanceof User) {
+                    app(SignInGuard::class)->signedIn($e->user, request()); // a new computer: the owner or IT is told (before this sign-in is recorded)
+                }
                 $signIn('auth.signed_in', $e->user);
                 if ($e->user instanceof User) {
                     app(SupportAccount::class)->signedIn($e->user); // the owner is told each time SyncLytics support signs in
