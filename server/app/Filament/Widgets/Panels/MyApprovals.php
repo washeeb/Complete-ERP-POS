@@ -2,8 +2,10 @@
 
 namespace App\Filament\Widgets\Panels;
 
+use App\Domain\Access\OwnerSeparation;
 use App\Filament\Pages\PricesToReview;
 use App\Filament\Pages\TimeApprovals;
+use App\Filament\Resources\AccessRequests\AccessRequestResource;
 use App\Filament\Resources\DirectPurchases\DirectPurchaseResource;
 use App\Filament\Resources\ExpenseClaims\ExpenseClaimResource;
 use App\Filament\Resources\LeaveRequests\LeaveRequestResource;
@@ -12,6 +14,7 @@ use App\Filament\Resources\PurchaseOrders\PurchaseOrderResource;
 use App\Filament\Resources\StockAdjustments\StockAdjustmentResource;
 use App\Filament\Resources\StockCostRuns\StockCostRunResource;
 use App\Filament\Support\Erp;
+use App\Models\AccessRequest;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Facades\DB;
 
@@ -59,6 +62,9 @@ class MyApprovals extends Widget
             $isPage = ! method_exists($resource, 'canViewAny');
             $out[] = ['label' => $label, 'count' => $n, 'url' => $isPage ? ($resource::canAccess() ? $resource::getUrl() : null) : ($resource::canViewAny() ? $resource::getUrl('index') : null)];
         }
+        if (self::decidesAccess()) { // IT Admin's access requests: the owner and SyncLytics support decide
+            $out[] = ['label' => 'Access requests', 'count' => AccessRequest::query()->waiting()->where('requested_by', '<>', $me->id)->count(), 'url' => AccessRequestResource::getUrl('index')];
+        }
         if (TimeApprovals::canAccess()) { // time belongs to a branch through its project
             $out[] = ['label' => 'Timesheets', 'count' => TimeApprovals::waiting()->count(), 'url' => TimeApprovals::getUrl()];
         }
@@ -68,6 +74,13 @@ class MyApprovals extends Widget
 
     public static function canView(): bool
     {
-        return collect(self::KINDS)->contains(fn ($k) => Erp::canAnywhere($k[1])) || TimeApprovals::canAccess();
+        return collect(self::KINDS)->contains(fn ($k) => Erp::canAnywhere($k[1])) || TimeApprovals::canAccess() || self::decidesAccess();
+    }
+
+    private static function decidesAccess(): bool
+    {
+        $me = Erp::user();
+
+        return $me && ($me->isSupport() || OwnerSeparation::isOwnerAccount($me));
     }
 }

@@ -11,6 +11,7 @@ use App\Support\StaffCard;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Support\Exceptions\Halt;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\HtmlString;
@@ -28,7 +29,14 @@ class EditUser extends EditRecord
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        return Erp::run(fn ($actor) => app(AccessService::class)->updateUser($actor, $record, $data, $data['reason'] ?? null));
+        $user = Erp::run(fn ($actor) => app(AccessService::class)->updateUser($actor, $record, $data, $data['reason'] ?? null));
+        if ($user === null) { // IT Admin: sent for approval; the page shows the user as they still are
+            $this->redirect(UserResource::getUrl('edit', ['record' => $record]));
+
+            throw new Halt;
+        }
+
+        return $user;
     }
 
     protected function getHeaderActions(): array
