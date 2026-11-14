@@ -16,6 +16,7 @@ Schedule::command('erp:imports')->everyMinute()->runInBackground(); // large imp
 // Live updates, store pushes and incoming store orders (each run loops ~55 s).
 Schedule::command('erp:relay')->everyMinute()->withoutOverlapping(2)->runInBackground();
 Schedule::command('erp:channels:reconcile')->everyFifteenMinutes()->withoutOverlapping(30)->runInBackground();
+Schedule::command('erp:access-requests')->hourly(); // IT Admin's access requests not answered in 72 hours lapse
 Schedule::command('erp:device-health')->everyFifteenMinutes()->withoutOverlapping(10); // tills with problems: IT is told once a day per problem
 Schedule::command('erp:expire-balances')->dailyAt('02:30')->withoutOverlapping(60);
 Schedule::command('erp:gl-post')->everyMinute()->withoutOverlapping(30)->runInBackground(); // the books follow sales and stock within a minute

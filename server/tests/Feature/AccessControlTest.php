@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Access\AccessService;
+use App\Domain\Access\SentForApproval;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\DomainException;
 use App\Models\Role;
@@ -120,11 +121,14 @@ it('refuses adding a permission the editor does not hold company-wide', function
     $this->access->saveRole(actorFor($mgr->fresh()), $bm, [], [...$bm->permissionKeys(), 'audit.verify']);
 })->throws(AccessDenied::class);
 
-it('refuses creating a user above the creator\'s own level', function () {
+it('sends a user above IT\'s own level to the owner, and never takes the SyncLytics level', function () {
     $it = staff($this->owner, 'it2', 4, 'it_admin');
-    $this->access->createUser(actorFor($it), ['name' => 'Boss', 'username' => 'boss', 'email' => 'b@demo.test',
-        'password' => 'correct-horse-battery', 'security_level' => 5]);
-})->throws(AccessDenied::class);
+    // Owner decision 2026-11-13: IT asks, the owner approves; the owner's level decides (AccessRequestsTest).
+    expect(fn () => $this->access->createUser(actorFor($it), ['name' => 'Boss', 'username' => 'boss', 'email' => 'b@demo.test',
+        'password' => 'correct-horse-battery', 'security_level' => 5]))->toThrow(SentForApproval::class)
+        ->and(fn () => $this->access->createUser(actorFor($it), ['name' => 'Fake support', 'username' => 'fake', 'email' => 'f@demo.test',
+            'password' => 'correct-horse-battery', 'security_level' => 7]))->toThrow(AccessDenied::class);
+});
 
 it('requires a reason for temporary access', function () {
     $s = staff($this->owner, 'sup', 3);

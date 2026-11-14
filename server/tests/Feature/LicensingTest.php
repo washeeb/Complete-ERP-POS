@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Access\AccessService;
+use App\Domain\Access\SentForApproval;
 use App\Domain\Customers\CustomerService;
 use App\Domain\Devices\DeviceService;
 use App\Domain\Launch\PracticeCompany;
@@ -275,8 +276,9 @@ it('lets the owner grant roles on a licence without HR, without granting what th
     $yaw = staff($this->owner, 'yaw', 4); // before IT Admin: after that the owner no longer adds users
     $itAdmin = staff($this->owner, 'esi', 4, 'it_admin');
     app(Authorizer::class)->forget();
+    // It goes to the owner, who holds them (owner decision 2026-11-13).
     expect(fn () => $access->grant(actorFor($itAdmin), $yaw, Role::where('key', 'hr_manager')->first(), ScopeType::Tenant, $this->tenant->id))
-        ->toThrow(AccessDenied::class, 'hold all of its permissions');
+        ->toThrow(SentForApproval::class);
 });
 
 it('does not count the practice company\'s logins against the licensed users', function () {

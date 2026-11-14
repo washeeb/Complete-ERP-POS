@@ -1,9 +1,12 @@
 <?php
 
+use App\Domain\Access\AccessRequests;
 use App\Domain\Access\AccessService;
+use App\Domain\Access\SentForApproval;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\DomainException;
 use App\Filament\Resources\Users\Pages\EditUser;
+use App\Models\AccessRequest;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
@@ -27,7 +30,12 @@ it('lets someone who manages users reset someone below them, never themselves or
     $manager = withMfa(staff($this->owner, 'mgr', 4, 'it_admin')); // manages users
     $access = app(AccessService::class);
 
-    $access->resetMfa(actorFor($manager), $cashier, 'New phone');
+    // IT asks; the owner approves (owner decision 2026-11-13). Never itself, never someone above: refused at once.
+    try {
+        $access->resetMfa(actorFor($manager), $cashier, 'New phone');
+    } catch (SentForApproval $e) {
+        app(AccessRequests::class)->approve(actorFor(withMfa($this->owner->fresh())), $e->request);
+    }
     expect($cashier->fresh()->app_authentication_secret)->toBeNull()
         ->and(fn () => $access->resetMfa(actorFor($manager), $manager, 'Mine'))->toThrow(DomainException::class)
         ->and(fn () => $access->resetMfa(actorFor($manager), $this->owner, 'Above me'))->toThrow(AccessDenied::class)
@@ -38,6 +46,7 @@ it('lets someone who manages users reset someone below them, never themselves or
     Filament::setCurrentPanel(Filament::getPanel('admin'));
     $this->actingAs($manager, 'web');
     Livewire::test(EditUser::class, ['record' => $cashier->id])
-        ->callAction('resetMfa', ['reason' => 'Lost phone'])->assertHasNoActionErrors();
-    expect($cashier->fresh()->app_authentication_secret)->toBeNull();
+        ->callAction('resetMfa', ['reason' => 'Lost phone'])->assertHasNoActionErrors()->assertNotified('Sent for approval');
+    expect($cashier->fresh()->app_authentication_secret)->not->toBeNull()
+        ->and(AccessRequest::where('kind', 'user.reset_mfa')->where('status', 'pending')->count())->toBe(1);
 });

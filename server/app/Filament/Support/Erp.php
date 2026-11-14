@@ -2,8 +2,10 @@
 
 namespace App\Filament\Support;
 
+use App\Domain\Access\SentForApproval;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
+use App\Models\AccessRequest;
 use App\Models\User;
 use App\Security\Authorizer;
 use App\Support\IndustryContext;
@@ -79,10 +81,21 @@ final class Erp
      * @param  callable(Actor): T  $call
      * @return T
      */
+    /** IT Admin's access change went to the owner or SyncLytics support (owner decision 2026-11-13). */
+    public static function sentForApproval(SentForApproval $e): void
+    {
+        Notification::make()->info()->title('Sent for approval')->persistent()
+            ->body($e->request->summary.' The owner or SyncLytics support approves it (People & access → Access requests); it lapses after '.AccessRequest::HOURS.' hours if not answered.')->send();
+    }
+
     public static function run(callable $call, ?string $success = null): mixed
     {
         try {
             $result = $call(self::actor());
+        } catch (SentForApproval $e) {
+            self::sentForApproval($e);
+
+            return null; // not done yet: the owner or SyncLytics support decides
         } catch (DomainException $e) {
             Notification::make()->danger()->title('Not saved')->body($e->getMessage())->persistent()->send();
 

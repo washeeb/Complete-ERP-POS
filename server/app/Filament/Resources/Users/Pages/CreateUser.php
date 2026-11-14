@@ -6,6 +6,7 @@ use App\Domain\Access\AccessService;
 use App\Filament\Resources\Users\UserResource;
 use App\Filament\Support\Erp;
 use Filament\Resources\Pages\CreateRecord;
+use Filament\Support\Exceptions\Halt;
 use Illuminate\Database\Eloquent\Model;
 
 class CreateUser extends CreateRecord
@@ -14,7 +15,14 @@ class CreateUser extends CreateRecord
 
     protected function handleRecordCreation(array $data): Model
     {
-        return Erp::run(fn ($actor) => app(AccessService::class)->createUser($actor, $data));
+        $user = Erp::run(fn ($actor) => app(AccessService::class)->createUser($actor, $data));
+        if ($user === null) { // IT Admin: sent to the owner or SyncLytics support for approval
+            $this->redirect(UserResource::getUrl('index'));
+
+            throw new Halt;
+        }
+
+        return $user;
     }
 
     protected function getRedirectUrl(): string
