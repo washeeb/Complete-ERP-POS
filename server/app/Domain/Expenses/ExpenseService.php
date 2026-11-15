@@ -14,6 +14,7 @@ use App\Models\Branch;
 use App\Models\ExpenseClaim;
 use App\Models\Project;
 use App\Security\Authorizer;
+use App\Security\Reconfirm;
 use Illuminate\Support\Carbon;
 
 /**
@@ -118,6 +119,7 @@ final class ExpenseService
         if (! BankingService::isMoneyAccount($from)) {
             throw new DomainException("{$from->label()} is not a cash, bank or mobile money account.");
         }
+        Reconfirm::require($actor, (int) $claim->amount_minor, 'paying an expense claim');
         $day = Carbon::parse($paidOn ?? now()->toDateString());
         if ($day->isAfter(now()->endOfDay())) {
             throw new DomainException('The date cannot be in the future.');

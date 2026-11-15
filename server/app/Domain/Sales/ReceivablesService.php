@@ -20,6 +20,7 @@ use App\Models\SalePayment;
 use App\Models\Tenant;
 use App\Models\Warehouse;
 use App\Security\Authorizer;
+use App\Security\Reconfirm;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -97,6 +98,8 @@ final class ReceivablesService
         if (trim($reason) === '') {
             throw new DomainException('Give the reason for the credit note.');
         }
+        // No goods back: a debt written off (always confirmed); goods back: like a refund, above the limit.
+        Reconfirm::require($actor, (int) $invoice->total_minor, $returnTo ? 'a credit note' : 'writing off what a customer owes', always: $returnTo === null);
         $customer = Customer::findOrFail($invoice->customer_id);
 
         return $this->recorder->transaction(function () use ($actor, $invoice, $reason, $returnTo, $branch, $customer) {

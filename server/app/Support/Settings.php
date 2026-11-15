@@ -43,6 +43,11 @@ final class Settings
             'label' => 'Require two-factor sign-in from security level',
             'help' => 'People at this level or above must set up an authenticator app before they can use the back office. Spec default: L3 (supervisors).',
         ],
+        'security.reconfirm_above_minor' => [
+            'type' => 'int', 'default' => 300000, 'min' => 0, 'max' => 100000000000, 'group' => 'Security',
+            'label' => "Confirm it's you before paying out more than (pesewas)",
+            'help' => 'Paying a supplier, an expense claim, payroll or a staff loan, moving money between accounts, or a credit note for returned goods above this amount: the person enters their authenticator code (or a passkey, or a code by WhatsApp or e-mail) first. Writing a debt off and new bank or MoMo details always ask. 300000 = GH₵ 3,000; 0 = every payment. Changing it asks too.',
+        ],
         'security.pin_max_attempts' => [
             'type' => 'int', 'who' => 'technical', 'default' => 5, 'min' => 3, 'max' => 10, 'group' => 'Security',
             'label' => 'Wrong POS PINs before the PIN is locked',
