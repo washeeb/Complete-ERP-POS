@@ -1,2 +1,0 @@
-## Notes without conflicts — branch `notes-without-conflicts`
-- Per-change note files: `changes/`, `docs/state/`, `docs/decisions/` (READMEs there); `pos/scripts/notes.mjs` (`npm run notes`, `--dry`) folds them into CHANGELOG.md (under [Unreleased], grouped by kind), docs/STATE.md and docs/DECISIONS.md (appended), then deletes them. CLAUDE.md end-of-task rule changed accordingly. `docs/manual/*-Installation-Guide.pdf` untracked and git-ignored (built locally by `npm run manual`).
