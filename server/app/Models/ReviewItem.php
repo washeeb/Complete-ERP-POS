@@ -17,6 +17,7 @@ class ReviewItem extends Model
         'grant_expired' => 'Sold after the offline sign-in expired',
         'grant_revoked' => 'Sold by a person or device later revoked',
         'clock_skew' => 'Till clock was wrong',
+        'after_count' => 'Sale reached the server after its shift was counted (check the count)',
         'negative_stock' => 'Stock went below zero after syncing',
         'sync_conflict' => 'Sync conflict',
         'sync_failed' => 'Change from another node could not be applied',

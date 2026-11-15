@@ -269,7 +269,9 @@ pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
             let path = app.path().app_config_dir()?.join("till.json");
-            let config: Config = fs::read(&path).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_default();
+            // A new till opens the drawer after cash by default (owner 2026-11-14: a fresh desktop till never opened it until
+            // the box was ticked); a till already set up keeps its saved choice. No drawer: the printer ignores the pulse.
+            let config: Config = fs::read(&path).ok().and_then(|b| serde_json::from_slice(&b).ok()).unwrap_or_else(|| Config { drawer: true, ..Config::default() });
             // Always start on the local set-up page: it opens the saved server when that answers (or, once it has
             // answered before, when the till must work offline), and otherwise shows what is wrong so it can be fixed.
             let start = WebviewUrl::App("index.html".into());

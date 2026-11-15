@@ -75,7 +75,7 @@ final class DrawerService
             throw new DomainException('Choose what you are doing with the drawer.');
         }
         $till = Till::find($device->till_id) ?? throw new DomainException('This device is not assigned to a till.', 'no_till');
-        $shift = ($p['shift_id'] ?? null) ? Shift::where('device_id', $device->id)->find($p['shift_id']) : Shift::where('device_id', $device->id)->where('status', 'open')->first();
+        $shift = ($p['shift_id'] ?? null) ? ShiftService::resolve($device, $p['shift_id']) : Shift::where('device_id', $device->id)->where('status', 'open')->first();
         if (! $shift || (! $offline && $shift->status !== 'open')) {
             throw new DomainException('Open a shift on this till first.', 'no_shift');
         }
