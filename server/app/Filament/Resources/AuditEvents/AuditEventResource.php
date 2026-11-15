@@ -118,12 +118,12 @@ class AuditEventResource extends Resource
             ->filters([
                 SelectFilter::make('source')->options(['web' => 'Back office', 'pos' => 'POS', 'api' => 'API', 'cli' => 'Command line', 'system' => 'System', 'sync' => 'Sync']),
                 SelectFilter::make('computer')->label('Computer')->options(fn () => Computer::labels())
-                    ->query(fn (Builder $q, array $data) => filled($data['value'] ?? null) ? $q->whereRaw("client->>'computer_key' = ?", [$data['value']]) : $q),
+                    ->query(fn (Builder $query, array $data) => filled($data['value'] ?? null) ? $query->whereRaw("client->>'computer_key' = ?", [$data['value']]) : $query),
                 SelectFilter::make('signins')->label('Sign-ins')->options(['auth' => 'Back-office sign-ins and sign-outs', 'pos' => 'Till sign-ins'])
-                    ->query(fn (Builder $q, array $data) => match ($data['value'] ?? null) {
-                        'auth' => $q->where('action', 'like', 'auth.%'),
-                        'pos' => $q->whereIn('action', ['pos.login', 'pos.login_failed', 'pos.pin_locked']),
-                        default => $q,
+                    ->query(fn (Builder $query, array $data) => match ($data['value'] ?? null) {
+                        'auth' => $query->where('action', 'like', 'auth.%'),
+                        'pos' => $query->whereIn('action', ['pos.login', 'pos.login_failed', 'pos.pin_locked']),
+                        default => $query,
                     }),
             ])
             ->defaultSort('seq', 'desc')

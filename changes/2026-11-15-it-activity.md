@@ -1,0 +1,4 @@
+### Added
+- **IT and support activity for the owner** (owner decision: "Owner sees all IT activity"). **People & access → IT and support activity** lists everything IT Admin and SyncLytics support did, and every technical change by anyone (users, access and access requests, roles, devices and computers, settings, sync, remote sessions, API keys, modules, backups, licence, sign-in security), newest first, in plain words with who, what, the details and the computer. Filters: who (IT and support only, or support only) and when (last 7, 30 or 90 days, or all). A row opens the full audit record. The menu shows how many in the last 7 days. Read-only.
+### Fixed
+- **Some list filters did nothing, and Customers → *Owes money* broke the customer list.** The audit log's *Computer* and *Sign-ins* filters, Sales *Today*, Customers *On credit*, Shifts, Products, Invoices *Overdue*, MoMo charges and the support screens' filters were ignored. They now filter as labelled.

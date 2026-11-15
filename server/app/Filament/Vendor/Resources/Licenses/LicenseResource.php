@@ -212,13 +212,13 @@ class LicenseResource extends Resource
             ->filters([
                 SelectFilter::make('state')->label('Status')->options(['current' => 'Current (not replaced or revoked)', 'expiring' => 'Ending within 60 days',
                     'expired' => 'Ended', 'revoked' => 'Revoked', 'replaced' => 'Replaced'])->default('current')
-                    ->query(fn (Builder $q, array $data) => match ($data['value'] ?? null) {
-                        'current' => $q->whereNull('revoked_at')->whereNull('superseded_by'),
-                        'expiring' => $q->whereNull('revoked_at')->whereNull('superseded_by')->whereBetween('expires_on', [now()->toDateString(), now()->addDays(60)->toDateString()]),
-                        'expired' => $q->whereNull('revoked_at')->whereNull('superseded_by')->where('expires_on', '<', now()->toDateString()),
-                        'revoked' => $q->whereNotNull('revoked_at'),
-                        'replaced' => $q->whereNotNull('superseded_by'),
-                        default => $q,
+                    ->query(fn (Builder $query, array $data) => match ($data['value'] ?? null) {
+                        'current' => $query->whereNull('revoked_at')->whereNull('superseded_by'),
+                        'expiring' => $query->whereNull('revoked_at')->whereNull('superseded_by')->whereBetween('expires_on', [now()->toDateString(), now()->addDays(60)->toDateString()]),
+                        'expired' => $query->whereNull('revoked_at')->whereNull('superseded_by')->where('expires_on', '<', now()->toDateString()),
+                        'revoked' => $query->whereNotNull('revoked_at'),
+                        'replaced' => $query->whereNotNull('superseded_by'),
+                        default => $query,
                     }),
                 SelectFilter::make('customer_id')->label('Customer')->relationship('client', 'name')->searchable()->preload(),
                 SelectFilter::make('plan_id')->label('Plan')->relationship('plan', 'name'),

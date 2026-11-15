@@ -167,7 +167,7 @@ class SaleResource extends Resource
             ])
             ->filters([
                 SelectFilter::make('branch_id')->label('Branch')->options(fn () => Branch::orderBy('code')->pluck('code', 'id')),
-                Filter::make('today')->label('Today')->query(fn ($q) => $q->where('occurred_at', '>=', now()->startOfDay())),
+                Filter::make('today')->label('Today')->query(fn ($query) => $query->where('occurred_at', '>=', now()->startOfDay())),
                 ListFilters::dates('occurred_at', 'Sold'),
                 ListFilters::person(self::class, 'cashier_id', 'cashier_name', 'Teller'),
                 SelectFilter::make('payment_method')->label('Paid by')->multiple()->options(SalePayment::METHODS)

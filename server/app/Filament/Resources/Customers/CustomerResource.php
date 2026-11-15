@@ -273,8 +273,8 @@ class CustomerResource extends Resource
             ])
             ->filters([
                 SelectFilter::make('type')->options(Customer::TYPES),
-                Filter::make('owing')->label('Owes money')->query(fn (Builder $q) => $q->whereHas('balance', fn ($b) => $b->where('balance_minor', '>', 0))),
-                Filter::make('credit')->label('Credit customers')->query(fn (Builder $q) => $q->whereNotNull('credit_limit_minor')),
+                Filter::make('owing')->label('Owes money')->query(fn (Builder $query) => $query->whereHas('balance', fn ($b) => $b->where('balance_minor', '>', 0))),
+                Filter::make('credit')->label('Credit customers')->query(fn (Builder $query) => $query->whereNotNull('credit_limit_minor')),
             ])
             ->defaultSort('name')
             ->recordActions([ViewAction::make(), EditAction::make()]));
