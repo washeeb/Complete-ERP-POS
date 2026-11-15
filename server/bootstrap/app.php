@@ -56,7 +56,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     default => 422,
                 };
 
-                return response()->json(['error' => $e->errorCode, 'detail' => $e->getMessage()], $status);
+                return response()->json(['error' => $e->errorCode, 'detail' => $e->getMessage()] + ($e->data ? ['data' => $e->data] : []), $status);
             }
         });
         // Back-office pages: the person is told what really failed, with the reference to find it in the server log

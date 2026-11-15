@@ -83,6 +83,16 @@ final class Settings
             'label' => 'Opening the drawer without a sale needs a manager',
             'help' => 'On: "Open drawer (no sale)" on the till asks for the username and PIN of someone allowed to approve it (managers, unless you change the roles); offline, the PIN is checked on the till and anything the person was not allowed to approve goes to the review list. Off: the cashier opens it with a reason only. On for every company unless switched off.',
         ],
+        'pos.void_approval' => [
+            'type' => 'bool', 'default' => false, 'group' => 'Tills and cash',
+            'label' => 'Removing items from a sale needs a supervisor',
+            'help' => 'On: taking an item off a sale, lowering its quantity or cancelling the whole sale on the till (above the amount below) asks a supervisor: from their phone (Sales → Till requests) or at the till with their staff card and PIN. Why: items taken off after the customer paid in cash are a common way to steal. Off (the default): the cashier removes items freely, as before.',
+        ],
+        'pos.void_approval_above_minor' => [
+            'type' => 'int', 'default' => 0, 'min' => 0, 'max' => 100000000, 'group' => 'Tills and cash',
+            'label' => 'Removing items: a supervisor approves above (pesewas)',
+            'help' => '0 = every removal. e.g. 5000 = GHS 50: removing items worth up to GHS 50 needs nobody. Only when the setting above is on.',
+        ],
         'pos.payout_approval_minor' => [
             'type' => 'int', 'default' => 10000, 'min' => 0, 'max' => 100000000, 'group' => 'Tills and cash',
             'label' => 'Expenses paid from the till: a supervisor approves above (pesewas)',

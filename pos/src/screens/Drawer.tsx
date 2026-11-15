@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { ApiError } from '../api'
+import { ApiError, type Approval } from '../api'
 import { recordDrawer, shrinkPhoto, type DrawerBody } from '../drawer'
 import { openDrawer } from '../hardware'
 import { formatMoney, parseMoney } from '../money'
 import { offlineSignIn } from '../offline'
 import type { DrawerSlip } from '../slip'
 import type { Bootstrap } from '../types'
-import { SignedIn } from './SignedIn'
+import { ManagerApproval } from './ManagerApproval'
 
 type Tab = 'payout' | 'payin' | 'drop' | 'no_sale'
 const TABS: { key: Tab; label: string }[] = [
@@ -29,8 +29,7 @@ export function DrawerScreen({ boot, online, initial = 'payout', onDone, onCance
   const [reason, setReason] = useState('')
   const [reference, setReference] = useState('')
   const [photo, setPhoto] = useState<string | null>(null)
-  const [supUser, setSupUser] = useState('')
-  const [supPin, setSupPin] = useState('')
+  const [asking, setAsking] = useState(false) // a manager's yes is being asked for
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const money = (m: number) => formatMoney(m, boot.company.currency, boot.company.exponent)
@@ -40,14 +39,20 @@ export function DrawerScreen({ boot, online, initial = 'payout', onDone, onCance
   const needsSupervisor = tab === 'drop' || (tab === 'payout' && minor > drawer.payout_approval_minor) || noSaleApproval
   const approver = noSaleApproval ? 'Manager' : 'Supervisor'
 
-  async function submit(e: React.FormEvent) {
+  function submit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    if (needsSupervisor) setAsking(true)
+    else void save(null)
+  }
+
+  async function save(approval: Approval | null) {
+    setAsking(false)
     setBusy(true)
     const body: DrawerBody = {
       kind: tab, amount_minor: tab === 'no_sale' ? 0 : minor, account_id: tab === 'payout' ? accountId : null, payee: tab === 'payout' ? payee.trim() || null : null,
       reason: reason.trim() || null, reference: tab === 'payout' ? reference.trim() || null : null, photo: tab === 'payout' ? photo : null,
-      approval: needsSupervisor ? { username: supUser.trim(), pin: supPin } : null,
+      approval: needsSupervisor ? approval : null,
     }
     try {
       let r: Awaited<ReturnType<typeof recordDrawer>>
@@ -55,9 +60,9 @@ export function DrawerScreen({ boot, online, initial = 'payout', onDone, onCance
       try {
         r = await recordDrawer(online, body)
       } catch (err) {
-        if (!(err instanceof ApiError && err.code === 'offline_approval_needed') || !needsSupervisor) throw err
+        if (!(err instanceof ApiError && err.code === 'offline_approval_needed') || !approval || !('username' in approval)) throw err
         // The server cannot be reached: the supervisor's PIN is checked here against their offline sign-in.
-        const g = await offlineSignIn(supUser, supPin)
+        const g = await offlineSignIn(approval.username, approval.pin)
         if (g.user_id === boot.user.id) throw new Error('Another person must approve this.')
         r = await recordDrawer(false, { ...body, approved_by: g.user_id })
         approver = g.user_name
@@ -87,7 +92,7 @@ export function DrawerScreen({ boot, online, initial = 'payout', onDone, onCance
   }
 
   const ready = (tab === 'no_sale' || minor > 0) && (tab !== 'payout' || accountId) && (tab === 'drop' || reason.trim() !== '')
-    && (!needsSupervisor || (supUser.trim() !== '' && supPin.length >= 4))
+
 
   return (
     <div className="modal" role="dialog" aria-modal="true" aria-label="Drawer">
@@ -131,20 +136,19 @@ export function DrawerScreen({ boot, online, initial = 'payout', onDone, onCance
         )}
         {tab === 'drop' && <p className="muted small">The supervisor counts the cash in front of you and takes it to the safe.</p>}
         {noSaleApproval && <p className="muted small">A manager approves opening the drawer without a sale.</p>}
-        {needsSupervisor && (
-          <fieldset className="supervisor">
-            <legend>{approver}</legend>
-            <SignedIn />
-            <label>{approver} username<input autoComplete="off" value={supUser} onChange={(e) => setSupUser(e.target.value)} autoCapitalize="none" /></label>
-            <label>{approver} PIN<input type="text" className="pin-mask" autoComplete="off" inputMode="numeric" value={supPin} onChange={(e) => setSupPin(e.target.value.replace(/\D/g, '').slice(0, 8))} /></label>
-          </fieldset>
-        )}
+        {needsSupervisor && <p className="muted small">Next, a {approver.toLowerCase()} approves: from their phone, or here with their card and PIN.</p>}
         {error && <p className="error" role="alert">{error}</p>}
         <div className="row">
           <button type="button" onClick={onCancel} disabled={busy}>Back</button>
           <button className="primary big" disabled={busy || !ready}>{busy ? 'Saving…' : TABS.find((t) => t.key === tab)!.label}</button>
         </div>
       </form>
+      {asking && (
+        <ManagerApproval title={`${approver} approval`} who={noSaleApproval ? 'manager' : 'supervisor'} online={online} selfId={boot.user.id}
+          ask={{ kind: tab === 'no_sale' ? 'no_sale' : 'drawer', amount_minor: tab === 'no_sale' ? 0 : minor, reason: reason.trim() || null,
+            summary: tab === 'no_sale' ? 'Open the drawer without a sale' : tab === 'drop' ? `Cash drop of ${money(minor)}` : `Pay out ${money(minor)}${payee.trim() ? ` to ${payee.trim()}` : ''}` }}
+          onApproved={(a) => void save(a)} onCancel={() => setAsking(false)} />
+      )}
     </div>
   )
 }

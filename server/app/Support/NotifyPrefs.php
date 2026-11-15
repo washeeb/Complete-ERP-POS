@@ -12,19 +12,19 @@ use App\Models\User;
  */
 final class NotifyPrefs
 {
-    public const CHANNELS = ['in_app' => 'In the back office (the bell)', 'email' => 'E-mail', 'sms' => 'SMS', 'whatsapp' => 'WhatsApp'];
+    public const CHANNELS = ['in_app' => 'In the back office (the bell)', 'push' => 'On my phone or computer (notification)', 'email' => 'E-mail', 'sms' => 'SMS', 'whatsapp' => 'WhatsApp'];
 
     /** topic => [title, what it covers, channels its senders use] */
     public const TOPICS = [
-        'approvals' => ['Waiting for your approval', 'Orders, stock adjustments, expense claims, leave and access requests waiting for you.', ['in_app']],
+        'approvals' => ['Waiting for your approval', 'Orders, stock adjustments, expense claims, leave and access requests waiting for you, and tills asking for your yes.', ['in_app', 'push']],
         'purchasing' => ['Buying', 'Purchase requests, quotes from suppliers, their confirmations and invoices, goods on the way, contracts ending.', ['in_app']],
         'stock' => ['Stock', 'Products at or below their minimum.', ['in_app']],
         'pricing' => ['Prices to review', 'New prices worked out by the pricing rules, waiting for your approval.', ['in_app']],
-        'iot' => ['Sensor alarms', 'A fridge, freezer or room out of range, power off, a door left open, a sensor gone silent.', ['in_app', 'whatsapp', 'sms']],
+        'iot' => ['Sensor alarms', 'A fridge, freezer or room out of range, power off, a door left open, a sensor gone silent.', ['in_app', 'push', 'whatsapp', 'sms']],
         'service' => ['Service desk and maintenance', 'Tickets for you and their deadlines, late tickets, work orders and breakdowns.', ['in_app']],
         'projects' => ['Projects', 'Tasks given to you, your time approved or sent back.', ['in_app']],
         'crm' => ['Customers and deals (CRM)', 'Follow-ups due, leads and deals given to you.', ['in_app']],
-        'cash' => ['Cash', 'A till holding more cash than allowed (cash drop needed).', ['in_app']],
+        'cash' => ['Cash', 'A till holding more cash than allowed (cash drop needed).', ['in_app', 'push']],
         'pharmacy' => ['Pharmacy', 'Medicine sales to sign off.', ['in_app']],
         'payments' => ['Payments received', 'Mobile money and card payments as they come in, and their summary.', ['in_app', 'email', 'sms', 'whatsapp']],
         'summary' => ['Daily summary', 'The day\'s figures, once a day.', ['in_app', 'email', 'whatsapp']],

@@ -4,7 +4,9 @@ import { CameraScan } from './CameraScan'
 import { cachedImage } from '../brand'
 import { isDesktop, readScale } from '../hardware'
 import { beep } from '../prefs'
-import { api, ApiError } from '../api'
+import { api, ApiError, type Approval } from '../api'
+import { raisePeaks, removedSince, settlePeaks, voidNeedsApproval, type Peak, type Removed } from '../approve'
+import { ManagerApproval } from './ManagerApproval'
 import { addMarkdown, addToCart, addWeighed, findByBarcode, priceCart, qtyAllowed, resolvePrice, search, setManual, setQty, type CartLine } from '../cart'
 import { findMarkdown, parseScaleLabel, productForPlu } from '../scale'
 import { db, nextSeq, type CacheRecord } from '../db'
@@ -73,9 +75,9 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   const [readingPick, setReadingPick] = useState<{ product: Product; unit: Unit } | null>(null)
   const [picking, setPicking] = useState(false)
   // seq: a retry of the same sale (after an approval) keeps its receipt number, so numbers have no gaps.
-  type Approvals = { credit?: { username: string; pin: string }; discount?: { username: string; pin: string }; offlineApproverId?: string; seq?: number; rx?: Rx; tip?: number
+  type Approvals = { credit?: { username: string; pin: string }; discount?: Approval; offlineApproverId?: string; seq?: number; rx?: Rx; tip?: number
     tradeIns?: TradeInItem[]; tradeInApproval?: { username: string; pin: string } | null }
-  const [approval, setApproval] = useState<{ payments: Payment[]; message: string; kind: 'credit' | 'discount' | 'discount_offline' | 'sign_in'; approvals: Approvals } | null>(null)
+  const [approval, setApproval] = useState<{ payments: Payment[]; message: string; kind: 'credit' | 'discount' | 'discount_offline' | 'sign_in'; approvals: Approvals; limit?: number } | null>(null)
   const [promotions, setPromotions] = useState<PromotionRow[]>([])
   const [utcOffset, setUtcOffset] = useState(0)
   const [grocery, setGrocery] = useState<Grocery | null>(null)
@@ -160,6 +162,10 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   }
   const list = boot.price_lists.find((l) => l.id === listId) ?? defaultList
   const money = (m: number) => formatMoney(m, boot.company.currency, boot.company.exponent)
+  // Removing items from a sale (company setting): what each line held at most, so what was taken off can be asked about.
+  const peaks = useRef<Record<string, Peak>>({})
+  const [voidAsk, setVoidAsk] = useState<{ removed: Removed[]; after: Pick<CartLine, 'key' | 'qtyMilli'>[]; then: () => void } | null>(null)
+  const voidAbove = boot.drawer?.void_approval_minor ?? null
   // The price of one unit on the price list in use, to check a price without adding the item.
   const priceOf = (p: Product, u: Unit) => resolvePrice(p, u.id, list.id, 1000, new Date())
   const cart = useMemo(() => priceCart(withDeposits(lines, products), list, new Date(), { promotions, branchId: boot.branch.id, utcOffsetMinutes: utcOffset, coupon, saleDiscountBp: saleBp,
@@ -376,7 +382,8 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
         setMessage(`${line.unit.uom_name} allows ${line.unit.decimals} decimal place(s).`)
         return
       }
-      setLines((l) => setQty(l, line.key, milli))
+      if (milli === 0) guardVoid(lines.filter((x) => x.key !== line.key), () => setLines((l) => setQty(l, line.key, 0)))
+      else setLines((l) => setQty(l, line.key, milli))
     } catch {
       setMessage('Enter a quantity like 2 or 1.5')
     }
@@ -387,7 +394,20 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
     setLines((l) => addToCart(setQty(l, line.key, 0), line.product, unit, line.qtyMilli))
   }
 
+  const pricedForPeaks = () => cart.lines.map((l) => ({ key: l.key, name: l.product.name, qtyMilli: l.qtyMilli, totalMinor: l.total }))
+  useEffect(() => { // an empty sale (paid, sent or cleared with approval) starts afresh
+    peaks.current = lines.length ? raisePeaks(peaks.current, pricedForPeaks()) : {}
+  }, [cart]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /** Taking items off: above the company's amount a supervisor approves first (from their phone, or here). */
+  function guardVoid(after: Pick<CartLine, 'key' | 'qtyMilli'>[], apply: () => void) {
+    const removed = removedSince(peaks.current, after)
+    if (!voidNeedsApproval(removed, voidAbove)) return apply()
+    setVoidAsk({ removed, after, then: apply })
+  }
+
   function startPay() {
+    if (!voidAsk && voidNeedsApproval(removedSince(peaks.current, lines), voidAbove)) return guardVoid(lines, startPay)
     if (orderMode) {
       sendOrder()
       return
@@ -505,7 +525,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
         return
       }
       if (e?.code === 'discount_needs_approval' || (retrying && approvals.discount)) {
-        setApproval({ payments, message: e!.message, kind: 'discount', approvals: { ...approvals, discount: undefined } })
+        setApproval({ payments, message: e!.message, kind: 'discount', approvals: { ...approvals, discount: undefined }, limit: Number(e?.data.limit_amount ?? 0) })
         return
       }
       setPayError(err instanceof Error ? err.message : String(err))
@@ -675,7 +695,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
                   <td className="num">{l.price ? money(l.price.amount_minor) : 'no price'}</td>
                   <td className="num">{money(l.total)}</td>
                   <td>{!l.service && <button type="button" className="link" onClick={() => setEditing(l)} aria-label={`Discount ${l.product.name}`}>%</button>}
-                    {!l.diningItemId && !l.autoDeposit && <button type="button" className="link" onClick={() => setLines((x) => setQty(x, l.key, 0))} aria-label={`Remove ${l.service ? 'service charge' : l.product.name}`}>✕</button>}</td>
+                    {!l.diningItemId && !l.autoDeposit && <button type="button" className="link" onClick={() => guardVoid(lines.filter((x) => x.key !== l.key), () => setLines((x) => setQty(x, l.key, 0)))} aria-label={`Remove ${l.service ? 'service charge' : l.product.name}`}>✕</button>}</td>
                 </tr>
               ))}
             </tbody>
@@ -697,7 +717,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
             </label>
           </form>
           <div className="row">
-            <button type="button" onClick={() => setLines([])} disabled={!lines.length}>Clear</button>
+            <button type="button" onClick={() => guardVoid([], () => setLines([]))} disabled={!lines.length}>Clear</button>
             <button type="button" onClick={() => setDetailsPrompt({ message: '' })} aria-label="Sale details">
               Details{details.comment || details.name || details.phone || Object.keys(details.extras).length ? ' ✓' : ''}</button>
             <button type="button" className="primary big" onClick={startPay} disabled={!lines.length || busy}>{orderMode ? 'Send order (F12)' : cart.total < 0 ? 'Pay out deposit (F12)' : 'Pay (F12)'}</button>
@@ -756,7 +776,22 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
         onDone={(m, s) => { setDrawerTab(null); if (s) setSlip({ slip: s, message: m }); else setDrawerNote(m); checkCashLimit(online, boot.drawer?.cash_limit_minor ?? 0).then(setCashHigh).catch(() => undefined) }} />}
       {slip && <SlipScreen slip={slip.slip} boot={boot} message={slip.message} onDone={() => setSlip(null)} />}
       {picking && <CustomerPicker customers={customers} money={money} onPick={pickCustomer} onCancel={() => setPicking(false)} />}
-      {approval && <CreditApproval title={approval.kind === 'sign_in' ? 'Sign in again' : approval.kind === 'credit' ? 'Supervisor approval — credit' : 'Supervisor approval — discount'}
+      {voidAsk && (
+        <ManagerApproval title="Supervisor approval: removing items" who="supervisor" online={online} selfId={boot.user.id} spend
+          ask={{ kind: 'void', amount_minor: voidAsk.removed.reduce((a, r) => a + r.amountMinor, 0),
+            summary: `Take ${money(voidAsk.removed.reduce((a, r) => a + r.amountMinor, 0))} of items off the sale`,
+            details: voidAsk.removed.map((r) => ({ name: r.name, qty: prettyQty(r.qtyMilli), amount_minor: r.amountMinor })) }}
+          onApproved={() => { peaks.current = settlePeaks(peaks.current, voidAsk.after); const go = voidAsk.then; setVoidAsk(null); go() }}
+          onCancel={() => setVoidAsk(null)} />
+      )}
+      {approval?.kind === 'discount' && (
+        <ManagerApproval title="Supervisor approval: discount" who="supervisor" online={online} selfId={boot.user.id} busy={busy} message={approval.message}
+          ask={{ kind: 'discount', limit_amount: approval.limit ?? 0, amount_minor: cart.discount,
+            summary: `Discount of ${((approval.limit ?? 0) / 100).toFixed(2)} % (${money(cart.discount)} off a sale of ${money(cart.total)})`,
+            details: cart.lines.filter((l) => l.discount > 0).map((l) => ({ name: l.product.name, qty: prettyQty(l.qtyMilli), amount_minor: l.total })) }}
+          onApproved={(a) => void complete(approval.payments, { ...approval.approvals, discount: a })} onCancel={() => setApproval(null)} />
+      )}
+      {approval && approval.kind !== 'discount' && <CreditApproval title={approval.kind === 'sign_in' ? 'Sign in again' : approval.kind === 'credit' ? 'Supervisor approval — credit' : 'Supervisor approval — discount'}
         self={approval.kind === 'sign_in'} message={approval.message} busy={busy} onApprove={approve} onCancel={() => setApproval(null)} />}
       {editing && <LineDiscount line={editing} money={money} onSave={(m) => { setLines((x) => setManual(x, editing.key, m)); setEditing(null) }} onCancel={() => setEditing(null)} />}
       {takingPayment && customer && <AccountPayment customer={customer} money={money} exponent={boot.company.exponent}

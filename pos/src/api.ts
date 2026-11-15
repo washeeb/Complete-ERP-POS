@@ -3,6 +3,14 @@ import { db, getDevice, getSession } from './db'
 import type { OfflineGrant } from './db'
 import type { Bootstrap, PostedSale, Product, PromotionRow, Returnable, Shift, TillCustomer, WmsBin, WmsBootstrap, WmsCatalog, WmsCount, WmsOrder, WmsTransfer, WmsUnit, Grocery, Pharmacy, Restaurant, DiningOrder, Floor, KitchenTicket, Reservation, RepairJob, SerialInfo, Fashion, Alteration, Services, Appointment, ServicePass, StaffMember, VanDay } from './types'
 
+export type ApprovalKind = 'return' | 'discount' | 'void' | 'no_sale' | 'drawer' | 'restaurant_void'
+export type ApprovalAsk = { kind: ApprovalKind; summary: string; amount_minor?: number; limit_amount?: number; reason?: string | null
+  details?: { name: string; qty?: string; amount_minor?: number }[] }
+export type TillApprovalState = { id: string; kind: ApprovalKind; status: 'pending' | 'approved' | 'declined' | 'cancelled' | 'expired' | 'used'
+  decided_by: string | null; note: string | null; expires_at: string }
+/** A manager's yes: typed (or card-scanned) at the till, or given from their phone (the request id). */
+export type Approval = { username: string; pin: string } | { request_id: string }
+
 /** Automatic shifts: a manager allows a till to open outside trading hours, or again after its shift was closed. */
 export type ShiftGrant = { username: string; pin: string; reason: string }
 
@@ -12,12 +20,15 @@ export class ApiError extends Error {
   status: number
   /** Technical reason (the browser's), for the set-up screen and problem reports only. */
   detail?: string
+  /** Facts the server gives with the refusal (e.g. the discount a manager must approve). */
+  data: Record<string, unknown>
 
-  constructor(code: string, message: string, status: number, detail?: string) {
+  constructor(code: string, message: string, status: number, detail?: string, data: Record<string, unknown> = {}) {
     super(message)
     this.code = code
     this.status = status
     this.detail = detail
+    this.data = data
   }
 }
 
@@ -65,7 +76,7 @@ async function call<T>(path: string, init: RequestInit & { auth?: 'device' | 'se
     if (res.status === 401 && auth === 'session') await db.kv.delete('session')
     if (res.status === 401 && auth === 'session' && !body.error) throw new ApiError('signed_out', SIGNED_OUT, 401)
     const detail = body.detail ?? body.message ?? 'Something went wrong. Try again, or tell your supervisor.'
-    throw new ApiError(body.error ?? (res.status === 422 ? 'validation' : 'server'), detail, res.status)
+    throw new ApiError(body.error ?? (res.status === 422 ? 'validation' : 'server'), detail, res.status, undefined, body.data ?? {})
   }
   return body as T
 }
@@ -127,6 +138,13 @@ export const api = {
   /** A change to this till's own settings, approved by a manager's PIN and recorded in the audit log. */
   tillSettings: (approval: { username: string; pin: string }, changes: Record<string, [string, string]>) =>
     call<{ approved_by: string }>('pos/settings', { method: 'POST', body: JSON.stringify({ approval, changes }) }),
+  // Asking a manager who is not at the till (approve.ts).
+  askApproval: (body: ApprovalAsk) => call<{ approval: TillApprovalState }>('pos/approvals', { method: 'POST', body: JSON.stringify(body) }),
+  approvalStatus: (id: string) => call<{ approval: TillApprovalState }>(`pos/approvals/${id}`, { timeoutMs: 8000 }),
+  approveHere: (id: string, username: string, pin: string) =>
+    call<{ approval: TillApprovalState }>(`pos/approvals/${id}/here`, { method: 'POST', body: JSON.stringify({ username, pin }) }),
+  cancelApproval: (id: string) => call<{ approval: TillApprovalState }>(`pos/approvals/${id}/cancel`, { method: 'POST' }),
+  useApproval: (id: string) => call<{ approved_by: string }>(`pos/approvals/${id}/use`, { method: 'POST' }),
   drawer: (body: unknown) => call<{ event: { id: string; kind: string; amount_minor: number; approved_by: string | null } }>('pos/drawer', { method: 'POST', body: JSON.stringify(body) }),
   /** Device health (every few minutes); the answer carries fixes queued for this till in the back office. */
   health: (snapshot: unknown) => call<{ commands: import('./health').RemoteCommand[] }>('pos/health', { method: 'POST', body: JSON.stringify(snapshot) }),
@@ -153,7 +171,7 @@ export const dining = {
     call<{ order: DiningOrder }>('pos/restaurant/orders', { method: 'POST', body: JSON.stringify(body) }),
   addItems: (id: string, items: NewDiningItem[]) => call<{ order: DiningOrder }>(`pos/restaurant/orders/${id}/items`, { method: 'POST', body: JSON.stringify({ items }) }),
   fire: (id: string, course: number | null) => call<{ order: DiningOrder }>(`pos/restaurant/orders/${id}/fire`, { method: 'POST', body: JSON.stringify({ course }) }),
-  void: (id: string, itemIds: string[], reason: string, approval?: { username: string; pin: string } | null) =>
+  void: (id: string, itemIds: string[], reason: string, approval?: Approval | null) =>
     call<{ order: DiningOrder }>(`pos/restaurant/orders/${id}/void`, { method: 'POST', body: JSON.stringify({ item_ids: itemIds, reason, ...(approval ? { approval } : {}) }) }),
   serve: (id: string, itemIds: string[]) => call<{ order: DiningOrder }>(`pos/restaurant/orders/${id}/serve`, { method: 'POST', body: JSON.stringify({ item_ids: itemIds }) }),
   move: (id: string, tableId: string) => call<{ order: DiningOrder }>(`pos/restaurant/orders/${id}/move`, { method: 'POST', body: JSON.stringify({ dining_table_id: tableId }) }),
@@ -165,7 +183,7 @@ export const dining = {
     call<{ reservation: Reservation }>(`pos/restaurant/reservations${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(body) }),
   deposit: (id: string, body: { method: 'cash' | 'momo' | 'card'; amount_minor: number; provider?: string; reference?: string }) =>
     call<{ reservation: Reservation }>(`pos/restaurant/reservations/${id}/deposit`, { method: 'POST', body: JSON.stringify(body) }),
-  refund: (id: string, body: { method: 'cash' | 'momo' | 'card'; provider?: string; reference?: string; approval?: { username: string; pin: string } | null }) =>
+  refund: (id: string, body: { method: 'cash' | 'momo' | 'card'; provider?: string; reference?: string; approval?: Approval | null }) =>
     call<{ reservation: Reservation }>(`pos/restaurant/reservations/${id}/refund`, { method: 'POST', body: JSON.stringify(body) }),
   seat: (id: string, tableId?: string | null) => call<{ order: DiningOrder }>(`pos/restaurant/reservations/${id}/seat`, { method: 'POST', body: JSON.stringify({ dining_table_id: tableId ?? null }) }),
   noShow: (id: string) => call<{ reservation: Reservation }>(`pos/restaurant/reservations/${id}/no-show`, { method: 'POST' }),

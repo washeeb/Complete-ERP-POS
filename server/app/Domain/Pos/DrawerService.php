@@ -110,7 +110,7 @@ final class DrawerService
                     $unapproved = $approver ? "{$approver->name} may not approve opening the drawer without a sale" : 'nobody approved it';
                 }
             } elseif (! empty($p['approval'])) {
-                $approver = $this->approvals->verify($device, $p['approval'], $permission, $till, null, 0, $user->id);
+                $approver = $this->approvals->verify($device, $p['approval'], $permission, $till, null, (int) $amount, $user->id);
             } else {
                 throw new DomainException(match (true) {
                     $noSale => 'A manager opens the drawer without a sale: their username and PIN.',

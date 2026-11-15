@@ -1,7 +1,7 @@
 import { v7 as uuidv7 } from 'uuid'
 import { shiftClosedOnServer } from './shift'
 import { warrantyUntil } from './electronics'
-import { api, ApiError, SIGNED_OUT, van as vanApi, type OrderBody, type VisitBody, type ShiftGrant } from './api'
+import { api, ApiError, SIGNED_OUT, van as vanApi, type OrderBody, type VisitBody, type ShiftGrant, type Approval } from './api'
 import { db, getLocalShift, getSession, type OfflineGrant } from './db'
 import { enqueue, grantFor, saveGrant } from './offline'
 import type { Bootstrap, Payment, PostedSale, Shift, TradeInItem } from './types'
@@ -141,7 +141,7 @@ export type RxDetails = { prescriber_name: string; prescriber_reg_no?: string; f
 export async function submitSale(args: {
   boot: Bootstrap; online: boolean; cart: Cart; listId: string; payments: Payment[]; seq: number; catalogVersion: string | null
   customerId?: string | null; creditApproval?: { username: string; pin: string } | null; saleId?: string
-  coupon?: string | null; saleDiscountBp?: number; discountApproval?: { username: string; pin: string } | null; offlineApproverId?: string | null
+  coupon?: string | null; saleDiscountBp?: number; discountApproval?: Approval | null; offlineApproverId?: string | null
   prescription?: RxDetails | null; pharmacistApproval?: { username: string; pin: string } | null; pharmacistOfflineBy?: string | null
   diningOrderId?: string | null; tipMinor?: number; kitchenTickets?: boolean
   tradeIns?: TradeInItem[]; tradeInApproval?: { username: string; pin: string } | null

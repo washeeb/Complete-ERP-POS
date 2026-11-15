@@ -85,6 +85,7 @@
     {"key": "pos.discount", "label": "Give discounts and change prices at the till, up to your limit (or approve them by PIN)", "min_level": 3},
     {"key": "pos.drawer", "label": "Approve till pay-outs above the limit and take cash drops from tills (by PIN)", "min_level": 3},
     {"key": "pos.no_sale", "label": "Approve opening a till drawer without a sale (by PIN)", "min_level": 4},
+    {"key": "pos.void", "label": "Approve removing items from a sale at the till, when the company asks for it (by PIN or from your phone)", "min_level": 3},
     {"key": "pos.settings", "label": "Change a till's printer, drawer, scale and screen settings at the till (by PIN)", "min_level": 4, "technical": true},
     {"key": "pos.return.no_receipt", "label": "Approve returns at the till with a PIN, including without a receipt or after the return period (store credit only)", "min_level": 3},
     {"key": "returns.office", "label": "Enter returns in the back office", "min_level": 3},

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { v7 as uuidv7 } from 'uuid'
-import { ApiError, dining, type WasteBody, type WasteProduct, type WasteResult } from '../api'
+import { ApiError, dining, type Approval, type WasteBody, type WasteProduct, type WasteResult } from '../api'
 import { formatMoney, parseMoney } from '../money'
 import type { DiningOrder, DiningTable, Reservation } from '../types'
 import { SignedIn } from './SignedIn'
+import { ManagerApproval } from './ManagerApproval'
 
 const PLATFORMS = [['bolt_food', 'Bolt Food'], ['glovo', 'Glovo'], ['chowdeck', 'Chowdeck']] as const
 const NETWORKS = [['mtn', 'MTN MoMo'], ['telecel', 'Telecel Cash'], ['at', 'AT Money']] as const
@@ -116,19 +117,20 @@ function DepositDialog({ r, refund, money, onDone, onCancel }: { r: Reservation;
   const [amount, setAmount] = useState('')
   const [provider, setProvider] = useState('mtn')
   const [reference, setReference] = useState('')
-  const [approval, setApproval] = useState<{ username: string; pin: string } | null>(null)
+  const [asking, setAsking] = useState(false) // a supervisor approves the refund
   const [error, setError] = useState('')
   const fmt = (m: number) => formatMoney(m, money.currency, money.exponent)
-  async function save(e: React.FormEvent) {
-    e.preventDefault()
+  async function save(e: React.FormEvent | null, approval: Approval | null = null) {
+    e?.preventDefault()
     setError('')
+    setAsking(false)
     const extra = method === 'momo' ? { provider, reference } : reference ? { reference } : {}
     try {
-      if (refund) await dining.refund(r.id, { method, ...extra, approval: approval?.username ? approval : null })
+      if (refund) await dining.refund(r.id, { method, ...extra, approval })
       else await dining.deposit(r.id, { method, amount_minor: parseMoney(amount, money.exponent), ...extra })
       onDone()
     } catch (err) {
-      if (err instanceof ApiError && err.code === 'refund_needs_approval') setApproval({ username: '', pin: '' })
+      if (err instanceof ApiError && err.code === 'refund_needs_approval' && !approval) setAsking(true)
       setError(errorText(err))
     }
   }
@@ -144,15 +146,13 @@ function DepositDialog({ r, refund, money, onDone, onCancel }: { r: Reservation;
         {!refund && <label>Amount<input autoFocus className="big mono" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} required /></label>}
         {method === 'momo' && <select aria-label="Network" value={provider} onChange={(e) => setProvider(e.target.value)}>{NETWORKS.map(([id, n]) => <option key={id} value={id}>{n}</option>)}</select>}
         {method !== 'cash' && <label>{method === 'momo' ? 'Transaction ID' : 'Reference (optional)'}<input value={reference} onChange={(e) => setReference(e.target.value)} maxLength={80} /></label>}
-        {approval && (
-          <div className="row">
-            <SignedIn />
-            <label>Supervisor username<input autoComplete="off" value={approval.username} onChange={(e) => setApproval({ ...approval, username: e.target.value })} autoCapitalize="none" /></label>
-            <label>Supervisor PIN<input type="text" className="pin-mask" autoComplete="off" inputMode="numeric" value={approval.pin} onChange={(e) => setApproval({ ...approval, pin: e.target.value.replace(/\D/g, '').slice(0, 8) })} /></label>
-          </div>
-        )}
         <div className="row"><button type="button" onClick={onCancel}>Back</button><button className="primary big">{refund ? 'Refund' : 'Take deposit'}</button></div>
       </form>
+      {asking && (
+        <ManagerApproval title="Supervisor approval: refund" who="supervisor" online selfId="" message={error}
+          ask={{ kind: 'restaurant_void', amount_minor: r.deposit_left_minor, summary: `Refund the ${fmt(r.deposit_left_minor)} deposit to ${r.guest_name}` }}
+          onApproved={(a) => void save(null, a)} onCancel={() => setAsking(false)} />
+      )}
     </div>
   )
 }

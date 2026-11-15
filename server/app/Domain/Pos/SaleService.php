@@ -328,7 +328,7 @@ final class SaleService
             } elseif ($offline) {
                 $flags[] = ['discount_over_limit', sprintf('%s gave a %.2f %% discount while offline, above their limit', $user->name, $needBp / 100)];
             } elseif (empty($p['discount_approval'])) {
-                throw new DomainException(sprintf('A supervisor must approve a %.2f %% discount.', $needBp / 100), 'discount_needs_approval');
+                throw new DomainException(sprintf('A supervisor must approve a %.2f %% discount.', $needBp / 100), 'discount_needs_approval', ['limit_amount' => $needBp]);
             } else {
                 $discountApprovedBy = $this->approvals->verify($device, $p['discount_approval'], 'pos.discount', $till, 'discount_bp', $needBp, $user->id)->name;
             }
