@@ -93,7 +93,7 @@ class SupportConsole extends Page implements HasTable
             ])
             ->filters([
                 Filter::make('attention')->label('Needs attention or not reporting')
-                    ->query(fn (Builder $q) => $q->where(fn ($w) => $w->where('health_at', '<', now()->subHours(self::SILENT_HOURS))
+                    ->query(fn (Builder $query) => $query->where(fn ($w) => $w->where('health_at', '<', now()->subHours(self::SILENT_HOURS))
                         ->orWhereRaw("exists (select 1 from jsonb_array_elements(coalesce(health->'checks', '[]'::jsonb)) c where c->>'status' = 'fail')"))),
             ])
             ->recordActions([

@@ -86,7 +86,7 @@ class MomoChargeResource extends Resource
                 ListFilters::dates('created_at', 'Asked'),
                 SelectFilter::make('status')->options(MomoCharge::STATUSES),
                 // Money received with no sale: the till gave up before the customer approved — give it back or ring up the sale.
-                Filter::make('unused')->label('Paid, not on a sale')->query(fn (Builder $q) => $q->where('status', 'success')->whereNull('sale_id')),
+                Filter::make('unused')->label('Paid, not on a sale')->query(fn (Builder $query) => $query->where('status', 'success')->whereNull('sale_id')),
             ])
             ->defaultSort('created_at', 'desc');
     }

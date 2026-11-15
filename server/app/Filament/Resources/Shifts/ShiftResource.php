@@ -136,7 +136,7 @@ class ShiftResource extends Resource
                 ListFilters::dates('opened_at', 'Opened'),
                 ListFilters::amount('over_short_minor', 'Over / short', signed: true),
                 Filter::make('vault_waiting')->label('Vaults waiting for the manager\'s count')
-                    ->query(fn (Builder $q) => $q->whereNotNull('vault_id')->where('status', 'closed')->whereNull('checked_at'))])
+                    ->query(fn (Builder $query) => $query->whereNotNull('vault_id')->where('status', 'closed')->whereNull('checked_at'))])
             ->recordActions([
                 Action::make('report')->label('Shift report')->icon(Heroicon::OutlinedPrinter)->color('gray')
                     ->visible(fn (Shift $r) => ! $r->isOpen())->action(fn (Shift $r) => self::report($r)),

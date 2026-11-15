@@ -166,7 +166,7 @@ class InvoiceResource extends Resource
                 ListFilters::amount('total_minor', 'Total'),
                 ListFilters::dates('issued_on', 'Issued', isDate: true),
                 SelectFilter::make('status')->options(Invoice::STATUSES),
-                Filter::make('overdue')->label('Past due date')->query(fn (Builder $q) => $q->where('status', 'posted')->whereDate('due_on', '<', now())),
+                Filter::make('overdue')->label('Past due date')->query(fn (Builder $query) => $query->where('status', 'posted')->whereDate('due_on', '<', now())),
             ])
             ->defaultSort('issued_on', 'desc')
             ->recordActions([ViewAction::make(), ...self::invoiceActions()]);

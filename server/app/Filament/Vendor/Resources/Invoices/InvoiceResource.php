@@ -118,12 +118,12 @@ class InvoiceResource extends Resource
             ])
             ->filters([
                 SelectFilter::make('status')->options(['open' => 'Open', 'overdue' => 'Overdue', 'paid' => 'Paid', 'void' => 'Void'])
-                    ->query(fn (Builder $q, array $data) => match ($data['value'] ?? null) {
-                        'overdue' => $q->where('status', 'open')->where('due_on', '<', now()->toDateString()),
-                        null, '' => $q, default => $q->where('status', $data['value'])
+                    ->query(fn (Builder $query, array $data) => match ($data['value'] ?? null) {
+                        'overdue' => $query->where('status', 'open')->where('due_on', '<', now()->toDateString()),
+                        null, '' => $query, default => $query->where('status', $data['value'])
                     }),
                 SelectFilter::make('customer_id')->label('Customer')->relationship('customer', 'name')->searchable(),
-                SelectFilter::make('license_id')->label('Licence')->options(fn () => [])->query(fn (Builder $q, array $data) => ($data['value'] ?? null) ? $q->where('license_id', $data['value']) : $q),
+                SelectFilter::make('license_id')->label('Licence')->options(fn () => [])->query(fn (Builder $query, array $data) => ($data['value'] ?? null) ? $query->where('license_id', $data['value']) : $query),
             ])
             ->recordActions([ViewAction::make()]);
     }

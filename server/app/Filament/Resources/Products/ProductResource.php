@@ -374,8 +374,8 @@ class ProductResource extends Resource
                 SelectFilter::make('category_id')->label('Category')->options(fn () => Category::orderBy('name')->pluck('name', 'id')),
                 TernaryFilter::make('is_active')->label('For sale'),
                 SelectFilter::make('drug_schedule')->label('Medicine schedule')->options(Product::SCHEDULES + ['none' => 'Not a medicine'])
-                    ->query(fn (Builder $q, array $data) => match ($data['value'] ?? null) {
-                        null, '' => $q, 'none' => $q->whereNull('drug_schedule'), default => $q->where('drug_schedule', $data['value'])
+                    ->query(fn (Builder $query, array $data) => match ($data['value'] ?? null) {
+                        null, '' => $query, 'none' => $query->whereNull('drug_schedule'), default => $query->where('drug_schedule', $data['value'])
                     })
                     ->visible(fn () => ModuleService::enabledAnywhere('pharmacy')),
             ])
