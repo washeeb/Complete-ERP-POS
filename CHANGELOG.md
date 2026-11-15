@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 ### Changed
+- **Opening stock after selling has started** (owner request: SUPBOG counted before its first sale but loaded the count later; some products were sold below zero). Products that have only been sold or returned at the till still take their opening balance; stock on hand becomes the count less what was sold since. Products already received, adjusted or moved are still refused. A row with no cost takes the product's cost in ZionEX (average cost, else its supplier's last price).
+### Changed
 - **Sign-in protection** (owner decision). The owner, IT Admin and SyncLytics support always need a second step, whatever the company rule. IT and support sign in with the authenticator app or a passkey (not a code by message) and are signed out after 15 minutes without a click or key. The owner and IT are told, on the bell and by e-mail, when their account signs in on a new computer or phone, with **This wasn't me**: it signs the account out everywhere and (unless unticked) locks it until SyncLytics support calls; support is told at once.
 ### Security
 - **Laravel 13.42.0** (from 13.34.0) and its supporting libraries: fixes advisory GHSA-63hm-g96r-2m2q (output injection in concurrent tasks).
