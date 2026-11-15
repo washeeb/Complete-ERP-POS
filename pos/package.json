@@ -12,6 +12,7 @@
     "test": "vitest run",
     "e2e": "playwright test",
     "manual": "node scripts/manual.mjs",
+    "notes": "node scripts/notes.mjs",
     "manual:screens": "node scripts/manual-screens.mjs",
     "check:layout": "node scripts/layout-check.mjs",
     "training": "node scripts/training.mjs",

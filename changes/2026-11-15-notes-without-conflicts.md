@@ -1,0 +1,2 @@
+### Changed
+- **Release notes no longer collide between changes** (owner request: the notes and the guide clashed whenever two changes were open). Each change adds its own note files (`changes/`, `docs/state/`, `docs/decisions/`) instead of editing the same lines of the changelog and the state and decision logs; `npm run notes` folds them in before a release. The installation guide PDF is built from its chapters on each computer (`npm run manual`) and no longer kept in git.
