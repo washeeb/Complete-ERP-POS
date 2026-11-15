@@ -45,6 +45,7 @@ final class AutoPoster
         'cost_set' => 'opening_equity', 'cost_change' => 'stock_adjustment', // a cost run: stock that never had a cost; a cost replaced (or the run's own account)
         'supplier_return' => 'supplier_returns', // held until the supplier settles (credit, replacement, refund or nothing)
         'opening' => 'opening_equity',
+        'oversold_cost' => 'cogs', // goods sold below zero at no cost, costed when stock came in (StockLedger::settleOversold)
         'trade_in' => 'trade_in_clearing', // used items taken in on a sale (the sale's trade-in tender is on the other side)
         'production_issue' => 'wip', 'production_return' => 'wip', 'production_output' => 'wip', 'by_product' => 'wip', // work orders
         'project_issue' => 'project_wip', 'project_return' => 'project_wip', // projects (internal ones: straight to project costs)

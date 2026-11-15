@@ -23,6 +23,9 @@ use Illuminate\Support\Facades\DB;
  */
 final class InventoryService
 {
+    /** Stock movements that do not stop an opening balance: selling at the till before the count was loaded. */
+    public const SELLING = ['sale', 'sale_return'];
+
     public const ADJUSTMENT_REASONS = [
         'damaged' => 'Damaged',
         'expired' => 'Expired',
@@ -136,8 +139,10 @@ final class InventoryService
                 throw new DomainException('An opening balance cannot be negative.');
             }
             // One opening balance per product, or per batch for a batch-tracked product (several batches at go-live).
-            // Anything else already moved (a sale, a receipt, an adjustment), or the same batch again, means it is too late.
-            $history = StockMovement::where('warehouse_id', $warehouse->id)->where('product_id', $product->id);
+            // A receipt, an adjustment, a transfer, or the same batch again means it is too late. Till sales and returns are not:
+            // a shop that starts selling before its count is loaded (owner 2026-11-15, SUPBOG: counted before the first sale,
+            // loaded after) gets its opening balance, and stock on hand becomes the count less what was sold since.
+            $history = StockMovement::where('warehouse_id', $warehouse->id)->where('product_id', $product->id)->whereNotIn('type', self::SELLING);
             $batchNo = trim((string) $batchNo);
             if ($product->track_batches && $batchNo !== '') {
                 $batchId = StockBatch::where('product_id', $product->id)->where('batch_no', $batchNo)->value('id');

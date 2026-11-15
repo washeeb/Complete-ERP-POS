@@ -103,6 +103,7 @@ final class StockLedger
             // reversal takes the goods out at the cost they came in at, so goods-received-not-billed clears exactly.
             $atAverage = StockProjection::costPerUnit($avg === null ? null : (string) $avg, (string) $e['unit']->factor);
             $cost = match (true) {
+                $type === self::OVERSOLD => $e['unit_cost_minor'] ?? null, // settling goods sold below zero: out at the incoming cost, back in with none
                 in_array($type, ['receipt_reversal', 'cost_set', 'cost_change'], true) => $e['unit_cost_minor'] ?? $atAverage, // a cost run takes stock out at what the books hold for it
                 $e['qty_milli'] > 0 => $e['unit_cost_minor'] ?? ($type === 'putaway' ? null : $atAverage),
                 default => $atAverage,
@@ -150,7 +151,71 @@ final class StockLedger
         $this->outbox->publishRaw($actor, 'stock_movement_batch', $movements[0]->id, 1, "stock.{$type}",
             ['movements' => array_map(fn (StockMovement $m) => $m->getAttributes(), $movements)] + ($serials['rows'] ? ['serials' => $serials] : []));
 
+        if ($type !== self::OVERSOLD) {
+            $this->settleOversold($actor, $warehouse, $levels, $movements, $occurredAt ?? $now, $sourceType, $sourceId);
+        }
+
         return $movements;
+    }
+
+    /** Movements that settle the cost of goods sold below zero (settleOversold). */
+    public const OVERSOLD = 'oversold_cost';
+
+    /** Incoming stock that does not settle anything: moves inside a warehouse, cost runs, a unit change, a till return. */
+    private const NOT_SETTLING = [self::OVERSOLD, 'putaway', 'batch_assign', 'cost_set', 'cost_change', 'unit_conversion', 'sale_return'];
+
+    /**
+     * Goods sold below zero went out at no cost: there was no average cost yet (owner request 2026-11-15: SUPBOG sold before
+     * its opening stock was loaded). When stock with a real cost comes in, those goods are costed at once at that cost: a
+     * pair of movements, out at the cost and back in with none, so the quantity and the average stay as they are, cost of
+     * sales takes the cost (AutoPoster: oversold_cost → cost of sales) and the stock value in the books and in the ledger
+     * drop by it together. Only what was sold at no cost and is still below zero, never more than came in, and never what a
+     * cost run already caught up (StockCostRuns, which in turn leaves settled sales alone).
+     *
+     * @param  iterable<object>  $before  stock levels before this posting, by product id
+     * @param  list<StockMovement>  $movements
+     */
+    private function settleOversold(Actor $actor, Warehouse $warehouse, $before, array $movements, CarbonInterface $at, ?string $sourceType, ?string $sourceId): void
+    {
+        $in = [];
+        foreach ($movements as $m) {
+            if ((float) $m->qty_base <= 0 || ! $m->unit_cost_minor || in_array($m->type, self::NOT_SETTLING, true)) {
+                continue;
+            }
+            $in[$m->product_id] ??= ['milli' => 0, 'cost' => (int) round($m->unit_cost_minor / max((float) $m->factor, 0.000001)), 'batch' => $m->batch_id];
+            $in[$m->product_id]['milli'] += Qty::toMilli((string) $m->qty_base);
+        }
+        foreach ($in as $productId => $i) {
+            $below = -Qty::toMilli((string) $before[$productId]->on_hand);
+            if ($below <= 0 || $i['cost'] <= 0) {
+                continue;
+            }
+            $n = min($i['milli'], $below, self::unsettledAtNoCost($warehouse->id, $productId));
+            $product = Product::find($productId);
+            if ($n <= 0 || ! $product || $product->track_serials) {
+                continue; // serial-numbered goods are sold unit by unit, never below zero
+            }
+            $base = ProductUom::where('product_id', $productId)->where('is_base', true)->firstOrFail();
+            $batch = $i['batch'] ? ['batch_id' => $i['batch']] : [];
+            $this->post($actor, $warehouse, self::OVERSOLD, [
+                ['product' => $product, 'unit' => $base, 'qty_milli' => -$n, 'unit_cost_minor' => $i['cost'], 'bin_id' => false] + $batch,
+                ['product' => $product, 'unit' => $base, 'qty_milli' => $n, 'unit_cost_minor' => null, 'bin_id' => false] + $batch,
+            ], 'Cost of goods sold below zero, settled when stock came in', $sourceType, $sourceId, $at);
+        }
+    }
+
+    /** Sold at no cost here, not yet settled and not caught up by a cost run (milli base units). */
+    public static function unsettledAtNoCost(string $warehouseId, string $productId): int
+    {
+        $q = fn ($builder) => (float) ($builder->value('q') ?? 0);
+        $sold = $q(DB::table('stock_movements')->where('warehouse_id', $warehouseId)->where('product_id', $productId)->whereIn('type', ['sale', 'sale_return'])
+            ->where(fn ($w) => $w->whereNull('unit_cost_minor')->orWhere('unit_cost_minor', 0))->selectRaw('-SUM(qty_base) AS q'));
+        $settled = $q(DB::table('stock_movements')->where('warehouse_id', $warehouseId)->where('product_id', $productId)->where('type', self::OVERSOLD)
+            ->where('qty_base', '<', 0)->selectRaw('-SUM(qty_base) AS q'));
+        $caughtUp = $q(DB::table('stock_cost_run_lines as l')->join('stock_cost_runs as r', 'r.id', '=', 'l.stock_cost_run_id')->where('r.status', 'posted')
+            ->whereNull('r.reverses_id')->where('l.warehouse_id', $warehouseId)->where('l.product_id', $productId)->selectRaw('SUM(l.sold_qty) AS q'));
+
+        return max(0, Qty::toMilli(number_format($sold - $settled - $caughtUp, 3, '.', '')));
     }
 
     /**

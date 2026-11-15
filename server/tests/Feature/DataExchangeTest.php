@@ -8,7 +8,9 @@ use App\Domain\Imports\ImportService;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Inventory\StockAdjustmentService;
 use App\Domain\Inventory\StockCountService;
+use App\Domain\Inventory\StockLedger;
 use App\Domain\Pricing\PriceResolver;
+use App\Domain\Purchasing\SupplierService;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\DomainException;
 use App\Filament\Pages\FinancialReports;
@@ -26,11 +28,13 @@ use App\Models\StockAdjustment;
 use App\Models\StockBatch;
 use App\Models\StockLevel;
 use App\Models\Supplier;
+use App\Models\SupplierProduct;
 use App\Models\Warehouse;
 use App\Security\ScopeType;
 use App\Support\Exports\Exporter;
 use App\Support\Settings;
 use Filament\Actions\Testing\TestAction;
+use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -350,4 +354,26 @@ it('loads opening stock by barcode or exact name, and skips products not counted
     expect(skuOnHand($this->wh, 'SOAP-1'))->toBe('12.000')->and(skuOnHand($this->wh, 'BAG-1'))->toBe('50.000')
         ->and($done->summary['unchanged'])->toBe(1)
         ->and(collect($done->errors)->pluck('message')->implode(' '))->toContain('More than one product is named Toy car');
+});
+
+it('takes the opening count of a shop that started selling first, and costs rows without a cost from the supplier', function () {
+    // Owner 2026-11-15 (SUPBOG): counted before the first sale, loaded after selling had begun; some products sold below zero.
+    $rice = makeProduct($this->owner, 'RICE-5', 'Rice 5 kg', retail: '120.00');
+    $oil = makeProduct($this->owner, 'OIL-1', 'Oil 1 L', retail: '45.00');
+    $soap = makeProduct($this->owner, 'SOAP', 'Soap', retail: '10.00');
+    DB::transaction(fn () => app(StockLedger::class)->post($this->o, $this->wh, 'sale', [['product' => $rice, 'unit' => $rice->units->first(), 'qty_milli' => -3000]],
+        'Sale HQ-T01-000001', 'sale', null, alreadyHappened: true)); // sold at the till before the count was loaded: on hand -3
+    app(InventoryService::class)->adjust($this->o, $this->wh, $soap, $soap->units->first(), '2', 'adjustment', 'found'); // already adjusted: too late
+    $supplier = app(SupplierService::class)->save($this->o, new Supplier, ['name' => 'Oil supplier']);
+    SupplierProduct::create(['supplier_id' => $supplier->id, 'product_id' => $oil->id, 'product_uom_id' => $oil->units->first()->id, 'last_cost_minor' => 3250]);
+
+    $done = $this->imports->run($this->o, 'opening_stock', importCsvFile([['warehouse', 'sku', 'qty', 'unit_cost'],
+        [$this->wh->code, 'RICE-5', '10', '95.00'], [$this->wh->code, 'OIL-1', '4', ''], [$this->wh->code, 'SOAP', '5', '8.00']]), 'opening.csv', ['skip_errors' => true], null, true);
+
+    expect($done->summary['added'])->toBe(2)->and($done->rows_error)->toBe(1)
+        ->and(skuOnHand($this->wh, 'RICE-5'))->toBe('7.000') // counted 10, less the 3 sold since
+        ->and((int) round((float) StockLevel::where('warehouse_id', $this->wh->id)->where('product_id', $rice->id)->value('avg_cost_minor')))->toBe(9500)
+        ->and((int) round((float) StockLevel::where('warehouse_id', $this->wh->id)->where('product_id', $oil->id)->value('avg_cost_minor')))->toBe(3250) // the supplier's last price
+        ->and(collect($done->errors)->pluck('message')->implode(' '))->toContain('already has stock history')
+        ->and(app(StockLedger::class)->check($this->tenant->id))->toBe([]);
 });
