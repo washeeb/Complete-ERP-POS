@@ -545,7 +545,7 @@ final class StockCostRuns
     {
         $out = [];
         foreach (DB::table('stock_movements')->where('tenant_id', $tenantId)->where('qty_entered', '>', 0)->where(fn ($q) => $q->whereNull('unit_cost_minor')->orWhere('unit_cost_minor', 0))
-            ->whereNotIn('type', ['putaway', 'batch_assign', 'unit_conversion', ...self::COST_TYPES])->distinct()->get(['warehouse_id', 'product_id']) as $r) {
+            ->whereNotIn('type', ['putaway', 'batch_assign', 'unit_conversion', StockLedger::OVERSOLD, ...self::COST_TYPES])->distinct()->get(['warehouse_id', 'product_id']) as $r) {
             $out["{$r->warehouse_id}|{$r->product_id}"] = true;
         }
 
@@ -562,6 +562,14 @@ final class StockCostRuns
         }
         foreach (DB::table('stock_cost_run_lines as l')->join('stock_cost_runs as r', 'r.id', '=', 'l.stock_cost_run_id')->where('l.tenant_id', $tenantId)->where('r.status', 'posted')->whereNull('r.reverses_id')
             ->whereNotNull('l.warehouse_id')->groupBy('l.warehouse_id', 'l.product_id')->selectRaw('l.warehouse_id, l.product_id, SUM(l.sold_qty) AS q')->get() as $r) {
+            $k = "{$r->warehouse_id}|{$r->product_id}";
+            if (isset($out[$k])) {
+                $out[$k] -= Qty::toMilli(number_format((float) $r->q, 3, '.', ''));
+            }
+        }
+        // Costed when stock came in (StockLedger::settleOversold): not caught up a second time.
+        foreach (DB::table('stock_movements')->where('tenant_id', $tenantId)->where('type', StockLedger::OVERSOLD)->where('qty_base', '<', 0)
+            ->groupBy('warehouse_id', 'product_id')->selectRaw('warehouse_id, product_id, -SUM(qty_base) AS q')->get() as $r) {
             $k = "{$r->warehouse_id}|{$r->product_id}";
             if (isset($out[$k])) {
                 $out[$k] -= Qty::toMilli(number_format((float) $r->q, 3, '.', ''));

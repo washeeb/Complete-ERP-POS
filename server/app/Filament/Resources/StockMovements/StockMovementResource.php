@@ -38,7 +38,7 @@ class StockMovementResource extends Resource
     /** What a movement can be, for the filter. */
     public const TYPES = ['sale' => 'Sale', 'sale_return' => 'Return from a customer', 'receipt' => 'Goods received', 'receipt_reversal' => 'Goods received, reversed', 'adjustment' => 'Adjustment',
         'count' => 'Stock count', 'opening' => 'Opening', 'transfer_out' => 'Transfer out', 'transfer_in' => 'Transfer in', 'supplier_return' => 'Return to supplier', 'delivery' => 'Delivery to customer',
-        'customer_return' => 'Customer return', 'batch_assign' => 'Batch tracking started', 'unit_conversion' => 'Unit changed', 'cost_set' => 'Cost set by a cost run', 'cost_change' => 'Cost changed by a cost run',
+        'customer_return' => 'Customer return', 'oversold_cost' => 'Cost of goods sold below zero', 'batch_assign' => 'Batch tracking started', 'unit_conversion' => 'Unit changed', 'cost_set' => 'Cost set by a cost run', 'cost_change' => 'Cost changed by a cost run',
         'stock_received' => 'Received with a cost'];
 
     public static function canViewAny(): bool

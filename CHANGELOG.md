@@ -1,6 +1,8 @@
 # Changelog
 
 ## [Unreleased]
+### Fixed
+- **Sales made below zero are costed when stock comes in** (found while loading SUPBOG's opening stock). A product sold before any stock with a cost was in went out at no cost, so cost of sales was too low and the books kept the value of goods already sold. When stock with a cost comes in (opening, delivery, direct purchase, transfer), the oversold quantity is costed at that cost: cost of sales rises and the stock value falls by the same amount; quantity and average cost stay. A cost run does not add them again. From this update on (earlier cases unchanged); free for every client.
 ### Changed
 - **Opening stock after selling has started** (owner request: SUPBOG counted before its first sale but loaded the count later; some products were sold below zero). Products that have only been sold or returned at the till still take their opening balance; stock on hand becomes the count less what was sold since. Products already received, adjusted or moved are still refused. A row with no cost takes the product's cost in ZionEX (average cost, else its supplier's last price).
 ### Changed

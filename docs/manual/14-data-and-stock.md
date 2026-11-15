@@ -165,6 +165,8 @@ The adjustment page shows each line's stock **before**, the **change** and **aft
 
 **Is the factor right?** **Stock → Estimated costs** lists every product with an estimated cost, and what its first real delivery cost, with the real factor (price ÷ real cost). **Why:** after a few weeks of deliveries you can see whether 1.4 was close, and run the rest again with a better factor if it was not.
 
+**Sold below zero, then stock came in.** A product sold before any stock with a cost was in (for example selling before the opening count was loaded) went out at no cost: there was nothing to cost it at yet. When stock with a cost comes in (opening stock, a delivery, a direct purchase, stock received with a cost, a transfer), the system costs those sales at once, at the cost that came in: **Stock → Stock ledger** shows a pair of lines *Cost of goods sold below zero* (out at the cost, back in with none), and the books move that cost from *Stock* to *Cost of sales*. The quantity on hand and the average cost do not change. Only what was sold at no cost and is still below zero is costed, never more than came in; the rest is costed by the next stock that comes in. A cost run does not add these sales again. Sales below zero made before this update stay as they were. **Why:** otherwise the cost of those sales would stay at nothing and the books would keep the value of goods already sold.
+
 ## 14.3c Direct purchases: a supplier's invoice with no purchase order
 
 Goods often arrive with an invoice and no purchase order, such as a wholesaler's delivery paid by MoMo at the door. **Purchasing → Direct purchases** (also **Enter a supplier invoice** on *Stock adjustments*) records it all on one form. It is free with every licence.
