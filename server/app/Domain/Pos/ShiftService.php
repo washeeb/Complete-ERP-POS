@@ -34,6 +34,24 @@ final class ShiftService
         return Shift::where('device_id', $device->id)->where('status', 'open')->first();
     }
 
+    /** Minutes within which a second shift opened by the same person on the same till is the same shift (a double press). */
+    public const TWIN_MINUTES = 10;
+
+    /** This till's shift by the id the till knows it by: its own id, or the id of a second open of it (shift_aliases). */
+    public static function resolve(Device $device, ?string $id): ?Shift
+    {
+        if (! $id) {
+            return null;
+        }
+        $shift = Shift::where('device_id', $device->id)->find($id);
+        if ($shift) {
+            return $shift;
+        }
+        $to = DB::table('shift_aliases')->where('id', $id)->where('device_id', $device->id)->value('shift_id');
+
+        return $to ? Shift::where('device_id', $device->id)->find($to) : null;
+    }
+
     /** $id/$openedAt come from the till (offline shifts are opened without us); $offline skips the live access check (reviewed via the grant instead). */
     public function open(Device $device, User $user, int $floatMinor, ?string $id = null, ?CarbonInterface $openedAt = null, bool $offline = false, ?string $vaultSessionId = null, ?array $grant = null, ?string $vaultId = null): Shift
     {
@@ -44,7 +62,28 @@ final class ShiftService
 
             return $existing; // replay
         }
+        if ($id && ($twin = self::resolve($device, $id))) {
+            return $twin; // a second open of a shift, already matched to it
+        }
         $till = $this->till($device, $user, $offline);
+        // Opened twice (owner report 2026-11-15): Open shift pressed again while the first press was on its way, so the
+        // till queued a second shift seconds after the one the server has. Same person, same till, within 10 minutes: it is
+        // the same shift. Its id is kept as another name for it, so the sales the till made under it are not refused.
+        if ($id && $offline && $openedAt) {
+            $twin = Shift::where('device_id', $device->id)->where('opened_by', $user->id)
+                ->whereBetween('opened_at', [Carbon::instance($openedAt)->subMinutes(self::TWIN_MINUTES), Carbon::instance($openedAt)->addMinutes(self::TWIN_MINUTES)])
+                ->orderByRaw('abs(extract(epoch from (opened_at - ?::timestamp)))', [Carbon::instance($openedAt)->utc()->format('Y-m-d H:i:s.u')])->first();
+            if ($twin) {
+                $this->recorder->transaction(function () use ($twin, $id, $device, $user, $openedAt) {
+                    DB::table('shift_aliases')->insert(['id' => $id, 'tenant_id' => $twin->tenant_id, 'shift_id' => $twin->id, 'device_id' => $device->id,
+                        'opened_at' => Carbon::instance($openedAt), 'created_at' => now(), 'updated_at' => now()]);
+                    $this->recorder->audit->record(Actor::user($user, 'pos', $device->id), 'shift.opened_twice', $twin, [],
+                        'The till opened this shift a second time (Open shift pressed again); both are one shift', $twin->branch_id);
+                });
+
+                return $twin;
+            }
+        }
         if ($floatMinor < 0) {
             throw new DomainException('The opening float cannot be negative.');
         }
