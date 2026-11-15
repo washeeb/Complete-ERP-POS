@@ -206,9 +206,14 @@ test('the drawer: an expense paid out, a cash drop by a supervisor, and the cash
   // Cash drop from the banner: the supervisor's PIN is needed; the warning clears.
   await page.getByRole('button', { name: 'Cash drop' }).click()
   await d.getByLabel(/^Amount/).fill('150')
-  await d.getByLabel('Supervisor username').fill('kojo')
-  await d.getByLabel('Supervisor PIN').fill('7391')
   await d.getByRole('button', { name: 'Cash drop' }).last().click()
+  // The supervisor is at the till: card or username, and PIN (online, "Ask a supervisor" would send it to their phone).
+  const ok = page.getByRole('dialog', { name: 'Supervisor approval' })
+  const here = ok.getByRole('button', { name: /Supervisor is here/ })
+  if (await here.isVisible()) await here.click()
+  await ok.getByLabel(/card, or type their username/).fill('kojo')
+  await ok.getByLabel('Supervisor PIN').fill('7391')
+  await ok.getByRole('button', { name: 'Approve' }).click()
   await expect(slip.getByText('Cash drop of GH₵ 150.00 recorded.')).toBeVisible()
   await expect(slip.getByText('Kojo Supervisor')).toBeVisible() // taken by
   await expect(slip.getByText('Supervisor (took the cash)', { exact: true })).toBeVisible()
