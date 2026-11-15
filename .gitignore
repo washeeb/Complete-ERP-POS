@@ -12,3 +12,7 @@ Thumbs.db
 .vscode/
 .local-secrets/
 docs/manual/.manual.html
+
+# The installation guide PDF is built from docs/manual/*.md (cd pos && npm run manual), not kept in git: a binary file
+# rebuilt by every change made every two open PRs collide (owner request 2026-11-15).
+docs/manual/*-Installation-Guide.pdf
