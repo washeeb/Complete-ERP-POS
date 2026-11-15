@@ -14,6 +14,7 @@ use App\Models\BankStatementLine;
 use App\Models\Branch;
 use App\Models\MoneyTransfer;
 use App\Security\Authorizer;
+use App\Security\Reconfirm;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -79,6 +80,9 @@ final class BankingService
         $this->require($actor, $permission, $permission === 'banking.manage' ? null : $fromBranch); // a cash deposit is the branch's
         if ($from->id === $to->id) {
             throw new DomainException('Choose two different accounts.');
+        }
+        if ($permission === 'banking.manage') { // a branch banking its cash takings is the safe direction: no extra step
+            Reconfirm::require($actor, $amountMinor, 'moving money between accounts');
         }
         foreach ([$from, $to] as $a) {
             if (! self::isMoneyAccount($a)) {

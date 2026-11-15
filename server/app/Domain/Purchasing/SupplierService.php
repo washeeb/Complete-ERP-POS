@@ -12,6 +12,7 @@ use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Models\Tenant;
 use App\Security\Authorizer;
+use App\Security\Reconfirm;
 use App\Support\Caps;
 use App\Support\IndustryContext;
 use App\Support\Money;
@@ -66,6 +67,7 @@ final class SupplierService
             // New or changed bank / MoMo details wait for a second person to verify them before money goes there.
             $bankChanged = collect(Supplier::BANK_FIELDS)->contains(fn ($f) => $supplier->isDirty($f) && (filled($supplier->{$f}) || filled($supplier->getOriginal($f))));
             if ($bankChanged) {
+                Reconfirm::require($actor, null, "giving {$supplier->name} new bank or MoMo details", always: true); // payments could be redirected
                 $supplier->forceFill(['bank_verified_by' => null, 'bank_verified_by_name' => null, 'bank_verified_at' => null]);
             }
             $this->recorder->save($actor, $supplier, $supplier->exists ? 'supplier.updated' : 'supplier.created');

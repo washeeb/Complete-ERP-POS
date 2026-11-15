@@ -18,6 +18,7 @@ use App\Models\PayrollRun;
 use App\Models\Payslip;
 use App\Models\Tenant;
 use App\Security\Authorizer;
+use App\Security\Reconfirm;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -131,6 +132,7 @@ final class PayrollService
         $this->require($actor, 'payroll.pay');
         $byCash = (int) $run->payslips()->get()->filter(fn ($p) => ($p->employee['pay_method'] ?? '') === 'cash')->sum('net_minor');
         $byBank = (int) $run->payslips()->sum('net_minor') - $byCash;
+        Reconfirm::require($actor, $byBank + $byCash, 'paying wages');
         foreach ([[$bank, $byBank, 'bank or MoMo'], [$cash, $byCash, 'cash']] as [$acc, $amount, $label]) {
             if ($amount > 0 && (! $acc || ! BankingService::isMoneyAccount($acc))) {
                 throw new DomainException("Choose the account the {$label} pay comes from.");

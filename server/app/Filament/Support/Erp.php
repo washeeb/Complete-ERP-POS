@@ -5,10 +5,13 @@ namespace App\Filament\Support;
 use App\Domain\Access\SentForApproval;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
+use App\Filament\Pages\ConfirmItsYou;
 use App\Models\AccessRequest;
 use App\Models\User;
 use App\Security\Authorizer;
+use App\Security\ReconfirmNeeded;
 use App\Support\IndustryContext;
+use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Filament\Support\Exceptions\Halt;
@@ -82,6 +85,15 @@ final class Erp
      * @return T
      */
     /** IT Admin's access change went to the owner or SyncLytics support (owner decision 2026-11-13). */
+    /** Money above the limit (App\Security\Reconfirm): the note opens "Confirm it's you" in a new tab. */
+    public static function askToReconfirm(string $message): void
+    {
+        Notification::make()->warning()->persistent()->title("Confirm it's you first")
+            ->body($message.' Confirm in the tab that opens, then press the button here again.')
+            ->actions([Action::make('confirm')->label("Confirm it's you")->url(ConfirmItsYou::getUrl())->openUrlInNewTab()->button()])
+            ->send();
+    }
+
     public static function sentForApproval(SentForApproval $e): void
     {
         Notification::make()->info()->title('Sent for approval')->persistent()
@@ -92,6 +104,10 @@ final class Erp
     {
         try {
             $result = $call(self::actor());
+        } catch (ReconfirmNeeded $e) {
+            self::askToReconfirm($e->getMessage());
+
+            throw new Halt; // the form keeps what was typed: confirm in the other tab, then press again
         } catch (SentForApproval $e) {
             self::sentForApproval($e);
 

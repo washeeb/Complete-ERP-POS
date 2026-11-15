@@ -14,6 +14,7 @@ use App\Models\Supplier;
 use App\Models\SupplierPayment;
 use App\Models\Tenant;
 use App\Security\Authorizer;
+use App\Security\Reconfirm;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -47,6 +48,9 @@ final class SupplierPaymentService
         }
         if (! array_key_exists($method, SupplierPayment::METHODS)) {
             throw new DomainException('Choose how the supplier was paid.');
+        }
+        if (! $authorised) { // a payment made at the screen (not one recorded by a posting that was approved already)
+            Reconfirm::require($actor, $amountMinor, 'paying a supplier');
         }
         if ($amountMinor <= 0) {
             throw new DomainException('Enter an amount above zero.');

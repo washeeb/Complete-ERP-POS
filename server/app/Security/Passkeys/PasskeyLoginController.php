@@ -4,6 +4,7 @@ namespace App\Security\Passkeys;
 
 use App\Domain\Support\Actor;
 use App\Domain\Support\Recorder;
+use App\Filament\Pages\ConfirmItsYou;
 use App\Models\User;
 use App\Support\UserPrefs;
 use Filament\Facades\Filament;
@@ -31,9 +32,13 @@ class PasskeyLoginController extends AuthenticateUsingPasskeyController
 
             return $this;
         }
+        $already = auth()->id() === $authenticatable->id; // signed in already: a passkey on "Confirm it's you"
         auth()->login($authenticatable, $remember);
         Session::regenerate();
         Session::put(self::SESSION_KEY, $authenticatable->id);
+        if ($already) {
+            ConfirmItsYou::confirmed($authenticatable, 'passkey');
+        }
 
         app(Recorder::class)->transaction(fn () => app(Recorder::class)->audit
             ->record(Actor::user($authenticatable, 'web'), 'auth.passkey_login', $authenticatable));

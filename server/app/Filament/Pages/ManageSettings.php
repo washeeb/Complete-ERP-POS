@@ -6,6 +6,7 @@ use App\Domain\Licensing\LicenseManager;
 use App\Domain\Modules\ModuleService;
 use App\Domain\Support\Recorder;
 use App\Filament\Support\Erp;
+use App\Security\Reconfirm;
 use App\Support\Settings;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -134,6 +135,10 @@ class ManageSettings extends Page
     {
         $data = $this->form->getState();
         $settings = app(Settings::class);
+        // The "confirm it's you" limit protects money: changing it asks too (a stolen session must not raise it first).
+        if (array_key_exists(self::field(Reconfirm::SETTING), $data) && (int) $data[self::field(Reconfirm::SETTING)] !== (int) $settings->get(Reconfirm::SETTING, Erp::user()->tenant_id)) {
+            Erp::run(fn ($actor) => Reconfirm::require($actor, null, 'changing when to confirm payments', always: true));
+        }
         Erp::run(fn ($actor) => app(Recorder::class)->transaction(function () use ($actor, $data, $settings) {
             foreach (array_keys(Settings::DEFINITIONS) as $key) {
                 if (! array_key_exists(self::field($key), $data) || ! Settings::mayChange($key, Erp::user())) {

@@ -17,6 +17,7 @@ use App\Models\LeaveRequest;
 use App\Models\LeaveType;
 use App\Models\PayrollProfile;
 use App\Security\Authorizer;
+use App\Security\Reconfirm;
 use App\Support\Codes;
 use Illuminate\Support\Carbon;
 
@@ -50,6 +51,11 @@ final class HrService
         }
         if ((int) ($data['commission_bp'] ?? 0) < 0 || (int) ($data['commission_bp'] ?? 0) > 10000) {
             throw new DomainException('Commission: 0 to 100 %.');
+        }
+        // New bank or MoMo details for someone already paid: wages could be redirected (always confirmed).
+        if ($e->exists && collect(['pay_method', 'bank_name', 'bank_account_no', 'momo_number'])->contains(fn ($f) => array_key_exists($f, $data)
+            && (string) (is_string($data[$f]) ? trim($data[$f]) : $data[$f]) !== (string) $e->getOriginal($f))) {
+            Reconfirm::require($actor, null, "changing {$e->name}'s bank or MoMo details", always: true);
         }
         if (! empty($data['user_id']) && Employee::where('user_id', $data['user_id'])->when($e->exists, fn ($q) => $q->whereKeyNot($e->id))->exists()) {
             throw new DomainException('That sign-in already belongs to another employee.');
@@ -210,6 +216,7 @@ final class HrService
         if (! BankingService::isMoneyAccount($paidFrom)) {
             throw new DomainException("{$paidFrom->label()} is not a cash, bank or mobile money account.");
         }
+        Reconfirm::require($actor, $principal, 'paying out a staff loan or advance');
         if ($e->status !== 'active') {
             throw new DomainException('Only current employees can get an advance or loan.');
         }
