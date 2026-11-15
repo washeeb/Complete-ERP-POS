@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Fixed
+- **Sales made below zero are costed when stock comes in** (found while loading SUPBOG's opening stock). A product sold before any stock with a cost was in went out at no cost, so cost of sales was too low and the books kept the value of goods already sold. When stock with a cost comes in (opening, delivery, direct purchase, transfer), the oversold quantity is costed at that cost: cost of sales rises and the stock value falls by the same amount; quantity and average cost stay. A cost run does not add them again. From this update on (earlier cases unchanged); free for every client.
 - **Till sales refused because the shift was opened twice** (owner report: 146 sales on one SUPBOG till, "The shift for this offline sale was not received"). On a slow line, pressing **Open shift** again started a second shift seconds after the first: the server accepted the first, the till sold under the second, and everything in it was refused. The button now greys while the shift opens and the till opens one shift at a time (the same for **Close shift**). The server treats a second open by the same person on the same till within 10 minutes as the same shift, so **Retry refused** brings those sales in; sales that arrive after that shift was counted are listed for review.
 - **Desktop till 0.30.6: the cash drawer opens after cash on a new install** (it started unticked, so the drawer stayed shut until someone ticked it; the web till opens it through the printer driver).
 ### Changed
