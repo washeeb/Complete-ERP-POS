@@ -65,8 +65,19 @@ export async function signInAgain(userId: string, username: string, pin: string)
 const isNetwork = (e: unknown) => e instanceof ApiError && e.code === 'network'
 
 /** Open the till. With cash control, on the vault the cashier issued to this teller (its float is the vault's). */
+let opening: Promise<void> | null = null
+
 export async function openShift(floatMinor: number, online: boolean, vaultSessionId: string | null = null, grant: ShiftGrant | null = null,
   own: { id: string; name: string } | null = null): Promise<void> {
+  // One open at a time (owner report 2026-11-15): a second call while the first is on its way waits for it, instead of
+  // opening a second shift that the server then refuses, with every sale in it.
+  if (opening) return opening
+  opening = openShiftOnce(floatMinor, online, vaultSessionId, grant, own).finally(() => { opening = null })
+  return opening
+}
+
+async function openShiftOnce(floatMinor: number, online: boolean, vaultSessionId: string | null, grant: ShiftGrant | null,
+  own: { id: string; name: string } | null): Promise<void> {
   const id = uuidv7()
   const openedAt = new Date().toISOString()
   let queued = await queueMode(online)
