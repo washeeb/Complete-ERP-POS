@@ -130,9 +130,12 @@ final class SaleService
             if ($occurredAt->isAfter(now()->addMinutes(10))) {
                 $flags[] = ['clock_skew', 'Till clock was ahead of the server by '.now()->diffForHumans($occurredAt, true)];
             }
-            $shift = Shift::where('device_id', $device->id)->find($p['shift_id'] ?? null);
+            $shift = ShiftService::resolve($device, $p['shift_id'] ?? null); // or the shift it is a second open of
             if (! $shift || ($shift->closed_at && $shift->closed_at->lt($occurredAt))) {
                 throw new DomainException('The shift for this offline sale was not received.', 'no_shift');
+            }
+            if ($shift->status === 'closed') {
+                $flags[] = ['after_count', "Reached the server after {$shift->opened_by_name}'s shift was counted and closed: check that shift's count"];
             }
             if ($shift->opened_by !== $user->id && (bool) $this->settings->get('pos.shift_per_person', $device->tenant_id)) {
                 $flags[] = ['shift_other_person', "{$user->name} sold offline in {$shift->opened_by_name}'s shift"];

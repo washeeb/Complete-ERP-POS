@@ -24,7 +24,7 @@ final class TestTradingReset
     /** The trading tables (with their lines). The order of deleting is worked out from the foreign keys. */
     public const TABLES = [
         // Tills and cash
-        'sales', 'sale_lines', 'sale_payments', 'trade_ins', 'shifts', 'shift_count_corrections', 'vault_sessions', 'vault_covers', 'cash_movements', 'cash_handovers', 'cash_variances', 'till_drawer_events', 'expense_claims',
+        'sales', 'sale_lines', 'sale_payments', 'trade_ins', 'shifts', 'shift_aliases', 'shift_count_corrections', 'vault_sessions', 'vault_covers', 'cash_movements', 'cash_handovers', 'cash_variances', 'till_drawer_events', 'expense_claims',
         'prescriptions', 'pharmacy_signoffs', 'review_items', 'fiscal_submissions', 'commissions', 'momo_charges', 'refill_reminders', 'whatsapp_orders', 'nhis_claim_lines', 'nhis_claims',
         // Stock
         'stock_movements', 'stock_movement_serials', 'stock_levels', 'stock_batch_levels', 'stock_bin_levels', 'stock_batches', 'serial_numbers', 'stock_reservations',

@@ -195,8 +195,13 @@ export function OpenShift({ boot, online, onDone, onLogout }: { boot: Bootstrap;
   const [grant, setGrant] = useState<ShiftGrant>({ username: '', pin: '', reason: '' })
   const money = (m: number) => formatMoney(m, boot.company.currency, boot.company.exponent)
 
+  const [opening, setOpening] = useState(false)
+
   async function submit(e: React.FormEvent) {
     e.preventDefault()
+    if (opening) return // one press at a time: a second press on a slow line opened a second shift
+    setOpening(true)
+    setError('')
     const allowed = needsGrant ? grant : null
     try {
       if (personal) {
@@ -214,6 +219,8 @@ export function OpenShift({ boot, online, onDone, onLogout }: { boot: Bootstrap;
     } catch (err) {
       if (err instanceof ApiError && (err.code === 'outside_hours' || err.code === 'till_closed')) setNeedsGrant(true)
       setError(err instanceof Error ? err.message : 'Could not open the shift.')
+    } finally {
+      setOpening(false)
     }
   }
 
@@ -288,7 +295,7 @@ export function OpenShift({ boot, online, onDone, onLogout }: { boot: Bootstrap;
         </fieldset>
       )}
       {error && <p className="error" role="alert">{error}</p>}
-      <button className="primary big">{needsGrant ? 'Open shift (manager allows)' : 'Open shift'}</button>
+      <button className="primary big" disabled={opening}>{opening ? 'Opening the shift…' : needsGrant ? 'Open shift (manager allows)' : 'Open shift'}</button>
     </form>
   )
 }
@@ -361,8 +368,12 @@ export function CloseShift({ boot, online, onClosed, onCancel }: { boot: Bootstr
   const byNotes = denominations.length > 0
   const total = denominations.reduce((sum, d) => sum + (parseInt(counts[d.key] || '0', 10) || 0) * d.value, 0)
 
+  const [closing, setClosing] = useState(false)
+
   async function submit(e: React.FormEvent) {
     e.preventDefault()
+    if (closing) return // one press at a time
+    setClosing(true)
     try {
       const denoms = byNotes ? Object.fromEntries(denominations.map((d) => [d.key, parseInt(counts[d.key] || '0', 10) || 0]).filter(([, n]) => (n as number) > 0)) : null
       const amount = byNotes ? total : parseMoney(counted, boot.company.exponent)
@@ -374,6 +385,8 @@ export function CloseShift({ boot, online, onClosed, onCancel }: { boot: Bootstr
         other: shift.other ?? [], otherSent: Object.keys(read).length > 0, takings: shift.takings ?? null })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not close the shift.')
+    } finally {
+      setClosing(false)
     }
   }
 
@@ -491,7 +504,7 @@ export function CloseShift({ boot, online, onClosed, onCancel }: { boot: Bootstr
       {error && <p className="error" role="alert">{error}</p>}
       <div className="row">
         <button type="button" onClick={onCancel}>Back to selling</button>
-        <button className="primary big">Close shift</button>
+        <button className="primary big" disabled={closing}>{closing ? 'Closing the shift…' : 'Close shift'}</button>
       </div>
     </form>
   )
