@@ -676,3 +676,14 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 
 ## Blockers
 - None.
+
+## IT and support activity (owner separation step 5) — branch `it-activity`
+- `App\Filament\Pages\ItActivity` (People & access, sort 4; support, owner account or `audit.view`): AuditEvent rows where the actor is a technical person (`technicalPeople()`: Platform level, or anyone who holds or held a role with `is_technical`) or the action matches `ItActivity::TECHNICAL` (minus personal screen preferences). Filters `who`, `when` (default 30 days); ViewAction reuses `AuditEventResource::infolist`; nav badge = last 7 days. Tests: ItActivityTest.
+- Filament injects a filter's / `modifyQueryUsing`'s query **only by the parameter name `$query`**; 13 closures named `$q` got an empty query (filter ignored, or Customers "Owes money" crashed: `balance()` on null). All renamed; TableFiltersTest scans `app/Filament` so a `$q` cannot come back, and checks the customers "owing" filter.
+
+## Confirm it's you before money leaves — branch `money-reconfirm`
+- `App\Security\Reconfirm::require(actor, amountMinor, what, always)` (web actors only; session `erp.reconfirmed_at`, 5 min; `$assumeConfirmed` for tests, set in TestCase) throws `ReconfirmNeeded` (DomainException code `reconfirm`); `Erp::run` shows a persistent note with a new-tab link to `ConfirmItsYou` (authenticator via AppAuthentication::verifyCode, SignInCode send/verify, password if no authenticator or passkey; passkey via PasskeyLoginController when already signed in as the same user; audit `auth.reconfirmed`; 5 tries a minute).
+- Called in SupplierPaymentService::pay (not `authorised`), ExpenseService::pay, PayrollService::pay, BankingService::transfer (banking.manage only), HrService::issueLoan; always: ReceivablesService::creditNote without goods back, SupplierService bank change, HrService::saveEmployee bank/MoMo change, ManageSettings change of `security.reconfirm_above_minor` (default 300000). Tests: ReconfirmTest.
+
+## Notes without conflicts — branch `notes-without-conflicts`
+- Per-change note files: `changes/`, `docs/state/`, `docs/decisions/` (READMEs there); `pos/scripts/notes.mjs` (`npm run notes`, `--dry`) folds them into CHANGELOG.md (under [Unreleased], grouped by kind), docs/STATE.md and docs/DECISIONS.md (appended), then deletes them. CLAUDE.md end-of-task rule changed accordingly. `docs/manual/*-Installation-Guide.pdf` untracked and git-ignored (built locally by `npm run manual`).
