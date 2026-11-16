@@ -2,6 +2,43 @@
 
 ## [Unreleased]
 ### Added
+- **A manager approves till actions from their phone** (owner request). Wherever the till needs a supervisor or manager (a return, a discount or price change, opening the drawer without a sale, a cash drop or pay-out, a restaurant void or refund), the cashier can press **Ask a manager**. Everyone allowed to approve it gets a notification on the bell and on their phone. They see the items, the amount and the reason, then approve (after confirming it is them) or decline with a reason. The till carries on by itself. A manager at the till can still approve there, now by **scanning their staff card** and typing their PIN. Requests lapse after 10 minutes; an approval works once, for that till, cashier and amount. All requests and answers are under **Sales → Till requests** and in the audit log.
+- **Phone notifications** for the back office: **Sales → Till requests → Turn on notifications**, once per phone or computer. They arrive even when the back office is closed. Each person can switch them off per kind under Profile → Notifications.
+- **Removing items from a sale can need a supervisor** (System → Settings → Tills and cash; off by default): taking items off, lowering a quantity before payment, or cancelling the sale, above an amount you choose.
+- **The new back office, first part** (owner decision: a Windows-style app in React and Microsoft's Fluent UI, replacing today's screens step by step). At `/office/`:
+  - the company's colours and logo;
+  - two ways to show the menu: **across the top** (the default) or a **slim side menu** with Create at the top, chosen per person;
+  - one search box (Ctrl+K) for pages and records;
+  - **Create** for anything the person may add;
+  - light or dark as the person chose.
+- **Home, Recent and Favourites as icons at the start of the menu** (owner request), in both looks:
+  - the clock lists the pages opened lately;
+  - the star lists your favourite pages and adds or removes the page on screen; it is filled when that page is a favourite. It uses the same favourites as the classic back office.
+- **A new Home**, after the owner's NetSuite-style template, with every panel:
+  - **Reminders:** what waits for you, the urgent ones big;
+  - **Tiles:** big coloured shortcuts, chosen under Personalize;
+  - **Key performance indicators:** cards with a trend line, and the table of this period against the period before, with the change;
+  - **KPI meter:** a dial for the figure you pick;
+  - **Top 15 items by quantity sold:** donut, bars or table, for its own period;
+  - **Monthly trend:** sales and buying over 12 months as columns, lines or a table, with a 3-month average;
+  - **Shortcuts:** favourites, quick add, pages opened lately.
+  **Viewing** sets the period, **Personalize** the panels and tiles, **Layout** two or three columns. Panels are dragged by their handle (or moved from their ⋯ menu); each person's arrangement is kept.
+- The menu is exactly the current back office's for that person (permissions, modules, licence). Pages not yet rebuilt open inside the frame without their own menus, and the address bar, Back and bookmarks follow them. Signed out, it signs you in and brings you back. **Classic back office** goes back.
+- **To-do in the new back office:** everything waiting for your decision, item by item, on one page (`/office/todo`), with its count on the menu (in the side menu just under Create, as in the owner's template).
+  - **Till requests** come first and are approved or declined right there: Approve asks you to confirm it is you, inside the page; Decline asks why, and the cashier sees it.
+  - Then purchase orders, stock adjustments, returns, direct purchases, cost runs, expense claims, leave, prices to review, access requests, the review queue and timesheets. Each item shows its number, who asked, the amount and how long it has waited, and opens its page to decide.
+  - It refreshes by itself.
+- **Staff card generator** (owner request). **People & access → Staff cards**:
+  - Tick the people, press **Print new cards**, and the cards print straight away: on an A4 sheet (10 cards with cut lines) or on a PVC card printer (one card per page).
+  - Each card has the company colour and logo, the person's photo or initials, name, role and branch, and a **barcode** (Code 128) that every till scanner reads, laser or camera.
+  - The print page works once; card codes are never kept.
+  - **Card lost: stop it** stops cards at once.
+- **A staff card alone can sign in at the till** (System → Settings → Tills and cash; off by default). When on, scanning the card signs the person in without the PIN, offline too where the till already has their sign-in. Approvals always need the PIN or a manager's yes.
+### Changed
+- **Signing in opens the new back office** (owner decision for release 1): the new Home, or your own home page (Today, a favourite) inside it. A page you were going to (for example from a notification) still opens. **Classic back office** under your name goes back; **New back office** in the classic one's menu comes back.
+### Fixed
+- **Scanning a staff card on the till's sign-in screen:** the box switched to "Staff card scanned" as soon as the card's first characters arrived, so the rest of the code and the scanner's Enter may have been lost. Now the card is taken whole, then the PIN is asked for.
+### Added
 - **IT and support activity for the owner** (owner decision: "Owner sees all IT activity"). **People & access → IT and support activity** lists everything IT Admin and SyncLytics support did, and every technical change by anyone (users, access and access requests, roles, devices and computers, settings, sync, remote sessions, API keys, modules, backups, licence, sign-in security), newest first, in plain words with who, what, the details and the computer. Filters: who (IT and support only, or support only) and when (last 7, 30 or 90 days, or all). A row opens the full audit record. The menu shows how many in the last 7 days. Read-only.
 - **"Confirm it's you" before money leaves** (owner decision, limit GH₵ 3,000). Paying a supplier, an expense claim, wages or a staff loan, moving money between accounts, or a credit note for returned goods above the limit asks the person at the screen to confirm it is them: authenticator code, passkey, a code sent by WhatsApp or e-mail, or (with none of these) their password. Writing off what a customer owes and new bank or MoMo details for a supplier or a member of staff always ask. A confirmation lasts 5 minutes. The limit is under Settings → Security; changing it asks too. A branch banking its cash takings, the API, the server and the tills are not affected.
 ### Changed
