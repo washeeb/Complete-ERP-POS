@@ -168,8 +168,8 @@ Route::prefix('v1')->group(function () {
 Broadcast::routes(['prefix' => 'v1/pos', 'middleware' => ['auth:sanctum', 'device.token:pos']]);
 
 // The licence server (answers only when this installation is the licence server).
-Route::post('license/checkin', [LicenseServerController::class, 'checkin'])->middleware('throttle:30,1');
-Route::post('license/health', [LicenseServerController::class, 'health'])->middleware('throttle:30,1'); // the support console's hourly reports
+Route::post('license/checkin', [LicenseServerController::class, 'checkin'])->middleware('throttle:30,1,licence-checkin');
+Route::post('license/health', [LicenseServerController::class, 'health'])->middleware('throttle:30,1,licence-health'); // the support console's hourly reports
 
 // Public API v1 for other systems (keys under System → API clients; description at /api/public/v1/openapi.json).
 Route::prefix('public/v1')->group(function () {

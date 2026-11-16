@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { appPathFor, routeOf, type Route } from './paths'
+import { appPathFor, classicPathFor, routeOf, type Route } from './paths'
 
 /** Moving between pages without reloading the app: the address bar, Back and Forward work as for any site. */
 const EVENT = 'zx-navigate'
@@ -14,7 +14,8 @@ export function navigate(to: string, replace = false) {
 
 /** The address follows a page that moved by itself inside the frame (a link or a save there), without reloading it. */
 export function followFrame(adminPath: string) {
-  const path = appPathFor(adminPath)
+  // The frame shows the old version of the page, so the address says so (a rebuilt page's new address would differ).
+  const path = classicPathFor(adminPath.split('?')[0]) + (adminPath.includes('?') ? `?${adminPath.split('?').slice(1).join('?')}` : '')
   if (path !== location.pathname + location.search) history.replaceState(null, '', path)
 }
 

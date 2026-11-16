@@ -7,8 +7,10 @@ import { api, type Me, type Menu, type Prefs } from './api'
 import { useRoute } from './nav'
 import { ClassicPage } from './pages/ClassicPage'
 import { HomePage } from './pages/HomePage'
+import { SalePage } from './pages/SalePage'
+import { SalesPage } from './pages/SalesPage'
 import { TodoPage } from './pages/TodoPage'
-import { adminPathFor, tabOf } from './paths'
+import { adminEquivalent, adminPathFor, tabOf } from './paths'
 import { SideLook } from './shell/SideLook'
 import { TopLook } from './shell/TopLook'
 import { themes } from './theme'
@@ -70,7 +72,7 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
   const { dispatchToast } = useToastController(toaster)
   const [title, setTitle] = useState('')
 
-  const shown = route.page === 'home' ? 'Home' : route.page === 'todo' ? 'To-do' : title
+  const shown = route.page === 'home' ? 'Home' : route.page === 'todo' ? 'To-do' : route.page === 'sales' ? 'Till sales' : title
   useEffect(() => { document.title = shown ? `${shown} · ${me.company.name}` : me.company.name }, [shown, me.company.name])
 
   const onLook = useCallback((look: Prefs['office_look']) => {
@@ -92,18 +94,22 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
   }, [])
 
   const admin = route.page === 'classic' ? route.admin : menu.home
-  const current = route.page === 'classic' ? tabOf(menu, route.admin) : null
+  const same = adminEquivalent(route) // the current back office's page this one stands for: its menu area, its star
+  const current = same ? tabOf(menu, same) : null
   const Look = me.prefs.office_look === 'side' ? SideLook : TopLook
   // The page on screen, for the star (add it to favourites): where the frame is now, which may be past the menu click.
-  const page = route.page === 'classic' ? { url: adminPathFor(location.pathname + location.search) ?? route.admin, label: title || 'This page' } : null
+  const page = route.page === 'classic' ? { url: adminPathFor(location.pathname + location.search) ?? route.admin, label: title || 'This page' }
+    : route.page === 'sales' ? { url: '/admin/sales', label: 'Till sales' } : null
 
   return (
     <>
       <Look me={me} menu={menu} current={current} page={page} todo={todo} atTodo={route.page === 'todo'} onLook={onLook} onFavourites={(favourites) => setMe({ ...me, favourites })}>
-        {/* Home and To-do are the new ones; every other page is the current back office's, framed. */}
+        {/* Pages rebuilt so far are the new ones; every other page is the current back office's, framed. */}
         {route.page === 'home' ? <HomePage me={me} menu={menu} />
           : route.page === 'todo' ? <TodoPage onCount={setTodo} />
-            : <ClassicPage admin={admin} onTitle={setTitle} />}
+            : route.page === 'sales' ? <SalesPage />
+              : route.page === 'sale' ? <SalePage id={route.id} onTitle={setTitle} />
+                : <ClassicPage admin={admin} onTitle={setTitle} />}
       </Look>
       <Toaster toasterId={toaster} position="top-end" />
     </>

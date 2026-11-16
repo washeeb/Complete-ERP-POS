@@ -23,6 +23,22 @@ export type TodoItem = {
 }
 export type TodoGroup = { key: string; label: string; hint: string; count: number; url: string | null; inline: boolean; items: TodoItem[] }
 export type Todo = { currency: string; exponent: number; groups: TodoGroup[]; total: number }
+export type SaleRow = { id: string; receipt_no: string; occurred_at: string; kind: string; branch: string | null; till: string | null; cashier: string | null; total: number; paid_by: string[] }
+export type SalesList = {
+  currency: string; exponent: number; total: number; sum: number; mix: { method: string; amount: number }[]
+  page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: SaleRow[]
+}
+export type Option = { id: string; label: string }
+export type SalesOptions = { branches: Option[]; tellers: Option[]; methods: Option[]; per: number[] }
+export type SaleDetail = {
+  currency: string; exponent: number; id: string; receipt_no: string; occurred_at: string; kind: string; return_reason: string | null
+  cashier: string | null; where: string; net: number; tax: number; total: number; change: number; discount: number; discount_note: string | null; points: number
+  customer: { id: string | null; walk_in_name: string | null; walk_in_phone: string | null; details: { label: string; value: string }[]; comment: string | null; comment_on_receipt: boolean }
+  lines: { name: string; qty: string; unit_price: number; tax: number; total: number; dosage: string | null }[]
+  tax_breakdown: { name: string; amount: number }[]
+  payments: { method: string; amount: number; reference: string | null }[]
+  actions: { print: string; preview: string; save_customer: boolean }
+}
 export type Period = 'today' | 'week' | 'month' | 'quarter' | 'year'
 export type Kpi = { key: string; label: string; format: 'money' | 'count'; current: number; previous: number | null; change: number | null; spark: number[]; url: string }
 export type HomeData = {
@@ -77,6 +93,11 @@ export const api = {
   home: (period: Period, top: Period) => call<HomeData>(`/office-api/home?period=${period}&top=${top}`),
   saveHome: (layout: import('./home/layout').HomeLayout | null) =>
     call<{ layout: import('./home/layout').HomeLayout | null }>('/office-api/home-layout', { method: 'POST', body: JSON.stringify({ layout }) }),
+  sales: (query: string, signal?: AbortSignal) => call<SalesList>(`/office-api/sales?${query}`, { signal }),
+  salesOptions: () => call<SalesOptions>('/office-api/sales/options'),
+  sale: (id: string) => call<SaleDetail>(`/office-api/sales/${id}`),
+  saveSaleCustomer: (id: string, name: string, phone: string) =>
+    call<{ customer: { id: string; name: string } }>(`/office-api/sales/${id}/save-customer`, { method: 'POST', body: JSON.stringify({ name, phone }) }),
   todo: () => call<Todo>('/office-api/todo'),
   todoCount: () => call<{ count: number }>('/office-api/todo-count'),
   /** Approve or decline a till request; ApiError code "reconfirm" (with its url) = confirm it is you first. */

@@ -10,6 +10,7 @@ use App\Http\Controllers\AccessRequestController;
 use App\Http\Controllers\BrandAssetController;
 use App\Http\Controllers\ExpenseReceiptController;
 use App\Http\Controllers\Office\OfficeController;
+use App\Http\Controllers\Office\SalesController as OfficeSalesController;
 use App\Http\Controllers\PrintController;
 use App\Http\Controllers\RemoteConnectController;
 use App\Http\Controllers\RfqQuoteController;
@@ -40,7 +41,7 @@ Route::get('/office', fn () => redirect('/office/'));
 // Signed out in the new back office: sign in, then back to the same page of it (only ever a page of /office).
 Route::get('/office-signin', [OfficeController::class, 'signIn'])->name('office.sign-in');
 Route::get('/office/{path?}', [OfficeController::class, 'index'])->where('path', '.*')->name('office');
-Route::prefix('office-api')->middleware(['auth', 'throttle:120,1'])->group(function () {
+Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->group(function () {
     Route::get('me', [OfficeController::class, 'me']);
     Route::get('menu', [OfficeController::class, 'menu']);
     Route::get('search', [OfficeController::class, 'search']);
@@ -50,6 +51,11 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1'])->group(funct
     Route::get('todo', [OfficeController::class, 'todo']);
     Route::get('todo-count', [OfficeController::class, 'todoCount']);
     Route::post('till-requests/{id}/decide', [OfficeController::class, 'decideTillRequest'])->whereUuid('id');
+    // Screens rebuilt in the new back office (release 2: sales and shifts).
+    Route::get('sales', [OfficeSalesController::class, 'index']);
+    Route::get('sales/options', [OfficeSalesController::class, 'options']);
+    Route::get('sales/{id}', [OfficeSalesController::class, 'show'])->whereUuid('id');
+    Route::post('sales/{id}/save-customer', [OfficeSalesController::class, 'saveCustomer'])->whereUuid('id');
 });
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;
@@ -66,7 +72,7 @@ Route::get('/pos/{path?}', function () {
 })->where('path', '.*');
 
 // Passkey sign-in for the back office (package routes, with our hardened login controller).
-Route::prefix('passkeys')->middleware('throttle:10,1')->group(function () {
+Route::prefix('passkeys')->middleware('throttle:10,1,passkeys')->group(function () {
     Route::get('authentication-options', GeneratePasskeyAuthenticationOptionsController::class)->name('passkeys.authentication_options');
     Route::post('authenticate', PasskeyLoginController::class)->name('passkeys.login');
 });
@@ -74,10 +80,10 @@ Route::prefix('passkeys')->middleware('throttle:10,1')->group(function () {
 // Built-in online shop (one per storefront channel; 404 unless the channel is active).
 Route::prefix('shop/{slug}')->where(['slug' => '[a-z0-9-]+'])->group(function () {
     Route::get('/', [StorefrontController::class, 'index'])->name('shop.index');
-    Route::post('cart', [StorefrontController::class, 'add'])->name('shop.add')->middleware('throttle:60,1');
+    Route::post('cart', [StorefrontController::class, 'add'])->name('shop.add')->middleware('throttle:60,1,shop-cart');
     Route::get('cart', [StorefrontController::class, 'cartView'])->name('shop.cart');
-    Route::post('cart/update', [StorefrontController::class, 'update'])->name('shop.update')->middleware('throttle:60,1');
-    Route::post('checkout', [StorefrontController::class, 'checkout'])->name('shop.checkout')->middleware('throttle:10,1');
+    Route::post('cart/update', [StorefrontController::class, 'update'])->name('shop.update')->middleware('throttle:60,1,shop-cart');
+    Route::post('checkout', [StorefrontController::class, 'checkout'])->name('shop.checkout')->middleware('throttle:10,1,shop-checkout');
     Route::get('order/{order}', [StorefrontController::class, 'order'])->name('shop.order')->whereUuid('order')->middleware('signed');
 });
 
@@ -112,7 +118,7 @@ Route::prefix('print')->middleware(['auth', 'license:output'])->name('print.')->
 });
 
 // Receipt photos attached to expense claims (private storage).
-Route::get('remote/connect/{device}/{mode}', RemoteConnectController::class)->middleware(['auth', 'throttle:30,1'])->name('remote.connect')->whereUuid('device')->where('mode', 'view|control');
+Route::get('remote/connect/{device}/{mode}', RemoteConnectController::class)->middleware(['auth', 'throttle:30,1,remote-connect'])->name('remote.connect')->whereUuid('device')->where('mode', 'view|control');
 Route::get('whatsapp-file/{order}/{index}', WhatsappMediaController::class)->middleware(['auth'])->name('whatsapp.file')->whereUuid('order')->whereNumber('index');
 Route::get('support-screenshot/{report}', SupportScreenshotController::class)->middleware(['auth'])->name('support.screenshot')->whereUuid('report');
 Route::get('expense-receipt/{claim}', ExpenseReceiptController::class)->middleware(['auth', 'license:output'])->name('expense.receipt')->whereUuid('claim');
@@ -121,8 +127,8 @@ Route::get('expense-receipt/{claim}', ExpenseReceiptController::class)->middlewa
 Route::get('disposal-certificate/{adjustment}', [PrintController::class, 'disposalCertificate'])->middleware(['auth', 'license:output'])->name('disposal.certificate')->whereUuid('adjustment');
 
 // The receiver of a waybill confirms delivery from the QR code: no sign-in, the waybill's secret link only.
-Route::get('w/{token}', [WaybillConfirmController::class, 'show'])->name('waybill.confirm')->middleware('throttle:30,1');
-Route::post('w/{token}', [WaybillConfirmController::class, 'confirm'])->middleware('throttle:10,1');
+Route::get('w/{token}', [WaybillConfirmController::class, 'show'])->name('waybill.confirm')->middleware('throttle:30,1,waybill');
+Route::post('w/{token}', [WaybillConfirmController::class, 'confirm'])->middleware('throttle:10,1,waybill-confirm');
 
 // A supplier downloads the purchase order sent to them by WhatsApp: no sign-in, a signed link for 30 days, that PDF only.
 Route::get('po/{po}', function (string $po) {
@@ -130,45 +136,45 @@ Route::get('po/{po}', function (string $po) {
     abort_unless($path, 404);
 
     return Storage::disk('local')->download($path, PurchaseOrder::withoutGlobalScopes()->whereKey($po)->value('number').'.pdf');
-})->name('purchase-order.pdf')->whereUuid('po')->middleware(['signed', 'throttle:30,1']);
+})->name('purchase-order.pdf')->whereUuid('po')->middleware(['signed', 'throttle:30,1,po-pdf']);
 
 // Someone stops campaign e-mails from the link in one (CRM): no sign-in, a signed link. The page asks first, so mail
 // "This wasn't me" (owner decision 2026-11-13): from the new-computer notice or e-mail. The link shows the page; the
 // button signs the account out everywhere (scanners opening links change nothing). Signed, 7 days.
 Route::get('account/not-me/{user}/{computer}', fn (string $user) => view('access.not-me', ['done' => false, 'name' => User::withoutGlobalScopes()->findOrFail($user)->name, 'locked' => false]))
-    ->name('account.not-me')->whereUuid(['user', 'computer'])->middleware(['signed', 'throttle:20,1']);
+    ->name('account.not-me')->whereUuid(['user', 'computer'])->middleware(['signed', 'throttle:20,1,not-me']);
 Route::post('account/not-me/{user}/{computer}', function (Request $request, string $user, string $computer) {
     $user = User::withoutGlobalScopes()->findOrFail($user);
     app(SignInGuard::class)->notMe($user, $computer, $request->boolean('lock'));
 
     return view('access.not-me', ['done' => true, 'name' => $user->name, 'locked' => $request->boolean('lock')]);
-})->whereUuid(['user', 'computer'])->middleware(['signed', 'throttle:20,1']);
+})->whereUuid(['user', 'computer'])->middleware(['signed', 'throttle:20,1,not-me-answer']);
 
 // scanners opening links do not unsubscribe people; the button posts.
 Route::get('u/{kind}/{id}/{channel}', fn (string $kind, string $id, string $channel) => view('crm-unsubscribe', ['done' => false, 'company' => null]))
-    ->name('crm.unsubscribe')->where(['kind' => 'customer|lead', 'channel' => 'email|sms|whatsapp'])->whereUuid('id')->middleware(['signed', 'throttle:30,1']);
+    ->name('crm.unsubscribe')->where(['kind' => 'customer|lead', 'channel' => 'email|sms|whatsapp'])->whereUuid('id')->middleware(['signed', 'throttle:30,1,unsubscribe']);
 Route::post('u/{kind}/{id}/{channel}', fn (string $kind, string $id, string $channel) => view('crm-unsubscribe', ['done' => true,
     'company' => app(Crm::class)->unsubscribe($kind, $id, $channel)]))
-    ->where(['kind' => 'customer|lead', 'channel' => 'email|sms|whatsapp'])->whereUuid('id')->middleware(['signed', 'throttle:10,1']);
+    ->where(['kind' => 'customer|lead', 'channel' => 'email|sms|whatsapp'])->whereUuid('id')->middleware(['signed', 'throttle:10,1,unsubscribe-answer']);
 
 // Service desk (paid add-on): customers report a problem on the company's web form; "How did we do?" after a ticket is
 // resolved (signed link; the page asks first).
-Route::get('help/{company}', [ServiceDeskPublicController::class, 'form'])->where('company', '[a-z0-9-]+')->middleware('throttle:30,1')->name('service.help');
-Route::post('help/{company}', [ServiceDeskPublicController::class, 'submit'])->where('company', '[a-z0-9-]+')->middleware('throttle:5,1');
-Route::get('r/{ticket}', [ServiceDeskPublicController::class, 'rateForm'])->whereUuid('ticket')->middleware(['signed', 'throttle:30,1'])->name('ticket.rate');
-Route::post('r/{ticket}', [ServiceDeskPublicController::class, 'rate'])->whereUuid('ticket')->middleware(['signed', 'throttle:10,1']);
+Route::get('help/{company}', [ServiceDeskPublicController::class, 'form'])->where('company', '[a-z0-9-]+')->middleware('throttle:30,1,help')->name('service.help');
+Route::post('help/{company}', [ServiceDeskPublicController::class, 'submit'])->where('company', '[a-z0-9-]+')->middleware('throttle:5,1,help-submit');
+Route::get('r/{ticket}', [ServiceDeskPublicController::class, 'rateForm'])->whereUuid('ticket')->middleware(['signed', 'throttle:30,1,rate'])->name('ticket.rate');
+Route::post('r/{ticket}', [ServiceDeskPublicController::class, 'rate'])->whereUuid('ticket')->middleware(['signed', 'throttle:10,1,rate-submit']);
 
 // A supplier quotes on a request for quotation from the link sent to them: no sign-in, that request only.
-Route::get('q/{token}', [RfqQuoteController::class, 'show'])->name('rfq.quote')->middleware('throttle:30,1');
-Route::post('q/{token}', [RfqQuoteController::class, 'quote'])->middleware('throttle:10,1');
+Route::get('q/{token}', [RfqQuoteController::class, 'show'])->name('rfq.quote')->middleware('throttle:30,1,rfq');
+Route::post('q/{token}', [RfqQuoteController::class, 'quote'])->middleware('throttle:10,1,rfq-submit');
 
 // The supplier portal: the supplier's own page from their secret link (orders, invoices, payments). 404 while it is off.
-Route::prefix('s/{token}')->middleware('throttle:30,1')->group(function () {
+Route::prefix('s/{token}')->middleware('throttle:30,1,supplier-portal')->group(function () {
     Route::get('/', [SupplierPortalController::class, 'home'])->name('supplier.portal');
     Route::get('order/{po}', [SupplierPortalController::class, 'order'])->name('supplier.portal.order')->whereUuid('po');
     Route::get('order/{po}/pdf', [SupplierPortalController::class, 'orderPdf'])->name('supplier.portal.order-pdf')->whereUuid('po');
-    Route::post('order/{po}', [SupplierPortalController::class, 'act'])->whereUuid('po')->middleware('throttle:10,1');
-    Route::post('invoice', [SupplierPortalController::class, 'invoice'])->name('supplier.portal.invoice')->middleware('throttle:10,1');
+    Route::post('order/{po}', [SupplierPortalController::class, 'act'])->whereUuid('po')->middleware('throttle:10,1,supplier-order');
+    Route::post('invoice', [SupplierPortalController::class, 'invoice'])->name('supplier.portal.invoice')->middleware('throttle:10,1,supplier-invoice');
     Route::get('wht/{payment}', [SupplierPortalController::class, 'wht'])->name('supplier.portal.wht')->whereUuid('payment');
 });
 Route::get('agreement-file/{agreement}', function (PurchaseAgreement $agreement, Authorizer $authz) {
@@ -184,7 +190,7 @@ Route::get('supplier-invoice/{invoice}', [SupplierPortalController::class, 'file
 Route::get('stock-photo/{line}', StockPhotoController::class)->middleware(['auth'])->name('stock-photo')->whereUuid('line');
 
 // "Ask for access" from the no-access page: the people who give roles are told who asked, for which page and why.
-Route::post('access-request', AccessRequestController::class)->middleware(['auth', 'throttle:5,10'])->name('access.request');
+Route::post('access-request', AccessRequestController::class)->middleware(['auth', 'throttle:5,10,access-request'])->name('access.request');
 
 // How far the signed-in person's long work has got (imports, bulk changes): asked by the progress card every second.
 Route::get('progress-status', fn () => response()->json(Progress::live()))->middleware(['auth'])->name('progress.status');
@@ -209,4 +215,4 @@ Route::post('admin-ui/favourite', function (Request $request, AccessService $acc
     }
 
     return response()->json(['favourites' => $list]);
-})->middleware(['auth', 'throttle:30,1'])->name('ui.favourite');
+})->middleware(['auth', 'throttle:30,1,favourite'])->name('ui.favourite');
