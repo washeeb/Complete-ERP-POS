@@ -335,7 +335,7 @@ Register and enrol the tills, handhelds and kitchen screens: **Chapter 9**.
 3. **Give each teller a vault:** **Cash → Shifts and vaults → Add a vault**: a name (*Vault 1*), the teller who holds it, the till (only for *own till*), and the standard float. One vault per person.
 4. **On the till:** at *Open shift* the teller sees only their own vault, confirms they counted its float, and sells. Their name and vault show in their own colour at the top of the till.
 5. **Someone away?** A manager lends the absent teller's vault to the person covering, for today only: on the till (*Covering for someone?*, the manager's username and PIN) or in **Cash → Shifts and vaults → Lend for today**. **Why:** the cover is recorded with the manager's name and reason, and ends at midnight.
-6. **Closing:** the teller counts blind and is signed out. With *a manager recounts*, the shift shows *Waiting for the manager's count* in **Sales → Shifts**; the manager presses **Count the vault** and counts the tray (one recount if the two counts differ). Only then is the over/short booked.
+6. **Closing:** the teller counts blind and is signed out. With *a manager recounts*, the shift shows *Waiting for the manager's count* in **Sales → Till shifts**; the manager opens the shift, presses **Count the vault** and counts the tray (one recount if the two counts differ). Only then is the over/short booked.
 
 **Staff cards (optional, faster sign-in).**
 1. Open **People & access → Staff cards**.

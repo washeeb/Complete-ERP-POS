@@ -53,6 +53,8 @@ export type ShiftDetail = ShiftRow & {
   facts: Record<string, string>
   sheets: ReportSheet[]
   expected_now: number | null
+  denominations: { key: string; label: string; value: number; kind: 'note' | 'coin' }[]
+  vault_recounts: number
   actions: { report: boolean; close: boolean; correct: boolean; count_vault: boolean }
 }
 export type ShiftsOptions = { branches: Option[]; tellers: Option[]; people: Option[]; kinds: Option[]; per: number[] }
@@ -127,6 +129,9 @@ export const api = {
   shiftReportUrl: (id: string) => `/office-api/shifts/${id}/report`,
   closeShift: (id: string, counted: string, reason: string) => call<ShiftDetail>(`/office-api/shifts/${id}/close`, { method: 'POST', body: JSON.stringify({ counted, reason }) }),
   correctShift: (id: string, counted: string, reason: string) => call<ShiftDetail>(`/office-api/shifts/${id}/correct`, { method: 'POST', body: JSON.stringify({ counted, reason }) }),
+  /** The manager's blind vault count: "recount" = differs from the teller's the first time, count again; "checked" = booked. */
+  countVault: (id: string, body: { denoms?: Record<string, number>; amount?: string }) =>
+    call<{ status: 'recount' | 'checked'; shift: ShiftDetail }>(`/office-api/shifts/${id}/count-vault`, { method: 'POST', body: JSON.stringify(body) }),
   drawer: (query: string, signal?: AbortSignal) => call<DrawerList>(`/office-api/drawer?${query}`, { signal }),
   todo: () => call<Todo>('/office-api/todo'),
   todoCount: () => call<{ count: number }>('/office-api/todo-count'),

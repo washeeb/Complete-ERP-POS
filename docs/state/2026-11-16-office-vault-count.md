@@ -1,0 +1,13 @@
+## New back office, release 2 finished: the vault count — branch `office-vault-count`
+- **Server:** `POST /office-api/shifts/{id}/count-vault` (`Office\ShiftsController::countVault`).
+  - Takes `denoms` (key → whole count, keys from `CashControl::denominations`) or `amount`.
+  - Calls `TellerVaults::check` in one transaction and returns `{status: recount|checked, shift}`.
+  - AccessDenied gives 403 and DomainException gives 422 (e.g. a third count, or an unknown note).
+  - `ShiftsScreen::shift` now also returns `denominations` (key, label, value, note/coin) and `vault_recounts`.
+- **Client:** `pages/VaultCount.tsx` (the dialog and `countTotal`), opened from `ShiftPage`. The classic link for the vault count is gone.
+- **Tests:** OfficeVaultCountTest (2) and VaultCount.test.ts (2).
+- **Browser check:** `office-check.mjs` changes the shift answer in the browser only (to offer `count_vault`), fills two boxes, and expects the total; nothing is saved.
+- **Dev only:** `php artisan serve` cannot serve a deep `/office/…` address on reload (404).
+  - PHP's built-in server takes `public/office/index.html` as the script and `/shifts` as PATH_INFO, so Laravel sees the wrong path.
+  - The installed servers (Caddy, nginx, Docker) use try_files and are fine. In dev, open `/office/` and click through.
+- **Release 2 is complete** (sales, shifts, drawer, vault count). Next: release 3, products and stock.

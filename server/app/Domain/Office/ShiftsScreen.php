@@ -2,6 +2,7 @@
 
 namespace App\Domain\Office;
 
+use App\Domain\Pos\CashControl;
 use App\Domain\Pos\ShiftService;
 use App\Filament\Resources\Shifts\ShiftResource;
 use App\Filament\Support\Erp;
@@ -112,6 +113,10 @@ final class ShiftsScreen
             'tiles' => $intro['tiles'], 'facts' => $intro['facts'], 'branch' => $intro['branch'],
             'sheets' => array_values(array_filter($sheets, fn ($sh) => ! (($sh['skip_empty'] ?? false) && $sh['rows'] === []))),
             'expected_now' => $s->isOpen() ? app(ShiftService::class)->expectedCash($s) : null,
+            // The vault count is blind: the notes and coins to count, never the figure it is checked against.
+            'denominations' => collect(CashControl::denominations($s->currency_code))->map(fn ($d, $key) => ['key' => $key, 'label' => preg_replace('/ (note|coin)$/', '', $d[0]),
+                'value' => $d[1], 'kind' => str_starts_with($key, 'n') ? 'note' : 'coin'])->values()->all(),
+            'vault_recounts' => (int) $s->check_recounts,
             'actions' => [
                 'report' => ! $s->isOpen(),
                 'close' => $s->isOpen() && ! $s->vault_session_id && $canSetup,

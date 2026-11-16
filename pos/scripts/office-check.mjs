@@ -89,6 +89,27 @@ try {
           await page.waitForURL(/\/office\/shifts\/[0-9a-f-]{36}$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: a shift did not open`))
           await page.getByText('Grand total sold').waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: the shift shows no report figures`))
           await page.screenshot({ path: out(`shift-${look}-${w}`), fullPage: true })
+          // The vault count form, drawn: the dev data has no vault waiting, so the answer is changed in the browser only
+          // to offer the count; the form is shown, looked at and cancelled (nothing is saved).
+          if (look === 'top' && w === 1366) {
+            await page.route('**/office-api/shifts/*', async (r) => {
+              const res = await r.fetch()
+              const j = await res.json()
+              await r.fulfill({ response: res, json: { ...j, vault: 'Vault 1', actions: { ...j.actions, count_vault: true } } })
+            })
+            // Back to the list and open the row again in the app (not a reload: `php artisan serve` cannot serve a deep
+            // /office/… address, it takes /office/index.html for a script; the installed web servers can).
+            await page.goBack()
+            await row.click()
+            await page.getByRole('button', { name: 'Count the vault' }).click({ timeout: 15000 })
+            const dlg = page.getByRole('dialog', { name: /Count the vault/ })
+            await dlg.getByLabel('GH₵100', { exact: true }).fill('1').catch(() => problems.push('vault count: no GH₵100 box'))
+            await dlg.getByLabel('GH₵20', { exact: true }).fill('2').catch(() => problems.push('vault count: no GH₵20 box'))
+            await dlg.getByText('GH₵140.00').waitFor({ timeout: 5000 }).catch(() => problems.push('vault count: the total did not add up to GH₵140.00'))
+            await page.screenshot({ path: out('vault-count') })
+            await dlg.getByRole('button', { name: 'Cancel' }).click()
+            await page.unroute('**/office-api/shifts/*')
+          }
         }
       }
 

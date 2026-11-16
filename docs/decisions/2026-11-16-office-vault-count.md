@@ -1,0 +1,12 @@
+## The vault count in the new back office
+- **Found:**
+  - The vault count was the last part of release 2 still on the classic screen.
+  - The rule itself (blind count, one recount on the first mismatch, the second count booked) already lives in `TellerVaults::check`.
+- **Decided:**
+  - The new form calls that same service, so both screens follow one rule.
+  - The form shows the running total of what the manager typed (it helps them catch a typo), but never the teller's or the expected figure, because the count must stay blind.
+  - After a mismatch the boxes are cleared, not kept, so the recount really starts from the tray.
+- **Found while checking:** a reload of a deep `/office/…` address 404s under `php artisan serve`.
+  - Proven with a request-echo router: SCRIPT_NAME was `/office/index.html` and PATH_INFO was `/shifts`.
+  - This is the PHP built-in server, not the app. In Pest the same addresses answer normally, and the installed web servers use try_files.
+  - Not worked around in the app. The browser check now reaches the shift by clicking, as a person does.
