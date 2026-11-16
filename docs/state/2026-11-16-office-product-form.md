@@ -1,0 +1,18 @@
+## New back office, release 3 part 2: the product form — branch `office-product-form`
+- **Server:** `App\Domain\Office\ProductForm`.
+  - `form(?Product)` gives values, choices, `sections`, `base_unit_locked` (stock has moved), the pricing note and the AI availability.
+  - `save()` maps the values to `CatalogService::saveProduct`. Only the sections in use are sent, so a hidden module's fields are never cleared. Prices are sent only with `pricing.manage` for the product's industry. The base unit is not sent once stock has moved. The NHIS price goes to minor units.
+- **Routes (ProductsController):**
+  - `GET products/form`, `products/{id}/form`
+  - `POST products`, `products/{id}` (save)
+  - `POST products/quick-add` (category, brand or unit, via `QuickCreate::existing` and `saveSimple`)
+  - `GET products/ingredients`
+  - `POST products/{id}/describe` (ProductWriter)
+- **Client:**
+  - `pages/ProductFormPage.tsx`.
+  - `form/Fields.tsx`: Choose (type-to-narrow plus "+"), ChooseMany, Tags (scan, then Enter), TextField, LongText, Toggle. Each field may shrink to its grid column.
+  - Routes `/office/products/new` and `/office/products/{id}/edit`.
+  - `REBUILT` maps `/admin/products/create` and `/admin/products/{uuid}/edit` to them; **Classic form** links to the old one.
+- **office-check:** Edit opens the form, typing keeps its place, screenshots of units and prices, then Cancel.
+- **Tests:** OfficeProductsTest (12).
+- **Next in release 3:** stock on hand, stock movements, adjustments, counts, transfers and requests.

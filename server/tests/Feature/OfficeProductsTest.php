@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Inventory\InventoryService;
+use App\Models\AuditEvent;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Till;
@@ -104,4 +105,60 @@ it('changes the unit of a product, and lists the ones that cannot change', funct
     expect($r['done'])->toBe(1)->and(Product::find($this->sugar->id)->base_uom_id)->toBe($tab->id);
     $this->postJson('/office-api/products/bulk', ['action' => 'unit', 'mode' => 'convert', 'uom_id' => $tab->id, 'reason' => 'x', 'ids' => [$this->milo->id]])
         ->assertStatus(422); // convert needs "how many"
+});
+
+// The product form (release 3, part 2): the current form's fields, saved through the same CatalogService::saveProduct.
+
+it('opens an empty form for a new product, and creates it with its unit, barcode and price', function () {
+    $this->actingAs($this->owner, 'web');
+    $f = $this->getJson('/office-api/products/form')->assertOk()->json();
+    expect($f['id'])->toBeNull()->and($f['values']['track_stock'])->toBeTrue()->and($f['values']['base_uom_id'])->not->toBe('')
+        ->and($f['sections']['prices'])->toBeTrue()->and($f['choices']['uoms'])->not->toBeEmpty();
+
+    $ctn = Uom::where('code', 'CTN')->value('id');
+    $v = $f['values'];
+    $v['name'] = 'Peak milk 400g';
+    $v['base_barcodes'] = ['6001067099991'];
+    $v['units'] = [['uom_id' => $ctn, 'factor' => '12', 'is_sellable' => true, 'is_purchasable' => true, 'barcodes' => []]];
+    $v['prices'][0]['amount'] = '25.50';
+    $id = $this->postJson('/office-api/products', ['values' => $v])->assertOk()->json('id');
+
+    $p = Product::with('prices', 'units', 'barcodes')->find($id);
+    expect($p->name)->toBe('PEAK MILK 400G')->and($p->sku)->not->toBe('')->and($p->units)->toHaveCount(2)
+        ->and($p->prices->first()->amount_minor)->toBe(2550)->and($p->barcodes->pluck('code')->all())->toContain('6001067099991');
+});
+
+it('edits a product with a reason, and refuses a rule the service enforces', function () {
+    $this->actingAs($this->owner, 'web');
+    $f = $this->getJson("/office-api/products/{$this->milo->id}/form")->assertOk()->json();
+    expect($f['values']['name'])->toBe('MILO 400G')->and($f['values']['units'][0]['factor'])->toBe('24')->and($f['base_unit_locked'])->toBeTrue()
+        ->and(collect($f['values']['prices'])->pluck('amount')->all())->toContain('45.00');
+
+    $v = $f['values'];
+    $v['location'] = 'Shelf B2';
+    $v['reason'] = 'Moved to aisle B';
+    $v['base_uom_id'] = Uom::where('code', 'CTN')->value('id'); // stock has moved: ignored, not an error
+    $this->postJson("/office-api/products/{$this->milo->id}", ['values' => $v])->assertOk();
+    $p = $this->milo->fresh();
+    expect($p->location)->toBe('Shelf B2')->and($p->base_uom_id)->toBe(Uom::where('code', 'PC')->value('id'))
+        ->and(AuditEvent::where('subject_id', $p->id)->where('action', 'product.updated')->orderByDesc('seq')->value('reason'))->toBe('Moved to aisle B');
+
+    $v['plu'] = 'abc'; // a scale code is up to 5 digits
+    $this->postJson("/office-api/products/{$this->milo->id}", ['values' => $v])->assertStatus(422)->assertJsonPath('detail', fn ($d) => str_contains($d, 'PLU'));
+});
+
+it('adds a missing category from the form, and picks one that already exists', function () {
+    $this->actingAs($this->owner, 'web');
+    $a = $this->postJson('/office-api/products/quick-add', ['kind' => 'category', 'name' => 'Beverages'])->assertOk()->json();
+    $b = $this->postJson('/office-api/products/quick-add', ['kind' => 'category', 'name' => 'beverages'])->assertOk()->json();
+    expect($a['existed'])->toBeFalse()->and($b['existed'])->toBeTrue()->and($b['id'])->toBe($a['id']);
+    expect($this->getJson('/office-api/products/ingredients?q=milo')->assertOk()->json('results.0.label'))->toContain('MILO');
+});
+
+it('keeps the form from someone who may not change products', function () {
+    $auditor = withMfa(staff($this->owner, 'ama', 1, 'auditor', ScopeType::Branch, $this->branches['BA']->id));
+    $this->actingAs($auditor, 'web');
+    $this->getJson('/office-api/products/form')->assertForbidden();
+    $this->postJson("/office-api/products/{$this->milo->id}", ['values' => ['name' => 'X']])->assertForbidden();
+    $this->postJson('/office-api/products/quick-add', ['kind' => 'brand', 'name' => 'Nestle'])->assertForbidden();
 });

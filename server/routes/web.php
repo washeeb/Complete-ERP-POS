@@ -73,6 +73,13 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::post('products/bulk', [OfficeProductsController::class, 'bulk']);
     Route::post('products/hand-off', [OfficeProductsController::class, 'handOff']);
     Route::post('products/batches-all', [OfficeProductsController::class, 'batchesAll']);
+    Route::get('products/form', [OfficeProductsController::class, 'form']);
+    Route::get('products/{id}/form', [OfficeProductsController::class, 'form'])->whereUuid('id');
+    Route::post('products', [OfficeProductsController::class, 'save']);
+    Route::post('products/{id}', [OfficeProductsController::class, 'save'])->whereUuid('id');
+    Route::post('products/quick-add', [OfficeProductsController::class, 'quickAdd']);
+    Route::get('products/ingredients', [OfficeProductsController::class, 'ingredients']);
+    Route::post('products/{id}/describe', [OfficeProductsController::class, 'describe'])->whereUuid('id');
 });
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;

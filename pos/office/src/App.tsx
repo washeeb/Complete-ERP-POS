@@ -8,6 +8,7 @@ import { useRoute } from './nav'
 import { ClassicPage } from './pages/ClassicPage'
 import { HomePage } from './pages/HomePage'
 import { DrawerPage } from './pages/DrawerPage'
+import { ProductFormPage } from './pages/ProductFormPage'
 import { ProductPage } from './pages/ProductPage'
 import { ProductsPage } from './pages/ProductsPage'
 import { SalePage } from './pages/SalePage'
@@ -120,6 +121,7 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
                     : route.page === 'drawer' ? <DrawerPage />
                       : route.page === 'products' ? <ProductsPage />
                         : route.page === 'product' ? <ProductPage id={route.id} onTitle={setTitle} />
+                          : route.page === 'product-form' ? <ProductFormPage key={route.id ?? 'new'} id={route.id} onTitle={setTitle} />
                       : <ClassicPage admin={admin} onTitle={setTitle} />}
       </Look>
       <Toaster toasterId={toaster} position="top-end" />

@@ -167,6 +167,24 @@ try {
         await page.waitForURL(/\/office\/products\/[0-9a-f-]{36}$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: a product did not open`))
         await page.getByRole('heading', { name: 'Barcodes and units', level: 2 }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: the product shows no units`))
         await page.screenshot({ path: out(`product-${look}-${w}`), fullPage: true })
+        // Edit opens the new form; typing keeps its place (a field rebuilt on each key would lose it); Cancel goes back.
+        await page.getByRole('button', { name: 'Edit', exact: true }).click()
+        await page.waitForURL(/\/office\/products\/[0-9a-f-]{36}\/edit$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Edit did not open the new form (${page.url()})`))
+        await page.getByRole('button', { name: 'Save changes' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: the product form did not open`))
+        const shelf = page.getByLabel('Location / shelf')
+        await shelf.click()
+        await page.keyboard.type('B2 TEST')
+        if (!(await shelf.inputValue().catch(() => '')).endsWith('B2 TEST')) problems.push(`${look} ${w}: typing in the product form loses its place`)
+        await page.screenshot({ path: out(`product-form-${look}-${w}`), fullPage: true })
+        if (look === 'top' && w === 1366) {
+          await page.getByRole('region', { name: 'Barcodes and units' }).scrollIntoViewIfNeeded().catch(() => problems.push('product form: no Barcodes and units'))
+          await page.screenshot({ path: out('product-form-units') })
+          await page.getByRole('button', { name: 'Add a price' }).scrollIntoViewIfNeeded().catch(() => problems.push('product form: no Prices'))
+          await page.mouse.wheel(0, 200)
+          await page.screenshot({ path: out('product-form-prices') })
+        }
+        await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
+        await page.waitForURL(/\/office\/products\/[0-9a-f-]{36}$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Cancel did not go back to the product`))
       }
 
       // Stock on hand is still the current page: it opens inside, and the address follows.

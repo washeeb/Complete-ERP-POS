@@ -92,6 +92,24 @@ export type ProductDetail = {
   actions: { edit: string | null; labels: boolean; change_unit: boolean }
   change_unit_note: string | null
 }
+export type UnitRow = { uom_id: string; factor: string; is_sellable: boolean; is_purchasable: boolean; barcodes: string[] }
+export type PriceRow = { price_list_id: string; uom_id: string; min_qty: string; amount: string; starts_at: string; ends_at: string }
+export type ProductValues = {
+  name: string; industry_id: string; location: string; category_id: string; brand_id: string; tax_group_id: string; base_uom_id: string; buying_uom_id: string
+  track_stock: boolean; is_active: boolean; track_batches: boolean; plu: string; description: string
+  drug_schedule: string; generic_name: string; strength: string; dosage_form: string; fda_reg_no: string; active_ingredients: string[]; dosage: string; nhis_price: string; daily_use: string
+  track_serials: boolean; warranty_months: string; is_container: boolean; deposit_product_id: string; deposit_per_unit: string; consignor_id: string; consignment_bp: string
+  reading_kind: string; service_minutes: string; commission_bp: string; licence_keys: boolean
+  pack: { items: { product_ids: string[]; sessions: string; label: string }[]; valid_days: string }
+  station: string; modifier_group_ids: string[]; recipe: { product_uom_id: string; qty: string; label: string | null }[]
+  base_barcodes: string[]; units: UnitRow[]; prices: PriceRow[]; reason: string
+}
+export type ProductFormData = {
+  id: string | null; sku: string | null; name: string | null; currency: string; values: ProductValues
+  sections: { industry: boolean; medicine: boolean; serials: boolean; containers: boolean; consignment: boolean; health: boolean; services: boolean; restaurant: boolean; prices: boolean }
+  base_unit_locked: boolean; pricing_note: string | null; below_cost: boolean; can: { quick_add: boolean; describe: boolean }; ai_unavailable: string | null
+  choices: Record<'industries' | 'categories' | 'brands' | 'tax_groups' | 'uoms' | 'price_lists' | 'schedules' | 'containers' | 'suppliers' | 'readings' | 'services' | 'stations' | 'modifier_groups', Option[]>
+}
 /** Which products an action is for: the ticked ones, or every product the list's search and filters pick. */
 export type Pick = { ids: string[] } | { match: Record<string, string | string[]> }
 export type BulkResult = { done: number; untouched?: number; skipped: string[] }
@@ -176,6 +194,15 @@ export const api = {
   /** Export prices / Work out cost from selling price: their own pages, given the products; returns where to go. */
   productsHandOff: (pick: Pick, to: 'prices' | 'cost_run') =>
     call<{ url: string }>('/office-api/products/hand-off', { method: 'POST', body: JSON.stringify({ ...pick, to }) }),
+  /** The product form: a new product (no id) or an existing one. */
+  productForm: (id?: string) => call<ProductFormData>(id ? `/office-api/products/${id}/form` : '/office-api/products/form'),
+  saveProduct: (id: string | null, values: ProductValues) =>
+    call<{ id: string }>(id ? `/office-api/products/${id}` : '/office-api/products', { method: 'POST', body: JSON.stringify({ values }) }),
+  /** Add a missing category, brand or unit from the form; one already there under that name (or code) comes back instead. */
+  quickAdd: (kind: 'category' | 'brand' | 'uom', form: { name: string; code?: string; decimals?: number }) =>
+    call<{ id: string; label: string; existed: boolean }>('/office-api/products/quick-add', { method: 'POST', body: JSON.stringify({ kind, ...form }) }),
+  ingredients: (q: string, signal?: AbortSignal) => call<{ results: Option[] }>(`/office-api/products/ingredients?q=${encodeURIComponent(q)}`, { signal }),
+  describeProduct: (id: string, tone: string) => call<{ description: string }>(`/office-api/products/${id}/describe`, { method: 'POST', body: JSON.stringify({ tone }) }),
   batchesAll: () => call<{ done: number; untouched: number; skipped: string[] }>('/office-api/products/batches-all', { method: 'POST', body: '{}' }),
   todo: () => call<Todo>('/office-api/todo'),
   todoCount: () => call<{ count: number }>('/office-api/todo-count'),
