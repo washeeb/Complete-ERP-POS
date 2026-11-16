@@ -70,7 +70,7 @@ The migration imports are explained in Chapter 17.2. **Coming from** (QuickBooks
 
    **Why:** each industry's tills and screens show only its own products. A product list imported to the wrong industry would show at the wrong shops.
 
-   **Products already in the wrong industry:** Catalog → Products, tick them (the tick at the top selects the page; *Select all* selects every product in the list), then **Move to industry**. Stock and prices stay; SKUs given by the system take the new industry's series (e.g. `100123` becomes `PHARMA-000124`), while SKUs from your old system stay as they are.
+   **Products already in the wrong industry:** Stock → Products, tick them (the tick at the top ticks the page; *Tick all … that match* takes every product the search and filters pick), then **Change → Move to industry**. Stock and prices stay; SKUs given by the system take the new industry's series (e.g. `100123` becomes `PHARMA-000124`), while SKUs from your old system stay as they are.
 2. **Get the file ready:**
    - **Download template (Excel)** — the headings and one example row (also as **CSV**); or
    - **Download current data to edit (Excel)** — your existing products, prices, customers or suppliers in exactly the import layout (also as **CSV**). Change what you need in Excel and import it back;

@@ -86,6 +86,12 @@ What's there:
 
 **Till drawer (rebuilt).** **Sales → Till drawer** lists money in and out of the drawers besides sales: expenses paid out (press **Open** to see the receipt photo), pay-ins, cash drops and drawers opened without a sale, with who did it and who approved it.
 
+**Products (rebuilt).** **Stock → Products** lists what you sell and keep in stock, with the price on your standard price list and the stock on hand in the branches you may see.
+- **Find a product** by its SKU, name or shelf, or scan its barcode into the search box. **Filters** narrows by industry, category, for sale or not, medicine schedule, or out of stock.
+- **Tick products** (the tick at the top ticks the page; then **Tick all … that match** takes every product the search and filters pick) for **Print labels**, **Export prices**, and under **Change**: category, brand or tax, the unit, batches and expiry, the medicine schedule, the industry, or **Work out cost from selling price**. Products that cannot be changed are listed with the reason; the others are changed. **Why:** one product that cannot change does not stop the rest.
+- **Press a product** to see it on one page: its details, units and barcodes, prices (and the pricing rule that sets them, with a warning when a price is below the cost), the stock in each warehouse, batches with their expiry dates, and the latest stock movements.
+- **New product**, **Edit**, and the file imports under **More** still open the current form inside the new back office; that form is rebuilt next.
+
 Pages that have not been rebuilt yet open inside the new frame without their own menus. Over the next updates the daily screens are rebuilt one area at a time, and then everyone signs in to the new back office.
 
 **Why:** a faster, clearer screen that looks and behaves like a Windows program, introduced step by step so nothing stops working.

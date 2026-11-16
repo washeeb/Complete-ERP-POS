@@ -1,0 +1,12 @@
+## Products in the new back office
+- **Split:** release 3 (products and stock) is too large for one change. Products (list and product page) come first, then the product form, then the stock screens. Release 2 was split the same way.
+- **The product form stays classic for now.**
+  - Found: it has ten module sections (medicine, serials, containers, consignment, health check, services and packs, restaurant recipes, units, prices) and the AI description.
+  - Decided: rebuilding it properly is its own change. Until then New product and Edit open it framed, as other pages not yet rebuilt do.
+- **Every action of the current list is kept, through the same code.** Labels, the bulk changes and Switch on batches for all call the same services (CatalogService, Labels, UnitChangeService via `ProductResource::changeUnit`). Export prices and the cost run hand the ticked products over through the same session keys, so the two screens cannot drift apart.
+- **"Every product that matches" is sent as the filters, not as ids,** so ticking 1,500 products does not mean sending 1,500 ids. The server picks them again with the same filters, inside the person's industries, capped at 5,000.
+- **Stock on hand follows stock permissions.**
+  - Found: the current list sums stock in every warehouse, even for someone who may see only one branch's stock.
+  - Decided: the new screen shows only the warehouses whose stock the person may see, and no stock figure at all without `stock.view`.
+  - Likewise, the pricing note (it shows the latest cost) needs `pricing.manage`, as the Prices section of the form does.
+- **A link to the old list with a search** (`/admin/products?tableSearch=…`) opens the new list with the same search.

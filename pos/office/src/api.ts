@@ -64,6 +64,37 @@ export type DrawerRow = {
 }
 export type DrawerList = { currency: string; exponent: number; total: number; page: number; per: number; dir: 'asc' | 'desc'
   kinds: { id: string; label: string; count: number; amount: number }[]; rows: DrawerRow[] }
+export type ProductRow = {
+  id: string; sku: string; name: string; category: string | null; location: string | null; schedule: string | null; industry: string | null
+  active: boolean; batches: boolean; price: number | null; on_hand: string | null; unit: string | null; tracked: boolean
+}
+export type ProductsList = {
+  currency: string; exponent: number; price_list: string | null; stock_shown: boolean; total: number; active: number; out: number | null
+  page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: ProductRow[]
+}
+export type ProductsOptions = {
+  industries: Option[]; categories: Option[]; schedules: Option[]; per: number[]
+  can: { manage: boolean; prices: boolean; labels: boolean; cost_run: boolean; schedule: boolean; move_industry: boolean; stock: boolean }
+  links: { create?: string; import?: string; update?: string; import_prices?: string }
+  batches_off: number; batches_note: string
+  labels: { kinds: Option[]; layouts: (Option & { sheet: boolean })[]; price_lists: Option[] }
+  brands: Option[]; tax_groups: Option[]; uoms: Option[]; industry_choices: Option[]; medicine_schedules: Option[]
+}
+export type ProductDetail = {
+  currency: string; exponent: number; id: string; sku: string; name: string; active: boolean; schedule: string | null; description: string | null
+  unit: string | null; tracked: boolean; facts: Record<string, string>; medicine: Record<string, string>
+  units: { unit: string; factor: string; base: boolean; sold: boolean; bought: boolean; barcodes: string[] }[]
+  prices: { list: string | null; unit: string | null; from: string; amount: number; starts: string | null; ends: string | null }[]
+  pricing_note: string | null; below_cost: boolean
+  stock_shown: boolean; stock: { where: string; on_hand: string; low: boolean }[]; stock_total: string | null
+  batches: { batch: string; expires: string | null; on_hand: string; expired: boolean }[]
+  movements: { at: string | null; type: string; qty: string; in: boolean; where: string | null; reason: string | null; by: string | null }[]
+  actions: { edit: string | null; labels: boolean; change_unit: boolean }
+  change_unit_note: string | null
+}
+/** Which products an action is for: the ticked ones, or every product the list's search and filters pick. */
+export type Pick = { ids: string[] } | { match: Record<string, string | string[]> }
+export type BulkResult = { done: number; untouched?: number; skipped: string[] }
 export type Period = 'today' | 'week' | 'month' | 'quarter' | 'year'
 export type Kpi = { key: string; label: string; format: 'money' | 'count'; current: number; previous: number | null; change: number | null; spark: number[]; url: string }
 export type HomeData = {
@@ -133,6 +164,19 @@ export const api = {
   countVault: (id: string, body: { denoms?: Record<string, number>; amount?: string }) =>
     call<{ status: 'recount' | 'checked'; shift: ShiftDetail }>(`/office-api/shifts/${id}/count-vault`, { method: 'POST', body: JSON.stringify(body) }),
   drawer: (query: string, signal?: AbortSignal) => call<DrawerList>(`/office-api/drawer?${query}`, { signal }),
+  products: (query: string, signal?: AbortSignal) => call<ProductsList>(`/office-api/products?${query}`, { signal }),
+  productsOptions: () => call<ProductsOptions>('/office-api/products/options'),
+  product: (id: string) => call<ProductDetail>(`/office-api/products/${id}`),
+  /** Labels for the products, ready to print: the address opens them in a new tab. */
+  productLabels: (pick: Pick, form: { kind: string; layout: string; price_list_id: string | null; copies: number; skip: number; give: boolean }) =>
+    call<{ url: string; count: number; given: number }>('/office-api/products/labels', { method: 'POST', body: JSON.stringify({ ...pick, ...form }) }),
+  /** move (field, to) · schedule · batches · industry · unit (mode, uom_id, per, reason) */
+  productsBulk: (pick: Pick, action: string, form: Record<string, string | null> = {}) =>
+    call<BulkResult>('/office-api/products/bulk', { method: 'POST', body: JSON.stringify({ ...pick, action, ...form }) }),
+  /** Export prices / Work out cost from selling price: their own pages, given the products; returns where to go. */
+  productsHandOff: (pick: Pick, to: 'prices' | 'cost_run') =>
+    call<{ url: string }>('/office-api/products/hand-off', { method: 'POST', body: JSON.stringify({ ...pick, to }) }),
+  batchesAll: () => call<{ done: number; untouched: number; skipped: string[] }>('/office-api/products/batches-all', { method: 'POST', body: '{}' }),
   todo: () => call<Todo>('/office-api/todo'),
   todoCount: () => call<{ count: number }>('/office-api/todo-count'),
   /** Approve or decline a till request; ApiError code "reconfirm" (with its url) = confirm it is you first. */

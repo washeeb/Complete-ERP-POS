@@ -1,5 +1,5 @@
 import {
-  Button, Dropdown, makeStyles, mergeClasses, Option, ProgressBar, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, tokens,
+  Button, Checkbox, Dropdown, makeStyles, mergeClasses, Option, ProgressBar, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, tokens,
 } from '@fluentui/react-components'
 import { ChevronLeftRegular, ChevronRightRegular } from '@fluentui/react-icons'
 import type { ReactNode } from 'react'
@@ -11,6 +11,7 @@ const useStyles = makeStyles({
   head: { backgroundColor: tokens.colorNeutralBackground2, position: 'sticky', top: 0, zIndex: 1 },
   row: { cursor: 'pointer', ':focus-visible': { outline: `2px solid ${tokens.colorStrokeFocus2}`, outlineOffset: '-2px' } },
   end: { textAlign: 'right', fontVariantNumeric: 'tabular-nums' },
+  tick: { width: '36px', paddingInlineEnd: 0 },
   empty: { padding: '40px 16px', textAlign: 'center', color: tokens.colorNeutralForeground3 },
   pager: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', padding: '10px 4px' },
   pagerRight: { display: 'flex', alignItems: 'center', gap: '6px' },
@@ -20,19 +21,29 @@ export type Column<T> = { key: string; label: string; sort?: string; end?: boole
 
 /**
  * A list as a Fluent table: headers sort (click again to turn the order round), a row opens with a click or Enter, a
- * thin bar shows while the next page loads. Rows keep their place while loading, so the page does not jump.
+ * thin bar shows while the next page loads. Rows keep their place while loading, so the page does not jump. With
+ * `selected`, each row has a tick box (and the heading one ticks the whole page) for actions on several rows.
  */
-export function DataTable<T extends { id: string }>({ label, columns, rows, sort, dir, loading, empty, onSort, onOpen }: {
+export function DataTable<T extends { id: string }>({ label, columns, rows, sort, dir, loading, empty, onSort, onOpen, selected, onSelect }: {
   label: string; columns: Column<T>[]; rows: T[]; sort: string; dir: 'asc' | 'desc'; loading: boolean; empty: ReactNode
   onSort: (sort: string, dir: 'asc' | 'desc') => void; onOpen: (row: T) => void
+  selected?: ReadonlySet<string>; onSelect?: (ids: string[], on: boolean) => void
 }) {
   const s = useStyles()
+  const ticking = selected !== undefined && onSelect !== undefined
+  const onPage = rows.filter((r) => selected?.has(r.id)).length
   return (
     <div className={s.wrap}>
       {loading && <ProgressBar className={s.bar} thickness="medium" aria-label="Loading" />}
       <Table aria-label={label} size="medium" style={{ minWidth: 640 }}>
         <TableHeader className={s.head}>
           <TableRow>
+            {ticking && (
+              <TableHeaderCell className={s.tick}>
+                <Checkbox aria-label="Tick every row on this page" checked={onPage === 0 ? false : onPage === rows.length ? true : 'mixed'}
+                  onChange={(_, d) => onSelect(rows.map((r) => r.id), d.checked === true)} />
+              </TableHeaderCell>
+            )}
             {columns.map((c) => (
               <TableHeaderCell key={c.key} className={mergeClasses(c.end && s.end)} style={c.width ? { width: c.width } : undefined}
                 button={c.end ? { style: { justifyContent: 'flex-end' } } : undefined}
@@ -47,7 +58,12 @@ export function DataTable<T extends { id: string }>({ label, columns, rows, sort
         <TableBody>
           {rows.map((r) => (
             <TableRow key={r.id} className={s.row} tabIndex={0} onClick={() => onOpen(r)}
-              onKeyDown={(e) => { if (e.key === 'Enter') onOpen(r) }}>
+              onKeyDown={(e) => { if (e.key === 'Enter') onOpen(r) }} aria-selected={ticking ? selected.has(r.id) : undefined}>
+              {ticking && (
+                <TableCell className={s.tick} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                  <Checkbox aria-label="Tick this row" checked={selected.has(r.id)} onChange={(_, d) => onSelect([r.id], d.checked === true)} />
+                </TableCell>
+              )}
               {columns.map((c) => <TableCell key={c.key} className={mergeClasses(c.end && s.end)}>{c.render(r)}</TableCell>)}
             </TableRow>
           ))}
