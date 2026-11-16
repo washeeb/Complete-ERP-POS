@@ -39,6 +39,29 @@ export type SaleDetail = {
   payments: { method: string; amount: number; reference: string | null }[]
   actions: { print: string; preview: string; save_customer: boolean }
 }
+export type ShiftRow = {
+  id: string; where: string; status: 'open' | 'closed'; shift_name: string | null; opened_by: string | null; sellers: string | null
+  opened_at: string | null; closed_at: string | null; left_open: string | null; vault: string | null; vault_waiting: boolean
+  sales: number; takings: number; float: number; expected: number | null; counted: number | null; corrected: boolean; over_short: number | null
+  drawer: string | null; checks: string; note: string | null
+}
+export type ShiftsList = { currency: string; exponent: number; total: number; open: number; over_short: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: ShiftRow[] }
+export type ReportSheet = { title: string; headings: string[]; rows: string[][]; numeric?: number[]; foot?: string[] }
+export type ShiftDetail = ShiftRow & {
+  currency: string; exponent: number; branch: string
+  tiles: { label: string; value: string; tone?: 'good' | 'warn' | 'bad' | null }[]
+  facts: Record<string, string>
+  sheets: ReportSheet[]
+  expected_now: number | null
+  actions: { report: boolean; close: boolean; correct: boolean; count_vault: boolean }
+}
+export type ShiftsOptions = { branches: Option[]; tellers: Option[]; people: Option[]; kinds: Option[]; per: number[] }
+export type DrawerRow = {
+  id: string; occurred_at: string | null; where: string; kind: string; kind_label: string; amount: number | null; spent_on: string | null
+  reason: string | null; payee: string | null; by: string | null; approved_by: string | null; receipt: string | null; offline: boolean; shift_id: string
+}
+export type DrawerList = { currency: string; exponent: number; total: number; page: number; per: number; dir: 'asc' | 'desc'
+  kinds: { id: string; label: string; count: number; amount: number }[]; rows: DrawerRow[] }
 export type Period = 'today' | 'week' | 'month' | 'quarter' | 'year'
 export type Kpi = { key: string; label: string; format: 'money' | 'count'; current: number; previous: number | null; change: number | null; spark: number[]; url: string }
 export type HomeData = {
@@ -98,6 +121,13 @@ export const api = {
   sale: (id: string) => call<SaleDetail>(`/office-api/sales/${id}`),
   saveSaleCustomer: (id: string, name: string, phone: string) =>
     call<{ customer: { id: string; name: string } }>(`/office-api/sales/${id}/save-customer`, { method: 'POST', body: JSON.stringify({ name, phone }) }),
+  shifts: (query: string, signal?: AbortSignal) => call<ShiftsList>(`/office-api/shifts?${query}`, { signal }),
+  shiftsOptions: () => call<ShiftsOptions>('/office-api/shifts/options'),
+  shift: (id: string) => call<ShiftDetail>(`/office-api/shifts/${id}`),
+  shiftReportUrl: (id: string) => `/office-api/shifts/${id}/report`,
+  closeShift: (id: string, counted: string, reason: string) => call<ShiftDetail>(`/office-api/shifts/${id}/close`, { method: 'POST', body: JSON.stringify({ counted, reason }) }),
+  correctShift: (id: string, counted: string, reason: string) => call<ShiftDetail>(`/office-api/shifts/${id}/correct`, { method: 'POST', body: JSON.stringify({ counted, reason }) }),
+  drawer: (query: string, signal?: AbortSignal) => call<DrawerList>(`/office-api/drawer?${query}`, { signal }),
   todo: () => call<Todo>('/office-api/todo'),
   todoCount: () => call<{ count: number }>('/office-api/todo-count'),
   /** Approve or decline a till request; ApiError code "reconfirm" (with its url) = confirm it is you first. */

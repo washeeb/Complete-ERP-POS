@@ -11,6 +11,7 @@ use App\Http\Controllers\BrandAssetController;
 use App\Http\Controllers\ExpenseReceiptController;
 use App\Http\Controllers\Office\OfficeController;
 use App\Http\Controllers\Office\SalesController as OfficeSalesController;
+use App\Http\Controllers\Office\ShiftsController as OfficeShiftsController;
 use App\Http\Controllers\PrintController;
 use App\Http\Controllers\RemoteConnectController;
 use App\Http\Controllers\RfqQuoteController;
@@ -56,6 +57,13 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::get('sales/options', [OfficeSalesController::class, 'options']);
     Route::get('sales/{id}', [OfficeSalesController::class, 'show'])->whereUuid('id');
     Route::post('sales/{id}/save-customer', [OfficeSalesController::class, 'saveCustomer'])->whereUuid('id');
+    Route::get('shifts', [OfficeShiftsController::class, 'index']);
+    Route::get('shifts/options', [OfficeShiftsController::class, 'options']);
+    Route::get('shifts/{id}', [OfficeShiftsController::class, 'show'])->whereUuid('id');
+    Route::get('shifts/{id}/report', [OfficeShiftsController::class, 'report'])->whereUuid('id');
+    Route::post('shifts/{id}/close', [OfficeShiftsController::class, 'close'])->whereUuid('id');
+    Route::post('shifts/{id}/correct', [OfficeShiftsController::class, 'correct'])->whereUuid('id');
+    Route::get('drawer', [OfficeShiftsController::class, 'drawer']);
 });
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;

@@ -7,7 +7,10 @@ import { api, type Me, type Menu, type Prefs } from './api'
 import { useRoute } from './nav'
 import { ClassicPage } from './pages/ClassicPage'
 import { HomePage } from './pages/HomePage'
+import { DrawerPage } from './pages/DrawerPage'
 import { SalePage } from './pages/SalePage'
+import { ShiftPage } from './pages/ShiftPage'
+import { ShiftsPage } from './pages/ShiftsPage'
 import { SalesPage } from './pages/SalesPage'
 import { TodoPage } from './pages/TodoPage'
 import { adminEquivalent, adminPathFor, tabOf } from './paths'
@@ -72,7 +75,8 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
   const { dispatchToast } = useToastController(toaster)
   const [title, setTitle] = useState('')
 
-  const shown = route.page === 'home' ? 'Home' : route.page === 'todo' ? 'To-do' : route.page === 'sales' ? 'Till sales' : title
+  const LIST_TITLES: Partial<Record<typeof route.page, string>> = { home: 'Home', todo: 'To-do', sales: 'Till sales', shifts: 'Till shifts', drawer: 'Till drawer' }
+  const shown = LIST_TITLES[route.page] ?? title
   useEffect(() => { document.title = shown ? `${shown} · ${me.company.name}` : me.company.name }, [shown, me.company.name])
 
   const onLook = useCallback((look: Prefs['office_look']) => {
@@ -99,7 +103,7 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
   const Look = me.prefs.office_look === 'side' ? SideLook : TopLook
   // The page on screen, for the star (add it to favourites): where the frame is now, which may be past the menu click.
   const page = route.page === 'classic' ? { url: adminPathFor(location.pathname + location.search) ?? route.admin, label: title || 'This page' }
-    : route.page === 'sales' ? { url: '/admin/sales', label: 'Till sales' } : null
+    : same && LIST_TITLES[route.page] ? { url: same, label: LIST_TITLES[route.page]! } : null
 
   return (
     <>
@@ -109,7 +113,10 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
           : route.page === 'todo' ? <TodoPage onCount={setTodo} />
             : route.page === 'sales' ? <SalesPage />
               : route.page === 'sale' ? <SalePage id={route.id} onTitle={setTitle} />
-                : <ClassicPage admin={admin} onTitle={setTitle} />}
+                : route.page === 'shifts' ? <ShiftsPage />
+                  : route.page === 'shift' ? <ShiftPage id={route.id} onTitle={setTitle} />
+                    : route.page === 'drawer' ? <DrawerPage />
+                      : <ClassicPage admin={admin} onTitle={setTitle} />}
       </Look>
       <Toaster toasterId={toaster} position="top-end" />
     </>

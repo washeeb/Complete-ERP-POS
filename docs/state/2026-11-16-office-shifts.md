@@ -1,0 +1,14 @@
+## New back office, release 2: Till shifts and Till drawer — branch `office-shifts`
+- **Server:** `App\Domain\Office\ShiftsScreen`.
+  - `shifts`: status, branch, teller, period, from, to, os_min, os_max (the corrected over/short via a subquery on `shift_count_corrections.corrected_at`), vault_waiting, sort `opened_at`/`over_short`.
+  - `shift`: `ShiftResource::reportContent` gives the tiles, facts and sheets; plus actions report, close, correct, count_vault.
+  - `drawer`: kind, branch, person, dates; totals per kind.
+  - `options`.
+  - It reuses ShiftResource's public helpers (`takings` via ShiftService, `sellers`, `leftOpen`, `drawerSummary`, `otherSummary`), so the figures are identical to the classic screen's.
+- **Routes:** `/office-api/shifts`, `/shifts/options`, `/shifts/{id}`, `/shifts/{id}/report` (PDF through Exporter), `POST /shifts/{id}/close` and `/correct` (ShiftService `closeFromOffice` and `correctCount`), and `/drawer`, all through `Office\ShiftsController`. Scope: `sales.view` and branch; the actions need `cash.setup`, as before.
+- **Client:**
+  - `pages/ShiftsPage.tsx`, `ShiftPage.tsx` (the report's tiles and tables, and the count dialog) and `DrawerPage.tsx`.
+  - New shared pieces: `list/useList.ts` (a request replaced by a newer one is cancelled) and `list/ListParts.tsx` (PageHead with Classic version, PeriodButtons, Cards, `when`, `overShortColour`).
+  - `REBUILT` adds `/admin/shifts` → `/office/shifts` and `/admin/till-drawer-events` → `/office/drawer`.
+- **Not rebuilt yet:** the manager's vault count (denominations form). It links to the classic screen.
+- Tests: OfficeShiftsTest (5).

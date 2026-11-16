@@ -76,6 +76,15 @@ What's there:
 - Press a sale to see it in full, with **Print copy** and, for a walk-in who left a phone number, **Save as customer**.
 - **Classic version** (top right) opens the old screen.
 
+**Till shifts (rebuilt).** **Sales → Till shifts** shows each shift: the till, who opened it, the sales, the float, the cash expected, counted and over or short, and the mobile money and card checks.
+- A shift **left open** overnight shows in red: close it on the till.
+- Choose the period or **Open now**; **Filters** narrows by branch, teller, over or short, dates, or vaults waiting for the manager's count.
+- Press a shift to see its full report on screen, with **Shift report** to print it.
+- **Correct the count** fixes a mistyped count: type the right amount and why. The difference goes to the books and the original stays visible.
+- **Close shift** closes a shift that no till can close any more, for example after a till was reinstalled.
+
+**Till drawer (rebuilt).** **Sales → Till drawer** lists money in and out of the drawers besides sales: expenses paid out (press **Open** to see the receipt photo), pay-ins, cash drops and drawers opened without a sale, with who did it and who approved it.
+
 Pages that have not been rebuilt yet open inside the new frame without their own menus. Over the next updates the daily screens are rebuilt one area at a time, and then everyone signs in to the new back office.
 
 **Why:** a faster, clearer screen that looks and behaves like a Windows program, introduced step by step so nothing stops working.
