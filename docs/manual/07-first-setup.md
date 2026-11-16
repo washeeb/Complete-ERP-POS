@@ -337,7 +337,22 @@ Register and enrol the tills, handhelds and kitchen screens: **Chapter 9**.
 5. **Someone away?** A manager lends the absent teller's vault to the person covering, for today only: on the till (*Covering for someone?*, the manager's username and PIN) or in **Cash → Shifts and vaults → Lend for today**. **Why:** the cover is recorded with the manager's name and reason, and ends at midnight.
 6. **Closing:** the teller counts blind and is signed out. With *a manager recounts*, the shift shows *Waiting for the manager's count* in **Sales → Shifts**; the manager presses **Count the vault** and counts the tray (one recount if the two counts differ). Only then is the over/short booked.
 
-**Staff cards (optional, faster sign-in).** **System → Users → (person) → Staff card** prints a card with a QR code. At the till the teller scans it instead of typing her username, then types her PIN. **Why:** no shared or mistyped usernames; a lost card alone cannot sign anyone in (the PIN is still needed); **Card lost** stops it at once.
+**Staff cards (optional, faster sign-in).**
+1. Open **People & access → Staff cards**.
+2. Tick the people (or all of them), press **Print new cards**, and choose:
+   - **A4 sheet**: 10 cards with dashed cut lines, for any office printer. Laminate them if you like.
+   - **Card printer**: plastic PVC cards, one card per page, 85.6 × 54 mm (bank-card size).
+3. The cards open in a new tab and the print window appears.
+
+Each card has the company colour and logo, the person's photo (or initials), name, role and branch, and a barcode. For one person, press **Staff card** on their page (**People & access → Users**).
+
+**Print straight away:** the print page works once. A card's code is never kept, so it cannot be printed again later. If a print fails, print new cards; the cards from the failed batch stop working.
+
+At the till, the person scans the card instead of typing their username, then types their PIN. **Why:** sign-in is quicker, nobody's username is typed where others see it, and a lost card alone cannot sign anyone in. If a card is lost, tick the person and press **Card lost: stop it**; the card stops working at once.
+
+**Barcode, not QR code:** every till scanner reads a barcode, both laser scanners and camera scanners. Cards printed before this change (with a QR code) keep working on scanners that read QR codes.
+
+**A card alone, without the PIN (optional).** **System → Settings → Tills and cash → A staff card alone signs in at the till (no PIN)**. It is off by default; when it is on, scanning the card signs the person in straight away. **Why it is off by default:** whoever holds the card is that person at the till, so stop a lost card at once. Approvals (returns, discounts, the drawer) always need the PIN, or a manager's yes from their phone.
 
 **Check:** sign in as one teller: only her vault is offered; open, sell, close; as a manager, **Count the vault** in Sales → Shifts.
 

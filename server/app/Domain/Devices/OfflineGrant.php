@@ -41,6 +41,9 @@ final class OfflineGrant
                 'salt' => base64_encode($salt),
                 'hash' => base64_encode(hash_pbkdf2('sha256', $pin, $salt, self::ITERATIONS, 32, true)),
             ],
+            // The company lets a staff card alone sign in (pos.card_only_sign_in): offline too, by the card this grant was
+            // saved with. Approvals still need the PIN.
+            'card_only' => (bool) $this->settings->get('pos.card_only_sign_in', $user->tenant_id),
         ];
         $grant['sig'] = $this->sign($grant);
 

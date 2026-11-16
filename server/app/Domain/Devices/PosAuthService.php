@@ -34,9 +34,38 @@ final class PosAuthService
 
     public function pinLogin(Device $device, string $username, string $pin): array
     {
+        if ($pin === '' && AccessService::isBadge($username)) {
+            return $this->signIn($device, $this->verifyCardOnly($device, $username), null);
+        }
+        if ($pin === '') {
+            throw new DomainException('Type your PIN.', 'pin_required'); // not a wrong PIN: nothing counts towards the lockout
+        }
         $user = $this->verifyPin($device, $username, $pin);
 
         return $this->signIn($device, $user, $pin);
+    }
+
+    /**
+     * A staff card alone (owner choice 2026-11-15, company setting, off by default): the card signs the person in without a
+     * PIN. Off, the till is told to ask for the PIN (nothing about the card is revealed).
+     */
+    private function verifyCardOnly(Device $device, string $card): User
+    {
+        if (! $device->isActive()) {
+            throw new DomainException('This device is not enrolled or has been revoked.', 'device_revoked');
+        }
+        if (! $this->settings->get('pos.card_only_sign_in', $device->tenant_id)) {
+            throw new DomainException('Type your PIN.', 'pin_required');
+        }
+        $user = User::where('tenant_id', $device->tenant_id)->where('badge_hash', AccessService::badgeHash($card))->first();
+        if (! $user || ! $user->is_active) {
+            throw new DomainException('This card is not known here, or was stopped. Sign in with your username and PIN.', 'invalid_credentials');
+        }
+        if ($user->pin_locked_until?->isFuture()) {
+            throw new DomainException('This PIN is locked after too many wrong attempts. Try later or ask a manager to reset it.', 'pin_locked');
+        }
+
+        return $user;
     }
 
     /** Check a person's PIN on this device (wrong PINs count towards the lockout). Used for sign-in and for clocking in/out. */
@@ -80,7 +109,7 @@ final class PosAuthService
         return $user;
     }
 
-    private function signIn(Device $device, User $user, string $pin): array
+    private function signIn(Device $device, User $user, ?string $pin): array
     {
         $handheld = $device->kind === 'handheld';
         if ($handheld) {
@@ -98,7 +127,7 @@ final class PosAuthService
         return $this->recorder->transaction(function () use ($user, $device, $pin, $handheld) {
             $user->pin_failed_attempts = 0;
             $user->last_login_at = now();
-            $this->recorder->save(Actor::user($user, 'pos', $device->id), $user, 'pos.login', branchId: $device->branch_id);
+            $this->recorder->save(Actor::user($user, 'pos', $device->id), $user, 'pos.login', $pin === null ? 'Staff card only' : null, branchId: $device->branch_id);
             $device->seen();
             $token = $user->createToken(($handheld ? 'handheld' : 'pos').":{$device->id}", [$handheld ? 'handheld' : 'pos', "device:{$device->id}"], now()->addHours(self::TOKEN_HOURS));
 
@@ -107,7 +136,8 @@ final class PosAuthService
                 'expires_at' => $token->accessToken->expires_at?->toIso8601String(),
                 'user' => ['id' => $user->id, 'name' => $user->name, 'username' => $user->username],
                 // Lets this person sign in on this till while it cannot reach the server.
-                'offline_grant' => $this->grants->issue($user, $device, $pin), // tills and handhelds keep working, and sign in, while the server is out of reach
+                // Only with a PIN (the grant holds its hash for offline approvals); a card-only sign-in keeps the grant the till has.
+                'offline_grant' => $pin === null ? null : $this->grants->issue($user, $device, $pin),
             ];
         });
     }

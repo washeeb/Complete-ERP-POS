@@ -4,7 +4,7 @@ import { api, ApiError, type ShiftGrant } from '../api'
 import { db } from '../db'
 import { createDeviceKey } from '../deviceKey'
 import { formatMoney, parseMoney } from '../money'
-import { offlineSignIn, saveGrant } from '../offline'
+import { offlineCardOnly, offlineSignIn, saveGrant } from '../offline'
 import { applyUpdateIfWaiting, UPDATE_READY } from '../swUpdate'
 import { closeShift, openShift } from '../till'
 import { isStaffCard, personColor } from '../person'
@@ -58,6 +58,8 @@ export function Login({ onDone, deviceName }: { onDone: () => void; deviceName?:
   const [busy, setBusy] = useState(false)
   const pinRef = useRef<HTMLInputElement>(null)
   const card = isStaffCard(username) // a scanned staff card stands in for the username; the PIN is still needed
+  // The card's panel shows after the scanner's Enter: until then the box stays, so every character the scanner types lands.
+  const [scanned, setScanned] = useState(false)
 
   // A new till version waiting: switch to it here, where nobody is in the middle of a sale (not while someone types).
   const typing = username !== '' || pin !== ''
@@ -70,7 +72,12 @@ export function Login({ onDone, deviceName }: { onDone: () => void; deviceName?:
 
   async function submit(e?: React.FormEvent) {
     e?.preventDefault()
-    if (card && pin.length < 4) return pinRef.current?.focus() // the scanner's Enter after the card: now the PIN
+    // The scanner's Enter after the card: the card alone signs in where the company allows it; otherwise now the PIN.
+    if (card && pin === '' && !scanned) {
+      if (await cardOnly(username)) return
+      setScanned(true)
+    }
+    if (card && pin.length < 4) return pinRef.current?.focus()
     if (!username || pin.length < 4) return
     setBusy(true)
     setError('')
@@ -89,6 +96,33 @@ export function Login({ onDone, deviceName }: { onDone: () => void; deviceName?:
     } catch (err) {
       setPin('')
       setError(err instanceof Error ? err.message : 'Sign-in failed.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  /** A staff card alone (company setting): true when it signed the person in; false = the PIN is needed. */
+  async function cardOnly(code: string): Promise<boolean> {
+    setBusy(true)
+    setError('')
+    try {
+      try {
+        const r = await api.login(code.trim(), '')
+        await db.kv.put({ id: 'session', token: r.token, userId: r.user.id, userName: r.user.name, expiresAt: r.expires_at })
+      } catch (err) {
+        if (err instanceof ApiError && err.code === 'pin_required') return false
+        if (!(err instanceof ApiError && err.code === 'network')) throw err
+        const g = await offlineCardOnly(code) // no server: only if this card's grant here allows the card alone
+        if (!g) return false
+        await db.kv.put({ id: 'session', token: null, userId: g.user_id, userName: g.user_name, expiresAt: g.expires_at })
+      }
+      onDone()
+      return true
+    } catch (err) {
+      setUsername('')
+      setScanned(false)
+      setError(err instanceof Error ? err.message : 'Sign-in failed.')
+      return true // shown; nothing more to do with this card
     } finally {
       setBusy(false)
     }
@@ -123,15 +157,15 @@ export function Login({ onDone, deviceName }: { onDone: () => void; deviceName?:
     <form className="card narrow" onSubmit={submit}>
       <h1>Sign in</h1>
       {deviceName && <p className="muted">{deviceName}</p>}
-      {card ? (
+      {card && scanned ? (
         <div className="card-scanned" role="status">
           <span>Staff card scanned. Type your PIN.</span>
-          <button type="button" onClick={() => { setUsername(''); setPin('') }}>Not my card</button>
+          <button type="button" onClick={() => { setUsername(''); setPin(''); setScanned(false) }}>Not my card</button>
         </div>
       ) : (
         <label>
           Username, or scan your staff card
-          <input autoFocus className="big" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="off" autoCapitalize="none" spellCheck={false} required />
+          <input autoFocus className={card ? 'big pin-mask' : 'big'} value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="off" autoCapitalize="none" spellCheck={false} required />
         </label>
       )}
       <label>

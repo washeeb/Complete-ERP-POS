@@ -25,10 +25,10 @@ class DeviceAuthController extends Controller
     {
         $data = $request->validate([
             'username' => ['required', 'string', 'max:60'],
-            'pin' => ['required', 'string', 'max:8'],
+            'pin' => ['nullable', 'string', 'max:8'], // empty: a staff card alone, where the company allows it
         ]);
 
-        return response()->json($auth->pinLogin($request->attributes->get('device'), $data['username'], $data['pin']));
+        return response()->json($auth->pinLogin($request->attributes->get('device'), $data['username'], (string) ($data['pin'] ?? '')));
     }
 
     public function me(Request $request): JsonResponse

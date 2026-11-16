@@ -29,6 +29,19 @@ export async function saveGrant(grant: OfflineGrant, card: string | null = null)
   await db.grants.put({ ...grant, usernameKey: key, ...(badgeKey ? { badgeKey } : {}) })
 }
 
+/**
+ * Offline sign-in by a staff card alone: only when the company allowed it when this grant was given (the server signs
+ * `card_only` into it) and the card is the one saved with it. null = the PIN is needed.
+ */
+export async function offlineCardOnly(code: string): Promise<OfflineGrant | null> {
+  if (!isStaffCard(code)) return null
+  const key = await cardKey(code)
+  const grant = asSigned(await db.grants.filter((g) => g.badgeKey === key).first())
+  const device = await getDevice()
+  if (!grant || grant.card_only !== true || grant.device_id !== device?.deviceId || Date.parse(grant.expires_at) < Date.now()) return null
+  return grant
+}
+
 /** Offline sign-in: the PIN unlocks this person's grant for this till, until it expires. */
 export async function offlineSignIn(username: string, pin: string): Promise<OfflineGrant> {
   const cardKeyOf = isStaffCard(username) ? await cardKey(username) : ''

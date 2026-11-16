@@ -83,6 +83,11 @@ final class Settings
             'label' => 'Opening the drawer without a sale needs a manager',
             'help' => 'On: "Open drawer (no sale)" on the till asks for the username and PIN of someone allowed to approve it (managers, unless you change the roles); offline, the PIN is checked on the till and anything the person was not allowed to approve goes to the review list. Off: the cashier opens it with a reason only. On for every company unless switched off.',
         ],
+        'pos.card_only_sign_in' => [
+            'type' => 'bool', 'default' => false, 'group' => 'Tills and cash',
+            'label' => 'A staff card alone signs in at the till (no PIN)',
+            'help' => 'Off (the default): the card replaces the username and the person still types their PIN, so a lost or borrowed card alone cannot sign anyone in. On: scanning the card signs the person in straight away. Quicker, but whoever holds the card is that person at the till: stop a lost card at once (People & access → Staff cards). Approvals (returns, discounts, the drawer) always need the PIN or a manager\'s yes from their phone.',
+        ],
         'pos.void_approval' => [
             'type' => 'bool', 'default' => false, 'group' => 'Tills and cash',
             'label' => 'Removing items from a sale needs a supervisor',
