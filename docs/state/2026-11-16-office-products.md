@@ -1,0 +1,19 @@
+## New back office, release 3 (products and stock) part 1: Products — branch `office-products`
+- **Server:** `App\Domain\Office\ProductsScreen`.
+  - `filtered()` / `list()`: q (SKU, name, shelf, or an exact barcode); industry (`shared` for shared items); category; active; schedule (`none` = not a medicine); stock=`out`; sort name/sku.
+  - The on-hand figure is a subquery over `stock_levels` in the warehouses the person may see (`StockLevelResource::warehouseIds`, and none without `stock.view`); `stock_shown` says whether it is shown.
+  - `options()`: filters, `can` flags, `links` (classic create/import pages), and the actions' choices.
+  - `show()`: facts, medicine, units, prices, `pricing_note` and `below_cost` (only with `pricing.manage`), stock per warehouse, batches with stock (`stock_batch_levels`), and the last 15 movements.
+- **Controller:** `Office\ProductsController`.
+  - `index`, `options`, `show`.
+  - `labels` (`Labels::giveBarcodes` and `prepare`, returning the URL).
+  - `bulk`: move, schedule, batches and industry go through CatalogService in one transaction; unit goes through `ProductResource::changeUnit` per product (a refused product is listed, not failed).
+  - `hand-off` (session `price_list.products` / `stock_cost_run.products`, returning the classic page) and `batches-all`.
+  - Products are picked as `ids[]` (≤ 5000) or `match` (the list filters), always inside `IndustryContext::productScope`.
+- **Client:**
+  - `pages/ProductsPage.tsx` (tick boxes, "Tick all N that match", the actions bar), `pages/ProductPage.tsx` and `pages/ProductActions.tsx` (one dialog per action).
+  - `DataTable` gains optional `selected`/`onSelect`.
+  - `REBUILT` maps `/admin/products` to `/office/products` and carries `tableSearch` over as `q`. `/admin/products/{id}/edit` and `/create` stay classic (framed).
+- **office-check:** a Products step (rows, tick, the Print labels form, open a product). The framed-page example is now Stock on hand.
+- **Tests:** OfficeProductsTest (8), paths.test.
+- **Next in release 3:** the product form itself (create/edit with its module sections), then stock on hand, stock movements, adjustments, counts, transfers and requests.

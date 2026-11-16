@@ -18,7 +18,7 @@ const menu: Menu = {
 
 describe('addresses', () => {
   it('opens a current back-office page inside the new one, and back', () => {
-    expect(appPathFor('/admin/products?tableSearch=rice')).toBe('/office/a/products?tableSearch=rice')
+    expect(appPathFor('/admin/stock-levels?tableSearch=rice')).toBe('/office/a/stock-levels?tableSearch=rice')
     expect(appPathFor('/admin/products/abc/edit')).toBe('/office/a/products/abc/edit')
     expect(appPathFor('/admin')).toBe('/office/')
     expect(appPathFor('https://evil.example/admin')).toBe('/office/') // never another site
@@ -39,6 +39,11 @@ describe('addresses', () => {
     expect(appPathFor('/admin/till-drawer-events')).toBe('/office/drawer')
     expect(routeOf('/office/shifts/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')).toEqual({ page: 'shift', id: '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f' })
     expect(adminEquivalent({ page: 'drawer' })).toBe('/admin/till-drawer-events')
+    expect(appPathFor('/admin/products')).toBe('/office/products')
+    expect(appPathFor('/admin/products?tableSearch=milo 400')).toBe('/office/products?q=milo%20400') // the search carries over
+    expect(appPathFor('/admin/products/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f/edit')).toBe('/office/a/products/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f/edit') // the form stays
+    expect(routeOf('/office/products/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')).toEqual({ page: 'product', id: '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f' })
+    expect(adminEquivalent({ page: 'product', id: 'x' })).toBe('/admin/products')
   })
 
   it('knows its own pages', () => {

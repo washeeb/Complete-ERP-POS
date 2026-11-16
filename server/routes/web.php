@@ -10,6 +10,7 @@ use App\Http\Controllers\AccessRequestController;
 use App\Http\Controllers\BrandAssetController;
 use App\Http\Controllers\ExpenseReceiptController;
 use App\Http\Controllers\Office\OfficeController;
+use App\Http\Controllers\Office\ProductsController as OfficeProductsController;
 use App\Http\Controllers\Office\SalesController as OfficeSalesController;
 use App\Http\Controllers\Office\ShiftsController as OfficeShiftsController;
 use App\Http\Controllers\PrintController;
@@ -65,6 +66,13 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::post('shifts/{id}/correct', [OfficeShiftsController::class, 'correct'])->whereUuid('id');
     Route::post('shifts/{id}/count-vault', [OfficeShiftsController::class, 'countVault'])->whereUuid('id');
     Route::get('drawer', [OfficeShiftsController::class, 'drawer']);
+    Route::get('products', [OfficeProductsController::class, 'index']);
+    Route::get('products/options', [OfficeProductsController::class, 'options']);
+    Route::get('products/{id}', [OfficeProductsController::class, 'show'])->whereUuid('id');
+    Route::post('products/labels', [OfficeProductsController::class, 'labels']);
+    Route::post('products/bulk', [OfficeProductsController::class, 'bulk']);
+    Route::post('products/hand-off', [OfficeProductsController::class, 'handOff']);
+    Route::post('products/batches-all', [OfficeProductsController::class, 'batchesAll']);
 });
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;

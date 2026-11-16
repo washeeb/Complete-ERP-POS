@@ -25,6 +25,8 @@ function totp(secret) {
 const browser = await chromium.launch()
 const page = await browser.newPage({ viewport: { width: 1920, height: 1000 } })
 const problems = []
+let optionsAnswer = 'no answer yet' // the products screen's options, for a clearer problem report
+page.on('response', async (r) => { if (r.url().includes('/office-api/products/options')) optionsAnswer = `options answered ${r.status()} ${(await r.text().catch(() => '')).slice(0, 200)}` })
 try {
   // Opening /office signed out goes to the sign-in page, and back to /office afterwards.
   await page.goto(`${base}/office/`)
@@ -138,18 +140,46 @@ try {
       const sideways = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
       if (sideways > 1) problems.push(`${look} ${w}: the page runs ${sideways}px off the side`)
 
-      // An area opens its pages; picking one opens it inside, and the address follows.
+      // Products, rebuilt: from the menu, rows with prices and stock; a row opens the product with its stock and movements.
       const area = page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Stock/ }).first()
       await area.click()
       await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: 'Products', exact: true }).first().click()
-      await page.waitForURL(/\/office\/a\/products/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Products did not open at /office/a/products (${page.url()})`))
+      await page.waitForURL(/\/office\/products$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Products did not open the new screen (${page.url()})`))
+      const productRow = page.getByRole('table', { name: 'Products' }).getByRole('row').nth(1)
+      await Promise.race([productRow.waitFor({ timeout: 20000 }), page.getByText('No products match').waitFor({ timeout: 20000 })])
+        .catch(() => problems.push(`${look} ${w}: Products showed neither rows nor "No products match"`))
+      await page.getByRole('button', { name: 'New product' }).waitFor({ timeout: 10000 })
+        .catch(() => problems.push(`${look} ${w}: Products has no "New product" (the dev owner may add products): ${optionsAnswer}`))
+      await page.screenshot({ path: out(`products-${look}-${w}`) })
+      if (await productRow.isVisible().catch(() => false)) {
+        if (look === 'top' && w === 1366) { // tick a product: the actions show; Print labels opens its form (nothing is made)
+          await productRow.getByRole('checkbox', { name: 'Tick this row' }).check()
+          await page.getByRole('region', { name: 'Ticked products' }).getByText('1 ticked').waitFor({ timeout: 5000 }).catch(() => problems.push('products: ticking a row shows no actions'))
+          await page.getByRole('region', { name: 'Ticked products' }).getByRole('button', { name: 'Print labels' }).click()
+          const dlg = page.getByRole('dialog', { name: 'Print labels' })
+          await dlg.getByText('For 1 product.').waitFor({ timeout: 5000 }).catch(() => problems.push('products: Print labels did not open its form'))
+          await page.waitForTimeout(400)
+          await page.screenshot({ path: out('products-labels') })
+          await dlg.getByRole('button', { name: 'Cancel' }).click()
+          await page.getByRole('region', { name: 'Ticked products' }).getByRole('button', { name: 'Clear' }).click()
+        }
+        await productRow.click()
+        await page.waitForURL(/\/office\/products\/[0-9a-f-]{36}$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: a product did not open`))
+        await page.getByRole('heading', { name: 'Barcodes and units', level: 2 }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: the product shows no units`))
+        await page.screenshot({ path: out(`product-${look}-${w}`), fullPage: true })
+      }
+
+      // Stock on hand is still the current page: it opens inside, and the address follows.
+      await area.click()
+      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: 'Stock on hand', exact: true }).first().click()
+      await page.waitForURL(/\/office\/a\/stock-levels/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Stock on hand did not open at /office/a/stock-levels (${page.url()})`))
       await page.waitForFunction(() => {
         const f = document.querySelector('iframe[title="Page"]')
-        return f?.contentWindow?.location.pathname === '/admin/products' && f.contentDocument?.querySelector('h1')?.textContent?.includes('Products')
-      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Products page did not open inside`))
+        return f?.contentWindow?.location.pathname === '/admin/stock-levels' && !!f.contentDocument?.querySelector('h1')
+      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Stock on hand page did not open inside`))
       const f = await frameReady()
       await f.locator('.fi-ta-table, .fi-ta-empty-state').first().waitFor({ timeout: 20000 })
-        .catch(() => problems.push(`${look} ${w}: the Products list did not show inside`))
+        .catch(() => problems.push(`${look} ${w}: the Stock on hand list did not show inside`))
       const chrome = await f.locator('.fi-sidebar, .fi-topbar').evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== 'none').length)
       if (chrome) problems.push(`${look} ${w}: the embedded page still shows its own menu`)
       await page.waitForTimeout(600) // the page's own loader fades out
@@ -158,17 +188,17 @@ try {
       // Recent lists the page just opened; the star adds it to favourites and takes it off again.
       const nav = page.getByRole('navigation', { name: 'Menu' })
       await (look === 'top' ? nav.getByRole('button', { name: 'Recent pages' }) : nav.getByRole('button', { name: 'Recent' })).click()
-      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /Products/ }).first().waitFor({ timeout: 5000 })
-        .catch(() => problems.push(`${look} ${w}: Recent does not list Products`))
+      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /Stock/ }).first().waitFor({ timeout: 5000 })
+        .catch(() => problems.push(`${look} ${w}: Recent does not list Stock on hand`))
       await page.keyboard.press('Escape')
       const star = look === 'top' ? nav.getByRole('button', { name: 'Favourites' }) : nav.getByRole('button', { name: 'Favourites' })
       await star.click()
       const fav = page.getByRole('dialog', { name: 'Favourite pages' })
       await fav.getByRole('button', { name: /^Add “/ }).click().catch(() => problems.push(`${look} ${w}: Favourites has no "Add this page"`))
-      await fav.getByRole('link', { name: /Products/ }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Products did not become a favourite`))
+      await fav.getByRole('link', { name: /Stock/ }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Stock on hand did not become a favourite`))
       await page.screenshot({ path: out(`favourites-${look}-${w}`) })
       await fav.getByRole('button', { name: /^Take “/ }).last().click().catch(() => undefined) // leave the dev account as it was
-      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Products could not be taken off favourites`))
+      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Stock on hand could not be taken off favourites`))
       await page.keyboard.press('Escape')
 
       // Search: Ctrl+K, type, a page of the menu is offered.
