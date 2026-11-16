@@ -1371,3 +1371,65 @@ Design:
 - Owner: "the notes and guide keeps happening. find a lasting fix." Cause: every change edited the top of CHANGELOG.md and docs/STATE.md and the end of docs/DECISIONS.md, and rebuilt the guide PDF (a binary git cannot merge). Any two open PRs therefore conflicted, after every merge.
 - Fix: one note file per change in each of `changes/`, `docs/state/`, `docs/decisions/` (the pattern of towncrier, changesets and architecture decision records): new files never collide. `npm run notes` folds them into the three shared files in one PR before a release, which nothing else touches at that moment. The guide PDF is a build product: generated locally from the chapters (and not needed by the release, which does not ship it), so it is git-ignored. **Not chosen:** `.gitattributes merge=union` (git-only; GitHub's own mergeability check does not run merge drivers, so PRs would still show as conflicting), committing the PDF only on main (still a binary to merge between branches).
 - Still possible: two changes editing the same paragraph of the same guide chapter. Rare; resolved by hand.
+
+## A manager approves till actions from their phone (2026-11-15)
+- **The request.** The branch manager is not always near the till, and typing the manager's PIN at the till shows it.
+- **The owner's choices:**
+  - remote approval for returns and refunds, voids and removed lines, discounts and price changes, and opening the drawer with no sale;
+  - the manager answers from a phone notification and a page, confirming with a passkey or fingerprint;
+  - free for everyone.
+- **One rule for both ways.** A remote yes needs exactly what a PIN yes needs: the same permission and limit for that till, and never the cashier. It is checked when the request is made and again when the till uses it. The till sends the request id in place of the PIN, so every existing approval point accepts it without changing its rules.
+- **Single use, short life.** The manager has 10 minutes to answer, and the till has 10 minutes to use the approval. It only works on the same till, for the same cashier and the same kind of action, and for no more than the amount asked. **Why:** an approval must not be saved up and spent on something else.
+- **Confirm it's you on every remote yes** with a passkey, fingerprint or authenticator code. One confirmation covers 5 minutes. **Why:** a phone left unlocked must not approve refunds.
+- **Phone notifications use Web Push, not WhatsApp.**
+  - They are free, instant and need no provider, and the page opens in one tap.
+  - The server makes its own key pair once; the private key is stored encrypted.
+  - Notifications go out after the server has replied, so the till never waits.
+  - iPhones need the site added to the home screen (an Apple rule).
+- **Staff card at the till for approvals too.** The manager scans their card instead of typing their username, so only the PIN is typed.
+- **Removing items.**
+  - Until now the till let cashiers remove items freely. A company setting (off by default) now asks a supervisor above an amount.
+  - What counts is the quantity taken off since the last approval. Typing over a quantity is not a removal, and a lowered quantity is caught at payment.
+  - Offline, the till checks the supervisor's PIN against their offline sign-in.
+
+## The new back office: how it is built and introduced (2026-11-16)
+- **The owner's choices:**
+  - rewrite the back office (and later the till) in React with Fluent UI v9, so it looks and feels like a Windows program;
+  - two looks: a NetSuite-style menu across the top (the default) and a slim side menu (Oracle-style template);
+  - move screen by screen, daily work first;
+  - everyone moves to it after release 1, with a link back to the classic back office for a few releases;
+  - keep today's sign-in page for now;
+  - free.
+- **One source of truth.** The new app asks the server for the menu, and the server builds it with the current back office's own code, so permissions, modules, licence and the owner/IT split stay identical. Business rules stay in the domain services; the new screens only call them.
+- **Old screens inside the new frame.** They are framed without their own menus. **Why:** people see one menu and one look from day one, and each rebuilt screen simply replaces its framed version. Only the same site may frame them (SAMEORIGIN, frame-ancestors 'self' are unchanged).
+- **The address is `/office`, not `/app`.** On installed servers `/app/*` already carries the live updates (Reverb); found by checking the installers before release.
+- **In the till's JavaScript package (`pos/`).** One install, one CI job, the same tests and type checks; the release build adds one step.
+- **Pinned Fluent versions,** at least two weeks old, exact, like the other pinned tools.
+- **Not a reproduction** of NetSuite or Oracle: their layout ideas, our name, colours and content.
+
+## To-do, and everyone into the new back office (2026-11-16)
+- **To-do lists the items, not counts.** People decide faster when they see the order number, who asked and the amount. The rules are the dashboard's own (`MyApprovals::KINDS`): only kinds the person may approve, where they may, never their own. So To-do can never show more than the pages behind it.
+- **Till requests are answered in To-do itself.** A cashier is waiting at the till. Every other kind opens its own page, which already has the full approve or turn-down logic; that logic is rebuilt screen by screen later, not duplicated now.
+- **"Confirm it's you" inside the page.** The same rule as on the Till requests page, shown in a dialog so the manager stays in To-do.
+- **Signing in opens the new back office** (the owner's choice for release 1):
+  - A page someone was going to (a notification's link) still opens.
+  - Their chosen home (Today, a favourite) opens inside the new frame.
+  - The classic back office is one click away both ways, for a few releases.
+
+## Staff card generator and card-only sign-in (2026-11-16)
+- **The request:** cards generated and printed straight away, so staff scan instead of typing.
+- **The owner's choices:**
+  - default: card plus PIN; option: card alone;
+  - printing on an A4 sheet and on a PVC card printer;
+  - free.
+- **A barcode (Code 128), not a QR code.** Many supermarket scanners are laser scanners that cannot read QR codes; every scanner reads Code 128. New codes are shorter (`SLB1-` plus 14 characters, 70 random bits), so the bars stay wide enough to read on a card. Old cards keep working.
+- **Printed once, never kept.**
+  - A card's code is stored only as a hash, so it can be printed only when it is made.
+  - A batch's codes sit encrypted in the cache for 10 minutes, for one print page that only its maker can open.
+  - **Why:** a copied link or a later visitor cannot print a duplicate card.
+  - The code is never printed as text, so nobody can type it in.
+- **Card alone is off by default.** With it on, whoever holds the card is that person at the till.
+  - Approvals still need the PIN, or a manager's yes from their phone.
+  - A card-only sign-in does not replace the till's offline grant: the grant holds the PIN hash that offline approvals need.
+  - Offline, the card alone works only if the grant was issued while the company allowed it (signed `card_only` flag).
+- **Sign-in screen fix:** the screen used to swap the username box for "Staff card scanned" as soon as `SLB1-` arrived, so a scanner's later characters and its Enter could be lost. It now waits for the Enter. Found by the new end-to-end test; not confirmed on a real scanner.

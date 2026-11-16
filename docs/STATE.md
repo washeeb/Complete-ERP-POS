@@ -687,3 +687,111 @@ One branch, PR and release per stage. Paid = licence option, hidden until licens
 
 ## Notes without conflicts — branch `notes-without-conflicts`
 - Per-change note files: `changes/`, `docs/state/`, `docs/decisions/` (READMEs there); `pos/scripts/notes.mjs` (`npm run notes`, `--dry`) folds them into CHANGELOG.md (under [Unreleased], grouped by kind), docs/STATE.md and docs/DECISIONS.md (appended), then deletes them. CLAUDE.md end-of-task rule changed accordingly. `docs/manual/*-Installation-Guide.pdf` untracked and git-ignored (built locally by `npm run manual`).
+
+## Remote approvals at the till — branch `remote-approvals`
+- `till_approvals` + `App\Domain\Pos\TillApprovals`:
+  - `ask`
+  - `decide`: web; Reconfirm is always required to approve.
+  - `approveHere`: card or username plus PIN, via SupervisorApproval.
+  - `cancel`, `status`, `consume`.
+- `TillApproval::KINDS` maps each kind to a permission (plus a limit key where one applies):
+  - return → `pos.return.no_receipt`
+  - discount → `pos.discount` (limit `discount_bp`)
+  - void → `pos.void` (new)
+  - no_sale, drawer
+  - restaurant_void → `restaurant.void`
+- Approval rules:
+  - lasts 10 minutes and works once;
+  - same device, cashier and permission;
+  - amount no more than what was asked;
+  - the approver is re-checked when the till uses it.
+- `SupervisorApproval::verify` accepts `{request_id}` (it calls consume) and a staff-card code in `username`.
+- Till API:
+  - `pos/approvals` (ask)
+  - `GET pos/approvals/{id}`
+  - `/here`, `/cancel`
+  - `/use` (voids)
+- Back office: `TillRequests` page under Sales. It refreshes every 5 s, shows only the person's branches, and has a menu badge.
+- Web Push uses `minishlink/web-push`:
+  - Tables: `push_subscriptions`, and `web_push_keys` (VAPID keys per tenant, private key encrypted).
+  - `App\Domain\Messaging\PhonePush` is called from `Notifier::toPermission` and sends after the response (`defer`).
+  - NotifyPrefs has a new `push` channel for approvals, iot and cash.
+  - Browser side: `public/push-sw.js` and the `layout.push` script; the button is on TillRequests.
+  - Tests read `PhonePush::$sent`.
+- `DomainException` takes `data`, returned as `data` in the JSON. `discount_needs_approval` sends `limit_amount` (bp).
+- Settings: `pos.void_approval` (off) and `pos.void_approval_above_minor`. Bootstrap sends `drawer.void_approval_minor` (null = off).
+- Till:
+  - `screens/ManagerApproval.tsx`: ask remotely, or manager is here; `spend` for voids.
+  - `approve.ts`: `waitForAnswer` and the removal high-water marks.
+  - Used in Drawer, ReturnScreen, Sell (discount and voids), Restaurant void and the deposit refund.
+- Tests: TillApprovalsTest, approve.test.ts.
+
+## New back office, release 1 part 1 (shell) — branch `office-shell`
+- **The app.** Source in `pos/office/` (React 19, Fluent UI v9 9.75.1, icons 2.0.345, pinned exact).
+  - Build config `pos/vite.office.config.ts` (root `office`, base `/office/`, output `server/public/office`, or `OFFICE_OUT_DIR`).
+  - Scripts: `npm run build:office`, `npm run dev:office` (port 5175, proxies to 8010), `npm run check:office` (signs in as the dev owner, both looks × two sizes, screenshots in `.local-secrets/office-*.png`).
+  - `npm run build` and `npm test` include it; `tsconfig.office.json` is referenced from `tsconfig.json`.
+- **Address.** `/office`, because `/app/*` is Reverb on installed servers (Caddy `@live`).
+  - Web servers hand out `/office/*` statically with a fallback to its index: Caddy (Ubuntu and Windows `handle /office/*`) and nginx (Docker `location /office/`).
+  - Laravel routes `/office/{path}` (dev and tests), `/office-signin?to=` (puts `url.intended`, accepts only `/office` paths) and `/office-api/{me,menu,search,prefs}` (auth, throttle 120/min).
+- **Server.** `App\Http\Controllers\Office\OfficeController` sets the Filament admin panel and reuses:
+  - `Look::tabs()` for the menu (tabs → sections → groups → items, `/admin` paths);
+  - `Look::quickCreate()` for Create;
+  - Filament's global search;
+  - `UserPrefs` with the new `office_look` (`top` | `side`, default `top`), saved through `AccessService::updateOwnProfile`.
+- **Old screens inside.** `layout.embedded` (panel HEAD_END hook): when framed by the same origin, it adds `html.zx-embedded` (hides the sidebar, topbar and tab band) and posts `{type: 'zx-page', title, path}` to the parent. `ClassicPage` (iframe) follows it with `history.replaceState`; a login or logout path takes the whole window.
+- **Releases and installers.** `release:build --with-pos` also runs `build:office`. The Dockerfile and Ubuntu installer build it from source when it is missing; `/office/assets/*` are cached for a year.
+- **Home.**
+  - Server: `App\Domain\Office\HomeData`, at `GET /office-api/home?period=&top=`. It returns:
+    - reminders: `MyApprovals::items()`, numeric menu badges (big only for `WAITING_ON_SOMEONE`), stock below minimum / expired / expiring, and POs due or open;
+    - KPIs: sales, receipts, average sale, stock value, open POs and their value, bought, customers owe, we owe; each with the previous comparable period and up to 12 spark buckets;
+    - the top 15 items by base quantity, and a 12-month trend of sales and purchases.
+  - Layout: `POST /office-api/home-layout` stores `ui_prefs.office_home` (`UserPrefs::cleanHome`: cols, panels, up to 8 tiles, meter).
+  - Client:
+    - `pages/HomePage.tsx`: header, Personalize, Layout, HTML5 drag by the handle, keyboard moves in each panel's ⋯ menu, and the tile picker;
+    - `home/Panels.tsx`;
+    - `home/charts.tsx`: SVG sparkline, gauge, donut (top 7 plus Other), time chart (one axis, 2px gaps, rounded tops), bars and tooltips;
+    - `home/layout.ts` and `home/format.ts`.
+  - Chart colours are the dataviz validated categorical set (`--zx-s1…8`, light and dark under `html[data-theme]`).
+  - "Opened lately" is kept in the browser only (`zx-recent`).
+- Tests: OfficeShellTest, `office/src/*.test.ts`.
+- Next parts: the Home dashboard of tiles, then To-do, then everyone signs in to `/office`.
+
+## New back office: To-do and sign-in landing — branch `office-todo`
+- **Server:** `App\Domain\Office\TodoData`.
+  - Groups:
+    - till requests (`TillApprovals::mayDecide`);
+    - each `MyApprovals::KINDS` (now public), with its documents listed: number, who, amount, reason, time, view or edit URL;
+    - access requests (`MyApprovals::decidesAccess`, now public);
+    - the review queue (count);
+    - timesheets (count).
+  - Endpoints: `GET /office-api/todo`, `GET /office-api/todo-count`, and `POST /office-api/till-requests/{id}/decide` `{yes, note}`.
+  - The decide endpoint answers 428 `{error: reconfirm, url}` when "Confirm it's you" is needed, 403 when the person may not decide, and 422 for any other refusal.
+- **Client:**
+  - `pages/TodoPage.tsx`: tabs per group, inline Approve/Decline for till requests, the confirm page in a dialog iframe, then "Approve now"; refreshes every 15 s.
+  - The To-do icon with a count (polled every 30 s) in both looks. In the side look it sits under Create, as in the template.
+  - `ApiError.url`; 429 is shown in plain words.
+- **Landing:** `UserPrefs::officeHomeUrl()`: the dashboard maps to `/office/`; any other home `/admin/x` maps to `/office/a/x`. It is used by `HomeLoginResponse` and `PasskeyLoginController`. The panel's own `homeUrl` is unchanged.
+- **Classic back office:** a user menu item, "New back office".
+- **Checks:**
+  - `layout-check` and `manual-screens` accept landing on `/office`.
+  - `layout-check` starts at `/admin` and waits for the profile's reload after Save. A fixed 600 ms lost the race and cut off the next page.
+- Tests: OfficeTodoTest; OfficeShellTest (landing); PreferencesNotificationsTest (home inside the new back office).
+
+## Staff card generator — branch `staff-cards`
+- `App\Support\StaffCard`:
+  - `issue(actor, users, layout)` makes new badges through `AccessService::issueBadge` and puts the codes, encrypted, in the cache (`staff-cards:{token}`, 10 min). It returns the URL of `print.staff-cards`.
+  - `take(token, userId)` works once, and only for the person who made the batch.
+  - `face()` builds what goes on a card: photo as a data URI, top role and its scope, and a Code 128 SVG (the `<desc>` holding the code is stripped).
+- Print view: `resources/views/print/staff-cards.blade.php`. It has A4 and CR80 (`@page 85.6mm 54mm`) layouts and prints on load.
+- Page `App\Filament\Pages\StaffCards` (People & access, `admin.users.manage`): bulk **Print new cards** and **Card lost**. `EditUser`'s Staff card action uses the same flow; the old modal and `StaffCard::html` are gone.
+- New badge codes are `SLB1-` plus 14 characters (19 in total). Old 20-character codes keep working (they are looked up by hash).
+- `pos.card_only_sign_in` (off):
+  - `PosAuthService::pinLogin` with an empty PIN and a card signs the person in, and returns `offline_grant` null so the till keeps its grant.
+  - With the setting off it answers `pin_required`.
+  - An empty PIN with a username is also `pin_required`, and is not counted as a failed attempt.
+  - `OfflineGrant` carries a signed `card_only` flag.
+- Till:
+  - `Login` (Setup.tsx) keeps the box until the scanner's Enter (`scanned` state), then tries the card alone, else asks for the PIN.
+  - `offlineCardOnly` in offline.ts.
+- Tests: StaffCardsTest, e2e/staff-card.spec.ts.
