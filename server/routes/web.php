@@ -63,6 +63,7 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::get('shifts/{id}/report', [OfficeShiftsController::class, 'report'])->whereUuid('id');
     Route::post('shifts/{id}/close', [OfficeShiftsController::class, 'close'])->whereUuid('id');
     Route::post('shifts/{id}/correct', [OfficeShiftsController::class, 'correct'])->whereUuid('id');
+    Route::post('shifts/{id}/count-vault', [OfficeShiftsController::class, 'countVault'])->whereUuid('id');
     Route::get('drawer', [OfficeShiftsController::class, 'drawer']);
 });
 

@@ -82,6 +82,7 @@ What's there:
 - Press a shift to see its full report on screen, with **Shift report** to print it.
 - **Correct the count** fixes a mistyped count: type the right amount and why. The difference goes to the books and the original stays visible.
 - **Close shift** closes a shift that no till can close any more, for example after a till was reinstalled.
+- **Count the vault** (only when each teller has their own vault and a manager recounts it): appears on a closed shift *waiting for the manager's count*. Type how many of each note and coin are in the tray; the total adds up as you type, but the teller's figure is never shown. **Why:** a count you cannot compare with anything is an honest count. If yours differs from the teller's, the boxes clear and you count once more from the start; that second count is booked, and the over or short is worked out from it.
 
 **Till drawer (rebuilt).** **Sales → Till drawer** lists money in and out of the drawers besides sales: expenses paid out (press **Open** to see the receipt photo), pay-ins, cash drops and drawers opened without a sale, with who did it and who approved it.
 

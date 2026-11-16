@@ -8,7 +8,7 @@ import { api, type ShiftDetail } from '../api'
 import { money } from '../home/format'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
-import { classicPathFor } from '../paths'
+import { VaultCount } from './VaultCount'
 
 const TONE: Record<string, string> = { good: 'var(--zx-good)', warn: 'var(--zx-warn)', bad: 'var(--zx-bad)' }
 
@@ -31,7 +31,7 @@ const useStyles = makeStyles({
 /**
  * One till shift (release 2): the shift report's own tiles, facts and tables (sales by payment method, the cash, the
  * MoMo/card checks, the drawer, coupons), the report as a PDF, and the current screen's actions: correct a mistyped
- * count, close a shift no till can close. The manager's vault count stays on the classic screen for now.
+ * count, close a shift no till can close, and the manager's blind vault count (VaultCount).
  */
 export function ShiftPage({ id, onTitle }: { id: string; onTitle: (t: string) => void }) {
   const page = usePageStyles()
@@ -39,6 +39,7 @@ export function ShiftPage({ id, onTitle }: { id: string; onTitle: (t: string) =>
   const [shift, setShift] = useState<ShiftDetail | null>(null)
   const [error, setError] = useState('')
   const [action, setAction] = useState<'close' | 'correct' | null>(null)
+  const [counting, setCounting] = useState(false)
   const [done, setDone] = useState('')
 
   useEffect(() => {
@@ -62,7 +63,7 @@ export function ShiftPage({ id, onTitle }: { id: string; onTitle: (t: string) =>
           {shift.actions.report && <Button appearance="primary" icon={<DocumentPdfRegular />} onClick={() => window.open(api.shiftReportUrl(shift.id), '_blank', 'noopener')}>Shift report</Button>}
           {shift.actions.correct && <Button icon={<EditRegular />} onClick={() => setAction('correct')}>Correct the count</Button>}
           {shift.actions.close && <Button icon={<LockClosedRegular />} onClick={() => setAction('close')}>Close shift</Button>}
-          {shift.actions.count_vault && <Button icon={<MoneyHandRegular />} onClick={() => navigate(classicPathFor('/admin/shifts'))}>Count the vault (classic)</Button>}
+          {shift.actions.count_vault && <Button appearance="primary" icon={<MoneyHandRegular />} onClick={() => setCounting(true)}>Count the vault</Button>}
         </div>
       </div>
       <Text className={s.muted}>{shift.branch}</Text>
@@ -100,6 +101,8 @@ export function ShiftPage({ id, onTitle }: { id: string; onTitle: (t: string) =>
         </section>
       ))}
 
+      {counting && <VaultCount shift={shift} onCancel={() => setCounting(false)}
+        onDone={(next) => { setShift(next); setCounting(false); setDone('Vault counted. Your count is booked; the over/short is worked out from it.') }} />}
       {action && <CountDialog shift={shift} kind={action} money={m} onCancel={() => setAction(null)}
         onDone={(next) => { setShift(next); setAction(null); setDone(action === 'close' ? 'Shift closed. The over/short goes to the books as for any close.' : 'Count corrected. The difference is posted; the original count stays on the shift.') }} />}
     </div>

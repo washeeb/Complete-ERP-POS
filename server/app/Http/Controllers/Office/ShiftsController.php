@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Office;
 
 use App\Domain\Office\ShiftsScreen;
+use App\Domain\Pos\CashControl;
 use App\Domain\Pos\ShiftService;
+use App\Domain\Pos\TellerVaults;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
@@ -68,6 +70,27 @@ class ShiftsController extends Controller
         $data = $request->validate(['counted' => ['required', 'numeric', 'min:0'], 'reason' => ['required', 'string', 'max:200']]);
 
         return $this->run(fn ($actor) => $shifts->correctCount($actor, $s, Money::toMinor((string) $data['counted'], $s->currency_code), $data['reason']), $request, $s);
+    }
+
+    /**
+     * The manager counts a vault blind (personal vaults, light flow), note by note: when it differs from the teller's
+     * count the first time, they count again from the start; the second count stands and is booked.
+     */
+    public function countVault(Request $request, string $id, TellerVaults $vaults): JsonResponse
+    {
+        $s = $this->find($id);
+        $data = $request->validate(['denoms' => ['nullable', 'array'], 'denoms.*' => ['nullable', 'integer', 'min:0', 'max:100000'], 'amount' => ['nullable', 'numeric', 'min:0']]);
+        $denoms = CashControl::denominations($s->currency_code) ? collect($data['denoms'] ?? [])->map(fn ($v) => (int) ($v ?? 0))->all() : null;
+        $amount = $denoms === null ? Money::toMinor((string) ($data['amount'] ?? '0'), $s->currency_code) : null;
+        try {
+            $res = DB::transaction(fn () => $vaults->check(Actor::user($request->user(), 'web'), $s, $denoms, $amount));
+        } catch (AccessDenied $e) {
+            return response()->json(['error' => $e->errorCode, 'detail' => $e->getMessage()], 403);
+        } catch (DomainException $e) {
+            return response()->json(['error' => $e->errorCode, 'detail' => $e->getMessage()], 422);
+        }
+
+        return response()->json(['status' => $res['status'], 'shift' => (new ShiftsScreen($request->user()))->shift(Shift::findOrFail($s->id))]);
     }
 
     public function drawer(Request $request): JsonResponse
