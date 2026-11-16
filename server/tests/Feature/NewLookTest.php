@@ -45,12 +45,12 @@ it('uses the tabs unless the company or the person chooses another look', functi
 
 it('shows the tabs, the page finder, + New and who is signed in, built from what the person may open', function () {
     $this->actingAs(withMfa($this->owner));
-    $this->get('/admin/sales')->assertOk()->assertSee('zx-tabbar', false)->assertSee('Purchasing')->assertSee('Finance')
+    $this->get('/admin/sales')->assertOk()->assertSee('class="zx-tabbar"', false)->assertSee('Purchasing')->assertSee('Finance')
         ->assertSee('Find a page')->assertSee('Purchase order')->assertSee('zx-who', false)->assertSee('Favourites');
 
     app(AccessService::class)->updateOwnProfile(actorFor($this->owner), $this->owner->fresh(), ['ui_look' => 'classic']);
     $this->actingAs(withMfa($this->owner->fresh()));
-    $this->get('/admin/sales')->assertOk()->assertDontSee('zx-tabbar', false)->assertSee('zx-classic', false)->assertDontSee('zx-who', false);
+    $this->get('/admin/sales')->assertOk()->assertDontSee('class="zx-tabbar"', false)->assertSee('zx-classic', false)->assertDontSee('zx-who', false);
 });
 
 it('gives a cashier only the tabs for the pages a cashier may open', function () {

@@ -15,6 +15,7 @@
 /node_modules
 /public/build
 /public/pos
+/public/office
 /public/css/filament
 /public/fonts/filament
 /public/hot

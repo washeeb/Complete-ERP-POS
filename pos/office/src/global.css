@@ -1,0 +1,50 @@
+/* The new back office: Fluent draws everything; these are only the page edges. */
+html, body, #root { margin: 0; height: 100%; }
+body { font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+.zx-user-text { display: flex; flex-direction: column; align-items: flex-start; max-width: 160px; text-align: start; line-height: 1.2; }
+@media (max-width: 760px) { .zx-user-text { display: none; } }
+
+/* Chart colours: the validated categorical set, in a fixed order, stepped separately for dark (dataviz palette). */
+:root {
+  --zx-s1: #2a78d6; --zx-s2: #eb6834; --zx-s3: #1baf7a; --zx-s4: #eda100; --zx-s5: #e87ba4; --zx-s6: #008300; --zx-s7: #6250d6; --zx-s8: #e34948;
+  --zx-good: #1b8a4b; --zx-warn: #c26a00; --zx-bad: #c4314b;
+}
+:root[data-theme='dark'] {
+  --zx-s1: #3987e5; --zx-s2: #d95926; --zx-s3: #199e70; --zx-s4: #c98500; --zx-s5: #d55181; --zx-s6: #0ca30c; --zx-s7: #9085e9; --zx-s8: #e66767;
+  --zx-good: #0ca30c; --zx-warn: #e3a008; --zx-bad: #e66767;
+}
+
+.zx-legend { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; }
+.zx-legend li { display: flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }
+.zx-swatch { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 10px; outline: 1px dashed currentColor; outline-offset: -1px; }
+.zx-swatch[style*='var('] { outline: none; }
+.zx-legend-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zx-legend-value { opacity: .7; font-variant-numeric: tabular-nums; }
+
+.zx-hbars { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 12.5px; }
+.zx-hbars li { display: grid; grid-template-columns: minmax(80px, 40%) 1fr auto; align-items: center; gap: 8px; }
+.zx-hbar-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zx-hbar-track { height: 10px; border-radius: 5px; background: color-mix(in srgb, currentColor 8%, transparent); overflow: hidden; }
+.zx-hbar { display: block; height: 100%; border-radius: 5px; background: var(--zx-s1); }
+.zx-hbar-value { font-variant-numeric: tabular-nums; opacity: .8; }
+
+/* Motion: things grow in once, and nothing moves for people who asked for less motion. */
+@keyframes zx-grow { from { transform: scaleY(0); } }
+@keyframes zx-grow-x { from { transform: scaleX(0); } }
+@keyframes zx-fade { from { opacity: 0; } }
+@keyframes zx-rise { from { opacity: 0; transform: translateY(6px); } }
+.zx-grow { transform-box: fill-box; transform-origin: bottom; animation: zx-grow .5s cubic-bezier(.2,.8,.2,1) both; }
+.zx-grow-x { transform-origin: left; animation: zx-grow-x .5s cubic-bezier(.2,.8,.2,1) both; }
+.zx-fade { animation: zx-fade .4s ease-out both; }
+.zx-rise { animation: zx-rise .35s ease-out both; }
+@media (prefers-reduced-motion: reduce) { .zx-grow, .zx-grow-x, .zx-fade, .zx-rise { animation: none; } }
+
+/* Tiles: the company's own touch, a soft diagonal weave over each colour (as the template's tiles have a texture). */
+.zx-tile { position: relative; overflow: hidden; isolation: isolate; }
+.zx-tile::before { content: ''; position: absolute; inset: 0; z-index: -1; opacity: .16;
+  background-image: repeating-linear-gradient(135deg, #fff 0 1px, transparent 1px 9px), radial-gradient(120% 80% at 100% 0, rgba(255,255,255,.5), transparent 60%); }
+.zx-tile:hover::before { opacity: .26; }
+
+/* A panel being dragged, and where it will land. */
+.zx-dragging { opacity: .45; }
+.zx-drop { outline: 2px dashed var(--zx-s1); outline-offset: 4px; border-radius: 10px; }

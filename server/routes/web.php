@@ -9,6 +9,7 @@ use App\Domain\Support\DomainException;
 use App\Http\Controllers\AccessRequestController;
 use App\Http\Controllers\BrandAssetController;
 use App\Http\Controllers\ExpenseReceiptController;
+use App\Http\Controllers\Office\OfficeController;
 use App\Http\Controllers\PrintController;
 use App\Http\Controllers\RemoteConnectController;
 use App\Http\Controllers\RfqQuoteController;
@@ -32,6 +33,21 @@ use Illuminate\Support\Facades\Storage;
 use Spatie\LaravelPasskeys\Http\Controllers\GeneratePasskeyAuthenticationOptionsController;
 
 Route::get('/', fn () => redirect('/admin'));
+
+// The new back office (React + Fluent UI, built into public/office by `npm run build:office` in pos/). The page, and what it
+// shows (OfficeController), for people signed in to the back office; pages not yet rebuilt open inside it.
+Route::get('/office', fn () => redirect('/office/'));
+// Signed out in the new back office: sign in, then back to the same page of it (only ever a page of /office).
+Route::get('/office-signin', [OfficeController::class, 'signIn'])->name('office.sign-in');
+Route::get('/office/{path?}', [OfficeController::class, 'index'])->where('path', '.*')->name('office');
+Route::prefix('office-api')->middleware(['auth', 'throttle:120,1'])->group(function () {
+    Route::get('me', [OfficeController::class, 'me']);
+    Route::get('menu', [OfficeController::class, 'menu']);
+    Route::get('search', [OfficeController::class, 'search']);
+    Route::post('prefs', [OfficeController::class, 'prefs']);
+    Route::get('home', [OfficeController::class, 'home']);
+    Route::post('home-layout', [OfficeController::class, 'homeLayout']);
+});
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;
 // these routes only catch the bare address and a till app that has not been built yet.

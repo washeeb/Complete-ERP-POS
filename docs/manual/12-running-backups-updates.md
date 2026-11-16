@@ -33,6 +33,37 @@ questions like "what did Ama take by mobile money last week?" in a few clicks, a
 
 **Today — the owner's phone view** (top of the menu; anyone with *receive the daily summary*): the day on one screen that reads well on a phone and updates every minute — sales against the same day last week, cash / mobile money / card, till closes and cash over or short, what needs attention (server health, refused till work, approvals, expiring stock; tap to open), and per branch the sales, tills still open, who closed the day and whether the deposit is on the bank statement. **Yesterday** is one tap away. On the phone, open the back office, go to **Today**, then the browser menu → **Add to Home screen**: it opens like an app. **Why:** the owner sees the business from anywhere in ten seconds, without the full back office.
 
+**The new back office (being introduced).** Open `https://<your server>/office/` after signing in as usual. It is the same back office in a Windows-style frame, built with Microsoft's Fluent design.
+
+There are two ways to show the menu. Each person chooses under their name at the top right; you can switch at any time and nothing else changes.
+- **Across the top** (the default): areas such as Sales and Stock on a coloured bar; each opens its pages in columns.
+- **At the side**: a slim coloured strip of icons, with **Create** at the top.
+
+What's there:
+- **One search box** (Ctrl+K) finds pages of the menu and records: customers, products, invoices and more.
+- **Create** starts a new sale, invoice, product and so on.
+- Three icons start the menu:
+  - the **house** for Home;
+  - the **clock** for the pages you opened lately;
+  - the **star** for your favourite pages. Press it on any page to add that page, or take it off. The star is filled when the page is already a favourite, and your favourites follow you to every computer.
+- **Classic back office** (under your name) goes back to the old screens.
+
+**Home** shows the business at a glance:
+- **Reminders:** what waits for you; anything needing a decision shows big.
+- **Tiles:** big shortcuts to the pages you use most.
+- **Key performance indicators:** this period against the one before, with the change.
+- **KPI meter:** a dial for the figure you choose.
+- **Top 15 items sold**, and the **monthly trend** of sales and buying.
+- **Shortcuts:** your favourites, quick ways to add things, and the pages you opened lately.
+
+**Viewing** (top right) chooses the period: today, this week, month, quarter or year. **Personalize** chooses which panels show and which tiles. **Layout** chooses two or three columns. To move a panel, drag the small bar at its top, or use its **⋯** menu. Your arrangement is kept for you on every computer. Each chart can switch to a table (the small icons at its top right).
+
+**Why:** everyone sees first what needs them, and the figures that matter, without opening a report.
+
+Pages that have not been rebuilt yet open inside the new frame without their own menus. Over the next updates the daily screens are rebuilt one area at a time, and then everyone signs in to the new back office.
+
+**Why:** a faster, clearer screen that looks and behaves like a Windows program, introduced step by step so nothing stops working.
+
 **The SyncLytics support account** is switched on and off only by SyncLytics support (**System → Settings → Security → The SyncLytics support account may sign in**). **Why:** support looks after the technical side; a stolen owner sign-in must not be able to lock support out. The owner is told each time support signs in, and everything it does is in the audit log.
 
 ### Who did what, and from which computer

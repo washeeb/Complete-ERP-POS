@@ -11,6 +11,9 @@ RUN set -eux; \
     if [ -f pos/package.json ] && [ ! -f server/public/pos/index.html ]; then \
         cd pos && npm ci --no-audit --no-fund && POS_OUT_DIR=/src/server/public/pos npm run build:server && cd ..; \
     fi; \
+    if [ -f pos/package.json ] && [ ! -f server/public/office/index.html ]; then \
+        cd pos && npm ci --no-audit --no-fund && OFFICE_OUT_DIR=/src/server/public/office npm run build:office && cd ..; \
+    fi; \
     if [ -f server/package.json ] && [ ! -f server/public/build/manifest.json ]; then \
         cd server && npm ci --no-audit --no-fund && npm run build && rm -rf node_modules && cd ..; \
     fi; \
@@ -30,7 +33,7 @@ RUN set -eux; \
     apt-get install -y --no-install-recommends nginx supervisor curl ca-certificates gnupg libicu-dev libpq-dev libzip-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
         libicu72 libpq5 libzip4 libpng16-16 libjpeg62-turbo libfreetype6; \
     install -d /usr/share/postgresql-common/pgdg; \
-    curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc; \
+    curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc; \
     echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list; \
     apt-get update; apt-get install -y --no-install-recommends postgresql-client-${PG_MAJOR}; \
     docker-php-ext-configure gd --with-freetype --with-jpeg; \

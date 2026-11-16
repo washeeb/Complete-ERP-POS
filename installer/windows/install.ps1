@@ -205,7 +205,7 @@ $tls
 `t}
 `t# Files whose names or links change with each release (the till's code, the screens' styles and scripts) are kept by
 `t# the browser for a year instead of being asked for again on every page.
-`t@versioned path /pos/assets/* /build/* /css/* /js/* /fonts/* /vendor/*
+`t@versioned path /pos/assets/* /office/assets/* /build/* /css/* /js/* /fonts/* /vendor/*
 `theader @versioned Cache-Control `"public, max-age=31536000, immutable`"
 `t# One handle runs per request (Caddy puts handle before respond/reverse_proxy, so each case is its own handle).
 `t# Hidden files (.env and the like) never leave the server.
@@ -225,6 +225,12 @@ $tls
 `thandle /pos/* {
 `t`theader /pos/sw.js Cache-Control no-cache
 `t`ttry_files {path} /pos/index.html
+`t`tfile_server
+`t}
+`t# The new back office (single-page): unknown paths fall back to its index; it asks the server for everything else.
+`thandle /office/* {
+`t`theader /office/index.html Cache-Control no-cache
+`t`ttry_files {path} /office/index.html
 `t`tfile_server
 `t}
 `thandle {

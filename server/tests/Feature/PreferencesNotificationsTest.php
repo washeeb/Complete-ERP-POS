@@ -21,7 +21,7 @@ it('keeps only allowed preferences and opens the chosen home page after signing 
     $this->actingAs(withMfa($this->owner));
     app(AccessService::class)->updateOwnProfile(actorFor($this->owner), $this->owner->fresh(),
         ['ui_prefs' => ['home' => 'today', 'rows' => '50', 'theme' => 'dark', 'date' => 'iso', 'density' => 'compact', 'evil' => 'x']]);
-    expect($this->owner->fresh()->ui_prefs)->toBe(['home' => 'today', 'rows' => 50, 'theme' => 'dark', 'date' => 'iso', 'density' => 'compact']);
+    expect($this->owner->fresh()->ui_prefs)->toBe(['home' => 'today', 'rows' => 50, 'theme' => 'dark', 'date' => 'iso', 'density' => 'compact', 'office_look' => 'top']);
 
     $this->actingAs(withMfa($this->owner->fresh()));
     expect(UserPrefs::dateFormat())->toBe('Y-m-d')

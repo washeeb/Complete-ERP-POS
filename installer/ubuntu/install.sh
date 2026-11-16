@@ -190,6 +190,11 @@ if [ ! -f public/pos/index.html ] && [ -f "$SRC/pos/package.json" ]; then
   command -v npm >/dev/null || { curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 https://deb.nodesource.com/setup_24.x | bash - >/dev/null && apt-get install -y -q nodejs; }
   (cd "$SRC/pos" && npm ci --no-audit --no-fund && POS_OUT_DIR="$DIR/server/public/pos" npm run build:server)
 fi
+if [ ! -f public/office/index.html ] && [ -f "$SRC/pos/package.json" ]; then
+  say "   Building the new back office from source (why: the release did not include it)"
+  command -v npm >/dev/null || { curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 https://deb.nodesource.com/setup_24.x | bash - >/dev/null && apt-get install -y -q nodejs; }
+  (cd "$SRC/pos" && npm ci --no-audit --no-fund && OFFICE_OUT_DIR="$DIR/server/public/office" npm run build:office)
+fi
 php artisan storage:link --no-interaction >/dev/null 2>&1 || true
 php artisan optimize --no-interaction
 php artisan filament:optimize --no-interaction # caches the screens' building blocks and icons
@@ -314,7 +319,7 @@ ${TLS}
 	}
 	# Files whose names or links change with each release (the till's code, the screens' styles and scripts) are kept by
 	# the browser for a year instead of being asked for again on every page.
-	@versioned path /pos/assets/* /build/* /css/* /js/* /fonts/* /vendor/*
+	@versioned path /pos/assets/* /office/assets/* /build/* /css/* /js/* /fonts/* /vendor/*
 	header @versioned Cache-Control "public, max-age=31536000, immutable"
 	# One handle runs per request. Hidden files (.env and the like) never leave the server.
 	@hidden {
@@ -333,6 +338,12 @@ ${TLS}
 	handle /pos/* {
 		header /pos/sw.js Cache-Control no-cache
 		try_files {path} /pos/index.html
+		file_server
+	}
+	# The new back office (single-page): unknown paths fall back to its index; it asks the server for everything else.
+	handle /office/* {
+		header /office/index.html Cache-Control no-cache
+		try_files {path} /office/index.html
 		file_server
 	}
 	handle {
