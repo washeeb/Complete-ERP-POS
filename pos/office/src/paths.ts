@@ -14,6 +14,8 @@ const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
 const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray) => string }[] = [
   { admin: /^\/admin\/sales\/?$/, app: () => `${APP}/sales` },
   { admin: new RegExp(`^/admin/sales/(${UUID})$`), app: (m) => `${APP}/sales/${m[1]}` },
+  { admin: /^\/admin\/shifts\/?$/, app: () => `${APP}/shifts` },
+  { admin: /^\/admin\/till-drawer-events\/?$/, app: () => `${APP}/drawer` },
 ]
 
 /** /admin/products?x=1 → /office/a/products?x=1; /admin → /office/ (home); a rebuilt page → its new address. Anything else is not ours: home. */
@@ -41,7 +43,8 @@ export function adminPathFor(appPath: string): string | null {
 }
 
 /** The new back office's own pages. */
-export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { page: 'sale'; id: string } | { page: 'classic'; admin: string }
+export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { page: 'sale'; id: string } | { page: 'shifts' } | { page: 'shift'; id: string }
+  | { page: 'drawer' } | { page: 'classic'; admin: string }
 
 export function routeOf(path: string, search = ''): Route {
   const admin = adminPathFor(path + search)
@@ -50,6 +53,10 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/sales\/?$/.test(path)) return { page: 'sales' }
   const sale = path.match(new RegExp(`^/office/sales/(${UUID})/?$`))
   if (sale) return { page: 'sale', id: sale[1] }
+  if (/^\/office\/shifts\/?$/.test(path)) return { page: 'shifts' }
+  const shift = path.match(new RegExp(`^/office/shifts/(${UUID})/?$`))
+  if (shift) return { page: 'shift', id: shift[1] }
+  if (/^\/office\/drawer\/?$/.test(path)) return { page: 'drawer' }
   return { page: 'home' }
 }
 
@@ -59,6 +66,8 @@ export function adminEquivalent(route: Route): string | null {
     case 'classic': return route.admin
     case 'sales': return '/admin/sales'
     case 'sale': return `/admin/sales/${route.id}`
+    case 'shifts': case 'shift': return '/admin/shifts'
+    case 'drawer': return '/admin/till-drawer-events'
     default: return null
   }
 }

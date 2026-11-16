@@ -35,6 +35,10 @@ describe('addresses', () => {
     expect(routeOf('/office/sales')).toEqual({ page: 'sales' })
     expect(routeOf('/office/sales/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')).toEqual({ page: 'sale', id: '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f' })
     expect(adminEquivalent({ page: 'sales' })).toBe('/admin/sales')
+    expect(appPathFor('/admin/shifts')).toBe('/office/shifts')
+    expect(appPathFor('/admin/till-drawer-events')).toBe('/office/drawer')
+    expect(routeOf('/office/shifts/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')).toEqual({ page: 'shift', id: '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f' })
+    expect(adminEquivalent({ page: 'drawer' })).toBe('/admin/till-drawer-events')
   })
 
   it('knows its own pages', () => {
