@@ -7,6 +7,7 @@ import { api, type Me, type Menu, type Prefs } from './api'
 import { useRoute } from './nav'
 import { ClassicPage } from './pages/ClassicPage'
 import { HomePage } from './pages/HomePage'
+import { TodoPage } from './pages/TodoPage'
 import { adminPathFor, tabOf } from './paths'
 import { SideLook } from './shell/SideLook'
 import { TopLook } from './shell/TopLook'
@@ -69,7 +70,8 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
   const { dispatchToast } = useToastController(toaster)
   const [title, setTitle] = useState('')
 
-  useEffect(() => { document.title = title ? `${title} · ${me.company.name}` : me.company.name }, [title, me.company.name])
+  const shown = route.page === 'home' ? 'Home' : route.page === 'todo' ? 'To-do' : title
+  useEffect(() => { document.title = shown ? `${shown} · ${me.company.name}` : me.company.name }, [shown, me.company.name])
 
   const onLook = useCallback((look: Prefs['office_look']) => {
     const before = me
@@ -80,6 +82,15 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
     })
   }, [me, setMe, dispatchToast])
 
+  // How many wait for this person's decision: the number on the To-do icon, fresh every half minute.
+  const [todo, setTodo] = useState(0)
+  useEffect(() => {
+    const read = () => { api.todoCount().then((r) => setTodo(r.count)).catch(() => undefined) }
+    read()
+    const t = setInterval(read, 30000)
+    return () => clearInterval(t)
+  }, [])
+
   const admin = route.page === 'classic' ? route.admin : menu.home
   const current = route.page === 'classic' ? tabOf(menu, route.admin) : null
   const Look = me.prefs.office_look === 'side' ? SideLook : TopLook
@@ -88,9 +99,11 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
 
   return (
     <>
-      <Look me={me} menu={menu} current={current} page={page} onLook={onLook} onFavourites={(favourites) => setMe({ ...me, favourites })}>
-        {/* Home is the new one; To-do (next) still shows the current dashboard; every other page is the current one, framed. */}
-        {route.page === 'home' ? <HomePage me={me} menu={menu} /> : <ClassicPage admin={admin} onTitle={setTitle} />}
+      <Look me={me} menu={menu} current={current} page={page} todo={todo} atTodo={route.page === 'todo'} onLook={onLook} onFavourites={(favourites) => setMe({ ...me, favourites })}>
+        {/* Home and To-do are the new ones; every other page is the current back office's, framed. */}
+        {route.page === 'home' ? <HomePage me={me} menu={menu} />
+          : route.page === 'todo' ? <TodoPage onCount={setTodo} />
+            : <ClassicPage admin={admin} onTitle={setTitle} />}
       </Look>
       <Toaster toasterId={toaster} position="top-end" />
     </>

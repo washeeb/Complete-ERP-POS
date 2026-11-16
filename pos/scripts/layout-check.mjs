@@ -36,15 +36,20 @@ await page.locator('input[type=password]').fill(secrets.password)
 await page.getByRole('button', { name: 'Sign in', exact: true }).click()
 const code = page.locator('input[autocomplete="one-time-code"], input[inputmode="numeric"]').first()
 await code.waitFor({ timeout: 15000 }); await code.fill(totp(secrets.totp_secret)); await code.press('Enter')
-await page.waitForURL(/\/admin(?!\/login)/, { timeout: 20000 }).catch(async (e) => {
+// Signing in lands in the new back office now (or the classic one): either means signed in.
+await page.waitForURL(/\/(admin(?!\/login)|office)/, { timeout: 20000 }).catch(async (e) => {
   await page.screenshot({ path: resolve(here, '../../.local-secrets/layout-check-signin.png') }) // git-ignored folder: never committed
   throw new Error('Sign-in did not finish; see .local-secrets/layout-check-signin.png. ' + e.message)
 })
+// This check is about the classic back office's screens: start there, as before signing in landed in the new one.
+await page.goto(`${base}/admin`); await page.waitForLoadState('networkidle')
 
 const chooseLook = async (value) => {
   await page.goto(`${base}/admin/profile`); await page.waitForLoadState('networkidle')
   await page.locator(`input[type=radio][value="${value}"]`).check()
-  await page.getByRole('button', { name: 'Save changes' }).click(); await page.waitForLoadState('networkidle'); await page.waitForTimeout(600)
+  // Saving reloads the profile (so the new look shows): wait for that reload, not a fixed time, or it cuts off the next page.
+  const reloaded = page.waitForEvent('framenavigated', { predicate: (f) => f === page.mainFrame(), timeout: 15000 }).catch(() => undefined)
+  await page.getByRole('button', { name: 'Save changes' }).click(); await reloaded; await page.waitForLoadState('networkidle'); await page.waitForTimeout(300)
 }
 
 const problems = []

@@ -54,6 +54,6 @@ class PasskeyLoginController extends AuthenticateUsingPasskeyController
 
         $user = $request->user();
 
-        return redirect()->intended(UserPrefs::homeUrl($user instanceof User ? $user : null)); // the person's own home page
+        return redirect()->intended(UserPrefs::officeHomeUrl($user instanceof User ? $user : null)); // the person's own home page, in the new back office
     }
 }

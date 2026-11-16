@@ -18,6 +18,7 @@ use App\Security\SignInCode;
 use App\Support\Dashboard\Panels;
 use App\Support\Look;
 use App\Support\UserPrefs;
+use Filament\Actions\Action;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -25,6 +26,7 @@ use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
 use Filament\PanelProvider;
+use Filament\Support\Icons\Heroicon;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -62,6 +64,8 @@ class AdminPanelProvider extends PanelProvider
             // The new look (System → Settings → Appearance, or each person's profile): tabs across the top.
             ->topNavigation(fn () => Look::hasTopTabs())
             ->homeUrl(fn () => UserPrefs::homeUrl(auth()->user())) // the logo opens the person's own home page
+            // Back to the new back office (where signing in now lands), from the classic one.
+            ->userMenuItems(['office' => Action::make('office')->label('New back office')->icon(Heroicon::OutlinedWindow)->url('/office/')])
             ->sidebarCollapsibleOnDesktop(fn () => Look::current() === 'side') // the dark rail folds to icons
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->databaseNotifications()->databaseNotificationsPolling('30s')

@@ -1,4 +1,4 @@
-import { makeStyles, mergeClasses, Popover, PopoverSurface, PopoverTrigger, Text, tokens } from '@fluentui/react-components'
+import { CounterBadge, makeStyles, mergeClasses, Popover, PopoverSurface, PopoverTrigger, Text, tokens } from '@fluentui/react-components'
 import { useState, type ReactNode } from 'react'
 import { HistoryRegular, StarFilled, StarRegular } from '@fluentui/react-icons'
 import type { Me, Menu, Prefs } from '../api'
@@ -22,6 +22,8 @@ const useStyles = makeStyles({
     ':focus-visible': { outline: '2px solid currentColor', outlineOffset: '-4px' },
   },
   create: { minHeight: '72px' },
+  badged: { position: 'relative', display: 'inline-flex' },
+  counter: { position: 'absolute', top: '-6px', right: '-14px' },
   sep: { display: 'block', height: '1px', margin: '4px 14px', backgroundColor: 'currentColor', opacity: 0.25, flex: '0 0 1px' },
   current: { backgroundColor: 'rgba(255,255,255,.16)', boxShadow: 'inset 3px 0 0 currentColor' },
   icon: { fontSize: '24px', display: 'block' },
@@ -41,11 +43,12 @@ const useStyles = makeStyles({
  * Look 2 (the owner's side-menu template): a slim coloured rail of areas, each an icon with its name below, Create at the
  * top. An area opens its pages in a fly-out beside the rail; the page keeps the whole width.
  */
-export function SideLook({ me, menu, current, page, onLook, onFavourites, children }: {
-  me: Me; menu: Menu; current: string | null; page: Page | null; onLook: (l: Prefs['office_look']) => void; onFavourites: (list: Page[]) => void
-  children: ReactNode
+export function SideLook({ me, menu, current, page, todo, atTodo, onLook, onFavourites, children }: {
+  me: Me; menu: Menu; current: string | null; page: Page | null; todo: number; atTodo: boolean
+  onLook: (l: Prefs['office_look']) => void; onFavourites: (list: Page[]) => void; children: ReactNode
 }) {
   const s = useStyles()
+  const atHome = current === null && !page && !atTodo
   const [open, setOpen] = useState<string | null>(null)
   const band = me.company.menu_color ?? menuShade(me.company.color)
   const ink = onColor(band)
@@ -57,7 +60,11 @@ export function SideLook({ me, menu, current, page, onLook, onFavourites, childr
           <button type="button" className={mergeClasses(s.item, s.create)} style={{ backgroundColor: me.company.color, color: me.company.on_color }}>
             <AreaIcon label="Create" className={s.icon} />Create
           </button>} />
-        <button type="button" className={mergeClasses(s.item, current === null && s.current)} onClick={() => navigate('/office/')} aria-current={current === null ? 'page' : undefined}>
+        <button type="button" className={mergeClasses(s.item, atTodo && s.current)} onClick={() => navigate('/office/todo')} aria-current={atTodo ? 'page' : undefined}
+          aria-label={todo ? `To-do, ${todo} waiting for you` : 'To-do'}>
+          <span className={s.badged}><AreaIcon label="To-do" className={s.icon} />{todo > 0 && <CounterBadge className={s.counter} count={todo} overflowCount={99} size="small" color="danger" />}</span>To-do
+        </button>
+        <button type="button" className={mergeClasses(s.item, atHome && s.current)} onClick={() => navigate('/office/')} aria-current={atHome ? 'page' : undefined}>
           <AreaIcon label="Home" className={s.icon} />Home
         </button>
         <RecentMenu beside trigger={<button type="button" className={s.item}><HistoryRegular className={s.icon} aria-hidden />Recent</button>} />

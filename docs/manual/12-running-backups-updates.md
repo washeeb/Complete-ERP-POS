@@ -33,7 +33,14 @@ questions like "what did Ama take by mobile money last week?" in a few clicks, a
 
 **Today — the owner's phone view** (top of the menu; anyone with *receive the daily summary*): the day on one screen that reads well on a phone and updates every minute — sales against the same day last week, cash / mobile money / card, till closes and cash over or short, what needs attention (server health, refused till work, approvals, expiring stock; tap to open), and per branch the sales, tills still open, who closed the day and whether the deposit is on the bank statement. **Yesterday** is one tap away. On the phone, open the back office, go to **Today**, then the browser menu → **Add to Home screen**: it opens like an app. **Why:** the owner sees the business from anywhere in ten seconds, without the full back office.
 
-**The new back office (being introduced).** Open `https://<your server>/office/` after signing in as usual. It is the same back office in a Windows-style frame, built with Microsoft's Fluent design.
+**The new back office.** Signing in now opens it, at `https://<your server>/office/`. It is the same back office in a Windows-style frame, built with Microsoft's Fluent design. **Classic back office** (under your name) goes back to the old screens, and **New back office** in the classic one's menu (under your photo) comes back.
+
+**To-do** (the list icon at the start of the menu, with a red number) shows everything waiting for your decision.
+- **Till requests** come first: Approve (after confirming it is you) or Decline (say why; the cashier sees it) right there.
+- After them, the purchase orders, stock adjustments, returns, expense claims, leave, access requests and the rest are listed with their number, who asked, the amount and how long they have waited. **Open** shows each one so you can approve or turn it down.
+- The list refreshes by itself.
+
+**Why:** nothing that needs you gets missed, and a cashier waiting at the till gets an answer in seconds.
 
 There are two ways to show the menu. Each person chooses under their name at the top right; you can switch at any time and nothing else changes.
 - **Across the top** (the default): areas such as Sales and Stock on a coloured bar; each opens its pages in columns.

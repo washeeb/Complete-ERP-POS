@@ -31,7 +31,7 @@ class MyApprovals extends Widget
     protected string $view = 'filament.widgets.my-approvals';
 
     /** kind => [label, permission, table, waiting status, list page, branch column (null = company-wide), who asked] */
-    private const KINDS = [
+    public const KINDS = [
         'po' => ['Purchase orders', 'purchasing.approve', 'purchase_orders', 'pending_approval', PurchaseOrderResource::class, 'branch_id', 'created_by'],
         'adjustment' => ['Stock adjustments', 'stock.adjust.approve', 'stock_adjustments', 'submitted', StockAdjustmentResource::class, 'branch_id', 'submitted_by'],
         'return' => ['Returns', 'returns.office.approve', 'office_returns', 'submitted', OfficeReturnResource::class, 'branch_id', 'created_by'],
@@ -77,7 +77,7 @@ class MyApprovals extends Widget
         return collect(self::KINDS)->contains(fn ($k) => Erp::canAnywhere($k[1])) || TimeApprovals::canAccess() || self::decidesAccess();
     }
 
-    private static function decidesAccess(): bool
+    public static function decidesAccess(): bool
     {
         $me = Erp::user();
 

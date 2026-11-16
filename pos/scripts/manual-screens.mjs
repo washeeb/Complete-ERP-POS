@@ -53,7 +53,7 @@ const shot = (page, name) => page.screenshot({ path: resolve(out, `${name}.png`)
   await code.waitFor({ timeout: 15000 })
   await code.fill(totp(secrets.totp_secret))
   await code.press('Enter')
-  await page.waitForURL(/\/admin(?!\/login)/, { timeout: 20000 })
+  await page.waitForURL(/\/(admin(?!\/login)|office)/, { timeout: 20000 }) // signing in lands in the new back office now
   const chooseLook = async (value) => { // '' = the company's choice
     await page.goto(`${base}/admin/profile`)
     await page.waitForLoadState('networkidle')

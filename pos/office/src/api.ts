@@ -17,6 +17,12 @@ export type Me = {
   classic: string
 }
 export type SearchResult = { group: string; title: string; url: string; details: string }
+export type TodoItem = {
+  id: string; title: string; detail: string; who: string | null; where: string | null; amount: number | null; percent: number | null
+  at: string; expires_at: string | null; lines: string[]; url: string
+}
+export type TodoGroup = { key: string; label: string; hint: string; count: number; url: string | null; inline: boolean; items: TodoItem[] }
+export type Todo = { currency: string; exponent: number; groups: TodoGroup[]; total: number }
 export type Period = 'today' | 'week' | 'month' | 'quarter' | 'year'
 export type Kpi = { key: string; label: string; format: 'money' | 'count'; current: number; previous: number | null; change: number | null; spark: number[]; url: string }
 export type HomeData = {
@@ -32,11 +38,14 @@ export type HomeData = {
 export class ApiError extends Error {
   status: number
   code: string
+  /** Where to go to fix it, when the server says (e.g. "Confirm it's you"). */
+  url: string | null
 
-  constructor(message: string, status: number, code = 'error') {
+  constructor(message: string, status: number, code = 'error', url: string | null = null) {
     super(message)
     this.status = status
     this.code = code
+    this.url = url
   }
 }
 
@@ -56,7 +65,8 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
     throw new ApiError('Signed out', res.status, 'signed_out')
   }
   const body = await res.json().catch(() => ({}))
-  if (!res.ok) throw new ApiError(body.detail ?? body.message ?? 'Something went wrong. Try again.', res.status, body.error ?? 'error')
+  if (res.status === 429) throw new ApiError('Too many changes in a minute. Wait a moment, then try again.', 429, 'too_many')
+  if (!res.ok) throw new ApiError(body.detail ?? body.message ?? 'Something went wrong. Try again.', res.status, body.error ?? 'error', typeof body.url === 'string' ? body.url : null)
   return body as T
 }
 
@@ -67,6 +77,11 @@ export const api = {
   home: (period: Period, top: Period) => call<HomeData>(`/office-api/home?period=${period}&top=${top}`),
   saveHome: (layout: import('./home/layout').HomeLayout | null) =>
     call<{ layout: import('./home/layout').HomeLayout | null }>('/office-api/home-layout', { method: 'POST', body: JSON.stringify({ layout }) }),
+  todo: () => call<Todo>('/office-api/todo'),
+  todoCount: () => call<{ count: number }>('/office-api/todo-count'),
+  /** Approve or decline a till request; ApiError code "reconfirm" (with its url) = confirm it is you first. */
+  decideTill: (id: string, yes: boolean, note?: string) =>
+    call<{ status: string; decided_by: string | null }>(`/office-api/till-requests/${id}/decide`, { method: 'POST', body: JSON.stringify({ yes, note: note ?? null }) }),
   /** Add a page to the person's favourites, or take it off (the same list as the classic back office's star). */
   toggleFavourite: (url: string, label: string) =>
     call<{ favourites: { url: string; label: string }[] }>('/admin-ui/favourite', { method: 'POST', body: JSON.stringify({ url, label }) }),

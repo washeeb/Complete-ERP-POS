@@ -1,8 +1,10 @@
 <?php
 
 use App\Domain\Customers\CustomerService;
+use App\Http\Responses\HomeLoginResponse;
 use App\Models\Customer;
 use App\Security\ScopeType;
+use Illuminate\Http\Request;
 
 // The new back office (/office, owner decision 2026-11-15/16): what it shows comes from the current back office, for the
 // person signed in, so both always agree on menus and permissions.
@@ -95,4 +97,11 @@ it('keeps each person\'s arrangement of Home, and only what makes sense', functi
     $this->postJson('/office-api/prefs', ['office_look' => 'side'])->assertOk();
     $this->getJson('/office-api/home')->assertJsonPath('layout.cols', 2); // changing the look keeps the Home arrangement
     $this->postJson('/office-api/home-layout', ['layout' => null])->assertOk()->assertJsonPath('layout', null); // back to the standard Home
+});
+
+it('lands everyone in the new back office after signing in, their own home inside it, with the classic one a click away', function () {
+    $resp = fn ($u) => (new HomeLoginResponse)->toResponse(tap(Request::create('/'), fn ($r) => $r->setUserResolver(fn () => $u)))->getTargetUrl();
+    expect($resp($this->owner))->toEndWith('/office/');
+    $this->actingAs($this->owner, 'web');
+    $this->get('/admin/sales')->assertOk()->assertSee('New back office');
 });

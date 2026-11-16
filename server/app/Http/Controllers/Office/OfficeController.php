@@ -5,11 +5,17 @@ namespace App\Http\Controllers\Office;
 use App\Domain\Access\AccessService;
 use App\Domain\Branding\Branding;
 use App\Domain\Office\HomeData;
+use App\Domain\Office\TodoData;
+use App\Domain\Pos\TillApprovals;
+use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
+use App\Filament\Pages\ConfirmItsYou;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
+use App\Models\TillApproval;
 use App\Models\User;
+use App\Security\ReconfirmNeeded;
 use App\Support\Look;
 use App\Support\UserPrefs;
 use BackedEnum;
@@ -144,6 +150,40 @@ class OfficeController extends Controller
 
         return response()->json((new HomeData($user))->build(in_array($period, $ok, true) ? $period : 'month', in_array($top, $ok, true) ? $top : 'month')
             + ['layout' => UserPrefs::for($user)['office_home'] ?? null]);
+    }
+
+    /** To-do: everything waiting for this person's decision (App\Domain\Office\TodoData). */
+    public function todo(Request $request): JsonResponse
+    {
+        return response()->json((new TodoData($this->panel($request)))->build());
+    }
+
+    /** The number on the To-do icon. */
+    public function todoCount(Request $request): JsonResponse
+    {
+        return response()->json(['count' => (new TodoData($this->panel($request)))->count()]);
+    }
+
+    /**
+     * A till request answered from To-do. Approving asks the person to confirm it is them first (as on the Till requests
+     * page): the answer then says where to confirm, and the app opens it.
+     */
+    public function decideTillRequest(Request $request, string $id, TillApprovals $approvals): JsonResponse
+    {
+        $user = $this->panel($request);
+        $data = $request->validate(['yes' => ['required', 'boolean'], 'note' => ['nullable', 'string', 'max:255']]);
+        $r = TillApproval::findOrFail($id);
+        try {
+            $r = $approvals->decide(Actor::user($user, 'web'), $r, (bool) $data['yes'], $data['note'] ?? null);
+        } catch (ReconfirmNeeded $e) {
+            return response()->json(['error' => 'reconfirm', 'detail' => $e->getMessage(), 'url' => ConfirmItsYou::getUrl()], 428);
+        } catch (AccessDenied $e) {
+            return response()->json(['error' => $e->errorCode, 'detail' => $e->getMessage()], 403);
+        } catch (DomainException $e) {
+            return response()->json(['error' => $e->errorCode, 'detail' => $e->getMessage()], 422);
+        }
+
+        return response()->json(['status' => $r->status, 'decided_by' => $r->decided_by_name]);
     }
 
     /** The person arranged their Home (Personalize, Layout): kept with their other choices. */
