@@ -133,6 +133,19 @@ final class UserPrefs
         };
     }
 
+    /**
+     * Where signing in lands (owner decision 2026-11-16: the new back office for everyone once release 1 is out): the
+     * new Home, or the person's own home page (Today, a favourite) opened inside it. The classic back office stays one
+     * click away (under the person's name).
+     */
+    public static function officeHomeUrl(?User $user): string
+    {
+        $home = (string) parse_url(self::homeUrl($user), PHP_URL_PATH);
+        $rest = preg_replace('#^/admin/?#', '', $home);
+
+        return url('/').($rest === '' ? '/office/' : '/office/a/'.$rest);
+    }
+
     public static function dateFormat(): string
     {
         return self::DATES[self::get('date')][1];

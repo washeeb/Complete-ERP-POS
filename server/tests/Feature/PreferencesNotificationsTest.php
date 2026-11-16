@@ -25,7 +25,7 @@ it('keeps only allowed preferences and opens the chosen home page after signing 
 
     $this->actingAs(withMfa($this->owner->fresh()));
     expect(UserPrefs::dateFormat())->toBe('Y-m-d')
-        ->and((new HomeLoginResponse)->toResponse(tap(Request::create('/'), fn ($r) => $r->setUserResolver(fn () => $this->owner->fresh())))->getTargetUrl())->toEndWith('/admin/today');
+        ->and((new HomeLoginResponse)->toResponse(tap(Request::create('/'), fn ($r) => $r->setUserResolver(fn () => $this->owner->fresh())))->getTargetUrl())->toEndWith('/office/a/today'); // the new back office, the person's own home inside it
     $this->get('/admin/sales')->assertOk()->assertSee('zx-compact', false)->assertSee("'dark'", false);
 
     // Unknown values fall back to the standard; a page that is not a favourite cannot be home.

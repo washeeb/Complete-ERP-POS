@@ -1,5 +1,5 @@
-import { Button, makeStyles, mergeClasses, Popover, PopoverSurface, PopoverTrigger, Text, tokens, Tooltip } from '@fluentui/react-components'
-import { ChevronDownRegular, HistoryRegular, HomeFilled, StarFilled, StarRegular } from '@fluentui/react-icons'
+import { Button, CounterBadge, makeStyles, mergeClasses, Popover, PopoverSurface, PopoverTrigger, Text, tokens, Tooltip } from '@fluentui/react-components'
+import { ChevronDownRegular, HistoryRegular, HomeFilled, StarFilled, StarRegular, TaskListSquareLtrRegular } from '@fluentui/react-icons'
 import { useState, type ReactNode } from 'react'
 import type { Me, Menu, Prefs } from '../api'
 import { navigate } from '../nav'
@@ -27,6 +27,8 @@ const useStyles = makeStyles({
     ':hover': { color: 'inherit', backgroundColor: 'rgba(255,255,255,.12)' }, ':hover:active': { color: 'inherit', backgroundColor: 'rgba(255,255,255,.18)' },
   },
   current: { boxShadow: 'inset 0 -3px 0 currentColor', backgroundColor: 'rgba(255,255,255,.10)' },
+  badged: { position: 'relative', display: 'inline-flex' },
+  counter: { position: 'absolute', top: '-8px', right: '-12px' },
   sep: { width: '1px', margin: '10px 6px', backgroundColor: 'currentColor', opacity: 0.3, flex: '0 0 1px' },
   panel: { width: 'min(880px, calc(100vw - 32px))', maxHeight: '70vh', overflowY: 'auto', padding: '12px' },
   main: { flex: '1 1 auto', display: 'flex', flexDirection: 'column', minHeight: 0 },
@@ -37,10 +39,11 @@ const useStyles = makeStyles({
  * Look 1 (the default, owner 2026-11-16): the company and search on a white band, the menu areas on a coloured band
  * below; each area drops down its pages in columns. Like the desktop business programs people know.
  */
-export function TopLook({ me, menu, current, page, onLook, onFavourites, children }: {
-  me: Me; menu: Menu; current: string | null; page: Page | null; onLook: (l: Prefs['office_look']) => void; onFavourites: (list: Page[]) => void
-  children: ReactNode
+export function TopLook({ me, menu, current, page, todo, atTodo, onLook, onFavourites, children }: {
+  me: Me; menu: Menu; current: string | null; page: Page | null; todo: number; atTodo: boolean
+  onLook: (l: Prefs['office_look']) => void; onFavourites: (list: Page[]) => void; children: ReactNode
 }) {
+  const atHome = current === null && !page && !atTodo
   const s = useStyles()
   const [open, setOpen] = useState<string | null>(null)
   const band = me.company.menu_color ?? menuShade(me.company.color)
@@ -61,8 +64,12 @@ export function TopLook({ me, menu, current, page, onLook, onFavourites, childre
       </header>
       <nav className={s.bar} style={{ backgroundColor: band, color: ink }} aria-label="Menu">
         <Tooltip content="Home" relationship="label">
-          <Button appearance="transparent" className={mergeClasses(s.tab, current === null && !page && s.current)} icon={<HomeFilled />} onClick={() => navigate('/office/')}
-            aria-current={current === null && !page ? 'page' : undefined} />
+          <Button appearance="transparent" className={mergeClasses(s.tab, atHome && s.current)} icon={<HomeFilled />} onClick={() => navigate('/office/')}
+            aria-current={atHome ? 'page' : undefined} />
+        </Tooltip>
+        <Tooltip content={todo ? `To-do: ${todo} waiting for you` : 'To-do'} relationship="label">
+          <Button appearance="transparent" className={mergeClasses(s.tab, atTodo && s.current)} aria-current={atTodo ? 'page' : undefined} onClick={() => navigate('/office/todo')}
+            icon={<span className={s.badged}><TaskListSquareLtrRegular />{todo > 0 && <CounterBadge className={s.counter} count={todo} overflowCount={99} size="small" color="danger" />}</span>} />
         </Tooltip>
         <RecentMenu trigger={
           <Tooltip content="Recent pages" relationship="label"><Button appearance="transparent" className={s.tab} icon={<HistoryRegular />} /></Tooltip>} />

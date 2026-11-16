@@ -47,6 +47,9 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1'])->group(funct
     Route::post('prefs', [OfficeController::class, 'prefs']);
     Route::get('home', [OfficeController::class, 'home']);
     Route::post('home-layout', [OfficeController::class, 'homeLayout']);
+    Route::get('todo', [OfficeController::class, 'todo']);
+    Route::get('todo-count', [OfficeController::class, 'todoCount']);
+    Route::post('till-requests/{id}/decide', [OfficeController::class, 'decideTillRequest'])->whereUuid('id');
 });
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;

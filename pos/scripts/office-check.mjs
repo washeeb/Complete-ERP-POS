@@ -59,6 +59,28 @@ try {
       }
       await page.waitForTimeout(700) // the panels' grow-in finishes
       await page.screenshot({ path: out(`home-${look}-${w}`), fullPage: true })
+      // To-do: from the menu, the list of what waits (or "All clear").
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /^To-do/ }).first().click()
+      await page.getByRole('heading', { name: 'To-do', level: 1 }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: To-do did not open`))
+      if (!/\/office\/todo/.test(page.url())) problems.push(`${look} ${w}: To-do is not at /office/todo (${page.url()})`)
+      await page.waitForTimeout(500)
+      await page.screenshot({ path: out(`todo-${look}-${w}`), fullPage: true })
+      // A till request waiting: Approve asks to confirm it is you (or approves at once if confirmed in the last minutes).
+      const approve = page.getByRole('button', { name: 'Approve', exact: true }).first()
+      if (look === 'side' && w === 1366 && await approve.isVisible().catch(() => false)) {
+        await approve.click()
+        const confirm = page.getByRole('dialog', { name: "Confirm it's you" })
+        await Promise.race([confirm.waitFor({ timeout: 10000 }), page.getByText(/^Approved:/).waitFor({ timeout: 10000 })])
+          .catch(() => problems.push('To-do: Approve neither asked to confirm nor approved'))
+        if (await confirm.isVisible().catch(() => false)) {
+          await page.frameLocator('iframe[title="Confirm it\'s you"]').locator('html.zx-embedded').waitFor({ timeout: 15000 })
+            .catch(() => problems.push('To-do: the confirm page did not open inside the dialog'))
+          await page.screenshot({ path: out('todo-confirm') })
+          await confirm.getByRole('button', { name: 'Cancel' }).click()
+        }
+      }
+      await page.goto(`${base}/office/`)
+      await page.getByRole('heading', { name: 'Home', level: 1 }).waitFor({ timeout: 20000 })
       const sideways = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
       if (sideways > 1) problems.push(`${look} ${w}: the page runs ${sideways}px off the side`)
 
