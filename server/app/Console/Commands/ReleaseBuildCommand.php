@@ -102,6 +102,14 @@ class ReleaseBuildCommand extends Command
 
                 return self::FAILURE;
             }
+            // The new back office (/office), from the same folder, with the same stamp.
+            $b = Process::path($pos)->env(['VITE_BUILD_STAMP' => $build, 'OFFICE_OUT_DIR' => $root.DIRECTORY_SEPARATOR.'public'.DIRECTORY_SEPARATOR.'office'])
+                ->timeout(600)->run(['npm', 'run', 'build:office']);
+            if (! $b->successful()) {
+                $this->error('New back office build failed: '.$b->errorOutput());
+
+                return self::FAILURE;
+            }
         }
 
         // 5. The server's own built assets (the online shop's live updates), which git does not hold.

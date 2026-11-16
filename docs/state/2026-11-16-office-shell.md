@@ -1,0 +1,17 @@
+## New back office, release 1 part 1 (shell) — branch `office-shell`
+- **The app.** Source in `pos/office/` (React 19, Fluent UI v9 9.75.1, icons 2.0.345, pinned exact).
+  - Build config `pos/vite.office.config.ts` (root `office`, base `/office/`, output `server/public/office`, or `OFFICE_OUT_DIR`).
+  - Scripts: `npm run build:office`, `npm run dev:office` (port 5175, proxies to 8010), `npm run check:office` (signs in as the dev owner, both looks × two sizes, screenshots in `.local-secrets/office-*.png`).
+  - `npm run build` and `npm test` include it; `tsconfig.office.json` is referenced from `tsconfig.json`.
+- **Address.** `/office`, because `/app/*` is Reverb on installed servers (Caddy `@live`).
+  - Web servers hand out `/office/*` statically with a fallback to its index: Caddy (Ubuntu and Windows `handle /office/*`) and nginx (Docker `location /office/`).
+  - Laravel routes `/office/{path}` (dev and tests), `/office-signin?to=` (puts `url.intended`, accepts only `/office` paths) and `/office-api/{me,menu,search,prefs}` (auth, throttle 120/min).
+- **Server.** `App\Http\Controllers\Office\OfficeController` sets the Filament admin panel and reuses:
+  - `Look::tabs()` for the menu (tabs → sections → groups → items, `/admin` paths);
+  - `Look::quickCreate()` for Create;
+  - Filament's global search;
+  - `UserPrefs` with the new `office_look` (`top` | `side`, default `top`), saved through `AccessService::updateOwnProfile`.
+- **Old screens inside.** `layout.embedded` (panel HEAD_END hook): when framed by the same origin, it adds `html.zx-embedded` (hides the sidebar, topbar and tab band) and posts `{type: 'zx-page', title, path}` to the parent. `ClassicPage` (iframe) follows it with `history.replaceState`; a login or logout path takes the whole window.
+- **Releases and installers.** `release:build --with-pos` also runs `build:office`. The Dockerfile and Ubuntu installer build it from source when it is missing; `/office/assets/*` are cached for a year.
+- Tests: OfficeShellTest, `office/src/*.test.ts`.
+- Next parts: the Home dashboard of tiles, then To-do, then everyone signs in to `/office`.

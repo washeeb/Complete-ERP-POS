@@ -1,0 +1,5 @@
+/* The new back office: Fluent draws everything; these are only the page edges. */
+html, body, #root { margin: 0; height: 100%; }
+body { font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+.zx-user-text { display: flex; flex-direction: column; align-items: flex-start; max-width: 160px; text-align: start; line-height: 1.2; }
+@media (max-width: 760px) { .zx-user-text { display: none; } }

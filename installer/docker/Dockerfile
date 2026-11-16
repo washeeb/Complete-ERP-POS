@@ -11,6 +11,9 @@ RUN set -eux; \
     if [ -f pos/package.json ] && [ ! -f server/public/pos/index.html ]; then \
         cd pos && npm ci --no-audit --no-fund && POS_OUT_DIR=/src/server/public/pos npm run build:server && cd ..; \
     fi; \
+    if [ -f pos/package.json ] && [ ! -f server/public/office/index.html ]; then \
+        cd pos && npm ci --no-audit --no-fund && OFFICE_OUT_DIR=/src/server/public/office npm run build:office && cd ..; \
+    fi; \
     if [ -f server/package.json ] && [ ! -f server/public/build/manifest.json ]; then \
         cd server && npm ci --no-audit --no-fund && npm run build && rm -rf node_modules && cd ..; \
     fi; \

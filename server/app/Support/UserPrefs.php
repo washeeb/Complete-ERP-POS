@@ -18,7 +18,10 @@ use Throwable;
  */
 final class UserPrefs
 {
-    public const DEFAULTS = ['home' => 'dashboard', 'rows' => 10, 'theme' => 'system', 'date' => 'words', 'density' => 'comfortable'];
+    public const DEFAULTS = ['home' => 'dashboard', 'rows' => 10, 'theme' => 'system', 'date' => 'words', 'density' => 'comfortable', 'office_look' => 'top'];
+
+    /** The new back office (/app): menu across the top (owner's default, 2026-11-16) or the slim side menu. */
+    public const OFFICE_LOOKS = ['top' => 'Menu across the top', 'side' => 'Side menu'];
 
     public const ROWS = [10, 25, 50, 100];
 
@@ -53,7 +56,7 @@ final class UserPrefs
         if (in_array((int) ($in['rows'] ?? 0), self::ROWS, true)) {
             $p['rows'] = (int) $in['rows'];
         }
-        foreach (['theme' => self::THEMES, 'date' => self::DATES, 'density' => self::DENSITIES] as $key => $allowed) {
+        foreach (['theme' => self::THEMES, 'date' => self::DATES, 'density' => self::DENSITIES, 'office_look' => self::OFFICE_LOOKS] as $key => $allowed) {
             if (isset($allowed[$in[$key] ?? ''])) {
                 $p[$key] = $in[$key];
             }

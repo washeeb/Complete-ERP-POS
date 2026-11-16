@@ -5,11 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && vite build -c vite.office.config.ts --outDir ../dist-office --emptyOutDir",
     "build:server": "tsc -b && vite build --mode server",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "vitest run && vitest run -c vite.office.config.ts",
     "e2e": "playwright test",
     "manual": "node scripts/manual.mjs",
     "notes": "node scripts/notes.mjs",
@@ -19,9 +19,14 @@
     "pentest": "node scripts/training.mjs pentest ^0[12]-",
     "brand": "node scripts/brand.mjs",
     "brand:loader": "node scripts/brand-loader.mjs",
-    "desktop:build": "cd ../desktop && node ../pos/node_modules/@tauri-apps/cli/tauri.js build"
+    "desktop:build": "cd ../desktop && node ../pos/node_modules/@tauri-apps/cli/tauri.js build",
+    "build:office": "tsc -b && vite build -c vite.office.config.ts",
+    "dev:office": "vite -c vite.office.config.ts",
+    "check:office": "node scripts/office-check.mjs"
   },
   "dependencies": {
+    "@fluentui/react-components": "9.75.1",
+    "@fluentui/react-icons": "2.0.345",
     "dexie": "^4.4.6",
     "html-to-image": "1.11.13",
     "laravel-echo": "^2.5.0",

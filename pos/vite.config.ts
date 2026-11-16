@@ -66,6 +66,6 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       proxy: { '/api': 'http://127.0.0.1:8010', '/up': 'http://127.0.0.1:8010', '/brand': 'http://127.0.0.1:8010' },
     },
-    test: { environment: 'node', exclude: ['e2e/**', 'node_modules/**'] },
+    test: { environment: 'node', exclude: ['e2e/**', 'node_modules/**', 'office/**'] }, // the new back office runs its own (vite.office.config.ts)
   }
 })
