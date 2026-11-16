@@ -42,7 +42,23 @@ There are two ways to show the menu. Each person chooses under their name at the
 What's there:
 - **One search box** (Ctrl+K) finds pages of the menu and records: customers, products, invoices and more.
 - **Create** starts a new sale, invoice, product and so on.
+- Three icons start the menu:
+  - the **house** for Home;
+  - the **clock** for the pages you opened lately;
+  - the **star** for your favourite pages. Press it on any page to add that page, or take it off. The star is filled when the page is already a favourite, and your favourites follow you to every computer.
 - **Classic back office** (under your name) goes back to the old screens.
+
+**Home** shows the business at a glance:
+- **Reminders:** what waits for you; anything needing a decision shows big.
+- **Tiles:** big shortcuts to the pages you use most.
+- **Key performance indicators:** this period against the one before, with the change.
+- **KPI meter:** a dial for the figure you choose.
+- **Top 15 items sold**, and the **monthly trend** of sales and buying.
+- **Shortcuts:** your favourites, quick ways to add things, and the pages you opened lately.
+
+**Viewing** (top right) chooses the period: today, this week, month, quarter or year. **Personalize** chooses which panels show and which tiles. **Layout** chooses two or three columns. To move a panel, drag the small bar at its top, or use its **⋯** menu. Your arrangement is kept for you on every computer. Each chart can switch to a table (the small icons at its top right).
+
+**Why:** everyone sees first what needs them, and the figures that matter, without opening a report.
 
 Pages that have not been rebuilt yet open inside the new frame without their own menus. Over the next updates the daily screens are rebuilt one area at a time, and then everyone signs in to the new back office.
 

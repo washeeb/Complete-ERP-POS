@@ -13,5 +13,18 @@
   - `UserPrefs` with the new `office_look` (`top` | `side`, default `top`), saved through `AccessService::updateOwnProfile`.
 - **Old screens inside.** `layout.embedded` (panel HEAD_END hook): when framed by the same origin, it adds `html.zx-embedded` (hides the sidebar, topbar and tab band) and posts `{type: 'zx-page', title, path}` to the parent. `ClassicPage` (iframe) follows it with `history.replaceState`; a login or logout path takes the whole window.
 - **Releases and installers.** `release:build --with-pos` also runs `build:office`. The Dockerfile and Ubuntu installer build it from source when it is missing; `/office/assets/*` are cached for a year.
+- **Home.**
+  - Server: `App\Domain\Office\HomeData`, at `GET /office-api/home?period=&top=`. It returns:
+    - reminders: `MyApprovals::items()`, numeric menu badges (big only for `WAITING_ON_SOMEONE`), stock below minimum / expired / expiring, and POs due or open;
+    - KPIs: sales, receipts, average sale, stock value, open POs and their value, bought, customers owe, we owe; each with the previous comparable period and up to 12 spark buckets;
+    - the top 15 items by base quantity, and a 12-month trend of sales and purchases.
+  - Layout: `POST /office-api/home-layout` stores `ui_prefs.office_home` (`UserPrefs::cleanHome`: cols, panels, up to 8 tiles, meter).
+  - Client:
+    - `pages/HomePage.tsx`: header, Personalize, Layout, HTML5 drag by the handle, keyboard moves in each panel's ⋯ menu, and the tile picker;
+    - `home/Panels.tsx`;
+    - `home/charts.tsx`: SVG sparkline, gauge, donut (top 7 plus Other), time chart (one axis, 2px gaps, rounded tops), bars and tooltips;
+    - `home/layout.ts` and `home/format.ts`.
+  - Chart colours are the dataviz validated categorical set (`--zx-s1…8`, light and dark under `html[data-theme]`).
+  - "Opened lately" is kept in the browser only (`zx-recent`).
 - Tests: OfficeShellTest, `office/src/*.test.ts`.
 - Next parts: the Home dashboard of tiles, then To-do, then everyone signs in to `/office`.

@@ -20,8 +20,42 @@ final class UserPrefs
 {
     public const DEFAULTS = ['home' => 'dashboard', 'rows' => 10, 'theme' => 'system', 'date' => 'words', 'density' => 'comfortable', 'office_look' => 'top'];
 
-    /** The new back office (/app): menu across the top (owner's default, 2026-11-16) or the slim side menu. */
+    /** The new back office (/office): menu across the top (owner's default, 2026-11-16) or the slim side menu. */
     public const OFFICE_LOOKS = ['top' => 'Menu across the top', 'side' => 'Side menu'];
+
+    /** The panels of the new back office's Home, which each person arranges (Personalize, Layout). */
+    public const HOME_PANELS = ['reminders', 'shortcuts', 'tiles', 'kpis', 'trend', 'meter', 'top_items'];
+
+    /**
+     * A person's Home: columns (2 or 3), the panels in order with their column and whether hidden, up to 8 tiles (pages
+     * of the back office) and the figure on the KPI meter. Anything unknown is dropped; null = the standard Home.
+     *
+     * @return array{cols: int, panels: list<array{id: string, col: int, hidden: bool}>, tiles: list<array{url: string, label: string}>, meter: ?string}|null
+     */
+    public static function cleanHome(mixed $in): ?array
+    {
+        if (! is_array($in)) {
+            return null;
+        }
+        $cols = in_array((int) ($in['cols'] ?? 3), [2, 3], true) ? (int) $in['cols'] : 3;
+        $panels = [];
+        foreach ((array) ($in['panels'] ?? []) as $p) {
+            $id = is_array($p) ? (string) ($p['id'] ?? '') : '';
+            if (in_array($id, self::HOME_PANELS, true) && ! collect($panels)->contains('id', $id)) {
+                $panels[] = ['id' => $id, 'col' => max(0, min($cols - 1, (int) ($p['col'] ?? 0))), 'hidden' => (bool) ($p['hidden'] ?? false)];
+            }
+        }
+        $tiles = [];
+        foreach (array_slice((array) ($in['tiles'] ?? []), 0, 8) as $t) {
+            $url = is_array($t) ? (string) ($t['url'] ?? '') : '';
+            if (preg_match('#^/admin(/[A-Za-z0-9/_\-]*)?(\?[^\s<>"]*)?$#', $url)) {
+                $tiles[] = ['url' => $url, 'label' => mb_substr(trim(strip_tags((string) ($t['label'] ?? ''))), 0, 60) ?: $url];
+            }
+        }
+        $meter = preg_match('/^[a-z_]{2,30}$/', (string) ($in['meter'] ?? '')) ? (string) $in['meter'] : null;
+
+        return ['cols' => $cols, 'panels' => $panels, 'tiles' => $tiles, 'meter' => $meter];
+    }
 
     public const ROWS = [10, 25, 50, 100];
 
@@ -60,6 +94,9 @@ final class UserPrefs
             if (isset($allowed[$in[$key] ?? ''])) {
                 $p[$key] = $in[$key];
             }
+        }
+        if (($home = self::cleanHome($in['office_home'] ?? null)) !== null) {
+            $p['office_home'] = $home; // only when the person arranged their Home; absent = the standard one
         }
 
         return $p;

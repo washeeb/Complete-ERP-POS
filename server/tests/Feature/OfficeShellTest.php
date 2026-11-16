@@ -19,9 +19,9 @@ it('sends someone signed out to sign in, and back to the same page of the new ba
     expect(session('url.intended'))->toBe(url('/office/a/products?tableSearch=rice'));
 
     $this->get('/office-signin?to='.urlencode('https://evil.example/app/'))->assertRedirect('/admin/login');
-    expect(session('url.intended'))->toBe(url('/office/')); // never another site
+    expect(session('url.intended'))->toBe(url('/').'/office/'); // never another site
     $this->get('/office-signin?to='.urlencode('//evil.example/app'))->assertRedirect('/admin/login');
-    expect(session('url.intended'))->toBe(url('/office/'));
+    expect(session('url.intended'))->toBe(url('/').'/office/');
 
     $this->get('/office/a/products')->assertRedirect('/admin/login'); // an address inside the app, opened directly
     expect(session('url.intended'))->toBe(url('/office/a/products'));
@@ -66,4 +66,33 @@ it('searches records the way the current back office does', function () {
     expect(mb_strtolower($hits->pluck('title')->implode(' ')))->toContain('kwabena boateng stores')
         ->and($hits->every(fn ($h) => str_starts_with($h['url'], '/admin')))->toBeTrue();
     $this->getJson('/office-api/search?q=K')->assertOk()->assertJsonPath('results', []);
+});
+
+it('builds Home from what the person may see: reminders, KPIs against the period before, top items and the trend', function () {
+    $this->actingAs($this->owner, 'web');
+    $home = $this->getJson('/office-api/home?period=month')->assertOk()->json();
+    expect($home['period']['label'])->toBe('This month')
+        ->and(collect($home['kpis'])->pluck('key'))->toContain('sales')->toContain('stock')->toContain('open_po')
+        ->and(collect($home['kpis'])->firstWhere('key', 'sales'))->toHaveKeys(['current', 'previous', 'change', 'spark'])
+        ->and($home['trend']['months'])->toHaveCount(12)
+        ->and(collect($home['trend']['series'])->pluck('key'))->toContain('sales')
+        ->and(collect($home['reminders'])->every(fn ($r) => str_starts_with($r['url'], '/admin')))->toBeTrue()
+        ->and($home['layout'])->toBeNull();
+    $this->getJson('/office-api/home?period=forever')->assertOk()->assertJsonPath('period.key', 'month');
+});
+
+it('keeps each person\'s arrangement of Home, and only what makes sense', function () {
+    $this->actingAs($this->owner, 'web');
+    $this->postJson('/office-api/home-layout', ['layout' => ['cols' => 2, 'meter' => 'stock',
+        'panels' => [['id' => 'kpis', 'col' => 1], ['id' => 'trend', 'col' => 5, 'hidden' => true], ['id' => 'evil', 'col' => 0], ['id' => 'kpis', 'col' => 0]],
+        'tiles' => [['url' => '/admin/products', 'label' => 'Products'], ['url' => 'https://evil.example/', 'label' => 'x'], ['url' => '/admin/sales?x=<script>', 'label' => '<b>S</b>']]]])
+        ->assertOk()
+        ->assertJsonPath('layout.cols', 2)
+        ->assertJsonPath('layout.panels', [['id' => 'kpis', 'col' => 1, 'hidden' => false], ['id' => 'trend', 'col' => 1, 'hidden' => true]])
+        ->assertJsonPath('layout.tiles', [['url' => '/admin/products', 'label' => 'Products']])
+        ->assertJsonPath('layout.meter', 'stock');
+    $this->getJson('/office-api/home')->assertJsonPath('layout.cols', 2);
+    $this->postJson('/office-api/prefs', ['office_look' => 'side'])->assertOk();
+    $this->getJson('/office-api/home')->assertJsonPath('layout.cols', 2); // changing the look keeps the Home arrangement
+    $this->postJson('/office-api/home-layout', ['layout' => null])->assertOk()->assertJsonPath('layout', null); // back to the standard Home
 });

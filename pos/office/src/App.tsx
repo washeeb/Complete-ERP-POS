@@ -6,7 +6,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { api, type Me, type Menu, type Prefs } from './api'
 import { useRoute } from './nav'
 import { ClassicPage } from './pages/ClassicPage'
-import { tabOf } from './paths'
+import { HomePage } from './pages/HomePage'
+import { adminPathFor, tabOf } from './paths'
 import { SideLook } from './shell/SideLook'
 import { TopLook } from './shell/TopLook'
 import { themes } from './theme'
@@ -41,7 +42,10 @@ export function App() {
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)))
   }, [])
   useEffect(load, [load])
-  useEffect(() => { document.documentElement.style.colorScheme = dark ? 'dark' : 'light' }, [dark])
+  useEffect(() => { // Fluent draws its own colours; the charts' colours follow the same light or dark
+    document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+  }, [dark])
 
   return (
     <FluentProvider theme={dark ? theme.dark : theme.light} style={{ minHeight: '100vh' }}>
@@ -79,12 +83,14 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
   const admin = route.page === 'classic' ? route.admin : menu.home
   const current = route.page === 'classic' ? tabOf(menu, route.admin) : null
   const Look = me.prefs.office_look === 'side' ? SideLook : TopLook
+  // The page on screen, for the star (add it to favourites): where the frame is now, which may be past the menu click.
+  const page = route.page === 'classic' ? { url: adminPathFor(location.pathname + location.search) ?? route.admin, label: title || 'This page' } : null
 
   return (
     <>
-      <Look me={me} menu={menu} current={current} onLook={onLook}>
-        {/* Until the new Home and To-do pages arrive, they show the current back office's dashboard. */}
-        <ClassicPage admin={admin} onTitle={setTitle} />
+      <Look me={me} menu={menu} current={current} page={page} onLook={onLook} onFavourites={(favourites) => setMe({ ...me, favourites })}>
+        {/* Home is the new one; To-do (next) still shows the current dashboard; every other page is the current one, framed. */}
+        {route.page === 'home' ? <HomePage me={me} menu={menu} /> : <ClassicPage admin={admin} onTitle={setTitle} />}
       </Look>
       <Toaster toasterId={toaster} position="top-end" />
     </>

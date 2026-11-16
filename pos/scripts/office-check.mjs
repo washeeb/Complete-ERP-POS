@@ -52,25 +52,48 @@ try {
     for (const [w, h] of [[1920, 1000], [1366, 720]]) {
       await page.setViewportSize({ width: w, height: h })
       await page.goto(`${base}/office/`)
-      const f = await frameReady()
-      const chrome = await f.locator('.fi-sidebar, .fi-topbar').evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== 'none').length)
-      if (chrome) problems.push(`${look} ${w}: the embedded page still shows its own menu`)
+      // Home: every panel of the template is there.
+      await page.getByRole('heading', { name: 'Home', level: 1 }).waitFor({ timeout: 20000 })
+      for (const panel of ['Reminders', 'Tiles', 'Key performance indicators', 'KPI meter', 'Top 15 items by quantity sold', 'Monthly trend', 'Shortcuts']) {
+        if (!(await page.getByRole('heading', { name: panel, level: 2 }).isVisible().catch(() => false))) problems.push(`${look} ${w}: Home has no "${panel}" panel`)
+      }
+      await page.waitForTimeout(700) // the panels' grow-in finishes
+      await page.screenshot({ path: out(`home-${look}-${w}`), fullPage: true })
       const sideways = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
       if (sideways > 1) problems.push(`${look} ${w}: the page runs ${sideways}px off the side`)
 
       // An area opens its pages; picking one opens it inside, and the address follows.
       const area = page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Stock/ }).first()
       await area.click()
-      await page.getByRole('link', { name: 'Products', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: 'Products', exact: true }).first().click()
       await page.waitForURL(/\/office\/a\/products/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Products did not open at /office/a/products (${page.url()})`))
       await page.waitForFunction(() => {
         const f = document.querySelector('iframe[title="Page"]')
         return f?.contentWindow?.location.pathname === '/admin/products' && f.contentDocument?.querySelector('h1')?.textContent?.includes('Products')
       }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Products page did not open inside`))
-      await (await frameReady()).locator('.fi-ta-table, .fi-ta-empty-state').first().waitFor({ timeout: 20000 })
+      const f = await frameReady()
+      await f.locator('.fi-ta-table, .fi-ta-empty-state').first().waitFor({ timeout: 20000 })
         .catch(() => problems.push(`${look} ${w}: the Products list did not show inside`))
+      const chrome = await f.locator('.fi-sidebar, .fi-topbar').evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== 'none').length)
+      if (chrome) problems.push(`${look} ${w}: the embedded page still shows its own menu`)
       await page.waitForTimeout(600) // the page's own loader fades out
       await page.screenshot({ path: out(`${look}-${w}`) })
+
+      // Recent lists the page just opened; the star adds it to favourites and takes it off again.
+      const nav = page.getByRole('navigation', { name: 'Menu' })
+      await (look === 'top' ? nav.getByRole('button', { name: 'Recent pages' }) : nav.getByRole('button', { name: 'Recent' })).click()
+      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /Products/ }).first().waitFor({ timeout: 5000 })
+        .catch(() => problems.push(`${look} ${w}: Recent does not list Products`))
+      await page.keyboard.press('Escape')
+      const star = look === 'top' ? nav.getByRole('button', { name: 'Favourites' }) : nav.getByRole('button', { name: 'Favourites' })
+      await star.click()
+      const fav = page.getByRole('dialog', { name: 'Favourite pages' })
+      await fav.getByRole('button', { name: /^Add “/ }).click().catch(() => problems.push(`${look} ${w}: Favourites has no "Add this page"`))
+      await fav.getByRole('link', { name: /Products/ }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Products did not become a favourite`))
+      await page.screenshot({ path: out(`favourites-${look}-${w}`) })
+      await fav.getByRole('button', { name: /^Take “/ }).last().click().catch(() => undefined) // leave the dev account as it was
+      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Products could not be taken off favourites`))
+      await page.keyboard.press('Escape')
 
       // Search: Ctrl+K, type, a page of the menu is offered.
       await page.keyboard.press('Control+k')

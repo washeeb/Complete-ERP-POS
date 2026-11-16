@@ -17,6 +17,17 @@ export type Me = {
   classic: string
 }
 export type SearchResult = { group: string; title: string; url: string; details: string }
+export type Period = 'today' | 'week' | 'month' | 'quarter' | 'year'
+export type Kpi = { key: string; label: string; format: 'money' | 'count'; current: number; previous: number | null; change: number | null; spark: number[]; url: string }
+export type HomeData = {
+  currency: string; exponent: number
+  period: { key: Period; label: string; previous: string; options: Record<Period, string> }
+  reminders: { label: string; count: number; url: string; urgent: boolean }[]
+  kpis: Kpi[]
+  top_items: { id: string; name: string; qty: number; total: number }[]
+  trend: { months: string[]; series: { key: string; label: string; values: number[] }[] }
+  layout: import('./home/layout').HomeLayout | null
+}
 
 export class ApiError extends Error {
   status: number
@@ -53,6 +64,12 @@ export const api = {
   me: () => call<Me>('/office-api/me'),
   menu: () => call<Menu>('/office-api/menu'),
   search: (q: string, signal?: AbortSignal) => call<{ results: SearchResult[] }>(`/office-api/search?q=${encodeURIComponent(q)}`, { signal }),
+  home: (period: Period, top: Period) => call<HomeData>(`/office-api/home?period=${period}&top=${top}`),
+  saveHome: (layout: import('./home/layout').HomeLayout | null) =>
+    call<{ layout: import('./home/layout').HomeLayout | null }>('/office-api/home-layout', { method: 'POST', body: JSON.stringify({ layout }) }),
+  /** Add a page to the person's favourites, or take it off (the same list as the classic back office's star). */
+  toggleFavourite: (url: string, label: string) =>
+    call<{ favourites: { url: string; label: string }[] }>('/admin-ui/favourite', { method: 'POST', body: JSON.stringify({ url, label }) }),
   setLook: (look: Prefs['office_look']) => call<{ prefs: Prefs }>('/office-api/prefs', { method: 'POST', body: JSON.stringify({ office_look: look }) }),
   /** Sign out of the back office (the same sign-in as the current one), then the sign-in page. */
   signOut: async () => {

@@ -45,6 +45,8 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1'])->group(funct
     Route::get('menu', [OfficeController::class, 'menu']);
     Route::get('search', [OfficeController::class, 'search']);
     Route::post('prefs', [OfficeController::class, 'prefs']);
+    Route::get('home', [OfficeController::class, 'home']);
+    Route::post('home-layout', [OfficeController::class, 'homeLayout']);
 });
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;

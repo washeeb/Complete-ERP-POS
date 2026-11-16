@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Office;
 
 use App\Domain\Access\AccessService;
 use App\Domain\Branding\Branding;
+use App\Domain\Office\HomeData;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Http\Controllers\Controller;
@@ -52,7 +53,7 @@ class OfficeController extends Controller
         if ($request->user()) {
             return redirect($to);
         }
-        $request->session()->put('url.intended', url($to));
+        $request->session()->put('url.intended', rtrim(url('/'), '/').$to); // exactly this address (url() would drop the final /)
 
         return redirect('/admin/login');
     }
@@ -131,6 +132,32 @@ class OfficeController extends Controller
         }
 
         return response()->json(['prefs' => UserPrefs::for($user->fresh())]);
+    }
+
+    /** Home: reminders, KPIs for the period chosen (and the one before), top items, the monthly trend (App\Domain\Office\HomeData). */
+    public function home(Request $request): JsonResponse
+    {
+        $user = $this->panel($request);
+        $period = (string) $request->query('period', 'month');
+        $top = (string) $request->query('top', 'month');
+        $ok = array_keys(HomeData::PERIODS);
+
+        return response()->json((new HomeData($user))->build(in_array($period, $ok, true) ? $period : 'month', in_array($top, $ok, true) ? $top : 'month')
+            + ['layout' => UserPrefs::for($user)['office_home'] ?? null]);
+    }
+
+    /** The person arranged their Home (Personalize, Layout): kept with their other choices. */
+    public function homeLayout(Request $request, AccessService $access): JsonResponse
+    {
+        $user = $this->panel($request);
+        $layout = UserPrefs::cleanHome($request->input('layout'));
+        try {
+            DB::transaction(fn () => $access->updateOwnProfile(Actor::user($user), $user, ['ui_prefs' => ['office_home' => $layout] + UserPrefs::for($user)]));
+        } catch (DomainException $e) {
+            return response()->json(['error' => $e->errorCode, 'detail' => $e->getMessage()], 422);
+        }
+
+        return response()->json(['layout' => UserPrefs::for($user->fresh())['office_home'] ?? null]);
     }
 
     /** The answers above are the back office's own: same panel, same person, same rules. */

@@ -1,6 +1,7 @@
 import { makeStyles, ProgressBar, tokens } from '@fluentui/react-components'
 import { useEffect, useRef, useState } from 'react'
 import { followFrame } from '../nav'
+import { rememberPage } from '../recent'
 
 const useStyles = makeStyles({
   wrap: { position: 'relative', flex: '1 1 auto', display: 'flex', minHeight: 0 },
@@ -39,11 +40,15 @@ export function ClassicPage({ admin, onTitle }: { admin: string; onTitle: (title
       const d = e.data as { type?: string; title?: string; path?: string }
       if (d?.type !== 'zx-page') return
       setLoading(false)
-      if (typeof d.title === 'string') onTitle(d.title.replace(/\s+[-–|]\s+[^-–|]+$/, ''))
       if (typeof d.path !== 'string') return
       // Signed out meanwhile, or the page left the back office: the whole window goes there, not the frame.
-      if (!d.path.startsWith('/admin') || /^\/admin\/(login|logout)\b/.test(d.path)) location.assign(d.path)
-      else followFrame(d.path)
+      if (!d.path.startsWith('/admin') || /^\/admin\/(login|logout)\b/.test(d.path)) return location.assign(d.path)
+      followFrame(d.path)
+      if (typeof d.title === 'string') {
+        const title = d.title.replace(/\s+[-–|]\s+[^-–|]+$/, '')
+        onTitle(title)
+        rememberPage(d.path, title) // for Home's "Opened lately"
+      }
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
