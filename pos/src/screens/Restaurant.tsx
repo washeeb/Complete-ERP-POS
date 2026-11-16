@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { v7 as uuidv7 } from 'uuid'
-import { ApiError, dining, type NewDiningItem } from '../api'
+import { ApiError, dining, type Approval, type NewDiningItem } from '../api'
 import { search } from '../cart'
 import { prettyQty, toMilli } from '../money'
 import { describeChoices, groupsFor, heldCourses, kitchenNote, minutesSince, modifierError, tableBooking, unpaid } from '../restaurant'
 import { BookingsPanel, DeliveryDialog, WasteDialog } from './RestaurantExtras'
 import type { DiningItem, DiningOrder, DiningTable, Floor as FloorData, Product, Restaurant } from '../types'
-import { SignedIn } from './SignedIn'
+import { ManagerApproval } from './ManagerApproval'
 import { LogoLoader } from './LogoLoader'
 
 const COURSES = ['Now', 'Starter', 'Main', 'Dessert'] as const
@@ -250,7 +250,7 @@ export function BillView({ initial, products, restaurant, onPay, onBack }: {
   async function send() {
     if (await run(() => dining.addItems(order.id, pending.map((i) => ({ id: i.id, product_id: i.product_id, product_uom_id: i.product_uom_id, qty: i.qty, modifier_option_ids: i.modifier_option_ids, note: i.note, course: i.course, seat: i.seat, hold: i.hold }))))) setPending([])
   }
-  async function voidSelected(reason: string, approval: { username: string; pin: string } | null) {
+  async function voidSelected(reason: string, approval: Approval | null) {
     try {
       setBusy(true)
       const r = await dining.void(order.id, selected, reason, approval)
@@ -328,7 +328,7 @@ export function BillView({ initial, products, restaurant, onPay, onBack }: {
         <p className="muted small">Total to pay is worked out at the till, with any service charge{restaurant.tips ? ' and tip' : ''}.</p>
       </div>
       {picking && <ModifierPicker product={picking} restaurant={restaurant} tableService={tableService} onDone={(c) => addPicked(picking, c)} onCancel={() => setPicking(null)} />}
-      {voiding && <VoidDialog message={voiding.message} needsApproval={voiding.needsApproval} busy={busy} onVoid={voidSelected} onCancel={() => setVoiding(null)} />}
+      {voiding && <VoidDialog message={voiding.message} needsApproval={voiding.needsApproval} busy={busy} count={selected.length} onVoid={voidSelected} onCancel={() => setVoiding(null)} />}
       {moving && (
         <div className="modal" role="dialog" aria-modal="true" aria-label="Move to table">
           <div className="card pay">
@@ -343,25 +343,23 @@ export function BillView({ initial, products, restaurant, onPay, onBack }: {
   )
 }
 
-function VoidDialog({ message, needsApproval, busy, onVoid, onCancel }: {
-  message: string; needsApproval: boolean; busy: boolean; onVoid: (reason: string, approval: { username: string; pin: string } | null) => void; onCancel: () => void
+function VoidDialog({ message, needsApproval, busy, count, onVoid, onCancel }: {
+  message: string; needsApproval: boolean; busy: boolean; count: number; onVoid: (reason: string, approval: Approval | null) => void; onCancel: () => void
 }) {
   const [reason, setReason] = useState('')
-  const [username, setUsername] = useState('')
-  const [pin, setPin] = useState('')
+  const [asking, setAsking] = useState(false)
+  if (asking) {
+    return <ManagerApproval title="Supervisor approval: void" who="supervisor" online selfId="" busy={busy} message={message}
+      ask={{ kind: 'restaurant_void', summary: `Void ${count} item${count === 1 ? '' : 's'} the kitchen already has`, reason: reason.trim() }}
+      onApproved={(a) => { setAsking(false); onVoid(reason.trim(), a) }} onCancel={() => setAsking(false)} />
+  }
   return (
     <div className="modal" role="dialog" aria-modal="true" aria-label="Void items" onKeyDown={(e) => e.key === 'Escape' && onCancel()}>
-      <form className="card pay" onSubmit={(e) => { e.preventDefault(); if (reason.trim()) onVoid(reason.trim(), needsApproval && username ? { username, pin } : null) }}>
+      <form className="card pay" onSubmit={(e) => { e.preventDefault(); if (!reason.trim()) return; if (needsApproval) setAsking(true); else onVoid(reason.trim(), null) }}>
         <h2>Void items</h2>
         {message && <p className="error" role="alert">{message}</p>}
         <label>Reason<input autoFocus value={reason} onChange={(e) => setReason(e.target.value)} maxLength={200} placeholder="e.g. customer changed order, spilled" /></label>
-        {needsApproval && (
-          <div className="row">
-            <SignedIn />
-            <label>Supervisor username<input autoComplete="off" value={username} onChange={(e) => setUsername(e.target.value)} autoCapitalize="none" /></label>
-            <label>Supervisor PIN<input type="text" className="pin-mask" autoComplete="off" inputMode="numeric" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))} /></label>
-          </div>
-        )}
+        {needsApproval && <p className="muted small">A supervisor approves next: from their phone, or here with their card and PIN.</p>}
         <div className="row"><button type="button" onClick={onCancel} disabled={busy}>Back</button><button className="primary big" disabled={busy || !reason.trim()}>Void</button></div>
       </form>
     </div>

@@ -2,6 +2,7 @@
 
 namespace App\Domain\Pos;
 
+use App\Domain\Access\AccessService;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
@@ -13,9 +14,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * A supervisor approves something on a till by entering their own username and PIN (spec §7: approval by PIN).
- * Same lockout as till sign-in; the approver must hold the permission (and limit) for the target, and cannot be
- * the cashier asking.
+ * A supervisor approves something on a till by entering their own username (or scanning their staff card) and PIN (spec
+ * §7: approval by PIN), or from wherever they are: the till asked them (App\Domain\Pos\TillApprovals) and sends the
+ * request id instead. Same lockout as till sign-in; the approver must hold the permission (and limit) for the target,
+ * and cannot be the cashier asking.
  */
 final class SupervisorApproval
 {
@@ -23,8 +25,14 @@ final class SupervisorApproval
 
     public function verify(Device $device, array $approval, string $permission, Model $target, ?string $limitKey, int $amountMinor, string $cashierId): User
     {
+        if (filled($approval['request_id'] ?? null)) {
+            return app(TillApprovals::class)->consume($device, (string) $approval['request_id'], $permission, $limitKey, $amountMinor, $cashierId);
+        }
         $failed = new DomainException('Supervisor username or PIN is wrong.', 'approval_failed');
-        $user = User::where('tenant_id', $device->tenant_id)->where('username', strtolower(trim((string) ($approval['username'] ?? ''))))->first();
+        $name = trim((string) ($approval['username'] ?? ''));
+        $user = AccessService::isBadge($name) // a scanned staff card stands in for the username
+            ? User::where('tenant_id', $device->tenant_id)->where('badge_hash', AccessService::badgeHash($name))->first()
+            : User::where('tenant_id', $device->tenant_id)->where('username', strtolower($name))->first();
         if (! $user || ! $user->is_active || ! $user->pin_hash) {
             Hash::check((string) ($approval['pin'] ?? ''), '$2y$12$'.str_repeat('a', 53));
             throw $failed;

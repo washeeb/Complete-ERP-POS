@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\PosController;
 use App\Http\Controllers\Api\V1\RestaurantController;
 use App\Http\Controllers\Api\V1\ServicesController;
 use App\Http\Controllers\Api\V1\SyncController;
+use App\Http\Controllers\Api\V1\TillApprovalController;
 use App\Http\Controllers\Api\V1\VanController;
 use App\Http\Controllers\Api\V1\WhatsappController;
 use App\Http\Controllers\Api\V1\WmsController;
@@ -75,6 +76,12 @@ Route::prefix('v1')->group(function () {
         Route::post('problems', [PosController::class, 'reportProblem'])->middleware('throttle:pos-sync');
         Route::get('receipts', [PosController::class, 'lookupSale']);
         Route::post('returns', [PosController::class, 'postReturn']);
+        // Asking a manager who is not at the till; the till checks for the answer every few seconds.
+        Route::post('approvals', [TillApprovalController::class, 'ask'])->middleware('throttle:pos-sync');
+        Route::get('approvals/{id}', [TillApprovalController::class, 'status'])->whereUuid('id');
+        Route::post('approvals/{id}/here', [TillApprovalController::class, 'here'])->whereUuid('id')->middleware('throttle:pos-login');
+        Route::post('approvals/{id}/cancel', [TillApprovalController::class, 'cancel'])->whereUuid('id');
+        Route::post('approvals/{id}/use', [TillApprovalController::class, 'use'])->whereUuid('id');
         Route::post('account-payments', [PosController::class, 'accountPayment']);
 
         // Electronics: serial / warranty lookup and repair job cards.

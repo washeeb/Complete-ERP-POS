@@ -383,6 +383,27 @@ The full guides for each person are in the training material (Chapter 17.7).
 - **Cash limit in a till drawer** — off by default; for example 200000 (GHS 2,000). **Why:** above it the till asks for a *cash drop* to the safe and supervisors are told, so little cash sits in the drawer.
 - **One shift per person on a till** — on by default. **Why:** each person's sales and cash stay apart. When someone signs in on a till where another person's shift is still open, the till asks them to close it (count the drawer) and open their own; sales into someone else's shift are refused (and flagged in **Sales → Review** when made offline). **Sales → Till shifts** shows *Sold by …* under *Opened by* when more than one person sold in a shift. Switch it off where several people share one till and one drawer (e.g. waiters).
 - **Opening the drawer without a sale needs a manager** — on by default. **Why:** an open drawer with no sale is the easiest way to take cash unseen, so a manager types their username and PIN each time. Who counts as a manager is the permission *Approve opening a till drawer without a sale* (Branch Manager, General Manager and the owner unless you change the roles in **System → Roles**); supervisors cannot approve it. If the till is offline, the PIN is checked on the till and anything the person was not allowed to approve appears in **Sales → Review**.
+- **Removing items from a sale needs a supervisor**: off by default. It comes with **Removing items: a supervisor approves above** (0 means every removal). When it is on, a supervisor must approve before the cashier can take an item off a sale, lower a quantity before payment or cancel the whole sale. **Why:** taking items off after the customer has paid in cash is a common way to steal.
+
+**A manager's yes without being at the till.** Whenever the till needs a supervisor or manager, the cashier sees two buttons. This covers a return, a discount or price change, opening the drawer, a cash drop or pay-out, removing items, and a restaurant void or refund.
+- **Ask a manager (they approve on their phone)**: everyone allowed to approve it gets a notification on the bell and on their phone.
+  - They press it and see what is asked: the items, the amount and the reason.
+  - **Approve** asks them first to confirm it is them with their passkey, fingerprint or authenticator code.
+  - **Decline** needs a reason, which the cashier sees.
+  - The till carries on by itself within seconds.
+  - A request nobody answers lapses after 10 minutes. An approval works once, for that till, that cashier and that amount.
+- **Manager is here**: they scan their **staff card** (or type their username) and type their PIN, as before.
+
+**Why:** the manager is not always near the till, and typing a manager's PIN where cashiers and customers can see it gives the PIN away. Every request and answer is kept in the audit log and under **Sales → Till requests**.
+
+**Turn on phone notifications (each manager, once per phone).**
+1. On the phone, sign in to the back office.
+2. Open **Sales → Till requests** and press **Turn on notifications**.
+3. Allow notifications when the phone asks.
+
+On an iPhone, first add the site to the home screen (Share → Add to Home Screen) and open it from there, because iPhones only allow notifications for sites added that way. Each person can switch off phone notifications for a kind of message under their profile (top right → Profile → Notifications).
+
+**Check:** on the test day, open the drawer without a sale, press *Ask a manager* and approve from the manager's phone.
 
 Each pay-out is also recorded under **Expenses → Expense claims** as paid from the till, against an operating-expense account (the categories the till offers). **Check:** on the test day, pay out a small amount for transport, do a cash drop with a supervisor's PIN (a slip prints each time; check it on the receipt printer), and open the drawer once without a sale with a manager's PIN (a supervisor's PIN is refused). Then **Sales → Till drawer** lists all three, and the cash still balances at the close.
 

@@ -117,6 +117,8 @@ class PosController extends Controller
                 'payout_approval_minor' => (int) $settings->get('pos.payout_approval_minor', $device->tenant_id),
                 'no_sale_approval' => (bool) $settings->get('pos.no_sale_approval', $device->tenant_id),
                 'cash_limit_minor' => (int) $settings->get('pos.drawer_cash_limit_minor', $device->tenant_id),
+                // Removing items from a sale (or cancelling it) above this needs a supervisor; null = never.
+                'void_approval_minor' => $settings->get('pos.void_approval', $device->tenant_id) ? (int) $settings->get('pos.void_approval_above_minor', $device->tenant_id) : null,
                 'categories' => collect(DrawerService::payoutAccounts())->map(fn ($name, $id) => ['id' => $id, 'name' => $name])->values(),
             ],
             // Cash control: the vaults the cashier issued to this teller at this till, and the notes and coins to count.
@@ -406,7 +408,7 @@ class PosController extends Controller
             'id' => ['required', 'uuid'], 'kind' => ['required', 'string', 'max:20'], 'amount_minor' => ['nullable', 'integer', 'min:0', 'max:100000000000'],
             'account_id' => ['nullable', 'uuid'], 'payee' => ['nullable', 'string', 'max:255'], 'reason' => ['nullable', 'string', 'max:255'],
             'reference' => ['nullable', 'string', 'max:80'], 'photo' => ['nullable', 'string', 'max:4200000'],
-            'approval' => ['nullable', 'array'], 'approval.username' => ['required_with:approval', 'string'], 'approval.pin' => ['required_with:approval', 'string'],
+            'approval' => ['nullable', 'array'], 'approval.request_id' => ['nullable', 'uuid'], 'approval.username' => ['nullable', 'string', 'max:200'], 'approval.pin' => ['nullable', 'string', 'max:8'],
         ]);
         $e = $drawer->record($this->device($request), $request->user(), $data);
 

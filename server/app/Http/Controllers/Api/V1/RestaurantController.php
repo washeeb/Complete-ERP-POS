@@ -86,10 +86,10 @@ class RestaurantController extends Controller
     {
         $data = $request->validate([
             'item_ids' => ['required', 'array', 'min:1', 'max:100'], 'item_ids.*' => ['uuid'], 'reason' => ['required', 'string', 'max:255'],
-            'approval.username' => ['nullable', 'string', 'max:60'], 'approval.pin' => ['nullable', 'string', 'max:8'],
+            'approval.request_id' => ['nullable', 'uuid'], 'approval.username' => ['nullable', 'string', 'max:200'], 'approval.pin' => ['nullable', 'string', 'max:8'],
         ]);
         $order = $this->dining->void($this->device($request), $request->user(), $this->find($request, $id), $data['item_ids'], $data['reason'],
-            ! empty($data['approval']['username']) ? $data['approval'] : null);
+            (! empty($data['approval']['username']) || ! empty($data['approval']['request_id'])) ? $data['approval'] : null);
 
         return response()->json(['order' => self::order($order)]);
     }
@@ -151,9 +151,9 @@ class RestaurantController extends Controller
     public function refund(Request $request, string $id): JsonResponse
     {
         $data = $request->validate(['method' => ['required', 'in:cash,momo,card'], 'provider' => ['nullable', 'string', 'max:20'], 'reference' => ['nullable', 'string', 'max:80'],
-            'approval.username' => ['nullable', 'string', 'max:60'], 'approval.pin' => ['nullable', 'string', 'max:8']]);
+            'approval.request_id' => ['nullable', 'uuid'], 'approval.username' => ['nullable', 'string', 'max:200'], 'approval.pin' => ['nullable', 'string', 'max:8']]);
         $r = $this->bookings->refundDeposit($this->device($request), $request->user(), $this->findBooking($request, $id), $data['method'],
-            ! empty($data['approval']['username']) ? $data['approval'] : null, $data['provider'] ?? null, $data['reference'] ?? null);
+            (! empty($data['approval']['username']) || ! empty($data['approval']['request_id'])) ? $data['approval'] : null, $data['provider'] ?? null, $data['reference'] ?? null);
 
         return response()->json(['reservation' => self::booking($r)]);
     }
@@ -186,7 +186,7 @@ class RestaurantController extends Controller
         $data = $this->wasteInput($request);
 
         return response()->json($this->waste->record($this->device($request), $request->user(), $data['items'], $data['reason'],
-            ! empty($data['approval']['username']) ? $data['approval'] : null), 201);
+            (! empty($data['approval']['username']) || ! empty($data['approval']['request_id'])) ? $data['approval'] : null), 201);
     }
 
     /** Kitchen waste from the kitchen screen: the cook identifies themselves with username and PIN. */
@@ -196,7 +196,7 @@ class RestaurantController extends Controller
         $data = $this->wasteInput($request) + $request->validate(['username' => ['required', 'string', 'max:60'], 'pin' => ['required', 'string', 'max:8']]);
         $user = $auth->verifyPin($kds, $data['username'], $data['pin']);
 
-        return response()->json($this->waste->record($kds, $user, $data['items'], $data['reason'], ! empty($data['approval']['username']) ? $data['approval'] : null), 201);
+        return response()->json($this->waste->record($kds, $user, $data['items'], $data['reason'], (! empty($data['approval']['username']) || ! empty($data['approval']['request_id'])) ? $data['approval'] : null), 201);
     }
 
     /** What a kitchen screen can log as waste: dishes with a recipe and stocked ingredients (base units). */
@@ -215,7 +215,7 @@ class RestaurantController extends Controller
         return $request->validate([
             'items' => ['required', 'array', 'min:1', 'max:50'], 'items.*.product_id' => ['required', 'uuid'], 'items.*.product_uom_id' => ['required', 'uuid'],
             'items.*.qty' => ['required', 'string', 'max:20'], 'reason' => ['required', 'string', 'max:120'],
-            'approval.username' => ['nullable', 'string', 'max:60'], 'approval.pin' => ['nullable', 'string', 'max:8'],
+            'approval.request_id' => ['nullable', 'uuid'], 'approval.username' => ['nullable', 'string', 'max:200'], 'approval.pin' => ['nullable', 'string', 'max:8'],
         ]);
     }
 

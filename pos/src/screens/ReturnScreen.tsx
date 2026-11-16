@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { v7 as uuidv7 } from 'uuid'
-import { api, ApiError } from '../api'
+import { api, ApiError, type Approval } from '../api'
 import { divRound, prettyQty, toMilli } from '../money'
 import { getLocalShift, nextSeq } from '../db'
 import type { Bootstrap, PostedSale, Returnable } from '../types'
-import { SignedIn } from './SignedIn'
+import { ManagerApproval } from './ManagerApproval'
 
 const METHOD: Record<string, string> = { cash: 'Cash', momo: 'Mobile money', card: 'Card', account: 'Customer account', points: 'Points', gift_card: 'Gift card', store_credit: 'Store credit', nhis: 'NHIS (comes off the next claim)' }
 
@@ -20,7 +20,7 @@ export function ReturnScreen({ boot, money, onDone }: { boot: Bootstrap; money: 
   const [qty, setQty] = useState<Record<string, string>>({})
   const [refs, setRefs] = useState<Record<string, string>>({})
   const [reason, setReason] = useState('')
-  const [supervisor, setSupervisor] = useState({ username: '', pin: '' })
+  const [asking, setAsking] = useState(false) // a manager's yes is being asked for
   const [reasonCode, setReasonCode] = useState('')
   const [creditOnly, setCreditOnly] = useState(false) // no receipt or past the period: store credit, with a PIN
   const [manager, setManager] = useState(false) // the server asked for a manager's PIN
@@ -50,7 +50,7 @@ export function ReturnScreen({ boot, money, onDone }: { boot: Bootstrap; money: 
   const rule = boot.returns
   const pinFor = creditOnly || manager || (!!rule && rule.approval !== 'off' && value > rule.above_minor)
   const pinNeeded = creditOnly || manager || (rule?.approval === 'require' && value > rule.above_minor)
-  const pinGiven = !!supervisor.username.trim() && !!supervisor.pin
+  const ready = !!found && value > 0 && !!(rule ? reasonCode : reason.trim())
   // Refund to the original tenders, in the order they were paid, up to what is still refundable on each.
   const tenders = (found?.returnable.tenders ?? []).filter((t) => t.refundable_minor > 0)
   const refunds = tenders.reduce<{ left: number; list: ((typeof tenders)[number] & { amount: number })[] }>((acc, t) => {
@@ -58,7 +58,8 @@ export function ReturnScreen({ boot, money, onDone }: { boot: Bootstrap; money: 
     return { left: acc.left - amount, list: amount > 0 ? [...acc.list, { ...t, amount }] : acc.list }
   }, { left: value, list: [] }).list
 
-  async function submit() {
+  async function submit(approval: Approval | null = null) {
+    setAsking(false)
     setBusy(true)
     setError('')
     try {
@@ -68,13 +69,15 @@ export function ReturnScreen({ boot, money, onDone }: { boot: Bootstrap; money: 
         original_sale_id: found?.sale.id ?? null, reason: reason.trim() || (rule?.reasons[reasonCode] ?? reasonCode), reason_code: reasonCode || null,
         lines: lines.filter((l) => qty[l.id] && toMilli(qty[l.id]) > 0).map((l) => ({ original_line_id: l.id, qty: qty[l.id] })),
         refunds: creditOnly ? [] : refunds.map((t) => ({ method: t.method, amount_minor: t.amount, reference: refs[t.method] || null })),
-        ...(pinNeeded || pinGiven ? { approval: supervisor } : {}),
+        ...(approval ? { approval } : {}),
       })
       if (r.store_credit_code) setCredit(r.store_credit_code)
       else onDone(r.sale)
     } catch (err) {
+      const needs = err instanceof ApiError && ['return_needs_approval', 'return_needs_manager'].includes(err.code)
       if (err instanceof ApiError && err.code === 'return_needs_approval') setCreditOnly(true)
       if (err instanceof ApiError && err.code === 'return_needs_manager') setManager(true)
+      if (needs && !approval) setAsking(true) // straight to asking a manager
       setError(err instanceof Error ? err.message : String(err))
     } finally {
       setBusy(false)
@@ -133,20 +136,23 @@ export function ReturnScreen({ boot, money, onDone }: { boot: Bootstrap; money: 
           </label>
         )}
         <label>{rule ? 'Details' : 'Reason'}<input aria-label="Return reason" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={255} /></label>
-        {pinFor && (
-          <div className="grid2">
-            <SignedIn />
-            {!pinNeeded && <p className="muted small">A manager can approve now; otherwise it goes to a manager to review.</p>}
-            <label>Supervisor username<input autoComplete="off" value={supervisor.username} onChange={(e) => setSupervisor({ ...supervisor, username: e.target.value })} autoCapitalize="none" /></label>
-            <label>Supervisor PIN<input type="text" className="pin-mask" autoComplete="off" inputMode="numeric" value={supervisor.pin} onChange={(e) => setSupervisor({ ...supervisor, pin: e.target.value.replace(/\D/g, '') })} /></label>
-          </div>
-        )}
+        {pinFor && (pinNeeded
+          ? <p className="muted small">A manager approves this return: from their phone, or here with their card and PIN.</p>
+          : <p className="muted small">A manager can approve it now; otherwise it goes to a manager to review afterwards.</p>)}
         {error && <p className="error" role="alert">{error}</p>}
         <div className="row">
           <button type="button" onClick={() => onDone(null)} disabled={busy}>Back (Esc)</button>
-          <button className="primary big" onClick={submit} disabled={busy || !found || value <= 0 || !(rule ? reasonCode : reason.trim()) || (pinNeeded && !pinGiven)}>{busy ? 'Saving…' : 'Refund'}</button>
+          {pinFor && !pinNeeded && <button type="button" onClick={() => setAsking(true)} disabled={busy || !ready}>Refund with a manager's yes</button>}
+          <button className="primary big" onClick={() => (pinNeeded ? setAsking(true) : void submit())} disabled={busy || !ready}>{busy ? 'Saving…' : 'Refund'}</button>
         </div>
       </div>
+      {asking && (
+        <ManagerApproval title="Manager approval: return" online /* returns need the server */ selfId={boot.user.id} busy={busy}
+          ask={{ kind: 'return', amount_minor: value, reason: reason.trim() || (rule?.reasons[reasonCode] ?? reasonCode) || null,
+            summary: `${creditOnly ? 'Store credit' : 'Refund'} of ${money(value)}${found ? ` for receipt ${found.sale.receipt_no ?? ''}` : ''}`.trim(),
+            details: lines.filter((l) => qty[l.id] && toMilli(qty[l.id]) > 0).map((l) => ({ name: l.name, qty: qty[l.id] })) }}
+          onApproved={(a) => void submit(a)} onCancel={() => setAsking(false)} />
+      )}
     </div>
   )
 }

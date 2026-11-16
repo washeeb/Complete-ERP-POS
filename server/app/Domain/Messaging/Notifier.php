@@ -34,6 +34,7 @@ final class Notifier
             $n->actions([Action::make('open')->label('Open')->url($url)->markAsRead()]);
         }
         $n->sendToDatabase($users);
+        app(PhonePush::class)->send($users, $title, $body, $url, $topic); // and on their phone, where they allowed it
 
         return $users->count();
     }

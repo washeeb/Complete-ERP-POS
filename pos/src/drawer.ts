@@ -1,5 +1,5 @@
 import { v7 as uuidv7 } from 'uuid'
-import { api, ApiError } from './api'
+import { api, ApiError, type Approval } from './api'
 import { db, getLocalShift } from './db'
 import { enqueue } from './offline'
 import { currentGrant, queueMode } from './till'
@@ -12,7 +12,7 @@ import type { DrawerKind } from './types'
  */
 export type DrawerBody = {
   kind: DrawerKind; amount_minor?: number; account_id?: string | null; payee?: string | null; reason?: string | null
-  reference?: string | null; photo?: string | null; approval?: { username: string; pin: string } | null; approved_by?: string | null
+  reference?: string | null; photo?: string | null; approval?: Approval | null; approved_by?: string | null
 }
 
 /** How the cash in the drawer changes: pay-ins add, pay-outs and drops take away. */
