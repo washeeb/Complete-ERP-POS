@@ -59,6 +59,22 @@ try {
       }
       await page.waitForTimeout(700) // the panels' grow-in finishes
       await page.screenshot({ path: out(`home-${look}-${w}`), fullPage: true })
+      // Till sales, rebuilt: from the menu it opens the new list (not the framed one); a filter narrows it; a row opens the sale.
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Sales/ }).first().click()
+      await page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: 'Till sales', exact: true }).first().click()
+      await page.waitForURL(/\/office\/sales$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Till sales did not open the new screen (${page.url()})`))
+      await page.getByRole('heading', { name: 'Till sales', level: 1 }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: no Till sales heading`))
+      await page.getByRole('button', { name: 'All', exact: true }).click()
+      const firstRow = page.getByRole('table', { name: 'Till sales' }).getByRole('row').nth(1)
+      await Promise.race([firstRow.waitFor({ timeout: 20000 }), page.getByText('No sales match').waitFor({ timeout: 20000 })]).catch(() => problems.push(`${look} ${w}: Till sales showed neither sales nor "No sales match"`))
+      await page.screenshot({ path: out(`sales-${look}-${w}`) })
+      if (await firstRow.isVisible().catch(() => false)) {
+        await firstRow.click()
+        await page.waitForURL(/\/office\/sales\/[0-9a-f-]{36}$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: a sale did not open`))
+        await page.getByRole('heading', { name: /^Sale / }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: no sale heading`))
+        await page.screenshot({ path: out(`sale-${look}-${w}`), fullPage: true })
+      } else problems.push(`${look} ${w}: the dev data has no till sales to open`)
+
       // To-do: from the menu, the list of what waits (or "All clear").
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /^To-do/ }).first().click()
       await page.getByRole('heading', { name: 'To-do', level: 1 }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: To-do did not open`))

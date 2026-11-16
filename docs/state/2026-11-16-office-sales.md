@@ -1,0 +1,18 @@
+## New back office, release 2: Till sales — branch `office-sales`
+- **Server:** `App\Domain\Office\SalesScreen`.
+  - `list`: q, branch, period, from, to, teller, `methods[]`, min, max, kind, sort, dir, page, per; it also returns totals and the top 4 ways of paying.
+  - `options`; `show`, with `actions.save_customer` following the classic rule.
+  - Routes `/office-api/sales`, `/office-api/sales/options`, `/office-api/sales/{id}` and `POST /office-api/sales/{id}/save-customer`, all through `App\Http\Controllers\Office\SalesController`. Scope is `sales.view` with `Erp::branchIds`.
+- **Client:**
+  - `list/query.ts`: the list state in the address (`useQueryParams`; `name[]` for arrays; any filter change goes back to page 1).
+  - `list/DataTable.tsx`: sortable Fluent table and Pager.
+  - `pages/SalesPage.tsx` and `pages/SalePage.tsx`.
+  - `paths.ts`:
+    - `REBUILT` maps `/admin/sales[/{id}]` to `/office/sales[/{id}]`;
+    - `classicPathFor()` gives the framed old version;
+    - `adminEquivalent()` marks the menu area and the star;
+    - `followFrame` keeps the `/office/a/…` form for framed pages.
+- **Request limits:** every `throttle:N,M` now has its own name (third value).
+  - Laravel keys plain limits by user id, or by IP for guests, so all routes shared one counter.
+  - `RouteLimitsTest` scans every route (the Livewire library's upload route is excepted) and reproduces the favourite case; with the old routes it got 429.
+- **Next:** Shifts (and the till drawer), then products and stock.

@@ -67,6 +67,15 @@ What's there:
 
 **Why:** everyone sees first what needs them, and the figures that matter, without opening a report.
 
+**Till sales (rebuilt).** **Sales → Till sales** lists every sale and return, newest first.
+- **Search** by receipt, teller or customer.
+- Choose **Today**, **7**, **30** or **90 days**, or **All**.
+- **Filters** narrows by branch, teller, how it was paid, amount, dates, or returns only. Each filter in use shows as a small chip; its **×** takes it off.
+- The cards above the list show how many sales, their total and how they were paid.
+- Press a heading to sort by it.
+- Press a sale to see it in full, with **Print copy** and, for a walk-in who left a phone number, **Save as customer**.
+- **Classic version** (top right) opens the old screen.
+
 Pages that have not been rebuilt yet open inside the new frame without their own menus. Over the next updates the daily screens are rebuilt one area at a time, and then everyone signs in to the new back office.
 
 **Why:** a faster, clearer screen that looks and behaves like a Windows program, introduced step by step so nothing stops working.
