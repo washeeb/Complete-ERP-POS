@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Domain\Branding\Branding;
 use App\Domain\Catalog\Labels;
 use App\Domain\Customers\CustomerLedger;
 use App\Domain\Logistics\WaybillService;
@@ -33,12 +34,14 @@ use App\Models\Supplier;
 use App\Models\SupplierPayment;
 use App\Models\SupplierReturn;
 use App\Models\Tenant;
+use App\Models\User;
 use App\Models\Warehouse;
 use App\Models\Waybill;
 use App\Security\Authorizer;
 use App\Support\Money;
 use App\Support\Qr;
 use App\Support\Settings;
+use App\Support\StaffCard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -88,6 +91,20 @@ class PrintController extends Controller
         return view('print.invoice', ['doc' => $invoice->load('lines'), 'company' => $this->company($invoice->branch_id),
             'customer' => Customer::find($invoice->customer_id),
             'open' => (int) (collect(app(CustomerLedger::class)->openItems($invoice->customer_id))->firstWhere('doc_id', $invoice->id)?->open_minor ?? 0)]);
+    }
+
+    /**
+     * New staff cards, printed straight away (App\Support\StaffCard). The page works once, for the person who made them:
+     * after that the codes are gone, so a copied link cannot print a second set.
+     */
+    public function staffCards(Request $request, string $token): View
+    {
+        $batch = StaffCard::take($token, $request->user()->id);
+        $users = $batch ? User::whereIn('id', array_keys($batch['codes']))->orderBy('name')->get() : collect();
+        $tenant = Tenant::find($request->user()->tenant_id);
+
+        return view('print.staff-cards', ['layout' => $batch['layout'] ?? 'a4', 'brand' => Branding::forTenant($tenant),
+            'logo' => Branding::logoDataUri($tenant?->id), 'cards' => $users->map(fn (User $u) => StaffCard::face($u, $batch['codes'][$u->id]))->all()]);
     }
 
     /**

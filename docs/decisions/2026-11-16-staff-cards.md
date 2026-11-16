@@ -1,0 +1,17 @@
+## Staff card generator and card-only sign-in (2026-11-16)
+- **The request:** cards generated and printed straight away, so staff scan instead of typing.
+- **The owner's choices:**
+  - default: card plus PIN; option: card alone;
+  - printing on an A4 sheet and on a PVC card printer;
+  - free.
+- **A barcode (Code 128), not a QR code.** Many supermarket scanners are laser scanners that cannot read QR codes; every scanner reads Code 128. New codes are shorter (`SLB1-` plus 14 characters, 70 random bits), so the bars stay wide enough to read on a card. Old cards keep working.
+- **Printed once, never kept.**
+  - A card's code is stored only as a hash, so it can be printed only when it is made.
+  - A batch's codes sit encrypted in the cache for 10 minutes, for one print page that only its maker can open.
+  - **Why:** a copied link or a later visitor cannot print a duplicate card.
+  - The code is never printed as text, so nobody can type it in.
+- **Card alone is off by default.** With it on, whoever holds the card is that person at the till.
+  - Approvals still need the PIN, or a manager's yes from their phone.
+  - A card-only sign-in does not replace the till's offline grant: the grant holds the PIN hash that offline approvals need.
+  - Offline, the card alone works only if the grant was issued while the company allowed it (signed `card_only` flag).
+- **Sign-in screen fix:** the screen used to swap the username box for "Staff card scanned" as soon as `SLB1-` arrived, so a scanner's later characters and its Enter could be lost. It now waits for the Enter. Found by the new end-to-end test; not confirmed on a real scanner.

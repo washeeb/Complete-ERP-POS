@@ -1,0 +1,17 @@
+## Staff card generator — branch `staff-cards`
+- `App\Support\StaffCard`:
+  - `issue(actor, users, layout)` makes new badges through `AccessService::issueBadge` and puts the codes, encrypted, in the cache (`staff-cards:{token}`, 10 min). It returns the URL of `print.staff-cards`.
+  - `take(token, userId)` works once, and only for the person who made the batch.
+  - `face()` builds what goes on a card: photo as a data URI, top role and its scope, and a Code 128 SVG (the `<desc>` holding the code is stripped).
+- Print view: `resources/views/print/staff-cards.blade.php`. It has A4 and CR80 (`@page 85.6mm 54mm`) layouts and prints on load.
+- Page `App\Filament\Pages\StaffCards` (People & access, `admin.users.manage`): bulk **Print new cards** and **Card lost**. `EditUser`'s Staff card action uses the same flow; the old modal and `StaffCard::html` are gone.
+- New badge codes are `SLB1-` plus 14 characters (19 in total). Old 20-character codes keep working (they are looked up by hash).
+- `pos.card_only_sign_in` (off):
+  - `PosAuthService::pinLogin` with an empty PIN and a card signs the person in, and returns `offline_grant` null so the till keeps its grant.
+  - With the setting off it answers `pin_required`.
+  - An empty PIN with a username is also `pin_required`, and is not counted as a failed attempt.
+  - `OfflineGrant` carries a signed `card_only` flag.
+- Till:
+  - `Login` (Setup.tsx) keeps the box until the scanner's Enter (`scanned` state), then tries the card alone, else asks for the PIN.
+  - `offlineCardOnly` in offline.ts.
+- Tests: StaffCardsTest, e2e/staff-card.spec.ts.

@@ -321,7 +321,7 @@ final class AccessService
             $this->assertLevelGrantable($actor, $user->security_level);
         }
         $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O or 1/I: a code read out loud is not mistaken
-        $code = self::BADGE_PREFIX.implode('', array_map(fn () => $alphabet[random_int(0, 31)], range(1, 20)));
+        $code = self::BADGE_PREFIX.implode('', array_map(fn () => $alphabet[random_int(0, 31)], range(1, 14))); // 70 bits: short enough for a barcode any scanner reads
         $user->forceFill(['badge_hash' => self::badgeHash($code), 'badge_issued_at' => now()]);
         $this->recorder->transaction(fn () => $this->recorder->save($actor, $user, $user->getOriginal('badge_hash') ? 'user.badge_replaced' : 'user.badge_issued'));
 
