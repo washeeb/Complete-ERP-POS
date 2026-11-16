@@ -48,7 +48,7 @@ jobs:
       - name: PostgreSQL 17 client tools (backups use pg_dump / pg_restore / psql)
         run: |
           sudo install -d /usr/share/postgresql-common/pgdg
-          sudo curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          sudo curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
           echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
           sudo apt-get update -q && sudo apt-get install -y -q postgresql-client-17
       - run: composer install --no-interaction --prefer-dist
