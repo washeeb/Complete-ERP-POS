@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Office;
 
+use App\Domain\Ai\ProductWriter;
 use App\Domain\Catalog\CatalogService;
 use App\Domain\Catalog\Labels;
+use App\Domain\Office\ProductForm;
 use App\Domain\Office\ProductsScreen;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
@@ -12,9 +14,13 @@ use App\Filament\Pages\PriceListExport;
 use App\Filament\Resources\Products\ProductResource;
 use App\Filament\Resources\StockCostRuns\StockCostRunResource;
 use App\Filament\Support\Erp;
+use App\Filament\Support\QuickCreate;
 use App\Http\Controllers\Controller;
+use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Industry;
 use App\Models\Product;
+use App\Models\Uom;
 use App\Support\IndustryContext;
 use Closure;
 use Filament\Facades\Filament;
@@ -165,6 +171,70 @@ class ProductsController extends Controller
 
         return $this->act($request, fn (Actor $actor) => $catalog->switchOnBatches($actor, (new ProductsScreen($request->user()))->query()
             ->where('track_stock', true)->where('track_batches', false)->get()));
+    }
+
+    /** The product form: a new product (no id) or an existing one, with its choices and sections. */
+    public function form(Request $request, ?string $id = null): JsonResponse
+    {
+        $this->allowed();
+        abort_unless(Erp::canAnywhere('catalog.manage'), 403, 'You cannot add or change products.');
+
+        return response()->json((new ProductForm($request->user()))->form($id ? $this->product($request, $id) : null));
+    }
+
+    /** Save the form: a new product, or changes to one (with the reason, kept in the audit log). */
+    public function save(Request $request, ?string $id = null): JsonResponse
+    {
+        $this->allowed();
+        $request->validate(['values' => ['required', 'array'], 'values.name' => ['required', 'string', 'max:160'], 'values.reason' => ['nullable', 'string', 'max:255'],
+            'values.description' => ['nullable', 'string', 'max:5000'], 'values.location' => ['nullable', 'string', 'max:60'],
+            'values.units' => ['array', 'max:30'], 'values.prices' => ['array', 'max:200'], 'values.recipe' => ['array', 'max:100']]);
+        $product = $id ? $this->product($request, $id) : new Product;
+
+        return $this->act($request, fn (Actor $actor) => ['id' => (new ProductForm($request->user()))->save($actor, $product, (array) $request->input('values'))->id]);
+    }
+
+    /**
+     * "+" next to category, brand or unit: add the missing one without leaving the form, through the same rules as its
+     * own screen; one already there under that name (or code) is picked instead of a second copy.
+     */
+    public function quickAdd(Request $request, CatalogService $catalog): JsonResponse
+    {
+        $this->allowed();
+        $d = $request->validate(['kind' => ['required', Rule::in(['category', 'brand', 'uom'])], 'name' => ['required', 'string', 'max:120'],
+            'code' => ['required_if:kind,uom', 'nullable', 'string', 'max:10'], 'decimals' => ['nullable', 'integer', 'min:0', 'max:3']]);
+        if ($existing = QuickCreate::existing($d['kind'], $d)) {
+            return response()->json(['id' => $existing->getKey(), 'label' => $d['kind'] === 'uom' ? "{$existing->code} · {$existing->name}" : $existing->name, 'existed' => true]);
+        }
+
+        return $this->act($request, function (Actor $actor) use ($catalog, $d) {
+            $m = match ($d['kind']) {
+                'category' => $catalog->saveSimple($actor, new Category, ['name' => trim($d['name']), 'is_active' => true]),
+                'brand' => $catalog->saveSimple($actor, new Brand, ['name' => trim($d['name'])]),
+                default => $catalog->saveSimple($actor, new Uom, ['code' => $d['code'], 'name' => $d['name'], 'decimals' => (int) ($d['decimals'] ?? 0)]),
+            };
+
+            return ['id' => $m->getKey(), 'label' => $d['kind'] === 'uom' ? "{$m->code} · {$m->name}" : $m->name, 'existed' => false];
+        });
+    }
+
+    /** Recipe ingredients: products that track stock, by unit, matching what is typed. */
+    public function ingredients(Request $request): JsonResponse
+    {
+        $this->allowed();
+
+        return response()->json(['results' => ProductForm::ingredients(mb_substr(trim((string) $request->query('q', '')), 0, 60))]);
+    }
+
+    /** A draft online-shop description from the product's details; nothing is saved until the form is. */
+    public function describe(Request $request, string $id, ProductWriter $writer): JsonResponse
+    {
+        $this->allowed();
+        abort_unless(Erp::canAnywhere('catalog.manage'), 403, 'You cannot change products.');
+        $tone = (string) $request->validate(['tone' => ['required', Rule::in(['friendly', 'professional', 'short'])]])['tone'];
+        $product = $this->product($request, $id);
+
+        return $this->act($request, fn (Actor $actor) => ['description' => $writer->draft($actor, $product, $tone)], transaction: false);
     }
 
     private function pickRules(): array

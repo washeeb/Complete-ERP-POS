@@ -41,7 +41,10 @@ describe('addresses', () => {
     expect(adminEquivalent({ page: 'drawer' })).toBe('/admin/till-drawer-events')
     expect(appPathFor('/admin/products')).toBe('/office/products')
     expect(appPathFor('/admin/products?tableSearch=milo 400')).toBe('/office/products?q=milo%20400') // the search carries over
-    expect(appPathFor('/admin/products/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f/edit')).toBe('/office/a/products/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f/edit') // the form stays
+    expect(appPathFor('/admin/products/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f/edit')).toBe('/office/products/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f/edit')
+    expect(appPathFor('/admin/products/create')).toBe('/office/products/new')
+    expect(routeOf('/office/products/new')).toEqual({ page: 'product-form', id: null })
+    expect(routeOf('/office/products/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f/edit')).toEqual({ page: 'product-form', id: '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f' })
     expect(routeOf('/office/products/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')).toEqual({ page: 'product', id: '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f' })
     expect(adminEquivalent({ page: 'product', id: 'x' })).toBe('/admin/products')
   })
