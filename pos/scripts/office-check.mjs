@@ -187,17 +187,36 @@ try {
         await page.waitForURL(/\/office\/products\/[0-9a-f-]{36}$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Cancel did not go back to the product`))
       }
 
-      // Stock on hand is still the current page: it opens inside, and the address follows.
+      // Stock on hand and the stock ledger, rebuilt: rows (or "Nothing matches"); the adjustment form opens and is cancelled.
+      for (const [link, url, heading, empty] of [['Stock on hand', /\/office\/stock$/, 'Stock on hand', 'Nothing matches'], ['Stock ledger', /\/office\/stock\/movements$/, 'Stock ledger', 'No movements match']]) {
+        await area.click()
+        await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: link, exact: true }).first().click()
+        await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        const first = page.getByRole('table', { name: heading }).getByRole('row').nth(1)
+        await Promise.race([first.waitFor({ timeout: 20000 }), page.getByText(empty).waitFor({ timeout: 20000 })]).catch(() => problems.push(`${look} ${w}: ${link} showed neither rows nor "${empty}"`))
+        await page.screenshot({ path: out(`${link.replace(/ /g, '-').toLowerCase()}-${look}-${w}`) })
+        if (link === 'Stock on hand' && look === 'top' && w === 1366) {
+          await page.getByRole('button', { name: 'Opening stock / adjustment' }).click().catch(() => problems.push('stock: no "Opening stock / adjustment" for the dev owner'))
+          const dlg = page.getByRole('dialog', { name: 'Opening stock / adjustment' })
+          await dlg.getByRole('radio', { name: 'Adjustment' }).check().catch(() => problems.push('stock: the adjustment form did not open'))
+          await dlg.getByText('Reason').first().waitFor({ timeout: 5000 }).catch(() => problems.push('stock: an adjustment asks no reason'))
+          await page.waitForTimeout(400)
+          await page.screenshot({ path: out('stock-adjust') })
+          await dlg.getByRole('button', { name: 'Cancel' }).click()
+        }
+      }
+
+      // Stock adjustments is still the current page: it opens inside, and the address follows.
       await area.click()
-      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: 'Stock on hand', exact: true }).first().click()
-      await page.waitForURL(/\/office\/a\/stock-levels/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Stock on hand did not open at /office/a/stock-levels (${page.url()})`))
+      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: 'Stock adjustments', exact: true }).first().click()
+      await page.waitForURL(/\/office\/a\/stock-adjustments/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Stock adjustments did not open at /office/a/stock-adjustments (${page.url()})`))
       await page.waitForFunction(() => {
         const f = document.querySelector('iframe[title="Page"]')
-        return f?.contentWindow?.location.pathname === '/admin/stock-levels' && !!f.contentDocument?.querySelector('h1')
-      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Stock on hand page did not open inside`))
+        return f?.contentWindow?.location.pathname === '/admin/stock-adjustments' && !!f.contentDocument?.querySelector('h1')
+      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Stock adjustments page did not open inside`))
       const f = await frameReady()
       await f.locator('.fi-ta-table, .fi-ta-empty-state').first().waitFor({ timeout: 20000 })
-        .catch(() => problems.push(`${look} ${w}: the Stock on hand list did not show inside`))
+        .catch(() => problems.push(`${look} ${w}: the Stock adjustments list did not show inside`))
       const chrome = await f.locator('.fi-sidebar, .fi-topbar').evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== 'none').length)
       if (chrome) problems.push(`${look} ${w}: the embedded page still shows its own menu`)
       await page.waitForTimeout(600) // the page's own loader fades out
@@ -207,16 +226,16 @@ try {
       const nav = page.getByRole('navigation', { name: 'Menu' })
       await (look === 'top' ? nav.getByRole('button', { name: 'Recent pages' }) : nav.getByRole('button', { name: 'Recent' })).click()
       await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /Stock/ }).first().waitFor({ timeout: 5000 })
-        .catch(() => problems.push(`${look} ${w}: Recent does not list Stock on hand`))
+        .catch(() => problems.push(`${look} ${w}: Recent does not list Stock adjustments`))
       await page.keyboard.press('Escape')
       const star = look === 'top' ? nav.getByRole('button', { name: 'Favourites' }) : nav.getByRole('button', { name: 'Favourites' })
       await star.click()
       const fav = page.getByRole('dialog', { name: 'Favourite pages' })
       await fav.getByRole('button', { name: /^Add “/ }).click().catch(() => problems.push(`${look} ${w}: Favourites has no "Add this page"`))
-      await fav.getByRole('link', { name: /Stock/ }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Stock on hand did not become a favourite`))
+      await fav.getByRole('link', { name: /Stock/ }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Stock adjustments did not become a favourite`))
       await page.screenshot({ path: out(`favourites-${look}-${w}`) })
       await fav.getByRole('button', { name: /^Take “/ }).last().click().catch(() => undefined) // leave the dev account as it was
-      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Stock on hand could not be taken off favourites`))
+      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Stock adjustments could not be taken off favourites`))
       await page.keyboard.press('Escape')
 
       // Search: Ctrl+K, type, a page of the menu is offered.

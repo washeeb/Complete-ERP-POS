@@ -1,5 +1,5 @@
 import {
-  Badge, Button, makeStyles, MessageBar, MessageBarBody, Spinner, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, tokens,
+  Badge, Button, Link, makeStyles, MessageBar, MessageBarBody, Spinner, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, tokens,
 } from '@fluentui/react-components'
 import { ArrowLeftRegular, CheckmarkRegular, EditRegular, QrCodeRegular, ScalesRegular } from '@fluentui/react-icons'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
@@ -145,6 +145,7 @@ export function ProductPage({ id, onTitle }: { id: string; onTitle: (t: string) 
           )}
           {p.stock_shown && p.tracked && (
             <Panel title="Latest stock movements">
+              {p.movements.length > 0 && <Link style={{ display: 'inline-block', marginBottom: 6 }} onClick={() => navigate(`/office/stock/movements?product=${p.id}`)}>All movements of this product</Link>}
               {p.movements.length === 0 ? <Text className={s.muted}>Nothing has moved yet.</Text> : (
                 <Table size="small" aria-label="Latest stock movements">
                   <TableHeader><TableRow><TableHeaderCell>When</TableHeaderCell><TableHeaderCell>What</TableHeaderCell><TableHeaderCell>Where</TableHeaderCell>

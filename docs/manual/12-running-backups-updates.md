@@ -98,6 +98,17 @@ What's there:
   - **Classic form** (top right) opens the old form.
 - The file imports under **More** still open the current pages inside the new back office.
 
+**Stock on hand (rebuilt).** **Stock → Stock on hand** shows every product in every warehouse you may see, with the quantity and when it last moved.
+- **Find stock** by SKU, name or a scanned barcode. **Filters** narrows by warehouse, category, and in stock, out of stock (0) or negative. A negative quantity means more was sold than was recorded coming in: count it.
+- **Stock sheet** makes the list to count from: PDF to print or CSV for Excel, with or without the system quantities (leave them out for a blind count).
+- **Opening stock / adjustment** records a first count, or a change with its reason (damaged, expired, theft, found…). It is one row in the stock ledger with your name; nothing is overwritten. **More → Update stock from CSV** loads many at once.
+- Press a row to open the product.
+
+**Stock ledger (rebuilt).** **Stock → Stock ledger** lists every movement of stock, newest first: sales, returns, deliveries, transfers, counts and adjustments, with who did it and why.
+- Choose the period, search a product, or filter by kind, warehouse, category, brand, person or dates.
+- On a product's page, **All movements of this product** opens the ledger for that product only.
+- Nothing in the ledger ever changes: a mistake is put right by a new movement. **Why:** the stock on hand can always be checked against it.
+
 Pages that have not been rebuilt yet open inside the new frame without their own menus. Over the next updates the daily screens are rebuilt one area at a time, and then everyone signs in to the new back office.
 
 **Why:** a faster, clearer screen that looks and behaves like a Windows program, introduced step by step so nothing stops working.

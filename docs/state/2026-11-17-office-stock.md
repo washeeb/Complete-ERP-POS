@@ -1,0 +1,17 @@
+## New back office, release 3 part 3: stock on hand and the stock ledger — branch `office-stock`
+- **Server:** `App\Domain\Office\StockScreen`.
+  - It uses the current screens' own queries (`StockLevelResource::getEloquentQuery` and `StockMovementResource::getEloquentQuery`), so warehouse and industry scope are identical to the current screens.
+  - `levels()`: q (SKU, name or exact barcode); warehouse; category; level (in, out, negative); sort product, on_hand or updated_at. Counts come from FILTER aggregates.
+  - `movements()`: q; product id; period or from/to; types[]; warehouses[]; categories[]; brands[]; by.
+  - `find()`: products that track stock, with their units, for the adjustment form.
+- **Controller:** `Office\StockController`.
+  - `GET stock` (with `/options`, `/find`), `GET stock/sheet` (the stock sheet, ported from ListStockLevels), `POST stock/adjust` (`InventoryService::adjust`).
+  - `GET stock/movements` (with `/options`).
+- **Client:**
+  - `pages/StockPage.tsx` (Filters; the StockSheet and Adjust dialogs) and `pages/MovementsPage.tsx` (multi-select filters).
+  - The product page links to `/office/stock/movements?product=…`.
+  - `REBUILT` maps `/admin/stock-levels` (carrying `tableSearch` over as `q`) and `/admin/stock-movements`.
+- **office-check:** steps for both lists, plus opening the adjustment form. The framed-page example is now Stock adjustments.
+- **Tests:** OfficeStockTest (5).
+- **Gap found:** the rebuilt lists (sales, shifts, drawer, products, stock) have no **Export** yet. The current tables all get one from `TableExport::group()` (AppServiceProvider). To do: one shared export for the rebuilt lists.
+- **Next in release 3:** stock adjustments, counts, transfers and requests.
