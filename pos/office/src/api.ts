@@ -110,6 +110,18 @@ export type ProductFormData = {
   base_unit_locked: boolean; pricing_note: string | null; below_cost: boolean; can: { quick_add: boolean; describe: boolean }; ai_unavailable: string | null
   choices: Record<'industries' | 'categories' | 'brands' | 'tax_groups' | 'uoms' | 'price_lists' | 'schedules' | 'containers' | 'suppliers' | 'readings' | 'services' | 'stations' | 'modifier_groups', Option[]>
 }
+export type StockRow = { id: string; product_id: string; sku: string | null; name: string | null; warehouse: string | null; on_hand: string; unit: string | null; updated_at: string | null }
+export type StockList = { total: number; stocked: number; empty: number; negative: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: StockRow[] }
+export type StockOptions = {
+  warehouses: Option[]; categories: Option[]; per: number[]; can_adjust: boolean; adjust_warehouses: Option[]; reasons: Option[]; links: { import?: string }
+}
+export type StockFind = { id: string; label: string; batches: boolean; units: Option[] }
+export type MovementRow = {
+  id: string; at: string | null; warehouse: string | null; product_id: string; product: string | null; sku: string | null; type: string
+  entered: string; qty: string; unit: string | null; in: boolean; reason: string | null; by: string | null
+}
+export type MovementsList = { total: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; product: string | null; rows: MovementRow[] }
+export type MovementsOptions = { types: Option[]; warehouses: Option[]; categories: Option[]; brands: Option[]; people: Option[]; per: number[] }
 /** Which products an action is for: the ticked ones, or every product the list's search and filters pick. */
 export type Pick = { ids: string[] } | { match: Record<string, string | string[]> }
 export type BulkResult = { done: number; untouched?: number; skipped: string[] }
@@ -203,6 +215,15 @@ export const api = {
     call<{ id: string; label: string; existed: boolean }>('/office-api/products/quick-add', { method: 'POST', body: JSON.stringify({ kind, ...form }) }),
   ingredients: (q: string, signal?: AbortSignal) => call<{ results: Option[] }>(`/office-api/products/ingredients?q=${encodeURIComponent(q)}`, { signal }),
   describeProduct: (id: string, tone: string) => call<{ description: string }>(`/office-api/products/${id}/describe`, { method: 'POST', body: JSON.stringify({ tone }) }),
+  stock: (query: string, signal?: AbortSignal) => call<StockList>(`/office-api/stock?${query}`, { signal }),
+  stockOptions: () => call<StockOptions>('/office-api/stock/options'),
+  stockFind: (q: string, signal?: AbortSignal) => call<{ results: StockFind[] }>(`/office-api/stock/find?q=${encodeURIComponent(q)}`, { signal }),
+  /** The stock sheet opens as a download (PDF or CSV). */
+  stockSheetUrl: (p: { warehouse: string; category: string; show_qty: boolean; format: 'pdf' | 'csv'; zero: boolean }) =>
+    `/office-api/stock/sheet?${new URLSearchParams({ warehouse: p.warehouse, category: p.category, show_qty: p.show_qty ? '1' : '0', format: p.format, zero: p.zero ? '1' : '0' })}`,
+  adjustStock: (body: Record<string, string | null>) => call<{ id: string; qty: string }>('/office-api/stock/adjust', { method: 'POST', body: JSON.stringify(body) }),
+  movements: (query: string, signal?: AbortSignal) => call<MovementsList>(`/office-api/stock/movements?${query}`, { signal }),
+  movementsOptions: () => call<MovementsOptions>('/office-api/stock/movements/options'),
   batchesAll: () => call<{ done: number; untouched: number; skipped: string[] }>('/office-api/products/batches-all', { method: 'POST', body: '{}' }),
   todo: () => call<Todo>('/office-api/todo'),
   todoCount: () => call<{ count: number }>('/office-api/todo-count'),

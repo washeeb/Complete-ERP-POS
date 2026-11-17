@@ -13,6 +13,7 @@ use App\Http\Controllers\Office\OfficeController;
 use App\Http\Controllers\Office\ProductsController as OfficeProductsController;
 use App\Http\Controllers\Office\SalesController as OfficeSalesController;
 use App\Http\Controllers\Office\ShiftsController as OfficeShiftsController;
+use App\Http\Controllers\Office\StockController as OfficeStockController;
 use App\Http\Controllers\PrintController;
 use App\Http\Controllers\RemoteConnectController;
 use App\Http\Controllers\RfqQuoteController;
@@ -80,6 +81,13 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::post('products/quick-add', [OfficeProductsController::class, 'quickAdd']);
     Route::get('products/ingredients', [OfficeProductsController::class, 'ingredients']);
     Route::post('products/{id}/describe', [OfficeProductsController::class, 'describe'])->whereUuid('id');
+    Route::get('stock', [OfficeStockController::class, 'levels']);
+    Route::get('stock/options', [OfficeStockController::class, 'levelsOptions']);
+    Route::get('stock/find', [OfficeStockController::class, 'find']);
+    Route::get('stock/sheet', [OfficeStockController::class, 'sheet']);
+    Route::post('stock/adjust', [OfficeStockController::class, 'adjust']);
+    Route::get('stock/movements', [OfficeStockController::class, 'movements']);
+    Route::get('stock/movements/options', [OfficeStockController::class, 'movementsOptions']);
 });
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;
