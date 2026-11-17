@@ -122,6 +122,34 @@ export type MovementRow = {
 }
 export type MovementsList = { total: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; product: string | null; rows: MovementRow[] }
 export type MovementsOptions = { types: Option[]; warehouses: Option[]; categories: Option[]; brands: Option[]; people: Option[]; per: number[] }
+/** A product unit for a document line ("SKU · Name — CTN × 24"), and what a warehouse holds of it. */
+export type UnitOption = { id: string; label: string; batches: boolean; serialised: boolean }
+export type UnitStock = { qty: number; unit: string; factor: number; cost: number | null; batch: number | null }
+export type AdjRow = {
+  id: string; number: string; created_at: string | null; warehouse: string | null; reason: string; disposal: boolean; reference: string | null
+  lines: number; value: number | null; status: string; status_label: string; by: string | null
+}
+export type AdjList = { currency: string; exponent: number; total: number; waiting: number; drafts: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: AdjRow[] }
+export type AdjOptions = {
+  statuses: Option[]; kinds: Option[]; reasons: Option[]; warehouses: Option[]; per: number[]; can_create: boolean; links: { import?: string; invoice?: string }
+}
+export type AdjDetail = {
+  currency: string; exponent: number; id: string; number: string; status: string; status_label: string; kind: string
+  facts: Record<string, string>; note: string | null
+  disposal: { method: string | null; disposed_on: string | null; witness: string | null; certificate: string | null } | null
+  lines: { headings: string[]; rows: string[][]; numeric: number[] }; value: number; value_note: string; over_limit: string | null
+  photos: { line: number; url: string }[]
+  actions: { edit: boolean; submit: boolean; post: string | null; reopen: boolean; cancel: boolean; import: string | null; disposal_record: string | null }
+}
+export type AdjLine = {
+  product_uom_id: string; label: string | null; mode: string; qty: string; unit_cost: string; batch_no: string; expires_on: string; reason_code: string; note: string
+  serials: string[]; photo_path: string; photo_url: string | null; batches: boolean; serialised: boolean
+}
+export type AdjForm = {
+  id: string | null; number: string | null; currency: string; exponent: number
+  values: { warehouse_id: string; reason_code: string; reference: string; note: string; lines: AdjLine[] }
+  choices: { warehouses: Option[]; reasons: Option[]; modes: Option[] }; photos: boolean; photos_required: boolean; approval_limit: number
+}
 /** Which products an action is for: the ticked ones, or every product the list's search and filters pick. */
 export type Pick = { ids: string[] } | { match: Record<string, string | string[]> }
 export type BulkResult = { done: number; untouched?: number; skipped: string[] }
@@ -224,6 +252,28 @@ export const api = {
   adjustStock: (body: Record<string, string | null>) => call<{ id: string; qty: string }>('/office-api/stock/adjust', { method: 'POST', body: JSON.stringify(body) }),
   movements: (query: string, signal?: AbortSignal) => call<MovementsList>(`/office-api/stock/movements?${query}`, { signal }),
   movementsOptions: () => call<MovementsOptions>('/office-api/stock/movements/options'),
+  stockUnits: (q: string, signal?: AbortSignal) => call<{ results: UnitOption[] }>(`/office-api/stock/units?q=${encodeURIComponent(q)}`, { signal }),
+  unitStock: (unit: string, warehouse: string, batch: string, signal?: AbortSignal) =>
+    call<{ stock: UnitStock | null }>(`/office-api/stock/unit-stock?${new URLSearchParams({ unit, warehouse, batch })}`, { signal }),
+  /** A photo for a stock line: kept privately; the returned path is saved with the line. */
+  stockPhoto: async (file: File) => {
+    const body = new FormData()
+    body.append('photo', file)
+    const res = await fetch('/office-api/stock/photos', { method: 'POST', body, credentials: 'same-origin', headers: { Accept: 'application/json', 'X-XSRF-TOKEN': xsrf() } })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) throw new ApiError(json.message ?? json.detail ?? 'The photo could not be added.', res.status)
+    return json as { path: string }
+  },
+  adjustments: (query: string, signal?: AbortSignal) => call<AdjList>(`/office-api/adjustments?${query}`, { signal }),
+  adjustmentsOptions: () => call<AdjOptions>('/office-api/adjustments/options'),
+  adjustment: (id: string) => call<AdjDetail>(`/office-api/adjustments/${id}`),
+  adjustmentForm: (id?: string) => call<AdjForm>(id ? `/office-api/adjustments/${id}/form` : '/office-api/adjustments/form'),
+  saveAdjustment: (id: string | null, values: AdjForm['values']) =>
+    call<{ id: string }>(id ? `/office-api/adjustments/${id}` : '/office-api/adjustments', { method: 'POST', body: JSON.stringify({ values }) }),
+  /** submit · post · reopen · cancel (the last two with a reason). */
+  adjustmentAction: (id: string, action: string, reason?: string) =>
+    call<AdjDetail>(`/office-api/adjustments/${id}/action`, { method: 'POST', body: JSON.stringify({ action, reason: reason ?? null }) }),
+  adjustmentVoucherUrl: (id: string, format: 'pdf' | 'csv') => `/office-api/adjustments/${id}/voucher?format=${format}`,
   batchesAll: () => call<{ done: number; untouched: number; skipped: string[] }>('/office-api/products/batches-all', { method: 'POST', body: '{}' }),
   todo: () => call<Todo>('/office-api/todo'),
   todoCount: () => call<{ count: number }>('/office-api/todo-count'),

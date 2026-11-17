@@ -109,7 +109,11 @@ What's there:
 - On a product's page, **All movements of this product** opens the ledger for that product only.
 - Nothing in the ledger ever changes: a mistake is put right by a new movement. **Why:** the stock on hand can always be checked against it.
 
-**Export on the rebuilt lists.** Till sales, Till shifts, Till drawer, Products, Stock on hand and the Stock ledger each have **Export**, as every list of the classic back office does.
+**Stock adjustments (rebuilt).** **Stock → Stock adjustments** lists them with their status: drafts, **Waiting for approval** (counted on a card), posted and cancelled. Search a number or reference, choose the period, or filter by status, type (adjustment or disposal), reason and warehouse.
+- **New stock adjustment** opens the form described in chapter 14 (section 14.3): each line shows what the warehouse holds now, what it will hold after, and the value. **Details** on a line holds the batch, expiry, unit cost, its own reason, a note and **Add a photo** (on a phone or tablet this opens the camera).
+- Press an adjustment to see it: who prepared, submitted and posted it, every line before and after, and the value. The buttons are what may be done next: **Edit** (a draft), **Submit for approval**, **Post** or **Approve and post**, **Send back to draft** or **Cancel** (both ask the reason), **Export** (the voucher to sign, or the lines as CSV) and **Add lines from CSV**.
+
+**Export on the rebuilt lists.** Till sales, Till shifts, Till drawer, Products, Stock on hand, the Stock ledger and Stock adjustments each have **Export**, as every list of the classic back office does.
 - **Excel**, **CSV** or **PDF** of what the list shows: its search, filters and order, all pages, not only the one on screen.
 - A PDF holds about 800 rows; for a longer list **Export to PDF** is greyed out and says so. Narrow the list (for example to a date range), or use Excel or CSV, which take everything. **Why:** a PDF is laid out in the server's memory, and a very long one would stop it.
 - Every export is recorded in the audit log with your name and what was exported.

@@ -216,17 +216,65 @@ try {
         }
       }
 
-      // Stock adjustments is still the current page: it opens inside, and the address follows.
+      // Stock adjustments, rebuilt: the list, a document, and the draft form: a product picked shows what the warehouse holds.
       await area.click()
       await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: 'Stock adjustments', exact: true }).first().click()
-      await page.waitForURL(/\/office\/a\/stock-adjustments/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Stock adjustments did not open at /office/a/stock-adjustments (${page.url()})`))
+      await page.waitForURL(/\/office\/adjustments$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Stock adjustments did not open the new screen (${page.url()})`))
+      const adjRow = page.getByRole('table', { name: 'Stock adjustments' }).getByRole('row').nth(1)
+      await Promise.race([adjRow.waitFor({ timeout: 20000 }), page.getByText('No adjustments match').waitFor({ timeout: 20000 })])
+        .catch(() => problems.push(`${look} ${w}: Stock adjustments showed neither rows nor "No adjustments match"`))
+      await page.screenshot({ path: out(`adjustments-${look}-${w}`) })
+      if (await adjRow.isVisible().catch(() => false)) {
+        await adjRow.click()
+        await page.getByRole('region', { name: 'Lines' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: an adjustment shows no lines`))
+        await page.screenshot({ path: out(`adjustment-${look}-${w}`), fullPage: true })
+        await page.goBack()
+      }
+      if (look === 'top' && w === 1366) {
+        await page.getByRole('button', { name: 'New stock adjustment' }).click()
+        await page.waitForURL(/\/office\/adjustments\/new$/, { timeout: 15000 }).catch(() => problems.push('adjustment form: did not open'))
+        const lineRegion = page.getByRole('region', { name: 'Lines' })
+        await lineRegion.waitFor({ timeout: 15000 }).catch(() => problems.push('adjustment form: no lines'))
+        const wh = page.getByRole('combobox', { name: /Warehouse/ })
+        if (!(await wh.inputValue().catch(() => ''))) { await wh.click(); await page.getByRole('option').first().click() }
+        const picker = lineRegion.getByRole('combobox', { name: /Product and unit/ })
+        await picker.click()
+        await picker.fill('am')
+        await page.getByRole('option').first().click({ timeout: 15000 }).catch(() => problems.push('adjustment form: the product search offered nothing'))
+        await lineRegion.getByRole('spinbutton', { name: /Quantity/ }).fill('1')
+        await lineRegion.getByText(/^-?\d+(\.\d+)? \S+$/).first().waitFor({ timeout: 10000 }).catch(() => problems.push('adjustment form: no stock shown for the product'))
+        await page.waitForTimeout(400)
+        await page.screenshot({ path: out('adjustment-form') })
+        await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
+
+        // One adjustment's page, drawn from an answer made up in the browser (the dev data may hold none; nothing is saved).
+        const fake = '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f'
+        await page.route(`**/office-api/adjustments/${fake}`, (r) => r.fulfill({ json: {
+          currency: 'GHS', exponent: 2, id: fake, number: 'ADJ-HQ-000042', status: 'submitted', status_label: 'Waiting for approval', kind: 'adjustment',
+          facts: { Warehouse: 'HQ-W1 · Main store', Reason: 'Damaged', Reference: 'DR-7', 'Prepared by': 'Esi Cashier', 'Submitted by': 'Esi Cashier' },
+          note: 'Carton fell from the shelf.', disposal: null,
+          lines: { headings: ['#', 'SKU', 'Product', 'Change', 'Quantity', 'On hand before', 'Change (base units)', 'On hand after', 'Batch', 'Reason', 'Note'],
+            rows: [['1', 'MILO-400', 'MILO 400G', 'Decrease (−)', '3.000 PC', '40.000', '-3.000', '37.000', '', 'Damaged', 'Dropped']], numeric: [0, 5, 6, 7] },
+          value: -9000, value_note: 'If posted now (against stock on hand now), value at average cost', over_limit: null, photos: [],
+          actions: { edit: false, submit: false, post: 'Approve and post', reopen: true, cancel: true, import: null, disposal_record: null },
+        } }))
+        await page.evaluate((id) => { history.pushState(null, '', `/office/adjustments/${id}`); window.dispatchEvent(new Event('zx-navigate')) }, fake)
+        await page.getByRole('button', { name: 'Approve and post' }).waitFor({ timeout: 15000 }).catch(() => problems.push('adjustment: the page did not draw'))
+        await page.screenshot({ path: out('adjustment'), fullPage: true })
+        await page.unroute(`**/office-api/adjustments/${fake}`)
+      }
+
+      // Stock counts is still the current page: it opens inside, and the address follows.
+      await area.click()
+      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: 'Stock counts', exact: true }).first().click()
+      await page.waitForURL(/\/office\/a\/stock-counts/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Stock counts did not open at /office/a/stock-counts (${page.url()})`))
       await page.waitForFunction(() => {
         const f = document.querySelector('iframe[title="Page"]')
-        return f?.contentWindow?.location.pathname === '/admin/stock-adjustments' && !!f.contentDocument?.querySelector('h1')
-      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Stock adjustments page did not open inside`))
+        return f?.contentWindow?.location.pathname === '/admin/stock-counts' && !!f.contentDocument?.querySelector('h1')
+      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Stock counts page did not open inside`))
       const f = await frameReady()
       await f.locator('.fi-ta-table, .fi-ta-empty-state').first().waitFor({ timeout: 20000 })
-        .catch(() => problems.push(`${look} ${w}: the Stock adjustments list did not show inside`))
+        .catch(() => problems.push(`${look} ${w}: the Stock counts list did not show inside`))
       const chrome = await f.locator('.fi-sidebar, .fi-topbar').evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== 'none').length)
       if (chrome) problems.push(`${look} ${w}: the embedded page still shows its own menu`)
       await page.waitForTimeout(600) // the page's own loader fades out
@@ -236,16 +284,16 @@ try {
       const nav = page.getByRole('navigation', { name: 'Menu' })
       await (look === 'top' ? nav.getByRole('button', { name: 'Recent pages' }) : nav.getByRole('button', { name: 'Recent' })).click()
       await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /Stock/ }).first().waitFor({ timeout: 5000 })
-        .catch(() => problems.push(`${look} ${w}: Recent does not list Stock adjustments`))
+        .catch(() => problems.push(`${look} ${w}: Recent does not list Stock counts`))
       await page.keyboard.press('Escape')
       const star = look === 'top' ? nav.getByRole('button', { name: 'Favourites' }) : nav.getByRole('button', { name: 'Favourites' })
       await star.click()
       const fav = page.getByRole('dialog', { name: 'Favourite pages' })
       await fav.getByRole('button', { name: /^Add “/ }).click().catch(() => problems.push(`${look} ${w}: Favourites has no "Add this page"`))
-      await fav.getByRole('link', { name: /Stock/ }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Stock adjustments did not become a favourite`))
+      await fav.getByRole('link', { name: /Stock/ }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Stock counts did not become a favourite`))
       await page.screenshot({ path: out(`favourites-${look}-${w}`) })
       await fav.getByRole('button', { name: /^Take “/ }).last().click().catch(() => undefined) // leave the dev account as it was
-      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Stock adjustments could not be taken off favourites`))
+      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Stock counts could not be taken off favourites`))
       await page.keyboard.press('Escape')
 
       // Search: Ctrl+K, type, a page of the menu is offered.

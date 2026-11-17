@@ -7,12 +7,37 @@ import { useState } from 'react'
 /** A PDF is laid out row by row in the server's memory: beyond this it does not fit (the server says so too). */
 export const PDF_ROWS = 800
 
-export type ExportList = 'sales' | 'shifts' | 'drawer' | 'products' | 'stock' | 'movements'
+export type ExportList = 'sales' | 'shifts' | 'drawer' | 'products' | 'stock' | 'movements' | 'adjustments'
 
 /** The file name the server gave (Content-Disposition), or a plain one. */
 export function fileName(disposition: string | null, fallback: string): string {
   const m = disposition?.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i)
   return m ? decodeURIComponent(m[1]) : fallback
+}
+
+/**
+ * Fetch a file the server makes (an export, a voucher) and save it under the name the server gave. A refusal (a licence
+ * that does not allow output, too many rows…) comes back as its message instead of a broken download; null = saved.
+ */
+export async function download(url: string, fallback: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, { credentials: 'same-origin' })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      return body.detail ?? body.message ?? 'The file could not be made. Try again.'
+    }
+    const blob = await res.blob()
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = fileName(res.headers.get('Content-Disposition'), fallback)
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000)
+    return null
+  } catch {
+    return 'The file could not be made. Check the connection and try again.'
+  }
 }
 
 /**
@@ -27,26 +52,9 @@ export function ExportMenu({ list, query, total }: { list: ExportList; query: st
   const tooMany = total !== null && total > PDF_ROWS
   const go = async (format: 'xlsx' | 'csv' | 'pdf') => {
     setBusy(true)
-    try {
-      const res = await fetch(`/office-api/export/${list}?${query}${query ? '&' : ''}format=${format}`, { credentials: 'same-origin' })
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        onError(body.detail ?? body.message ?? 'The export could not be made. Try again.')
-        return
-      }
-      const blob = await res.blob()
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = fileName(res.headers.get('Content-Disposition'), `${list}.${format}`)
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      setTimeout(() => URL.revokeObjectURL(a.href), 10000)
-    } catch {
-      onError('The export could not be made. Check the connection and try again.')
-    } finally {
-      setBusy(false)
-    }
+    const problem = await download(`/office-api/export/${list}?${query}${query ? '&' : ''}format=${format}`, `${list}.${format}`)
+    if (problem) onError(problem)
+    setBusy(false)
   }
   return (
     <>

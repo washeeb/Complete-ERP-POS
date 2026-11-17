@@ -11,6 +11,7 @@ use App\Filament\Support\Fields;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductUom;
 use App\Models\StockLevel;
 use App\Models\StockMovement;
 use App\Models\User;
@@ -132,6 +133,39 @@ final class StockScreen
             'reasons' => self::opt(InventoryService::ADJUSTMENT_REASONS),
             'links' => array_filter(['import' => $adjust ? ProductsScreen::path(ImportData::getUrl(['type' => 'stock_adjustment'])) : null]),
         ];
+    }
+
+    /**
+     * Product units for a document line (adjustments, counts, transfers…): products by name, SKU or a scanned barcode, as
+     * the current forms' "Product and unit" (Fields::productUnit), with whether they take batches or serial numbers.
+     * $buying: only the units the product is bought in.
+     */
+    public function units(string $q, bool $buying = false): array
+    {
+        if (mb_strlen($q) < 2) {
+            return [];
+        }
+
+        return ProductUom::with('product', 'uom')
+            ->whereHas('product', fn (Builder $w) => IndustryContext::productScope($w)->whereNull('products.archived_at')->where('track_stock', true))
+            ->where(fn ($w) => $w->whereHas('product', fn (Builder $x) => $x->where('is_active', true)->where(fn ($y) => $y->where('name', 'ilike', "%{$q}%")
+                ->orWhere('sku', 'ilike', "%{$q}%")))->orWhereHas('barcodes', fn ($b) => $b->where('code', $q)))
+            ->when($buying, fn ($w) => $w->where('is_purchasable', true))
+            ->limit(30)->get()->sortBy(fn ($u) => [$u->product->name, -(float) $u->factor])->values()
+            ->map(fn (ProductUom $u) => ['id' => $u->id, 'label' => Fields::unitLabel($u, $buying), 'batches' => (bool) $u->product->track_batches,
+                'serialised' => (bool) $u->product->track_serials])->all();
+    }
+
+    /** What a warehouse holds of a product unit now, its average cost per base unit, and a batch's share. */
+    public function unitStock(string $unitId, string $warehouseId, ?string $batch): ?array
+    {
+        $ids = StockLevelResource::warehouseIds();
+        if ($ids !== null && ! in_array($warehouseId, $ids, true)) {
+            return null;
+        }
+        $s = Fields::stockOf($unitId, $warehouseId, $batch);
+
+        return $s ? ['qty' => round($s['qty'], 3), 'unit' => $s['unit'], 'factor' => $s['factor'], 'cost' => $s['cost'], 'batch' => $s['batch'] === null ? null : round($s['batch'], 3)] : null;
     }
 
     /** Stocked products matching what is typed, with their units, for the adjustment form. */
