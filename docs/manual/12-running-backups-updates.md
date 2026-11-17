@@ -109,6 +109,11 @@ What's there:
 - On a product's page, **All movements of this product** opens the ledger for that product only.
 - Nothing in the ledger ever changes: a mistake is put right by a new movement. **Why:** the stock on hand can always be checked against it.
 
+**Export on the rebuilt lists.** Till sales, Till shifts, Till drawer, Products, Stock on hand and the Stock ledger each have **Export**, as every list of the classic back office does.
+- **Excel**, **CSV** or **PDF** of what the list shows: its search, filters and order, all pages, not only the one on screen.
+- A PDF holds about 800 rows; for a longer list **Export to PDF** is greyed out and says so. Narrow the list (for example to a date range), or use Excel or CSV, which take everything. **Why:** a PDF is laid out in the server's memory, and a very long one would stop it.
+- Every export is recorded in the audit log with your name and what was exported.
+
 Pages that have not been rebuilt yet open inside the new frame without their own menus. Over the next updates the daily screens are rebuilt one area at a time, and then everyone signs in to the new back office.
 
 **Why:** a faster, clearer screen that looks and behaves like a Windows program, introduced step by step so nothing stops working.

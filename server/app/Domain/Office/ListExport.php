@@ -1,0 +1,187 @@
+<?php
+
+namespace App\Domain\Office;
+
+use App\Models\PriceList;
+use App\Models\Product;
+use App\Models\Sale;
+use App\Models\Shift;
+use App\Models\StockLevel;
+use App\Models\StockMovement;
+use App\Models\TillDrawerEvent;
+use App\Models\User;
+use App\Support\Money;
+use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
+
+/**
+ * "Export" on the new back office's lists, as on every list of the current one (TableExport): what the list shows — its
+ * search, filters and order, all pages — as Excel, CSV or PDF, through the same Exporter (licence check, audit row,
+ * CSV-injection guard, PDF row limit). Each list's rows come from the same query and row as the screen itself
+ * (filtered / sorted / row of its screen class), so the file matches the screen.
+ */
+final class ListExport
+{
+    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements'];
+
+    public function __construct(private readonly User $user) {}
+
+    /** Whether this person may see the list at all (the same check as the screen). */
+    public static function canView(string $list): bool
+    {
+        return match ($list) {
+            'sales' => SalesScreen::canView(),
+            'shifts', 'drawer' => ShiftsScreen::canView(),
+            'products' => ProductsScreen::canView(),
+            'stock', 'movements' => StockScreen::canView(),
+            default => false,
+        };
+    }
+
+    private function currency(): string
+    {
+        return $this->user->tenant?->currency_code ?? 'GHS';
+    }
+
+    private function at(?string $iso): string
+    {
+        return $iso ? CarbonImmutable::parse($iso)->setTimezone($this->user->tenant?->timezone ?: 'UTC')->format('Y-m-d H:i') : '';
+    }
+
+    private function money(?int $minor, ?string $currency = null): string
+    {
+        return $minor === null ? '' : Money::display($minor, $currency ?? $this->currency());
+    }
+
+    /**
+     * The sheet for the Exporter, and how many rows it has.
+     *
+     * @return array{title: string, sheet: array, count: int, filters: list<string>}
+     */
+    public function sheet(string $list, array $p): array
+    {
+        unset($p['page'], $p['per'], $p['format'], $p['r']);
+        [$title, $headings, $numeric, $query, $row] = match ($list) {
+            'sales' => $this->sales($p),
+            'shifts' => $this->shifts($p),
+            'drawer' => $this->drawer($p),
+            'products' => $this->products($p),
+            'stock' => $this->stock($p),
+            'movements' => $this->movements($p),
+        };
+        /** @var Builder $query */
+        $count = (clone $query)->toBase()->getCountForPagination();
+        $rows = (function () use ($query, $row) {
+            foreach ($query->lazy(500) as $record) {
+                yield array_map(fn ($v) => $v === null ? '' : (string) $v, $row($record));
+            }
+        })();
+
+        return ['title' => $title, 'count' => $count, 'filters' => $this->describe($p),
+            'sheet' => ['title' => $title, 'headings' => $headings, 'rows' => $rows, 'numeric' => $numeric]];
+    }
+
+    private function sales(array $p): array
+    {
+        $screen = new SalesScreen($this->user);
+
+        return ['Till sales', ['Receipt', 'Kind', 'Sold at', 'Branch', 'Till', 'Teller', 'Paid by', 'Total'], [7], $screen->sorted($p),
+            function (Sale $s) use ($screen) {
+                $r = $screen->rowOf($s);
+
+                return [$r['receipt_no'], $r['kind'] === 'return' ? 'Return' : 'Sale', $this->at($r['occurred_at']), $r['branch'], $r['till'], $r['cashier'],
+                    implode(' + ', $r['paid_by']), $this->money($r['total'], $s->currency_code)];
+            }];
+    }
+
+    private function shifts(array $p): array
+    {
+        $screen = new ShiftsScreen($this->user);
+
+        return ['Till shifts', ['Till', 'Shift', 'Opened by', 'Also sold', 'Opened', 'Closed', 'Sales', 'Sales total', 'Float', 'Expected', 'Counted', 'Over / short', 'Drawer', 'MoMo, card & vouchers', 'Note'],
+            [6, 7, 8, 9, 10, 11], $screen->shiftsSorted($p),
+            function (Shift $s) use ($screen) {
+                $r = $screen->row($s);
+                $closed = $r['status'] === 'open' ? ($r['left_open'] ? "Left open since {$r['left_open']}" : 'Open') : $this->at($r['closed_at']);
+
+                return [$r['where'], $r['shift_name'], $r['opened_by'], $r['sellers'], $this->at($r['opened_at']), $closed, $r['sales'], $this->money($r['takings']),
+                    $this->money($r['float']), $this->money($r['expected']), $this->money($r['counted']).($r['corrected'] ? ' (corrected)' : ''), $this->money($r['over_short']),
+                    $r['drawer'], $r['checks'], $r['note']];
+            }];
+    }
+
+    private function drawer(array $p): array
+    {
+        $screen = new ShiftsScreen($this->user);
+
+        return ['Till drawer', ['When', 'Till', 'What', 'Amount', 'Spent on', 'Reason', 'Paid to', 'By', 'Approved by'], [3], $screen->drawerSorted($p),
+            function (TillDrawerEvent $e) use ($screen) {
+                $r = $screen->drawerRow($e);
+
+                return [$this->at($r['occurred_at']), $r['where'], $r['kind_label'], $this->money($r['amount']), $r['spent_on'], $r['reason'], $r['payee'], $r['by'], $r['approved_by']];
+            }];
+    }
+
+    private function products(array $p): array
+    {
+        $screen = new ProductsScreen($this->user);
+        $default = PriceList::where('is_default', true)->first();
+        $stock = $screen->stockShown();
+        $schedules = ['otc' => 'OTC', 'pom' => 'POM', 'controlled' => 'Controlled'];
+
+        return ['Products', ['SKU', 'Name', 'Category', 'Location', 'Medicine schedule', 'Industry', ($default?->name ?? 'Standard').' price', ...($stock ? ['On hand', 'Unit'] : []), 'For sale'],
+            $stock ? [6, 7] : [6], $screen->sorted($p),
+            function (Product $x) use ($screen, $default, $stock, $schedules) {
+                $r = $screen->rowOf($x, $default, $stock);
+
+                return [$r['sku'], $r['name'], $r['category'], $r['location'], $schedules[$r['schedule']] ?? '', $r['industry'] ?? 'Shared',
+                    $this->money($r['price'], $default?->currency_code), ...($stock ? [$r['tracked'] ? $r['on_hand'] : 'not tracked', $r['unit']] : []), $r['active'] ? 'Yes' : 'No'];
+            }];
+    }
+
+    private function stock(array $p): array
+    {
+        $screen = new StockScreen($this->user);
+
+        return ['Stock on hand', ['SKU', 'Product', 'Warehouse', 'On hand', 'Unit', 'Last movement'], [3], $screen->levelsSorted($p),
+            function (StockLevel $l) use ($screen) {
+                $r = $screen->levelRow($l);
+
+                return [$r['sku'], $r['name'], $r['warehouse'], $r['on_hand'], $r['unit'], $this->at($r['updated_at'])];
+            }];
+    }
+
+    private function movements(array $p): array
+    {
+        $screen = new StockScreen($this->user);
+
+        return ['Stock ledger', ['When', 'Warehouse', 'SKU', 'Product', 'What', 'Entered', 'Base qty', 'Unit', 'Reason', 'By'], [6], $screen->movementsSorted($p),
+            function (StockMovement $m) use ($screen) {
+                $r = $screen->movementRow($m);
+
+                return [$this->at($r['at']), $r['warehouse'], $r['sku'], $r['product'], $r['type'], $r['entered'], $r['qty'], $r['unit'], $r['reason'], $r['by']];
+            }];
+    }
+
+    /** "Search: rice", "Period: 7 days", "From: 2026-11-01" … for the PDF header and the audit row. */
+    private function describe(array $p): array
+    {
+        $names = ['q' => 'Search', 'period' => 'Period', 'from' => 'From', 'to' => 'Until', 'status' => 'Status', 'kind' => 'Kind', 'level' => 'Stock',
+            'stock' => 'Stock', 'active' => 'For sale', 'schedule' => 'Medicine schedule', 'min' => 'Total from', 'max' => 'Total up to',
+            'os_min' => 'Over/short from', 'os_max' => 'Over/short up to', 'vault_waiting' => 'Vaults waiting', 'sort' => null, 'dir' => null];
+        $periods = ['today' => 'Today', '7' => '7 days', '30' => '30 days', '90' => '90 days'];
+        $out = [];
+        foreach ($p as $k => $v) {
+            if (($names[$k] ?? false) === null || $v === '' || $v === [] || $v === null) {
+                continue;
+            }
+            $value = is_array($v) ? count($v).' chosen' : ($k === 'period' ? ($periods[$v] ?? $v) : ($k === 'active' ? ($v === '1' ? 'Yes' : 'No') : (string) $v));
+            if (preg_match('/^[0-9a-f-]{36}$/', $value)) {
+                $value = 'chosen';
+            }
+            $out[] = ($names[$k] ?? ucfirst(str_replace('_', ' ', $k))).': '.$value;
+        }
+
+        return $out;
+    }
+}

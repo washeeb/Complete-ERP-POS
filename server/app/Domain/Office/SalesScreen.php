@@ -39,8 +39,8 @@ final class SalesScreen
         return Sale::query()->when($ids !== null, fn (Builder $q) => $q->whereIn('branch_id', $ids));
     }
 
-    /** @param  array<string, mixed>  $p  q, branch, period (today|7|30|90), from, to, teller, methods[], min, max, kind, sort, dir, page, per */
-    public function list(array $p): array
+    /** The sales the search and filters pick (also for the export). */
+    public function filtered(array $p): Builder
     {
         $tz = $this->user->tenant?->timezone ?: 'UTC';
         $today = CarbonImmutable::now($tz)->startOfDay();
@@ -83,26 +83,52 @@ final class SalesScreen
             $q->where('kind', $p['kind']);
         }
 
+        return $q;
+    }
+
+    /** The order the list shows: [column, direction]. */
+    public function order(array $p): array
+    {
+        return [in_array($p['sort'] ?? null, self::SORTS, true) ? $p['sort'] : 'occurred_at', ($p['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc'];
+    }
+
+    /** The filtered sales in the list's order, with what a row shows loaded. */
+    public function sorted(array $p): Builder
+    {
+        [$sort, $dir] = $this->order($p);
+
+        return $this->filtered($p)->with(['branch:id,code,name', 'till:id,code,name', 'payments:id,sale_id,method,amount_minor'])->orderBy($sort, $dir)->orderBy('id', $dir);
+    }
+
+    /** One row of the list. */
+    public function rowOf(Sale $s): array
+    {
+        return [
+            'id' => $s->id, 'receipt_no' => $s->receipt_no, 'occurred_at' => $s->occurred_at?->toIso8601String(), 'kind' => $s->kind,
+            'branch' => $s->branch?->code, 'till' => $s->till?->name, 'cashier' => $s->cashier_name, 'total' => (int) $s->total_minor,
+            'paid_by' => $s->payments->pluck('method')->unique()->map(fn ($m) => SalePayment::METHODS[$m] ?? $m)->values()->all(),
+        ];
+    }
+
+    /** @param  array<string, mixed>  $p  q, branch, period (today|7|30|90), from, to, teller, methods[], min, max, kind, sort, dir, page, per */
+    public function list(array $p): array
+    {
+        $q = $this->filtered($p);
+        $currency = $this->user->tenant?->currency_code ?? 'GHS';
         $totals = (clone $q)->selectRaw('COUNT(*) AS n, COALESCE(SUM(total_minor), 0) AS s')->first();
         $mix = SalePayment::query()->whereIn('sale_id', (clone $q)->select('sales.id'))->groupBy('method')
             ->selectRaw('method, SUM(amount_minor) AS amount')->orderByDesc('amount')->limit(4)->get()
             ->map(fn ($r) => ['method' => SalePayment::METHODS[$r->method] ?? $r->method, 'amount' => (int) $r->amount])->all();
 
-        $sort = in_array($p['sort'] ?? null, self::SORTS, true) ? $p['sort'] : 'occurred_at';
-        $dir = ($p['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+        [$sort, $dir] = $this->order($p);
         $per = in_array((int) ($p['per'] ?? 0), self::PER_PAGE, true) ? (int) $p['per'] : 25;
         $page = max(1, (int) ($p['page'] ?? 1));
-        $rows = (clone $q)->with(['branch:id,code,name', 'till:id,code,name', 'payments:id,sale_id,method,amount_minor'])
-            ->orderBy($sort, $dir)->orderBy('id', $dir)->forPage($page, $per)->get();
+        $rows = $this->sorted($p)->forPage($page, $per)->get();
 
         return [
             'currency' => $currency, 'exponent' => Money::exponent($currency),
             'total' => (int) $totals->n, 'sum' => (int) $totals->s, 'mix' => $mix, 'page' => $page, 'per' => $per, 'sort' => $sort, 'dir' => $dir,
-            'rows' => $rows->map(fn (Sale $s) => [
-                'id' => $s->id, 'receipt_no' => $s->receipt_no, 'occurred_at' => $s->occurred_at?->toIso8601String(), 'kind' => $s->kind,
-                'branch' => $s->branch?->code, 'till' => $s->till?->name, 'cashier' => $s->cashier_name, 'total' => (int) $s->total_minor,
-                'paid_by' => $s->payments->pluck('method')->unique()->map(fn ($m) => SalePayment::METHODS[$m] ?? $m)->values()->all(),
-            ])->all(),
+            'rows' => $rows->map(fn (Sale $s) => $this->rowOf($s))->all(),
         ];
     }
 

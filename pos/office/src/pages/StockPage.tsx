@@ -6,6 +6,7 @@ import { AddRegular, ArrowUploadRegular, ClipboardTextLtrRegular, FilterRegular,
 import { useEffect, useState } from 'react'
 import { api, type Option as Choice, type StockFind, type StockOptions, type StockRow } from '../api'
 import { DataTable, Pager, type Column } from '../list/DataTable'
+import { ExportMenu } from '../list/ExportMenu'
 import { Cards, PageHead, usePageStyles } from '../list/ListParts'
 import { serialize, str, useQueryParams, type Params } from '../list/query'
 import { useList } from '../list/useList'
@@ -71,6 +72,7 @@ export function StockPage() {
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="SKU, name or barcode" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search stock" />
         <Filters options={options} params={params} onApply={set} />
+        <ExportMenu list="stock" query={serialize(params)} total={data?.total ?? null} />
         <span className={s.grow} />
         <Button icon={<HistoryRegular />} onClick={() => navigate('/office/stock/movements')}>Stock ledger</Button>
         <Button icon={<ClipboardTextLtrRegular />} disabled={!options} onClick={() => setDialog('sheet')}>Stock sheet</Button>

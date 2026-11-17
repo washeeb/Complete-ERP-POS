@@ -53,8 +53,8 @@ final class StockScreen
             ->orWhereHas('barcodes', fn ($b) => $b->where('code', $q)));
     }
 
-    /** @param  array<string, mixed>  $p  q, warehouse, category, level (in|out|negative), sort (product|on_hand|updated_at), dir, page, per */
-    public function levels(array $p): array
+    /** The stock lines the search and filters pick (also for the export). */
+    public function levelsFiltered(array $p): Builder
     {
         $q = StockLevelResource::getEloquentQuery();
         if (($s = trim((string) ($p['q'] ?? ''))) !== '') {
@@ -69,25 +69,52 @@ final class StockScreen
         match ($p['level'] ?? null) {
             'in' => $q->where('on_hand', '>', 0), 'out' => $q->where('on_hand', 0), 'negative' => $q->where('on_hand', '<', 0), default => null,
         };
-        $totals = (clone $q)->toBase()->selectRaw('COUNT(*) AS n, COUNT(*) FILTER (WHERE on_hand > 0) AS stocked, COUNT(*) FILTER (WHERE on_hand = 0) AS empty, COUNT(*) FILTER (WHERE on_hand < 0) AS negative')->first();
-        [$per, $page, $dir] = $this->page($p);
-        $sort = in_array($p['sort'] ?? null, ['product', 'on_hand', 'updated_at'], true) ? $p['sort'] : 'product';
-        $q->with('product.baseUom', 'warehouse');
+
+        return $q;
+    }
+
+    /** [sort, direction] of the stock list. */
+    private function levelsOrder(array $p): array
+    {
+        return [in_array($p['sort'] ?? null, ['product', 'on_hand', 'updated_at'], true) ? $p['sort'] : 'product', ($p['dir'] ?? 'asc') === 'desc' ? 'desc' : 'asc'];
+    }
+
+    public function levelsSorted(array $p): Builder
+    {
+        [$sort, $dir] = $this->levelsOrder($p);
+        $q = $this->levelsFiltered($p)->with('product.baseUom', 'warehouse');
         match ($sort) {
             'on_hand' => $q->orderBy('on_hand', $dir),
             'updated_at' => $q->orderByRaw('updated_at '.$dir.' NULLS LAST'),
             default => $q->orderBy(Product::select('name')->whereColumn('products.id', 'stock_levels.product_id'), $dir),
         };
-        $rows = $q->orderBy('warehouse_id')->orderBy('product_id')->forPage($page, $per)->get();
+
+        return $q->orderBy('warehouse_id')->orderBy('product_id');
+    }
+
+    /** One line of stock on hand. */
+    public function levelRow(StockLevel $l): array
+    {
+        return [
+            'id' => "{$l->warehouse_id}:{$l->product_id}", 'product_id' => $l->product_id, 'sku' => $l->product?->sku, 'name' => $l->product?->name,
+            'warehouse' => $l->warehouse ? "{$l->warehouse->code} · {$l->warehouse->name}" : null, 'on_hand' => ProductsScreen::qty((string) $l->on_hand),
+            'unit' => $l->product?->baseUom?->code, 'updated_at' => $l->updated_at?->toIso8601String(),
+        ];
+    }
+
+    /** @param  array<string, mixed>  $p  q, warehouse, category, level (in|out|negative), sort (product|on_hand|updated_at), dir, page, per */
+    public function levels(array $p): array
+    {
+        $q = $this->levelsFiltered($p);
+        $totals = (clone $q)->toBase()->selectRaw('COUNT(*) AS n, COUNT(*) FILTER (WHERE on_hand > 0) AS stocked, COUNT(*) FILTER (WHERE on_hand = 0) AS empty, COUNT(*) FILTER (WHERE on_hand < 0) AS negative')->first();
+        [$per, $page] = $this->page($p);
+        [$sort, $dir] = $this->levelsOrder($p);
+        $rows = $this->levelsSorted($p)->forPage($page, $per)->get();
 
         return [
             'total' => (int) $totals->n, 'stocked' => (int) $totals->stocked, 'empty' => (int) $totals->empty, 'negative' => (int) $totals->negative,
             'page' => $page, 'per' => $per, 'sort' => $sort, 'dir' => $dir,
-            'rows' => $rows->map(fn (StockLevel $l) => [
-                'id' => "{$l->warehouse_id}:{$l->product_id}", 'product_id' => $l->product_id, 'sku' => $l->product?->sku, 'name' => $l->product?->name,
-                'warehouse' => $l->warehouse ? "{$l->warehouse->code} · {$l->warehouse->name}" : null, 'on_hand' => ProductsScreen::qty((string) $l->on_hand),
-                'unit' => $l->product?->baseUom?->code, 'updated_at' => $l->updated_at?->toIso8601String(),
-            ])->all(),
+            'rows' => $rows->map(fn (StockLevel $l) => $this->levelRow($l))->all(),
         ];
     }
 
@@ -121,11 +148,8 @@ final class StockScreen
                     'label' => $u->uom->code.($u->is_base ? '' : ' (× '.rtrim(rtrim((string) $u->factor, '0'), '.').')')])->all()])->all();
     }
 
-    /**
-     * @param  array<string, mixed>  $p  q (product), product (id), period (today|7|30|90), from, to, types[], warehouses[], categories[], brands[], by,
-     *                                   dir, page, per
-     */
-    public function movements(array $p): array
+    /** The movements the search and filters pick (also for the export). */
+    public function movementsFiltered(array $p): Builder
     {
         $tz = $this->user->tenant?->timezone ?: 'UTC';
         $today = CarbonImmutable::now($tz)->startOfDay();
@@ -165,19 +189,42 @@ final class StockScreen
         if (filled($p['by'] ?? null)) {
             $q->where('actor_id', (string) $p['by']);
         }
-        $total = (clone $q)->count();
+
+        return $q;
+    }
+
+    public function movementsSorted(array $p): Builder
+    {
+        $dir = ($p['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+
+        return $this->movementsFiltered($p)->with('product:id,name,sku,base_uom_id', 'product.baseUom:id,code')->orderBy('occurred_at', $dir)->orderBy('id', $dir);
+    }
+
+    /** One movement of the ledger. */
+    public function movementRow(StockMovement $m): array
+    {
+        return [
+            'id' => $m->id, 'at' => $m->occurred_at?->toIso8601String(), 'warehouse' => $m->warehouse?->code, 'product_id' => $m->product_id,
+            'product' => $m->product?->name, 'sku' => $m->product?->sku, 'type' => StockMovementResource::TYPES[$m->type] ?? $m->type,
+            'entered' => ProductsScreen::qty((string) $m->qty_entered).' '.$m->uom?->code, 'qty' => ProductsScreen::qty((string) $m->qty_base),
+            'unit' => $m->product?->baseUom?->code, 'in' => (float) $m->qty_base >= 0, 'reason' => $m->reason, 'by' => $m->actor_name,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $p  q (product), product (id), period (today|7|30|90), from, to, types[], warehouses[], categories[], brands[], by,
+     *                                   dir, page, per
+     */
+    public function movements(array $p): array
+    {
+        $total = $this->movementsFiltered($p)->count();
         [$per, $page, $dir] = $this->page($p, 'desc');
-        $rows = $q->with('product:id,name,sku,base_uom_id', 'product.baseUom:id,code')->orderBy('occurred_at', $dir)->orderBy('id', $dir)->forPage($page, $per)->get();
+        $rows = $this->movementsSorted($p)->forPage($page, $per)->get();
 
         return [
             'total' => $total, 'page' => $page, 'per' => $per, 'sort' => 'occurred_at', 'dir' => $dir,
             'product' => filled($p['product'] ?? null) ? Product::whereKey((string) $p['product'])->value('name') : null,
-            'rows' => $rows->map(fn (StockMovement $m) => [
-                'id' => $m->id, 'at' => $m->occurred_at?->toIso8601String(), 'warehouse' => $m->warehouse?->code, 'product_id' => $m->product_id,
-                'product' => $m->product?->name, 'sku' => $m->product?->sku, 'type' => StockMovementResource::TYPES[$m->type] ?? $m->type,
-                'entered' => ProductsScreen::qty((string) $m->qty_entered).' '.$m->uom?->code, 'qty' => ProductsScreen::qty((string) $m->qty_base),
-                'unit' => $m->product?->baseUom?->code, 'in' => (float) $m->qty_base >= 0, 'reason' => $m->reason, 'by' => $m->actor_name,
-            ])->all(),
+            'rows' => $rows->map(fn (StockMovement $m) => $this->movementRow($m))->all(),
         ];
     }
 

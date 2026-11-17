@@ -5,6 +5,7 @@ import { FilterRegular } from '@fluentui/react-icons'
 import { useEffect, useState } from 'react'
 import { api, type MovementRow, type MovementsOptions, type Option as Choice } from '../api'
 import { DataTable, Pager, type Column } from '../list/DataTable'
+import { ExportMenu } from '../list/ExportMenu'
 import { PageHead, PeriodButtons, usePageStyles, when } from '../list/ListParts'
 import { list, serialize, str, useQueryParams, type Params } from '../list/query'
 import { useList } from '../list/useList'
@@ -64,6 +65,7 @@ export function MovementsPage() {
         <SearchBox className={s.search} placeholder="Product: SKU, name or barcode" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search the stock ledger" />
         <PeriodButtons value={str(params, 'period')} onChange={(v) => set({ period: v, from: '', to: '' })} />
         <Filters options={options} params={params} onApply={set} />
+        <ExportMenu list="movements" query={serialize(params)} total={data?.total ?? null} />
       </div>
       {chips.length > 0 && (
         <TagGroup style={{ marginBottom: 10 }} aria-label="Filters in use" onDismiss={(_, d) => { const c = chips.find((x) => x.key === d.value); if (c) set(c.clear) }}>
