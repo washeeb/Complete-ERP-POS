@@ -10,6 +10,7 @@ use App\Http\Controllers\AccessRequestController;
 use App\Http\Controllers\BrandAssetController;
 use App\Http\Controllers\ExpenseReceiptController;
 use App\Http\Controllers\Office\AdjustmentsController as OfficeAdjustmentsController;
+use App\Http\Controllers\Office\CountsController as OfficeCountsController;
 use App\Http\Controllers\Office\ExportController as OfficeExportController;
 use App\Http\Controllers\Office\OfficeController;
 use App\Http\Controllers\Office\ProductsController as OfficeProductsController;
@@ -102,7 +103,14 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::post('adjustments/{id}', [OfficeAdjustmentsController::class, 'save'])->whereUuid('id');
     Route::post('adjustments/{id}/action', [OfficeAdjustmentsController::class, 'action'])->whereUuid('id');
     Route::get('adjustments/{id}/voucher', [OfficeAdjustmentsController::class, 'voucher'])->whereUuid('id');
-    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments']);
+    Route::get('counts', [OfficeCountsController::class, 'index']);
+    Route::get('counts/options', [OfficeCountsController::class, 'options']);
+    Route::post('counts', [OfficeCountsController::class, 'start']);
+    Route::get('counts/{id}', [OfficeCountsController::class, 'show'])->whereUuid('id');
+    Route::post('counts/{id}/record', [OfficeCountsController::class, 'record'])->whereUuid('id');
+    Route::post('counts/{id}/action', [OfficeCountsController::class, 'action'])->whereUuid('id');
+    Route::get('counts/{id}/sheet', [OfficeCountsController::class, 'sheet'])->whereUuid('id');
+    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts']);
 });
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;

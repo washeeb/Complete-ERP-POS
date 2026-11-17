@@ -264,17 +264,51 @@ try {
         await page.unroute(`**/office-api/adjustments/${fake}`)
       }
 
-      // Stock counts is still the current page: it opens inside, and the address follows.
+      // Stock counts, rebuilt: the list and the Start dialog; one count drawn from a made-up answer, with Enter counts (nothing saved).
       await area.click()
       await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: 'Stock counts', exact: true }).first().click()
-      await page.waitForURL(/\/office\/a\/stock-counts/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Stock counts did not open at /office/a/stock-counts (${page.url()})`))
+      await page.waitForURL(/\/office\/counts$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Stock counts did not open the new screen (${page.url()})`))
+      const countRow = page.getByRole('table', { name: 'Stock counts' }).getByRole('row').nth(1)
+      await Promise.race([countRow.waitFor({ timeout: 20000 }), page.getByText('No counts match').waitFor({ timeout: 20000 })])
+        .catch(() => problems.push(`${look} ${w}: Stock counts showed neither rows nor "No counts match"`))
+      await page.screenshot({ path: out(`counts-${look}-${w}`) })
+      if (await countRow.isVisible().catch(() => false)) { // a real count: its lines
+        await countRow.click()
+        await page.getByRole('region', { name: /^Lines/ }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: a count shows no lines`))
+        await page.screenshot({ path: out(`count-${look}-${w}`), fullPage: true })
+        await page.goBack()
+      }
+      if (look === 'top' && w === 1366) {
+        await page.getByRole('button', { name: 'Start a count' }).click().catch(() => problems.push('counts: no "Start a count" for the dev owner'))
+        await page.getByRole('dialog', { name: 'Start a count' }).getByRole('button', { name: 'Cancel' }).click().catch(() => problems.push('counts: the Start dialog did not open'))
+        const fakeCount = '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e1f'
+        await page.route(`**/office-api/counts/${fakeCount}`, (r) => r.fulfill({ json: {
+          currency: 'GHS', exponent: 2, id: fakeCount, number: 'CNT-HQ-000007', status: 'counting', status_label: 'Counting', blind: true,
+          facts: { Warehouse: 'HQ-W1 · Main store', Counting: 'Whole warehouse', Type: 'Blind', 'Started by': 'Ama Owner · 17 Nov 2026 09:00' },
+          note: 'Month end', shows_expected: false, counted: 1, bins: [],
+          lines: [{ sku: 'MILO-400', product: 'MILO 400G', unit: 'PC', bin: null, counted: '38', by: 'Yaw Store', expected: null, difference: null }],
+          actions: { count: true, submit: true, post: false, cancel: true, import: null },
+        } }))
+        await page.evaluate((id) => { history.pushState(null, '', `/office/counts/${id}`); window.dispatchEvent(new Event('zx-navigate')) }, fakeCount)
+        await page.getByRole('button', { name: 'Enter counts' }).click({ timeout: 15000 }).catch(() => problems.push('count: the page did not draw'))
+        await page.getByRole('dialog', { name: 'Enter counts' }).waitFor({ timeout: 5000 }).catch(() => problems.push('count: Enter counts did not open'))
+        await page.waitForTimeout(400)
+        await page.screenshot({ path: out('count') })
+        await page.getByRole('dialog', { name: 'Enter counts' }).getByRole('button', { name: 'Cancel' }).click()
+        await page.unroute(`**/office-api/counts/${fakeCount}`)
+      }
+
+      // Transfers is still the current page: it opens inside, and the address follows.
+      await area.click()
+      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: 'Transfers', exact: true }).first().click()
+      await page.waitForURL(/\/office\/a\/stock-transfers/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Transfers did not open at /office/a/stock-transfers (${page.url()})`))
       await page.waitForFunction(() => {
         const f = document.querySelector('iframe[title="Page"]')
-        return f?.contentWindow?.location.pathname === '/admin/stock-counts' && !!f.contentDocument?.querySelector('h1')
-      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Stock counts page did not open inside`))
+        return f?.contentWindow?.location.pathname === '/admin/stock-transfers' && !!f.contentDocument?.querySelector('h1')
+      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Transfers page did not open inside`))
       const f = await frameReady()
       await f.locator('.fi-ta-table, .fi-ta-empty-state').first().waitFor({ timeout: 20000 })
-        .catch(() => problems.push(`${look} ${w}: the Stock counts list did not show inside`))
+        .catch(() => problems.push(`${look} ${w}: the Transfers list did not show inside`))
       const chrome = await f.locator('.fi-sidebar, .fi-topbar').evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== 'none').length)
       if (chrome) problems.push(`${look} ${w}: the embedded page still shows its own menu`)
       await page.waitForTimeout(600) // the page's own loader fades out
@@ -283,17 +317,17 @@ try {
       // Recent lists the page just opened; the star adds it to favourites and takes it off again.
       const nav = page.getByRole('navigation', { name: 'Menu' })
       await (look === 'top' ? nav.getByRole('button', { name: 'Recent pages' }) : nav.getByRole('button', { name: 'Recent' })).click()
-      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /Stock/ }).first().waitFor({ timeout: 5000 })
-        .catch(() => problems.push(`${look} ${w}: Recent does not list Stock counts`))
+      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /Transfers/ }).first().waitFor({ timeout: 5000 })
+        .catch(() => problems.push(`${look} ${w}: Recent does not list Transfers`))
       await page.keyboard.press('Escape')
       const star = look === 'top' ? nav.getByRole('button', { name: 'Favourites' }) : nav.getByRole('button', { name: 'Favourites' })
       await star.click()
       const fav = page.getByRole('dialog', { name: 'Favourite pages' })
       await fav.getByRole('button', { name: /^Add “/ }).click().catch(() => problems.push(`${look} ${w}: Favourites has no "Add this page"`))
-      await fav.getByRole('link', { name: /Stock/ }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Stock counts did not become a favourite`))
+      await fav.getByRole('link', { name: /Transfers/ }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Transfers did not become a favourite`))
       await page.screenshot({ path: out(`favourites-${look}-${w}`) })
       await fav.getByRole('button', { name: /^Take “/ }).last().click().catch(() => undefined) // leave the dev account as it was
-      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Stock counts could not be taken off favourites`))
+      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Transfers could not be taken off favourites`))
       await page.keyboard.press('Escape')
 
       // Search: Ctrl+K, type, a page of the menu is offered.

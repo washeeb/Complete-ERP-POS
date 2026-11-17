@@ -113,7 +113,9 @@ What's there:
 - **New stock adjustment** opens the form described in chapter 14 (section 14.3): each line shows what the warehouse holds now, what it will hold after, and the value. **Details** on a line holds the batch, expiry, unit cost, its own reason, a note and **Add a photo** (on a phone or tablet this opens the camera).
 - Press an adjustment to see it: who prepared, submitted and posted it, every line before and after, and the value. The buttons are what may be done next: **Edit** (a draft), **Submit for approval**, **Post** or **Approve and post**, **Send back to draft** or **Cancel** (both ask the reason), **Export** (the voucher to sign, or the lines as CSV) and **Add lines from CSV**.
 
-**Export on the rebuilt lists.** Till sales, Till shifts, Till drawer, Products, Stock on hand, the Stock ledger and Stock adjustments each have **Export**, as every list of the classic back office does.
+**Stock counts (rebuilt).** **Stock → Stock counts** lists the counts with their status (being counted, waiting for approval, posted, cancelled) and the value of the differences once posted. **Start a count** chooses the warehouse (or one bin) and whether it is blind. On the count: **Enter counts**, **Count sheet** (PDF or CSV), **Import counted quantities (CSV)**, **Submit for approval**, **Approve and post** (by someone else) and **Cancel count**. How to run a count is in chapter 14 (section 14.4).
+
+**Export on the rebuilt lists.** Till sales, Till shifts, Till drawer, Products, Stock on hand, the Stock ledger, Stock adjustments and Stock counts each have **Export**, as every list of the classic back office does.
 - **Excel**, **CSV** or **PDF** of what the list shows: its search, filters and order, all pages, not only the one on screen.
 - A PDF holds about 800 rows; for a longer list **Export to PDF** is greyed out and says so. Narrow the list (for example to a date range), or use Excel or CSV, which take everything. **Why:** a PDF is laid out in the server's memory, and a very long one would stop it.
 - Every export is recorded in the audit log with your name and what was exported.
