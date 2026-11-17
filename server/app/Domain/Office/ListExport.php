@@ -10,6 +10,7 @@ use App\Models\StockAdjustment;
 use App\Models\StockCount;
 use App\Models\StockLevel;
 use App\Models\StockMovement;
+use App\Models\StockTransfer;
 use App\Models\TillDrawerEvent;
 use App\Models\User;
 use App\Support\Money;
@@ -24,7 +25,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final class ListExport
 {
-    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts'];
+    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers'];
 
     public function __construct(private readonly User $user) {}
 
@@ -38,6 +39,7 @@ final class ListExport
             'stock', 'movements' => StockScreen::canView(),
             'adjustments' => AdjustmentsScreen::canView(),
             'counts' => CountsScreen::canView(),
+            'transfers' => TransfersScreen::canView(),
             default => false,
         };
     }
@@ -74,6 +76,7 @@ final class ListExport
             'movements' => $this->movements($p),
             'adjustments' => $this->adjustments($p),
             'counts' => $this->counts($p),
+            'transfers' => $this->transfers($p),
         };
         /** @var Builder $query */
         $count = (clone $query)->toBase()->getCountForPagination();
@@ -195,11 +198,23 @@ final class ListExport
             }];
     }
 
+    private function transfers(array $p): array
+    {
+        $screen = new TransfersScreen($this->user);
+
+        return ['Transfers', ['Transfer', 'From', 'To', 'Status', 'Difference on arrival', 'Lines', 'Dispatched', 'Created', 'Created by'], [5], $screen->sorted($p),
+            function (StockTransfer $t) use ($screen) {
+                $r = $screen->rowOf($t);
+
+                return [$r['number'], $r['from'], $r['to'], $r['status_label'], $r['difference'] ? 'Yes' : '', $r['lines'], $this->at($r['dispatched_at']), $this->at($r['created_at']), $r['by']];
+            }];
+    }
+
     /** "Search: rice", "Period: 7 days", "From: 2026-11-01" … for the PDF header and the audit row. */
     private function describe(array $p): array
     {
         $names = ['q' => 'Search', 'period' => 'Period', 'from' => 'From', 'to' => 'Until', 'status' => 'Status', 'kind' => 'Kind', 'level' => 'Stock',
-            'stock' => 'Stock', 'reason' => 'Reason', 'warehouse' => 'Warehouse', 'active' => 'For sale', 'schedule' => 'Medicine schedule', 'min' => 'Total from', 'max' => 'Total up to',
+            'stock' => 'Stock', 'reason' => 'Reason', 'warehouse' => 'Warehouse', 'difference' => 'Difference on arrival', 'from_wh' => 'From warehouse', 'to_wh' => 'To warehouse', 'active' => 'For sale', 'schedule' => 'Medicine schedule', 'min' => 'Total from', 'max' => 'Total up to',
             'os_min' => 'Over/short from', 'os_max' => 'Over/short up to', 'vault_waiting' => 'Vaults waiting', 'sort' => null, 'dir' => null];
         $periods = ['today' => 'Today', '7' => '7 days', '30' => '30 days', '90' => '90 days'];
         $out = [];

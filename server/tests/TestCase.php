@@ -28,4 +28,15 @@ abstract class TestCase extends BaseTestCase
         ImportService::$backgroundFrom = 500;
         DocumentNumbers::$outerTransactions = 1; // RefreshDatabase wraps each test: a number taken outside the document's own transaction must still fail
     }
+
+    /**
+     * Long exports and bulk changes call set_time_limit() so a big job is not cut short on a live server. The whole test run
+     * is one PHP process, and on Windows the limit counts clock time: a limit set by one test would stop every test after
+     * it once that time had passed. Each test's limit ends with the test.
+     */
+    protected function tearDown(): void
+    {
+        set_time_limit(0);
+        parent::tearDown();
+    }
 }

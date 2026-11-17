@@ -1,0 +1,15 @@
+## New back office, release 3 part 4c: transfers — branch `office-transfers`
+- **Server:**
+  - `App\Domain\Office\TransfersScreen`:
+    - `filtered`, `sorted` and `rowOf` on `StockTransferResource::getEloquentQuery` plus `withCount('lines')`; the filters `from_wh` and `to_wh` (not from/to, which mean dates in the export description) and `difference`.
+    - `list`: counts by status, and `to_receive` (in transit to the person's branches, as the menu badge).
+    - `show`: lines sent and received; bins when the receiving warehouse uses them; actions plus the print and waybill links.
+    - `form` and `save` (`TransferService::saveDraft`).
+  - `Office\TransfersController`: index, options, show, form, save, `action` (dispatch; receive with `received[line_id]`, `to_bin_id` and `note`; cancel with a reason).
+  - `ListExport` gains `transfers`.
+- **Client:**
+  - `pages/TransfersPage.tsx`, `TransferPage.tsx` (the Receive dialog is filled in with what was sent and flags a difference) and `TransferFormPage.tsx` (live stock to send from `stock/unit-stock`; `repeated` from CountPage for duplicate lines).
+  - `REBUILT` maps the list, `/create`, `/{uuid}` and `/{uuid}/edit`.
+- **office-check:** the list, a real transfer, the form (a product shows its stock to send), and Receive on a transfer drawn from a made-up answer (nothing saved). Stock requests is the framed example; its Recent and favourite link is matched with `/request/i`.
+- **Tests:** OfficeTransfersTest (2).
+- **Next:** stock requests, the last part of release 3.

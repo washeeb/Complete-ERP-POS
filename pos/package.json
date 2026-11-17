@@ -22,7 +22,8 @@
     "desktop:build": "cd ../desktop && node ../pos/node_modules/@tauri-apps/cli/tauri.js build",
     "build:office": "tsc -b && vite build -c vite.office.config.ts",
     "dev:office": "vite -c vite.office.config.ts",
-    "check:office": "node scripts/office-check.mjs"
+    "check:office": "node scripts/office-check.mjs",
+    "audit": "node scripts/audit.mjs"
   },
   "dependencies": {
     "@fluentui/react-components": "9.75.1",

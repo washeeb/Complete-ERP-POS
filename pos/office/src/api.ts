@@ -124,6 +124,24 @@ export type MovementsList = { total: number; page: number; per: number; sort: st
 export type MovementsOptions = { types: Option[]; warehouses: Option[]; categories: Option[]; brands: Option[]; people: Option[]; per: number[] }
 /** A product unit for a document line ("SKU · Name — CTN × 24"), and what a warehouse holds of it. */
 export type UnitOption = { id: string; product_id: string; label: string; batches: boolean; serialised: boolean }
+export type TransferRow = {
+  id: string; number: string; from: string | null; to: string | null; status: string; status_label: string; difference: boolean; lines: number
+  dispatched_at: string | null; created_at: string | null; by: string | null
+}
+export type TransferList = { total: number; in_transit: number; to_receive: number; drafts: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: TransferRow[] }
+export type TransferOptions = { statuses: Option[]; warehouses: Option[]; per: number[]; can_create: boolean }
+export type TransferDetail = {
+  id: string; number: string; status: string; status_label: string; facts: Record<string, string>; note: string | null; difference: boolean | null
+  lines: { id: string; sku: string; name: string; unit: string; sent: string; received: string | null; serials: string[] }[]
+  bins: Option[]
+  actions: { edit: boolean; dispatch: boolean; receive: boolean; cancel: boolean; print: string; waybill: string; waybill_label: string }
+}
+export type TransferLine = { product_uom_id: string; label: string | null; product_id: string; qty: string; serials: string[]; serialised: boolean }
+export type TransferForm = {
+  id: string | null; number: string | null
+  values: { from_warehouse_id: string; to_warehouse_id: string; note: string; lines: TransferLine[] }
+  choices: { from: Option[]; to: Option[] }
+}
 export type CountRow = {
   id: string; number: string; warehouse: string | null; bin: string | null; status: string; status_label: string; blind: boolean
   started_at: string | null; started_by: string | null; lines: number; difference: number | null
@@ -289,6 +307,15 @@ export const api = {
   adjustmentAction: (id: string, action: string, reason?: string) =>
     call<AdjDetail>(`/office-api/adjustments/${id}/action`, { method: 'POST', body: JSON.stringify({ action, reason: reason ?? null }) }),
   adjustmentVoucherUrl: (id: string, format: 'pdf' | 'csv') => `/office-api/adjustments/${id}/voucher?format=${format}`,
+  transfers: (query: string, signal?: AbortSignal) => call<TransferList>(`/office-api/transfers?${query}`, { signal }),
+  transfersOptions: () => call<TransferOptions>('/office-api/transfers/options'),
+  transfer: (id: string) => call<TransferDetail>(`/office-api/transfers/${id}`),
+  transferForm: (id?: string) => call<TransferForm>(id ? `/office-api/transfers/${id}/form` : '/office-api/transfers/form'),
+  saveTransfer: (id: string | null, values: TransferForm['values']) =>
+    call<{ id: string }>(id ? `/office-api/transfers/${id}` : '/office-api/transfers', { method: 'POST', body: JSON.stringify({ values }) }),
+  /** dispatch · receive (what arrived per line, the bin, a note) · cancel (with a reason). */
+  transferAction: (id: string, action: string, extra: { reason?: string; received?: Record<string, string>; to_bin_id?: string | null; note?: string | null } = {}) =>
+    call<TransferDetail>(`/office-api/transfers/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...extra }) }),
   counts: (query: string, signal?: AbortSignal) => call<CountList>(`/office-api/counts?${query}`, { signal }),
   countsOptions: () => call<CountOptions>('/office-api/counts/options'),
   count: (id: string) => call<CountDetail>(`/office-api/counts/${id}`),
