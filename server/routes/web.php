@@ -9,6 +9,7 @@ use App\Domain\Support\DomainException;
 use App\Http\Controllers\AccessRequestController;
 use App\Http\Controllers\BrandAssetController;
 use App\Http\Controllers\ExpenseReceiptController;
+use App\Http\Controllers\Office\AdjustmentsController as OfficeAdjustmentsController;
 use App\Http\Controllers\Office\ExportController as OfficeExportController;
 use App\Http\Controllers\Office\OfficeController;
 use App\Http\Controllers\Office\ProductsController as OfficeProductsController;
@@ -89,7 +90,19 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::post('stock/adjust', [OfficeStockController::class, 'adjust']);
     Route::get('stock/movements', [OfficeStockController::class, 'movements']);
     Route::get('stock/movements/options', [OfficeStockController::class, 'movementsOptions']);
-    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements']);
+    Route::get('stock/units', [OfficeAdjustmentsController::class, 'units']);
+    Route::get('stock/unit-stock', [OfficeAdjustmentsController::class, 'unitStock']);
+    Route::post('stock/photos', [OfficeAdjustmentsController::class, 'photo']);
+    Route::get('adjustments', [OfficeAdjustmentsController::class, 'index']);
+    Route::get('adjustments/options', [OfficeAdjustmentsController::class, 'options']);
+    Route::get('adjustments/form', [OfficeAdjustmentsController::class, 'form']);
+    Route::post('adjustments', [OfficeAdjustmentsController::class, 'save']);
+    Route::get('adjustments/{id}', [OfficeAdjustmentsController::class, 'show'])->whereUuid('id');
+    Route::get('adjustments/{id}/form', [OfficeAdjustmentsController::class, 'form'])->whereUuid('id');
+    Route::post('adjustments/{id}', [OfficeAdjustmentsController::class, 'save'])->whereUuid('id');
+    Route::post('adjustments/{id}/action', [OfficeAdjustmentsController::class, 'action'])->whereUuid('id');
+    Route::get('adjustments/{id}/voucher', [OfficeAdjustmentsController::class, 'voucher'])->whereUuid('id');
+    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments']);
 });
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;

@@ -1,0 +1,19 @@
+## New back office, release 3 part 4a: stock adjustments — branch `office-adjustments`
+- **Server:**
+  - `App\Domain\Office\AdjustmentsScreen`:
+    - `filtered`, `sorted` and `rowOf` (on `StockAdjustmentResource::getEloquentQuery`); `list` (status counts select only `status`, because the screen's query carries `withCount('lines')`); `options` (import and supplier-invoice links).
+    - `show`: `lineRows`, gross-based `over_limit`, photos, actions.
+    - `form` and `save` (`StockAdjustmentService::saveDraft`).
+  - `Office\AdjustmentsController`: index, options, show, form, save, `action` (submit, post, reopen, cancel), `voucher` (`StockAdjustmentResource::voucher`), `photo` (stores to the local disk under `stock-photos/`).
+  - Shared for the documents still to come:
+    - `GET stock/units?q=` (`StockScreen::units`, as `Fields::productUnit`).
+    - `GET stock/unit-stock?unit=&warehouse=&batch=` (`Fields::stockOf`, limited to warehouses the person may see).
+  - `ListExport` gains `adjustments`.
+- **Client:**
+  - `pages/AdjustmentsPage.tsx`, `AdjustmentPage.tsx` (Confirm dialog for each action), `AdjustmentFormPage.tsx` (`LineRow` fetches the unit's stock live; `lineEffect` and `alsoOn` are tested).
+  - `form/UnitPicker.tsx` (reusable).
+  - `download()` lives in `list/ExportMenu.tsx`.
+  - `REBUILT` maps the list, `/create`, `/{uuid}` and `/{uuid}/edit`.
+- **office-check:** the list, the form (pick a product: Available and After show), one adjustment drawn from an answer made up in the browser (nothing saved), and Stock counts as the framed example.
+- **Tests:** OfficeAdjustmentsTest (4) and AdjustmentFormPage.test.
+- **Next:** stock counts, then transfers and requests.

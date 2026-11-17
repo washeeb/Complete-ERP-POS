@@ -18,7 +18,7 @@ const menu: Menu = {
 
 describe('addresses', () => {
   it('opens a current back-office page inside the new one, and back', () => {
-    expect(appPathFor('/admin/stock-adjustments?tableSearch=rice')).toBe('/office/a/stock-adjustments?tableSearch=rice')
+    expect(appPathFor('/admin/stock-counts?tableSearch=rice')).toBe('/office/a/stock-counts?tableSearch=rice')
     expect(appPathFor('/admin/products/abc/edit')).toBe('/office/a/products/abc/edit')
     expect(appPathFor('/admin')).toBe('/office/')
     expect(appPathFor('https://evil.example/admin')).toBe('/office/') // never another site
@@ -45,6 +45,10 @@ describe('addresses', () => {
     expect(appPathFor('/admin/products/create')).toBe('/office/products/new')
     expect(appPathFor('/admin/stock-levels?tableSearch=milo')).toBe('/office/stock?q=milo')
     expect(appPathFor('/admin/stock-movements')).toBe('/office/stock/movements')
+    expect(appPathFor('/admin/stock-adjustments/create')).toBe('/office/adjustments/new')
+    expect(appPathFor('/admin/stock-adjustments/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')).toBe('/office/adjustments/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')
+    expect(routeOf('/office/adjustments/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f/edit')).toEqual({ page: 'adjustment-form', id: '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f' })
+    expect(routeOf('/office/adjustments/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')).toEqual({ page: 'adjustment', id: '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f' })
     expect(routeOf('/office/stock/movements')).toEqual({ page: 'movements' })
     expect(adminEquivalent({ page: 'stock' })).toBe('/admin/stock-levels')
     expect(routeOf('/office/products/new')).toEqual({ page: 'product-form', id: null })

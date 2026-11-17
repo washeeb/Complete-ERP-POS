@@ -18,6 +18,10 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/till-drawer-events\/?$/, app: () => `${APP}/drawer` },
   { admin: /^\/admin\/stock-levels\/?$/, app: (_, q) => `${APP}/stock${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/stock-movements\/?$/, app: () => `${APP}/stock/movements` },
+  { admin: /^\/admin\/stock-adjustments\/?$/, app: () => `${APP}/adjustments` },
+  { admin: /^\/admin\/stock-adjustments\/create\/?$/, app: () => `${APP}/adjustments/new` },
+  { admin: new RegExp(`^/admin/stock-adjustments/(${UUID})$`), app: (m) => `${APP}/adjustments/${m[1]}` },
+  { admin: new RegExp(`^/admin/stock-adjustments/(${UUID})/edit$`), app: (m) => `${APP}/adjustments/${m[1]}/edit` },
   { admin: /^\/admin\/products\/create\/?$/, app: () => `${APP}/products/new` },
   { admin: new RegExp(`^/admin/products/(${UUID})/edit$`), app: (m) => `${APP}/products/${m[1]}/edit` },
   { admin: /^\/admin\/products\/?$/, app: (_, q) => `${APP}/products${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` }, // a search carries over
@@ -49,7 +53,8 @@ export function adminPathFor(appPath: string): string | null {
 
 /** The new back office's own pages. */
 export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { page: 'sale'; id: string } | { page: 'shifts' } | { page: 'shift'; id: string }
-  | { page: 'drawer' } | { page: 'products' } | { page: 'product'; id: string } | { page: 'product-form'; id: string | null } | { page: 'stock' } | { page: 'movements' } | { page: 'classic'; admin: string }
+  | { page: 'drawer' } | { page: 'products' } | { page: 'product'; id: string } | { page: 'product-form'; id: string | null } | { page: 'stock' } | { page: 'movements' }
+  | { page: 'adjustments' } | { page: 'adjustment'; id: string } | { page: 'adjustment-form'; id: string | null } | { page: 'classic'; admin: string }
 
 export function routeOf(path: string, search = ''): Route {
   const admin = adminPathFor(path + search)
@@ -65,6 +70,10 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/products\/?$/.test(path)) return { page: 'products' }
   if (/^\/office\/stock\/?$/.test(path)) return { page: 'stock' }
   if (/^\/office\/stock\/movements\/?$/.test(path)) return { page: 'movements' }
+  if (/^\/office\/adjustments\/?$/.test(path)) return { page: 'adjustments' }
+  if (/^\/office\/adjustments\/new\/?$/.test(path)) return { page: 'adjustment-form', id: null }
+  const adj = path.match(new RegExp(`^/office/adjustments/(${UUID})(/edit)?/?$`))
+  if (adj) return adj[2] ? { page: 'adjustment-form', id: adj[1] } : { page: 'adjustment', id: adj[1] }
   if (/^\/office\/products\/new\/?$/.test(path)) return { page: 'product-form', id: null }
   const edit = path.match(new RegExp(`^/office/products/(${UUID})/edit/?$`))
   if (edit) return { page: 'product-form', id: edit[1] }
@@ -84,6 +93,7 @@ export function adminEquivalent(route: Route): string | null {
     case 'products': case 'product': case 'product-form': return '/admin/products'
     case 'stock': return '/admin/stock-levels'
     case 'movements': return '/admin/stock-movements'
+    case 'adjustments': case 'adjustment': case 'adjustment-form': return '/admin/stock-adjustments'
     default: return null
   }
 }
