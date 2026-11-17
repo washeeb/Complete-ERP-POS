@@ -348,17 +348,76 @@ try {
         await page.unroute(`**/office-api/transfers/${fakeTr}`)
       }
 
-      // Stock requests is still the current page: it opens inside, and the address follows.
+      // Stock requests, rebuilt: the list, a real request, the "Ask for stock" form (a product shows what both sides hold),
+      // and Send on a request between industries drawn from a made-up answer (nothing saved).
       await area.click()
       await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: 'Stock requests', exact: true }).first().click()
-      await page.waitForURL(/\/office\/a\/stock-requests/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Stock requests did not open at /office/a/stock-requests (${page.url()})`))
+      await page.waitForURL(/\/office\/requests$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Stock requests did not open the new screen (${page.url()})`))
+      const rqRow = page.getByRole('table', { name: 'Stock requests' }).getByRole('row').nth(1)
+      await Promise.race([rqRow.waitFor({ timeout: 20000 }), page.getByText('No stock requests match').waitFor({ timeout: 20000 })])
+        .catch(() => problems.push(`${look} ${w}: Stock requests showed neither rows nor "No stock requests match"`))
+      await page.screenshot({ path: out(`requests-${look}-${w}`) })
+      if (await rqRow.isVisible().catch(() => false)) {
+        await rqRow.click()
+        await page.getByRole('region', { name: 'Lines' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: a stock request shows no lines`))
+        await page.screenshot({ path: out(`request-${look}-${w}`), fullPage: true })
+        await page.goBack()
+      }
+      if (look === 'top' && w === 1366) {
+        await page.getByRole('button', { name: 'Ask for stock' }).click()
+        await page.waitForURL(/\/office\/requests\/new$/, { timeout: 15000 }).catch(() => problems.push('request form: did not open'))
+        const forBox = page.getByRole('combobox', { name: /^For/ })
+        if (!(await forBox.inputValue().catch(() => ''))) { await forBox.click(); await page.getByRole('option').first().click() }
+        const askBox = page.getByRole('combobox', { name: /^Ask/ })
+        await askBox.click()
+        await page.getByRole('option').nth(1).click().catch(() => problems.push('request form: nobody to ask'))
+        const needRegion = page.getByRole('region', { name: 'What you need' })
+        const pick = needRegion.getByRole('combobox', { name: /Product and unit/ })
+        await pick.click()
+        await pick.fill('am')
+        await page.getByRole('option').first().click({ timeout: 15000 }).catch(() => problems.push('request form: the product search offered nothing'))
+        await needRegion.getByRole('spinbutton', { name: /Quantity/ }).fill('2')
+        await needRegion.getByText(/^-?\d+(\.\d+)? \S+$/).nth(1).waitFor({ timeout: 10000 }).catch(() => problems.push('request form: "You have" / "They have" not shown'))
+        await page.screenshot({ path: out('request-form') })
+        await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
+
+        const fakeRq = '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e3f'
+        await page.route(`**/office-api/requests/${fakeRq}`, (r) => r.fulfill({ json: {
+          id: fakeRq, number: 'SRQ-000007', status: 'approved', status_label: 'Approved', waiting_for: 'supply', cross: true,
+          facts: { For: 'G1-W1 · Grocery store', 'Asked of': 'P1-W1 · Pharmacy store', 'Asked by': 'Ama · 17 Nov 2026 09:10',
+            'Between industries': 'Yes: both sides approve, moved at cost', 'Approved (asking side)': 'Kwesi · 17 Nov 2026 09:30', 'Approved (supplying side)': 'Kojo · 17 Nov 2026 10:00' },
+          note: 'For the weekend', transfer: null,
+          lines: [{ id: 'l1', sku: 'GR-WATER', name: 'Bottled water', unit: 'PC', qty: '6', sent: null }],
+          actions: { approve: false, approve_text: '', supply: true, reject: true, cancel: false, print: '/print/stock-request/x' },
+        } }))
+        await page.route(`**/office-api/requests/${fakeRq}/products**`, (r) => r.fulfill({ json: [{ id: 'p1', label: 'PH-WATER · Bottled water (pharmacy)' }] }))
+        await page.evaluate((x) => { history.pushState(null, '', `/office/requests/${x}`); window.dispatchEvent(new Event('zx-navigate')) }, fakeRq)
+        await page.getByRole('button', { name: 'Send', exact: true }).click({ timeout: 15000 }).catch(() => problems.push('request: the page did not draw'))
+        const sendDlg = page.getByRole('dialog', { name: 'Send' })
+        await sendDlg.getByLabel('Send: Bottled water').fill('4').catch(() => problems.push('request: Send has no box per line'))
+        const own = sendDlg.getByRole('combobox', { name: /Your product for/ })
+        await own.click().catch(() => problems.push('request: between industries, Send does not ask for your own product'))
+        await own.fill('wa')
+        await page.getByRole('option', { name: /PH-WATER/ }).click({ timeout: 5000 }).catch(() => problems.push('request: your own products are not offered'))
+        if (await sendDlg.getByRole('button', { name: 'Send', exact: true }).isDisabled()) problems.push('request: Send stays off with everything filled in')
+        await page.waitForTimeout(300)
+        await page.screenshot({ path: out('request-send') })
+        await sendDlg.getByRole('button', { name: 'Back' }).click()
+        await page.unroute(`**/office-api/requests/${fakeRq}/products**`)
+        await page.unroute(`**/office-api/requests/${fakeRq}`)
+      }
+
+      // Waybills is still the current page: it opens inside, and the address follows.
+      await area.click()
+      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: 'Waybills', exact: true }).first().click()
+      await page.waitForURL(/\/office\/a\/waybills/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Waybills did not open at /office/a/waybills (${page.url()})`))
       await page.waitForFunction(() => {
         const f = document.querySelector('iframe[title="Page"]')
-        return f?.contentWindow?.location.pathname === '/admin/stock-requests' && !!f.contentDocument?.querySelector('h1')
-      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Stock requests page did not open inside`))
+        return f?.contentWindow?.location.pathname === '/admin/waybills' && !!f.contentDocument?.querySelector('h1')
+      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Waybills page did not open inside`))
       const f = await frameReady()
       await f.locator('.fi-ta-table, .fi-ta-empty-state').first().waitFor({ timeout: 20000 })
-        .catch(() => problems.push(`${look} ${w}: the Stock requests list did not show inside`))
+        .catch(() => problems.push(`${look} ${w}: the Waybills list did not show inside`))
       const chrome = await f.locator('.fi-sidebar, .fi-topbar').evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== 'none').length)
       if (chrome) problems.push(`${look} ${w}: the embedded page still shows its own menu`)
       await page.waitForTimeout(600) // the page's own loader fades out
@@ -367,17 +426,17 @@ try {
       // Recent lists the page just opened; the star adds it to favourites and takes it off again.
       const nav = page.getByRole('navigation', { name: 'Menu' })
       await (look === 'top' ? nav.getByRole('button', { name: 'Recent pages' }) : nav.getByRole('button', { name: 'Recent' })).click()
-      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /request/i }).first().waitFor({ timeout: 5000 })
-        .catch(() => problems.push(`${look} ${w}: Recent does not list Stock requests`))
+      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /Waybills/ }).first().waitFor({ timeout: 5000 })
+        .catch(() => problems.push(`${look} ${w}: Recent does not list Waybills`))
       await page.keyboard.press('Escape')
       const star = look === 'top' ? nav.getByRole('button', { name: 'Favourites' }) : nav.getByRole('button', { name: 'Favourites' })
       await star.click()
       const fav = page.getByRole('dialog', { name: 'Favourite pages' })
       await fav.getByRole('button', { name: /^Add “/ }).click().catch(() => problems.push(`${look} ${w}: Favourites has no "Add this page"`))
-      await fav.getByRole('link', { name: /request/i }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Stock requests did not become a favourite`))
+      await fav.getByRole('link', { name: /Waybills/ }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Waybills did not become a favourite`))
       await page.screenshot({ path: out(`favourites-${look}-${w}`) })
       await fav.getByRole('button', { name: /^Take “/ }).last().click().catch(() => undefined) // leave the dev account as it was
-      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Stock requests could not be taken off favourites`))
+      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Waybills could not be taken off favourites`))
       await page.keyboard.press('Escape')
 
       // Search: Ctrl+K, type, a page of the menu is offered.

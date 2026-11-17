@@ -20,6 +20,9 @@ import { AdjustmentPage } from './pages/AdjustmentPage'
 import { AdjustmentsPage } from './pages/AdjustmentsPage'
 import { CountPage } from './pages/CountPage'
 import { CountsPage } from './pages/CountsPage'
+import { RequestFormPage } from './pages/RequestFormPage'
+import { RequestPage } from './pages/RequestPage'
+import { RequestsPage } from './pages/RequestsPage'
 import { TransferFormPage } from './pages/TransferFormPage'
 import { TransferPage } from './pages/TransferPage'
 import { TransfersPage } from './pages/TransfersPage'
@@ -88,7 +91,7 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
   const { dispatchToast } = useToastController(toaster)
   const [title, setTitle] = useState('')
 
-  const LIST_TITLES: Partial<Record<typeof route.page, string>> = { home: 'Home', todo: 'To-do', sales: 'Till sales', shifts: 'Till shifts', drawer: 'Till drawer', products: 'Products', stock: 'Stock on hand', movements: 'Stock ledger', adjustments: 'Stock adjustments', counts: 'Stock counts', transfers: 'Transfers' }
+  const LIST_TITLES: Partial<Record<typeof route.page, string>> = { home: 'Home', todo: 'To-do', sales: 'Till sales', shifts: 'Till shifts', drawer: 'Till drawer', products: 'Products', stock: 'Stock on hand', movements: 'Stock ledger', adjustments: 'Stock adjustments', counts: 'Stock counts', transfers: 'Transfers', requests: 'Stock requests' }
   const shown = LIST_TITLES[route.page] ?? title
   useEffect(() => { document.title = shown ? `${shown} · ${me.company.name}` : me.company.name }, [shown, me.company.name])
 
@@ -142,6 +145,9 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
                                           : route.page === 'transfers' ? <TransfersPage />
                                             : route.page === 'transfer' ? <TransferPage id={route.id} onTitle={setTitle} />
                                               : route.page === 'transfer-form' ? <TransferFormPage key={route.id ?? 'new'} id={route.id} onTitle={setTitle} />
+                                                : route.page === 'requests' ? <RequestsPage />
+                                                  : route.page === 'request' ? <RequestPage id={route.id} onTitle={setTitle} />
+                                                    : route.page === 'request-form' ? <RequestFormPage onTitle={setTitle} />
                       : <ClassicPage admin={admin} onTitle={setTitle} />}
       </Look>
       <Toaster toasterId={toaster} position="top-end" />
