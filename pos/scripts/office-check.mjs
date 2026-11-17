@@ -298,17 +298,67 @@ try {
         await page.unroute(`**/office-api/counts/${fakeCount}`)
       }
 
-      // Transfers is still the current page: it opens inside, and the address follows.
+      // Transfers, rebuilt: the list, a real transfer, the draft form (a product shows what can be sent), and Receive on a
+      // transfer drawn from a made-up answer (nothing saved).
       await area.click()
       await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: 'Transfers', exact: true }).first().click()
-      await page.waitForURL(/\/office\/a\/stock-transfers/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Transfers did not open at /office/a/stock-transfers (${page.url()})`))
+      await page.waitForURL(/\/office\/transfers$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Transfers did not open the new screen (${page.url()})`))
+      const trRow = page.getByRole('table', { name: 'Transfers' }).getByRole('row').nth(1)
+      await Promise.race([trRow.waitFor({ timeout: 20000 }), page.getByText('No transfers match').waitFor({ timeout: 20000 })])
+        .catch(() => problems.push(`${look} ${w}: Transfers showed neither rows nor "No transfers match"`))
+      await page.screenshot({ path: out(`transfers-${look}-${w}`) })
+      if (await trRow.isVisible().catch(() => false)) {
+        await trRow.click()
+        await page.getByRole('region', { name: 'Lines' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: a transfer shows no lines`))
+        await page.screenshot({ path: out(`transfer-${look}-${w}`), fullPage: true })
+        await page.goBack()
+      }
+      if (look === 'top' && w === 1366) {
+        await page.getByRole('button', { name: 'New transfer' }).click()
+        await page.waitForURL(/\/office\/transfers\/new$/, { timeout: 15000 }).catch(() => problems.push('transfer form: did not open'))
+        const fromBox = page.getByRole('combobox', { name: /^From/ })
+        if (!(await fromBox.inputValue().catch(() => ''))) { await fromBox.click(); await page.getByRole('option').first().click() }
+        const linesRegion = page.getByRole('region', { name: 'Lines' })
+        const pick = linesRegion.getByRole('combobox', { name: /Product and unit/ })
+        await pick.click()
+        await pick.fill('am')
+        await page.getByRole('option').first().click({ timeout: 15000 }).catch(() => problems.push('transfer form: the product search offered nothing'))
+        await linesRegion.getByRole('spinbutton', { name: /Quantity/ }).fill('1')
+        await linesRegion.getByText(/^-?\d+(\.\d+)? \S+$/).first().waitFor({ timeout: 10000 }).catch(() => problems.push('transfer form: no stock to send shown'))
+        await page.screenshot({ path: out('transfer-form') })
+        await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
+
+        const fakeTr = '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e2f'
+        await page.route(`**/office-api/transfers/${fakeTr}`, (r) => r.fulfill({ json: {
+          id: fakeTr, number: 'TRF-HQ-000012', status: 'in_transit', status_label: 'In transit',
+          facts: { From: 'HQ-W1 · Main store', To: 'A-W1 · Branch A store', 'Created by': 'Ama Owner', 'Dispatched by': 'Kojo · 17 Nov 2026 10:05' },
+          note: 'Weekly top-up', difference: null, bins: [],
+          lines: [{ id: 'l1', sku: 'MILO-400', name: 'MILO 400G', unit: 'PC', sent: '10', received: null, serials: [] },
+            { id: 'l2', sku: 'SUGAR-1KG', name: 'SUGAR 1KG', unit: 'PC', sent: '24', received: null, serials: [] }],
+          actions: { edit: false, dispatch: false, receive: true, cancel: false, print: '/print/transfer/x', waybill: '/admin/waybills/create', waybill_label: 'Make a waybill' },
+        } }))
+        await page.evaluate((x) => { history.pushState(null, '', `/office/transfers/${x}`); window.dispatchEvent(new Event('zx-navigate')) }, fakeTr)
+        await page.getByRole('button', { name: 'Receive' }).click({ timeout: 15000 }).catch(() => problems.push('transfer: the page did not draw'))
+        const rec = page.getByRole('dialog', { name: 'Receive' })
+        await rec.getByLabel('Arrived: MILO 400G').fill('9').catch(() => problems.push('transfer: Receive has no box per line'))
+        await rec.getByText('Different from what was sent').waitFor({ timeout: 5000 }).catch(() => problems.push('transfer: a difference is not pointed out'))
+        await page.waitForTimeout(300)
+        await page.screenshot({ path: out('transfer-receive') })
+        await rec.getByRole('button', { name: 'Back' }).click()
+        await page.unroute(`**/office-api/transfers/${fakeTr}`)
+      }
+
+      // Stock requests is still the current page: it opens inside, and the address follows.
+      await area.click()
+      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: 'Stock requests', exact: true }).first().click()
+      await page.waitForURL(/\/office\/a\/stock-requests/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Stock requests did not open at /office/a/stock-requests (${page.url()})`))
       await page.waitForFunction(() => {
         const f = document.querySelector('iframe[title="Page"]')
-        return f?.contentWindow?.location.pathname === '/admin/stock-transfers' && !!f.contentDocument?.querySelector('h1')
-      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Transfers page did not open inside`))
+        return f?.contentWindow?.location.pathname === '/admin/stock-requests' && !!f.contentDocument?.querySelector('h1')
+      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Stock requests page did not open inside`))
       const f = await frameReady()
       await f.locator('.fi-ta-table, .fi-ta-empty-state').first().waitFor({ timeout: 20000 })
-        .catch(() => problems.push(`${look} ${w}: the Transfers list did not show inside`))
+        .catch(() => problems.push(`${look} ${w}: the Stock requests list did not show inside`))
       const chrome = await f.locator('.fi-sidebar, .fi-topbar').evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== 'none').length)
       if (chrome) problems.push(`${look} ${w}: the embedded page still shows its own menu`)
       await page.waitForTimeout(600) // the page's own loader fades out
@@ -317,17 +367,17 @@ try {
       // Recent lists the page just opened; the star adds it to favourites and takes it off again.
       const nav = page.getByRole('navigation', { name: 'Menu' })
       await (look === 'top' ? nav.getByRole('button', { name: 'Recent pages' }) : nav.getByRole('button', { name: 'Recent' })).click()
-      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /Transfers/ }).first().waitFor({ timeout: 5000 })
-        .catch(() => problems.push(`${look} ${w}: Recent does not list Transfers`))
+      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /request/i }).first().waitFor({ timeout: 5000 })
+        .catch(() => problems.push(`${look} ${w}: Recent does not list Stock requests`))
       await page.keyboard.press('Escape')
       const star = look === 'top' ? nav.getByRole('button', { name: 'Favourites' }) : nav.getByRole('button', { name: 'Favourites' })
       await star.click()
       const fav = page.getByRole('dialog', { name: 'Favourite pages' })
       await fav.getByRole('button', { name: /^Add “/ }).click().catch(() => problems.push(`${look} ${w}: Favourites has no "Add this page"`))
-      await fav.getByRole('link', { name: /Transfers/ }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Transfers did not become a favourite`))
+      await fav.getByRole('link', { name: /request/i }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Stock requests did not become a favourite`))
       await page.screenshot({ path: out(`favourites-${look}-${w}`) })
       await fav.getByRole('button', { name: /^Take “/ }).last().click().catch(() => undefined) // leave the dev account as it was
-      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Transfers could not be taken off favourites`))
+      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Stock requests could not be taken off favourites`))
       await page.keyboard.press('Escape')
 
       // Search: Ctrl+K, type, a page of the menu is offered.

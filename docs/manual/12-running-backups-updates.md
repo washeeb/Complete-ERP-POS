@@ -115,7 +115,13 @@ What's there:
 
 **Stock counts (rebuilt).** **Stock → Stock counts** lists the counts with their status (being counted, waiting for approval, posted, cancelled) and the value of the differences once posted. **Start a count** chooses the warehouse (or one bin) and whether it is blind. On the count: **Enter counts**, **Count sheet** (PDF or CSV), **Import counted quantities (CSV)**, **Submit for approval**, **Approve and post** (by someone else) and **Cancel count**. How to run a count is in chapter 14 (section 14.4).
 
-**Export on the rebuilt lists.** Till sales, Till shifts, Till drawer, Products, Stock on hand, the Stock ledger, Stock adjustments and Stock counts each have **Export**, as every list of the classic back office does.
+**Transfers (rebuilt).** **Stock → Transfers** lists stock moved between warehouses: drafts, **in transit**, received and cancelled. Cards count those in transit and those **yours to receive** (in transit to a warehouse of yours). Filter by status, from and to warehouse, or **Differences only**.
+- **New transfer:** the warehouse it leaves from (one you may send from), the one it goes to, a note, and the lines. Each line shows what the sending warehouse has to send, and turns red if you ask for more. Serial-numbered items take one serial number per unit. Nothing moves while it is a draft.
+- **Dispatch** takes the goods out of the sending warehouse; they are then in transit.
+- **Receive** (at the receiving warehouse) starts filled in with what was sent. Change any line to what actually arrived, choose the bin where the warehouse uses bins, and say in the note what was damaged. **Why:** a line that differs from what was sent goes to **Sales → Review** for someone to look into, instead of disappearing.
+- **Cancel** (a draft, with a reason), **Print**, and **Make a waybill** (or open it once made) are on the transfer.
+
+**Export on the rebuilt lists.** Till sales, Till shifts, Till drawer, Products, Stock on hand, the Stock ledger, Stock adjustments, Stock counts and Transfers each have **Export**, as every list of the classic back office does.
 - **Excel**, **CSV** or **PDF** of what the list shows: its search, filters and order, all pages, not only the one on screen.
 - A PDF holds about 800 rows; for a longer list **Export to PDF** is greyed out and says so. Narrow the list (for example to a date range), or use Excel or CSV, which take everything. **Why:** a PDF is laid out in the server's memory, and a very long one would stop it.
 - Every export is recorded in the audit log with your name and what was exported.
