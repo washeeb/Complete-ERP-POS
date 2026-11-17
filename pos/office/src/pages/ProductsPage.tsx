@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react'
 import { api, type Pick, type ProductRow, type ProductsOptions } from '../api'
 import { money } from '../home/format'
 import { DataTable, Pager, type Column } from '../list/DataTable'
+import { ExportMenu } from '../list/ExportMenu'
 import { Cards, PageHead, usePageStyles } from '../list/ListParts'
 import { serialize, str, useQueryParams, type Params } from '../list/query'
 import { useList } from '../list/useList'
@@ -100,6 +101,7 @@ export function ProductsPage() {
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="SKU, name, shelf or barcode" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search products" />
         <Filters options={options} params={params} stock={data?.stock_shown ?? false} onApply={set} />
+        <ExportMenu list="products" query={serialize(params)} total={data?.total ?? null} />
         <span className={s.grow} />
         {options?.links.create && <Button appearance="primary" icon={<AddRegular />} onClick={() => link(options.links.create)}>New product</Button>}
         {options && (options.links.import || options.links.import_prices || options.batches_off > 0) && (

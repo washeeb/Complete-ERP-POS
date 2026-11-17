@@ -42,8 +42,11 @@ final class ShiftsScreen
         return $this->user->tenant?->timezone ?: 'UTC';
     }
 
-    /** @param  array<string, mixed>  $p  status, branch, teller, period, from, to, os_min, os_max, vault_waiting, sort, dir, page, per */
-    public function shifts(array $p): array
+    /** The corrected over/short of `shifts`: the latest correction's, or the shift's own. */
+    private const OS = 'COALESCE((SELECT c.over_short_after_minor FROM shift_count_corrections c WHERE c.shift_id = shifts.id ORDER BY c.corrected_at DESC LIMIT 1), shifts.over_short_minor)';
+
+    /** The shifts the filters pick (also for the export). */
+    public function shiftsFiltered(array $p): Builder
     {
         $q = $this->scope(Shift::query());
         if (in_array($p['status'] ?? null, ['open', 'closed'], true)) {
@@ -57,7 +60,7 @@ final class ShiftsScreen
         }
         $this->dates($q, 'opened_at', $p);
         $currency = $this->user->tenant?->currency_code ?? 'GHS';
-        $os = 'COALESCE((SELECT c.over_short_after_minor FROM shift_count_corrections c WHERE c.shift_id = shifts.id ORDER BY c.corrected_at DESC LIMIT 1), shifts.over_short_minor)';
+        $os = self::OS;
         if (is_numeric($p['os_min'] ?? null)) {
             $q->whereRaw("{$os} >= ?", [Money::toMinor((string) $p['os_min'], $currency)]);
         }
@@ -68,21 +71,40 @@ final class ShiftsScreen
             $q->whereNotNull('vault_id')->where('status', 'closed')->whereNull('checked_at');
         }
 
+        return $q;
+    }
+
+    /** The filtered shifts in the list's order, with what a row shows loaded. */
+    public function shiftsSorted(array $p): Builder
+    {
+        $sort = ($p['sort'] ?? '') === 'over_short' ? 'over_short' : 'opened_at';
+        $dir = ($p['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+
+        return $this->shiftsFiltered($p)->with('branch', 'till', 'vault', 'latestCorrection', 'drawerEvents')->withCount('sales')
+            ->when($sort === 'over_short', fn ($w) => $w->orderByRaw(self::OS." {$dir} NULLS LAST"), fn ($w) => $w->orderBy('opened_at', $dir))
+            ->orderBy('id', $dir);
+    }
+
+    /** @param  array<string, mixed>  $p  status, branch, teller, period, from, to, os_min, os_max, vault_waiting, sort, dir, page, per */
+    public function shifts(array $p): array
+    {
+        $q = $this->shiftsFiltered($p);
+        $os = self::OS;
+        $currency = $this->user->tenant?->currency_code ?? 'GHS';
         $totals = (clone $q)->selectRaw("COUNT(*) AS n, SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) AS open, COALESCE(SUM({$os}), 0) AS os")->first();
         $sort = ($p['sort'] ?? '') === 'over_short' ? 'over_short' : 'opened_at';
         $dir = ($p['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
         $per = in_array((int) ($p['per'] ?? 0), self::PER_PAGE, true) ? (int) $p['per'] : 25;
         $page = max(1, (int) ($p['page'] ?? 1));
-        $rows = (clone $q)->with('branch', 'till', 'vault', 'latestCorrection', 'drawerEvents')->withCount('sales')
-            ->when($sort === 'over_short', fn ($w) => $w->orderByRaw("{$os} {$dir} NULLS LAST"), fn ($w) => $w->orderBy('opened_at', $dir))
-            ->orderBy('id', $dir)->forPage($page, $per)->get();
+        $rows = $this->shiftsSorted($p)->forPage($page, $per)->get();
 
         return ['currency' => $currency, 'exponent' => Money::exponent($currency), 'total' => (int) $totals->n, 'open' => (int) $totals->open,
             'over_short' => (int) $totals->os, 'page' => $page, 'per' => $per, 'sort' => $sort, 'dir' => $dir,
             'rows' => $rows->map(fn (Shift $s) => $this->row($s))->all()];
     }
 
-    private function row(Shift $s): array
+    /** One row of the list. */
+    public function row(Shift $s): array
     {
         $t = app(ShiftService::class)->takings($s);
 
@@ -126,8 +148,8 @@ final class ShiftsScreen
         ];
     }
 
-    /** @param  array<string, mixed>  $p  kind, branch, person, period, from, to, page, per */
-    public function drawer(array $p): array
+    /** The drawer events the filters pick (also for the export). */
+    public function drawerFiltered(array $p): Builder
     {
         $q = $this->scope(TillDrawerEvent::query());
         if (isset(TillDrawerEvent::KINDS[$p['kind'] ?? ''])) {
@@ -140,23 +162,44 @@ final class ShiftsScreen
             $q->where('user_id', (string) $p['person']);
         }
         $this->dates($q, 'occurred_at', $p);
+
+        return $q;
+    }
+
+    public function drawerSorted(array $p): Builder
+    {
+        $dir = ($p['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+
+        return $this->drawerFiltered($p)->with('account', 'shift.till', 'shift.branch')->orderBy('occurred_at', $dir)->orderBy('id', $dir);
+    }
+
+    /** One row of the drawer list. */
+    public function drawerRow(TillDrawerEvent $e): array
+    {
+        return [
+            'id' => $e->id, 'occurred_at' => $e->occurred_at?->toIso8601String(), 'where' => "{$e->shift?->branch?->code} · {$e->shift?->till?->code}",
+            'kind' => $e->kind, 'kind_label' => TillDrawerEvent::KINDS[$e->kind] ?? $e->kind, 'amount' => $e->kind === 'no_sale' ? null : (int) $e->amount_minor,
+            'spent_on' => $e->account?->name, 'reason' => $e->reason, 'payee' => $e->payee, 'by' => $e->user_name, 'approved_by' => $e->approved_by_name,
+            'receipt' => $e->expense_claim_id && $e->receipt_path ? route('expense.receipt', $e->expense_claim_id) : null, 'offline' => (bool) $e->offline,
+            'shift_id' => $e->shift_id,
+        ];
+    }
+
+    /** @param  array<string, mixed>  $p  kind, branch, person, period, from, to, page, per */
+    public function drawer(array $p): array
+    {
+        $q = $this->drawerFiltered($p);
         $sums = (clone $q)->groupBy('kind')->selectRaw('kind, COUNT(*) AS n, COALESCE(SUM(amount_minor), 0) AS s')->get()->keyBy('kind');
         $per = in_array((int) ($p['per'] ?? 0), self::PER_PAGE, true) ? (int) $p['per'] : 25;
         $page = max(1, (int) ($p['page'] ?? 1));
         $dir = ($p['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
-        $rows = (clone $q)->with('account', 'shift.till', 'shift.branch')->orderBy('occurred_at', $dir)->orderBy('id', $dir)->forPage($page, $per)->get();
+        $rows = $this->drawerSorted($p)->forPage($page, $per)->get();
         $currency = $this->user->tenant?->currency_code ?? 'GHS';
 
         return ['currency' => $currency, 'exponent' => Money::exponent($currency), 'total' => (int) $sums->sum('n'), 'page' => $page, 'per' => $per, 'dir' => $dir,
             'kinds' => collect(TillDrawerEvent::KINDS)->map(fn ($label, $k) => ['id' => $k, 'label' => $label, 'count' => (int) ($sums[$k]->n ?? 0),
                 'amount' => (int) ($sums[$k]->s ?? 0)])->values()->all(),
-            'rows' => $rows->map(fn (TillDrawerEvent $e) => [
-                'id' => $e->id, 'occurred_at' => $e->occurred_at?->toIso8601String(), 'where' => "{$e->shift?->branch?->code} · {$e->shift?->till?->code}",
-                'kind' => $e->kind, 'kind_label' => TillDrawerEvent::KINDS[$e->kind] ?? $e->kind, 'amount' => $e->kind === 'no_sale' ? null : (int) $e->amount_minor,
-                'spent_on' => $e->account?->name, 'reason' => $e->reason, 'payee' => $e->payee, 'by' => $e->user_name, 'approved_by' => $e->approved_by_name,
-                'receipt' => $e->expense_claim_id && $e->receipt_path ? route('expense.receipt', $e->expense_claim_id) : null, 'offline' => (bool) $e->offline,
-                'shift_id' => $e->shift_id,
-            ])->all()];
+            'rows' => $rows->map(fn (TillDrawerEvent $e) => $this->drawerRow($e))->all()];
     }
 
     /** Branches, tellers (who opened shifts) and people at the drawer, for the filters. */

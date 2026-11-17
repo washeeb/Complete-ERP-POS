@@ -195,6 +195,16 @@ try {
         const first = page.getByRole('table', { name: heading }).getByRole('row').nth(1)
         await Promise.race([first.waitFor({ timeout: 20000 }), page.getByText(empty).waitFor({ timeout: 20000 })]).catch(() => problems.push(`${look} ${w}: ${link} showed neither rows nor "${empty}"`))
         await page.screenshot({ path: out(`${link.replace(/ /g, '-').toLowerCase()}-${look}-${w}`) })
+        if (link === 'Stock ledger' && look === 'top' && w === 1366) { // Export → CSV: a file comes down, with the list's columns
+          await page.getByRole('button', { name: 'Export' }).click()
+          const [file] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }), page.getByRole('menuitem', { name: 'Export to CSV' }).click()])
+            .catch(() => [null])
+          if (!file) problems.push('export: Export to CSV gave no file')
+          else {
+            const text = await file.path().then((p) => readFileSync(p, 'utf8')).catch(() => '')
+            if (!/\.csv$/.test(file.suggestedFilename()) || !text.includes('Base qty')) problems.push(`export: the CSV is not the ledger (${file.suggestedFilename()})`)
+          }
+        }
         if (link === 'Stock on hand' && look === 'top' && w === 1366) {
           await page.getByRole('button', { name: 'Opening stock / adjustment' }).click().catch(() => problems.push('stock: no "Opening stock / adjustment" for the dev owner'))
           const dlg = page.getByRole('dialog', { name: 'Opening stock / adjustment' })

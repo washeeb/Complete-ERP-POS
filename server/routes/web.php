@@ -9,6 +9,7 @@ use App\Domain\Support\DomainException;
 use App\Http\Controllers\AccessRequestController;
 use App\Http\Controllers\BrandAssetController;
 use App\Http\Controllers\ExpenseReceiptController;
+use App\Http\Controllers\Office\ExportController as OfficeExportController;
 use App\Http\Controllers\Office\OfficeController;
 use App\Http\Controllers\Office\ProductsController as OfficeProductsController;
 use App\Http\Controllers\Office\SalesController as OfficeSalesController;
@@ -88,6 +89,7 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::post('stock/adjust', [OfficeStockController::class, 'adjust']);
     Route::get('stock/movements', [OfficeStockController::class, 'movements']);
     Route::get('stock/movements/options', [OfficeStockController::class, 'movementsOptions']);
+    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements']);
 });
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;

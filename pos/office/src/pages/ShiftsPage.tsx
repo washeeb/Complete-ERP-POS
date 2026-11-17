@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { api, type ShiftRow, type ShiftsOptions } from '../api'
 import { money } from '../home/format'
 import { DataTable, Pager, type Column } from '../list/DataTable'
+import { ExportMenu } from '../list/ExportMenu'
 import { Cards, overShortColour, PageHead, PeriodButtons, usePageStyles, when } from '../list/ListParts'
 import { serialize, str, useQueryParams, type Params } from '../list/query'
 import { useList } from '../list/useList'
@@ -63,6 +64,7 @@ export function ShiftsPage() {
         <PeriodButtons value={str(params, 'period')} onChange={(v) => set({ period: v })} />
         <Button size="small" appearance={str(params, 'status') === 'open' ? 'primary' : 'secondary'} onClick={() => set({ status: str(params, 'status') === 'open' ? '' : 'open' })}>Open now</Button>
         <Filters options={options} params={params} onApply={set} />
+        <ExportMenu list="shifts" query={serialize(params)} total={data?.total ?? null} />
       </div>
       {chips.length > 0 && (
         <TagGroup style={{ marginBottom: 10 }} aria-label="Filters in use" onDismiss={(_, d) => { const c = chips.find((x) => x.key === d.value); if (c) set(c.clear) }}>

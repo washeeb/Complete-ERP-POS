@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { api, type DrawerRow, type ShiftsOptions } from '../api'
 import { money } from '../home/format'
 import { DataTable, Pager, type Column } from '../list/DataTable'
+import { ExportMenu } from '../list/ExportMenu'
 import { Cards, PageHead, PeriodButtons, usePageStyles, when } from '../list/ListParts'
 import { serialize, str, useQueryParams } from '../list/query'
 import { useList } from '../list/useList'
@@ -58,6 +59,7 @@ export function DrawerPage() {
             <Option value="">Everyone</Option>{(options?.people ?? []).map((p) => <Option key={p.id} value={p.id}>{p.label}</Option>)}
           </Dropdown>
         </Field>
+        <ExportMenu list="drawer" query={serialize(params)} total={data?.total ?? null} />
         <Field label="Branch" size="small">
           <Dropdown size="small" value={options?.branches.find((b) => b.id === str(params, 'branch'))?.label ?? 'All branches'} selectedOptions={[str(params, 'branch')]}
             onOptionSelect={(_, d) => set({ branch: d.optionValue ?? '' })} style={{ minWidth: 170 }}>

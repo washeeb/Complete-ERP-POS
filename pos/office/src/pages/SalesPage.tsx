@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { api, type SaleRow, type SalesList, type SalesOptions } from '../api'
 import { money } from '../home/format'
 import { DataTable, Pager, type Column } from '../list/DataTable'
+import { ExportMenu } from '../list/ExportMenu'
 import { list, serialize, str, useQueryParams } from '../list/query'
 import { navigate } from '../nav'
 import { classicPathFor } from '../paths'
@@ -100,6 +101,7 @@ export function SalesPage() {
           {PERIODS.map(([k, l]) => <ToggleButton key={k || 'all'} size="small" checked={str(params, 'period') === k} onClick={() => set({ period: k })}>{l}</ToggleButton>)}
         </div>
         <Filters options={options} params={params} onApply={set} />
+        <ExportMenu list="sales" query={serialize(params)} total={data?.total ?? null} />
       </div>
 
       {chips.length > 0 && (

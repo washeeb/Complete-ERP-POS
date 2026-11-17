@@ -1,0 +1,16 @@
+## New back office: Export on the rebuilt lists — branch `office-export`
+- **Server:**
+  - Each screen class now exposes its list as a filtered query, a sorted query and one row:
+    - SalesScreen: `filtered`, `order`, `sorted`, `rowOf`.
+    - ShiftsScreen: `shiftsFiltered`, `shiftsSorted`, `row`, `drawerFiltered`, `drawerSorted`, `drawerRow`.
+    - ProductsScreen: `filtered`, `sorted`, `rowOf`, `stockShown`.
+    - StockScreen: `levelsFiltered`, `levelsSorted`, `levelRow`, `movementsFiltered`, `movementsSorted`, `movementRow`.
+  - The lists use these too, so screen and file cannot differ.
+  - `App\Domain\Office\ListExport::sheet($list, $params)` gives the Exporter sheet (headings as on screen, money with currency, local times) and the filters as text.
+  - `GET /office-api/export/{list}?format=xlsx|csv|pdf&…` (`Office\ExportController`) checks the screen's own view permission. A PDF over `Exporter::PDF_ROW_LIMIT` is refused with a 422 and an explanation.
+- **Client:**
+  - `list/ExportMenu.tsx`: fetches the file (so a refusal shows as a dialog, not a broken download) and saves it under the server's file name. PDF is greyed out over 800 rows.
+  - It is on all six rebuilt lists.
+- **office-check:** Stock ledger → Export → CSV must give a file with the ledger's columns.
+- **Tests:** OfficeExportTest (3), ExportMenu.test.
+- **From now on**, every rebuilt list adds its case to `ListExport` and puts `<ExportMenu>` in its toolbar.

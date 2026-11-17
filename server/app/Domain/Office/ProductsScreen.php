@@ -117,22 +117,44 @@ final class ProductsScreen
         $per = in_array((int) ($p['per'] ?? 0), self::PER_PAGE, true) ? (int) $p['per'] : 25;
         $page = max(1, (int) ($p['page'] ?? 1));
         $default = PriceList::where('is_default', true)->first();
-        $rows = (clone $q)->select('products.*')->selectRaw("{$onHand} AS on_hand_sum", $bindings)
-            ->with(['category:id,name', 'industry:id,name', 'baseUom:id,code', 'units:id,product_id,is_base', 'prices'])
-            ->orderBy($sort, $dir)->orderBy('id', $dir)->forPage($page, $per)->get();
+        $rows = $this->sorted($p)->forPage($page, $per)->get();
 
         return [
             'currency' => $default?->currency_code ?? $this->currency(), 'exponent' => Money::exponent($default?->currency_code ?? $this->currency()),
             'price_list' => $default?->name, 'stock_shown' => $stockShown,
             'total' => (int) $totals->n, 'active' => (int) $totals->active, 'out' => $out,
             'page' => $page, 'per' => $per, 'sort' => $sort, 'dir' => $dir,
-            'rows' => $rows->map(fn (Product $r) => [
-                'id' => $r->id, 'sku' => $r->sku, 'name' => $r->name, 'category' => $r->category?->name, 'location' => $r->location,
-                'schedule' => $r->drug_schedule, 'industry' => $r->industry?->name, 'active' => (bool) $r->is_active, 'batches' => (bool) $r->track_batches,
-                'price' => $this->basePrice($r, $default),
-                'on_hand' => $stockShown && $r->track_stock ? self::qty((string) $r->on_hand_sum) : null,
-                'unit' => $r->baseUom?->code, 'tracked' => (bool) $r->track_stock,
-            ])->all(),
+            'rows' => $rows->map(fn (Product $r) => $this->rowOf($r, $default, $stockShown))->all(),
+        ];
+    }
+
+    /** The filtered products in the list's order, with their stock on hand where the person may see it. */
+    public function sorted(array $p): Builder
+    {
+        [$onHand, $bindings] = $this->onHandSql();
+        $sort = in_array($p['sort'] ?? null, self::SORTS, true) ? $p['sort'] : 'name';
+        $dir = ($p['dir'] ?? 'asc') === 'desc' ? 'desc' : 'asc';
+
+        return $this->filtered($p)->select('products.*')->selectRaw("{$onHand} AS on_hand_sum", $bindings)
+            ->with(['category:id,name', 'industry:id,name', 'baseUom:id,code', 'units:id,product_id,is_base', 'prices'])
+            ->orderBy($sort, $dir)->orderBy('id', $dir);
+    }
+
+    /** Whether this person sees stock figures at all. */
+    public function stockShown(): bool
+    {
+        return $this->onHandSql()[0] !== 'NULL';
+    }
+
+    /** One row of the list. */
+    public function rowOf(Product $r, ?PriceList $default, bool $stockShown): array
+    {
+        return [
+            'id' => $r->id, 'sku' => $r->sku, 'name' => $r->name, 'category' => $r->category?->name, 'location' => $r->location,
+            'schedule' => $r->drug_schedule, 'industry' => $r->industry?->name, 'active' => (bool) $r->is_active, 'batches' => (bool) $r->track_batches,
+            'price' => $this->basePrice($r, $default),
+            'on_hand' => $stockShown && $r->track_stock ? self::qty((string) $r->on_hand_sum) : null,
+            'unit' => $r->baseUom?->code, 'tracked' => (bool) $r->track_stock,
         ];
     }
 
