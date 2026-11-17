@@ -123,7 +123,22 @@ export type MovementRow = {
 export type MovementsList = { total: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; product: string | null; rows: MovementRow[] }
 export type MovementsOptions = { types: Option[]; warehouses: Option[]; categories: Option[]; brands: Option[]; people: Option[]; per: number[] }
 /** A product unit for a document line ("SKU · Name — CTN × 24"), and what a warehouse holds of it. */
-export type UnitOption = { id: string; label: string; batches: boolean; serialised: boolean }
+export type UnitOption = { id: string; product_id: string; label: string; batches: boolean; serialised: boolean }
+export type CountRow = {
+  id: string; number: string; warehouse: string | null; bin: string | null; status: string; status_label: string; blind: boolean
+  started_at: string | null; started_by: string | null; lines: number; difference: number | null
+}
+export type CountList = { currency: string; exponent: number; total: number; counting: number; waiting: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: CountRow[] }
+export type CountOptions = {
+  statuses: Option[]; warehouses: Option[]; per: number[]; can_start: boolean; start_warehouses: Option[]; bins: Record<string, Option[]>
+}
+export type CountDetail = {
+  currency: string; exponent: number; id: string; number: string; status: string; status_label: string; blind: boolean
+  facts: Record<string, string>; note: string | null; shows_expected: boolean; counted: number; bins: Option[]
+  lines: { sku: string | null; product: string | null; unit: string | null; bin: string | null; counted: string | null; by: string | null; expected: string | null; difference: string | null }[]
+  actions: { count: boolean; submit: boolean; post: boolean; cancel: boolean; import: string | null }
+  posted_lines?: number | null
+}
 export type UnitStock = { qty: number; unit: string; factor: number; cost: number | null; batch: number | null }
 export type AdjRow = {
   id: string; number: string; created_at: string | null; warehouse: string | null; reason: string; disposal: boolean; reference: string | null
@@ -274,6 +289,18 @@ export const api = {
   adjustmentAction: (id: string, action: string, reason?: string) =>
     call<AdjDetail>(`/office-api/adjustments/${id}/action`, { method: 'POST', body: JSON.stringify({ action, reason: reason ?? null }) }),
   adjustmentVoucherUrl: (id: string, format: 'pdf' | 'csv') => `/office-api/adjustments/${id}/voucher?format=${format}`,
+  counts: (query: string, signal?: AbortSignal) => call<CountList>(`/office-api/counts?${query}`, { signal }),
+  countsOptions: () => call<CountOptions>('/office-api/counts/options'),
+  count: (id: string) => call<CountDetail>(`/office-api/counts/${id}`),
+  startCount: (body: { warehouse_id: string; bin_id: string | null; blind: boolean; note: string | null }) =>
+    call<{ id: string }>('/office-api/counts', { method: 'POST', body: JSON.stringify(body) }),
+  /** Counted quantities; a product counted again (same bin) replaces its earlier count. */
+  recordCount: (id: string, items: { product_uom_id: string; qty: string }[], bin: string | null) =>
+    call<CountDetail>(`/office-api/counts/${id}/record`, { method: 'POST', body: JSON.stringify({ items, bin_id: bin }) }),
+  /** submit · post · cancel (with a reason). */
+  countAction: (id: string, action: string, reason?: string) =>
+    call<CountDetail>(`/office-api/counts/${id}/action`, { method: 'POST', body: JSON.stringify({ action, reason: reason ?? null }) }),
+  countSheetUrl: (id: string, format: 'pdf' | 'csv') => `/office-api/counts/${id}/sheet?format=${format}`,
   batchesAll: () => call<{ done: number; untouched: number; skipped: string[] }>('/office-api/products/batches-all', { method: 'POST', body: '{}' }),
   todo: () => call<Todo>('/office-api/todo'),
   todoCount: () => call<{ count: number }>('/office-api/todo-count'),

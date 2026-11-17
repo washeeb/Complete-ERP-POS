@@ -1,0 +1,14 @@
+## New back office, release 3 part 4b: stock counts — branch `office-counts`
+- **Server:**
+  - `App\Domain\Office\CountsScreen`:
+    - `filtered`, `sorted` and `rowOf` on `StockCountResource::getEloquentQuery` plus `withCount('lines')`; `list` (status counts with `select('status')`).
+    - `options`: the warehouses one may count in, with their bins when they use bins.
+    - `show`: lines ordered by id (UUIDv7, so in counting order); expected and difference only when `StockCountResource::showsExpected`; bins to choose from when the warehouse uses bins and the count is not for one bin; actions.
+  - `Office\CountsController`: index, options, show, `start`, `record` (items; a refused line says its number), `action` (submit, post, cancel; post returns `posted_lines`), `sheet` (the stock_count importer's export rows, as ViewStockCount).
+  - `ListExport` gains `counts`. `StockScreen::units` now also returns `product_id`.
+- **Client:**
+  - `pages/CountsPage.tsx` (Start dialog) and `CountPage.tsx` (EnterCounts dialog with `UnitPicker` rows; `repeated` and `diffColour` are tested; Confirm for submit, post and cancel).
+  - `REBUILT` maps `/admin/stock-counts` and `/{uuid}`.
+- **office-check:** the list, the Start dialog, a real count's lines, and a count drawn from a made-up answer with Enter counts open (nothing saved). The framed example is now Transfers.
+- **Tests:** OfficeCountsTest (3) and CountPage.test.
+- **Next:** transfers, then stock requests.

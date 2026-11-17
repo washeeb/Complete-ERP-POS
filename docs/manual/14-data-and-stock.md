@@ -289,8 +289,8 @@ There are two ways to bring the system in line with what is on the shelves.
 2. Open the count and use **Count sheet**:
    - **PDF** to count on paper (SKU, barcode, product, unit, bin, and an empty *Counted* column; signature lines for the counter and the checker);
    - **CSV** to fill in Excel or on a tablet.
-3. Enter the counts: scan with a handheld (Chapter 9), type them on the count page, or fill the CSV's `counted_qty` column and use **Import counted quantities (CSV)**. Rows left empty are **not counted** (not set to zero).
-4. **Submit**, then a manager **approves and posts**. The differences become stock movements, with their value.
+3. Enter the counts: scan with a handheld (Chapter 9), press **Enter counts** on the count page (several products at once, each in whichever unit is easiest: cartons, packs or pieces), or fill the CSV's `counted_qty` column and use **Import counted quantities (CSV)**. Rows left empty are **not counted** (not set to zero). A product counted again **replaces** its earlier count. **Why:** a recount corrects a mistake. So if one product sits in two places, add them up and enter the total once (the form warns when a product is on two lines).
+4. **Submit**, then a manager **approves and posts**: someone other than the person who submitted it. The differences become stock movements, with their value.
 
 ### B. Update stock from a stock sheet (quick corrections)
 

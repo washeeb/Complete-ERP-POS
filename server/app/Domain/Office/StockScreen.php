@@ -152,7 +152,7 @@ final class StockScreen
                 ->orWhere('sku', 'ilike', "%{$q}%")))->orWhereHas('barcodes', fn ($b) => $b->where('code', $q)))
             ->when($buying, fn ($w) => $w->where('is_purchasable', true))
             ->limit(30)->get()->sortBy(fn ($u) => [$u->product->name, -(float) $u->factor])->values()
-            ->map(fn (ProductUom $u) => ['id' => $u->id, 'label' => Fields::unitLabel($u, $buying), 'batches' => (bool) $u->product->track_batches,
+            ->map(fn (ProductUom $u) => ['id' => $u->id, 'product_id' => $u->product_id, 'label' => Fields::unitLabel($u, $buying), 'batches' => (bool) $u->product->track_batches,
                 'serialised' => (bool) $u->product->track_serials])->all();
     }
 

@@ -1,0 +1,5 @@
+## Stock counts in the new back office
+- **StockCountService decides everything:** start, record, submit, post and cancel. A blind count's expected figures are hidden by the current screen's own rule (`StockCountResource::showsExpected`), applied on the server, so a counter never receives them.
+- **Found: a product counted again replaces its earlier count** (StockCountService::record: "replaces an earlier entry for the same product and bin"). That is deliberate, because a recount corrects. My first test assumed counts add up; the test now proves the replacement instead. Because the classic form says nothing about it, two lines naming the same product in one entry would silently keep only the later one. The new Enter counts dialog therefore names those lines and does not save until they are combined, and the guide says to add them up.
+- **Found: the person who submitted a count may not approve it** (`own_document`). The test proves this, and a second person posts.
+- **Lines are shown in the order they were counted** (their UUIDv7 id); count lines have no `created_at`.

@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Sale;
 use App\Models\Shift;
 use App\Models\StockAdjustment;
+use App\Models\StockCount;
 use App\Models\StockLevel;
 use App\Models\StockMovement;
 use App\Models\TillDrawerEvent;
@@ -23,7 +24,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final class ListExport
 {
-    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments'];
+    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts'];
 
     public function __construct(private readonly User $user) {}
 
@@ -36,6 +37,7 @@ final class ListExport
             'products' => ProductsScreen::canView(),
             'stock', 'movements' => StockScreen::canView(),
             'adjustments' => AdjustmentsScreen::canView(),
+            'counts' => CountsScreen::canView(),
             default => false,
         };
     }
@@ -71,6 +73,7 @@ final class ListExport
             'stock' => $this->stock($p),
             'movements' => $this->movements($p),
             'adjustments' => $this->adjustments($p),
+            'counts' => $this->counts($p),
         };
         /** @var Builder $query */
         $count = (clone $query)->toBase()->getCountForPagination();
@@ -176,6 +179,19 @@ final class ListExport
 
                 return [$r['number'], $this->at($r['created_at']), $r['warehouse'], $r['reason'].($r['disposal'] ? ' (disposal)' : ''), $r['reference'], $r['lines'],
                     $this->money($r['value']), $r['status_label'], $r['by']];
+            }];
+    }
+
+    private function counts(array $p): array
+    {
+        $screen = new CountsScreen($this->user);
+
+        return ['Stock counts', ['Count', 'Warehouse', 'Bin', 'Type', 'Status', 'Started', 'Started by', 'Lines', 'Difference value'], [7, 8], $screen->sorted($p),
+            function (StockCount $c) use ($screen) {
+                $r = $screen->rowOf($c);
+
+                return [$r['number'], $r['warehouse'], $r['bin'] ?? 'Whole warehouse', $r['blind'] ? 'Blind' : 'Expected shown', $r['status_label'],
+                    $this->at($r['started_at']), $r['started_by'], $r['lines'], $this->money($r['difference'])];
             }];
     }
 
