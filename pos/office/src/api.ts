@@ -215,6 +215,50 @@ export type InvoiceDetail = {
   credit_notes: { number: string; on: string | null; reason: string; goods_returned: boolean; by: string; total: number }[]
   actions: { print: string; credit: { warehouses: Option[] } | null }
 }
+export type SupplierRow = {
+  id: string; code: string; name: string; contact: string | null; phone: string | null; status: string; note: string | null; score: string | null
+  terms: string; products: number; owed: number | null; archived: boolean; bank_unchecked: boolean
+}
+export type SupplierList = {
+  currency: string; exponent: number; total: number; pending: number; blocked: number; owed: number | null
+  page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: SupplierRow[]
+}
+export type SupplierOptions = { statuses: Option[]; per: number[]; can_create: boolean; sees_owed: boolean; import: string | null }
+export type SupplierDoc = {
+  id: string; kind: string; required: boolean; number: string | null; expires_on: string | null; expired: boolean; soon: boolean
+  by: string; checked_by: string | null; file: boolean; can_verify: boolean; can_remove: boolean
+}
+export type Scorecard = {
+  orders: number; on_time: number | null; fill: number | null; quality_issues: number | null; price_change: number | null; lead_days: number | null
+  score: number | null; grade: string | null
+}
+export type SupplierDetail = {
+  currency: string; exponent: number; id: string; code: string; name: string; status: string; status_label: string; blocked_reason: string | null
+  gaps: string[]; approval_on: boolean; archived: boolean; archive_note: string | null; facts: Record<string, string>; notes: string | null; owed: number | null
+  bank: { details: Record<string, string>; checked: string | null; unchecked: boolean }
+  products: { label: string; sku: string | null; cost: number | null; min: string; multiple: string; preferred: boolean }[]
+  documents: { required: string[]; rows: SupplierDoc[]; kinds: Option[]; can_add: boolean }
+  scorecard: Scorecard
+  actions: {
+    edit: boolean; approve: boolean; block: boolean; unblock: boolean; verify_bank: { confirm: string } | null
+    portal: { channels: Option[]; email: string | null; phone: string | null; has_link: boolean } | null
+    opening: boolean; archive: { blockers: string[] } | null; restore: boolean
+  }
+}
+export type SupplierProductLine = {
+  product_uom_id: string; label: string | null; supplier_sku: string; last_cost: string; min_order_qty: string; order_multiple: string; is_preferred: boolean
+}
+export type SupplierValues = {
+  name: string; industry_id: string; contact_name: string; phone: string; email: string; tax_no: string; payment_terms_days: string; lead_time_days: string
+  return_days_before_expiry: string; address: string; notes: string; supply_kind: string; bank_name: string; bank_branch: string; bank_account_name: string
+  bank_account_no: string; momo_number: string; products: SupplierProductLine[]
+}
+export type SupplierForm = {
+  id: string | null; code: string | null; name: string | null; currency: string; values: SupplierValues
+  choices: { industries: Option[]; supply_kinds: Option[] }; sections: { industry: boolean }; bank_checked: string | null
+}
+export type SupplierAction = 'approve' | 'block' | 'unblock' | 'verify_bank' | 'portal' | 'opening' | 'archive' | 'restore'
+export type SupplierActionResult = { supplier: SupplierDetail; link?: string; open?: string | null; sent?: boolean }
 export type CustomerAction = 'pay' | 'credit' | 'opening' | 'patient' | 'follow_up' | 'archive' | 'restore'
 export type Held = { qty: number; unit: string } | null
 export type CountRow = {
@@ -410,6 +454,27 @@ export const api = {
     call<{ id: string }>(id ? `/office-api/customers/${id}` : '/office-api/customers', { method: 'POST', body: JSON.stringify({ values }) }),
   customerAction: (id: string, action: CustomerAction, body: Record<string, unknown> = {}) =>
     call<CustomerDetail>(`/office-api/customers/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  suppliers: (query: string, signal?: AbortSignal) => call<SupplierList>(`/office-api/suppliers?${query}`, { signal }),
+  suppliersOptions: () => call<SupplierOptions>('/office-api/suppliers/options'),
+  supplier: (id: string) => call<SupplierDetail>(`/office-api/suppliers/${id}`),
+  supplierForm: (id?: string) => call<SupplierForm>(id ? `/office-api/suppliers/${id}/form` : '/office-api/suppliers/form'),
+  supplierUnits: (q: string, signal?: AbortSignal) => call<{ results: UnitOption[] }>(`/office-api/suppliers/units?q=${encodeURIComponent(q)}`, { signal }),
+  /** Save; ApiError code "reconfirm" (with its url) = new bank details: confirm it is you first, then save again. */
+  saveSupplier: (id: string | null, values: SupplierValues) =>
+    call<{ id: string }>(id ? `/office-api/suppliers/${id}` : '/office-api/suppliers', { method: 'POST', body: JSON.stringify({ values }) }),
+  supplierAction: (id: string, action: SupplierAction, body: Record<string, unknown> = {}) =>
+    call<SupplierActionResult>(`/office-api/suppliers/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  /** Add a document (with its scan or photo): sent as a form, not JSON. */
+  addSupplierDocument: async (id: string, body: FormData) => {
+    const res = await fetch(`/office-api/suppliers/${id}/documents`, { method: 'POST', body, credentials: 'same-origin',
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) throw new ApiError(json.detail ?? json.message ?? 'The document could not be added.', res.status, json.error ?? 'error')
+    return json as { supplier: SupplierDetail }
+  },
+  supplierDocument: (id: string, doc: string, action: 'verify' | 'remove', reason?: string) =>
+    call<{ supplier: SupplierDetail }>(`/office-api/suppliers/${id}/documents/${doc}`, { method: 'POST', body: JSON.stringify({ action, reason }) }),
+  supplierDocumentUrl: (id: string, doc: string) => `/office-api/suppliers/${id}/documents/${doc}/file`,
   invoices: (query: string, signal?: AbortSignal) => call<InvoiceList>(`/office-api/invoices?${query}`, { signal }),
   invoicesOptions: () => call<InvoiceOptions>('/office-api/invoices/options'),
   invoice: (id: string) => call<InvoiceDetail>(`/office-api/invoices/${id}`),

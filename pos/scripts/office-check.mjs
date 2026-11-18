@@ -184,6 +184,43 @@ try {
         await page.goBack()
       }
 
+      // Suppliers, rebuilt (release 5): from the Purchasing menu, rows (or "No suppliers match"); a row opens the supplier
+      // with its products and documents; at one size the Scorecard dialog and the add form are drawn and left (nothing saved).
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Purchasing/ }).first().click()
+      await page.getByRole('navigation', { name: 'Purchasing' }).getByRole('link', { name: 'Suppliers', exact: true }).first().click()
+      await page.waitForURL(/\/office\/suppliers$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Suppliers did not open the new screen (${page.url()})`))
+      const supRow = page.getByRole('table', { name: 'Suppliers' }).getByRole('row').nth(1)
+      await Promise.race([supRow.waitFor({ timeout: 20000 }), page.getByText('No suppliers match').waitFor({ timeout: 20000 })])
+        .catch(() => problems.push(`${look} ${w}: Suppliers showed neither rows nor "No suppliers match"`))
+      await page.screenshot({ path: out(`suppliers-${look}-${w}`) })
+      if (await supRow.isVisible().catch(() => false)) {
+        await supRow.click()
+        await page.waitForURL(/\/office\/suppliers\/[0-9a-f-]{36}$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: a supplier did not open`))
+        await page.getByRole('region', { name: 'Documents' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: a supplier shows no documents section`))
+        await page.screenshot({ path: out(`supplier-${look}-${w}`), fullPage: true })
+        if (look === 'top' && w === 1366) {
+          await page.getByRole('button', { name: 'Scorecard', exact: true }).click()
+          const d = page.getByRole('dialog')
+          await d.waitFor({ timeout: 10000 }).catch(() => problems.push('supplier: Scorecard did not open its dialog'))
+          await page.screenshot({ path: out('supplier-scorecard') })
+          await d.getByRole('button', { name: 'Close' }).click()
+          await d.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => undefined)
+        }
+        await page.goBack()
+      } else problems.push(`${look} ${w}: the dev data has no suppliers to open`)
+      if (look === 'top' && w === 1366) {
+        await page.getByRole('button', { name: 'Add supplier' }).click()
+        await page.waitForURL(/\/office\/suppliers\/new$/, { timeout: 15000 }).catch(() => problems.push('supplier form: did not open'))
+        await page.getByRole('textbox', { name: /^Name/ }).fill('Check supplier').catch(() => problems.push('supplier form: no Name box'))
+        const industry = page.getByRole('combobox', { name: /^Industry/ })
+        if (await industry.isVisible().catch(() => false)) { await industry.click(); await page.getByRole('option').first().click() }
+        if (await page.getByRole('button', { name: 'Save', exact: true }).isDisabled()) problems.push('supplier form: Save stays off with the name (and industry) filled in')
+        await page.getByRole('button', { name: 'Add product' }).click()
+        if (await page.getByRole('button', { name: 'Save', exact: true }).isEnabled()) problems.push('supplier form: Save is on with a product line not chosen')
+        await page.screenshot({ path: out('supplier-form'), fullPage: true })
+        await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
+      }
+
       // To-do: from the menu, the list of what waits (or "All clear").
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /^To-do/ }).first().click()
       await page.getByRole('heading', { name: 'To-do', level: 1 }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: To-do did not open`))

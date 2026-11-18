@@ -12,8 +12,10 @@ const useStyles = makeStyles({
  * "Product and unit" on a document line (adjustments, counts, transfers…): type part of the name or SKU, or scan a
  * barcode; each product's units are offered ("Milo — CTN × 24"). As the current forms' product-unit field.
  */
-export function UnitPicker({ value, label, onChange, required = true }: {
+export function UnitPicker({ value, label, onChange, required = true, search = api.stockUnits }: {
   value: string; label: string | null; onChange: (u: UnitOption | null) => void; required?: boolean
+  /** Where the units come from: stocked products by default; suppliers offer every buying unit. */
+  search?: (q: string, signal?: AbortSignal) => Promise<{ results: UnitOption[] }>
 }) {
   const s = useStyles()
   const [text, setText] = useState(label ?? '')
@@ -22,9 +24,9 @@ export function UnitPicker({ value, label, onChange, required = true }: {
   useEffect(() => {
     if (text.trim().length < 2 || text === label) return
     const ctl = new AbortController()
-    const t = setTimeout(() => api.stockUnits(text.trim(), ctl.signal).then((r) => setFound(r.results)).catch(() => undefined), 250)
+    const t = setTimeout(() => search(text.trim(), ctl.signal).then((r) => setFound(r.results)).catch(() => undefined), 250)
     return () => { clearTimeout(t); ctl.abort() }
-  }, [text, label])
+  }, [text, label, search])
   return (
     <Field label="Product and unit" required={required} className={s.field}>
       <Combobox className={s.box} input={{ className: s.inner }} value={text} selectedOptions={value ? [value] : []} placeholder="Name, SKU or scan the barcode"

@@ -1,5 +1,5 @@
 import {
-  Badge, Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Link, makeStyles, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger,
+  Badge, Button, Link, makeStyles, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger,
   MessageBar, MessageBarBody, Spinner, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, tokens,
 } from '@fluentui/react-components'
 import {
@@ -8,6 +8,7 @@ import {
 } from '@fluentui/react-icons'
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { api, type CustomerAction, type CustomerDetail } from '../api'
+import { Ask } from '../form/Ask'
 import { Choose, LongText, Tags, TextField, Toggle, useFieldStyles } from '../form/Fields'
 import { money } from '../home/format'
 import { usePageStyles } from '../list/ListParts'
@@ -160,35 +161,6 @@ function Tile({ label, value, tone }: { label: string; value: string; tone?: str
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   const s = useStyles()
   return <section className={s.panel} aria-label={title}><h2 className={s.h2}>{title}</h2>{children}</section>
-}
-
-/** A dialog with its fields, Back, and the button that does it (off until what is required is filled in). */
-function Ask({ title, go, ready, onClose, run, children, width = 520 }: {
-  title: string; go: string; ready: boolean; onClose: () => void; run: () => Promise<unknown>; children: ReactNode; width?: number
-}) {
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
-  return (
-    <Dialog open onOpenChange={(_, d) => !d.open && onClose()}>
-      <DialogSurface style={{ maxWidth: width }}>
-        <DialogBody>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogContent>
-            {children}
-            {error && <Text block style={{ color: tokens.colorPaletteRedForeground1, marginTop: 10 }}>{error}</Text>}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={onClose}>Back</Button>
-            <Button appearance="primary" disabled={busy || !ready} onClick={() => {
-              setBusy(true)
-              setError('')
-              run().catch((e: unknown) => setError(e instanceof Error ? e.message : String(e))).finally(() => setBusy(false))
-            }}>{busy ? 'Working…' : go}</Button>
-          </DialogActions>
-        </DialogBody>
-      </DialogSurface>
-    </Dialog>
-  )
 }
 
 type Run = (body: Record<string, unknown>) => Promise<unknown>

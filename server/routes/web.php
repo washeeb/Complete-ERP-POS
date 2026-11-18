@@ -20,6 +20,7 @@ use App\Http\Controllers\Office\RequestsController as OfficeRequestsController;
 use App\Http\Controllers\Office\SalesController as OfficeSalesController;
 use App\Http\Controllers\Office\ShiftsController as OfficeShiftsController;
 use App\Http\Controllers\Office\StockController as OfficeStockController;
+use App\Http\Controllers\Office\SuppliersController as OfficeSuppliersController;
 use App\Http\Controllers\Office\TransfersController as OfficeTransfersController;
 use App\Http\Controllers\PrintController;
 use App\Http\Controllers\RemoteConnectController;
@@ -143,7 +144,19 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::get('invoices/options', [OfficeInvoicesController::class, 'options']);
     Route::get('invoices/{id}', [OfficeInvoicesController::class, 'show'])->whereUuid('id');
     Route::post('invoices/{id}/credit', [OfficeInvoicesController::class, 'credit'])->whereUuid('id');
-    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices']);
+    Route::get('suppliers', [OfficeSuppliersController::class, 'index']);
+    Route::get('suppliers/options', [OfficeSuppliersController::class, 'options']);
+    Route::get('suppliers/form', [OfficeSuppliersController::class, 'form']);
+    Route::get('suppliers/units', [OfficeSuppliersController::class, 'units']);
+    Route::post('suppliers', [OfficeSuppliersController::class, 'save']);
+    Route::get('suppliers/{id}', [OfficeSuppliersController::class, 'show'])->whereUuid('id');
+    Route::get('suppliers/{id}/form', [OfficeSuppliersController::class, 'form'])->whereUuid('id');
+    Route::post('suppliers/{id}', [OfficeSuppliersController::class, 'save'])->whereUuid('id');
+    Route::post('suppliers/{id}/action', [OfficeSuppliersController::class, 'action'])->whereUuid('id');
+    Route::post('suppliers/{id}/documents', [OfficeSuppliersController::class, 'addDocument'])->whereUuid('id');
+    Route::post('suppliers/{id}/documents/{doc}', [OfficeSuppliersController::class, 'document'])->whereUuid(['id', 'doc']);
+    Route::get('suppliers/{id}/documents/{doc}/file', [OfficeSuppliersController::class, 'documentFile'])->whereUuid(['id', 'doc']);
+    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers']);
 });
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;
