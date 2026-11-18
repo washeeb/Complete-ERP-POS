@@ -1,0 +1,14 @@
+## New back office, release 4 part 1: customers (branch `office-customers`)
+- **Server:**
+  - `App\Domain\Office\CustomersScreen`:
+    - `filtered`, `sorted` and `rowOf` on `CustomerResource::getEloquentQuery` (industry scope). Filters: `q` (also the normalised phone), `type`, `owing`, `credit`, `show` ('' in use, `archived`, `all`). Sorts: name, code, balance.
+    - `list` cards: total, owing, owed, credit, hold.
+    - `show`: facts, account (balance, overdue, limit, available, terms), open items with a link (invoice or sale), patient facts, and `actions` carrying what each dialog needs (branches and methods for a payment, the current credit, the patient's values, CRM types and people, archive blockers).
+    - `form` / `toDomain`: the current form's fields; industry only when the person has more than one; credit only when adding, at head office.
+  - `Office\CustomersController`: index, options, show, form, save, and `action` (pay, credit, opening, patient, follow_up, archive, restore), each through its service.
+  - `ListExport` gains `customers`.
+  - `PharmacyService::savePatient` now checks `pharmacy.patients` anywhere (was company-wide only).
+- **Client:** `pages/CustomersPage.tsx`, `CustomerPage.tsx` (dialogs: Pay, Statement, Credit, Opening, Patient, FollowUp, Archive, Restore), `CustomerFormPage.tsx`. `REBUILT` maps the list (a search carries over), `/create`, `/{uuid}` and `/{uuid}/edit`.
+- **office-check:** the list, a customer, the Record payment, Credit and Statement dialogs, and the add form (Save turns on once the name and industry are in; nothing saved).
+- **Tests:** OfficeCustomersTest (4).
+- **Next:** release 4 part 2, invoices.

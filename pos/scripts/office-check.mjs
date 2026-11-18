@@ -115,6 +115,47 @@ try {
         }
       }
 
+      // Customers, rebuilt (release 4): from the Sales menu, rows (or "No customers match"); a row opens the customer with
+      // their account and open items; the payment and credit dialogs and the add form are drawn and left (nothing saved).
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Sales/ }).first().click()
+      await page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: 'Customers', exact: true }).first().click()
+      await page.waitForURL(/\/office\/customers$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Customers did not open the new screen (${page.url()})`))
+      const custRow = page.getByRole('table', { name: 'Customers' }).getByRole('row').nth(1)
+      await Promise.race([custRow.waitFor({ timeout: 20000 }), page.getByText('No customers match').waitFor({ timeout: 20000 })])
+        .catch(() => problems.push(`${look} ${w}: Customers showed neither rows nor "No customers match"`))
+      await page.screenshot({ path: out(`customers-${look}-${w}`) })
+      if (await custRow.isVisible().catch(() => false)) {
+        await custRow.click()
+        await page.waitForURL(/\/office\/customers\/[0-9a-f-]{36}$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: a customer did not open`))
+        await page.getByRole('region', { name: 'Open items' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: a customer shows no open items`))
+        await page.screenshot({ path: out(`customer-${look}-${w}`), fullPage: true })
+        if (look === 'top' && w === 1366) {
+          for (const [button, dialog] of [['Record payment', 'Record payment'], ['Credit', 'Credit'], ['Statement', 'Statement']]) {
+            const b = page.getByRole('button', { name: button, exact: true })
+            if (!(await b.waitFor({ timeout: 10000 }).then(() => true).catch(() => false))) { problems.push(`customer: no ${button} button for the owner`); continue }
+            await b.click()
+            const d = page.getByRole('dialog', { name: dialog })
+            await d.waitFor({ timeout: 10000 }).catch(() => problems.push(`customer: ${button} did not open its dialog`))
+            await page.waitForTimeout(300)
+            await page.screenshot({ path: out(`customer-${button.replace(' ', '-').toLowerCase()}`) })
+            await d.getByRole('button', { name: 'Back' }).click()
+            await d.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => undefined) // the page behind is hidden until it closes
+          }
+        }
+        await page.goBack()
+      } else problems.push(`${look} ${w}: the dev data has no customers to open`)
+      if (look === 'top' && w === 1366) {
+        await page.getByRole('button', { name: 'Add customer' }).click()
+        await page.waitForURL(/\/office\/customers\/new$/, { timeout: 15000 }).catch(() => problems.push('customer form: did not open'))
+        await page.getByRole('textbox', { name: /^Name/ }).fill('Check customer').catch(() => problems.push('customer form: no Name box'))
+        const industry = page.getByRole('combobox', { name: /^Industry/ })
+        if (await industry.isVisible().catch(() => false)) { await industry.click(); await page.getByRole('option').first().click() }
+        if (await page.getByRole('button', { name: 'Save', exact: true }).isDisabled()) problems.push('customer form: Save stays off with the name (and industry) filled in')
+        await page.getByRole('region', { name: 'Marketing consent' }).waitFor({ timeout: 5000 }).catch(() => problems.push('customer form: no consent section'))
+        await page.screenshot({ path: out('customer-form'), fullPage: true })
+        await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
+      }
+
       // To-do: from the menu, the list of what waits (or "All clear").
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /^To-do/ }).first().click()
       await page.getByRole('heading', { name: 'To-do', level: 1 }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: To-do did not open`))

@@ -78,7 +78,9 @@ final class PharmacyService
     /** @param array{date_of_birth?: ?string, sex?: ?string, allergies?: array|string|null, conditions?: ?string, nhis_no?: ?string, nhis_expires_on?: ?string} $data */
     public function savePatient(Actor $actor, Customer $customer, array $data): PatientProfile
     {
-        if (! $actor->user || ! $this->authz->allows($actor->user, 'pharmacy.patients')) {
+        // Customers are shared by every branch, so a pharmacist of any branch keeps their patients' details (the button
+        // shows on the same rule). Before 2026-11-18 only a company-wide grant could save, and a branch pharmacist was refused.
+        if (! $actor->user || ! $this->authz->allowsAnywhere($actor->user, 'pharmacy.patients')) {
             throw new AccessDenied;
         }
         $p = PatientProfile::find($customer->id) ?? (new PatientProfile)->forceFill(['customer_id' => $customer->id, 'tenant_id' => $customer->tenant_id]);

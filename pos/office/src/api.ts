@@ -156,6 +156,46 @@ export type RequestForm = {
   values: { to_warehouse_id: string; from_warehouse_id: string; note: string; lines: RequestLine[] }
   choices: { to: Option[]; from: Option[] }
 }
+export type CustomerRow = {
+  id: string; code: string; name: string; contact: string | null; phone: string | null; type: string; price_list: string | null
+  balance: number | null; credit_limit: number | null; hold: boolean; archived: boolean
+}
+export type CustomerList = {
+  currency: string; exponent: number; total: number; owing: number; owed: number; credit: number; hold: number
+  page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: CustomerRow[]
+}
+export type CustomerOptions = { types: Option[]; per: number[]; can_create: boolean; import: string | null }
+export type PatientValues = { date_of_birth: string; sex: string; allergies: string[]; conditions: string; nhis_no: string; nhis_expires_on: string }
+export type CustomerDetail = {
+  currency: string; exponent: number; id: string; code: string; name: string; archived: boolean; hold: boolean; archive_note: string | null
+  facts: Record<string, string>; notes: string | null
+  account: { balance: number; overdue: number; limit: number | null; available: number | null; terms: string }
+  open_items: { number: string; due: string | null; overdue: boolean; amount: number; open: number; url: string | null }[]
+  patient: Record<string, string> | null
+  actions: {
+    edit: boolean
+    pay: { branches: Option[]; default_branch: string | null; methods: Option[]; providers: Option[] } | null
+    statement: string | null
+    credit: { limit: string; terms: string; hold: boolean } | null
+    opening: boolean
+    patient: PatientValues | null
+    follow_up: { types: Option[]; people: Option[] } | null
+    new_deal: string | null
+    archive: { blockers: string[] } | null
+    restore: boolean
+  }
+}
+export type CustomerValues = {
+  type: string; name: string; industry_id: string; phone: string; email: string; contact_name: string; tax_no: string; price_list_id: string
+  home_branch_id: string; address: string; tags: string[]; notes: string; consents: Record<string, boolean>; consent_source: string
+  credit_limit: string; payment_terms_days: string
+}
+export type CustomerForm = {
+  id: string | null; code: string | null; name: string | null; values: CustomerValues
+  choices: { types: Option[]; industries: Option[]; price_lists: Option[]; branches: Option[]; consent_sources: Option[]; consent_channels: Option[] }
+  sections: { industry: boolean; credit: boolean }
+}
+export type CustomerAction = 'pay' | 'credit' | 'opening' | 'patient' | 'follow_up' | 'archive' | 'restore'
 export type Held = { qty: number; unit: string } | null
 export type CountRow = {
   id: string; number: string; warehouse: string | null; bin: string | null; status: string; status_label: string; blind: boolean
@@ -342,6 +382,14 @@ export const api = {
   /** Between industries: the supplier's own products, to send for a line. */
   requestProducts: (id: string, q: string, signal?: AbortSignal) => call<Option[]>(`/office-api/requests/${id}/products?q=${encodeURIComponent(q)}`, { signal }),
   /** approve · supply (per line: what is sent, and the supplier's own product) · reject · cancel (with a reason). */
+  customers: (query: string, signal?: AbortSignal) => call<CustomerList>(`/office-api/customers?${query}`, { signal }),
+  customersOptions: () => call<CustomerOptions>('/office-api/customers/options'),
+  customer: (id: string) => call<CustomerDetail>(`/office-api/customers/${id}`),
+  customerForm: (id?: string) => call<CustomerForm>(id ? `/office-api/customers/${id}/form` : '/office-api/customers/form'),
+  saveCustomer: (id: string | null, values: CustomerValues) =>
+    call<{ id: string }>(id ? `/office-api/customers/${id}` : '/office-api/customers', { method: 'POST', body: JSON.stringify({ values }) }),
+  customerAction: (id: string, action: CustomerAction, body: Record<string, unknown> = {}) =>
+    call<CustomerDetail>(`/office-api/customers/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
   requestAction: (id: string, action: string, extra: { reason?: string; lines?: Record<string, { qty: string; send_product_id: string | null }> } = {}) =>
     call<RequestDetail>(`/office-api/requests/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...extra }) }),
   counts: (query: string, signal?: AbortSignal) => call<CountList>(`/office-api/counts?${query}`, { signal }),

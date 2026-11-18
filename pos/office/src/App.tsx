@@ -7,6 +7,9 @@ import { api, type Me, type Menu, type Prefs } from './api'
 import { useRoute } from './nav'
 import { ClassicPage } from './pages/ClassicPage'
 import { HomePage } from './pages/HomePage'
+import { CustomerFormPage } from './pages/CustomerFormPage'
+import { CustomerPage } from './pages/CustomerPage'
+import { CustomersPage } from './pages/CustomersPage'
 import { DrawerPage } from './pages/DrawerPage'
 import { ProductFormPage } from './pages/ProductFormPage'
 import { ProductPage } from './pages/ProductPage'
@@ -91,7 +94,7 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
   const { dispatchToast } = useToastController(toaster)
   const [title, setTitle] = useState('')
 
-  const LIST_TITLES: Partial<Record<typeof route.page, string>> = { home: 'Home', todo: 'To-do', sales: 'Till sales', shifts: 'Till shifts', drawer: 'Till drawer', products: 'Products', stock: 'Stock on hand', movements: 'Stock ledger', adjustments: 'Stock adjustments', counts: 'Stock counts', transfers: 'Transfers', requests: 'Stock requests' }
+  const LIST_TITLES: Partial<Record<typeof route.page, string>> = { home: 'Home', todo: 'To-do', sales: 'Till sales', shifts: 'Till shifts', drawer: 'Till drawer', products: 'Products', stock: 'Stock on hand', movements: 'Stock ledger', adjustments: 'Stock adjustments', counts: 'Stock counts', transfers: 'Transfers', requests: 'Stock requests', customers: 'Customers' }
   const shown = LIST_TITLES[route.page] ?? title
   useEffect(() => { document.title = shown ? `${shown} · ${me.company.name}` : me.company.name }, [shown, me.company.name])
 
@@ -148,6 +151,9 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
                                                 : route.page === 'requests' ? <RequestsPage />
                                                   : route.page === 'request' ? <RequestPage id={route.id} onTitle={setTitle} />
                                                     : route.page === 'request-form' ? <RequestFormPage onTitle={setTitle} />
+                                                      : route.page === 'customers' ? <CustomersPage />
+                                                        : route.page === 'customer' ? <CustomerPage id={route.id} onTitle={setTitle} />
+                                                          : route.page === 'customer-form' ? <CustomerFormPage key={route.id ?? 'new'} id={route.id} onTitle={setTitle} />
                       : <ClassicPage admin={admin} onTitle={setTitle} />}
       </Look>
       <Toaster toasterId={toaster} position="top-end" />
