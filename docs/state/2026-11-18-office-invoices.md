@@ -1,0 +1,12 @@
+## New back office, release 4 part 2: invoices (branch `office-invoices`)
+- **Server:**
+  - `App\Domain\Office\InvoicesScreen`:
+    - `filtered`, `sorted` and `rowOf` on `InvoiceResource::getEloquentQuery` (branches with `sales.orders.view` or `receivables.view`), with `open_minor` as a subselect (the invoice's ledger entry less its allocations, as `CustomerLedger::openItems`). Filters: `q` (number, customer, reference), `status`, `owed`, `overdue`, `period`, `from`, `to`, `min`, `max`. Sorts: issued_on, due_on, number, total_minor, open_minor.
+    - `list` cards: count, sum, open, overdue.
+    - `show`: details, lines, tax breakdown, `settled` (allocations joined to the ledger), `credit_notes`, and `actions` (print path; credit with the warehouses of `sales.deliver`, when posted and `receivables.credit_note` at its branch).
+  - `Office\InvoicesController`: index, options, show, `credit` (through `ReceivablesService::creditNote`; `ReconfirmNeeded` → 428 with the Confirm it's you address).
+  - `ListExport` gains `invoices`.
+- **Client:** `pages/InvoicesPage.tsx`, `pages/InvoicePage.tsx` (Credit note dialog), `form/ConfirmItsYou.tsx` (shared; To-do uses it too). `REBUILT` maps `/admin/invoices` (a search carries over) and `/admin/invoices/{uuid}`, so the customer's open items open the rebuilt invoice.
+- **office-check:** the list, an invoice, the Credit note dialog (Issue stays off without a reason; nothing issued).
+- **Tests:** OfficeInvoicesTest (3).
+- **Next:** release 5, purchasing.

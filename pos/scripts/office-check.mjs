@@ -156,6 +156,34 @@ try {
         await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
       }
 
+      // Invoices, rebuilt (release 4): from the Sales menu, rows (or "No invoices match"); a row opens the invoice with
+      // its lines and what settled it; at one size the Credit note dialog is drawn and left (nothing issued).
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Sales/ }).first().click()
+      await page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: 'Invoices', exact: true }).first().click()
+      await page.waitForURL(/\/office\/invoices$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Invoices did not open the new screen (${page.url()})`))
+      const invRow = page.getByRole('table', { name: 'Invoices' }).getByRole('row').nth(1)
+      await Promise.race([invRow.waitFor({ timeout: 20000 }), page.getByText('No invoices match').waitFor({ timeout: 20000 })])
+        .catch(() => problems.push(`${look} ${w}: Invoices showed neither rows nor "No invoices match"`))
+      await page.screenshot({ path: out(`invoices-${look}-${w}`) })
+      if (await invRow.isVisible().catch(() => false)) {
+        await invRow.click()
+        await page.waitForURL(/\/office\/invoices\/[0-9a-f-]{36}$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: an invoice did not open`))
+        await page.getByRole('region', { name: 'Lines' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: an invoice shows no lines`))
+        await page.screenshot({ path: out(`invoice-${look}-${w}`), fullPage: true })
+        const credit = page.getByRole('button', { name: 'Credit note', exact: true })
+        if (look === 'top' && w === 1366 && await credit.isVisible().catch(() => false)) {
+          await credit.click()
+          const d = page.getByRole('dialog')
+          await d.waitFor({ timeout: 10000 }).catch(() => problems.push('invoice: Credit note did not open its dialog'))
+          if (await d.getByRole('button', { name: 'Issue credit note' }).isEnabled().catch(() => true)) problems.push('invoice: Issue is on before a reason is given')
+          await page.waitForTimeout(300)
+          await page.screenshot({ path: out('invoice-credit-note') })
+          await d.getByRole('button', { name: 'Back' }).click() // nothing is issued
+          await d.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => undefined)
+        }
+        await page.goBack()
+      }
+
       // To-do: from the menu, the list of what waits (or "All clear").
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /^To-do/ }).first().click()
       await page.getByRole('heading', { name: 'To-do', level: 1 }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: To-do did not open`))

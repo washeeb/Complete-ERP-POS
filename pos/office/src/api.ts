@@ -195,6 +195,26 @@ export type CustomerForm = {
   choices: { types: Option[]; industries: Option[]; price_lists: Option[]; branches: Option[]; consent_sources: Option[]; consent_channels: Option[] }
   sections: { industry: boolean; credit: boolean }
 }
+export type InvoiceRow = {
+  id: string; number: string; customer: string; ref: string | null; issued_on: string; due_on: string; currency: string
+  total: number; open: number; status: string; overdue: boolean
+}
+export type InvoiceList = {
+  currency: string; exponent: number; total: number; sum: number; open: number; overdue: number
+  page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: InvoiceRow[]
+}
+export type InvoiceOptions = { statuses: Option[]; per: number[] }
+export type InvoiceDetail = {
+  currency: string; exponent: number; id: string; number: string; status: string; status_label: string
+  customer: { id: string; name: string; tax_no: string | null; open: string | null }
+  ref: string | null; branch: string | null; issued_on: string; due_on: string; overdue: boolean; prices_include_tax: boolean
+  net: number; tax: number; total: number; open: number
+  tax_breakdown: { name: string; amount: number }[]
+  lines: { sku: string; name: string; qty: string; unit_price: number; total: number }[]
+  settled: { kind: string; number: string | null; on: string; amount: number }[]
+  credit_notes: { number: string; on: string | null; reason: string; goods_returned: boolean; by: string; total: number }[]
+  actions: { print: string; credit: { warehouses: Option[] } | null }
+}
 export type CustomerAction = 'pay' | 'credit' | 'opening' | 'patient' | 'follow_up' | 'archive' | 'restore'
 export type Held = { qty: number; unit: string } | null
 export type CountRow = {
@@ -390,6 +410,12 @@ export const api = {
     call<{ id: string }>(id ? `/office-api/customers/${id}` : '/office-api/customers', { method: 'POST', body: JSON.stringify({ values }) }),
   customerAction: (id: string, action: CustomerAction, body: Record<string, unknown> = {}) =>
     call<CustomerDetail>(`/office-api/customers/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  invoices: (query: string, signal?: AbortSignal) => call<InvoiceList>(`/office-api/invoices?${query}`, { signal }),
+  invoicesOptions: () => call<InvoiceOptions>('/office-api/invoices/options'),
+  invoice: (id: string) => call<InvoiceDetail>(`/office-api/invoices/${id}`),
+  /** Credit note; ApiError code "reconfirm" (with its url) = confirm it is you first, then try again. */
+  creditInvoice: (id: string, reason: string, warehouse_id: string | null) =>
+    call<InvoiceDetail>(`/office-api/invoices/${id}/credit`, { method: 'POST', body: JSON.stringify({ reason, warehouse_id }) }),
   requestAction: (id: string, action: string, extra: { reason?: string; lines?: Record<string, { qty: string; send_product_id: string | null }> } = {}) =>
     call<RequestDetail>(`/office-api/requests/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...extra }) }),
   counts: (query: string, signal?: AbortSignal) => call<CountList>(`/office-api/counts?${query}`, { signal }),
