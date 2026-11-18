@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\PriceList;
 use App\Models\Product;
+use App\Models\PurchaseOrder;
 use App\Models\Sale;
 use App\Models\Shift;
 use App\Models\StockAdjustment;
@@ -29,7 +30,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final class ListExport
 {
-    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers'];
+    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders'];
 
     public function __construct(private readonly User $user) {}
 
@@ -48,6 +49,7 @@ final class ListExport
             'customers' => CustomersScreen::canView(),
             'invoices' => InvoicesScreen::canView(),
             'suppliers' => SuppliersScreen::canView(),
+            'purchase-orders' => PurchaseOrdersScreen::canView(),
             default => false,
         };
     }
@@ -89,6 +91,7 @@ final class ListExport
             'customers' => $this->customers($p),
             'invoices' => $this->invoices($p),
             'suppliers' => $this->suppliers($p),
+            'purchase-orders' => $this->purchaseOrders($p),
         };
         /** @var Builder $query */
         $count = (clone $query)->toBase()->getCountForPagination();
@@ -275,12 +278,25 @@ final class ListExport
             }];
     }
 
+    private function purchaseOrders(array $p): array
+    {
+        $screen = new PurchaseOrdersScreen($this->user);
+
+        return ['Purchase orders', ['Order', 'Supplier', 'To', 'Total', 'Expected', 'Status', 'Created'], [3], $screen->sorted($p),
+            function (PurchaseOrder $po) use ($screen) {
+                $r = $screen->rowOf($po);
+
+                return [$r['number'], $r['supplier'] ?? '', $r['to'] ?? '', $this->money($r['total'], $r['currency']), $r['expected_on'] ?? '',
+                    PurchaseOrder::STATUSES[$r['status']] ?? $r['status'], $this->at($r['created_at'])];
+            }];
+    }
+
     /** "Search: rice", "Period: 7 days", "From: 2026-11-01" … for the PDF header and the audit row. */
     private function describe(array $p): array
     {
         $names = ['q' => 'Search', 'period' => 'Period', 'from' => 'From', 'to' => 'Until', 'status' => 'Status', 'kind' => 'Kind', 'level' => 'Stock',
             'stock' => 'Stock', 'reason' => 'Reason', 'warehouse' => 'Warehouse', 'difference' => 'Difference on arrival', 'from_wh' => 'From warehouse', 'to_wh' => 'To warehouse', 'active' => 'For sale', 'schedule' => 'Medicine schedule', 'min' => 'Total from', 'max' => 'Total up to',
-            'os_min' => 'Over/short from', 'os_max' => 'Over/short up to', 'vault_waiting' => 'Vaults waiting', 'waiting' => 'Waiting on you', 'cross' => 'Between industries', 'owing' => 'Owes money', 'credit' => 'Credit customers', 'show' => 'Show', 'overdue' => 'Past due date', 'owed' => 'Still owed', 'unverified' => 'Bank details not checked', 'sort' => null, 'dir' => null];
+            'os_min' => 'Over/short from', 'os_max' => 'Over/short up to', 'vault_waiting' => 'Vaults waiting', 'waiting' => 'Waiting on you', 'cross' => 'Between industries', 'owing' => 'Owes money', 'credit' => 'Credit customers', 'show' => 'Show', 'overdue' => 'Past due date', 'owed' => 'Still owed', 'unverified' => 'Bank details not checked', 'supplier' => 'Supplier', 'sort' => null, 'dir' => null];
         $periods = ['today' => 'Today', '7' => '7 days', '30' => '30 days', '90' => '90 days'];
         $out = [];
         foreach ($p as $k => $v) {

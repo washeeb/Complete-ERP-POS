@@ -221,6 +221,33 @@ try {
         await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
       }
 
+      // Purchase orders, rebuilt (release 5): from the Purchasing menu, rows (or "No purchase orders match"); a row opens
+      // the order with its lines; at one size the new-order form is drawn and left (Save stays off until a line is filled).
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Purchasing/ }).first().click()
+      await page.getByRole('navigation', { name: 'Purchasing' }).getByRole('link', { name: 'Purchase orders', exact: true }).first().click()
+      await page.waitForURL(/\/office\/purchase-orders$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Purchase orders did not open the new screen (${page.url()})`))
+      const poRow = page.getByRole('table', { name: 'Purchase orders' }).getByRole('row').nth(1)
+      await Promise.race([poRow.waitFor({ timeout: 20000 }), page.getByText('No purchase orders match').waitFor({ timeout: 20000 })])
+        .catch(() => problems.push(`${look} ${w}: Purchase orders showed neither rows nor "No purchase orders match"`))
+      await page.screenshot({ path: out(`purchase-orders-${look}-${w}`) })
+      if (await poRow.isVisible().catch(() => false)) {
+        await poRow.click()
+        await page.waitForURL(/\/office\/purchase-orders\/[0-9a-f-]{36}$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: a purchase order did not open`))
+        await page.getByRole('region', { name: 'Lines' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: a purchase order shows no lines`))
+        await page.screenshot({ path: out(`purchase-order-${look}-${w}`), fullPage: true })
+        await page.goBack()
+      }
+      if (look === 'top' && w === 1366) {
+        await page.getByRole('button', { name: 'New purchase order' }).click()
+        await page.waitForURL(/\/office\/purchase-orders\/new$/, { timeout: 15000 }).catch(() => problems.push('purchase order form: did not open'))
+        await page.getByRole('region', { name: 'Lines' }).waitFor({ timeout: 10000 }).catch(() => problems.push('purchase order form: no Lines section'))
+        if (await page.getByRole('button', { name: 'Save draft', exact: true }).isEnabled()) problems.push('purchase order form: Save is on with nothing filled in')
+        await page.getByRole('button', { name: 'Service or non-stock item' }).first().click()
+        await page.getByRole('textbox', { name: /^What/ }).waitFor({ timeout: 5000 }).catch(() => problems.push('purchase order form: a service line asks no "What"'))
+        await page.screenshot({ path: out('purchase-order-form'), fullPage: true })
+        await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
+      }
+
       // To-do: from the menu, the list of what waits (or "All clear").
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /^To-do/ }).first().click()
       await page.getByRole('heading', { name: 'To-do', level: 1 }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: To-do did not open`))
