@@ -14,6 +14,7 @@ use App\Models\StockLevel;
 use App\Models\StockMovement;
 use App\Models\StockRequest;
 use App\Models\StockTransfer;
+use App\Models\Supplier;
 use App\Models\TillDrawerEvent;
 use App\Models\User;
 use App\Support\Money;
@@ -28,7 +29,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final class ListExport
 {
-    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices'];
+    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers'];
 
     public function __construct(private readonly User $user) {}
 
@@ -46,6 +47,7 @@ final class ListExport
             'requests' => RequestsScreen::canView(),
             'customers' => CustomersScreen::canView(),
             'invoices' => InvoicesScreen::canView(),
+            'suppliers' => SuppliersScreen::canView(),
             default => false,
         };
     }
@@ -86,6 +88,7 @@ final class ListExport
             'requests' => $this->requests($p),
             'customers' => $this->customers($p),
             'invoices' => $this->invoices($p),
+            'suppliers' => $this->suppliers($p),
         };
         /** @var Builder $query */
         $count = (clone $query)->toBase()->getCountForPagination();
@@ -257,12 +260,27 @@ final class ListExport
             }];
     }
 
+    private function suppliers(array $p): array
+    {
+        $screen = new SuppliersScreen($this->user);
+        $owed = SuppliersScreen::seesOwed();
+
+        return ['Suppliers', ['Code', 'Name', 'Contact person', 'Phone', 'Status', 'What is missing', 'Score', 'Terms', 'Products', ...($owed ? ['We owe'] : []), 'In use'],
+            $owed ? [8, 9] : [8], $screen->sorted($p),
+            function (Supplier $s) use ($screen, $owed) {
+                $r = $screen->rowOf($s);
+
+                return [$r['code'], $r['name'], $r['contact'] ?? '', $r['phone'] ?? '', Supplier::STATUSES[$r['status']] ?? $r['status'], $r['note'] ?? '',
+                    $r['score'] ?? '', $r['terms'], $r['products'], ...($owed ? [$r['owed'] ? $this->money($r['owed']) : ''] : []), $r['archived'] ? 'Archived' : 'In use'];
+            }];
+    }
+
     /** "Search: rice", "Period: 7 days", "From: 2026-11-01" … for the PDF header and the audit row. */
     private function describe(array $p): array
     {
         $names = ['q' => 'Search', 'period' => 'Period', 'from' => 'From', 'to' => 'Until', 'status' => 'Status', 'kind' => 'Kind', 'level' => 'Stock',
             'stock' => 'Stock', 'reason' => 'Reason', 'warehouse' => 'Warehouse', 'difference' => 'Difference on arrival', 'from_wh' => 'From warehouse', 'to_wh' => 'To warehouse', 'active' => 'For sale', 'schedule' => 'Medicine schedule', 'min' => 'Total from', 'max' => 'Total up to',
-            'os_min' => 'Over/short from', 'os_max' => 'Over/short up to', 'vault_waiting' => 'Vaults waiting', 'waiting' => 'Waiting on you', 'cross' => 'Between industries', 'owing' => 'Owes money', 'credit' => 'Credit customers', 'show' => 'Show', 'overdue' => 'Past due date', 'owed' => 'Still owed', 'sort' => null, 'dir' => null];
+            'os_min' => 'Over/short from', 'os_max' => 'Over/short up to', 'vault_waiting' => 'Vaults waiting', 'waiting' => 'Waiting on you', 'cross' => 'Between industries', 'owing' => 'Owes money', 'credit' => 'Credit customers', 'show' => 'Show', 'overdue' => 'Past due date', 'owed' => 'Still owed', 'unverified' => 'Bank details not checked', 'sort' => null, 'dir' => null];
         $periods = ['today' => 'Today', '7' => '7 days', '30' => '30 days', '90' => '90 days'];
         $out = [];
         foreach ($p as $k => $v) {

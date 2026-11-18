@@ -1,0 +1,12 @@
+## New back office, release 5 part 1: suppliers (branch `office-suppliers`)
+- **Server:**
+  - `App\Domain\Office\SuppliersScreen`:
+    - `filtered`, `sorted` and `rowOf` on `SupplierResource::getEloquentQuery`. Filters: `q` (code, name, phone, email, contact), `status`, `unverified`, `owed` (payables people at head office), `show`. Sorts: name, code, owed. Rows carry the onboarding gaps (or the block reason), the scorecard grade and `bank_unchecked`.
+    - `show`: facts, bank (shown to people who manage or approve suppliers; others see "On file"), products, documents (with per-row verify and remove), scorecard, and `actions`.
+    - `form` / `toDomain` (with the products), and `units` (buying units of any active product, as the current form's product field).
+  - `Office\SuppliersController`: index, options, show, form, units, save, `action` (approve, block, unblock, verify_bank, portal, opening, archive, restore), `addDocument` (multipart, file kept only when the document is saved), `document` (verify, remove), `documentFile`. `ReconfirmNeeded` → 428.
+  - `ListExport` gains `suppliers`.
+- **Client:** `pages/SuppliersPage.tsx`, `SupplierPage.tsx`, `SupplierFormPage.tsx`; `form/Ask.tsx` (the dialog from CustomerPage, now shared); `UnitPicker` takes a `search` source. `REBUILT` maps `/admin/suppliers` (a search carries over), `/create`, and `/{uuid}/edit` (to the supplier's page, as the classic screen has no view page).
+- **office-check:** the list, a supplier, the Scorecard dialog, and the add form (Save off while a product line is empty; nothing saved).
+- **Tests:** OfficeSuppliersTest (5).
+- **Next:** release 5 part 2, purchase orders.
