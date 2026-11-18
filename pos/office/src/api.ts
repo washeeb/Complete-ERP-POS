@@ -360,6 +360,15 @@ export type OrderRow = {
 export type OrderList = { currency: string; exponent: number; warehouse: string; can_levels: boolean; rows: OrderRow[] }
 export type OrderChange = { supplier_id?: string | null; product_uom_id?: string | null; qty?: string | null; cost?: string | null }
 export type SuggestedRow = { id: string; name: string; sku: string; store: string; avg_daily: string; lead_days: number; now: string; now_source: string | null; suggested: string }
+export type EcRow = { id: string; number: string; spent_on: string | null; by: string | null; branch: string | null; description: string; for: string | null; amount: number; status: string; mine: boolean }
+export type EcList = { currency: string; exponent: number; total: number; amount: number; waiting: number | null; to_pay: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: EcRow[] }
+export type EcDetail = {
+  currency: string; exponent: number; id: string; number: string; status: string; status_label: string; by: string | null; branch: string | null; spent_on: string | null
+  for: string | null; amount: number; payee: string | null; description: string; receipt: string | null; decided_by: string | null; rejection_reason: string | null
+  paid: { by: string; on: string | null; from: string | null } | null
+  actions: { approve: boolean; reject: boolean; pay: { accounts: Option[]; default: string } | null }
+}
+export type EcForm = { currency: string; branches: Option[]; accounts: Option[]; projects: Option[] | null }
 export type CustomerAction = 'pay' | 'credit' | 'opening' | 'patient' | 'follow_up' | 'archive' | 'restore'
 export type Held = { qty: number; unit: string } | null
 export type CountRow = {
@@ -655,6 +664,21 @@ export const api = {
   suggestedLevels: (warehouse: string) => call<{ warehouses: Option[]; rows: SuggestedRow[] }>(`/office-api/suggested-levels?warehouse=${encodeURIComponent(warehouse)}`),
   recalculateLevels: () => call<{ suggested: number }>('/office-api/suggested-levels/recalculate', { method: 'POST' }),
   acceptLevels: (ids: string[]) => call<{ accepted: number }>('/office-api/suggested-levels/accept', { method: 'POST', body: JSON.stringify({ ids }) }),
+  expenseClaims: (query: string, signal?: AbortSignal) => call<EcList>(`/office-api/expense-claims?${query}`, { signal }),
+  expenseClaimsOptions: () => call<{ statuses: Option[]; per: number[]; can_create: boolean }>('/office-api/expense-claims/options'),
+  expenseClaim: (id: string) => call<EcDetail>(`/office-api/expense-claims/${id}`),
+  expenseClaimForm: () => call<EcForm>('/office-api/expense-claims/form'),
+  /** New claim, sent as a form (the receipt photo goes with it). */
+  saveExpenseClaim: async (body: FormData) => {
+    const res = await fetch('/office-api/expense-claims', { method: 'POST', body, credentials: 'same-origin',
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) throw new ApiError(json.detail ?? json.message ?? 'The claim could not be saved.', res.status, json.error ?? 'error')
+    return json as { id: string }
+  },
+  /** approve · reject (reason) · pay (account_id, paid_on); ApiError code "reconfirm" (with its url) = confirm it is you first. */
+  expenseClaimAction: (id: string, action: 'approve' | 'reject' | 'pay', body: Record<string, unknown> = {}) =>
+    call<EcDetail>(`/office-api/expense-claims/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
   invoices: (query: string, signal?: AbortSignal) => call<InvoiceList>(`/office-api/invoices?${query}`, { signal }),
   invoicesOptions: () => call<InvoiceOptions>('/office-api/invoices/options'),
   invoice: (id: string) => call<InvoiceDetail>(`/office-api/invoices/${id}`),

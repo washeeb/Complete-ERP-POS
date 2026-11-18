@@ -14,6 +14,9 @@ import { CustomersPage } from './pages/CustomersPage'
 import { DirectPurchaseFormPage } from './pages/DirectPurchaseFormPage'
 import { DirectPurchasePage } from './pages/DirectPurchasePage'
 import { DirectPurchasesPage } from './pages/DirectPurchasesPage'
+import { ExpenseClaimFormPage } from './pages/ExpenseClaimFormPage'
+import { ExpenseClaimPage } from './pages/ExpenseClaimPage'
+import { ExpenseClaimsPage } from './pages/ExpenseClaimsPage'
 import { GoodsReceiptPage } from './pages/GoodsReceiptPage'
 import { GoodsReceiptsPage } from './pages/GoodsReceiptsPage'
 import { InvoicePage } from './pages/InvoicePage'
@@ -112,7 +115,7 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
   const { dispatchToast } = useToastController(toaster)
   const [title, setTitle] = useState('')
 
-  const LIST_TITLES: Partial<Record<typeof route.page, string>> = { home: 'Home', todo: 'To-do', sales: 'Till sales', shifts: 'Till shifts', drawer: 'Till drawer', products: 'Products', stock: 'Stock on hand', movements: 'Stock ledger', adjustments: 'Stock adjustments', counts: 'Stock counts', transfers: 'Transfers', requests: 'Stock requests', customers: 'Customers', invoices: 'Invoices', suppliers: 'Suppliers', 'purchase-orders': 'Purchase orders', 'goods-received': 'Goods received', 'direct-purchases': 'Direct purchases', 'supplier-invoices': 'Invoices from suppliers', 'consignment-to-pay': 'Consignment to pay', 'reorder-levels': 'Reorder levels', 'what-to-order': 'What to order', 'suggested-levels': 'Suggested levels' }
+  const LIST_TITLES: Partial<Record<typeof route.page, string>> = { home: 'Home', todo: 'To-do', sales: 'Till sales', shifts: 'Till shifts', drawer: 'Till drawer', products: 'Products', stock: 'Stock on hand', movements: 'Stock ledger', adjustments: 'Stock adjustments', counts: 'Stock counts', transfers: 'Transfers', requests: 'Stock requests', customers: 'Customers', invoices: 'Invoices', suppliers: 'Suppliers', 'purchase-orders': 'Purchase orders', 'goods-received': 'Goods received', 'direct-purchases': 'Direct purchases', 'supplier-invoices': 'Invoices from suppliers', 'consignment-to-pay': 'Consignment to pay', 'reorder-levels': 'Reorder levels', 'what-to-order': 'What to order', 'suggested-levels': 'Suggested levels', 'expense-claims': 'Expense claims' }
   const shown = LIST_TITLES[route.page] ?? title
   useEffect(() => { document.title = shown ? `${shown} · ${me.company.name}` : me.company.name }, [shown, me.company.name])
 
@@ -190,6 +193,9 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
                                                                                           : route.page === 'reorder-levels' ? <ReorderLevelsPage />
                                                                                             : route.page === 'what-to-order' ? <WhatToOrderPage />
                                                                                               : route.page === 'suggested-levels' ? <SuggestedLevelsPage />
+                                                                                                : route.page === 'expense-claims' ? <ExpenseClaimsPage />
+                                                                                                  : route.page === 'expense-claim' ? <ExpenseClaimPage id={route.id} onTitle={setTitle} />
+                                                                                                    : route.page === 'expense-claim-form' ? <ExpenseClaimFormPage onTitle={setTitle} />
                       : <ClassicPage admin={admin} onTitle={setTitle} />}
       </Look>
       <Toaster toasterId={toaster} position="top-end" />

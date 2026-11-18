@@ -4,6 +4,7 @@ namespace App\Domain\Office;
 
 use App\Models\Customer;
 use App\Models\DirectPurchase;
+use App\Models\ExpenseClaim;
 use App\Models\GoodsReceipt;
 use App\Models\Invoice;
 use App\Models\PriceList;
@@ -34,7 +35,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final class ListExport
 {
-    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules'];
+    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims'];
 
     public function __construct(private readonly User $user) {}
 
@@ -58,6 +59,7 @@ final class ListExport
             'direct-purchases' => DirectPurchasesScreen::canView(),
             'supplier-invoices' => SupplierInvoicesScreen::canView(),
             'reorder-rules' => ReorderScreen::canRules(),
+            'expense-claims' => ExpenseClaimsScreen::canView(),
             default => false,
         };
     }
@@ -104,6 +106,7 @@ final class ListExport
             'direct-purchases' => $this->directPurchases($p),
             'supplier-invoices' => $this->supplierInvoices($p),
             'reorder-rules' => $this->reorderRules($p),
+            'expense-claims' => $this->expenseClaims($p),
         };
         /** @var Builder $query */
         $count = (clone $query)->toBase()->getCountForPagination();
@@ -355,12 +358,25 @@ final class ListExport
             }];
     }
 
+    private function expenseClaims(array $p): array
+    {
+        $screen = new ExpenseClaimsScreen($this->user);
+
+        return ['Expense claims', ['Number', 'Date', 'By', 'Branch', 'Description', 'What for', 'Amount', 'Status'], [6], $screen->sorted($p),
+            function (ExpenseClaim $c) use ($screen) {
+                $r = $screen->rowOf($c);
+
+                return [$r['number'], $r['spent_on'] ?? '', $r['by'] ?? '', $r['branch'] ?? '', $r['description'], $r['for'] ?? '', $this->money($r['amount']),
+                    ExpenseClaim::STATUSES[$r['status']] ?? $r['status']];
+            }];
+    }
+
     /** "Search: rice", "Period: 7 days", "From: 2026-11-01" … for the PDF header and the audit row. */
     private function describe(array $p): array
     {
         $names = ['q' => 'Search', 'period' => 'Period', 'from' => 'From', 'to' => 'Until', 'status' => 'Status', 'kind' => 'Kind', 'level' => 'Stock',
             'stock' => 'Stock', 'reason' => 'Reason', 'warehouse' => 'Warehouse', 'difference' => 'Difference on arrival', 'from_wh' => 'From warehouse', 'to_wh' => 'To warehouse', 'active' => 'For sale', 'schedule' => 'Medicine schedule', 'min' => 'Total from', 'max' => 'Total up to',
-            'os_min' => 'Over/short from', 'os_max' => 'Over/short up to', 'vault_waiting' => 'Vaults waiting', 'waiting' => 'Waiting on you', 'cross' => 'Between industries', 'owing' => 'Owes money', 'credit' => 'Credit customers', 'show' => 'Show', 'overdue' => 'Past due date', 'owed' => 'Still owed', 'unverified' => 'Bank details not checked', 'supplier' => 'Supplier', 'settlement' => 'Payment', 'set_by' => 'Set by', 'sort' => null, 'dir' => null];
+            'os_min' => 'Over/short from', 'os_max' => 'Over/short up to', 'vault_waiting' => 'Vaults waiting', 'waiting' => 'Waiting on you', 'cross' => 'Between industries', 'owing' => 'Owes money', 'credit' => 'Credit customers', 'show' => 'Show', 'overdue' => 'Past due date', 'owed' => 'Still owed', 'unverified' => 'Bank details not checked', 'supplier' => 'Supplier', 'settlement' => 'Payment', 'set_by' => 'Set by', 'mine' => 'My claims', 'sort' => null, 'dir' => null];
         $periods = ['today' => 'Today', '7' => '7 days', '30' => '30 days', '90' => '90 days'];
         $out = [];
         foreach ($p as $k => $v) {

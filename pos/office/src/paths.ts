@@ -49,6 +49,9 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/reorder-rules\/?$/, app: (_, q) => `${APP}/reorder-levels${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/reorder-suggestions\/?$/, app: () => `${APP}/what-to-order` },
   { admin: /^\/admin\/suggested-levels\/?$/, app: () => `${APP}/suggested-levels` },
+  { admin: /^\/admin\/expense-claims\/?$/, app: (_, q) => `${APP}/expense-claims${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/expense-claims\/create\/?$/, app: () => `${APP}/expense-claims/new` },
+  { admin: new RegExp(`^/admin/expense-claims/(${UUID})$`), app: (m) => `${APP}/expense-claims/${m[1]}` },
   { admin: /^\/admin\/stock-counts\/?$/, app: () => `${APP}/counts` },
   { admin: new RegExp(`^/admin/stock-counts/(${UUID})$`), app: (m) => `${APP}/counts/${m[1]}` },
   { admin: /^\/admin\/stock-adjustments\/?$/, app: () => `${APP}/adjustments` },
@@ -96,6 +99,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
+  | { page: 'expense-claims' } | { page: 'expense-claim'; id: string } | { page: 'expense-claim-form' }
   | { page: 'requests' } | { page: 'request'; id: string } | { page: 'request-form' }
   | { page: 'transfers' } | { page: 'transfer'; id: string } | { page: 'transfer-form'; id: string | null } | { page: 'classic'; admin: string }
 
@@ -144,6 +148,10 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/reorder-levels\/?$/.test(path)) return { page: 'reorder-levels' }
   if (/^\/office\/what-to-order\/?$/.test(path)) return { page: 'what-to-order' }
   if (/^\/office\/suggested-levels\/?$/.test(path)) return { page: 'suggested-levels' }
+  if (/^\/office\/expense-claims\/?$/.test(path)) return { page: 'expense-claims' }
+  if (/^\/office\/expense-claims\/new\/?$/.test(path)) return { page: 'expense-claim-form' }
+  const ec = path.match(new RegExp(`^/office/expense-claims/(${UUID})/?$`))
+  if (ec) return { page: 'expense-claim', id: ec[1] }
   if (/^\/office\/requests\/?$/.test(path)) return { page: 'requests' }
   if (/^\/office\/requests\/new\/?$/.test(path)) return { page: 'request-form' }
   const req = path.match(new RegExp(`^/office/requests/(${UUID})/?$`))
@@ -189,6 +197,7 @@ export function adminEquivalent(route: Route): string | null {
     case 'reorder-levels': return '/admin/reorder-rules'
     case 'what-to-order': return '/admin/reorder-suggestions'
     case 'suggested-levels': return '/admin/suggested-levels'
+    case 'expense-claims': case 'expense-claim': case 'expense-claim-form': return '/admin/expense-claims'
     default: return null
   }
 }
