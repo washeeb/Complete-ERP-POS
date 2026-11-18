@@ -347,6 +347,19 @@ export type ConsignmentOwed = {
   currency: string; exponent: number; bill?: string
   rows: { key: string; supplier: string; supplier_open: string | null; branch: string; qty: string; sold: number; owed: number }[]
 }
+export type RuleRow = { id: string; product: string | null; sku: string | null; store: string | null; on_hand: string; min: string; max: string; source: string; source_label: string; editable: boolean }
+export type RuleList = { total: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; default_note: string; rows: RuleRow[] }
+export type RuleOptions = { warehouses: Option[]; set_by: Option[]; per: number[]; can_set: boolean; can_order: boolean; can_suggested: boolean; stores: Option[] }
+export type RuleUnits = { units: Option[]; buying: string | null }
+export type RuleForm = RuleUnits & { product: string | null; store: string | null; product_id: string; warehouse_id: string; product_uom_id: string; min: string; max: string }
+export type OrderRow = {
+  id: string; product_id: string; name: string; sku: string; changed: boolean; on_hand: string; on_order: string; in_transit: string; min: string; max: string; source: string | null
+  move: string | null; supplier_id: string | null; supplier: string | null; product_uom_id: string | null; uom_code: string | null; qty: string; order: string | null
+  cost: string | null; unit_cost: number | null
+}
+export type OrderList = { currency: string; exponent: number; warehouse: string; can_levels: boolean; rows: OrderRow[] }
+export type OrderChange = { supplier_id?: string | null; product_uom_id?: string | null; qty?: string | null; cost?: string | null }
+export type SuggestedRow = { id: string; name: string; sku: string; store: string; avg_daily: string; lead_days: number; now: string; now_source: string | null; suggested: string }
 export type CustomerAction = 'pay' | 'credit' | 'opening' | 'patient' | 'follow_up' | 'archive' | 'restore'
 export type Held = { qty: number; unit: string } | null
 export type CountRow = {
@@ -621,6 +634,27 @@ export const api = {
   consignment: () => call<ConsignmentOwed>('/office-api/consignment'),
   settleConsignment: (who: string, statement: string) =>
     call<ConsignmentOwed>('/office-api/consignment/settle', { method: 'POST', body: JSON.stringify({ who, statement }) }),
+  reorderRules: (query: string, signal?: AbortSignal) => call<RuleList>(`/office-api/reorder-rules?${query}`, { signal }),
+  reorderRulesOptions: () => call<RuleOptions>('/office-api/reorder-rules/options'),
+  reorderProducts: (q: string) => call<{ results: Option[] }>(`/office-api/reorder-rules/products?q=${encodeURIComponent(q)}`),
+  reorderUnits: (product: string) => call<RuleUnits>(`/office-api/reorder-rules/units?product=${encodeURIComponent(product)}`),
+  reorderRuleForm: (id: string) => call<RuleForm>(`/office-api/reorder-rules/${id}/form`),
+  saveReorderRule: (body: { warehouse_id: string; product_id: string; product_uom_id: string; min: string; max: string }) =>
+    call<{ saved: number }>('/office-api/reorder-rules', { method: 'POST', body: JSON.stringify(body) }),
+  reorderUseDefault: (id: string) => call<{ done: boolean }>(`/office-api/reorder-rules/${id}/default`, { method: 'POST' }),
+  whatToOrderOptions: () => call<{ warehouses: Option[]; suppliers: Option[] }>('/office-api/what-to-order/options'),
+  whatToOrder: (warehouse: string, supplier: string, changes: Record<string, OrderChange>) =>
+    call<OrderList>('/office-api/what-to-order', { method: 'POST', body: JSON.stringify({ warehouse: warehouse || null, supplier: supplier || null, changes }) }),
+  whatToOrderLine: (product: string) => call<{ suppliers: Option[]; units: Option[]; supplier_units: Record<string, string> }>(`/office-api/what-to-order/line?product=${encodeURIComponent(product)}`),
+  whatToOrderLevels: (body: { warehouse: string; product: string; min: string; max: string }) =>
+    call<{ id: string }>('/office-api/what-to-order/levels', { method: 'POST', body: JSON.stringify(body) }),
+  whatToOrderMoves: (warehouse: string, products: string[]) =>
+    call<{ requests: string[] }>('/office-api/what-to-order/moves', { method: 'POST', body: JSON.stringify({ warehouse, products }) }),
+  whatToOrderDrafts: (warehouse: string, products: string[], changes: Record<string, OrderChange>) =>
+    call<{ orders: { id: string; number: string }[] }>('/office-api/what-to-order/drafts', { method: 'POST', body: JSON.stringify({ warehouse, products, changes }) }),
+  suggestedLevels: (warehouse: string) => call<{ warehouses: Option[]; rows: SuggestedRow[] }>(`/office-api/suggested-levels?warehouse=${encodeURIComponent(warehouse)}`),
+  recalculateLevels: () => call<{ suggested: number }>('/office-api/suggested-levels/recalculate', { method: 'POST' }),
+  acceptLevels: (ids: string[]) => call<{ accepted: number }>('/office-api/suggested-levels/accept', { method: 'POST', body: JSON.stringify({ ids }) }),
   invoices: (query: string, signal?: AbortSignal) => call<InvoiceList>(`/office-api/invoices?${query}`, { signal }),
   invoicesOptions: () => call<InvoiceOptions>('/office-api/invoices/options'),
   invoice: (id: string) => call<InvoiceDetail>(`/office-api/invoices/${id}`),

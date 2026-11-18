@@ -1,0 +1,5 @@
+## Reorder levels, what to order and suggested levels in the new back office
+- **Same services, same rules.** Levels through `ReorderService::saveRule` and `useDefault`; what to order from `ReorderService::suggestions`, with the buyer's changes applied by `ReorderService::change` and orders made by `createDrafts`; moves by `requestMoves`; suggested levels by `SmartReorderLevels`.
+- **The buyer's changes stay in the page** (as the current page keeps them in its session) and go with each refresh and with Create draft purchase orders; nothing is saved until the orders are made, except the levels, which save at once as now.
+- **One dialog per line instead of four pencils.** The current page opens a small window per value (supplier, quantity, cost, levels); the new one opens one dialog with all of them and Undo, and the levels on a second step.
+- **Found while testing:** `Fields::qty` refused unit factors stored with six decimals ("24.000000"), so the current Reorder levels form's unit list failed for every product bought in packs. Fixed in the helper (zeros beyond three decimals dropped, a true fraction shown as is), so both screens work.

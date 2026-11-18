@@ -9,6 +9,7 @@ use App\Models\Invoice;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
+use App\Models\ReorderRule;
 use App\Models\Sale;
 use App\Models\Shift;
 use App\Models\StockAdjustment;
@@ -33,7 +34,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final class ListExport
 {
-    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices'];
+    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules'];
 
     public function __construct(private readonly User $user) {}
 
@@ -56,6 +57,7 @@ final class ListExport
             'goods-receipts' => GoodsReceiptsScreen::canView(),
             'direct-purchases' => DirectPurchasesScreen::canView(),
             'supplier-invoices' => SupplierInvoicesScreen::canView(),
+            'reorder-rules' => ReorderScreen::canRules(),
             default => false,
         };
     }
@@ -101,6 +103,7 @@ final class ListExport
             'goods-receipts' => $this->goodsReceipts($p),
             'direct-purchases' => $this->directPurchases($p),
             'supplier-invoices' => $this->supplierInvoices($p),
+            'reorder-rules' => $this->reorderRules($p),
         };
         /** @var Builder $query */
         $count = (clone $query)->toBase()->getCountForPagination();
@@ -339,12 +342,25 @@ final class ListExport
             }];
     }
 
+    private function reorderRules(array $p): array
+    {
+        $screen = new ReorderScreen($this->user);
+        $query = $screen->rulesSorted($p);
+
+        return ['Reorder levels', ['Product', 'SKU', 'Store', 'On hand', 'Min', 'Max', 'Set by'], [], $query,
+            function (ReorderRule $r) use ($screen) {
+                $row = $screen->ruleRow($r, $screen->rulePage([$r]));
+
+                return [$row['product'] ?? '', $row['sku'] ?? '', $row['store'] ?? '', $row['on_hand'], $row['min'], $row['max'], $row['source_label']];
+            }];
+    }
+
     /** "Search: rice", "Period: 7 days", "From: 2026-11-01" … for the PDF header and the audit row. */
     private function describe(array $p): array
     {
         $names = ['q' => 'Search', 'period' => 'Period', 'from' => 'From', 'to' => 'Until', 'status' => 'Status', 'kind' => 'Kind', 'level' => 'Stock',
             'stock' => 'Stock', 'reason' => 'Reason', 'warehouse' => 'Warehouse', 'difference' => 'Difference on arrival', 'from_wh' => 'From warehouse', 'to_wh' => 'To warehouse', 'active' => 'For sale', 'schedule' => 'Medicine schedule', 'min' => 'Total from', 'max' => 'Total up to',
-            'os_min' => 'Over/short from', 'os_max' => 'Over/short up to', 'vault_waiting' => 'Vaults waiting', 'waiting' => 'Waiting on you', 'cross' => 'Between industries', 'owing' => 'Owes money', 'credit' => 'Credit customers', 'show' => 'Show', 'overdue' => 'Past due date', 'owed' => 'Still owed', 'unverified' => 'Bank details not checked', 'supplier' => 'Supplier', 'settlement' => 'Payment', 'sort' => null, 'dir' => null];
+            'os_min' => 'Over/short from', 'os_max' => 'Over/short up to', 'vault_waiting' => 'Vaults waiting', 'waiting' => 'Waiting on you', 'cross' => 'Between industries', 'owing' => 'Owes money', 'credit' => 'Credit customers', 'show' => 'Show', 'overdue' => 'Past due date', 'owed' => 'Still owed', 'unverified' => 'Bank details not checked', 'supplier' => 'Supplier', 'settlement' => 'Payment', 'set_by' => 'Set by', 'sort' => null, 'dir' => null];
         $periods = ['today' => 'Today', '7' => '7 days', '30' => '30 days', '90' => '90 days'];
         $out = [];
         foreach ($p as $k => $v) {

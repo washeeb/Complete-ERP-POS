@@ -233,8 +233,22 @@ final class Fields
             ->get()->mapWithKeys(fn ($b) => [$b->id => $b->code.($b->name ? " · {$b->name}" : '')])->all();
     }
 
+    /**
+     * A quantity for people to read: "24", "2.5 CTN". Unit factors are stored with six decimals ("24.000000"): the zeros
+     * beyond three are dropped, and a true fraction ("0.333333") is shown as it is, instead of failing (found 2026-11-18:
+     * the Reorder levels form's unit list failed for every product bought in packs).
+     */
     public static function qty(string|int|float|null $value, ?string $uom = null): string
     {
-        return rtrim(rtrim(Qty::format(Qty::toMilli((string) ($value ?? '0'))), '0'), '.').($uom ? " {$uom}" : '');
+        $v = trim((string) ($value ?? '0'));
+        if (preg_match('/^(-?\d+)\.(\d{4,})$/', $v, $m)) {
+            $frac = rtrim($m[2], '0');
+            if (strlen($frac) > 3) {
+                return $m[1].'.'.$frac.($uom ? " {$uom}" : '');
+            }
+            $v = $m[1].($frac !== '' ? ".{$frac}" : '');
+        }
+
+        return rtrim(rtrim(Qty::format(Qty::toMilli($v)), '0'), '.').($uom ? " {$uom}" : '');
     }
 }
