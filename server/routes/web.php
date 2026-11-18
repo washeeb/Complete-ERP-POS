@@ -47,7 +47,8 @@ Route::get('/', fn () => redirect('/admin'));
 
 // The new back office (React + Fluent UI, built into public/office by `npm run build:office` in pos/). The page, and what it
 // shows (OfficeController), for people signed in to the back office; pages not yet rebuilt open inside it.
-Route::get('/office', fn () => redirect('/office/'));
+// redirect()->away with the full address: redirect('/office/') would drop the final slash and send /office back to itself.
+Route::get('/office', fn () => redirect()->away(rtrim(url('/'), '/').'/office/'));
 // Signed out in the new back office: sign in, then back to the same page of it (only ever a page of /office).
 Route::get('/office-signin', [OfficeController::class, 'signIn'])->name('office.sign-in');
 Route::get('/office/{path?}', [OfficeController::class, 'index'])->where('path', '.*')->name('office');
@@ -150,7 +151,7 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
 // A company's logo, icon or monogram (Company → Branding), public: it prints on receipts and shows in the online shop.
 Route::get('/brand/{slug}/{kind}', BrandAssetController::class)->where(['slug' => '[a-z0-9-]+', 'kind' => 'logo|logo_dark|icon|monogram\.svg'])->name('brand.asset');
 
-Route::get('/pos', fn () => redirect('/pos/'));
+Route::get('/pos', fn () => redirect()->away(rtrim(url('/'), '/').'/pos/')); // the final slash kept, as /office
 Route::get('/pos/{path?}', function () {
     $index = public_path('pos/index.html');
 
