@@ -11,6 +11,7 @@ use App\Http\Controllers\BrandAssetController;
 use App\Http\Controllers\ExpenseReceiptController;
 use App\Http\Controllers\Office\AdjustmentsController as OfficeAdjustmentsController;
 use App\Http\Controllers\Office\CountsController as OfficeCountsController;
+use App\Http\Controllers\Office\CustomersController as OfficeCustomersController;
 use App\Http\Controllers\Office\ExportController as OfficeExportController;
 use App\Http\Controllers\Office\OfficeController;
 use App\Http\Controllers\Office\ProductsController as OfficeProductsController;
@@ -128,7 +129,15 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::get('requests/{id}', [OfficeRequestsController::class, 'show'])->whereUuid('id');
     Route::get('requests/{id}/products', [OfficeRequestsController::class, 'products'])->whereUuid('id');
     Route::post('requests/{id}/action', [OfficeRequestsController::class, 'action'])->whereUuid('id');
-    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests']);
+    Route::get('customers', [OfficeCustomersController::class, 'index']);
+    Route::get('customers/options', [OfficeCustomersController::class, 'options']);
+    Route::get('customers/form', [OfficeCustomersController::class, 'form']);
+    Route::post('customers', [OfficeCustomersController::class, 'save']);
+    Route::get('customers/{id}', [OfficeCustomersController::class, 'show'])->whereUuid('id');
+    Route::get('customers/{id}/form', [OfficeCustomersController::class, 'form'])->whereUuid('id');
+    Route::post('customers/{id}', [OfficeCustomersController::class, 'save'])->whereUuid('id');
+    Route::post('customers/{id}/action', [OfficeCustomersController::class, 'action'])->whereUuid('id');
+    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers']);
 });
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;
