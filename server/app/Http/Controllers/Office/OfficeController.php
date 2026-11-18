@@ -57,7 +57,7 @@ class OfficeController extends Controller
         $to = (string) $request->query('to', $request->input('to', '/office/'));
         $to = preg_match('#^/office(/[^\s\\\\]*)?$#', $to) && ! str_starts_with($to, '//') ? $to : '/office/';
         if ($request->user()) {
-            return redirect($to);
+            return redirect()->away(rtrim(url('/'), '/').$to); // exactly this address: redirect() drops a final / (/office/ → /office → back here)
         }
         $request->session()->put('url.intended', rtrim(url('/'), '/').$to); // exactly this address (url() would drop the final /)
 

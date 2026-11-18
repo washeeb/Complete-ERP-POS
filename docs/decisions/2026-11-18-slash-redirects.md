@@ -1,0 +1,3 @@
+## Redirects to an address ending in "/"
+- **Found:** on a client server, `https://<domain>/office` answered 302 to `/office` itself (checked with curl on the server); `/office/` served the page. `redirect('/office/')` goes through Laravel's URL generator, which trims a final slash. The dev server never showed it because the check always opens `/office/`, and the web server (Caddy) only serves the app under `/office/*`, so the bare `/office` always reaches Laravel.
+- **Decided:** build the full address and use `redirect()->away(...)`, which keeps it exactly, in the three places that send people to such an address (`/office`, `/pos`, sign-in back to the new back office). A test checks each.
