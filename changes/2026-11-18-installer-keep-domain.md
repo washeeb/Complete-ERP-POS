@@ -1,0 +1,2 @@
+### Fixed
+- **Ubuntu updates keep the internet name.** An update run without `--domain` now keeps the internet name (and the certificate email) of the last install. Before, it switched the site to the server's own address, and browsers showed "This site can't provide a secure connection" (ERR_SSL_PROTOCOL_ERROR) until the update was run again with `--domain`. `--no-domain` moves a server back to its network address on purpose.

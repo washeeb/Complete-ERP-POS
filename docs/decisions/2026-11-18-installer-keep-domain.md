@@ -1,0 +1,5 @@
+## An update keeps the internet name it was installed with
+- **Found:** a client server updated with `install.sh --zip …` and no `--domain` stopped answering on its internet name (ERR_SSL_PROTOCOL_ERROR). Confirmed on the server: the Caddy site listed only the IP address and host name with Caddy's own certificate, so the internet name had no site and Caddy refused the handshake. The installer rebuilds the site file from its options on every run, and the release instructions gave the update command without `--domain`.
+- **Decided:** the installer remembers. Without `--domain` it takes the name from `APP_URL` in the existing `.env` (the installer wrote it the last time), and the certificate email from the Caddyfile; it says so on screen. Leaving an option out of an update must not take the site down.
+- **`--no-domain`** for the rare deliberate move back to the network address, so the old behaviour stays possible but never happens by accident.
+- **Not remembered:** an IP or localhost in `APP_URL` (that is the no-domain set-up anyway), and shared-server copies, which already require `--domain`.

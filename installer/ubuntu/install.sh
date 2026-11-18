@@ -3,6 +3,7 @@
 # doing what Chapter 5 of the installation guide describes by hand.
 #
 #   sudo bash install.sh --zip ~/ses-labs-<customer>-<build>.zip [--domain erp.example.com --email you@example.com]
+#   An update keeps the internet name (and email) of the last install when --domain is left out; --no-domain drops it.
 #                        [--role hq|branch --node-id HQ] [--dir /var/www/seslabs]
 #   Shared server (several small clients on one server, each on its own internet name):
 #   sudo bash install.sh --zip <release>.zip --instance clientname --domain clientname.example.com --email you@example.com
@@ -13,13 +14,14 @@
 set -euo pipefail
 
 SLUG="seslabs" # the product name in folder, service and site names
-ZIP=""; SRC=""; DOMAIN=""; EMAIL=""; ROLE="hq"; NODE_ID="HQ"; DIR=""; INSTANCE=""; CI_MODE=0; PHP_V="8.4"; PG_MAJOR=17
+ZIP=""; SRC=""; DOMAIN=""; EMAIL=""; NO_DOMAIN=0; ROLE="hq"; NODE_ID="HQ"; DIR=""; INSTANCE=""; CI_MODE=0; PHP_V="8.4"; PG_MAJOR=17
 while [ $# -gt 0 ]; do
   case "$1" in
     --zip) ZIP="$2"; shift 2 ;;
     --source) SRC="$2"; shift 2 ;;          # an extracted release or a source checkout (folder holding server/)
     --domain) DOMAIN="$2"; shift 2 ;;
     --email) EMAIL="$2"; shift 2 ;;
+    --no-domain) NO_DOMAIN=1; shift ;;       # an update that moves from an internet name back to the network address
     --role) ROLE="$2"; shift 2 ;;
     --node-id) NODE_ID="$2"; shift 2 ;;
     --dir) DIR="$2"; shift 2 ;;
@@ -60,6 +62,18 @@ else
   DB_NAME="erp"; APP_USER="www-data"; FPM_SOCK="/run/php/php${PHP_V}-fpm.sock"
 fi
 DIR="${DIR:-/var/www/${SLUG}}"
+
+# An update without --domain keeps the internet name of the last install (the address in .env), and the email from the
+# web server settings. Before, leaving it out switched the site to the network address only: the internet name then
+# had no site, and browsers showed "can't provide a secure connection" until the update was run again with --domain.
+if [ -z "$DOMAIN" ] && [ "$NO_DOMAIN" = 0 ] && [ "$CI_MODE" = 0 ] && [ -f "${DIR}/server/.env" ]; then
+  PREV="$(sed -n 's|^APP_URL=https://\([^/:]*\).*|\1|p' "${DIR}/server/.env" | tail -1 | tr 'A-Z' 'a-z')"
+  if echo "$PREV" | grep -q '\.' && ! echo "$PREV" | grep -Eq '^[0-9.]+$' && [ "$PREV" != "localhost" ]; then
+    DOMAIN="$PREV"
+    [ -n "$EMAIL" ] || EMAIL="$(sed -n 's|^[[:space:]]*email[[:space:]]\+\([^[:space:]]*\).*|\1|p' /etc/caddy/Caddyfile 2>/dev/null | head -1)"
+    echo "Keeping the internet name of the last install: ${DOMAIN} (add --no-domain to use only this server's address)."
+  fi
+fi
 
 # Where the system is reached: an internet name (Let's Encrypt), or this server's address and name on the network
 # (its own certificate authority). The test run uses localhost only.
