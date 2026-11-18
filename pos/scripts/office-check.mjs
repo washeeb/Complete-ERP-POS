@@ -273,6 +273,48 @@ try {
         await page.goBack()
       }
 
+      // Direct purchases, rebuilt (release 5): from the Purchasing menu, rows (or "No direct purchases match"); a row opens it;
+      // at one size the form is drawn (Save off while empty) and the Scan dialog opened and left (nothing read or saved).
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Purchasing/ }).first().click()
+      await page.getByRole('navigation', { name: 'Purchasing' }).getByRole('link', { name: 'Direct purchases', exact: true }).first().click()
+      await page.waitForURL(/\/office\/direct-purchases$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Direct purchases did not open the new screen (${page.url()})`))
+      const dpRow = page.getByRole('table', { name: 'Direct purchases' }).getByRole('row').nth(1)
+      await Promise.race([dpRow.waitFor({ timeout: 20000 }), page.getByText('No direct purchases match').waitFor({ timeout: 20000 })])
+        .catch(() => problems.push(`${look} ${w}: Direct purchases showed neither rows nor "No direct purchases match"`))
+      await page.screenshot({ path: out(`direct-purchases-${look}-${w}`) })
+      if (await dpRow.isVisible().catch(() => false)) {
+        await dpRow.click()
+        await page.waitForURL(/\/office\/direct-purchases\/[0-9a-f-]{36}$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: a direct purchase did not open`))
+        await page.getByRole('region', { name: 'Products' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: a direct purchase shows no products`))
+        await page.screenshot({ path: out(`direct-purchase-${look}-${w}`), fullPage: true })
+        await page.goBack()
+      }
+      if (look === 'top' && w === 1366) {
+        await page.getByRole('button', { name: 'Enter a supplier invoice' }).click()
+        await page.waitForURL(/\/office\/direct-purchases\/new$/, { timeout: 15000 }).catch(() => problems.push('direct purchase form: did not open'))
+        await page.getByRole('region', { name: 'Products' }).waitFor({ timeout: 10000 }).catch(() => problems.push('direct purchase form: no Products section'))
+        if (await page.getByRole('button', { name: 'Save', exact: true }).isEnabled()) problems.push('direct purchase form: Save is on with nothing filled in')
+        await page.getByRole('button', { name: 'Scan the invoice' }).click()
+        const d = page.getByRole('dialog')
+        await d.waitFor({ timeout: 10000 }).catch(() => problems.push('direct purchase form: Scan the invoice did not open'))
+        await page.screenshot({ path: out('direct-purchase-scan') })
+        await d.getByRole('button', { name: 'Back' }).click()
+        await d.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => undefined)
+        // One line filled in (nothing saved): the product search, its units, and the margin beside the new price.
+        const line1 = page.getByRole('group', { name: 'Line 1' })
+        const dpPick = line1.getByRole('combobox', { name: /Product and unit/ })
+        await dpPick.click() // opens the list, as a person typing does
+        await dpPick.fill('tom')
+        await page.getByRole('option').first().click({ timeout: 10000 }).catch(() => problems.push('direct purchase form: the product search found nothing for "tom"'))
+        await line1.getByRole('spinbutton', { name: /^Qty/ }).fill('2')
+        await line1.getByRole('spinbutton', { name: /^Unit price/ }).fill('100')
+        await line1.getByRole('spinbutton', { name: /^New selling price/ }).fill('150')
+        await line1.getByText(/^Margin \d+%/).waitFor({ timeout: 10000 }).catch(() => problems.push('direct purchase form: no margin shown beside the new price'))
+        await line1.scrollIntoViewIfNeeded()
+        await page.screenshot({ path: out('direct-purchase-form') })
+        await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
+      }
+
       // To-do: from the menu, the list of what waits (or "All clear").
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /^To-do/ }).first().click()
       await page.getByRole('heading', { name: 'To-do', level: 1 }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: To-do did not open`))

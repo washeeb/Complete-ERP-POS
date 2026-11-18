@@ -3,6 +3,7 @@
 namespace App\Domain\Office;
 
 use App\Models\Customer;
+use App\Models\DirectPurchase;
 use App\Models\GoodsReceipt;
 use App\Models\Invoice;
 use App\Models\PriceList;
@@ -31,7 +32,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final class ListExport
 {
-    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts'];
+    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases'];
 
     public function __construct(private readonly User $user) {}
 
@@ -52,6 +53,7 @@ final class ListExport
             'suppliers' => SuppliersScreen::canView(),
             'purchase-orders' => PurchaseOrdersScreen::canView(),
             'goods-receipts' => GoodsReceiptsScreen::canView(),
+            'direct-purchases' => DirectPurchasesScreen::canView(),
             default => false,
         };
     }
@@ -95,6 +97,7 @@ final class ListExport
             'suppliers' => $this->suppliers($p),
             'purchase-orders' => $this->purchaseOrders($p),
             'goods-receipts' => $this->goodsReceipts($p),
+            'direct-purchases' => $this->directPurchases($p),
         };
         /** @var Builder $query */
         $count = (clone $query)->toBase()->getCountForPagination();
@@ -307,12 +310,25 @@ final class ListExport
             }];
     }
 
+    private function directPurchases(array $p): array
+    {
+        $screen = new DirectPurchasesScreen($this->user);
+
+        return ['Direct purchases', ['No.', 'Date', 'Supplier', 'Invoice', 'Payment', 'Total', 'Status', 'By'], [5], $screen->sorted($p),
+            function (DirectPurchase $d) use ($screen) {
+                $r = $screen->rowOf($d);
+
+                return [$r['number'], $r['invoice_date'] ?? '', $r['supplier'] ?? '', $r['invoice_no'], DirectPurchase::SETTLEMENTS[$r['settlement']] ?? $r['settlement'],
+                    $this->money($r['total'], $r['currency']), DirectPurchase::STATUSES[$r['status']] ?? $r['status'], $r['by'] ?? ''];
+            }];
+    }
+
     /** "Search: rice", "Period: 7 days", "From: 2026-11-01" … for the PDF header and the audit row. */
     private function describe(array $p): array
     {
         $names = ['q' => 'Search', 'period' => 'Period', 'from' => 'From', 'to' => 'Until', 'status' => 'Status', 'kind' => 'Kind', 'level' => 'Stock',
             'stock' => 'Stock', 'reason' => 'Reason', 'warehouse' => 'Warehouse', 'difference' => 'Difference on arrival', 'from_wh' => 'From warehouse', 'to_wh' => 'To warehouse', 'active' => 'For sale', 'schedule' => 'Medicine schedule', 'min' => 'Total from', 'max' => 'Total up to',
-            'os_min' => 'Over/short from', 'os_max' => 'Over/short up to', 'vault_waiting' => 'Vaults waiting', 'waiting' => 'Waiting on you', 'cross' => 'Between industries', 'owing' => 'Owes money', 'credit' => 'Credit customers', 'show' => 'Show', 'overdue' => 'Past due date', 'owed' => 'Still owed', 'unverified' => 'Bank details not checked', 'supplier' => 'Supplier', 'sort' => null, 'dir' => null];
+            'os_min' => 'Over/short from', 'os_max' => 'Over/short up to', 'vault_waiting' => 'Vaults waiting', 'waiting' => 'Waiting on you', 'cross' => 'Between industries', 'owing' => 'Owes money', 'credit' => 'Credit customers', 'show' => 'Show', 'overdue' => 'Past due date', 'owed' => 'Still owed', 'unverified' => 'Bank details not checked', 'supplier' => 'Supplier', 'settlement' => 'Payment', 'sort' => null, 'dir' => null];
         $periods = ['today' => 'Today', '7' => '7 days', '30' => '30 days', '90' => '90 days'];
         $out = [];
         foreach ($p as $k => $v) {
