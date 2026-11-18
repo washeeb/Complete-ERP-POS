@@ -3,6 +3,7 @@
 namespace App\Domain\Office;
 
 use App\Models\Customer;
+use App\Models\Invoice;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\Sale;
@@ -27,7 +28,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final class ListExport
 {
-    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers'];
+    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices'];
 
     public function __construct(private readonly User $user) {}
 
@@ -44,6 +45,7 @@ final class ListExport
             'transfers' => TransfersScreen::canView(),
             'requests' => RequestsScreen::canView(),
             'customers' => CustomersScreen::canView(),
+            'invoices' => InvoicesScreen::canView(),
             default => false,
         };
     }
@@ -83,6 +85,7 @@ final class ListExport
             'transfers' => $this->transfers($p),
             'requests' => $this->requests($p),
             'customers' => $this->customers($p),
+            'invoices' => $this->invoices($p),
         };
         /** @var Builder $query */
         $count = (clone $query)->toBase()->getCountForPagination();
@@ -241,12 +244,25 @@ final class ListExport
             }];
     }
 
+    private function invoices(array $p): array
+    {
+        $screen = new InvoicesScreen($this->user);
+
+        return ['Invoices', ['Invoice', 'Customer', 'Customer ref.', 'Issued', 'Due', 'Total', 'Still owed', 'Status'], [5, 6], $screen->sorted($p),
+            function (Invoice $i) use ($screen) {
+                $r = $screen->rowOf($i);
+
+                return [$r['number'], $r['customer'], $r['ref'] ?? '', $r['issued_on'], $r['due_on'], $this->money($r['total'], $r['currency']),
+                    $r['open'] ? $this->money($r['open'], $r['currency']) : 'paid', Invoice::STATUSES[$r['status']] ?? $r['status']];
+            }];
+    }
+
     /** "Search: rice", "Period: 7 days", "From: 2026-11-01" … for the PDF header and the audit row. */
     private function describe(array $p): array
     {
         $names = ['q' => 'Search', 'period' => 'Period', 'from' => 'From', 'to' => 'Until', 'status' => 'Status', 'kind' => 'Kind', 'level' => 'Stock',
             'stock' => 'Stock', 'reason' => 'Reason', 'warehouse' => 'Warehouse', 'difference' => 'Difference on arrival', 'from_wh' => 'From warehouse', 'to_wh' => 'To warehouse', 'active' => 'For sale', 'schedule' => 'Medicine schedule', 'min' => 'Total from', 'max' => 'Total up to',
-            'os_min' => 'Over/short from', 'os_max' => 'Over/short up to', 'vault_waiting' => 'Vaults waiting', 'waiting' => 'Waiting on you', 'cross' => 'Between industries', 'owing' => 'Owes money', 'credit' => 'Credit customers', 'show' => 'Show', 'sort' => null, 'dir' => null];
+            'os_min' => 'Over/short from', 'os_max' => 'Over/short up to', 'vault_waiting' => 'Vaults waiting', 'waiting' => 'Waiting on you', 'cross' => 'Between industries', 'owing' => 'Owes money', 'credit' => 'Credit customers', 'show' => 'Show', 'overdue' => 'Past due date', 'owed' => 'Still owed', 'sort' => null, 'dir' => null];
         $periods = ['today' => 'Today', '7' => '7 days', '30' => '30 days', '90' => '90 days'];
         $out = [];
         foreach ($p as $k => $v) {

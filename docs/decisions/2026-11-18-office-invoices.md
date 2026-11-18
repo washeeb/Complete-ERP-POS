@@ -1,0 +1,6 @@
+## Invoices in the new back office
+- **Same service, same rule.** Credit note goes through `ReceivablesService::creditNote`; invoices are never edited or deleted, as on the current screen. Invoices are still raised only by deliveries.
+- **What is still owed comes from one query.** The current list asked the ledger once per row. The new list works out each invoice's open amount in the same query (its ledger entry less what was matched to it, the same sum as `CustomerLedger::openItems`), so it can also filter **Still owed**, sort by it and total it on the cards.
+- **Confirm it's you in the back office.** A write-off always asks the person to confirm it is them (`Reconfirm`, `always`). The server answers 428 with the confirm page's address and the page opens in a dialog, as To-do does for till approvals; the dialog is now one shared component (`ConfirmItsYou`) for the screens still to come that pay money out (expenses, suppliers, payroll).
+- **Added, not in the current page:** "Settled by" (which payments, credit notes or till returns paid the invoice) and the invoice's credit notes. They are read from the ledger, so nothing new is stored.
+- **The warehouse for returned goods** must be one the current list offers (active, a branch where the person may deliver); anything else is refused.

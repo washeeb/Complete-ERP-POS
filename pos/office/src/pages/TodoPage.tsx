@@ -1,10 +1,11 @@
 import {
-  Badge, Button, CounterBadge, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, makeStyles, mergeClasses,
+  Badge, Button, CounterBadge, Field, makeStyles, mergeClasses,
   MessageBar, MessageBarBody, Popover, PopoverSurface, PopoverTrigger, Spinner, Tab, TabList, Text, Textarea, tokens,
 } from '@fluentui/react-components'
-import { ArrowClockwiseRegular, CheckmarkRegular, DismissRegular, OpenRegular, ShieldCheckmarkRegular, TaskListSquareLtrRegular } from '@fluentui/react-icons'
+import { ArrowClockwiseRegular, CheckmarkRegular, DismissRegular, OpenRegular, TaskListSquareLtrRegular } from '@fluentui/react-icons'
 import { useCallback, useEffect, useState } from 'react'
 import { api, ApiError, type Todo, type TodoGroup, type TodoItem } from '../api'
+import { ConfirmItsYou } from '../form/ConfirmItsYou'
 import { money } from '../home/format'
 import { linkClick, navigate } from '../nav'
 import { appPathFor } from '../paths'
@@ -36,7 +37,6 @@ const useStyles = makeStyles({
   empty: { display: 'grid', placeItems: 'center', gap: '8px', padding: '48px 16px', textAlign: 'center', color: tokens.colorNeutralForeground3 },
   emptyIcon: { fontSize: '48px', color: 'var(--zx-good)' },
   more: { padding: '10px 16px', borderTop: `1px solid ${tokens.colorNeutralStroke3}` },
-  confirm: { width: '100%', height: '460px', border: 'none', borderRadius: tokens.borderRadiusMedium, backgroundColor: tokens.colorNeutralBackground2 },
 })
 
 function ago(iso: string): string {
@@ -137,26 +137,14 @@ export function TodoPage({ onCount }: { onCount: (n: number) => void }) {
       {groups.map((g) => <Group key={g.key} g={g} money={money2} busy={busy} onDecide={decide} />)}
 
       {confirmUrl && (
-        <Dialog open onOpenChange={(_, d) => { if (!d.open) { setConfirmUrl(null); setRetry(null) } }}>
-          <DialogSurface>
-            <DialogBody>
-              <DialogTitle>Confirm it's you</DialogTitle>
-              <DialogContent>
-                <Text block style={{ marginBottom: 8 }}>Approving at the till asks you to prove it is really you (passkey, fingerprint or the code from your app). Then press <strong>Approve now</strong>.</Text>
-                <iframe className={s.confirm} src={confirmUrl} title="Confirm it's you" allow="publickey-credentials-get *" />
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={() => { setConfirmUrl(null); setRetry(null) }}>Cancel</Button>
-                <Button appearance="primary" icon={<ShieldCheckmarkRegular />} onClick={() => {
-                  const item = todo.groups.flatMap((x) => x.items).find((i) => i.id === retry?.id)
-                  setConfirmUrl(null)
-                  setRetry(null)
-                  if (item) void decide(item, true)
-                }}>Approve now</Button>
-              </DialogActions>
-            </DialogBody>
-          </DialogSurface>
-        </Dialog>
+        <ConfirmItsYou url={confirmUrl} why="Approving at the till is protected." go="Approve now"
+          onCancel={() => { setConfirmUrl(null); setRetry(null) }}
+          onGo={() => {
+            const item = todo.groups.flatMap((x) => x.items).find((i) => i.id === retry?.id)
+            setConfirmUrl(null)
+            setRetry(null)
+            if (item) void decide(item, true)
+          }} />
       )}
     </div>
   )

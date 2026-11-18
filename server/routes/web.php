@@ -13,6 +13,7 @@ use App\Http\Controllers\Office\AdjustmentsController as OfficeAdjustmentsContro
 use App\Http\Controllers\Office\CountsController as OfficeCountsController;
 use App\Http\Controllers\Office\CustomersController as OfficeCustomersController;
 use App\Http\Controllers\Office\ExportController as OfficeExportController;
+use App\Http\Controllers\Office\InvoicesController as OfficeInvoicesController;
 use App\Http\Controllers\Office\OfficeController;
 use App\Http\Controllers\Office\ProductsController as OfficeProductsController;
 use App\Http\Controllers\Office\RequestsController as OfficeRequestsController;
@@ -137,7 +138,11 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::get('customers/{id}/form', [OfficeCustomersController::class, 'form'])->whereUuid('id');
     Route::post('customers/{id}', [OfficeCustomersController::class, 'save'])->whereUuid('id');
     Route::post('customers/{id}/action', [OfficeCustomersController::class, 'action'])->whereUuid('id');
-    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers']);
+    Route::get('invoices', [OfficeInvoicesController::class, 'index']);
+    Route::get('invoices/options', [OfficeInvoicesController::class, 'options']);
+    Route::get('invoices/{id}', [OfficeInvoicesController::class, 'show'])->whereUuid('id');
+    Route::post('invoices/{id}/credit', [OfficeInvoicesController::class, 'credit'])->whereUuid('id');
+    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices']);
 });
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;
