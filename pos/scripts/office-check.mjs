@@ -315,6 +315,16 @@ try {
         await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
       }
 
+      // Invoices from suppliers and Consignment to pay, rebuilt (release 5): from the Purchasing menu, each opens its new screen.
+      for (const [link, path, ready] of [['Invoices from suppliers', /\/office\/supplier-invoices$/, () => page.getByText('No invoices from suppliers here').or(page.getByRole('table', { name: 'Invoices from suppliers' }).getByRole('row').nth(1))],
+        ['Consignment to pay', /\/office\/consignment-to-pay$/, () => page.getByRole('region', { name: 'Owed for consigned goods sold' })]]) {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Purchasing/ }).first().click()
+        await page.getByRole('navigation', { name: 'Purchasing' }).getByRole('link', { name: link, exact: true }).first().click()
+        await page.waitForURL(path, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await ready().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${link} did not show its list`))
+        await page.screenshot({ path: out(`${link.split(' ')[0].toLowerCase()}-${look}-${w}`) })
+      }
+
       // To-do: from the menu, the list of what waits (or "All clear").
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /^To-do/ }).first().click()
       await page.getByRole('heading', { name: 'To-do', level: 1 }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: To-do did not open`))

@@ -336,6 +336,17 @@ export type DpForm = {
   choices: { suppliers: Option[]; warehouses: Option[]; settlements: Option[]; methods: Option[]; accounts: Option[]; tax_groups: Option[]; price_lists: Option[]; uoms: Option[]; industries: Option[] | null }
   short_dated_months: number; can_add_product: boolean; ai_unavailable: string | null
 }
+export type SiRow = {
+  id: string; received_at: string | null; supplier: string | null; invoice_no: string; invoice_date: string | null; currency: string; amount: number
+  order: { number: string; open: string | null } | null; sent_by: string | null; status: string; note: string | null
+  actions: { file: string | null; read: boolean; enter: string | null; mark: boolean; reject: boolean }
+}
+export type SiList = { currency: string; exponent: number; total: number; amount: number; waiting: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: SiRow[] }
+export type SiOptions = { statuses: Option[]; per: number[]; consignment: boolean }
+export type ConsignmentOwed = {
+  currency: string; exponent: number; bill?: string
+  rows: { key: string; supplier: string; supplier_open: string | null; branch: string; qty: string; sold: number; owed: number }[]
+}
 export type CustomerAction = 'pay' | 'credit' | 'opening' | 'patient' | 'follow_up' | 'archive' | 'restore'
 export type Held = { qty: number; unit: string } | null
 export type CountRow = {
@@ -601,6 +612,15 @@ export const api = {
     if (!res.ok) throw new ApiError(json.detail ?? json.message ?? 'The pages could not be added.', res.status, json.error ?? 'error')
     return json as T
   },
+  supplierInvoices: (query: string, signal?: AbortSignal) => call<SiList>(`/office-api/supplier-invoices?${query}`, { signal }),
+  supplierInvoicesOptions: () => call<SiOptions>('/office-api/supplier-invoices/options'),
+  supplierInvoiceBills: (id: string) => call<{ bills: Option[] }>(`/office-api/supplier-invoices/${id}/bills`),
+  /** read: the AI fills a draft bill (open: where to check it) · mark (bill) · reject (reason) */
+  supplierInvoiceAction: (id: string, action: 'read' | 'mark' | 'reject', body: Record<string, unknown> = {}) =>
+    call<{ open?: string; row?: SiRow }>(`/office-api/supplier-invoices/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  consignment: () => call<ConsignmentOwed>('/office-api/consignment'),
+  settleConsignment: (who: string, statement: string) =>
+    call<ConsignmentOwed>('/office-api/consignment/settle', { method: 'POST', body: JSON.stringify({ who, statement }) }),
   invoices: (query: string, signal?: AbortSignal) => call<InvoiceList>(`/office-api/invoices?${query}`, { signal }),
   invoicesOptions: () => call<InvoiceOptions>('/office-api/invoices/options'),
   invoice: (id: string) => call<InvoiceDetail>(`/office-api/invoices/${id}`),

@@ -44,6 +44,8 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/direct-purchases\/create\/?$/, app: () => `${APP}/direct-purchases/new` },
   { admin: new RegExp(`^/admin/direct-purchases/(${UUID})$`), app: (m) => `${APP}/direct-purchases/${m[1]}` },
   { admin: new RegExp(`^/admin/direct-purchases/(${UUID})/edit$`), app: (m) => `${APP}/direct-purchases/${m[1]}/edit` },
+  { admin: /^\/admin\/supplier-invoices\/?$/, app: () => `${APP}/supplier-invoices` },
+  { admin: /^\/admin\/consignment-to-pay\/?$/, app: () => `${APP}/consignment-to-pay` },
   { admin: /^\/admin\/stock-counts\/?$/, app: () => `${APP}/counts` },
   { admin: new RegExp(`^/admin/stock-counts/(${UUID})$`), app: (m) => `${APP}/counts/${m[1]}` },
   { admin: /^\/admin\/stock-adjustments\/?$/, app: () => `${APP}/adjustments` },
@@ -90,6 +92,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'purchase-orders' } | { page: 'purchase-order'; id: string } | { page: 'purchase-order-form'; id: string | null }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
+  | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' }
   | { page: 'requests' } | { page: 'request'; id: string } | { page: 'request-form' }
   | { page: 'transfers' } | { page: 'transfer'; id: string } | { page: 'transfer-form'; id: string | null } | { page: 'classic'; admin: string }
 
@@ -133,6 +136,8 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/direct-purchases\/new\/?$/.test(path)) return { page: 'direct-purchase-form', id: null }
   const dp = path.match(new RegExp(`^/office/direct-purchases/(${UUID})(/edit)?/?$`))
   if (dp) return dp[2] ? { page: 'direct-purchase-form', id: dp[1] } : { page: 'direct-purchase', id: dp[1] }
+  if (/^\/office\/supplier-invoices\/?$/.test(path)) return { page: 'supplier-invoices' }
+  if (/^\/office\/consignment-to-pay\/?$/.test(path)) return { page: 'consignment-to-pay' }
   if (/^\/office\/requests\/?$/.test(path)) return { page: 'requests' }
   if (/^\/office\/requests\/new\/?$/.test(path)) return { page: 'request-form' }
   const req = path.match(new RegExp(`^/office/requests/(${UUID})/?$`))
@@ -173,6 +178,8 @@ export function adminEquivalent(route: Route): string | null {
     case 'purchase-orders': case 'purchase-order': case 'purchase-order-form': return '/admin/purchase-orders'
     case 'goods-received': case 'goods-receipt': return '/admin/goods-receipts'
     case 'direct-purchases': case 'direct-purchase': case 'direct-purchase-form': return '/admin/direct-purchases'
+    case 'supplier-invoices': return '/admin/supplier-invoices'
+    case 'consignment-to-pay': return '/admin/consignment-to-pay'
     default: return null
   }
 }
