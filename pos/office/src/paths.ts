@@ -46,6 +46,9 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: new RegExp(`^/admin/direct-purchases/(${UUID})/edit$`), app: (m) => `${APP}/direct-purchases/${m[1]}/edit` },
   { admin: /^\/admin\/supplier-invoices\/?$/, app: () => `${APP}/supplier-invoices` },
   { admin: /^\/admin\/consignment-to-pay\/?$/, app: () => `${APP}/consignment-to-pay` },
+  { admin: /^\/admin\/reorder-rules\/?$/, app: (_, q) => `${APP}/reorder-levels${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/reorder-suggestions\/?$/, app: () => `${APP}/what-to-order` },
+  { admin: /^\/admin\/suggested-levels\/?$/, app: () => `${APP}/suggested-levels` },
   { admin: /^\/admin\/stock-counts\/?$/, app: () => `${APP}/counts` },
   { admin: new RegExp(`^/admin/stock-counts/(${UUID})$`), app: (m) => `${APP}/counts/${m[1]}` },
   { admin: /^\/admin\/stock-adjustments\/?$/, app: () => `${APP}/adjustments` },
@@ -92,7 +95,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'purchase-orders' } | { page: 'purchase-order'; id: string } | { page: 'purchase-order-form'; id: string | null }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
-  | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' }
+  | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
   | { page: 'requests' } | { page: 'request'; id: string } | { page: 'request-form' }
   | { page: 'transfers' } | { page: 'transfer'; id: string } | { page: 'transfer-form'; id: string | null } | { page: 'classic'; admin: string }
 
@@ -138,6 +141,9 @@ export function routeOf(path: string, search = ''): Route {
   if (dp) return dp[2] ? { page: 'direct-purchase-form', id: dp[1] } : { page: 'direct-purchase', id: dp[1] }
   if (/^\/office\/supplier-invoices\/?$/.test(path)) return { page: 'supplier-invoices' }
   if (/^\/office\/consignment-to-pay\/?$/.test(path)) return { page: 'consignment-to-pay' }
+  if (/^\/office\/reorder-levels\/?$/.test(path)) return { page: 'reorder-levels' }
+  if (/^\/office\/what-to-order\/?$/.test(path)) return { page: 'what-to-order' }
+  if (/^\/office\/suggested-levels\/?$/.test(path)) return { page: 'suggested-levels' }
   if (/^\/office\/requests\/?$/.test(path)) return { page: 'requests' }
   if (/^\/office\/requests\/new\/?$/.test(path)) return { page: 'request-form' }
   const req = path.match(new RegExp(`^/office/requests/(${UUID})/?$`))
@@ -180,6 +186,9 @@ export function adminEquivalent(route: Route): string | null {
     case 'direct-purchases': case 'direct-purchase': case 'direct-purchase-form': return '/admin/direct-purchases'
     case 'supplier-invoices': return '/admin/supplier-invoices'
     case 'consignment-to-pay': return '/admin/consignment-to-pay'
+    case 'reorder-levels': return '/admin/reorder-rules'
+    case 'what-to-order': return '/admin/reorder-suggestions'
+    case 'suggested-levels': return '/admin/suggested-levels'
     default: return null
   }
 }

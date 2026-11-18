@@ -1,0 +1,7 @@
+## New back office, release 5 part 6: reorder levels, what to order, suggested levels (branch `office-reorder`, stacked on `office-supplier-invoices`)
+- **Server:** `App\Domain\Office\ReorderScreen` (rules list on `ReorderRuleResource::getEloquentQuery` with the page's buying units and stock worked out once; product search and units with the buying unit chosen; rule form in base units; `suggestions` from `ReorderService::suggestions` with the buyer's changes applied by `ReorderService::change`; line choices; suggested levels). `Office\ReorderController`: rules, options, products, units, ruleForm, saveRule (one store or every store, figures converted to base units), useDefault; what-to-order options, suggestions (POST with the changes), line, levels, moves, drafts; suggested, recalculate, accept (only stores the person sets levels for). `ListExport` gains `reorder-rules`.
+- **`Fields::qty`** accepts quantities with more than three decimals when the extra digits are zeros (unit factors), and shows a true fraction as it is.
+- **Client:** `pages/ReorderLevelsPage.tsx`, `WhatToOrderPage.tsx` (changes held in the page and sent with each load and with Create draft purchase orders; client-side paging), `SuggestedLevelsPage.tsx`. `REBUILT` maps `/admin/reorder-rules`, `/admin/reorder-suggestions`, `/admin/suggested-levels`.
+- **office-check:** all three open from the Purchasing menu and load (Suggested levels skipped when smart levels are off); the Own figure dialog.
+- **Tests:** OfficeReorderTest (4).
+- **Next:** release 6, expenses.

@@ -325,6 +325,31 @@ try {
         await page.screenshot({ path: out(`${link.split(' ')[0].toLowerCase()}-${look}-${w}`) })
       }
 
+      // Reorder levels, What to order and Suggested levels, rebuilt (release 5): each opens from the Purchasing menu and shows
+      // its list loaded (rows, or its "nothing here" words); at one size the "Own figure" dialog is drawn and left.
+      for (const [link, path, table, empty] of [['Reorder levels', /\/office\/reorder-levels$/, 'Reorder levels', 'No product has its own figure'],
+        ['What to order', /\/office\/what-to-order$/, 'What to order', 'Nothing to order'], ['Suggested levels', /\/office\/suggested-levels$/, 'Suggested levels', 'No suggestions']]) {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Purchasing/ }).first().click()
+        const item = page.getByRole('navigation', { name: 'Purchasing' }).getByRole('link', { name: link, exact: true }).first()
+        if (!(await item.isVisible().catch(() => false))) { await page.keyboard.press('Escape'); continue } // Suggested levels is hidden while smart levels are off
+        await item.click()
+        await page.waitForURL(path, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await page.getByText(empty).or(page.getByRole('table', { name: table }).getByRole('row').nth(1)).first().waitFor({ timeout: 30000 })
+          .catch(() => problems.push(`${look} ${w}: ${link} showed neither rows nor "${empty}"`))
+        await page.screenshot({ path: out(`${link.replaceAll(' ', '-').toLowerCase()}-${look}-${w}`) })
+        if (link === 'Reorder levels' && look === 'top' && w === 1366) {
+          const add = page.getByRole('button', { name: 'Own figure for a product' })
+          if (await add.waitFor({ timeout: 10000 }).then(() => true).catch(() => false)) {
+            await add.click()
+            const d = page.getByRole('dialog')
+            await d.waitFor({ timeout: 10000 }).catch(() => problems.push('reorder levels: Own figure did not open'))
+            await page.screenshot({ path: out('reorder-levels-own') })
+            await d.getByRole('button', { name: 'Back' }).click()
+            await d.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => undefined)
+          }
+        }
+      }
+
       // To-do: from the menu, the list of what waits (or "All clear").
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /^To-do/ }).first().click()
       await page.getByRole('heading', { name: 'To-do', level: 1 }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: To-do did not open`))
