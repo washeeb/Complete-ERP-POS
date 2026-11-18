@@ -3,6 +3,7 @@
 namespace App\Domain\Office;
 
 use App\Models\Customer;
+use App\Models\GoodsReceipt;
 use App\Models\Invoice;
 use App\Models\PriceList;
 use App\Models\Product;
@@ -30,7 +31,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final class ListExport
 {
-    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders'];
+    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts'];
 
     public function __construct(private readonly User $user) {}
 
@@ -50,6 +51,7 @@ final class ListExport
             'invoices' => InvoicesScreen::canView(),
             'suppliers' => SuppliersScreen::canView(),
             'purchase-orders' => PurchaseOrdersScreen::canView(),
+            'goods-receipts' => GoodsReceiptsScreen::canView(),
             default => false,
         };
     }
@@ -92,6 +94,7 @@ final class ListExport
             'invoices' => $this->invoices($p),
             'suppliers' => $this->suppliers($p),
             'purchase-orders' => $this->purchaseOrders($p),
+            'goods-receipts' => $this->goodsReceipts($p),
         };
         /** @var Builder $query */
         $count = (clone $query)->toBase()->getCountForPagination();
@@ -288,6 +291,19 @@ final class ListExport
 
                 return [$r['number'], $r['supplier'] ?? '', $r['to'] ?? '', $this->money($r['total'], $r['currency']), $r['expected_on'] ?? '',
                     PurchaseOrder::STATUSES[$r['status']] ?? $r['status'], $this->at($r['created_at'])];
+            }];
+    }
+
+    private function goodsReceipts(array $p): array
+    {
+        $screen = new GoodsReceiptsScreen($this->user);
+
+        return ['Goods received', ['GRN', 'Order', 'Supplier', 'Delivery note', 'Warehouse', 'Value', 'Received', 'Received by', 'Status'], [5], $screen->sorted($p),
+            function (GoodsReceipt $g) use ($screen) {
+                $r = $screen->rowOf($g);
+
+                return [$r['number'], $r['order'] ?? '', $r['supplier'] ?? '', $r['ref'] ?? '', $r['warehouse'] ?? '', $this->money($r['value'], $r['currency']),
+                    $this->at($r['received_at']), $r['received_by'] ?? '', GoodsReceipt::STATUSES[$r['status']] ?? $r['status']];
             }];
     }
 

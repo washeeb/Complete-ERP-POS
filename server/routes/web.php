@@ -13,6 +13,7 @@ use App\Http\Controllers\Office\AdjustmentsController as OfficeAdjustmentsContro
 use App\Http\Controllers\Office\CountsController as OfficeCountsController;
 use App\Http\Controllers\Office\CustomersController as OfficeCustomersController;
 use App\Http\Controllers\Office\ExportController as OfficeExportController;
+use App\Http\Controllers\Office\GoodsReceiptsController as OfficeGoodsReceiptsController;
 use App\Http\Controllers\Office\InvoicesController as OfficeInvoicesController;
 use App\Http\Controllers\Office\OfficeController;
 use App\Http\Controllers\Office\ProductsController as OfficeProductsController;
@@ -170,7 +171,11 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::get('purchase-orders/{id}/form', [OfficePurchaseOrdersController::class, 'form'])->whereUuid('id');
     Route::post('purchase-orders/{id}', [OfficePurchaseOrdersController::class, 'save'])->whereUuid('id');
     Route::post('purchase-orders/{id}/action', [OfficePurchaseOrdersController::class, 'action'])->whereUuid('id');
-    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders']);
+    Route::get('goods-receipts', [OfficeGoodsReceiptsController::class, 'index']);
+    Route::get('goods-receipts/options', [OfficeGoodsReceiptsController::class, 'options']);
+    Route::get('goods-receipts/{id}', [OfficeGoodsReceiptsController::class, 'show'])->whereUuid('id');
+    Route::post('goods-receipts/{id}/action', [OfficeGoodsReceiptsController::class, 'action'])->whereUuid('id');
+    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts']);
 });
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;

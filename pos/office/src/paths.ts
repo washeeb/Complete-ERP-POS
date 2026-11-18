@@ -38,6 +38,8 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/purchase-orders\/create\/?$/, app: () => `${APP}/purchase-orders/new` },
   { admin: new RegExp(`^/admin/purchase-orders/(${UUID})$`), app: (m) => `${APP}/purchase-orders/${m[1]}` },
   { admin: new RegExp(`^/admin/purchase-orders/(${UUID})/edit$`), app: (m) => `${APP}/purchase-orders/${m[1]}/edit` },
+  { admin: /^\/admin\/goods-receipts\/?$/, app: (_, q) => `${APP}/goods-received${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: new RegExp(`^/admin/goods-receipts/(${UUID})$`), app: (m) => `${APP}/goods-received/${m[1]}` },
   { admin: /^\/admin\/stock-counts\/?$/, app: () => `${APP}/counts` },
   { admin: new RegExp(`^/admin/stock-counts/(${UUID})$`), app: (m) => `${APP}/counts/${m[1]}` },
   { admin: /^\/admin\/stock-adjustments\/?$/, app: () => `${APP}/adjustments` },
@@ -82,6 +84,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'invoices' } | { page: 'invoice'; id: string }
   | { page: 'suppliers' } | { page: 'supplier'; id: string } | { page: 'supplier-form'; id: string | null }
   | { page: 'purchase-orders' } | { page: 'purchase-order'; id: string } | { page: 'purchase-order-form'; id: string | null }
+  | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
   | { page: 'requests' } | { page: 'request'; id: string } | { page: 'request-form' }
   | { page: 'transfers' } | { page: 'transfer'; id: string } | { page: 'transfer-form'; id: string | null } | { page: 'classic'; admin: string }
 
@@ -118,6 +121,9 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/purchase-orders\/new\/?$/.test(path)) return { page: 'purchase-order-form', id: null }
   const po = path.match(new RegExp(`^/office/purchase-orders/(${UUID})(/edit)?/?$`))
   if (po) return po[2] ? { page: 'purchase-order-form', id: po[1] } : { page: 'purchase-order', id: po[1] }
+  if (/^\/office\/goods-received\/?$/.test(path)) return { page: 'goods-received' }
+  const grn = path.match(new RegExp(`^/office/goods-received/(${UUID})/?$`))
+  if (grn) return { page: 'goods-receipt', id: grn[1] }
   if (/^\/office\/requests\/?$/.test(path)) return { page: 'requests' }
   if (/^\/office\/requests\/new\/?$/.test(path)) return { page: 'request-form' }
   const req = path.match(new RegExp(`^/office/requests/(${UUID})/?$`))
@@ -156,6 +162,7 @@ export function adminEquivalent(route: Route): string | null {
     case 'invoices': case 'invoice': return '/admin/invoices'
     case 'suppliers': case 'supplier': case 'supplier-form': return '/admin/suppliers'
     case 'purchase-orders': case 'purchase-order': case 'purchase-order-form': return '/admin/purchase-orders'
+    case 'goods-received': case 'goods-receipt': return '/admin/goods-receipts'
     default: return null
   }
 }

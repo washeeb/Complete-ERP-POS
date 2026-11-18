@@ -248,6 +248,31 @@ try {
         await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
       }
 
+      // Goods received, rebuilt (release 5): from the Purchasing menu, rows (or "No goods received notes match"); a row opens the note.
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Purchasing/ }).first().click()
+      await page.getByRole('navigation', { name: 'Purchasing' }).getByRole('link', { name: 'Goods received', exact: true }).first().click()
+      await page.waitForURL(/\/office\/goods-received$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Goods received did not open the new screen (${page.url()})`))
+      const grnRow = page.getByRole('table', { name: 'Goods received' }).getByRole('row').nth(1)
+      await Promise.race([grnRow.waitFor({ timeout: 20000 }), page.getByText('No goods received notes match').waitFor({ timeout: 20000 })])
+        .catch(() => problems.push(`${look} ${w}: Goods received showed neither rows nor "No goods received notes match"`))
+      await page.screenshot({ path: out(`goods-received-${look}-${w}`) })
+      if (await grnRow.isVisible().catch(() => false)) {
+        await grnRow.click()
+        await page.waitForURL(/\/office\/goods-received\/[0-9a-f-]{36}$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: a goods received note did not open`))
+        await page.getByRole('region', { name: 'Lines' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: a goods received note shows no lines`))
+        await page.screenshot({ path: out(`goods-receipt-${look}-${w}`), fullPage: true })
+        const lbl = page.getByRole('button', { name: 'Print labels', exact: true })
+        if (look === 'top' && w === 1366 && await lbl.isVisible().catch(() => false)) {
+          await lbl.click()
+          const d = page.getByRole('dialog')
+          await d.getByRole('button', { name: 'Make the labels' }).waitFor({ timeout: 10000 }).catch(() => problems.push('goods received: Print labels did not open the labels dialog'))
+          await page.screenshot({ path: out('goods-receipt-labels') })
+          await d.getByRole('button', { name: 'Cancel' }).click() // no labels made
+          await d.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => undefined)
+        }
+        await page.goBack()
+      }
+
       // To-do: from the menu, the list of what waits (or "All clear").
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /^To-do/ }).first().click()
       await page.getByRole('heading', { name: 'To-do', level: 1 }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: To-do did not open`))
