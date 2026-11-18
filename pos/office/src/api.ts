@@ -298,6 +298,17 @@ export type PoForm = {
 }
 export type PoAction = 'submit' | 'approve' | 'reject' | 'send' | 'copy' | 'confirm_delivered' | 'receive' | 'close_short' | 'cancel'
 export type PoActionResult = { order: PoDetail; open?: string | null; copy?: { id: string; number: string }; receipt?: { number: string; held: boolean } }
+export type GrnRow = { id: string; number: string; order: string | null; supplier: string | null; ref: string | null; warehouse: string | null; currency: string; value: number; received_at: string | null; received_by: string | null; status: string }
+export type GrnList = { currency: string; exponent: number; total: number; value: number; held: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: GrnRow[] }
+export type GrnOptions = { statuses: Option[]; warehouses: Option[]; per: number[] }
+export type GrnDetail = {
+  currency: string; exponent: number; id: string; number: string; status: string; status_label: string
+  order: { number: string | null; open: string | null } | null; supplier: { name: string | null; open: string | null }; warehouse: string | null; ref: string | null
+  received_by: string | null; received_at: string | null; approved_by: string | null; value: number; reversal: { reason: string | null; by: string | null } | null; note: string | null
+  lines: { sku: string; name: string; qty: string; cost: number; value: number; bin: string | null; serials: string[] }[]
+  product_ids: string[]
+  actions: { print: string; accept: boolean; refuse: boolean; reverse: boolean; labels: boolean; waybill: { label: string; open: string } | null }
+}
 export type CustomerAction = 'pay' | 'credit' | 'opening' | 'patient' | 'follow_up' | 'archive' | 'restore'
 export type Held = { qty: number; unit: string } | null
 export type CountRow = {
@@ -536,6 +547,11 @@ export const api = {
     if (!res.ok) throw new ApiError(json.detail ?? json.message ?? 'The file could not be read.', res.status, json.error ?? 'error')
     return json as { id: string; number: string; lines: number; skipped: string[] }
   },
+  goodsReceipts: (query: string, signal?: AbortSignal) => call<GrnList>(`/office-api/goods-receipts?${query}`, { signal }),
+  goodsReceiptsOptions: () => call<GrnOptions>('/office-api/goods-receipts/options'),
+  goodsReceipt: (id: string) => call<GrnDetail>(`/office-api/goods-receipts/${id}`),
+  goodsReceiptAction: (id: string, action: 'accept' | 'refuse' | 'reverse', reason?: string) =>
+    call<GrnDetail>(`/office-api/goods-receipts/${id}/action`, { method: 'POST', body: JSON.stringify({ action, reason }) }),
   invoices: (query: string, signal?: AbortSignal) => call<InvoiceList>(`/office-api/invoices?${query}`, { signal }),
   invoicesOptions: () => call<InvoiceOptions>('/office-api/invoices/options'),
   invoice: (id: string) => call<InvoiceDetail>(`/office-api/invoices/${id}`),

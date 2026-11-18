@@ -10,6 +10,8 @@ import { HomePage } from './pages/HomePage'
 import { CustomerFormPage } from './pages/CustomerFormPage'
 import { CustomerPage } from './pages/CustomerPage'
 import { CustomersPage } from './pages/CustomersPage'
+import { GoodsReceiptPage } from './pages/GoodsReceiptPage'
+import { GoodsReceiptsPage } from './pages/GoodsReceiptsPage'
 import { InvoicePage } from './pages/InvoicePage'
 import { InvoicesPage } from './pages/InvoicesPage'
 import { PurchaseOrderFormPage } from './pages/PurchaseOrderFormPage'
@@ -102,7 +104,7 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
   const { dispatchToast } = useToastController(toaster)
   const [title, setTitle] = useState('')
 
-  const LIST_TITLES: Partial<Record<typeof route.page, string>> = { home: 'Home', todo: 'To-do', sales: 'Till sales', shifts: 'Till shifts', drawer: 'Till drawer', products: 'Products', stock: 'Stock on hand', movements: 'Stock ledger', adjustments: 'Stock adjustments', counts: 'Stock counts', transfers: 'Transfers', requests: 'Stock requests', customers: 'Customers', invoices: 'Invoices', suppliers: 'Suppliers', 'purchase-orders': 'Purchase orders' }
+  const LIST_TITLES: Partial<Record<typeof route.page, string>> = { home: 'Home', todo: 'To-do', sales: 'Till sales', shifts: 'Till shifts', drawer: 'Till drawer', products: 'Products', stock: 'Stock on hand', movements: 'Stock ledger', adjustments: 'Stock adjustments', counts: 'Stock counts', transfers: 'Transfers', requests: 'Stock requests', customers: 'Customers', invoices: 'Invoices', suppliers: 'Suppliers', 'purchase-orders': 'Purchase orders', 'goods-received': 'Goods received' }
   const shown = LIST_TITLES[route.page] ?? title
   useEffect(() => { document.title = shown ? `${shown} · ${me.company.name}` : me.company.name }, [shown, me.company.name])
 
@@ -170,6 +172,8 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
                                                                       : route.page === 'purchase-orders' ? <PurchaseOrdersPage />
                                                                         : route.page === 'purchase-order' ? <PurchaseOrderPage id={route.id} onTitle={setTitle} />
                                                                           : route.page === 'purchase-order-form' ? <PurchaseOrderFormPage key={route.id ?? 'new'} id={route.id} onTitle={setTitle} />
+                                                                            : route.page === 'goods-received' ? <GoodsReceiptsPage />
+                                                                              : route.page === 'goods-receipt' ? <GoodsReceiptPage id={route.id} onTitle={setTitle} />
                       : <ClassicPage admin={admin} onTitle={setTitle} />}
       </Look>
       <Toaster toasterId={toaster} position="top-end" />
