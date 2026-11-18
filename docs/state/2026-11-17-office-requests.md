@@ -1,0 +1,23 @@
+## New back office, release 3 part 5: stock requests (branch `office-requests`)
+- **Server:**
+  - `App\Domain\Office\RequestsScreen`:
+    - `filtered`, `sorted` and `rowOf` on `StockRequestResource::getEloquentQuery` with `withCount('lines')`. Filters: `from_wh` (asked of), `to_wh` (for), `cross`, and `waiting`.
+    - `waitingOnMe()` is the menu badge's rule in SQL (send / supplier approval / requester approval by branch), used both for the `waiting` filter and for the card.
+    - `show`: facts, the transfer, the lines (asked and sent), and actions with the approval text.
+    - `form`, `stock` ("You have" / "They have": any warehouse, as the current form), `ownProducts` (between industries, the supplier's catalogue), and `request`.
+  - `Office\RequestsController`:
+    - index, options, show, form, stock, save.
+    - `products`: only for someone who may send the request now.
+    - `action`: approve; supply with `lines[line_id] = {qty, send_product_id}`; reject or cancel with a reason.
+  - `ListExport` gains `requests`.
+- **Client:**
+  - `pages/RequestsPage.tsx`.
+  - `RequestPage.tsx`: the Send dialog with an own-product search per line between industries, and `nextStep`.
+  - `RequestFormPage.tsx`.
+  - `REBUILT` maps the list, `/create` and `/{uuid}`. There is no edit page: a request is cancelled and asked again.
+- **office-check:**
+  - Covers the list, a real request (if any), and the form ("You have" / "They have" shown).
+  - Also checks Send on a request between industries, drawn from a made-up answer (nothing saved).
+  - **Waybills** is now the framed example.
+- **Tests:** OfficeRequestsTest (3).
+- **Next:** release 4, customers and invoices.

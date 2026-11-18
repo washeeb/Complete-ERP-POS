@@ -142,6 +142,21 @@ export type TransferForm = {
   values: { from_warehouse_id: string; to_warehouse_id: string; note: string; lines: TransferLine[] }
   choices: { from: Option[]; to: Option[] }
 }
+export type RequestRow = { id: string; number: string; for: string | null; asked_of: string | null; cross: boolean; status: string; status_label: string; lines: number; by: string | null; created_at: string | null }
+export type RequestList = { total: number; open: number; sent: number; waiting: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: RequestRow[] }
+export type RequestOptions = { statuses: Option[]; warehouses: Option[]; per: number[]; can_create: boolean }
+export type RequestDetail = {
+  id: string; number: string; status: string; status_label: string; waiting_for: 'requester' | 'supplier' | 'supply' | null; cross: boolean
+  facts: Record<string, string>; note: string | null; transfer: { id: string; number: string; status_label: string } | null
+  lines: { id: string; sku: string; name: string; unit: string; qty: string; sent: string | null }[]
+  actions: { approve: boolean; approve_text: string; supply: boolean; reject: boolean; cancel: boolean; print: string }
+}
+export type RequestLine = { product_uom_id: string; label: string | null; qty: string }
+export type RequestForm = {
+  values: { to_warehouse_id: string; from_warehouse_id: string; note: string; lines: RequestLine[] }
+  choices: { to: Option[]; from: Option[] }
+}
+export type Held = { qty: number; unit: string } | null
 export type CountRow = {
   id: string; number: string; warehouse: string | null; bin: string | null; status: string; status_label: string; blind: boolean
   started_at: string | null; started_by: string | null; lines: number; difference: number | null
@@ -316,6 +331,19 @@ export const api = {
   /** dispatch · receive (what arrived per line, the bin, a note) · cancel (with a reason). */
   transferAction: (id: string, action: string, extra: { reason?: string; received?: Record<string, string>; to_bin_id?: string | null; note?: string | null } = {}) =>
     call<TransferDetail>(`/office-api/transfers/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...extra }) }),
+  requests: (query: string, signal?: AbortSignal) => call<RequestList>(`/office-api/requests?${query}`, { signal }),
+  requestsOptions: () => call<RequestOptions>('/office-api/requests/options'),
+  request: (id: string) => call<RequestDetail>(`/office-api/requests/${id}`),
+  requestForm: () => call<RequestForm>('/office-api/requests/form'),
+  saveRequest: (values: RequestForm['values']) => call<{ id: string }>('/office-api/requests', { method: 'POST', body: JSON.stringify({ values }) }),
+  /** What the asking warehouse and the asked one hold of a unit. */
+  requestStock: (unit: string, forWh: string, fromWh: string, signal?: AbortSignal) =>
+    call<{ mine: Held; theirs: Held }>(`/office-api/requests/stock?unit=${unit}&for=${forWh}&from=${fromWh}`, { signal }),
+  /** Between industries: the supplier's own products, to send for a line. */
+  requestProducts: (id: string, q: string, signal?: AbortSignal) => call<Option[]>(`/office-api/requests/${id}/products?q=${encodeURIComponent(q)}`, { signal }),
+  /** approve · supply (per line: what is sent, and the supplier's own product) · reject · cancel (with a reason). */
+  requestAction: (id: string, action: string, extra: { reason?: string; lines?: Record<string, { qty: string; send_product_id: string | null }> } = {}) =>
+    call<RequestDetail>(`/office-api/requests/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...extra }) }),
   counts: (query: string, signal?: AbortSignal) => call<CountList>(`/office-api/counts?${query}`, { signal }),
   countsOptions: () => call<CountOptions>('/office-api/counts/options'),
   count: (id: string) => call<CountDetail>(`/office-api/counts/${id}`),

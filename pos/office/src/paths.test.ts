@@ -18,7 +18,7 @@ const menu: Menu = {
 
 describe('addresses', () => {
   it('opens a current back-office page inside the new one, and back', () => {
-    expect(appPathFor('/admin/stock-requests?tableSearch=rice')).toBe('/office/a/stock-requests?tableSearch=rice')
+    expect(appPathFor('/admin/waybills?tableSearch=rice')).toBe('/office/a/waybills?tableSearch=rice')
     expect(appPathFor('/admin/products/abc/edit')).toBe('/office/a/products/abc/edit')
     expect(appPathFor('/admin')).toBe('/office/')
     expect(appPathFor('https://evil.example/admin')).toBe('/office/') // never another site
@@ -48,6 +48,10 @@ describe('addresses', () => {
     expect(appPathFor('/admin/stock-adjustments/create')).toBe('/office/adjustments/new')
     expect(appPathFor('/admin/stock-counts')).toBe('/office/counts')
     expect(appPathFor('/admin/stock-transfers/create')).toBe('/office/transfers/new')
+    expect(appPathFor('/admin/stock-requests')).toBe('/office/requests')
+    expect(appPathFor('/admin/stock-requests/create')).toBe('/office/requests/new')
+    expect(routeOf('/office/requests/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')).toEqual({ page: 'request', id: '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f' })
+    expect(routeOf('/office/requests/new')).toEqual({ page: 'request-form' })
     expect(routeOf('/office/transfers/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f/edit')).toEqual({ page: 'transfer-form', id: '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f' })
     expect(routeOf('/office/counts/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')).toEqual({ page: 'count', id: '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f' })
     expect(appPathFor('/admin/stock-adjustments/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')).toBe('/office/adjustments/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')

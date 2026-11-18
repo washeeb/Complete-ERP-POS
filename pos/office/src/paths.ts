@@ -22,6 +22,9 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/stock-transfers\/create\/?$/, app: () => `${APP}/transfers/new` },
   { admin: new RegExp(`^/admin/stock-transfers/(${UUID})$`), app: (m) => `${APP}/transfers/${m[1]}` },
   { admin: new RegExp(`^/admin/stock-transfers/(${UUID})/edit$`), app: (m) => `${APP}/transfers/${m[1]}/edit` },
+  { admin: /^\/admin\/stock-requests\/?$/, app: () => `${APP}/requests` },
+  { admin: /^\/admin\/stock-requests\/create\/?$/, app: () => `${APP}/requests/new` },
+  { admin: new RegExp(`^/admin/stock-requests/(${UUID})$`), app: (m) => `${APP}/requests/${m[1]}` },
   { admin: /^\/admin\/stock-counts\/?$/, app: () => `${APP}/counts` },
   { admin: new RegExp(`^/admin/stock-counts/(${UUID})$`), app: (m) => `${APP}/counts/${m[1]}` },
   { admin: /^\/admin\/stock-adjustments\/?$/, app: () => `${APP}/adjustments` },
@@ -62,6 +65,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'drawer' } | { page: 'products' } | { page: 'product'; id: string } | { page: 'product-form'; id: string | null } | { page: 'stock' } | { page: 'movements' }
   | { page: 'adjustments' } | { page: 'adjustment'; id: string } | { page: 'adjustment-form'; id: string | null }
   | { page: 'counts' } | { page: 'count'; id: string }
+  | { page: 'requests' } | { page: 'request'; id: string } | { page: 'request-form' }
   | { page: 'transfers' } | { page: 'transfer'; id: string } | { page: 'transfer-form'; id: string | null } | { page: 'classic'; admin: string }
 
 export function routeOf(path: string, search = ''): Route {
@@ -82,6 +86,10 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/transfers\/new\/?$/.test(path)) return { page: 'transfer-form', id: null }
   const tr = path.match(new RegExp(`^/office/transfers/(${UUID})(/edit)?/?$`))
   if (tr) return tr[2] ? { page: 'transfer-form', id: tr[1] } : { page: 'transfer', id: tr[1] }
+  if (/^\/office\/requests\/?$/.test(path)) return { page: 'requests' }
+  if (/^\/office\/requests\/new\/?$/.test(path)) return { page: 'request-form' }
+  const req = path.match(new RegExp(`^/office/requests/(${UUID})/?$`))
+  if (req) return { page: 'request', id: req[1] }
   if (/^\/office\/counts\/?$/.test(path)) return { page: 'counts' }
   const count = path.match(new RegExp(`^/office/counts/(${UUID})/?$`))
   if (count) return { page: 'count', id: count[1] }
@@ -111,6 +119,7 @@ export function adminEquivalent(route: Route): string | null {
     case 'adjustments': case 'adjustment': case 'adjustment-form': return '/admin/stock-adjustments'
     case 'counts': case 'count': return '/admin/stock-counts'
     case 'transfers': case 'transfer': case 'transfer-form': return '/admin/stock-transfers'
+    case 'requests': case 'request': case 'request-form': return '/admin/stock-requests'
     default: return null
   }
 }
