@@ -259,6 +259,45 @@ export type SupplierForm = {
 }
 export type SupplierAction = 'approve' | 'block' | 'unblock' | 'verify_bank' | 'portal' | 'opening' | 'archive' | 'restore'
 export type SupplierActionResult = { supplier: SupplierDetail; link?: string; open?: string | null; sent?: boolean }
+export type PoRow = { id: string; number: string; supplier: string | null; to: string | null; currency: string; total: number; expected_on: string | null; status: string; created_at: string | null }
+export type PoList = {
+  currency: string; exponent: number; total: number; sum: number; waiting: number; open: number
+  page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: PoRow[]
+}
+export type PoOptions = {
+  statuses: Option[]; suppliers: Option[]; warehouses: Option[]; per: number[]; can_create: boolean
+  import: { suppliers: Option[]; warehouses: Option[]; ai_unavailable: string | null } | null
+}
+export type PoReceiveLine = { id: string; item: string; batched: boolean; serialised: boolean; qty: string }
+export type PoDetail = {
+  currency: string; exponent: number; id: string; number: string; status: string; status_label: string
+  supplier: { id: string; name: string | null; open: string | null }; warehouse: string | null
+  net: number; tax: number; total: number; expected_on: string | null; created_by: string | null; created_at: string | null
+  approved_by: string | null; rejected_reason: string | null; close_reason: string | null
+  sent: { at: string; via: string; to: string; by: string | null } | false | null
+  confirmed: { promised_on: string | null; at: string; reply: string | null } | false | null
+  dispatched: { at: string; ref: string | null } | null
+  department: string | null; agreement: { number: string | null; open: string } | null; budget_note: string | null; note: string | null
+  lines: { sku: string | null; name: string; service: boolean; department: string | null; ordered: string; received: string; cost: number; total: number }[]
+  actions: {
+    print: string; edit: boolean; submit: boolean; approve: boolean; reject: boolean
+    send: { again: boolean; channels: Option[]; email: string | null; phone: string | null } | null
+    copy: boolean; confirm_delivered: { lines: { id: string; item: string; qty: string }[] } | null
+    receive: { bins: Option[] | null; lines: PoReceiveLine[] } | null
+    close_short: boolean; cancel: boolean; receipts: string | null
+  }
+}
+export type PoLine = {
+  kind: 'stock' | 'service'; product_uom_id: string; label: string | null; account_id: string; description: string; uom_code: string
+  department_id: string; project_id: string; agreement_line_id: string; qty: string; unit_cost: string
+}
+export type PoValues = { supplier_id: string; warehouse_id: string; expected_on: string; department_id: string; note: string; lines: PoLine[] }
+export type PoForm = {
+  id: string | null; number: string | null; currency: string; values: PoValues
+  choices: { suppliers: Option[]; warehouses: Option[]; departments: Option[]; accounts: Option[]; projects: Option[] | null }; can_add_supplier: boolean
+}
+export type PoAction = 'submit' | 'approve' | 'reject' | 'send' | 'copy' | 'confirm_delivered' | 'receive' | 'close_short' | 'cancel'
+export type PoActionResult = { order: PoDetail; open?: string | null; copy?: { id: string; number: string }; receipt?: { number: string; held: boolean } }
 export type CustomerAction = 'pay' | 'credit' | 'opening' | 'patient' | 'follow_up' | 'archive' | 'restore'
 export type Held = { qty: number; unit: string } | null
 export type CountRow = {
@@ -475,6 +514,28 @@ export const api = {
   supplierDocument: (id: string, doc: string, action: 'verify' | 'remove', reason?: string) =>
     call<{ supplier: SupplierDetail }>(`/office-api/suppliers/${id}/documents/${doc}`, { method: 'POST', body: JSON.stringify({ action, reason }) }),
   supplierDocumentUrl: (id: string, doc: string) => `/office-api/suppliers/${id}/documents/${doc}/file`,
+  purchaseOrders: (query: string, signal?: AbortSignal) => call<PoList>(`/office-api/purchase-orders?${query}`, { signal }),
+  purchaseOrdersOptions: () => call<PoOptions>('/office-api/purchase-orders/options'),
+  purchaseOrder: (id: string) => call<PoDetail>(`/office-api/purchase-orders/${id}`),
+  purchaseOrderForm: (id?: string) => call<PoForm>(id ? `/office-api/purchase-orders/${id}/form` : '/office-api/purchase-orders/form'),
+  poUnits: (q: string, signal?: AbortSignal) => call<{ results: UnitOption[] }>(`/office-api/purchase-orders/units?q=${encodeURIComponent(q)}`, { signal }),
+  poLineInfo: (supplier: string, unit: string, warehouse: string) =>
+    call<{ rule: string | null; available: string | null }>(`/office-api/purchase-orders/line-info?${new URLSearchParams({ supplier, unit, warehouse })}`),
+  poPackCode: (code: string) => call<{ batch: string | null; expires_on: string | null }>(`/office-api/purchase-orders/pack-code?code=${encodeURIComponent(code)}`),
+  poAddSupplier: (body: { name: string; phone?: string; email?: string; code?: string }) =>
+    call<{ id: string; label: string; existed: boolean }>('/office-api/purchase-orders/add-supplier', { method: 'POST', body: JSON.stringify(body) }),
+  savePurchaseOrder: (id: string | null, values: PoValues) =>
+    call<{ id: string }>(id ? `/office-api/purchase-orders/${id}` : '/office-api/purchase-orders', { method: 'POST', body: JSON.stringify({ values }) }),
+  purchaseOrderAction: (id: string, action: PoAction, body: Record<string, unknown> = {}) =>
+    call<PoActionResult>(`/office-api/purchase-orders/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  /** "Order from a file": sent as a form (the file), not JSON. */
+  importPurchaseOrder: async (body: FormData) => {
+    const res = await fetch('/office-api/purchase-orders/import', { method: 'POST', body, credentials: 'same-origin',
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) throw new ApiError(json.detail ?? json.message ?? 'The file could not be read.', res.status, json.error ?? 'error')
+    return json as { id: string; number: string; lines: number; skipped: string[] }
+  },
   invoices: (query: string, signal?: AbortSignal) => call<InvoiceList>(`/office-api/invoices?${query}`, { signal }),
   invoicesOptions: () => call<InvoiceOptions>('/office-api/invoices/options'),
   invoice: (id: string) => call<InvoiceDetail>(`/office-api/invoices/${id}`),
