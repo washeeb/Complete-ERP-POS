@@ -309,6 +309,33 @@ export type GrnDetail = {
   product_ids: string[]
   actions: { print: string; accept: boolean; refuse: boolean; reverse: boolean; labels: boolean; waybill: { label: string; open: string } | null }
 }
+export type DpRow = { id: string; number: string; invoice_date: string | null; supplier: string | null; invoice_no: string; settlement: string; currency: string; total: number; status: string; by: string | null }
+export type DpList = { currency: string; exponent: number; total: number; posted: number; waiting: number; drafts: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: DpRow[] }
+export type DpOptions = { statuses: Option[]; settlements: Option[]; per: number[]; can_create: boolean }
+export type DpDetail = {
+  currency: string; exponent: number; id: string; number: string; status: string; status_label: string
+  supplier: { name: string | null; open: string | null }; invoice_no: string; invoice_date: string | null; due_on: string | null
+  settlement: string; settlement_label: string; net: number; tax: number; total: number; printed_total: number | null; prices_include_tax: boolean
+  warehouse: string | null; method: string | null; reference: string | null; created_by: string | null; posted_by: string | null; reason: string | null; note: string | null
+  goods_receipt: { number: string | null; open: string | null } | null; bill: string | null; payment: string | null; warnings: string[]
+  lines: { product: string | null; qty: string; unit_price: number; batch: string | null; expires_on: string | null; net: number; tax: number; new_price: number | null; sell_unit: string | null; margin: number | null }[]
+  pages: number; product_ids: string[]
+  actions: { edit: boolean; correcting: boolean; submit: boolean; post: { what: string } | null; why_not: string | null; cancel: boolean; labels: boolean }
+}
+export type DpSellUnit = { id: string; label: string; factor: number }
+export type DpLine = {
+  product_uom_id: string; label: string | null; read_as: string | null; batched: boolean; factor: number; sell_units: DpSellUnit[]
+  qty: string; unit_price: string; tax_group_id: string; batch_no: string; expires_on: string; supplier_sku: string; sell_uom_id: string; new_price: string
+}
+export type DpValues = {
+  supplier_id: string; invoice_no: string; invoice_date: string; warehouse_id: string; prices_include_tax: boolean; printed_total: string; attachments: string[]
+  settlement: string; method: string; account_id: string; reference: string; due_on: string; price_list_id: string; note: string; lines: DpLine[]
+}
+export type DpForm = {
+  id: string | null; number: string | null; currency: string; correcting: boolean; values: DpValues
+  choices: { suppliers: Option[]; warehouses: Option[]; settlements: Option[]; methods: Option[]; accounts: Option[]; tax_groups: Option[]; price_lists: Option[]; uoms: Option[]; industries: Option[] | null }
+  short_dated_months: number; can_add_product: boolean; ai_unavailable: string | null
+}
 export type CustomerAction = 'pay' | 'credit' | 'opening' | 'patient' | 'follow_up' | 'archive' | 'restore'
 export type Held = { qty: number; unit: string } | null
 export type CountRow = {
@@ -552,6 +579,28 @@ export const api = {
   goodsReceipt: (id: string) => call<GrnDetail>(`/office-api/goods-receipts/${id}`),
   goodsReceiptAction: (id: string, action: 'accept' | 'refuse' | 'reverse', reason?: string) =>
     call<GrnDetail>(`/office-api/goods-receipts/${id}/action`, { method: 'POST', body: JSON.stringify({ action, reason }) }),
+  directPurchases: (query: string, signal?: AbortSignal) => call<DpList>(`/office-api/direct-purchases?${query}`, { signal }),
+  directPurchasesOptions: () => call<DpOptions>('/office-api/direct-purchases/options'),
+  directPurchase: (id: string) => call<DpDetail>(`/office-api/direct-purchases/${id}`),
+  directPurchaseForm: (id?: string) => call<DpForm>(id ? `/office-api/direct-purchases/${id}/form` : '/office-api/direct-purchases/form'),
+  dpUnits: (q: string, signal?: AbortSignal) => call<{ results: UnitOption[] }>(`/office-api/direct-purchases/units?q=${encodeURIComponent(q)}`, { signal }),
+  dpUnit: (id: string) => call<DpLine>(`/office-api/direct-purchases/unit?id=${encodeURIComponent(id)}`),
+  dpAddProduct: (body: Record<string, unknown>) => call<DpLine>('/office-api/direct-purchases/add-product', { method: 'POST', body: JSON.stringify(body) }),
+  saveDirectPurchase: (id: string | null, values: DpValues) =>
+    call<{ id: string }>(id ? `/office-api/direct-purchases/${id}` : '/office-api/direct-purchases', { method: 'POST', body: JSON.stringify({ values }) }),
+  directPurchaseAction: (id: string, action: 'submit' | 'post' | 'cancel', reason?: string) =>
+    call<DpDetail>(`/office-api/direct-purchases/${id}/action`, { method: 'POST', body: JSON.stringify({ action, reason }) }),
+  dpPageUrl: (id: string, n: number) => `/office-api/direct-purchases/${id}/page/${n}`,
+  /** Invoice pages: kept privately; "scan" also reads them with the AI and returns the filled form. Sent as a form, not JSON. */
+  dpFiles: async <T,>(what: 'upload' | 'scan', files: File[]) => {
+    const body = new FormData()
+    files.forEach((f) => body.append('files[]', f))
+    const res = await fetch(`/office-api/direct-purchases/${what}`, { method: 'POST', body, credentials: 'same-origin',
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) throw new ApiError(json.detail ?? json.message ?? 'The pages could not be added.', res.status, json.error ?? 'error')
+    return json as T
+  },
   invoices: (query: string, signal?: AbortSignal) => call<InvoiceList>(`/office-api/invoices?${query}`, { signal }),
   invoicesOptions: () => call<InvoiceOptions>('/office-api/invoices/options'),
   invoice: (id: string) => call<InvoiceDetail>(`/office-api/invoices/${id}`),

@@ -1,0 +1,5 @@
+## Direct purchases in the new back office
+- **Same service, same rules.** Saving, sending for approval, posting and cancelling go through `DirectPurchases` (duplicate invoice numbers, batches on medicines, expired stock, the approval limit and "nobody approves their own" checked there); the scan through `InvoiceScanner::scanPurchase`; a product added from a line through `CatalogService::saveProduct` with the same fields as the current form.
+- **Invoice pages are uploaded first, then attached.** The form uploads each page and keeps its path; saving accepts only paths of the purchase's own pages or pages this person uploaded in this sign-in, so a form cannot attach another invoice's file.
+- **The margin and short-dated note is worked out on the page** from the unit's factor, as the current form works it out on the server; the posting checks (`warnings`) remain the server's.
+- **Found while checking:** the product search answered, but the browser check typed without opening the list; it now clicks the box first, as a person does. Nothing in the screen changed.

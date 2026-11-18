@@ -40,6 +40,10 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: new RegExp(`^/admin/purchase-orders/(${UUID})/edit$`), app: (m) => `${APP}/purchase-orders/${m[1]}/edit` },
   { admin: /^\/admin\/goods-receipts\/?$/, app: (_, q) => `${APP}/goods-received${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: new RegExp(`^/admin/goods-receipts/(${UUID})$`), app: (m) => `${APP}/goods-received/${m[1]}` },
+  { admin: /^\/admin\/direct-purchases\/?$/, app: (_, q) => `${APP}/direct-purchases${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/direct-purchases\/create\/?$/, app: () => `${APP}/direct-purchases/new` },
+  { admin: new RegExp(`^/admin/direct-purchases/(${UUID})$`), app: (m) => `${APP}/direct-purchases/${m[1]}` },
+  { admin: new RegExp(`^/admin/direct-purchases/(${UUID})/edit$`), app: (m) => `${APP}/direct-purchases/${m[1]}/edit` },
   { admin: /^\/admin\/stock-counts\/?$/, app: () => `${APP}/counts` },
   { admin: new RegExp(`^/admin/stock-counts/(${UUID})$`), app: (m) => `${APP}/counts/${m[1]}` },
   { admin: /^\/admin\/stock-adjustments\/?$/, app: () => `${APP}/adjustments` },
@@ -85,6 +89,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'suppliers' } | { page: 'supplier'; id: string } | { page: 'supplier-form'; id: string | null }
   | { page: 'purchase-orders' } | { page: 'purchase-order'; id: string } | { page: 'purchase-order-form'; id: string | null }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
+  | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'requests' } | { page: 'request'; id: string } | { page: 'request-form' }
   | { page: 'transfers' } | { page: 'transfer'; id: string } | { page: 'transfer-form'; id: string | null } | { page: 'classic'; admin: string }
 
@@ -124,6 +129,10 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/goods-received\/?$/.test(path)) return { page: 'goods-received' }
   const grn = path.match(new RegExp(`^/office/goods-received/(${UUID})/?$`))
   if (grn) return { page: 'goods-receipt', id: grn[1] }
+  if (/^\/office\/direct-purchases\/?$/.test(path)) return { page: 'direct-purchases' }
+  if (/^\/office\/direct-purchases\/new\/?$/.test(path)) return { page: 'direct-purchase-form', id: null }
+  const dp = path.match(new RegExp(`^/office/direct-purchases/(${UUID})(/edit)?/?$`))
+  if (dp) return dp[2] ? { page: 'direct-purchase-form', id: dp[1] } : { page: 'direct-purchase', id: dp[1] }
   if (/^\/office\/requests\/?$/.test(path)) return { page: 'requests' }
   if (/^\/office\/requests\/new\/?$/.test(path)) return { page: 'request-form' }
   const req = path.match(new RegExp(`^/office/requests/(${UUID})/?$`))
@@ -163,6 +172,7 @@ export function adminEquivalent(route: Route): string | null {
     case 'suppliers': case 'supplier': case 'supplier-form': return '/admin/suppliers'
     case 'purchase-orders': case 'purchase-order': case 'purchase-order-form': return '/admin/purchase-orders'
     case 'goods-received': case 'goods-receipt': return '/admin/goods-receipts'
+    case 'direct-purchases': case 'direct-purchase': case 'direct-purchase-form': return '/admin/direct-purchases'
     default: return null
   }
 }

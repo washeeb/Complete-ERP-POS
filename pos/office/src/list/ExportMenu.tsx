@@ -7,7 +7,7 @@ import { useState } from 'react'
 /** A PDF is laid out row by row in the server's memory: beyond this it does not fit (the server says so too). */
 export const PDF_ROWS = 800
 
-export type ExportList = 'sales' | 'shifts' | 'drawer' | 'products' | 'stock' | 'movements' | 'adjustments' | 'counts' | 'transfers' | 'requests' | 'customers' | 'invoices' | 'suppliers' | 'purchase-orders' | 'goods-receipts'
+export type ExportList = 'sales' | 'shifts' | 'drawer' | 'products' | 'stock' | 'movements' | 'adjustments' | 'counts' | 'transfers' | 'requests' | 'customers' | 'invoices' | 'suppliers' | 'purchase-orders' | 'goods-receipts' | 'direct-purchases'
 
 /** The file name the server gave (Content-Disposition), or a plain one. */
 export function fileName(disposition: string | null, fallback: string): string {
