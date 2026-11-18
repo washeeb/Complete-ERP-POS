@@ -23,6 +23,7 @@ use App\Http\Controllers\Office\RequestsController as OfficeRequestsController;
 use App\Http\Controllers\Office\SalesController as OfficeSalesController;
 use App\Http\Controllers\Office\ShiftsController as OfficeShiftsController;
 use App\Http\Controllers\Office\StockController as OfficeStockController;
+use App\Http\Controllers\Office\SupplierInvoicesController as OfficeSupplierInvoicesController;
 use App\Http\Controllers\Office\SuppliersController as OfficeSuppliersController;
 use App\Http\Controllers\Office\TransfersController as OfficeTransfersController;
 use App\Http\Controllers\PrintController;
@@ -190,7 +191,13 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::get('direct-purchases/{id}/page/{n}', [OfficeDirectPurchasesController::class, 'page'])->whereUuid('id')->whereNumber('n');
     Route::post('direct-purchases/{id}', [OfficeDirectPurchasesController::class, 'save'])->whereUuid('id');
     Route::post('direct-purchases/{id}/action', [OfficeDirectPurchasesController::class, 'action'])->whereUuid('id');
-    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases']);
+    Route::get('supplier-invoices', [OfficeSupplierInvoicesController::class, 'index']);
+    Route::get('supplier-invoices/options', [OfficeSupplierInvoicesController::class, 'options']);
+    Route::get('supplier-invoices/{id}/bills', [OfficeSupplierInvoicesController::class, 'bills'])->whereUuid('id');
+    Route::post('supplier-invoices/{id}/action', [OfficeSupplierInvoicesController::class, 'action'])->whereUuid('id');
+    Route::get('consignment', [OfficeSupplierInvoicesController::class, 'consignment']);
+    Route::post('consignment/settle', [OfficeSupplierInvoicesController::class, 'settle']);
+    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices']);
 });
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;

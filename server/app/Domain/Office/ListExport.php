@@ -18,6 +18,7 @@ use App\Models\StockMovement;
 use App\Models\StockRequest;
 use App\Models\StockTransfer;
 use App\Models\Supplier;
+use App\Models\SupplierInvoice;
 use App\Models\TillDrawerEvent;
 use App\Models\User;
 use App\Support\Money;
@@ -32,7 +33,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final class ListExport
 {
-    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases'];
+    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices'];
 
     public function __construct(private readonly User $user) {}
 
@@ -54,6 +55,7 @@ final class ListExport
             'purchase-orders' => PurchaseOrdersScreen::canView(),
             'goods-receipts' => GoodsReceiptsScreen::canView(),
             'direct-purchases' => DirectPurchasesScreen::canView(),
+            'supplier-invoices' => SupplierInvoicesScreen::canView(),
             default => false,
         };
     }
@@ -98,6 +100,7 @@ final class ListExport
             'purchase-orders' => $this->purchaseOrders($p),
             'goods-receipts' => $this->goodsReceipts($p),
             'direct-purchases' => $this->directPurchases($p),
+            'supplier-invoices' => $this->supplierInvoices($p),
         };
         /** @var Builder $query */
         $count = (clone $query)->toBase()->getCountForPagination();
@@ -320,6 +323,19 @@ final class ListExport
 
                 return [$r['number'], $r['invoice_date'] ?? '', $r['supplier'] ?? '', $r['invoice_no'], DirectPurchase::SETTLEMENTS[$r['settlement']] ?? $r['settlement'],
                     $this->money($r['total'], $r['currency']), DirectPurchase::STATUSES[$r['status']] ?? $r['status'], $r['by'] ?? ''];
+            }];
+    }
+
+    private function supplierInvoices(array $p): array
+    {
+        $screen = new SupplierInvoicesScreen($this->user);
+
+        return ['Invoices from suppliers', ['Received', 'Supplier', 'Their invoice', 'Dated', 'Amount', 'For order', 'Sent by', 'Status', 'Bill or reason'], [4], $screen->sorted($p),
+            function (SupplierInvoice $i) use ($screen) {
+                $r = $screen->rowOf($i);
+
+                return [$this->at($r['received_at']), $r['supplier'] ?? '', $r['invoice_no'], $r['invoice_date'] ?? '', $this->money($r['amount'], $r['currency']),
+                    $r['order']['number'] ?? '', $r['sent_by'] ?? '', SupplierInvoice::STATUSES[$r['status']] ?? $r['status'], $r['note'] ?? ''];
             }];
     }
 
