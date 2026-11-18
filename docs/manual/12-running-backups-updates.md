@@ -220,7 +220,7 @@ SyncLytics sends you a new release. Update outside trading hours.
 
 **The simple way (recommended):**
 - **Windows:** run the new `SESLabs-server-setup-<version>.exe` on the server and choose the same folder.
-- **Ubuntu:** `sudo bash install.sh --zip <new release>.zip` with the same options as the first time.
+- **Ubuntu:** `sudo bash install.sh --zip <new release>.zip` with the same options as the first time. If you leave out `--domain`, the update keeps the internet name (and email) of the last install and says so. **Why:** before this, an update without `--domain` moved the site to the server's own address, and browsers showed "This site can't provide a secure connection" until it was run again with `--domain`. To move a server from an internet name back to its network address on purpose, add `--no-domain`.
 
 Either one **takes a backup first** with the version still installed. If that backup fails, it stops and changes nothing. Then it replaces the software, keeps your `.env`, uploads, backups and keys, updates the database, prepares the caches, applies the speed settings and restarts the services. Tills update by themselves (step 6 below).
 
