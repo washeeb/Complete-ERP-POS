@@ -420,6 +420,8 @@ try {
         ['Chart of accounts', /\/office\/accounts$/, () => page.getByRole('region', { name: 'Chart of accounts' })],
         ['Month-end', /\/office\/month-end$/, () => page.getByRole('region', { name: 'Months' })],
         ['Budgets', /\/office\/budgets$/, () => page.getByRole('region', { name: 'Budget' })],
+        ['Money moved', /\/office\/money-moved$/, () => page.getByText('No money moved yet').or(page.getByRole('table', { name: 'Money moved' }).getByRole('row').nth(1)).first()],
+        ['Bank & cash', /\/office\/bank-accounts$/, () => page.getByRole('region', { name: 'Bank and cash accounts' })],
         ['Journals', /\/office\/journals$/, () => page.getByText('No journals match').or(page.getByRole('table', { name: 'Journals' }).getByRole('row').nth(1)).first()]]) {
         await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
         await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: link, exact: true }).first().click()
@@ -427,6 +429,20 @@ try {
         await ready().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
         await page.screenshot({ path: out(`${link.replaceAll(' ', '-').toLowerCase()}-${look}-${w}`) })
       }
+      // Bank & cash, rebuilt (release 8): an account's Reconcile opens with the summary and both lists (nothing is matched).
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
+      await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: 'Bank & cash', exact: true }).first().click()
+      await page.getByRole('region', { name: 'Bank and cash accounts' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Bank & cash did not load`))
+      const reconcile = page.getByRole('button', { name: 'Reconcile', exact: true }).first()
+      if (await reconcile.count()) {
+        await reconcile.click()
+        await page.getByRole('region', { name: 'Statement lines to match' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Reconcile did not load`))
+        await page.screenshot({ path: out(`reconcile-${look}-${w}`) })
+      }
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
+      await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: 'Journals', exact: true }).first().click()
+      await page.waitForURL(/\/office\/journals$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Journals did not open again (${page.url()})`))
+      await page.getByText('No journals match').or(page.getByRole('table', { name: 'Journals' }).getByRole('row').nth(1)).first().waitFor({ timeout: 20000 }).catch(() => undefined)
       // Journals, rebuilt (release 8): a journal opens from the list with its lines (nothing is posted).
       const firstJournal = page.getByRole('table', { name: 'Journals' }).getByRole('row').nth(1)
       if (page.url().endsWith('/office/journals') && await firstJournal.count()) {

@@ -429,6 +429,16 @@ export type AccountForm = { types: Option[]; headers: (Option & { type: string }
 export type PeriodRow = { id: string; month: string; period: number; status: string; closed_by: string | null; closed_at: string | null; can_close: boolean; blockers: string[]; can_reopen: boolean }
 export type MonthEnd = { year: number; years: Option[]; can_setup: boolean; rows: PeriodRow[] }
 export type BudgetView = { year: number; branch: string; branches: Option[]; can_save: boolean; months: string[]; rows: { id: string; label: string; type: string; amounts: string[] }[] }
+export type BankRow = { id: string; name: string; kind: string; kind_label: string; provider: string | null; number: string | null; account_id: string; ledger: string | null
+  balance: number; to_match: number; archived: boolean; can_archive: boolean; can_restore: boolean; blockers: string[]; mapping: Record<string, string | number> | null }
+export type BankList = { currency: string; exponent: number; can_manage: boolean; can_reconcile: boolean; rows: BankRow[] }
+export type BankForms = { kinds: Option[]; ledger_accounts: Option[]; money_accounts: Option[]; branches: Option[]; hq: string; date_formats: Option[]; post_accounts: Option[]; can_manage: boolean }
+export type RecLine = { id: string; date: string; description?: string | null; reference?: string | null; number?: string; memo?: string | null; amount: number; suggested: boolean }
+export type Reconcile = { bank: { id: string; name: string; ledger: string | null }; as_at: string; currency: string; exponent: number
+  summary: { ledger: number; outstanding: number; unrecorded: number; expected_statement: number; statement: number | null; difference: number | null }
+  suggestions: number; statement: RecLine[]; ledger: RecLine[]; matches: { id: string; at: string; by: string | null; amount: number }[] }
+export type MoneyMoveRow = { id: string; number: string; date: string | null; from: string | null; to: string | null; amount: number; reference: string | null; note: string | null; by: string | null }
+export type MoneyMoveList = { currency: string; exponent: number; total: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; can_move: boolean; rows: MoneyMoveRow[] }
 export type RbDataset = { id: string; label: string; dated: boolean; dims: Option[]; measures: Option[] }
 export type RbOptions = { datasets: RbDataset[]; periods: Option[]; branches: Option[]; schedules: Option[]; people: Option[]; max_rows: number }
 export type RbChoices = { dataset: string; dimensions: string[]; measures: string[]; period: string; from: string | null; to: string | null; branch_id: string | null
@@ -824,6 +834,22 @@ export const api = {
   budget: (year: string, branch: string) => call<BudgetView>(`/office-api/budgets?${new URLSearchParams({ year, branch })}`),
   spread: (annual: string) => call<{ amounts: string[] }>(`/office-api/budgets/spread?annual=${encodeURIComponent(annual)}`),
   saveBudget: (year: number, branch: string, amounts: Record<string, string[]>) => call<{ saved: number; message: string }>('/office-api/budgets', { method: 'POST', body: JSON.stringify({ year, branch, amounts }) }),
+  bankAccounts: (query: string, signal?: AbortSignal) => call<BankList>(`/office-api/bank-accounts?${query}`, { signal }),
+  bankForms: () => call<BankForms>('/office-api/bank-accounts/forms'),
+  saveBank: (id: string | null, body: Record<string, unknown>) => call<{ bank: { id: string } }>(id ? `/office-api/bank-accounts/${id}` : '/office-api/bank-accounts', { method: 'POST', body: JSON.stringify(body) }),
+  archiveBank: (id: string, reason: string | null) => call<{ done: boolean }>(`/office-api/bank-accounts/${id}/archive`, { method: 'POST', body: JSON.stringify(reason === null ? { restore: true } : { reason }) }),
+  importStatement: async (id: string, body: FormData) => {
+    const res = await fetch(`/office-api/bank-accounts/${id}/import`, { method: 'POST', body, credentials: 'same-origin',
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) throw new ApiError(json.detail ?? json.message ?? 'The statement could not be read.', res.status, json.error ?? 'error')
+    return json as { added: number; skipped: number; message: string }
+  },
+  moveMoney: (body: Record<string, unknown>) => call<{ transfer: { id: string }; message: string }>('/office-api/money-moved', { method: 'POST', body: JSON.stringify(body) }),
+  moneyMoved: (query: string, signal?: AbortSignal) => call<MoneyMoveList>(`/office-api/money-moved?${query}`, { signal }),
+  reconcile: (id: string, asAt: string) => call<Reconcile>(`/office-api/bank-accounts/${id}/reconcile?as_at=${encodeURIComponent(asAt)}`),
+  reconcileStep: (id: string, step: 'match' | 'auto' | 'earlier' | 'post' | 'ignore' | 'unmatch', body: Record<string, unknown> = {}) =>
+    call<{ message: string }>(`/office-api/bank-accounts/${id}/reconcile/${step}`, { method: 'POST', body: JSON.stringify(body) }),
   financialOptions: () => call<FrOptions>('/office-api/financial-reports/options'),
   shareHeadOffice: (to: string) => call<{ message: string }>('/office-api/financial-reports/share-head-office', { method: 'POST', body: JSON.stringify({ to }) }),
   withholdingCsvUrl: (month: string) => `/office-api/withholding-tax/csv?month=${encodeURIComponent(month)}`,

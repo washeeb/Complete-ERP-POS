@@ -1,0 +1,5 @@
+## New back office, release 8 part 3: bank & cash, reconciliation, money moved (branch `office-banking`, stacked on `office-accounts`)
+- **Server:** `App\Domain\Office\BankingScreen` (accounts, forms, reconciliation data, money moved list); `Office\BankingController` through `BankingService` (save account, import, transfer, match, auto, clear as earlier, post from statement, ignore, unmatch) and `ArchiveService`. Import takes the CSV as a multipart upload with the column names.
+- **Client:** `pages/BankAccountsPage.tsx` (with the account, import and archive dialogs), `pages/ReconcilePage.tsx`, `pages/MoneyMovedPage.tsx`, `pages/MoveMoney.tsx` (shared dialog). `/admin/bank-accounts`, `/admin/bank-reconciliation?bank=…` and `/admin/money-transfers` map to `/office/bank-accounts`, `/office/bank-accounts/{id}/reconcile`, `/office/money-moved`.
+- **Tests:** `OfficeBankingTest`. office-check opens Bank & cash and Money moved, and Reconcile when the data has a bank account (the demo data has none, so Reconcile was not seen on screen).
+- **Next:** release 8 part 4, fixed assets.
