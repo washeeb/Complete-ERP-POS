@@ -1,0 +1,2 @@
+### Added
+- **Financial reports rebuilt in the new back office (release 7, part 1).** Trial balance, profit and loss, profit by industry, balance sheet, account ledger, budget vs actual, VAT return and the ledger check, with the same dates, branch, books and industry filters; an account on the trial balance opens its ledger, a journal on the ledger opens the journal; Share head office costs; Export (Excel, CSV, PDF) of exactly what is shown.

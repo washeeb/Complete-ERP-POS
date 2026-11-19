@@ -415,7 +415,8 @@ try {
       // Pay a supplier dialog is drawn with a supplier and an amount, and left (nothing paid).
       for (const [link, path, ready] of [['Supplier payments', /\/office\/supplier-payments$/, () => page.getByText('No supplier payments match').or(page.getByRole('table', { name: 'Supplier payments' }).getByRole('row').nth(1)).first()],
         ['Aged payables', /\/office\/aged-payables$/, () => page.getByRole('region', { name: 'Owed to suppliers' })],
-        ['Withholding tax', /\/office\/withholding-tax$/, () => page.getByRole('region', { name: 'Payments that kept tax back' })]]) {
+        ['Withholding tax', /\/office\/withholding-tax$/, () => page.getByRole('region', { name: 'Payments that kept tax back' })],
+        ['Reports', /\/office\/financial-reports$/, () => page.getByRole('region', { name: 'Trial balance' })]]) {
         await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
         await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: link, exact: true }).first().click()
         await page.waitForURL(path, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
