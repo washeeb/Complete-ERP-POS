@@ -92,6 +92,7 @@ describe('addresses', () => {
     expect(appPathFor('/admin/aged-payables')).toBe('/office/aged-payables')
     expect(adminEquivalent({ page: 'supplier-payments' })).toBe('/admin/supplier-payments')
     expect(appPathFor('/admin/withholding-tax-return')).toBe('/office/withholding-tax')
+    expect(appPathFor('/admin/insights?tab=stock')).toBe('/office/insights?tab=stock')
     expect(appPathFor('/admin/financial-reports?report=pl&from=2026-10-01')).toBe('/office/financial-reports?report=pl&from=2026-10-01')
     expect(routeOf('/office/transfers/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f/edit')).toEqual({ page: 'transfer-form', id: '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f' })
     expect(routeOf('/office/counts/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')).toEqual({ page: 'count', id: '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f' })

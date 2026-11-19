@@ -1,12 +1,12 @@
 import {
-  Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Dropdown, Field, Input, Link, makeStyles, MessageBar, MessageBarBody, Option, Spinner,
-  Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, tokens,
+  Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Dropdown, Field, Input, makeStyles, MessageBar, MessageBarBody, Option, Spinner, Text, tokens,
 } from '@fluentui/react-components'
 import { ArrowSplitRegular } from '@fluentui/react-icons'
 import { useEffect, useState } from 'react'
-import { api, type FrCell, type FrOptions, type FrReport, type FrTable } from '../api'
+import { api, type FrOptions, type FrReport } from '../api'
 import { ExportMenu } from '../list/ExportMenu'
 import { Cards, PageHead, usePageStyles } from '../list/ListParts'
+import { ReportTable, TONE } from '../list/ReportTables'
 import { parse, serialize, str, useQueryParams } from '../list/query'
 import { navigate } from '../nav'
 
@@ -14,17 +14,10 @@ const useStyles = makeStyles({
   bar: { display: 'flex', alignItems: 'flex-end', gap: '10px', flexWrap: 'wrap', marginBottom: '12px' },
   grow: { flex: '1 1 auto' },
   panel: { backgroundColor: tokens.colorNeutralBackground1, borderRadius: tokens.borderRadiusXLarge, border: `1px solid ${tokens.colorNeutralStroke2}`,
-    boxShadow: tokens.shadow4, padding: '14px 16px', overflowX: 'auto', marginBottom: '12px' },
-  end: { textAlign: 'right', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' },
-  head: { fontWeight: tokens.fontWeightBold, paddingTop: '12px' },
-  sub: { fontWeight: tokens.fontWeightSemibold },
-  total: { fontWeight: tokens.fontWeightBold, borderTop: `2px solid ${tokens.colorNeutralForeground1}` },
+    boxShadow: tokens.shadow4, padding: '14px 16px', marginBottom: '12px' },
   muted: { color: tokens.colorNeutralForeground3 },
-  caption: { display: 'block', marginBottom: '6px' },
 })
 
-const END = { style: { justifyContent: 'flex-end' } }
-const TONE = { good: 'var(--zx-good)', bad: 'var(--zx-bad)' } as const
 
 /**
  * Financial reports (release 7): trial balance, profit and loss, profit by industry, balance sheet, account ledger,
@@ -71,32 +64,6 @@ export function FinancialReportsPage() {
     if (to.startsWith('?')) set({ ...parse(to), industry: str(params, 'industry') })
     else navigate(to)
   }
-  const cell = (c: FrCell) => {
-    if (c === null || typeof c === 'string') return c ?? ''
-    const text = c.strong ? <Text weight="semibold">{c.t}</Text> : c.t
-    if (c.to) return <Link onClick={() => open(c.to!)}>{text}</Link>
-    return c.tone ? <span style={{ color: TONE[c.tone], fontWeight: c.tone === 'bad' ? 600 : undefined }}>{text}</span> : text
-  }
-  const table = (t: FrTable, i: number) => (
-    <section key={i} className={s.panel} aria-label={t.title}>
-      {data.tables.length > 1 && <Text weight="semibold" className={s.caption}>{t.title}</Text>}
-      <Table size="small" aria-label={t.title} style={{ minWidth: t.columns.length > 2 ? 560 : undefined }}>
-        <TableHeader><TableRow>{t.columns.map((c, j) => <TableHeaderCell key={j} className={c.end ? s.end : undefined} button={c.end ? END : undefined}>{c.label}</TableHeaderCell>)}</TableRow></TableHeader>
-        <TableBody>
-          {t.rows.length === 0 && <TableRow><TableCell colSpan={t.columns.length}><Text className={s.muted}>{data.empty ?? 'Nothing to show.'}</Text></TableCell></TableRow>}
-          {t.rows.map((row, j) => (
-            <TableRow key={j}>
-              {row.cells.map((c, k) => (
-                <TableCell key={k} className={[t.columns[k]?.end ? s.end : '', row.kind ? s[row.kind] : ''].join(' ')}>{cell(c)}</TableCell>
-              ))}
-            </TableRow>
-          ))}
-          {t.foot.length > 0 && <TableRow>{t.foot.map((c, k) => <TableCell key={k} className={[t.columns[k]?.end ? s.end : '', s.total].join(' ')}>{cell(c)}</TableCell>)}</TableRow>}
-        </TableBody>
-      </Table>
-    </section>
-  )
-
   return (
     <div className={page.page}>
       <PageHead title="Financial reports" hint="The books: trial balance, profit and loss, balance sheet, account ledgers, budget, VAT and the ledger check. Choose the report, the dates and the filters." classic={`/admin/financial-reports${query ? `?${query}` : ''}`} />
@@ -119,7 +86,7 @@ export function FinancialReportsPage() {
       {done && <MessageBar intent="success" style={{ marginBottom: 12 }}><MessageBarBody>{done}</MessageBarBody></MessageBar>}
       {data.warning && <MessageBar intent="warning" style={{ marginBottom: 12 }}><MessageBarBody>{data.warning}</MessageBarBody></MessageBar>}
       {data.cards && <Cards items={data.cards.map((c) => ({ label: c.label, value: c.value, tone: c.tone ? TONE[c.tone] : undefined }))} />}
-      {data.prompt ? <section className={s.panel} aria-label={data.title}><Text className={s.muted}>{data.prompt}</Text></section> : data.tables.map(table)}
+      {data.prompt ? <section className={s.panel} aria-label={data.title}><Text className={s.muted}>{data.prompt}</Text></section> : data.tables.map((t, i) => <ReportTable key={i} table={t} caption={data.tables.length > 1} empty={data.empty} onOpen={open} />)}
       {data.notes.map((n, i) => <Text key={i} block size={200} className={s.muted} style={{ marginBottom: 6 }}>{n}</Text>)}
       {sharing && data.share && (
         <Dialog open onOpenChange={(_, d) => !d.open && setSharing(false)}>
