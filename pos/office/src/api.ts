@@ -416,6 +416,11 @@ export type ReturnRow = { id: string; receipt_no: string; occurred_at: string | 
   reason: string | null; details: string | null; items: string; to: string; refund: number; currency: string; paid_by: string; open: string; slip: string }
 export type ReturnsList = { currency: string; exponent: number; total: number; refunded: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: ReturnRow[] }
 export type ReturnsOptions = { tellers: Option[]; branches: Option[]; per: number[]; summary: string; reasons: Option[]; products: Option[] }
+export type JournalRow = { id: string; number: string; date: string | null; kind: string; kind_label: string; memo: string | null; amount: number; by: string | null }
+export type JournalList = { currency: string; exponent: number; total: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: JournalRow[] }
+export type JournalOptions = { kinds: Option[]; per: number[]; can_journal: boolean; can_post_now: boolean; accounts: Option[]; branches: Option[]; hq: string }
+export type JournalDetail = JournalRow & { currency: string; exponent: number; reverses: { id: string; number: string } | null; reversed_by: { id: string; number: string } | null
+  can_reverse: boolean; lines: { account: string | null; account_id: string; branch: string | null; memo: string | null; debit: number; credit: number }[]; debits: number; credits: number }
 export type RbDataset = { id: string; label: string; dated: boolean; dims: Option[]; measures: Option[] }
 export type RbOptions = { datasets: RbDataset[]; periods: Option[]; branches: Option[]; schedules: Option[]; people: Option[]; max_rows: number }
 export type RbChoices = { dataset: string; dimensions: string[]; measures: string[]; period: string; from: string | null; to: string | null; branch_id: string | null
@@ -793,6 +798,13 @@ export const api = {
   addBatch: (body: Record<string, unknown>) => call<{ adjustment: { id: string; number: string; open: string } }>('/office-api/batches/add', { method: 'POST', body: JSON.stringify(body) }),
   returns: (query: string, signal?: AbortSignal) => call<ReturnsList>(`/office-api/returns?${query}`, { signal }),
   returnsOptions: () => call<ReturnsOptions>('/office-api/returns/options'),
+  journals: (query: string, signal?: AbortSignal) => call<JournalList>(`/office-api/journals?${query}`, { signal }),
+  journalOptions: () => call<JournalOptions>('/office-api/journals/options'),
+  journal: (id: string) => call<{ journal: JournalDetail }>(`/office-api/journals/${id}`),
+  /** New journal or opening balances; ApiError code "reconfirm" (with its url) = confirm it is you first. */
+  postJournal: (body: Record<string, unknown>) => call<{ journal: { id: string; number: string; open: string } }>('/office-api/journals', { method: 'POST', body: JSON.stringify(body) }),
+  reverseJournal: (id: string, date: string, reason: string) => call<{ journal: { id: string; number: string; open: string } }>(`/office-api/journals/${id}/reverse`, { method: 'POST', body: JSON.stringify({ date, reason }) }),
+  postNow: () => call<{ posted: number; errors: string[]; message: string }>('/office-api/journals/post-now', { method: 'POST' }),
   financialOptions: () => call<FrOptions>('/office-api/financial-reports/options'),
   shareHeadOffice: (to: string) => call<{ message: string }>('/office-api/financial-reports/share-head-office', { method: 'POST', body: JSON.stringify({ to }) }),
   withholdingCsvUrl: (month: string) => `/office-api/withholding-tax/csv?month=${encodeURIComponent(month)}`,

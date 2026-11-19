@@ -18,6 +18,7 @@ use App\Http\Controllers\Office\ExpenseClaimsController as OfficeExpenseClaimsCo
 use App\Http\Controllers\Office\ExportController as OfficeExportController;
 use App\Http\Controllers\Office\GoodsReceiptsController as OfficeGoodsReceiptsController;
 use App\Http\Controllers\Office\InvoicesController as OfficeInvoicesController;
+use App\Http\Controllers\Office\JournalsController as OfficeJournalsController;
 use App\Http\Controllers\Office\OfficeController;
 use App\Http\Controllers\Office\ProductsController as OfficeProductsController;
 use App\Http\Controllers\Office\PurchaseOrdersController as OfficePurchaseOrdersController;
@@ -243,6 +244,12 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::get('aged-payables', [OfficeSupplierPaymentsController::class, 'aging']);
     Route::get('withholding-tax', [OfficeSupplierPaymentsController::class, 'withholding']);
     Route::get('withholding-tax/csv', [OfficeSupplierPaymentsController::class, 'withholdingCsv']);
+    Route::get('journals', [OfficeJournalsController::class, 'index']);
+    Route::get('journals/options', [OfficeJournalsController::class, 'options']);
+    Route::post('journals', [OfficeJournalsController::class, 'store']);
+    Route::post('journals/post-now', [OfficeJournalsController::class, 'postNow']);
+    Route::get('journals/{journal}', [OfficeJournalsController::class, 'show'])->whereUuid('journal');
+    Route::post('journals/{journal}/reverse', [OfficeJournalsController::class, 'reverse'])->whereUuid('journal');
     Route::get('financial-reports', [OfficeReportsController::class, 'financial']);
     Route::get('financial-reports/options', [OfficeReportsController::class, 'financialOptions']);
     Route::get('financial-reports/export', [OfficeReportsController::class, 'financialExport']);
@@ -272,7 +279,7 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::get('saved-reports/{report}', [OfficeReportsController::class, 'savedReport'])->whereUuid('report');
     Route::delete('saved-reports/{report}', [OfficeReportsController::class, 'deleteReport'])->whereUuid('report');
     Route::post('saved-reports/{report}/send', [OfficeReportsController::class, 'sendReport'])->whereUuid('report');
-    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills', 'supplier-payments', 'returns']);
+    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills', 'supplier-payments', 'returns', 'journals']);
 });
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;
