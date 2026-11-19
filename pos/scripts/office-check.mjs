@@ -433,7 +433,8 @@ try {
       await page.screenshot({ path: out(`insights-${look}-${w}`) })
       // Shrink and Slow & dead stock, rebuilt (release 7): both open from the Stock menu and load.
       for (const [link, path, ready] of [['Shrink', /\/office\/shrink$/, () => page.getByRole('region', { name: 'By reason (at cost)' })],
-        ['Slow & dead stock', /\/office\/slow-stock$/, () => page.getByRole('region', { name: 'Slow and dead stock' })]]) {
+        ['Slow & dead stock', /\/office\/slow-stock$/, () => page.getByRole('region', { name: 'Slow and dead stock' })],
+        ['Batches & expiry', /\/office\/batches$/, () => page.getByRole('region', { name: 'Expired — take off the shelf' })]]) {
         await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Stock/ }).first().click()
         await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: link, exact: true }).first().click()
         await page.waitForURL(path, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))

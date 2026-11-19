@@ -407,6 +407,11 @@ export type ShrinkView = { from: string; to: string; warehouse: string; warehous
 export type SlowRow = { id: string; sku: string; name: string; on_hand: string; value: string; last_sold: string | null; idle_days: number
   move_to: { id: string; code: string; name: string; sold: string } | null; supplier: string | null }
 export type SlowView = { warehouse: string; warehouses: Option[]; days: number; periods: Option[]; count: number; value: string; can_move: boolean; rows: SlowRow[] }
+export type BatchRow = { batch_id: string; product: string; sku: string; batch_no: string; expires_on: string | null; expires: string | null; on_hand: string }
+export type BatchesView = { warehouse: string; warehouses: Option[]; can_mark_down: boolean; can_correct: boolean; can_add: boolean
+  suggestions: { batch_id: string; product: string; sku: string; batch_no: string; expires: string; days_left: number; on_hand: string; percent: string }[]
+  markdowns: { id: string; product: string | null; batch_no: string | null; percent: number; price: string; until: string | null; code: string }[]
+  labels: string | null; expired: BatchRow[]; batches: BatchRow[]; expiry_returns: string | null; sheet: string }
 export type RbDataset = { id: string; label: string; dated: boolean; dims: Option[]; measures: Option[] }
 export type RbOptions = { datasets: RbDataset[]; periods: Option[]; branches: Option[]; schedules: Option[]; people: Option[]; max_rows: number }
 export type RbChoices = { dataset: string; dimensions: string[]; measures: string[]; period: string; from: string | null; to: string | null; branch_id: string | null
@@ -775,6 +780,13 @@ export const api = {
   slowStock: (query: string, signal?: AbortSignal) => call<SlowView>(`/office-api/slow-stock?${query}`, { signal }),
   moveSlowStock: (warehouse: string, product: string, to: string) =>
     call<{ transfer: { id: string; number: string; open: string } }>('/office-api/slow-stock/move', { method: 'POST', body: JSON.stringify({ warehouse, product, to }) }),
+  batches: (warehouse: string) => call<BatchesView>(`/office-api/batches?warehouse=${encodeURIComponent(warehouse)}`),
+  batchProducts: (q: string) => call<{ products: Option[] }>(`/office-api/batches/products?q=${encodeURIComponent(q)}`),
+  productBatches: (warehouse: string, product: string) => call<{ batches: Option[] }>(`/office-api/batches/product-batches?${new URLSearchParams({ warehouse, product })}`),
+  applyMarkdown: (warehouse: string, batch: string, percent: string) => call<{ message: string }>('/office-api/batches/markdowns', { method: 'POST', body: JSON.stringify({ warehouse, batch, percent }) }),
+  withdrawMarkdown: (id: string) => call<{ message: string }>(`/office-api/batches/markdowns/${id}/withdraw`, { method: 'POST' }),
+  correctExpiry: (batch: string, expires_on: string, reason: string) => call<{ message: string }>('/office-api/batches/correct', { method: 'POST', body: JSON.stringify({ batch, expires_on, reason }) }),
+  addBatch: (body: Record<string, unknown>) => call<{ adjustment: { id: string; number: string; open: string } }>('/office-api/batches/add', { method: 'POST', body: JSON.stringify(body) }),
   financialOptions: () => call<FrOptions>('/office-api/financial-reports/options'),
   shareHeadOffice: (to: string) => call<{ message: string }>('/office-api/financial-reports/share-head-office', { method: 'POST', body: JSON.stringify({ to }) }),
   withholdingCsvUrl: (month: string) => `/office-api/withholding-tax/csv?month=${encodeURIComponent(month)}`,
