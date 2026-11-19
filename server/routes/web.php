@@ -237,6 +237,8 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::get('supplier-payments/preview', [OfficeSupplierPaymentsController::class, 'preview']);
     Route::post('supplier-payments', [OfficeSupplierPaymentsController::class, 'pay']);
     Route::get('aged-payables', [OfficeSupplierPaymentsController::class, 'aging']);
+    Route::get('withholding-tax', [OfficeSupplierPaymentsController::class, 'withholding']);
+    Route::get('withholding-tax/csv', [OfficeSupplierPaymentsController::class, 'withholdingCsv']);
     Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills', 'supplier-payments']);
 });
 

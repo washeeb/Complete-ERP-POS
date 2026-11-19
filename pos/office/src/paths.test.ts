@@ -91,6 +91,7 @@ describe('addresses', () => {
     expect(routeOf('/office/supplier-bills/new')).toEqual({ page: 'supplier-bill-form' })
     expect(appPathFor('/admin/aged-payables')).toBe('/office/aged-payables')
     expect(adminEquivalent({ page: 'supplier-payments' })).toBe('/admin/supplier-payments')
+    expect(appPathFor('/admin/withholding-tax-return')).toBe('/office/withholding-tax')
     expect(routeOf('/office/transfers/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f/edit')).toEqual({ page: 'transfer-form', id: '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f' })
     expect(routeOf('/office/counts/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')).toEqual({ page: 'count', id: '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f' })
     expect(appPathFor('/admin/stock-adjustments/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')).toBe('/office/adjustments/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')

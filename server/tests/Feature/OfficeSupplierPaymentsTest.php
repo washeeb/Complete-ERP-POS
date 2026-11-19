@@ -51,6 +51,15 @@ it('works out and keeps back withholding tax, with its certificate', function ()
     expect($preview)->toContain('before VAT')->toContain('Pay the supplier');
     $p = $this->postJson('/office-api/supplier-payments', ($this->pay)(['withhold' => true, 'amount' => '3000']))->assertOk()->json('payment');
     expect($p['wht'])->toBeGreaterThan(0)->and($p['paid'])->toBe(300000 - $p['wht'])->and($p['certificate'])->toContain('/wht/');
+
+    $month = now()->format('Y-m');
+    $wht = $this->getJson("/office-api/withholding-tax?month={$month}")->assertOk()->json();
+    expect($wht)->toMatchArray(['month' => $month, 'total' => $p['wht'], 'enabled' => true])->and($wht['rows'][0])->toMatchArray(['supplier' => 'OSU PROPERTIES', 'tin' => null])
+        ->and($wht['due'])->toBe(now()->startOfMonth()->addMonth()->day(15)->toDateString());
+    expect($this->getJson('/office-api/withholding-tax')->json('month'))->toBe(now()->subMonth()->format('Y-m')); // last month first
+    $csv = $this->get("/office-api/withholding-tax/csv?month={$month}");
+    $csv->assertOk();
+    expect($csv->streamedContent())->toContain('Supplier TIN')->toContain('OSU PROPERTIES');
 });
 
 it('asks to confirm it is you above the limit; a teller sees nothing and an accountant cannot pay', function () {
@@ -67,4 +76,5 @@ it('asks to confirm it is you above the limit; a teller sees nothing and an acco
     $teller = staff($this->owner, 'efua', 2, 'teller', ScopeType::Branch, $this->b['HQ']->id);
     $this->actingAs($teller, 'web')->getJson('/office-api/supplier-payments')->assertForbidden();
     $this->getJson('/office-api/aged-payables')->assertForbidden();
+    $this->getJson('/office-api/withholding-tax')->assertForbidden();
 });

@@ -13,7 +13,9 @@ use App\Models\Supplier;
 use App\Models\SupplierPayment;
 use App\Models\User;
 use App\Support\Money;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 /**
  * Supplier payments and Aged payables in the new back office (release 6 of the rewrite): the payments list with the
@@ -155,6 +157,39 @@ final class SupplierPaymentsScreen
         return ['currency' => $currency, 'exponent' => Money::exponent($currency), 'rows' => $rows->all(),
             'totals' => collect(['current', 'd1_30', 'd31_60', 'd61_90', 'd90_plus', 'total'])->mapWithKeys(fn ($k) => [$k => (int) $rows->sum($k)])->all(),
             'pay' => self::canPay() ? $this->payForm() : null];
+    }
+
+    /** Withholding tax: the months offered (the last two years), the one shown by default (last month: its return is due now). */
+    public static function whtMonths(): array
+    {
+        return collect(range(0, 23))->map(fn ($i) => now()->startOfMonth()->subMonths($i))
+            ->map(fn ($d) => ['id' => $d->format('Y-m'), 'label' => $d->format('F Y')])->all();
+    }
+
+    /** @return Collection<int, SupplierPayment> the month's payments that kept tax back */
+    public static function whtPayments(string $month)
+    {
+        [$y, $m] = array_map('intval', explode('-', $month));
+
+        return SupplierPayment::with('supplier')->where('wht_minor', '>', 0)->whereYear('paid_on', $y)->whereMonth('paid_on', $m)->orderBy('paid_on')->orderBy('number')->get();
+    }
+
+    /** The month's withholding tax, as the current Withholding tax page: each payment, the total and when it is due to GRA. */
+    public function withholding(?string $month): array
+    {
+        $month = is_string($month) && preg_match('/^\d{4}-\d{2}$/', $month) ? $month : now()->subMonth()->format('Y-m');
+        $rows = self::whtPayments($month);
+        $currency = $this->currency();
+
+        return [
+            'currency' => $currency, 'exponent' => Money::exponent($currency), 'month' => $month, 'months' => self::whtMonths(),
+            'due' => Carbon::parse("{$month}-01")->addMonth()->day(15)->toDateString(), 'total' => (int) $rows->sum('wht_minor'),
+            'enabled' => app(WithholdingTax::class)->enabled($this->user->tenant_id),
+            'rows' => $rows->map(fn (SupplierPayment $p) => [
+                'id' => $p->id, 'date' => $p->paid_on?->toDateString(), 'certificate_no' => $p->wht_certificate_no, 'certificate' => route('print.wht', $p->id, false),
+                'number' => $p->number, 'supplier' => $p->supplier?->name, 'tin' => $p->supplier?->tax_no, 'nature' => Supplier::SUPPLY_KINDS[$p->supplier?->supply_kind] ?? '',
+                'base' => (int) $p->wht_base_minor, 'rate' => $p->wht_rate_bp / 100, 'wht' => (int) $p->wht_minor])->values()->all(),
+        ];
     }
 
     private function currency(): string

@@ -20,6 +20,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Supplier payments and Aged payables in the new back office (App\Domain\Office\SupplierPaymentsScreen), and Pay a
@@ -85,6 +86,36 @@ class SupplierPaymentsController extends Controller
         }
 
         return response()->json(['payment' => (new SupplierPaymentsScreen($request->user()))->rowOf($p->fresh(['supplier', 'account']))]);
+    }
+
+    /** Withholding tax for a month (the current Withholding tax page). */
+    public function withholding(Request $request): JsonResponse
+    {
+        $this->panel();
+        abort_unless(SupplierPaymentsScreen::canAging(), 403, 'You cannot see withholding tax.');
+
+        return response()->json((new SupplierPaymentsScreen($request->user()))->withholding($request->query('month')));
+    }
+
+    /** "Download for GRA (CSV)": the month's schedule, as the current page gives it. */
+    public function withholdingCsv(Request $request): StreamedResponse
+    {
+        $this->panel();
+        abort_unless(SupplierPaymentsScreen::canAging(), 403, 'You cannot see withholding tax.');
+        $month = (string) $request->query('month', '');
+        abort_unless((bool) preg_match('/^\d{4}-\d{2}$/', $month), 422, 'Choose the month.');
+        $rows = SupplierPaymentsScreen::whtPayments($month);
+
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Date', 'Certificate', 'Payment', 'Supplier', 'Supplier TIN', 'Nature', 'Amount before VAT', 'Rate %', 'Withholding tax', 'Paid to supplier']);
+            foreach ($rows as $p) {
+                fputcsv($out, [$p->paid_on->toDateString(), $p->wht_certificate_no, $p->number, $p->supplier?->name, $p->supplier?->tax_no,
+                    Supplier::SUPPLY_KINDS[$p->supplier?->supply_kind] ?? '', number_format($p->wht_base_minor / 100, 2, '.', ''),
+                    $p->wht_rate_bp / 100, number_format($p->wht_minor / 100, 2, '.', ''), number_format($p->cashMinor() / 100, 2, '.', '')]);
+            }
+            fclose($out);
+        }, "withholding-tax-{$month}.csv", ['Content-Type' => 'text/csv']);
     }
 
     private function panel(): void
