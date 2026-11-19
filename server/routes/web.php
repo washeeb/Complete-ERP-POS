@@ -244,6 +244,8 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::get('financial-reports/options', [OfficeReportsController::class, 'financialOptions']);
     Route::get('financial-reports/export', [OfficeReportsController::class, 'financialExport']);
     Route::post('financial-reports/share-head-office', [OfficeReportsController::class, 'shareHeadOffice']);
+    Route::get('insights', [OfficeReportsController::class, 'insights']);
+    Route::get('insights/export', [OfficeReportsController::class, 'insightsExport']);
     Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills', 'supplier-payments']);
 });
 

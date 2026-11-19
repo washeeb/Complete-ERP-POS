@@ -89,12 +89,6 @@ final class FinancialReportsScreen
         return ['t' => $text, 'to' => $to];
     }
 
-    /** @param  list<string>  $cols  column names; "#" at the start = a number column (right-aligned) */
-    private static function table(string $title, array $cols, array $rows, array $foot = []): array
-    {
-        return ['title' => $title, 'columns' => array_map(fn ($c) => ['label' => ltrim($c, '#'), 'end' => str_starts_with($c, '#')], $cols), 'rows' => $rows, 'foot' => $foot];
-    }
-
     /** One report: its tables, notes under it, and what the page may offer (Share head office costs). */
     public function report(array $p): array
     {
@@ -122,7 +116,7 @@ final class FinancialReportsScreen
             $this->m($x['opening']), $this->m($x['debit']), $this->m($x['credit']), $this->m($x['closing'])]], $d['rows']);
         $t = $d['totals'];
 
-        return ['tables' => [self::table('Trial balance', ['Account', '#Opening', '#Debit', '#Credit', '#Closing'], $rows,
+        return ['tables' => [ReportTables::table('Trial balance', ['Account', '#Opening', '#Debit', '#Credit', '#Closing'], $rows,
             ['Total (debits + / credits −)', $this->m($t['opening']) ?: '0.00', $this->m($t['debit']), $this->m($t['credit']), $this->m($t['closing']) ?: '0.00'])],
             'empty' => 'Nothing posted in this range.',
             'notes' => ['Balances: debit +, credit −. Income and expense accounts start each financial year at zero; earlier years’ profit is in retained earnings.']];
@@ -143,7 +137,7 @@ final class FinancialReportsScreen
         }
         $rows[] = ['kind' => 'total', 'cells' => ['Net profit', $this->mm($d['net_profit'])]];
 
-        return ['tables' => [self::table('Profit and loss', ['Account', '#Amount'], $rows)],
+        return ['tables' => [ReportTables::table('Profit and loss', ['Account', '#Amount'], $rows)],
             'cards' => [['label' => 'Income', 'value' => $this->mm($d['income'])], ['label' => 'Gross profit', 'value' => $this->mm($d['gross_profit'])],
                 ['label' => 'Net profit', 'value' => $this->mm($d['net_profit']), 'tone' => $d['net_profit'] < 0 ? 'bad' : 'good']], 'notes' => []];
     }
@@ -166,7 +160,7 @@ final class FinancialReportsScreen
             ? 'One industry\'s assets and liabilities: cash banked, money owed and stock in transit between industries sit partly at company level, so a single industry\'s sheet does not balance on its own. Choose All industries for the company\'s balance sheet.'
             : ($d['balanced'] ? 'Assets equal liabilities plus equity.' : 'Out of balance — run the ledger check.');
 
-        return ['tables' => [self::table('Balance sheet', ['Account', '#Amount'], $rows)], 'notes' => [$note],
+        return ['tables' => [ReportTables::table('Balance sheet', ['Account', '#Amount'], $rows)], 'notes' => [$note],
             'warning' => ! $oneIndustry && ! $d['balanced'] ? 'Out of balance — run the ledger check.' : null];
     }
 
@@ -185,7 +179,7 @@ final class FinancialReportsScreen
         }
         $rows[] = ['kind' => 'total', 'cells' => ['Closing balance', '', '', '', '', '', $this->mm($d['closing'])]];
 
-        return ['tables' => [self::table($a->label(), ['Date', 'Journal', 'Description', 'Branch', '#Debit', '#Credit', '#Balance'], $rows)], 'notes' => []];
+        return ['tables' => [ReportTables::table($a->label(), ['Date', 'Journal', 'Description', 'Branch', '#Debit', '#Credit', '#Balance'], $rows)], 'notes' => []];
     }
 
     private function budget(Reports $r, array $p): array
@@ -199,7 +193,7 @@ final class FinancialReportsScreen
         $rows = array_map(fn ($x) => ['cells' => [$x['account']->label(), $this->m($x['budget']), $this->m($x['actual']),
             ['t' => $this->mm($x['variance']), 'tone' => $x['better'] ? 'good' : 'bad']]], $r->budgetVsActual($tenant, $a->year, $a->period, $to, $p['branch'], $p['industry']));
 
-        return ['tables' => [self::table('Budget vs actual', ['Account', '#Budget', '#Actual', '#Difference'], $rows)],
+        return ['tables' => [ReportTables::table('Budget vs actual', ['Account', '#Budget', '#Actual', '#Difference'], $rows)],
             'empty' => 'No budget or postings for these months. Enter one under Finance → Budgets.',
             'notes' => ["Months: {$label}. Income and costs both shown as positive amounts."]];
     }
@@ -218,9 +212,9 @@ final class FinancialReportsScreen
         $notes[] = 'From the ledger for the dates chosen. Your accountant must check these against the GRA return (which taxes are claimable on purchases, rates and boxes) before filing.';
 
         return ['tables' => [
-            self::table('Sales', ['Sales', '#Amount'], [['cells' => ['Sales (before tax)', $this->mm($d['sales_total'])]],
+            ReportTables::table('Sales', ['Sales', '#Amount'], [['cells' => ['Sales (before tax)', $this->mm($d['sales_total'])]],
                 ['cells' => ['— of which taxed', $this->mm($d['sales_taxed'])]], ['cells' => ['— of which exempt or zero-rated', $this->mm($d['sales_untaxed'])]]]),
-            self::table('Tax', ['Tax', '#On sales (output)', '#On purchases (input)', '#Due'], $taxes, ['Total', $sum('output'), $sum('input'), $sum('due')]),
+            ReportTables::table('Tax', ['Tax', '#On sales (output)', '#On purchases (input)', '#Due'], $taxes, ['Total', $sum('output'), $sum('input'), $sum('due')]),
         ], 'notes' => $notes];
     }
 
@@ -244,7 +238,7 @@ final class FinancialReportsScreen
         $rows[] = ['kind' => 'total', 'cells' => array_merge(['Net profit'], array_map(fn ($id) => $this->mm($d['totals'][$id]['net_profit']), array_keys($all)))];
         $sharing = app(HeadOfficeShare::class)->enabled($this->user->tenant_id);
 
-        return ['tables' => [self::table('Profit by industry', $cols, $rows)], 'notes' => ['Each industry is a profit centre: its column holds what its branches posted. The Company column holds head office and shared costs '
+        return ['tables' => [ReportTables::table('Profit by industry', $cols, $rows)], 'notes' => ['Each industry is a profit centre: its column holds what its branches posted. The Company column holds head office and shared costs '
             .($sharing ? 'until they are shared out by sales (Share head office costs, for the month of the To date)' : '(sharing them by sales can be switched on under System → Settings → Finance)')
             .'. Stock moved between industries is at cost, so it makes no profit for either.']];
     }
@@ -256,7 +250,7 @@ final class FinancialReportsScreen
             .($d['opening_left'] ? ' “Opening balances” still holds '.$this->mm($d['opening_left']).' — it should reach zero once all opening balances are in.' : '')
             .' Records not yet posted are picked up every few minutes (Journals → Post now).';
 
-        return ['tables' => [self::table('Ledger check', ['Control account', '#Ledger', '#Sub-ledger', '#Difference'], $rows)], 'notes' => [$note],
+        return ['tables' => [ReportTables::table('Ledger check', ['Control account', '#Ledger', '#Sub-ledger', '#Difference'], $rows)], 'notes' => [$note],
             'warning' => $d['ok'] ? null : implode(' ', $d['problems'])];
     }
 
@@ -289,15 +283,12 @@ final class FinancialReportsScreen
     public function sheets(array $p): array
     {
         $d = $this->report($p);
-        $plain = fn ($c) => is_array($c) ? (string) ($c['t'] ?? '') : (string) ($c ?? '');
-        $sheets = array_map(fn ($t) => ['title' => $t['title'], 'headings' => array_column($t['columns'], 'label'),
-            'rows' => array_merge(array_map(fn ($r) => array_map($plain, $r['cells']), $t['rows']), $t['foot'] ? [array_map($plain, $t['foot'])] : [])], $d['tables']);
         $filters = match ($d['report']) {
             'check' => ["Report: {$d['title']}"],
             'bs' => ["Report: {$d['title']}", "As at: {$d['to']}"],
             default => ["Report: {$d['title']}", "From: {$d['from']}", "To: {$d['to']}"],
         };
 
-        return ['title' => $d['title'], 'sheets' => $sheets ?: [['title' => $d['title'], 'headings' => [''], 'rows' => [[$d['prompt'] ?? $d['empty'] ?? '']]]], 'filters' => $filters];
+        return ['title' => $d['title'], 'sheets' => ReportTables::sheets($d['tables'], $d['prompt'] ?? $d['empty'] ?? $d['title']), 'filters' => $filters];
     }
 }

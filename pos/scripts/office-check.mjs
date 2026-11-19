@@ -423,6 +423,14 @@ try {
         await ready().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
         await page.screenshot({ path: out(`${link.replaceAll(' ', '-').toLowerCase()}-${look}-${w}`) })
       }
+      // Insights, rebuilt (release 7): opens from the Insights menu with the forecast; Stock health shows its four tables.
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Insights/ }).first().click()
+      await page.getByRole('navigation', { name: 'Insights' }).getByRole('link', { name: 'Insights', exact: true }).first().click()
+      await page.waitForURL(/\/office\/insights$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Insights did not open the new screen (${page.url()})`))
+      await page.getByRole('region', { name: 'Demand forecast and reorder' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Insights did not load`))
+      await page.getByRole('tab', { name: 'Stock health' }).click()
+      await page.getByRole('region', { name: 'Transfers between branches' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Insights stock health did not load`))
+      await page.screenshot({ path: out(`insights-${look}-${w}`) })
       if (look === 'top' && w === 1366) {
         const payBtn = page.getByRole('button', { name: 'Pay a supplier' })
         if (await payBtn.waitFor({ timeout: 10000 }).then(() => true).catch(() => false)) {
