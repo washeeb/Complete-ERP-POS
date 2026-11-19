@@ -402,7 +402,15 @@ export type AgingRow = { id: string; name: string; code: string; open: string | 
 export type Aging = { currency: string; exponent: number; rows: AgingRow[]; totals: Record<string, number>; pay: PayForm | null }
 export type WhtRow = { id: string; date: string | null; certificate_no: string | null; certificate: string; number: string; supplier: string | null; tin: string | null; nature: string; base: number; rate: number; wht: number }
 export type FrCell = string | null | { t: string; to?: string; tone?: 'good' | 'bad' | null; strong?: boolean }
-export type FrTable = { title: string; columns: { label: string; end: boolean }[]; rows: { kind?: 'head' | 'sub' | 'total'; cells: FrCell[] }[]; foot: FrCell[]; hint?: string | null; empty?: string | null }
+export type FrTable = { title: string; columns: { label: string; end: boolean }[]; rows: { kind?: 'head' | 'sub' | 'total' | null; cells: FrCell[]; drill?: Record<string, string> | null }[]; foot: FrCell[]; hint?: string | null; empty?: string | null }
+export type RbDataset = { id: string; label: string; dated: boolean; dims: Option[]; measures: Option[] }
+export type RbOptions = { datasets: RbDataset[]; periods: Option[]; branches: Option[]; schedules: Option[]; people: Option[]; max_rows: number }
+export type RbChoices = { dataset: string; dimensions: string[]; measures: string[]; period: string; from: string | null; to: string | null; branch_id: string | null
+  filter_dim: string | null; filter_value: string | null; sort: string | null; direction: 'asc' | 'desc' }
+export type RbResult = { title: string; period: string; truncated: boolean; table: FrTable; hint: string | null }
+export type RbRecipient = { type: 'email' | 'whatsapp' | 'user'; to: string }
+export type SavedReportRow = { id: string; name: string; dataset: string; by: string | null; mine: boolean; shared: boolean; schedule: string; schedule_label: string
+  next: string | null; last: string | null; schedule_day: number | null; schedule_time: string | null; format: string; recipients: RbRecipient[]; open: string }
 export type InsightsView = { tab: string; tabs: Option[]; title: string; warehouse: string; warehouses: Option[]; by_warehouse: boolean; tables: FrTable[] }
 export type FrReport = { report: string; title: string; account: string | null; from: string; to: string; branch: string | null; industry: string | null; books: string | null
   tables: FrTable[]; notes: string[]; empty?: string; prompt?: string; warning?: string | null; cards?: { label: string; value: string; tone?: 'good' | 'bad' }[]
@@ -752,6 +760,13 @@ export const api = {
   withholdingTax: (month: string) => call<WhtMonth>(`/office-api/withholding-tax?month=${encodeURIComponent(month)}`),
   financialReport: (query: string, signal?: AbortSignal) => call<FrReport>(`/office-api/financial-reports?${query}`, { signal }),
   insights: (query: string, signal?: AbortSignal) => call<InsightsView>(`/office-api/insights?${query}`, { signal }),
+  builderOptions: () => call<RbOptions>('/office-api/report-builder/options'),
+  runReport: (choices: RbChoices, drill: Record<string, string> | null) => call<RbResult>('/office-api/report-builder/run', { method: 'POST', body: JSON.stringify({ ...choices, drill }) }),
+  savedReports: (q: string) => call<{ rows: SavedReportRow[] }>(`/office-api/saved-reports?q=${encodeURIComponent(q)}`),
+  savedReport: (id: string) => call<{ report: SavedReportRow; choices: RbChoices }>(`/office-api/saved-reports/${id}`),
+  saveReport: (body: Record<string, unknown>) => call<{ report: SavedReportRow }>('/office-api/saved-reports', { method: 'POST', body: JSON.stringify(body) }),
+  deleteReport: (id: string) => call<{ deleted: boolean }>(`/office-api/saved-reports/${id}`, { method: 'DELETE' }),
+  sendReport: (id: string) => call<{ message: string }>(`/office-api/saved-reports/${id}/send`, { method: 'POST' }),
   financialOptions: () => call<FrOptions>('/office-api/financial-reports/options'),
   shareHeadOffice: (to: string) => call<{ message: string }>('/office-api/financial-reports/share-head-office', { method: 'POST', body: JSON.stringify({ to }) }),
   withholdingCsvUrl: (month: string) => `/office-api/withholding-tax/csv?month=${encodeURIComponent(month)}`,

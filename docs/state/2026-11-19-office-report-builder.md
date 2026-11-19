@@ -1,0 +1,5 @@
+## New back office, release 7 part 3: report builder and saved reports (branch `office-report-builder`, stacked on `office-insights`)
+- **Server:** `App\Domain\Office\ReportBuilderScreen` (allowed datasets with their columns and figures, definition from the builder's choices and back, the run as a `ReportTables` table whose lines carry `drill`, saved reports list). `ReportsController`: `builderOptions`, `builderRun` (POST), `builderExport` (`?choices=JSON`), `savedReports`, `savedReport`, `saveReport`, `deleteReport`, `sendReport`, and a shared `act()` for 403/422.
+- **Client:** `pages/ReportBuilderPage.tsx` (with the Save dialog), `pages/SavedReportsPage.tsx`; `ReportTable` takes `onDrill`. `/admin/report-builder?report=…` and `/admin/saved-reports` map to `/office/…`.
+- **Tests:** `OfficeReportBuilderTest`. office-check opens both from the Insights menu and opens a line's rows when the report has lines.
+- **Next:** release 7 part 4, stock reports (shrink, slow and dead stock, batches and expiry, returns report).

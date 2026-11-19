@@ -246,6 +246,14 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::post('financial-reports/share-head-office', [OfficeReportsController::class, 'shareHeadOffice']);
     Route::get('insights', [OfficeReportsController::class, 'insights']);
     Route::get('insights/export', [OfficeReportsController::class, 'insightsExport']);
+    Route::get('report-builder/options', [OfficeReportsController::class, 'builderOptions']);
+    Route::post('report-builder/run', [OfficeReportsController::class, 'builderRun']);
+    Route::get('report-builder/export', [OfficeReportsController::class, 'builderExport']);
+    Route::get('saved-reports', [OfficeReportsController::class, 'savedReports']);
+    Route::post('saved-reports', [OfficeReportsController::class, 'saveReport']);
+    Route::get('saved-reports/{report}', [OfficeReportsController::class, 'savedReport'])->whereUuid('report');
+    Route::delete('saved-reports/{report}', [OfficeReportsController::class, 'deleteReport'])->whereUuid('report');
+    Route::post('saved-reports/{report}/send', [OfficeReportsController::class, 'sendReport'])->whereUuid('report');
     Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills', 'supplier-payments']);
 });
 

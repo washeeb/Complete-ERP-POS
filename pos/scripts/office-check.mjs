@@ -431,6 +431,24 @@ try {
       await page.getByRole('tab', { name: 'Stock health' }).click()
       await page.getByRole('region', { name: 'Transfers between branches' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Insights stock health did not load`))
       await page.screenshot({ path: out(`insights-${look}-${w}`) })
+      // Report builder and Saved reports, rebuilt (release 7): both open from the Insights menu; the builder runs its first
+      // report, and a line of it opens the rows behind it (nothing is saved).
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Insights/ }).first().click()
+      await page.getByRole('navigation', { name: 'Insights' }).getByRole('link', { name: 'Report builder', exact: true }).first().click()
+      await page.waitForURL(/\/office\/report-builder$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Report builder did not open the new screen (${page.url()})`))
+      await page.getByRole('region', { name: 'Report choices' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Report builder did not load`))
+      await page.getByText(/ · /).first().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Report builder did not run its report`))
+      const line = page.locator('tr[tabindex="0"]').first()
+      if (await line.count()) {
+        await line.click()
+        await page.getByRole('button', { name: 'Back to the summary' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: a report line did not open the rows behind it`))
+      }
+      await page.screenshot({ path: out(`report-builder-${look}-${w}`) })
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Insights/ }).first().click()
+      await page.getByRole('navigation', { name: 'Insights' }).getByRole('link', { name: 'Saved reports', exact: true }).first().click()
+      await page.waitForURL(/\/office\/saved-reports$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Saved reports did not open the new screen (${page.url()})`))
+      await page.getByText('No saved reports yet').or(page.getByRole('table', { name: 'Saved reports' }).getByRole('row').nth(1)).first().waitFor({ timeout: 20000 })
+        .catch(() => problems.push(`${look} ${w}: Saved reports did not load`))
       if (look === 'top' && w === 1366) {
         const payBtn = page.getByRole('button', { name: 'Pay a supplier' })
         if (await payBtn.waitFor({ timeout: 10000 }).then(() => true).catch(() => false)) {
