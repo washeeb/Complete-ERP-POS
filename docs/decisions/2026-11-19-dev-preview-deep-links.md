@@ -1,0 +1,5 @@
+## Deep links on the dev preview
+- **Found:** on `php artisan serve`, `/office/sales` reached Laravel with `SCRIPT_NAME=/office/index.html` and `PATH_INFO=/sales` (proved with a router that printed `$_SERVER`). PHP's built-in server does that when a folder on the way (`public/office/`, `public/pos/`) holds an index file. Laravel then took `/office` as its own address and looked for a page `/sales`: "Not Found". The same request through the HTTP kernel gave the expected sign-in redirect, so the routes were fine.
+- **Decided:** a project `server/server.php` that resets the script to `/index.php` for anything that is not a real file, then runs Laravel's router unchanged. Real files (`/office/assets/…`) and folders are served as before.
+- **Why not elsewhere:** installs use Caddy, nginx or IIS, which never load this file; no installer runs `artisan serve`.
+- **Proved:** before, `/office/sales`, `/office/todo`, `/office/a/products` and `/pos/sale/x` gave 404 on 8010. After, the `/office` addresses redirect to sign-in (302) like an install, `/pos/…` opens the till, unknown addresses still give 404 and asset files load. `check:office` and `check:layout` pass.
