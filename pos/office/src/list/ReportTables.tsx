@@ -12,6 +12,8 @@ const useStyles = makeStyles({
   caption: { display: 'block' },
   hint: { display: 'block', marginBottom: '6px' },
   click: { cursor: 'pointer' },
+  track: { width: '160px', maxWidth: '30vw' },
+  bar: { height: '10px', borderRadius: '4px', backgroundColor: 'var(--zx-bad)' },
 })
 
 const END = { style: { justifyContent: 'flex-end' } }
@@ -28,6 +30,7 @@ export function ReportTable({ table: t, caption, empty, onOpen, onDrill }: {
   const s = useStyles()
   const cell = (c: FrCell) => {
     if (c === null || typeof c === 'string') return c ?? ''
+    if (c.bar !== undefined) return <div className={s.track} role="img" aria-label={`${c.bar}% of the largest`}><div className={s.bar} style={{ width: `${Math.max(2, c.bar)}%` }} /></div>
     const text = c.strong ? <Text weight="semibold">{c.t}</Text> : c.t
     if (c.to) return <Link onClick={(e) => { e.stopPropagation(); onOpen(c.to!) }}>{text}</Link>
     return c.tone ? <span style={{ color: TONE[c.tone], fontWeight: c.tone === 'bad' ? 600 : undefined }}>{text}</span> : text

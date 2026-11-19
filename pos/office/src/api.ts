@@ -401,8 +401,12 @@ export type SpOptions = { methods: Option[]; suppliers: Option[]; per: number[];
 export type AgingRow = { id: string; name: string; code: string; open: string | null; current: number; d1_30: number; d31_60: number; d61_90: number; d90_plus: number; total: number }
 export type Aging = { currency: string; exponent: number; rows: AgingRow[]; totals: Record<string, number>; pay: PayForm | null }
 export type WhtRow = { id: string; date: string | null; certificate_no: string | null; certificate: string; number: string; supplier: string | null; tin: string | null; nature: string; base: number; rate: number; wht: number }
-export type FrCell = string | null | { t: string; to?: string; tone?: 'good' | 'bad' | null; strong?: boolean }
+export type FrCell = string | null | { t: string; to?: string; tone?: 'good' | 'bad' | null; strong?: boolean; bar?: number }
 export type FrTable = { title: string; columns: { label: string; end: boolean }[]; rows: { kind?: 'head' | 'sub' | 'total' | null; cells: FrCell[]; drill?: Record<string, string> | null }[]; foot: FrCell[]; hint?: string | null; empty?: string | null }
+export type ShrinkView = { from: string; to: string; warehouse: string; warehouses: Option[]; total: string; entries: number; tables: FrTable[] }
+export type SlowRow = { id: string; sku: string; name: string; on_hand: string; value: string; last_sold: string | null; idle_days: number
+  move_to: { id: string; code: string; name: string; sold: string } | null; supplier: string | null }
+export type SlowView = { warehouse: string; warehouses: Option[]; days: number; periods: Option[]; count: number; value: string; can_move: boolean; rows: SlowRow[] }
 export type RbDataset = { id: string; label: string; dated: boolean; dims: Option[]; measures: Option[] }
 export type RbOptions = { datasets: RbDataset[]; periods: Option[]; branches: Option[]; schedules: Option[]; people: Option[]; max_rows: number }
 export type RbChoices = { dataset: string; dimensions: string[]; measures: string[]; period: string; from: string | null; to: string | null; branch_id: string | null
@@ -767,6 +771,10 @@ export const api = {
   saveReport: (body: Record<string, unknown>) => call<{ report: SavedReportRow }>('/office-api/saved-reports', { method: 'POST', body: JSON.stringify(body) }),
   deleteReport: (id: string) => call<{ deleted: boolean }>(`/office-api/saved-reports/${id}`, { method: 'DELETE' }),
   sendReport: (id: string) => call<{ message: string }>(`/office-api/saved-reports/${id}/send`, { method: 'POST' }),
+  shrink: (query: string, signal?: AbortSignal) => call<ShrinkView>(`/office-api/shrink?${query}`, { signal }),
+  slowStock: (query: string, signal?: AbortSignal) => call<SlowView>(`/office-api/slow-stock?${query}`, { signal }),
+  moveSlowStock: (warehouse: string, product: string, to: string) =>
+    call<{ transfer: { id: string; number: string; open: string } }>('/office-api/slow-stock/move', { method: 'POST', body: JSON.stringify({ warehouse, product, to }) }),
   financialOptions: () => call<FrOptions>('/office-api/financial-reports/options'),
   shareHeadOffice: (to: string) => call<{ message: string }>('/office-api/financial-reports/share-head-office', { method: 'POST', body: JSON.stringify({ to }) }),
   withholdingCsvUrl: (month: string) => `/office-api/withholding-tax/csv?month=${encodeURIComponent(month)}`,

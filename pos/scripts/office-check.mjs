@@ -431,6 +431,15 @@ try {
       await page.getByRole('tab', { name: 'Stock health' }).click()
       await page.getByRole('region', { name: 'Transfers between branches' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Insights stock health did not load`))
       await page.screenshot({ path: out(`insights-${look}-${w}`) })
+      // Shrink and Slow & dead stock, rebuilt (release 7): both open from the Stock menu and load.
+      for (const [link, path, ready] of [['Shrink', /\/office\/shrink$/, () => page.getByRole('region', { name: 'By reason (at cost)' })],
+        ['Slow & dead stock', /\/office\/slow-stock$/, () => page.getByRole('region', { name: 'Slow and dead stock' })]]) {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Stock/ }).first().click()
+        await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: link, exact: true }).first().click()
+        await page.waitForURL(path, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await ready().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        await page.screenshot({ path: out(`${link.replaceAll(' ', '-').replace('&', 'and').toLowerCase()}-${look}-${w}`) })
+      }
       // Report builder and Saved reports, rebuilt (release 7): both open from the Insights menu; the builder runs its first
       // report, and a line of it opens the rows behind it (nothing is saved).
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Insights/ }).first().click()
