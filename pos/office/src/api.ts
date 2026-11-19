@@ -369,6 +369,28 @@ export type EcDetail = {
   actions: { approve: boolean; reject: boolean; pay: { accounts: Option[]; default: string } | null }
 }
 export type EcForm = { currency: string; branches: Option[]; accounts: Option[]; projects: Option[] | null }
+export type SbRow = { id: string; number: string; supplier: string | null; invoice_no: string; bill_date: string | null; due_on: string | null; total: number; variance: number; status: string }
+export type SbList = { currency: string; exponent: number; total: number; posted: number; waiting: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: SbRow[] }
+export type SbOptions = { statuses: Option[]; suppliers: Option[]; per: number[]; can_create: boolean; scan: { branches: Option[]; hq: string; ai_unavailable: string | null } | null }
+export type SbDetail = {
+  currency: string; exponent: number; id: string; number: string; status: string; status_label: string; supplier: { name: string | null; open: string | null }
+  invoice_no: string; bill_date: string | null; due_on: string | null; net: number; tax: number; total: number; variance: number
+  created_by: string | null; decided_by: string | null; variance_reason: string | null; note: string | null
+  lines: { description: string; qty: string; price: number; order_price: number | null; tax: number; total: number }[]
+  actions: { approve: boolean; reject: boolean }
+}
+export type SbStockLine = { goods_receipt_line_id: string; qty: string; unit_cost: string }
+export type SbOrderLine = { purchase_order_line_id: string; qty: string; unit_cost: string }
+export type SbExpenseLine = { account_id: string; description: string; amount: string; tax_group_id: string; department_id: string; project_id: string; maintenance_order_id: string }
+export type SbValues = {
+  supplier_id: string; supplier_invoice_no: string; branch_id: string; bill_date: string; due_on: string; note: string
+  stock_lines: SbStockLine[]; order_lines: SbOrderLine[]; expense_lines: SbExpenseLine[]
+}
+export type SbForm = {
+  currency: string; values: SbValues; notice: string | null; checks: string[]; scan: string | null; invoice: string | null; can_add_supplier: boolean
+  choices: { suppliers: Option[]; branches: Option[]; accounts: Option[]; tax_groups: Option[]; departments: Option[]; projects: Option[] | null; work_orders: Option[] | null }
+}
+export type SbBillable = { grns: Option[]; stock: { id: string; label: string; qty: string; cost: string; grn: string | null }[]; orders: { id: string; label: string; qty: string; cost: string }[] }
 export type CustomerAction = 'pay' | 'credit' | 'opening' | 'patient' | 'follow_up' | 'archive' | 'restore'
 export type Held = { qty: number; unit: string } | null
 export type CountRow = {
@@ -679,6 +701,29 @@ export const api = {
   /** approve · reject (reason) · pay (account_id, paid_on); ApiError code "reconfirm" (with its url) = confirm it is you first. */
   expenseClaimAction: (id: string, action: 'approve' | 'reject' | 'pay', body: Record<string, unknown> = {}) =>
     call<EcDetail>(`/office-api/expense-claims/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  supplierBills: (query: string, signal?: AbortSignal) => call<SbList>(`/office-api/supplier-bills?${query}`, { signal }),
+  supplierBillsOptions: () => call<SbOptions>('/office-api/supplier-bills/options'),
+  supplierBill: (id: string) => call<SbDetail>(`/office-api/supplier-bills/${id}`),
+  supplierBillForm: (scan: string | null, invoice: string | null) =>
+    call<SbForm>(`/office-api/supplier-bills/form?${new URLSearchParams({ ...(scan ? { scan } : {}), ...(invoice ? { invoice } : {}) })}`),
+  supplierBillable: (supplier: string) => call<SbBillable>(`/office-api/supplier-bills/billable?supplier=${encodeURIComponent(supplier)}`),
+  sbAddSupplier: (body: { name: string; phone?: string; email?: string; code?: string }) =>
+    call<{ id: string; label: string; existed: boolean }>('/office-api/supplier-bills/add-supplier', { method: 'POST', body: JSON.stringify(body) }),
+  saveSupplierBill: (values: SbValues, scan: string | null, invoice: string | null) =>
+    call<{ id: string }>('/office-api/supplier-bills', { method: 'POST', body: JSON.stringify({ values, scan, invoice }) }),
+  supplierBillAction: (id: string, action: 'approve' | 'reject', reason?: string) =>
+    call<SbDetail>(`/office-api/supplier-bills/${id}/action`, { method: 'POST', body: JSON.stringify({ action, reason }) }),
+  /** Scan an invoice: the AI reads it into a draft bill (sent as a form, the file). */
+  scanSupplierBill: async (branch: string, file: File) => {
+    const body = new FormData()
+    body.append('branch_id', branch)
+    body.append('file', file)
+    const res = await fetch('/office-api/supplier-bills/scan', { method: 'POST', body, credentials: 'same-origin',
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) throw new ApiError(json.detail ?? json.message ?? 'The invoice could not be read.', res.status, json.error ?? 'error')
+    return json as { scan: string }
+  },
   invoices: (query: string, signal?: AbortSignal) => call<InvoiceList>(`/office-api/invoices?${query}`, { signal }),
   invoicesOptions: () => call<InvoiceOptions>('/office-api/invoices/options'),
   invoice: (id: string) => call<InvoiceDetail>(`/office-api/invoices/${id}`),

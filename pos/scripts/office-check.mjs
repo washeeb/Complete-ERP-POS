@@ -378,6 +378,39 @@ try {
         }
       }
 
+      // Supplier bills, rebuilt (release 6): from the Finance menu, rows (or "No supplier bills match"); a row opens the bill;
+      // at one size Enter a bill is opened, a supplier chosen and what is still to bill shown (nothing saved).
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
+      await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: 'Supplier bills', exact: true }).first().click()
+      await page.waitForURL(/\/office\/supplier-bills$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Supplier bills did not open the new screen (${page.url()})`))
+      const sbRow = page.getByRole('table', { name: 'Supplier bills' }).getByRole('row').nth(1)
+      await page.getByText('No supplier bills match').or(sbRow).first().waitFor({ timeout: 20000 })
+        .catch(() => problems.push(`${look} ${w}: Supplier bills showed neither rows nor "No supplier bills match"`))
+      await page.screenshot({ path: out(`supplier-bills-${look}-${w}`) })
+      if (await sbRow.isVisible().catch(() => false)) {
+        await sbRow.click()
+        await page.waitForURL(/\/office\/supplier-bills\/[0-9a-f-]{36}$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: a supplier bill did not open`))
+        await page.getByRole('region', { name: 'Lines' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: a supplier bill shows no lines`))
+        await page.screenshot({ path: out(`supplier-bill-${look}-${w}`), fullPage: true })
+        await page.goBack()
+      }
+      if (look === 'top' && w === 1366) {
+        const enter = page.getByRole('button', { name: 'Enter a bill' })
+        if (await enter.waitFor({ timeout: 10000 }).then(() => true).catch(() => false)) {
+          await enter.click()
+          await page.waitForURL(/\/office\/supplier-bills\/new$/, { timeout: 15000 }).catch(() => problems.push('supplier bill form: did not open'))
+          const sup = page.getByRole('combobox', { name: /^Supplier/ })
+          await sup.click()
+          await page.getByRole('option').first().click().catch(() => problems.push('supplier bill form: no supplier to choose'))
+          const goods = page.getByRole('region', { name: 'Goods received' })
+          await goods.getByText(/Add everything still to bill from|Nothing received from this supplier/).first().waitFor({ timeout: 15000 })
+            .catch(() => problems.push('supplier bill form: choosing a supplier did not show what is still to bill'))
+          if (await page.getByRole('button', { name: 'Create the bill' }).isEnabled()) problems.push('supplier bill form: Create is on with no lines')
+          await page.screenshot({ path: out('supplier-bill-form'), fullPage: true })
+          await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
+        }
+      }
+
       // To-do: from the menu, the list of what waits (or "All clear").
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /^To-do/ }).first().click()
       await page.getByRole('heading', { name: 'To-do', level: 1 }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: To-do did not open`))

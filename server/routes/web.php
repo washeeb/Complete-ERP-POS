@@ -25,6 +25,7 @@ use App\Http\Controllers\Office\RequestsController as OfficeRequestsController;
 use App\Http\Controllers\Office\SalesController as OfficeSalesController;
 use App\Http\Controllers\Office\ShiftsController as OfficeShiftsController;
 use App\Http\Controllers\Office\StockController as OfficeStockController;
+use App\Http\Controllers\Office\SupplierBillsController as OfficeSupplierBillsController;
 use App\Http\Controllers\Office\SupplierInvoicesController as OfficeSupplierInvoicesController;
 use App\Http\Controllers\Office\SuppliersController as OfficeSuppliersController;
 use App\Http\Controllers\Office\TransfersController as OfficeTransfersController;
@@ -221,7 +222,16 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::post('expense-claims', [OfficeExpenseClaimsController::class, 'save']);
     Route::get('expense-claims/{id}', [OfficeExpenseClaimsController::class, 'show'])->whereUuid('id');
     Route::post('expense-claims/{id}/action', [OfficeExpenseClaimsController::class, 'action'])->whereUuid('id');
-    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims']);
+    Route::get('supplier-bills', [OfficeSupplierBillsController::class, 'index']);
+    Route::get('supplier-bills/options', [OfficeSupplierBillsController::class, 'options']);
+    Route::get('supplier-bills/form', [OfficeSupplierBillsController::class, 'form']);
+    Route::get('supplier-bills/billable', [OfficeSupplierBillsController::class, 'billable']);
+    Route::post('supplier-bills/add-supplier', [OfficeSupplierBillsController::class, 'addSupplier']);
+    Route::post('supplier-bills/scan', [OfficeSupplierBillsController::class, 'scan']);
+    Route::post('supplier-bills', [OfficeSupplierBillsController::class, 'save']);
+    Route::get('supplier-bills/{id}', [OfficeSupplierBillsController::class, 'show'])->whereUuid('id');
+    Route::post('supplier-bills/{id}/action', [OfficeSupplierBillsController::class, 'action'])->whereUuid('id');
+    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills']);
 });
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;

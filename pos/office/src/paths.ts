@@ -52,6 +52,9 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/expense-claims\/?$/, app: (_, q) => `${APP}/expense-claims${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/expense-claims\/create\/?$/, app: () => `${APP}/expense-claims/new` },
   { admin: new RegExp(`^/admin/expense-claims/(${UUID})$`), app: (m) => `${APP}/expense-claims/${m[1]}` },
+  { admin: /^\/admin\/supplier-bills\/?$/, app: (_, q) => `${APP}/supplier-bills${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/supplier-bills\/create\/?$/, app: (_, q) => `${APP}/supplier-bills/new${q.get('scan') ? `?scan=${encodeURIComponent(q.get('scan')!)}` : q.get('invoice') ? `?invoice=${encodeURIComponent(q.get('invoice')!)}` : ''}` },
+  { admin: new RegExp(`^/admin/supplier-bills/(${UUID})$`), app: (m) => `${APP}/supplier-bills/${m[1]}` },
   { admin: /^\/admin\/stock-counts\/?$/, app: () => `${APP}/counts` },
   { admin: new RegExp(`^/admin/stock-counts/(${UUID})$`), app: (m) => `${APP}/counts/${m[1]}` },
   { admin: /^\/admin\/stock-adjustments\/?$/, app: () => `${APP}/adjustments` },
@@ -100,6 +103,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
   | { page: 'expense-claims' } | { page: 'expense-claim'; id: string } | { page: 'expense-claim-form' }
+  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' }
   | { page: 'requests' } | { page: 'request'; id: string } | { page: 'request-form' }
   | { page: 'transfers' } | { page: 'transfer'; id: string } | { page: 'transfer-form'; id: string | null } | { page: 'classic'; admin: string }
 
@@ -152,6 +156,10 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/expense-claims\/new\/?$/.test(path)) return { page: 'expense-claim-form' }
   const ec = path.match(new RegExp(`^/office/expense-claims/(${UUID})/?$`))
   if (ec) return { page: 'expense-claim', id: ec[1] }
+  if (/^\/office\/supplier-bills\/?$/.test(path)) return { page: 'supplier-bills' }
+  if (/^\/office\/supplier-bills\/new\/?$/.test(path)) return { page: 'supplier-bill-form' }
+  const sb = path.match(new RegExp(`^/office/supplier-bills/(${UUID})/?$`))
+  if (sb) return { page: 'supplier-bill', id: sb[1] }
   if (/^\/office\/requests\/?$/.test(path)) return { page: 'requests' }
   if (/^\/office\/requests\/new\/?$/.test(path)) return { page: 'request-form' }
   const req = path.match(new RegExp(`^/office/requests/(${UUID})/?$`))
@@ -198,6 +206,7 @@ export function adminEquivalent(route: Route): string | null {
     case 'what-to-order': return '/admin/reorder-suggestions'
     case 'suggested-levels': return '/admin/suggested-levels'
     case 'expense-claims': case 'expense-claim': case 'expense-claim-form': return '/admin/expense-claims'
+    case 'supplier-bills': case 'supplier-bill': case 'supplier-bill-form': return '/admin/supplier-bills'
     default: return null
   }
 }
