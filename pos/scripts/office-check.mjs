@@ -431,6 +431,14 @@ try {
       await page.getByRole('tab', { name: 'Stock health' }).click()
       await page.getByRole('region', { name: 'Transfers between branches' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Insights stock health did not load`))
       await page.screenshot({ path: out(`insights-${look}-${w}`) })
+      // Returns, rebuilt (release 7): opens from the Sales menu and loads.
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Sales/ }).first().click()
+      await page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: 'Returns', exact: true }).first().click()
+      await page.waitForURL(/\/office\/returns$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Returns did not open the new screen (${page.url()})`))
+      await page.getByText('No returns match').or(page.getByRole('table', { name: 'Returns' }).getByRole('row').nth(1)).first().waitFor({ timeout: 20000 })
+        .catch(() => problems.push(`${look} ${w}: Returns did not load`))
+      await page.getByText(/in the last 30 days/).first().waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Returns did not show the 30-day summary`))
+      await page.screenshot({ path: out(`returns-${look}-${w}`) })
       // Shrink and Slow & dead stock, rebuilt (release 7): both open from the Stock menu and load.
       for (const [link, path, ready] of [['Shrink', /\/office\/shrink$/, () => page.getByRole('region', { name: 'By reason (at cost)' })],
         ['Slow & dead stock', /\/office\/slow-stock$/, () => page.getByRole('region', { name: 'Slow and dead stock' })],

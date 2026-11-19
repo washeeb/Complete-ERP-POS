@@ -37,7 +37,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final class ListExport
 {
-    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills', 'supplier-payments'];
+    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills', 'supplier-payments', 'returns'];
 
     public function __construct(private readonly User $user) {}
 
@@ -64,6 +64,7 @@ final class ListExport
             'expense-claims' => ExpenseClaimsScreen::canView(),
             'supplier-bills' => SupplierBillsScreen::canView(),
             'supplier-payments' => SupplierPaymentsScreen::canView(),
+            'returns' => ReturnsScreen::canView(),
             default => false,
         };
     }
@@ -113,6 +114,7 @@ final class ListExport
             'expense-claims' => $this->expenseClaims($p),
             'supplier-bills' => $this->supplierBills($p),
             'supplier-payments' => $this->supplierPayments($p),
+            'returns' => $this->returns($p),
         };
         /** @var Builder $query */
         $count = (clone $query)->toBase()->getCountForPagination();
@@ -401,6 +403,19 @@ final class ListExport
 
                 return [$r['number'], $r['paid_on'] ?? '', $r['supplier'] ?? '', SupplierPayment::METHODS[$r['method']] ?? $r['method'], $r['from'] ?? '', $r['reference'] ?? '',
                     $this->money($r['amount']), $r['wht'] ? $this->money($r['wht']) : '', $r['certificate_no'] ?? '', $this->money($r['paid']), $r['by'] ?? ''];
+            }];
+    }
+
+    private function returns(array $p): array
+    {
+        $screen = new ReturnsScreen($this->user);
+
+        return ['Returns', ['Return', 'When', 'Branch', 'By', 'Approved by', 'Reason', 'Details', 'Items', 'Went to', 'Refund', 'Refunded as'], [9], $screen->sorted($p),
+            function (Sale $s) use ($screen) {
+                $r = $screen->rowOf($s);
+
+                return [$r['receipt_no'], $this->at($r['occurred_at']), $r['branch'] ?? '', $r['by'] ?? '', $r['approved_by'] ?? 'Not approved', $r['reason'] ?? '',
+                    $r['details'] ?? '', $r['items'], $r['to'], $this->money($r['refund'], $r['currency']), $r['paid_by']];
             }];
     }
 

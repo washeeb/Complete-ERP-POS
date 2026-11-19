@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Domain\Pos\ReturnService;
+use App\Domain\Support\Actor;
 use App\Filament\Resources\Sales\SaleResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\FinanceUi;
@@ -108,11 +109,17 @@ class ReturnsReport extends Page implements HasTable
     /** A return slip to sign and file: what came back, the refund, who did it and who approved it. */
     public static function slip(Sale $sale)
     {
+        return Erp::run(fn ($actor) => self::slipPdf($actor, $sale));
+    }
+
+    /** The return slip as a PDF download (also for the new back office, App\Http\Controllers\Office\ReturnsController). */
+    public static function slipPdf(Actor $actor, Sale $sale)
+    {
         $m = fn (int $v) => Money::display($v, $sale->currency_code);
         $sale->loadMissing('lines', 'payments', 'branch');
         $original = $sale->original_sale_id ? Sale::find($sale->original_sale_id) : null;
 
-        return Erp::run(fn ($actor) => app(Exporter::class)->pdf($actor, "Return {$sale->receipt_no}", [
+        return app(Exporter::class)->pdf($actor, "Return {$sale->receipt_no}", [
             ['title' => 'Goods returned', 'headings' => ['Item', 'Quantity', 'Went to', 'Refund'], 'numeric' => [3],
                 'rows' => $sale->lines->map(fn ($l) => [$l->name, rtrim(rtrim(ltrim((string) $l->qty, '-'), '0'), '.').' '.$l->uom_code, $l->returned_to === 'quarantine' ? 'Quarantine' : 'Shelf', $m(-(int) $l->line_total_minor)])->all(),
                 'foot' => ['Refund', '', '', $m(-(int) $sale->total_minor)]],
@@ -121,6 +128,6 @@ class ReturnsReport extends Page implements HasTable
             'facts' => array_filter(['Original receipt' => $original?->receipt_no, 'Date' => $sale->occurred_at->format('j M Y, H:i'), 'Reason' => (ReturnService::REASONS[$sale->return_reason_code] ?? null) ?: $sale->return_reason,
                 'Refunded as' => $sale->payments->pluck('method')->unique()->map(fn ($p) => SalePayment::METHODS[$p] ?? $p)->implode(' + '), 'Taken by' => $sale->cashier_name, 'Approved by' => $sale->discount_approved_by_name]),
             'sign' => ['Customer', "Taken by: {$sale->cashier_name}", 'Approved by'],
-        ]));
+        ]);
     }
 }

@@ -94,6 +94,7 @@ describe('addresses', () => {
     expect(appPathFor('/admin/withholding-tax-return')).toBe('/office/withholding-tax')
     expect(appPathFor('/admin/report-builder?report=0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')).toBe('/office/report-builder?report=0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')
     expect(appPathFor('/admin/shrink-report?from=2026-10-01')).toBe('/office/shrink?from=2026-10-01')
+    expect(appPathFor('/admin/returns')).toBe('/office/returns')
     expect(appPathFor('/admin/batches-expiry')).toBe('/office/batches')
     expect(appPathFor('/admin/stock/slow-stock')).toBe('/office/slow-stock')
     expect(appPathFor('/admin/saved-reports')).toBe('/office/saved-reports')
