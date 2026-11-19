@@ -350,6 +350,34 @@ try {
         }
       }
 
+      // Expense claims, rebuilt (release 6): from the Finance menu, rows (or "No expense claims match"); a row opens the claim;
+      // at one size the New claim form is drawn (Submit off while empty) and left.
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
+      await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: 'Expense claims', exact: true }).first().click()
+      await page.waitForURL(/\/office\/expense-claims$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Expense claims did not open the new screen (${page.url()})`))
+      const ecRow = page.getByRole('table', { name: 'Expense claims' }).getByRole('row').nth(1)
+      await page.getByText('No expense claims match').or(ecRow).first().waitFor({ timeout: 20000 })
+        .catch(() => problems.push(`${look} ${w}: Expense claims showed neither rows nor "No expense claims match"`))
+      await page.screenshot({ path: out(`expense-claims-${look}-${w}`) })
+      if (await ecRow.isVisible().catch(() => false)) {
+        await ecRow.click()
+        await page.waitForURL(/\/office\/expense-claims\/[0-9a-f-]{36}$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: an expense claim did not open`))
+        await page.getByRole('region', { name: 'The claim' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: an expense claim shows nothing`))
+        await page.screenshot({ path: out(`expense-claim-${look}-${w}`) })
+        await page.goBack()
+      }
+      if (look === 'top' && w === 1366) {
+        const newClaim = page.getByRole('button', { name: 'New claim' })
+        if (await newClaim.waitFor({ timeout: 10000 }).then(() => true).catch(() => false)) {
+          await newClaim.click()
+          await page.waitForURL(/\/office\/expense-claims\/new$/, { timeout: 15000 }).catch(() => problems.push('expense claim form: did not open'))
+          await page.getByRole('region', { name: 'The claim' }).waitFor({ timeout: 10000 }).catch(() => problems.push('expense claim form: no form'))
+          if (await page.getByRole('button', { name: 'Submit the claim' }).isEnabled()) problems.push('expense claim form: Submit is on with nothing filled in')
+          await page.screenshot({ path: out('expense-claim-form') })
+          await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
+        }
+      }
+
       // To-do: from the menu, the list of what waits (or "All clear").
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /^To-do/ }).first().click()
       await page.getByRole('heading', { name: 'To-do', level: 1 }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: To-do did not open`))

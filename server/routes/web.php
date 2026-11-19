@@ -13,6 +13,7 @@ use App\Http\Controllers\Office\AdjustmentsController as OfficeAdjustmentsContro
 use App\Http\Controllers\Office\CountsController as OfficeCountsController;
 use App\Http\Controllers\Office\CustomersController as OfficeCustomersController;
 use App\Http\Controllers\Office\DirectPurchasesController as OfficeDirectPurchasesController;
+use App\Http\Controllers\Office\ExpenseClaimsController as OfficeExpenseClaimsController;
 use App\Http\Controllers\Office\ExportController as OfficeExportController;
 use App\Http\Controllers\Office\GoodsReceiptsController as OfficeGoodsReceiptsController;
 use App\Http\Controllers\Office\InvoicesController as OfficeInvoicesController;
@@ -214,7 +215,13 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::get('suggested-levels', [OfficeReorderController::class, 'suggested']);
     Route::post('suggested-levels/recalculate', [OfficeReorderController::class, 'recalculate']);
     Route::post('suggested-levels/accept', [OfficeReorderController::class, 'accept']);
-    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules']);
+    Route::get('expense-claims', [OfficeExpenseClaimsController::class, 'index']);
+    Route::get('expense-claims/options', [OfficeExpenseClaimsController::class, 'options']);
+    Route::get('expense-claims/form', [OfficeExpenseClaimsController::class, 'form']);
+    Route::post('expense-claims', [OfficeExpenseClaimsController::class, 'save']);
+    Route::get('expense-claims/{id}', [OfficeExpenseClaimsController::class, 'show'])->whereUuid('id');
+    Route::post('expense-claims/{id}/action', [OfficeExpenseClaimsController::class, 'action'])->whereUuid('id');
+    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims']);
 });
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;
