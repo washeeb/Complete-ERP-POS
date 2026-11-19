@@ -38,6 +38,9 @@ export const SIGNED_OUT = 'Your sign-in on this till has ended. Enter your usern
 /** No call waits longer than this: on a slow network the till carries on (offline queue) instead of hanging. */
 export const DEFAULT_WAIT_MS = 20_000
 
+/** The whole product list (a supermarket's runs to thousands of items, with units, barcodes and prices). */
+export const CATALOG_WAIT_MS = 120_000
+
 /**
  * A signal that gives up after ms. AbortSignal.timeout where the browser has it; otherwise a timer, because the desktop
  * till runs on the PC's own WebView2, which can be years old on a PC whose updates are off (owner 2026-11-08: a new
@@ -101,16 +104,23 @@ export const api = {
     const headers: Record<string, string> = { Accept: 'application/json', Authorization: `Bearer ${(await getSession())?.token ?? ''}` }
     if (version) headers['If-None-Match'] = `"${version}"`
     let res: Response
+    // A time limit like every other request (owner 2026-11-19: a supermarket till stayed on "Starting the till…" for
+    // good). The whole product list of a large shop takes a while, so it gets longer than the usual 20 seconds; the
+    // limit also covers reading the answer, which is where a stalled connection hangs.
+    const signal = timeoutSignal(CATALOG_WAIT_MS)
+    let body: Record<string, unknown>
     try {
-      res = await fetch('/api/v1/pos/catalog', { headers })
-    } catch {
-      throw new ApiError('network', 'No connection.', 0)
+      res = await fetch('/api/v1/pos/catalog', { headers, signal })
+      if (res.status === 304) return null
+      if (GATEWAY_DOWN.includes(res.status)) throw new ApiError('network', 'No connection right now. Try again in a moment.', res.status)
+      body = await res.json().catch((e: unknown) => { if (signal.aborted) throw e; return {} }) // a stalled answer times out; a garbled one is a server error
+    } catch (e) {
+      if (e instanceof ApiError) throw e
+      const slow = e instanceof DOMException && (e.name === 'TimeoutError' || e.name === 'AbortError')
+      throw new ApiError('network', slow ? 'The product list took too long to arrive.' : 'No connection.', 0, slow ? 'catalog_timeout' : undefined)
     }
-    if (res.status === 304) return null
-    if (GATEWAY_DOWN.includes(res.status)) throw new ApiError('network', 'No connection right now. Try again in a moment.', res.status)
-    const body = await res.json().catch(() => ({}))
-    if (!res.ok) throw new ApiError(body.error ?? 'server', body.detail ?? 'Something went wrong. Try again, or tell your supervisor.', res.status)
-    return body as { version: string; generated_at: string; products: Product[]; promotions?: PromotionRow[]; utc_offset_minutes?: number; grocery?: Grocery | null; pharmacy?: Pharmacy | null; restaurant?: Restaurant | null; electronics?: boolean; fashion?: Fashion | null; services?: Services | null }
+    if (!res.ok) throw new ApiError((body.error as string) ?? 'server', (body.detail as string) ?? 'Something went wrong. Try again, or tell your supervisor.', res.status)
+    return body as unknown as { version: string; generated_at: string; products: Product[]; promotions?: PromotionRow[]; utc_offset_minutes?: number; grocery?: Grocery | null; pharmacy?: Pharmacy | null; restaurant?: Restaurant | null; electronics?: boolean; fashion?: Fashion | null; services?: Services | null }
   },
   /** Stock left, next expiry and low-stock minimum per product at this till's store (ETag); null = unchanged. */
   stock: async (version?: string | null) => {
