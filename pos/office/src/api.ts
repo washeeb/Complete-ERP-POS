@@ -412,6 +412,10 @@ export type BatchesView = { warehouse: string; warehouses: Option[]; can_mark_do
   suggestions: { batch_id: string; product: string; sku: string; batch_no: string; expires: string; days_left: number; on_hand: string; percent: string }[]
   markdowns: { id: string; product: string | null; batch_no: string | null; percent: number; price: string; until: string | null; code: string }[]
   labels: string | null; expired: BatchRow[]; batches: BatchRow[]; expiry_returns: string | null; sheet: string }
+export type ReturnRow = { id: string; receipt_no: string; occurred_at: string | null; branch: string | null; by: string | null; approved_by: string | null
+  reason: string | null; details: string | null; items: string; to: string; refund: number; currency: string; paid_by: string; open: string; slip: string }
+export type ReturnsList = { currency: string; exponent: number; total: number; refunded: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: ReturnRow[] }
+export type ReturnsOptions = { tellers: Option[]; branches: Option[]; per: number[]; summary: string; reasons: Option[]; products: Option[] }
 export type RbDataset = { id: string; label: string; dated: boolean; dims: Option[]; measures: Option[] }
 export type RbOptions = { datasets: RbDataset[]; periods: Option[]; branches: Option[]; schedules: Option[]; people: Option[]; max_rows: number }
 export type RbChoices = { dataset: string; dimensions: string[]; measures: string[]; period: string; from: string | null; to: string | null; branch_id: string | null
@@ -787,6 +791,8 @@ export const api = {
   withdrawMarkdown: (id: string) => call<{ message: string }>(`/office-api/batches/markdowns/${id}/withdraw`, { method: 'POST' }),
   correctExpiry: (batch: string, expires_on: string, reason: string) => call<{ message: string }>('/office-api/batches/correct', { method: 'POST', body: JSON.stringify({ batch, expires_on, reason }) }),
   addBatch: (body: Record<string, unknown>) => call<{ adjustment: { id: string; number: string; open: string } }>('/office-api/batches/add', { method: 'POST', body: JSON.stringify(body) }),
+  returns: (query: string, signal?: AbortSignal) => call<ReturnsList>(`/office-api/returns?${query}`, { signal }),
+  returnsOptions: () => call<ReturnsOptions>('/office-api/returns/options'),
   financialOptions: () => call<FrOptions>('/office-api/financial-reports/options'),
   shareHeadOffice: (to: string) => call<{ message: string }>('/office-api/financial-reports/share-head-office', { method: 'POST', body: JSON.stringify({ to }) }),
   withholdingCsvUrl: (month: string) => `/office-api/withholding-tax/csv?month=${encodeURIComponent(month)}`,

@@ -63,6 +63,7 @@ import { SavedReportsPage } from './pages/SavedReportsPage'
 import { ShrinkPage } from './pages/ShrinkPage'
 import { SlowStockPage } from './pages/SlowStockPage'
 import { BatchesPage } from './pages/BatchesPage'
+import { ReturnsPage } from './pages/ReturnsPage'
 import { StockPage } from './pages/StockPage'
 import { SalesPage } from './pages/SalesPage'
 import { TodoPage } from './pages/TodoPage'
@@ -128,7 +129,7 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
   const { dispatchToast } = useToastController(toaster)
   const [title, setTitle] = useState('')
 
-  const LIST_TITLES: Partial<Record<typeof route.page, string>> = { home: 'Home', todo: 'To-do', sales: 'Till sales', shifts: 'Till shifts', drawer: 'Till drawer', products: 'Products', stock: 'Stock on hand', movements: 'Stock ledger', adjustments: 'Stock adjustments', counts: 'Stock counts', transfers: 'Transfers', requests: 'Stock requests', customers: 'Customers', invoices: 'Invoices', suppliers: 'Suppliers', 'purchase-orders': 'Purchase orders', 'goods-received': 'Goods received', 'direct-purchases': 'Direct purchases', 'supplier-invoices': 'Invoices from suppliers', 'consignment-to-pay': 'Consignment to pay', 'reorder-levels': 'Reorder levels', 'what-to-order': 'What to order', 'suggested-levels': 'Suggested levels', 'expense-claims': 'Expense claims', 'supplier-bills': 'Supplier bills', 'supplier-payments': 'Supplier payments', 'aged-payables': 'Aged payables', 'withholding-tax': 'Withholding tax', 'financial-reports': 'Financial reports', insights: 'Insights', 'report-builder': 'Report builder', 'saved-reports': 'Saved reports', shrink: 'Shrink', 'slow-stock': 'Slow & dead stock', batches: 'Batches & expiry' }
+  const LIST_TITLES: Partial<Record<typeof route.page, string>> = { home: 'Home', todo: 'To-do', sales: 'Till sales', shifts: 'Till shifts', drawer: 'Till drawer', products: 'Products', stock: 'Stock on hand', movements: 'Stock ledger', adjustments: 'Stock adjustments', counts: 'Stock counts', transfers: 'Transfers', requests: 'Stock requests', customers: 'Customers', invoices: 'Invoices', suppliers: 'Suppliers', 'purchase-orders': 'Purchase orders', 'goods-received': 'Goods received', 'direct-purchases': 'Direct purchases', 'supplier-invoices': 'Invoices from suppliers', 'consignment-to-pay': 'Consignment to pay', 'reorder-levels': 'Reorder levels', 'what-to-order': 'What to order', 'suggested-levels': 'Suggested levels', 'expense-claims': 'Expense claims', 'supplier-bills': 'Supplier bills', 'supplier-payments': 'Supplier payments', 'aged-payables': 'Aged payables', 'withholding-tax': 'Withholding tax', 'financial-reports': 'Financial reports', insights: 'Insights', 'report-builder': 'Report builder', 'saved-reports': 'Saved reports', shrink: 'Shrink', 'slow-stock': 'Slow & dead stock', batches: 'Batches & expiry', returns: 'Returns' }
   const shown = LIST_TITLES[route.page] ?? title
   useEffect(() => { document.title = shown ? `${shown} · ${me.company.name}` : me.company.name }, [shown, me.company.name])
 
@@ -222,6 +223,7 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
                                                                                                                 : route.page === 'shrink' ? <ShrinkPage />
                                                                                                                 : route.page === 'slow-stock' ? <SlowStockPage />
                                                                                                                 : route.page === 'batches' ? <BatchesPage />
+                                                                                                                : route.page === 'returns' ? <ReturnsPage />
                       : <ClassicPage admin={admin} onTitle={setTitle} />}
       </Look>
       <Toaster toasterId={toaster} position="top-end" />
