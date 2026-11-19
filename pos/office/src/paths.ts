@@ -60,6 +60,8 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/withholding-tax-return\/?$/, app: () => `${APP}/withholding-tax` },
   { admin: /^\/admin\/report-builder\/?$/, app: (_, q) => `${APP}/report-builder${q.get('report') ? `?report=${encodeURIComponent(q.get('report')!)}` : ''}` },
   { admin: /^\/admin\/saved-reports\/?$/, app: () => `${APP}/saved-reports` },
+  { admin: /^\/admin\/shrink-report\/?$/, app: (_, q) => `${APP}/shrink${q.toString() ? `?${q}` : ''}` },
+  { admin: /^\/admin\/stock\/slow-stock\/?$/, app: (_, q) => `${APP}/slow-stock${q.toString() ? `?${q}` : ''}` },
   { admin: /^\/admin\/insights\/?$/, app: (_, q) => `${APP}/insights${q.toString() ? `?${q}` : ''}` }, // the tab and warehouse carry over
   { admin: /^\/admin\/financial-reports\/?$/, app: (_, q) => `${APP}/financial-reports${q.toString() ? `?${q}` : ''}` }, // the report and dates carry over
   { admin: /^\/admin\/stock-counts\/?$/, app: () => `${APP}/counts` },
@@ -110,7 +112,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
   | { page: 'expense-claims' } | { page: 'expense-claim'; id: string } | { page: 'expense-claim-form' }
-  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' }
+  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' }
   | { page: 'requests' } | { page: 'request'; id: string } | { page: 'request-form' }
   | { page: 'transfers' } | { page: 'transfer'; id: string } | { page: 'transfer-form'; id: string | null } | { page: 'classic'; admin: string }
 
@@ -174,6 +176,8 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/insights\/?$/.test(path)) return { page: 'insights' }
   if (/^\/office\/report-builder\/?$/.test(path)) return { page: 'report-builder' }
   if (/^\/office\/saved-reports\/?$/.test(path)) return { page: 'saved-reports' }
+  if (/^\/office\/shrink\/?$/.test(path)) return { page: 'shrink' }
+  if (/^\/office\/slow-stock\/?$/.test(path)) return { page: 'slow-stock' }
   if (/^\/office\/requests\/?$/.test(path)) return { page: 'requests' }
   if (/^\/office\/requests\/new\/?$/.test(path)) return { page: 'request-form' }
   const req = path.match(new RegExp(`^/office/requests/(${UUID})/?$`))
@@ -228,6 +232,8 @@ export function adminEquivalent(route: Route): string | null {
     case 'insights': return '/admin/insights'
     case 'report-builder': return '/admin/report-builder'
     case 'saved-reports': return '/admin/saved-reports'
+    case 'shrink': return '/admin/shrink-report'
+    case 'slow-stock': return '/admin/stock/slow-stock'
     default: return null
   }
 }
