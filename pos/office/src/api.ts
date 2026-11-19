@@ -400,6 +400,8 @@ export type PayForm = { suppliers: Option[]; accounts: Option[]; account: string
 export type SpOptions = { methods: Option[]; suppliers: Option[]; per: number[]; pay: PayForm | null; aging: boolean }
 export type AgingRow = { id: string; name: string; code: string; open: string | null; current: number; d1_30: number; d31_60: number; d61_90: number; d90_plus: number; total: number }
 export type Aging = { currency: string; exponent: number; rows: AgingRow[]; totals: Record<string, number>; pay: PayForm | null }
+export type WhtRow = { id: string; date: string | null; certificate_no: string | null; certificate: string; number: string; supplier: string | null; tin: string | null; nature: string; base: number; rate: number; wht: number }
+export type WhtMonth = { currency: string; exponent: number; month: string; months: Option[]; due: string; total: number; enabled: boolean; rows: WhtRow[] }
 export type CustomerAction = 'pay' | 'credit' | 'opening' | 'patient' | 'follow_up' | 'archive' | 'restore'
 export type Held = { qty: number; unit: string } | null
 export type CountRow = {
@@ -740,6 +742,8 @@ export const api = {
     call<{ text: string }>(`/office-api/supplier-payments/preview?${new URLSearchParams({ supplier, amount, withhold: withhold ? '1' : '0', wht })}`),
   /** Pay a supplier; ApiError code "reconfirm" (with its url) = confirm it is you first, then pay again. */
   paySupplier: (body: Record<string, unknown>) => call<{ payment: SpRow }>('/office-api/supplier-payments', { method: 'POST', body: JSON.stringify(body) }),
+  withholdingTax: (month: string) => call<WhtMonth>(`/office-api/withholding-tax?month=${encodeURIComponent(month)}`),
+  withholdingCsvUrl: (month: string) => `/office-api/withholding-tax/csv?month=${encodeURIComponent(month)}`,
   invoices: (query: string, signal?: AbortSignal) => call<InvoiceList>(`/office-api/invoices?${query}`, { signal }),
   invoicesOptions: () => call<InvoiceOptions>('/office-api/invoices/options'),
   invoice: (id: string) => call<InvoiceDetail>(`/office-api/invoices/${id}`),

@@ -57,6 +57,7 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: new RegExp(`^/admin/supplier-bills/(${UUID})$`), app: (m) => `${APP}/supplier-bills/${m[1]}` },
   { admin: /^\/admin\/supplier-payments\/?$/, app: (_, q) => `${APP}/supplier-payments${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/aged-payables\/?$/, app: () => `${APP}/aged-payables` },
+  { admin: /^\/admin\/withholding-tax-return\/?$/, app: () => `${APP}/withholding-tax` },
   { admin: /^\/admin\/stock-counts\/?$/, app: () => `${APP}/counts` },
   { admin: new RegExp(`^/admin/stock-counts/(${UUID})$`), app: (m) => `${APP}/counts/${m[1]}` },
   { admin: /^\/admin\/stock-adjustments\/?$/, app: () => `${APP}/adjustments` },
@@ -105,7 +106,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
   | { page: 'expense-claims' } | { page: 'expense-claim'; id: string } | { page: 'expense-claim-form' }
-  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' }
+  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' }
   | { page: 'requests' } | { page: 'request'; id: string } | { page: 'request-form' }
   | { page: 'transfers' } | { page: 'transfer'; id: string } | { page: 'transfer-form'; id: string | null } | { page: 'classic'; admin: string }
 
@@ -164,6 +165,7 @@ export function routeOf(path: string, search = ''): Route {
   if (sb) return { page: 'supplier-bill', id: sb[1] }
   if (/^\/office\/supplier-payments\/?$/.test(path)) return { page: 'supplier-payments' }
   if (/^\/office\/aged-payables\/?$/.test(path)) return { page: 'aged-payables' }
+  if (/^\/office\/withholding-tax\/?$/.test(path)) return { page: 'withholding-tax' }
   if (/^\/office\/requests\/?$/.test(path)) return { page: 'requests' }
   if (/^\/office\/requests\/new\/?$/.test(path)) return { page: 'request-form' }
   const req = path.match(new RegExp(`^/office/requests/(${UUID})/?$`))
@@ -213,6 +215,7 @@ export function adminEquivalent(route: Route): string | null {
     case 'supplier-bills': case 'supplier-bill': case 'supplier-bill-form': return '/admin/supplier-bills'
     case 'supplier-payments': return '/admin/supplier-payments'
     case 'aged-payables': return '/admin/aged-payables'
+    case 'withholding-tax': return '/admin/withholding-tax-return'
     default: return null
   }
 }
