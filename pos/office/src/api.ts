@@ -391,6 +391,15 @@ export type SbForm = {
   choices: { suppliers: Option[]; branches: Option[]; accounts: Option[]; tax_groups: Option[]; departments: Option[]; projects: Option[] | null; work_orders: Option[] | null }
 }
 export type SbBillable = { grns: Option[]; stock: { id: string; label: string; qty: string; cost: string; grn: string | null }[]; orders: { id: string; label: string; qty: string; cost: string }[] }
+export type SpRow = {
+  id: string; number: string; paid_on: string | null; supplier: string | null; supplier_open: string | null; method: string; from: string | null; reference: string | null
+  amount: number; wht: number; certificate_no: string | null; certificate: string | null; paid: number; by: string | null
+}
+export type SpList = { currency: string; exponent: number; total: number; settled: number; wht: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: SpRow[] }
+export type PayForm = { suppliers: Option[]; accounts: Option[]; account: string; methods: Option[]; branches: Option[]; branch: string; wht: boolean }
+export type SpOptions = { methods: Option[]; suppliers: Option[]; per: number[]; pay: PayForm | null; aging: boolean }
+export type AgingRow = { id: string; name: string; code: string; open: string | null; current: number; d1_30: number; d31_60: number; d61_90: number; d90_plus: number; total: number }
+export type Aging = { currency: string; exponent: number; rows: AgingRow[]; totals: Record<string, number>; pay: PayForm | null }
 export type CustomerAction = 'pay' | 'credit' | 'opening' | 'patient' | 'follow_up' | 'archive' | 'restore'
 export type Held = { qty: number; unit: string } | null
 export type CountRow = {
@@ -724,6 +733,13 @@ export const api = {
     if (!res.ok) throw new ApiError(json.detail ?? json.message ?? 'The invoice could not be read.', res.status, json.error ?? 'error')
     return json as { scan: string }
   },
+  supplierPayments: (query: string, signal?: AbortSignal) => call<SpList>(`/office-api/supplier-payments?${query}`, { signal }),
+  supplierPaymentsOptions: () => call<SpOptions>('/office-api/supplier-payments/options'),
+  agedPayables: () => call<Aging>('/office-api/aged-payables'),
+  payPreview: (supplier: string, amount: string, withhold: boolean, wht: string) =>
+    call<{ text: string }>(`/office-api/supplier-payments/preview?${new URLSearchParams({ supplier, amount, withhold: withhold ? '1' : '0', wht })}`),
+  /** Pay a supplier; ApiError code "reconfirm" (with its url) = confirm it is you first, then pay again. */
+  paySupplier: (body: Record<string, unknown>) => call<{ payment: SpRow }>('/office-api/supplier-payments', { method: 'POST', body: JSON.stringify(body) }),
   invoices: (query: string, signal?: AbortSignal) => call<InvoiceList>(`/office-api/invoices?${query}`, { signal }),
   invoicesOptions: () => call<InvoiceOptions>('/office-api/invoices/options'),
   invoice: (id: string) => call<InvoiceDetail>(`/office-api/invoices/${id}`),

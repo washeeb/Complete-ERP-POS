@@ -22,6 +22,7 @@ use App\Models\StockTransfer;
 use App\Models\Supplier;
 use App\Models\SupplierBill;
 use App\Models\SupplierInvoice;
+use App\Models\SupplierPayment;
 use App\Models\TillDrawerEvent;
 use App\Models\User;
 use App\Support\Money;
@@ -36,7 +37,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final class ListExport
 {
-    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills'];
+    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills', 'supplier-payments'];
 
     public function __construct(private readonly User $user) {}
 
@@ -62,6 +63,7 @@ final class ListExport
             'reorder-rules' => ReorderScreen::canRules(),
             'expense-claims' => ExpenseClaimsScreen::canView(),
             'supplier-bills' => SupplierBillsScreen::canView(),
+            'supplier-payments' => SupplierPaymentsScreen::canView(),
             default => false,
         };
     }
@@ -110,6 +112,7 @@ final class ListExport
             'reorder-rules' => $this->reorderRules($p),
             'expense-claims' => $this->expenseClaims($p),
             'supplier-bills' => $this->supplierBills($p),
+            'supplier-payments' => $this->supplierPayments($p),
         };
         /** @var Builder $query */
         $count = (clone $query)->toBase()->getCountForPagination();
@@ -387,12 +390,26 @@ final class ListExport
             }];
     }
 
+    private function supplierPayments(array $p): array
+    {
+        $screen = new SupplierPaymentsScreen($this->user);
+
+        return ['Supplier payments', ['Number', 'Date', 'Supplier', 'Method', 'Paid from', 'Reference', 'Settles', 'Withholding tax', 'Certificate', 'Paid out', 'Recorded by'],
+            [6, 7, 9], $screen->sorted($p),
+            function (SupplierPayment $s) use ($screen) {
+                $r = $screen->rowOf($s);
+
+                return [$r['number'], $r['paid_on'] ?? '', $r['supplier'] ?? '', SupplierPayment::METHODS[$r['method']] ?? $r['method'], $r['from'] ?? '', $r['reference'] ?? '',
+                    $this->money($r['amount']), $r['wht'] ? $this->money($r['wht']) : '', $r['certificate_no'] ?? '', $this->money($r['paid']), $r['by'] ?? ''];
+            }];
+    }
+
     /** "Search: rice", "Period: 7 days", "From: 2026-11-01" … for the PDF header and the audit row. */
     private function describe(array $p): array
     {
         $names = ['q' => 'Search', 'period' => 'Period', 'from' => 'From', 'to' => 'Until', 'status' => 'Status', 'kind' => 'Kind', 'level' => 'Stock',
             'stock' => 'Stock', 'reason' => 'Reason', 'warehouse' => 'Warehouse', 'difference' => 'Difference on arrival', 'from_wh' => 'From warehouse', 'to_wh' => 'To warehouse', 'active' => 'For sale', 'schedule' => 'Medicine schedule', 'min' => 'Total from', 'max' => 'Total up to',
-            'os_min' => 'Over/short from', 'os_max' => 'Over/short up to', 'vault_waiting' => 'Vaults waiting', 'waiting' => 'Waiting on you', 'cross' => 'Between industries', 'owing' => 'Owes money', 'credit' => 'Credit customers', 'show' => 'Show', 'overdue' => 'Past due date', 'owed' => 'Still owed', 'unverified' => 'Bank details not checked', 'supplier' => 'Supplier', 'settlement' => 'Payment', 'set_by' => 'Set by', 'mine' => 'My claims', 'sort' => null, 'dir' => null];
+            'os_min' => 'Over/short from', 'os_max' => 'Over/short up to', 'vault_waiting' => 'Vaults waiting', 'waiting' => 'Waiting on you', 'cross' => 'Between industries', 'owing' => 'Owes money', 'credit' => 'Credit customers', 'show' => 'Show', 'overdue' => 'Past due date', 'owed' => 'Still owed', 'unverified' => 'Bank details not checked', 'supplier' => 'Supplier', 'settlement' => 'Payment', 'set_by' => 'Set by', 'mine' => 'My claims', 'method' => 'Method', 'sort' => null, 'dir' => null];
         $periods = ['today' => 'Today', '7' => '7 days', '30' => '30 days', '90' => '90 days'];
         $out = [];
         foreach ($p as $k => $v) {

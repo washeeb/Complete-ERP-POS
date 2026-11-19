@@ -411,6 +411,32 @@ try {
         }
       }
 
+      // Supplier payments and Aged payables, rebuilt (release 6): both open from the Finance menu and load; at one size the
+      // Pay a supplier dialog is drawn with a supplier and an amount, and left (nothing paid).
+      for (const [link, path, ready] of [['Supplier payments', /\/office\/supplier-payments$/, () => page.getByText('No supplier payments match').or(page.getByRole('table', { name: 'Supplier payments' }).getByRole('row').nth(1)).first()],
+        ['Aged payables', /\/office\/aged-payables$/, () => page.getByRole('region', { name: 'Owed to suppliers' })]]) {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
+        await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: link, exact: true }).first().click()
+        await page.waitForURL(path, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await ready().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        await page.screenshot({ path: out(`${link.replaceAll(' ', '-').toLowerCase()}-${look}-${w}`) })
+      }
+      if (look === 'top' && w === 1366) {
+        const payBtn = page.getByRole('button', { name: 'Pay a supplier' })
+        if (await payBtn.waitFor({ timeout: 10000 }).then(() => true).catch(() => false)) {
+          await payBtn.click()
+          const d = page.getByRole('dialog')
+          await d.waitFor({ timeout: 10000 }).catch(() => problems.push('pay a supplier: the dialog did not open'))
+          await d.getByRole('combobox', { name: /^Supplier/ }).click()
+          await page.getByRole('option').first().click().catch(() => problems.push('pay a supplier: no supplier to choose'))
+          await d.getByRole('spinbutton', { name: /^Amount/ }).fill('10')
+          await page.waitForTimeout(800)
+          await page.screenshot({ path: out('pay-a-supplier') })
+          await d.getByRole('button', { name: 'Back' }).click() // nothing is paid
+          await d.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => undefined)
+        }
+      }
+
       // To-do: from the menu, the list of what waits (or "All clear").
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /^To-do/ }).first().click()
       await page.getByRole('heading', { name: 'To-do', level: 1 }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: To-do did not open`))
