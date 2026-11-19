@@ -45,14 +45,14 @@ export async function download(url: string, fallback: string): Promise<string | 
  * as Excel, CSV or PDF. A PDF holds about 800 rows; beyond that it is offered as Excel or CSV. A refusal (a licence that
  * does not allow output, too many rows) comes back as a message, not as a broken download.
  */
-export function ExportMenu({ list, query, total }: { list: ExportList; query: string; total: number | null }) {
+export function ExportMenu({ list, url, query, total }: { list?: ExportList; url?: string; query: string; total: number | null }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const onError = setError
   const tooMany = total !== null && total > PDF_ROWS
   const go = async (format: 'xlsx' | 'csv' | 'pdf') => {
     setBusy(true)
-    const problem = await download(`/office-api/export/${list}?${query}${query ? '&' : ''}format=${format}`, `${list}.${format}`)
+    const problem = await download(`${url ?? `/office-api/export/${list}`}?${query}${query ? '&' : ''}format=${format}`, `${list ?? 'report'}.${format}`)
     if (problem) onError(problem)
     setBusy(false)
   }

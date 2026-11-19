@@ -401,6 +401,12 @@ export type SpOptions = { methods: Option[]; suppliers: Option[]; per: number[];
 export type AgingRow = { id: string; name: string; code: string; open: string | null; current: number; d1_30: number; d31_60: number; d61_90: number; d90_plus: number; total: number }
 export type Aging = { currency: string; exponent: number; rows: AgingRow[]; totals: Record<string, number>; pay: PayForm | null }
 export type WhtRow = { id: string; date: string | null; certificate_no: string | null; certificate: string; number: string; supplier: string | null; tin: string | null; nature: string; base: number; rate: number; wht: number }
+export type FrCell = string | null | { t: string; to?: string; tone?: 'good' | 'bad' | null; strong?: boolean }
+export type FrTable = { title: string; columns: { label: string; end: boolean }[]; rows: { kind?: 'head' | 'sub' | 'total'; cells: FrCell[] }[]; foot: FrCell[] }
+export type FrReport = { report: string; title: string; account: string | null; from: string; to: string; branch: string | null; industry: string | null; books: string | null
+  tables: FrTable[]; notes: string[]; empty?: string; prompt?: string; warning?: string | null; cards?: { label: string; value: string; tone?: 'good' | 'bad' }[]
+  share: { month: string; text: string; can: boolean } | null }
+export type FrOptions = { reports: Option[]; accounts: Option[]; branches: Option[]; books: Option[]; industries: Option[] }
 export type WhtMonth = { currency: string; exponent: number; month: string; months: Option[]; due: string; total: number; enabled: boolean; rows: WhtRow[] }
 export type CustomerAction = 'pay' | 'credit' | 'opening' | 'patient' | 'follow_up' | 'archive' | 'restore'
 export type Held = { qty: number; unit: string } | null
@@ -743,6 +749,9 @@ export const api = {
   /** Pay a supplier; ApiError code "reconfirm" (with its url) = confirm it is you first, then pay again. */
   paySupplier: (body: Record<string, unknown>) => call<{ payment: SpRow }>('/office-api/supplier-payments', { method: 'POST', body: JSON.stringify(body) }),
   withholdingTax: (month: string) => call<WhtMonth>(`/office-api/withholding-tax?month=${encodeURIComponent(month)}`),
+  financialReport: (query: string, signal?: AbortSignal) => call<FrReport>(`/office-api/financial-reports?${query}`, { signal }),
+  financialOptions: () => call<FrOptions>('/office-api/financial-reports/options'),
+  shareHeadOffice: (to: string) => call<{ message: string }>('/office-api/financial-reports/share-head-office', { method: 'POST', body: JSON.stringify({ to }) }),
   withholdingCsvUrl: (month: string) => `/office-api/withholding-tax/csv?month=${encodeURIComponent(month)}`,
   invoices: (query: string, signal?: AbortSignal) => call<InvoiceList>(`/office-api/invoices?${query}`, { signal }),
   invoicesOptions: () => call<InvoiceOptions>('/office-api/invoices/options'),
