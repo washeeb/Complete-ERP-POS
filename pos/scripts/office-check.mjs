@@ -432,6 +432,19 @@ try {
         await ready().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
         await page.screenshot({ path: out(`${link.replace(/ *\/ */g, ' ').replaceAll(' ', '-').toLowerCase()}-${look}-${w}`) })
       }
+      // Users, rebuilt (settings and admin, part 1): opens from People and lists users; the first one opens with its access
+      // (nothing is changed).
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /People/ }).first().click()
+      await page.getByRole('navigation', { name: 'People' }).getByRole('link', { name: 'Users', exact: true }).first().click()
+      await page.waitForURL(/\/office\/users$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Users did not open the new screen (${page.url()})`))
+      const firstUser = page.getByRole('table', { name: 'Users' }).getByRole('row').nth(1)
+      await firstUser.waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Users did not load`))
+      await page.screenshot({ path: out(`users-${look}-${w}`) })
+      if (await firstUser.count()) {
+        await firstUser.click()
+        await page.getByRole('region', { name: 'Access' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: a user did not open with their access`))
+        await page.screenshot({ path: out(`user-${look}-${w}`), fullPage: true })
+      }
       // Fixed assets, rebuilt (release 8): Kinds of asset opens from the register with its kinds.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
       await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: 'Fixed assets', exact: true }).first().click()

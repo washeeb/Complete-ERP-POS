@@ -40,6 +40,7 @@ use App\Http\Controllers\Office\SupplierInvoicesController as OfficeSupplierInvo
 use App\Http\Controllers\Office\SupplierPaymentsController as OfficeSupplierPaymentsController;
 use App\Http\Controllers\Office\SuppliersController as OfficeSuppliersController;
 use App\Http\Controllers\Office\TransfersController as OfficeTransfersController;
+use App\Http\Controllers\Office\UsersController as OfficeUsersController;
 use App\Http\Controllers\PrintController;
 use App\Http\Controllers\RemoteConnectController;
 use App\Http\Controllers\RfqQuoteController;
@@ -264,6 +265,19 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::post('gra-evat/send-waiting', [OfficeEvatController::class, 'batch']);
     Route::get('gra-evat/{report}', [OfficeEvatController::class, 'show'])->whereUuid('report');
     Route::post('gra-evat/{report}/send', [OfficeEvatController::class, 'retry'])->whereUuid('report');
+    Route::get('users', [OfficeUsersController::class, 'index']);
+    Route::get('users/options', [OfficeUsersController::class, 'options']);
+    Route::post('users', [OfficeUsersController::class, 'store']);
+    Route::get('users/{user}', [OfficeUsersController::class, 'show'])->whereUuid('user');
+    Route::post('users/{user}', [OfficeUsersController::class, 'update'])->whereUuid('user');
+    Route::post('users/{user}/pin', [OfficeUsersController::class, 'pin'])->whereUuid('user');
+    Route::post('users/{user}/card', [OfficeUsersController::class, 'card'])->whereUuid('user');
+    Route::post('users/{user}/card-lost', [OfficeUsersController::class, 'cardLost'])->whereUuid('user');
+    Route::post('users/{user}/reset-two-step', [OfficeUsersController::class, 'resetMfa'])->whereUuid('user');
+    Route::post('users/{user}/archive', [OfficeUsersController::class, 'archive'])->whereUuid('user');
+    Route::post('users/{user}/restore', [OfficeUsersController::class, 'restore'])->whereUuid('user');
+    Route::post('users/{user}/access', [OfficeUsersController::class, 'grant'])->whereUuid('user');
+    Route::post('users/{user}/access/{grant}/revoke', [OfficeUsersController::class, 'revoke'])->whereUuid(['user', 'grant']);
     Route::get('bank-accounts', [OfficeBankingController::class, 'accounts']);
     Route::get('bank-accounts/forms', [OfficeBankingController::class, 'forms']);
     Route::post('bank-accounts', [OfficeBankingController::class, 'saveAccount']);
