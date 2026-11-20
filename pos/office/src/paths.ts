@@ -65,6 +65,10 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: new RegExp(`^/admin/fixed-assets/(${UUID})$`), app: (m) => `${APP}/fixed-assets/${m[1]}` },
   { admin: /^\/admin\/asset-classes\/?$/, app: () => `${APP}/asset-kinds` },
   { admin: /^\/admin\/accounting-export\/?$/, app: () => `${APP}/accounting-export` },
+  { admin: /^\/admin\/roles\/?$/, app: (_, q) => `${APP}/roles${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/roles\/create\/?$/, app: () => `${APP}/roles/new` },
+  { admin: new RegExp(`^/admin/roles/(${UUID})(/edit)?$`), app: (m) => `${APP}/roles/${m[1]}` },
+  { admin: /^\/admin\/access-requests\/?$/, app: () => `${APP}/access-requests` },
   { admin: /^\/admin\/users\/?$/, app: (_, q) => `${APP}/users${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/users\/create\/?$/, app: () => `${APP}/users?add=1` },
   { admin: new RegExp(`^/admin/users/(${UUID})(/edit)?$`), app: (m) => `${APP}/users/${m[1]}` },
@@ -131,7 +135,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
   | { page: 'expense-claims' } | { page: 'expense-claim'; id: string } | { page: 'expense-claim-form' }
-  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'returns' } | { page: 'journals' } | { page: 'accounts' } | { page: 'month-end' } | { page: 'budgets' } | { page: 'bank-accounts' } | { page: 'reconcile'; id: string } | { page: 'money-moved' } | { page: 'fixed-assets' } | { page: 'fixed-asset'; id: string } | { page: 'asset-kinds' } | { page: 'accounting-export' } | { page: 'gra-evat' } | { page: 'gra-evat-report'; id: string } | { page: 'users' } | { page: 'user'; id: string } | { page: 'journal'; id: string }
+  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'returns' } | { page: 'journals' } | { page: 'accounts' } | { page: 'month-end' } | { page: 'budgets' } | { page: 'bank-accounts' } | { page: 'reconcile'; id: string } | { page: 'money-moved' } | { page: 'fixed-assets' } | { page: 'fixed-asset'; id: string } | { page: 'asset-kinds' } | { page: 'accounting-export' } | { page: 'gra-evat' } | { page: 'gra-evat-report'; id: string } | { page: 'users' } | { page: 'user'; id: string } | { page: 'roles' } | { page: 'role'; id: string | null } | { page: 'access-requests' } | { page: 'journal'; id: string }
   | { page: 'requests' } | { page: 'request'; id: string } | { page: 'request-form' }
   | { page: 'transfers' } | { page: 'transfer'; id: string } | { page: 'transfer-form'; id: string | null } | { page: 'classic'; admin: string }
 
@@ -214,6 +218,11 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/accounting-export\/?$/.test(path)) return { page: 'accounting-export' }
   if (/^\/office\/gra-evat\/?$/.test(path)) return { page: 'gra-evat' }
   if (/^\/office\/users\/?$/.test(path)) return { page: 'users' }
+  if (/^\/office\/roles\/?$/.test(path)) return { page: 'roles' }
+  if (/^\/office\/roles\/new\/?$/.test(path)) return { page: 'role', id: null }
+  const ro = path.match(new RegExp(`^/office/roles/(${UUID})/?$`))
+  if (ro) return { page: 'role', id: ro[1] }
+  if (/^\/office\/access-requests\/?$/.test(path)) return { page: 'access-requests' }
   const us = path.match(new RegExp(`^/office/users/(${UUID})/?$`))
   if (us) return { page: 'user', id: us[1] }
   const ev = path.match(new RegExp(`^/office/gra-evat/(${UUID})/?$`))
@@ -289,6 +298,8 @@ export function adminEquivalent(route: Route): string | null {
     case 'accounting-export': return '/admin/accounting-export'
     case 'gra-evat': case 'gra-evat-report': return '/admin/gra-evat'
     case 'users': case 'user': return '/admin/users'
+    case 'roles': case 'role': return '/admin/roles'
+    case 'access-requests': return '/admin/access-requests'
     default: return null
   }
 }

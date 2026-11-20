@@ -463,6 +463,13 @@ export type UserDetail = UserRow & { phone: string | null; signin_method: string
   archive_blockers: string[]; can_restore: boolean; grants: UserGrant[]; history: { at: string; by: string; name: [string, string] | null; username: [string, string] | null }[] }
 /** A user change: done (message), or sent to the owner or SyncLytics support for approval (pending). */
 export type UserDone = { message: string; pending?: boolean; user?: { id: string; open: string }; print?: string }
+export type RoleRow = { id: string; name: string; description: string | null; level: number; permissions: number; technical: boolean; seeded: boolean; archived: boolean }
+export type RoleList = { total: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; can_manage: boolean; can_requests: boolean; waiting: number; rows: RoleRow[] }
+export type RoleForm = { levels: Option[]; areas: { area: string; permissions: { key: string; label: string; min_level: number; technical: boolean }[] }[] }
+export type RoleDetail = RoleRow & { key: string; keys: string[]; holders: number; can_edit: boolean; can_archive: boolean; archive_blockers: string[]; can_restore: boolean }
+export type AccessRequestRow = { id: string; status: string; status_label: string; kind: string; summary: string; by: string | null; asked: string | null; lapses: string | null
+  decided_by: string | null; note: string | null; can_decide: boolean; can_withdraw: boolean }
+export type AccessRequestList = { total: number; page: number; per: number; statuses: Record<string, string>; rows: AccessRequestRow[] }
 export type RbDataset = { id: string; label: string; dated: boolean; dims: Option[]; measures: Option[] }
 export type RbOptions = { datasets: RbDataset[]; periods: Option[]; branches: Option[]; schedules: Option[]; people: Option[]; max_rows: number }
 export type RbChoices = { dataset: string; dimensions: string[]; measures: string[]; period: string; from: string | null; to: string | null; branch_id: string | null
@@ -895,6 +902,14 @@ export const api = {
   userAction: (id: string, action: 'pin' | 'card' | 'card-lost' | 'reset-two-step' | 'archive' | 'restore' | 'access', body: Record<string, unknown> = {}) =>
     call<UserDone>(`/office-api/users/${id}/${action}`, { method: 'POST', body: JSON.stringify(body) }),
   revokeAccess: (id: string, grant: string, reason: string) => call<UserDone>(`/office-api/users/${id}/access/${grant}/revoke`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  roles: (query: string, signal?: AbortSignal) => call<RoleList>(`/office-api/roles?${query}`, { signal }),
+  roleForm: () => call<RoleForm>('/office-api/roles/form'),
+  role: (id: string) => call<{ role: RoleDetail }>(`/office-api/roles/${id}`),
+  saveRole: (id: string | null, body: Record<string, unknown>) => call<UserDone & { role?: { id: string; open: string } }>(id ? `/office-api/roles/${id}` : '/office-api/roles', { method: 'POST', body: JSON.stringify(body) }),
+  roleAction: (id: string, action: 'archive' | 'restore', body: Record<string, unknown> = {}) => call<UserDone>(`/office-api/roles/${id}/${action}`, { method: 'POST', body: JSON.stringify(body) }),
+  accessRequests: (query: string, signal?: AbortSignal) => call<AccessRequestList>(`/office-api/access-requests?${query}`, { signal }),
+  decideRequest: (id: string, step: 'approve' | 'reject' | 'withdraw', note: string | null = null) =>
+    call<UserDone & { failed?: boolean }>(`/office-api/access-requests/${id}/${step}`, { method: 'POST', body: JSON.stringify({ note }) }),
   financialOptions: () => call<FrOptions>('/office-api/financial-reports/options'),
   shareHeadOffice: (to: string) => call<{ message: string }>('/office-api/financial-reports/share-head-office', { method: 'POST', body: JSON.stringify({ to }) }),
   withholdingCsvUrl: (month: string) => `/office-api/withholding-tax/csv?month=${encodeURIComponent(month)}`,
