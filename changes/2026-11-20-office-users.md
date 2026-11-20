@@ -1,0 +1,2 @@
+### Added
+- **Users rebuilt in the new back office (settings and admin, part 1).** The list of everyone who signs in (search, in use or archived; level, two-step sign-in, how they sign in, till PIN), Add a user, and one user with Change, Set till PIN, Staff card, Card lost, Reset two-step sign-in, Archive and Restore, their access (Grant access with place, limits and an end date; Revoke) and their name history. A change made by IT is sent to the owner or SyncLytics support to approve, as now.

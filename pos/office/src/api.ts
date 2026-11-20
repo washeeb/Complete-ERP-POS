@@ -453,6 +453,16 @@ export type EvatList = { total: number; page: number; per: number; sort: string;
 export type EvatOptions = { per: number[]; mode: string; mode_label: string; can_batch: boolean; statuses: Record<string, string>; types: Record<string, string> }
 export type EvatDetail = EvatRow & { sent: string | null; answer: string | null; batch: string | null; next_attempt: string | null }
 export type AccountingExportOptions = { formats: Record<string, string>; from: string; to: string }
+export type UserRow = { id: string; name: string; username: string; email: string; photo: string; support: boolean; level: number; mfa: boolean; signs_in: string; pin: boolean
+  last_till: string | null; archived: boolean; active: boolean }
+export type UserList = { total: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: UserRow[] }
+export type UserOptions = { per: number[]; can_manage: boolean; can_grant: boolean; levels: Option[]; signin_methods: Option[]; password_only_max: number; card_layouts: Option[]
+  currency: string; exponent: number; roles: Option[]; scopes: Option[]; places: Record<string, Option[]> }
+export type UserGrant = { id: string; role: string | null; applies_to: string; limits: string; status: string; current: boolean; expires: string | null; by: string | null; reason: string | null; can_revoke: boolean }
+export type UserDetail = UserRow & { phone: string | null; signin_method: string; card: boolean; me: boolean; can_edit: boolean; can_reset_mfa: boolean; can_archive: boolean
+  archive_blockers: string[]; can_restore: boolean; grants: UserGrant[]; history: { at: string; by: string; name: [string, string] | null; username: [string, string] | null }[] }
+/** A user change: done (message), or sent to the owner or SyncLytics support for approval (pending). */
+export type UserDone = { message: string; pending?: boolean; user?: { id: string; open: string }; print?: string }
 export type RbDataset = { id: string; label: string; dated: boolean; dims: Option[]; measures: Option[] }
 export type RbOptions = { datasets: RbDataset[]; periods: Option[]; branches: Option[]; schedules: Option[]; people: Option[]; max_rows: number }
 export type RbChoices = { dataset: string; dimensions: string[]; measures: string[]; period: string; from: string | null; to: string | null; branch_id: string | null
@@ -878,6 +888,13 @@ export const api = {
   graEvatSendWaiting: () => call<{ sent: number; message: string }>('/office-api/gra-evat/send-waiting', { method: 'POST' }),
   accountingExport: () => call<AccountingExportOptions>('/office-api/accounting-export'),
   accountingExportUrl: (format: string, from: string, to: string) => `/office-api/accounting-export/file?format=${encodeURIComponent(format)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+  users: (query: string, signal?: AbortSignal) => call<UserList>(`/office-api/users?${query}`, { signal }),
+  userOptions: () => call<UserOptions>('/office-api/users/options'),
+  user: (id: string) => call<{ user: UserDetail }>(`/office-api/users/${id}`),
+  saveUser: (id: string | null, body: Record<string, unknown>) => call<UserDone>(id ? `/office-api/users/${id}` : '/office-api/users', { method: 'POST', body: JSON.stringify(body) }),
+  userAction: (id: string, action: 'pin' | 'card' | 'card-lost' | 'reset-two-step' | 'archive' | 'restore' | 'access', body: Record<string, unknown> = {}) =>
+    call<UserDone>(`/office-api/users/${id}/${action}`, { method: 'POST', body: JSON.stringify(body) }),
+  revokeAccess: (id: string, grant: string, reason: string) => call<UserDone>(`/office-api/users/${id}/access/${grant}/revoke`, { method: 'POST', body: JSON.stringify({ reason }) }),
   financialOptions: () => call<FrOptions>('/office-api/financial-reports/options'),
   shareHeadOffice: (to: string) => call<{ message: string }>('/office-api/financial-reports/share-head-office', { method: 'POST', body: JSON.stringify({ to }) }),
   withholdingCsvUrl: (month: string) => `/office-api/withholding-tax/csv?month=${encodeURIComponent(month)}`,

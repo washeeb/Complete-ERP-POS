@@ -65,6 +65,9 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: new RegExp(`^/admin/fixed-assets/(${UUID})$`), app: (m) => `${APP}/fixed-assets/${m[1]}` },
   { admin: /^\/admin\/asset-classes\/?$/, app: () => `${APP}/asset-kinds` },
   { admin: /^\/admin\/accounting-export\/?$/, app: () => `${APP}/accounting-export` },
+  { admin: /^\/admin\/users\/?$/, app: (_, q) => `${APP}/users${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/users\/create\/?$/, app: () => `${APP}/users?add=1` },
+  { admin: new RegExp(`^/admin/users/(${UUID})(/edit)?$`), app: (m) => `${APP}/users/${m[1]}` },
   { admin: /^\/admin\/gra-evat\/?$/, app: (_, q) => `${APP}/gra-evat${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/bank-accounts\/?$/, app: () => `${APP}/bank-accounts` },
   { admin: /^\/admin\/bank-reconciliation\/?$/, app: (_, q) => (q.get('bank') ? `${APP}/bank-accounts/${encodeURIComponent(q.get('bank')!)}/reconcile` : `${APP}/bank-accounts`) },
@@ -128,7 +131,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
   | { page: 'expense-claims' } | { page: 'expense-claim'; id: string } | { page: 'expense-claim-form' }
-  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'returns' } | { page: 'journals' } | { page: 'accounts' } | { page: 'month-end' } | { page: 'budgets' } | { page: 'bank-accounts' } | { page: 'reconcile'; id: string } | { page: 'money-moved' } | { page: 'fixed-assets' } | { page: 'fixed-asset'; id: string } | { page: 'asset-kinds' } | { page: 'accounting-export' } | { page: 'gra-evat' } | { page: 'gra-evat-report'; id: string } | { page: 'journal'; id: string }
+  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'returns' } | { page: 'journals' } | { page: 'accounts' } | { page: 'month-end' } | { page: 'budgets' } | { page: 'bank-accounts' } | { page: 'reconcile'; id: string } | { page: 'money-moved' } | { page: 'fixed-assets' } | { page: 'fixed-asset'; id: string } | { page: 'asset-kinds' } | { page: 'accounting-export' } | { page: 'gra-evat' } | { page: 'gra-evat-report'; id: string } | { page: 'users' } | { page: 'user'; id: string } | { page: 'journal'; id: string }
   | { page: 'requests' } | { page: 'request'; id: string } | { page: 'request-form' }
   | { page: 'transfers' } | { page: 'transfer'; id: string } | { page: 'transfer-form'; id: string | null } | { page: 'classic'; admin: string }
 
@@ -210,6 +213,9 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/asset-kinds\/?$/.test(path)) return { page: 'asset-kinds' }
   if (/^\/office\/accounting-export\/?$/.test(path)) return { page: 'accounting-export' }
   if (/^\/office\/gra-evat\/?$/.test(path)) return { page: 'gra-evat' }
+  if (/^\/office\/users\/?$/.test(path)) return { page: 'users' }
+  const us = path.match(new RegExp(`^/office/users/(${UUID})/?$`))
+  if (us) return { page: 'user', id: us[1] }
   const ev = path.match(new RegExp(`^/office/gra-evat/(${UUID})/?$`))
   if (ev) return { page: 'gra-evat-report', id: ev[1] }
   const jr = path.match(new RegExp(`^/office/journals/(${UUID})/?$`))
@@ -282,6 +288,7 @@ export function adminEquivalent(route: Route): string | null {
     case 'asset-kinds': return '/admin/asset-classes'
     case 'accounting-export': return '/admin/accounting-export'
     case 'gra-evat': case 'gra-evat-report': return '/admin/gra-evat'
+    case 'users': case 'user': return '/admin/users'
     default: return null
   }
 }
