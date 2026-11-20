@@ -483,6 +483,11 @@ export type ActivityRow = { id: string; when: string | null; who: string | null;
 export type ActivityList = { total: number; page: number; per: number; rows: ActivityRow[] }
 export type CardRow = { id: string; name: string; username: string; photo: string | null; roles: string[]; pin: boolean; card: boolean; card_on: string | null }
 export type CardList = { total: number; page: number; per: number; layouts: Option[]; rows: CardRow[] }
+export type SettingDef = { key: string; label: string; help: string; type: 'bool' | 'string' | 'choice' | 'int'; value: unknown; options: Option[] | null
+  min: number | null; max: number | null; rows: number | null; may_change: boolean; who: string | null }
+export type SettingsData = { groups: { group: string; settings: SettingDef[] }[] }
+export type ModuleItem = { key: string; name: string; description: string; status_label: string; available: boolean; status: 'enabled' | 'reserved' | 'disabled' }
+export type ModulesData = { branch_id: string | null; branches: Option[]; sections: { label: string; modules: ModuleItem[] }[] }
 export type RbDataset = { id: string; label: string; dated: boolean; dims: Option[]; measures: Option[] }
 export type RbOptions = { datasets: RbDataset[]; periods: Option[]; branches: Option[]; schedules: Option[]; people: Option[]; max_rows: number }
 export type RbChoices = { dataset: string; dimensions: string[]; measures: string[]; period: string; from: string | null; to: string | null; branch_id: string | null
@@ -929,6 +934,10 @@ export const api = {
   itActivity: (query: string, signal?: AbortSignal) => call<ActivityList>(`/office-api/it-activity?${query}`, { signal }),
   staffCards: (query: string, signal?: AbortSignal) => call<CardList>(`/office-api/staff-cards?${query}`, { signal }),
   cardsAction: (action: 'print' | 'stop', body: Record<string, unknown>) => call<UserDone>(`/office-api/staff-cards/${action}`, { method: 'POST', body: JSON.stringify(body) }),
+  settings: () => call<SettingsData>('/office-api/settings'),
+  saveSettings: (values: Record<string, unknown>, reason: string | null) => call<UserDone & { saved: number }>('/office-api/settings', { method: 'POST', body: JSON.stringify({ values, reason }) }),
+  modules: (branch: string | null) => call<ModulesData>(`/office-api/modules${branch ? `?branch=${encodeURIComponent(branch)}` : ''}`),
+  saveModules: (branch_id: string, modules: Record<string, string>, reason: string | null) => call<UserDone>('/office-api/modules', { method: 'POST', body: JSON.stringify({ branch_id, modules, reason }) }),
   financialOptions: () => call<FrOptions>('/office-api/financial-reports/options'),
   shareHeadOffice: (to: string) => call<{ message: string }>('/office-api/financial-reports/share-head-office', { method: 'POST', body: JSON.stringify({ to }) }),
   withholdingCsvUrl: (month: string) => `/office-api/withholding-tax/csv?month=${encodeURIComponent(month)}`,

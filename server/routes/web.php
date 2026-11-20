@@ -34,6 +34,7 @@ use App\Http\Controllers\Office\RequestsController as OfficeRequestsController;
 use App\Http\Controllers\Office\ReturnsController as OfficeReturnsController;
 use App\Http\Controllers\Office\RolesController as OfficeRolesController;
 use App\Http\Controllers\Office\SalesController as OfficeSalesController;
+use App\Http\Controllers\Office\SettingsController as OfficeSettingsController;
 use App\Http\Controllers\Office\ShiftsController as OfficeShiftsController;
 use App\Http\Controllers\Office\StockController as OfficeStockController;
 use App\Http\Controllers\Office\StockReportsController as OfficeStockReportsController;
@@ -295,6 +296,10 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::get('staff-cards', [OfficeAccessPagesController::class, 'cards']);
     Route::post('staff-cards/print', [OfficeAccessPagesController::class, 'printCards']);
     Route::post('staff-cards/stop', [OfficeAccessPagesController::class, 'stopCards']);
+    Route::get('settings', [OfficeSettingsController::class, 'settings']);
+    Route::post('settings', [OfficeSettingsController::class, 'saveSettings']);
+    Route::get('modules', [OfficeSettingsController::class, 'modules']);
+    Route::post('modules', [OfficeSettingsController::class, 'saveModules']);
     Route::get('access-requests', [OfficeRolesController::class, 'requests']);
     Route::post('access-requests/{accessRequest}/{step}', [OfficeRolesController::class, 'decide'])->whereUuid('accessRequest')->whereIn('step', ['approve', 'reject', 'withdraw']);
     Route::get('bank-accounts', [OfficeBankingController::class, 'accounts']);

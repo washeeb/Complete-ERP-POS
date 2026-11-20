@@ -69,6 +69,8 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/access-review\/?$/, app: () => `${APP}/who-can-do-what` },
   { admin: /^\/admin\/it-activity\/?$/, app: () => `${APP}/it-activity` },
   { admin: /^\/admin\/staff-cards\/?$/, app: () => `${APP}/staff-cards` },
+  { admin: /^\/admin\/manage-settings\/?$/, app: () => `${APP}/settings` },
+  { admin: /^\/admin\/manage-modules\/?$/, app: () => `${APP}/modules` },
   { admin: /^\/admin\/roles\/?$/, app: (_, q) => `${APP}/roles${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/roles\/create\/?$/, app: () => `${APP}/roles/new` },
   { admin: new RegExp(`^/admin/roles/(${UUID})(/edit)?$`), app: (m) => `${APP}/roles/${m[1]}` },
@@ -139,7 +141,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
   | { page: 'expense-claims' } | { page: 'expense-claim'; id: string } | { page: 'expense-claim-form' }
-  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'returns' } | { page: 'journals' } | { page: 'accounts' } | { page: 'month-end' } | { page: 'budgets' } | { page: 'bank-accounts' } | { page: 'reconcile'; id: string } | { page: 'money-moved' } | { page: 'fixed-assets' } | { page: 'fixed-asset'; id: string } | { page: 'asset-kinds' } | { page: 'accounting-export' } | { page: 'gra-evat' } | { page: 'gra-evat-report'; id: string } | { page: 'users' } | { page: 'user'; id: string } | { page: 'roles' } | { page: 'role'; id: string | null } | { page: 'access-requests' } | { page: 'company-wide-access' } | { page: 'who-can-do-what' } | { page: 'it-activity' } | { page: 'staff-cards' } | { page: 'journal'; id: string }
+  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'returns' } | { page: 'journals' } | { page: 'accounts' } | { page: 'month-end' } | { page: 'budgets' } | { page: 'bank-accounts' } | { page: 'reconcile'; id: string } | { page: 'money-moved' } | { page: 'fixed-assets' } | { page: 'fixed-asset'; id: string } | { page: 'asset-kinds' } | { page: 'accounting-export' } | { page: 'gra-evat' } | { page: 'gra-evat-report'; id: string } | { page: 'users' } | { page: 'user'; id: string } | { page: 'roles' } | { page: 'role'; id: string | null } | { page: 'access-requests' } | { page: 'settings' } | { page: 'modules' } | { page: 'company-wide-access' } | { page: 'who-can-do-what' } | { page: 'it-activity' } | { page: 'staff-cards' } | { page: 'journal'; id: string }
   | { page: 'requests' } | { page: 'request'; id: string } | { page: 'request-form' }
   | { page: 'transfers' } | { page: 'transfer'; id: string } | { page: 'transfer-form'; id: string | null } | { page: 'classic'; admin: string }
 
@@ -227,6 +229,8 @@ export function routeOf(path: string, search = ''): Route {
   const ro = path.match(new RegExp(`^/office/roles/(${UUID})/?$`))
   if (ro) return { page: 'role', id: ro[1] }
   if (/^\/office\/access-requests\/?$/.test(path)) return { page: 'access-requests' }
+  if (/^\/office\/settings\/?$/.test(path)) return { page: 'settings' }
+  if (/^\/office\/modules\/?$/.test(path)) return { page: 'modules' }
   if (/^\/office\/company-wide-access\/?$/.test(path)) return { page: 'company-wide-access' }
   if (/^\/office\/who-can-do-what\/?$/.test(path)) return { page: 'who-can-do-what' }
   if (/^\/office\/it-activity\/?$/.test(path)) return { page: 'it-activity' }
@@ -308,6 +312,8 @@ export function adminEquivalent(route: Route): string | null {
     case 'users': case 'user': return '/admin/users'
     case 'roles': case 'role': return '/admin/roles'
     case 'access-requests': return '/admin/access-requests'
+    case 'settings': return '/admin/manage-settings'
+    case 'modules': return '/admin/manage-modules'
     case 'company-wide-access': return '/admin/company-wide-access'
     case 'who-can-do-what': return '/admin/access-review'
     case 'it-activity': return '/admin/it-activity'

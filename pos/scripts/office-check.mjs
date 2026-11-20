@@ -477,6 +477,21 @@ try {
         await ready().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${shot} did not load`))
         await page.screenshot({ path: out(`${shot}-${look}-${w}`) })
       }
+      // Settings and Modules, rebuilt (settings and admin, part 4): both open from Setup and load (nothing is saved).
+      for (const [link, path, ready, shot] of [
+        ['Settings', /\/office\/settings$/, () => page.getByRole('region', { name: 'Settings' }), 'settings'],
+        ['Modules', /\/office\/modules$/, () => page.getByRole('region', { name: 'Optional department modules' }), 'modules']]) {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Setup/ }).first().click()
+        await page.getByRole('navigation', { name: 'Setup' }).getByRole('link', { name: link, exact: true }).first().click()
+        await page.waitForURL(path, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${shot} did not open the new screen (${page.url()})`))
+        await ready().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${shot} did not load`))
+        await page.screenshot({ path: out(`${shot}-${look}-${w}`) })
+        if (shot === 'settings') { // the search opens the groups that match, with their fields
+          await page.getByRole('searchbox', { name: 'Find a setting' }).fill('receipt')
+          await page.getByText(/Showing the settings with/).waitFor({ timeout: 10000 }).catch(() => problems.push(`${look} ${w}: settings search did not filter`))
+          await page.screenshot({ path: out(`settings-found-${look}-${w}`) })
+        }
+      }
       // Fixed assets, rebuilt (release 8): Kinds of asset opens from the register with its kinds.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
       await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: 'Fixed assets', exact: true }).first().click()
