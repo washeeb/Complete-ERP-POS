@@ -108,6 +108,8 @@ describe('addresses', () => {
     expect(appPathFor('/admin/roles/create')).toBe('/office/roles/new')
     expect(appPathFor('/admin/roles/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f/edit')).toBe('/office/roles/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')
     expect(appPathFor('/admin/access-requests')).toBe('/office/access-requests')
+    expect(appPathFor('/admin/manage-settings')).toBe('/office/settings')
+    expect(appPathFor('/admin/manage-modules')).toBe('/office/modules')
     expect(appPathFor('/admin/company-wide-access')).toBe('/office/company-wide-access')
     expect(appPathFor('/admin/access-review')).toBe('/office/who-can-do-what')
     expect(appPathFor('/admin/it-activity')).toBe('/office/it-activity')

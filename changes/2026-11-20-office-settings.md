@@ -1,0 +1,2 @@
+### Added
+- **Settings and Modules rebuilt in the new back office (settings and admin, part 4).** Settings: every setting by group, groups closed as a short list, a search box that opens the groups with matching settings, greyed settings showing who changes them, one Save with a reason (only what changed is sent). Modules: one branch at a time, each industry and department module Enabled, Reserved or Off. Both warn before leaving with unsaved changes.
