@@ -5,6 +5,7 @@ namespace App\Domain\Office;
 use App\Models\Customer;
 use App\Models\DirectPurchase;
 use App\Models\ExpenseClaim;
+use App\Models\FixedAsset;
 use App\Models\GoodsReceipt;
 use App\Models\Invoice;
 use App\Models\JournalEntry;
@@ -38,7 +39,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final class ListExport
 {
-    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills', 'supplier-payments', 'returns', 'journals'];
+    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills', 'supplier-payments', 'returns', 'journals', 'fixed-assets'];
 
     public function __construct(private readonly User $user) {}
 
@@ -67,6 +68,7 @@ final class ListExport
             'supplier-payments' => SupplierPaymentsScreen::canView(),
             'returns' => ReturnsScreen::canView(),
             'journals' => JournalsScreen::canView(),
+            'fixed-assets' => AssetsScreen::canView(),
             default => false,
         };
     }
@@ -118,6 +120,7 @@ final class ListExport
             'supplier-payments' => $this->supplierPayments($p),
             'returns' => $this->returns($p),
             'journals' => $this->journals($p),
+            'fixed-assets' => $this->fixedAssets($p),
         };
         /** @var Builder $query */
         $count = (clone $query)->toBase()->getCountForPagination();
@@ -406,6 +409,21 @@ final class ListExport
 
                 return [$r['number'], $r['paid_on'] ?? '', $r['supplier'] ?? '', SupplierPayment::METHODS[$r['method']] ?? $r['method'], $r['from'] ?? '', $r['reference'] ?? '',
                     $this->money($r['amount']), $r['wht'] ? $this->money($r['wht']) : '', $r['certificate_no'] ?? '', $this->money($r['paid']), $r['by'] ?? ''];
+            }];
+    }
+
+    private function fixedAssets(array $p): array
+    {
+        $screen = new AssetsScreen($this->user);
+        [$sort, $dir] = [in_array($p['sort'] ?? null, AssetsScreen::SORTS, true) ? $p['sort'] : 'number', ($p['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc'];
+
+        return ['Fixed assets', ['Number', 'Asset', 'Serial', 'Kind', 'At', 'Bought', 'Cost', 'Book value', 'Status'], [6, 7],
+            $screen->filtered($p)->orderBy("fixed_assets.{$sort}", $dir)->orderBy('fixed_assets.id', $dir),
+            function (FixedAsset $a) use ($screen) {
+                $r = $screen->rowOf($a);
+
+                return [$r['number'], $r['name'], $r['serial_no'] ?? '', $r['kind'] ?? '', $r['branch'] ?? '', $r['acquired_on'] ?? '', $this->money($r['cost']), $this->money($r['book']),
+                    $r['status'] === 'active' ? 'Active' : 'Disposed'];
             }];
     }
 

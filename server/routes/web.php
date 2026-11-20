@@ -10,6 +10,7 @@ use App\Http\Controllers\AccessRequestController;
 use App\Http\Controllers\BrandAssetController;
 use App\Http\Controllers\ExpenseReceiptController;
 use App\Http\Controllers\Office\AdjustmentsController as OfficeAdjustmentsController;
+use App\Http\Controllers\Office\AssetsController as OfficeAssetsController;
 use App\Http\Controllers\Office\BankingController as OfficeBankingController;
 use App\Http\Controllers\Office\BatchesController as OfficeBatchesController;
 use App\Http\Controllers\Office\BooksController as OfficeBooksController;
@@ -246,6 +247,14 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::get('aged-payables', [OfficeSupplierPaymentsController::class, 'aging']);
     Route::get('withholding-tax', [OfficeSupplierPaymentsController::class, 'withholding']);
     Route::get('withholding-tax/csv', [OfficeSupplierPaymentsController::class, 'withholdingCsv']);
+    Route::get('fixed-assets', [OfficeAssetsController::class, 'index']);
+    Route::get('fixed-assets/options', [OfficeAssetsController::class, 'options']);
+    Route::post('fixed-assets', [OfficeAssetsController::class, 'store']);
+    Route::get('fixed-assets/{asset}', [OfficeAssetsController::class, 'show'])->whereUuid('asset');
+    Route::post('fixed-assets/{asset}/dispose', [OfficeAssetsController::class, 'dispose'])->whereUuid('asset');
+    Route::get('asset-kinds', [OfficeAssetsController::class, 'classes']);
+    Route::post('asset-kinds', [OfficeAssetsController::class, 'saveClass']);
+    Route::post('asset-kinds/{class}', [OfficeAssetsController::class, 'saveClass'])->whereUuid('class');
     Route::get('bank-accounts', [OfficeBankingController::class, 'accounts']);
     Route::get('bank-accounts/forms', [OfficeBankingController::class, 'forms']);
     Route::post('bank-accounts', [OfficeBankingController::class, 'saveAccount']);
@@ -303,7 +312,7 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::get('saved-reports/{report}', [OfficeReportsController::class, 'savedReport'])->whereUuid('report');
     Route::delete('saved-reports/{report}', [OfficeReportsController::class, 'deleteReport'])->whereUuid('report');
     Route::post('saved-reports/{report}/send', [OfficeReportsController::class, 'sendReport'])->whereUuid('report');
-    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills', 'supplier-payments', 'returns', 'journals']);
+    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills', 'supplier-payments', 'returns', 'journals', 'fixed-assets']);
 });
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;

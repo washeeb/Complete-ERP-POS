@@ -422,12 +422,23 @@ try {
         ['Budgets', /\/office\/budgets$/, () => page.getByRole('region', { name: 'Budget' })],
         ['Money moved', /\/office\/money-moved$/, () => page.getByText('No money moved yet').or(page.getByRole('table', { name: 'Money moved' }).getByRole('row').nth(1)).first()],
         ['Bank & cash', /\/office\/bank-accounts$/, () => page.getByRole('region', { name: 'Bank and cash accounts' })],
+        ['Fixed assets', /\/office\/fixed-assets$/, () => page.getByText('No fixed assets match').or(page.getByRole('table', { name: 'Fixed assets' }).getByRole('row').nth(1)).first()],
         ['Journals', /\/office\/journals$/, () => page.getByText('No journals match').or(page.getByRole('table', { name: 'Journals' }).getByRole('row').nth(1)).first()]]) {
         await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
         await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: link, exact: true }).first().click()
         await page.waitForURL(path, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
         await ready().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
         await page.screenshot({ path: out(`${link.replaceAll(' ', '-').toLowerCase()}-${look}-${w}`) })
+      }
+      // Fixed assets, rebuilt (release 8): Kinds of asset opens from the register with its kinds.
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
+      await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: 'Fixed assets', exact: true }).first().click()
+      const kinds = page.getByRole('button', { name: 'Kinds of asset' })
+      await kinds.waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Fixed assets did not offer Kinds of asset`))
+      if (await kinds.count()) {
+        await kinds.click()
+        await page.getByRole('region', { name: 'Kinds of asset' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Kinds of asset did not load`))
+        await page.screenshot({ path: out(`asset-kinds-${look}-${w}`) })
       }
       // Bank & cash, rebuilt (release 8): an account's Reconcile opens with the summary and both lists (nothing is matched).
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
