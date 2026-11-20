@@ -445,6 +445,25 @@ try {
         await page.getByRole('region', { name: 'Access' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: a user did not open with their access`))
         await page.screenshot({ path: out(`user-${look}-${w}`), fullPage: true })
       }
+      // Roles and access requests, rebuilt (settings and admin, part 2): Roles lists and the first opens with its permissions;
+      // Access requests opens from the menu (nothing is changed or decided).
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /People/ }).first().click()
+      await page.getByRole('navigation', { name: 'People' }).getByRole('link', { name: 'Roles', exact: true }).first().click()
+      await page.waitForURL(/\/office\/roles$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Roles did not open the new screen (${page.url()})`))
+      const firstRole = page.getByRole('table', { name: 'Roles' }).getByRole('row').nth(1)
+      await firstRole.waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Roles did not load`))
+      await page.screenshot({ path: out(`roles-${look}-${w}`) })
+      if (await firstRole.count()) {
+        await firstRole.click()
+        await page.getByRole('region', { name: 'Permissions' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: a role did not open with its permissions`))
+        await page.screenshot({ path: out(`role-${look}-${w}`) })
+      }
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /People/ }).first().click()
+      await page.getByRole('navigation', { name: 'People' }).getByRole('link', { name: /^Access requests/ }).first().click()
+      await page.waitForURL(/\/office\/access-requests$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Access requests did not open the new screen (${page.url()})`))
+      await page.getByText('No access requests.').or(page.getByRole('table', { name: 'Access requests' }).getByRole('row').nth(1)).first().waitFor({ timeout: 20000 })
+        .catch(() => problems.push(`${look} ${w}: Access requests did not load`))
+      await page.screenshot({ path: out(`access-requests-${look}-${w}`) })
       // Fixed assets, rebuilt (release 8): Kinds of asset opens from the register with its kinds.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
       await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: 'Fixed assets', exact: true }).first().click()

@@ -1,0 +1,2 @@
+### Added
+- **Roles and access requests rebuilt in the new back office (settings and admin, part 2).** Roles (search, in use or archived; level, permissions, technical, seeded), one role with its permissions by area (find one, show only the ones it has), Add a role, Change and Save with a reason, Archive and Restore. Access requests: what IT Admin asked for, with Approve, Turn down (with a reason) and Withdraw.

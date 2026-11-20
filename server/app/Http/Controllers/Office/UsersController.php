@@ -3,26 +3,19 @@
 namespace App\Http\Controllers\Office;
 
 use App\Domain\Access\AccessService;
-use App\Domain\Access\SentForApproval;
 use App\Domain\Office\UsersScreen;
 use App\Domain\Org\ArchiveService;
-use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
-use App\Domain\Support\DomainException;
-use App\Filament\Pages\ConfirmItsYou;
 use App\Filament\Support\FinanceUi;
 use App\Http\Controllers\Controller;
-use App\Models\AccessRequest;
+use App\Http\Controllers\Office\Concerns\ActsOnAccess;
 use App\Models\Role;
 use App\Models\User;
-use App\Security\ReconfirmNeeded;
 use App\Security\ScopeType;
 use App\Support\StaffCard;
-use Filament\Facades\Filament;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
@@ -34,6 +27,8 @@ use Illuminate\Validation\Rules\Password;
  */
 class UsersController extends Controller
 {
+    use ActsOnAccess;
+
     public function index(Request $request): JsonResponse
     {
         $this->allowed(UsersScreen::canView());
@@ -217,31 +212,5 @@ class UsersController extends Controller
             'reason' => ['nullable', 'string', 'max:255'],
         ], ['username.regex' => 'Letters, numbers, dots, dashes and underscores only.', 'security_level.max' => 'You cannot give a level above your own.',
             'password.required' => 'Give a password (at least 12 characters).']);
-    }
-
-    private function act(callable $fn): JsonResponse
-    {
-        try {
-            return response()->json(DB::transaction(function () use ($fn) {
-                try {
-                    return $fn(Actor::user(request()->user(), 'web'));
-                } catch (SentForApproval $e) { // the request is kept: the transaction commits
-                    return ['pending' => true, 'message' => $e->request->summary.' The owner or SyncLytics support approves it (People & access → Access requests); it lapses after '
-                        .AccessRequest::HOURS.' hours if not answered.'];
-                }
-            }));
-        } catch (ReconfirmNeeded $e) {
-            return response()->json(['error' => 'reconfirm', 'detail' => $e->getMessage(), 'url' => ConfirmItsYou::getUrl()], 428);
-        } catch (AccessDenied $e) {
-            return response()->json(['error' => $e->errorCode, 'detail' => $e->getMessage() ?: 'You may not do this here.'], 403);
-        } catch (DomainException $e) {
-            return response()->json(['error' => $e->errorCode, 'detail' => $e->getMessage()], 422);
-        }
-    }
-
-    private function allowed(bool $can): void
-    {
-        Filament::setCurrentPanel(Filament::getPanel('admin'));
-        abort_unless($can, 403, 'You cannot see this.');
     }
 }
