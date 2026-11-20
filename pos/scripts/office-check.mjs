@@ -483,12 +483,20 @@ try {
         ['Modules', /\/office\/modules$/, () => page.getByRole('region', { name: 'Optional department modules' }), 'modules'],
         ['Messaging', /\/office\/messaging$/, () => page.getByRole('region', { name: 'SMS' }), 'messaging'],
         ['Templates', /\/office\/message-templates$/, () => page.getByRole('table', { name: 'Message templates' }).getByRole('row').nth(1), 'message-templates'],
+        ['Devices', /\/office\/devices$/, () => page.getByText('No devices.').or(page.getByRole('table', { name: 'Devices' }).getByRole('row').nth(1)).first(), 'devices'],
+        ['Computers', /\/office\/computers$/, () => page.getByText('No computers yet.').or(page.getByRole('table', { name: 'Computers' }).getByRole('row').nth(1)).first(), 'computers'],
         ['Message log', /\/office\/message-log$/, () => page.getByText('No messages match.').or(page.getByRole('table', { name: 'Message log' }).getByRole('row').nth(1)).first(), 'message-log']]) {
         await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Setup/ }).first().click()
         await page.getByRole('navigation', { name: 'Setup' }).getByRole('link', { name: link, exact: true }).first().click()
         await page.waitForURL(path, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${shot} did not open the new screen (${page.url()})`))
         await ready().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${shot} did not load`))
         await page.screenshot({ path: out(`${shot}-${look}-${w}`) })
+        if (shot === 'devices') { // Register a device opens with its branches, and is left (nothing registered)
+          await page.getByRole('button', { name: 'Register a device' }).click()
+          await page.getByRole('dialog').getByText('Till (for POS devices)').waitFor({ timeout: 10000 }).catch(() => problems.push(`${look} ${w}: Register a device did not open`))
+          await page.screenshot({ path: out(`device-register-${look}-${w}`) })
+          await page.getByRole('dialog').getByRole('button', { name: 'Back' }).click()
+        }
         if (shot === 'settings') { // the search opens the groups that match, with their fields
           await page.getByRole('searchbox', { name: 'Find a setting' }).fill('receipt')
           await page.getByText(/Showing the settings with/).waitFor({ timeout: 10000 }).catch(() => problems.push(`${look} ${w}: settings search did not filter`))
