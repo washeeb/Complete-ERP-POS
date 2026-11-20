@@ -1,0 +1,5 @@
+## Till start-up watchdog (branch `till-start-watchdog`)
+- **Seen:** a supermarket's desktop till stayed on "Starting the till…" after the update of 19 November 2026, also after restarting the app. Cause not confirmed yet: the owner was not on site.
+- **Found:** every start-up request gives up after 20 s except the product list (`api.catalog`), which had no time limit, so a slow or stalled answer kept the till on the loader with nothing to press.
+- **Changed:** `api.catalog` gives up after `CATALOG_WAIT_MS` (2 minutes, including reading the answer) with an `ApiError('network', …, 'catalog_timeout')`, which `fetchOrCache` already answers with the saved copy. `App.tsx` names each start-up step and, after `START_WATCHDOG_MS` (2.5 minutes) still loading, shows it on the error screen with Try again.
+- **Next:** when the supermarket till starts again, read what the screen says (or System → Health → Slow pages for `pos/catalog`) to confirm the cause; if the product list itself is too slow to build, that is the next fix (on the server).

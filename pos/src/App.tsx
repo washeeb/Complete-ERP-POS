@@ -35,6 +35,15 @@ const LABELS: Record<ConnectionState, string> = {
 /** How often the desktop till saves its own copy of unsent sales while any are waiting. */
 const BACKUP_EVERY_MS = 15 * 60_000
 
+/**
+ * Start-up never waits silently (owner 2026-11-19: a supermarket till stayed on "Starting the till…" for good): after
+ * this long the till says which step it is on, with Try again. Each step has its own time limit too; this covers
+ * anything else (the till's own storage on the PC, a step without a limit).
+ */
+export const START_WATCHDOG_MS = 150_000
+let startStep = "opening this till's own storage on the PC"
+const step = (s: string) => { startStep = s }
+
 export default function App() {
   const [stage, setStage] = useState<Stage>('loading')
   const [boot, setBoot] = useState<Bootstrap | null>(null)
@@ -54,11 +63,15 @@ export default function App() {
 
   /** Fetch start-up data and catalog; fall back to the cached copies when the server is unreachable. */
   const fetchOrCache = useCallback(async (): Promise<{ b: Bootstrap; products: Product[]; version: string | null; live: boolean }> => {
+    step('reading the copy of the product list saved on this PC')
     const cachedBoot = (await db.cache.get('bootstrap')) as Extract<CacheRecord, { id: 'bootstrap' }> | undefined
     const cachedCat = (await db.cache.get('catalog')) as Extract<CacheRecord, { id: 'catalog' }> | undefined
     try {
+      step("asking the server for this till's set-up")
       const b = await api.bootstrap()
+      step(cachedCat ? 'checking the server for product and price changes' : 'downloading the product list from the server (the first time takes longest)')
       const fresh = await api.catalog(cachedCat?.version)
+      step('saving the product list on this PC')
       const savedAt = new Date().toISOString()
       await db.cache.put({ id: 'bootstrap', data: b, savedAt })
       if (fresh) await db.cache.put({ id: 'catalog', version: fresh.version, products: fresh.products, promotions: fresh.promotions ?? [], utc_offset_minutes: fresh.utc_offset_minutes ?? 0, grocery: fresh.grocery ?? null, pharmacy: fresh.pharmacy ?? null, restaurant: fresh.restaurant ?? null, electronics: fresh.electronics ?? false, fashion: fresh.fashion ?? null, services: fresh.services ?? null, savedAt })
@@ -71,6 +84,7 @@ export default function App() {
   }, [])
 
   const load = useCallback(async () => {
+    step("opening this till's own storage on the PC")
     const device = await getDevice()
     if (!device) return setStage('enroll')
     if (device.kind === 'kds') return setStage('kitchen') // kitchen screen: the device itself, nobody signs in
@@ -138,6 +152,15 @@ export default function App() {
   useEffect(() => {
     load()
   }, [load])
+  useEffect(() => {
+    if (stage !== 'loading') return
+    const t = setTimeout(() => {
+      if (stageRef.current !== 'loading') return
+      setError(`Starting the till is taking too long. It is still ${startStep}. Check the network, then press Try again. If it happens again, tell your administrator what this says.`)
+      setStage('error')
+    }, START_WATCHDOG_MS)
+    return () => clearTimeout(t)
+  }, [stage])
 
   // Connection watch + background sending of queued work (every 15 s while anything waits).
   useEffect(() => {
@@ -263,7 +286,7 @@ export default function App() {
         <div className="card narrow">
           <h1>Something needs attention</h1>
           <p className="error">{error}</p>
-          <button className="primary" onClick={load}>Try again</button>
+          <button className="primary" onClick={() => { setStage('loading'); load() }}>Try again</button>
         </div>
       )}
     </div>
