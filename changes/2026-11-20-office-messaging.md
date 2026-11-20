@@ -1,0 +1,2 @@
+### Added
+- **Messaging rebuilt in the new back office (settings and admin, part 5).** Messaging set-up (SMS provider and sender ID, WhatsApp Business, the e-mail server in use, test messages), Message templates (wording, on or off, the approved WhatsApp template; archive and restore) and the Message log (search, status and channel; a message opens in full; Try again for a failed one). Saved passwords and keys are never sent to the screen: it only shows that one is saved.

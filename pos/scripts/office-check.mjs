@@ -480,7 +480,10 @@ try {
       // Settings and Modules, rebuilt (settings and admin, part 4): both open from Setup and load (nothing is saved).
       for (const [link, path, ready, shot] of [
         ['Settings', /\/office\/settings$/, () => page.getByRole('region', { name: 'Settings' }), 'settings'],
-        ['Modules', /\/office\/modules$/, () => page.getByRole('region', { name: 'Optional department modules' }), 'modules']]) {
+        ['Modules', /\/office\/modules$/, () => page.getByRole('region', { name: 'Optional department modules' }), 'modules'],
+        ['Messaging', /\/office\/messaging$/, () => page.getByRole('region', { name: 'SMS' }), 'messaging'],
+        ['Templates', /\/office\/message-templates$/, () => page.getByRole('table', { name: 'Message templates' }).getByRole('row').nth(1), 'message-templates'],
+        ['Message log', /\/office\/message-log$/, () => page.getByText('No messages match.').or(page.getByRole('table', { name: 'Message log' }).getByRole('row').nth(1)).first(), 'message-log']]) {
         await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Setup/ }).first().click()
         await page.getByRole('navigation', { name: 'Setup' }).getByRole('link', { name: link, exact: true }).first().click()
         await page.waitForURL(path, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${shot} did not open the new screen (${page.url()})`))
