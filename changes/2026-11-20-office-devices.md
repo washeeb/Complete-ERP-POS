@@ -1,0 +1,2 @@
+### Added
+- **Devices and computers rebuilt in the new back office (settings and admin, part 6).** Devices: status, code expiry, last seen, health in plain words, where last used from; Register a device (the enrolment code shown once, large), New code, Revoke, Send a fix and its history, View screen and Take control (remote support), Install remote support, Archive and Restore. Computers: every computer that used the back office, Name it, What it did.

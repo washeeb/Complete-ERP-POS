@@ -499,6 +499,16 @@ export type TemplateList = { channels: Option[]; can_edit: boolean; rows: Templa
 export type MessageRow = { id: string; when: string | null; channel: string; to: string; reference: string | null; subject: string | null; body: string; status: string; status_label: string
   error: string | null; provider: string | null; provider_ref: string | null; attempts: number; attachment: string | null; can_retry: boolean }
 export type MessageLog = { total: number; page: number; per: number; statuses: Option[]; channels: Option[]; rows: MessageRow[] }
+export type DeviceRow = { id: string; name: string; kind: string; branch: string | null; till: string | null; status: string; code_expires: string | null; last_seen: string | null
+  health: string | null; health_details: string | null; used_from: string | null; mac: string | null; archived: boolean; can_view: boolean; can_control: boolean
+  view_url: string | null; control_url: string | null; can_fix: boolean; has_fixes: boolean; can_reissue: boolean; can_revoke: boolean; can_archive: boolean
+  archive_blockers: string[]; can_restore: boolean }
+export type DeviceList = { total: number; page: number; per: number; remote_link: string | null; remote_available: boolean; rows: DeviceRow[] }
+export type DeviceOptions = { branches: Option[]; commands: Option[]; tills: Option[]; kinds: Option[] }
+export type DeviceFix = { when: string | null; what: string; by: string | null; status: string; result: string | null }
+export type ComputerRow = { id: string; label: string; name: string | null; machine: string | null; last_user: string | null; last_seen: string | null; ip: string | null
+  lookup: string | null; browser: string | null; first_seen: string | null; activity: string }
+export type ComputerList = { total: number; page: number; per: number; rows: ComputerRow[] }
 export type RbDataset = { id: string; label: string; dated: boolean; dims: Option[]; measures: Option[] }
 export type RbOptions = { datasets: RbDataset[]; periods: Option[]; branches: Option[]; schedules: Option[]; people: Option[]; max_rows: number }
 export type RbChoices = { dataset: string; dimensions: string[]; measures: string[]; period: string; from: string | null; to: string | null; branch_id: string | null
@@ -957,6 +967,14 @@ export const api = {
   templateArchive: (id: string, step: 'archive' | 'restore', reason: string | null = null) => call<UserDone>(`/office-api/message-templates/${id}/${step}`, { method: 'POST', body: JSON.stringify({ reason }) }),
   messageLog: (query: string, signal?: AbortSignal) => call<MessageLog>(`/office-api/message-log?${query}`, { signal }),
   retryMessage: (id: string) => call<UserDone & { row: MessageRow }>(`/office-api/message-log/${id}/retry`, { method: 'POST' }),
+  devices: (query: string, signal?: AbortSignal) => call<DeviceList>(`/office-api/devices?${query}`, { signal }),
+  deviceOptions: (branch: string | null) => call<DeviceOptions>(`/office-api/devices/options${branch ? `?branch=${encodeURIComponent(branch)}` : ''}`),
+  registerDevice: (body: Record<string, unknown>) => call<UserDone & { code: string; expires: string | null }>('/office-api/devices', { method: 'POST', body: JSON.stringify(body) }),
+  deviceAction: (id: string, action: 'new-code' | 'revoke' | 'fix' | 'archive' | 'restore', body: Record<string, unknown> = {}) =>
+    call<UserDone & { code?: string; expires?: string | null }>(`/office-api/devices/${id}/${action}`, { method: 'POST', body: JSON.stringify(body) }),
+  deviceFixes: (id: string) => call<{ rows: DeviceFix[] }>(`/office-api/devices/${id}/fixes`),
+  computers: (query: string, signal?: AbortSignal) => call<ComputerList>(`/office-api/computers?${query}`, { signal }),
+  nameComputer: (id: string, name: string) => call<UserDone>(`/office-api/computers/${id}/name`, { method: 'POST', body: JSON.stringify({ name }) }),
   financialOptions: () => call<FrOptions>('/office-api/financial-reports/options'),
   shareHeadOffice: (to: string) => call<{ message: string }>('/office-api/financial-reports/share-head-office', { method: 'POST', body: JSON.stringify({ to }) }),
   withholdingCsvUrl: (month: string) => `/office-api/withholding-tax/csv?month=${encodeURIComponent(month)}`,
