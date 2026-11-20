@@ -417,6 +417,9 @@ try {
         ['Aged payables', /\/office\/aged-payables$/, () => page.getByRole('region', { name: 'Owed to suppliers' })],
         ['Withholding tax', /\/office\/withholding-tax$/, () => page.getByRole('region', { name: 'Payments that kept tax back' })],
         ['Reports', /\/office\/financial-reports$/, () => page.getByRole('region', { name: 'Trial balance' })],
+        ['Chart of accounts', /\/office\/accounts$/, () => page.getByRole('region', { name: 'Chart of accounts' })],
+        ['Month-end', /\/office\/month-end$/, () => page.getByRole('region', { name: 'Months' })],
+        ['Budgets', /\/office\/budgets$/, () => page.getByRole('region', { name: 'Budget' })],
         ['Journals', /\/office\/journals$/, () => page.getByText('No journals match').or(page.getByRole('table', { name: 'Journals' }).getByRole('row').nth(1)).first()]]) {
         await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
         await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: link, exact: true }).first().click()

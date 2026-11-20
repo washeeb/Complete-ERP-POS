@@ -421,6 +421,14 @@ export type JournalList = { currency: string; exponent: number; total: number; p
 export type JournalOptions = { kinds: Option[]; per: number[]; can_journal: boolean; can_post_now: boolean; accounts: Option[]; branches: Option[]; hq: string }
 export type JournalDetail = JournalRow & { currency: string; exponent: number; reverses: { id: string; number: string } | null; reversed_by: { id: string; number: string } | null
   can_reverse: boolean; lines: { account: string | null; account_id: string; branch: string | null; memo: string | null; debit: number; credit: number }[]; debits: number; credits: number }
+export type AccountRow = { id: string; code: string; name: string; type: string; type_label: string; header: boolean; parent_id: string | null; control: string | null
+  purpose: string | null; system_key: string | null; description: string | null; balance: number | null; archived: boolean; archive_note: string | null
+  can_edit: boolean; can_archive: boolean; can_restore: boolean; blockers: string[]; ledger: string | null }
+export type AccountForm = { types: Option[]; headers: (Option & { type: string })[]; purposes: (Option & { type: string })[]
+  next_by_type: Record<string, string | null>; next_by_header: Record<string, string | null>; can_manage: boolean }
+export type PeriodRow = { id: string; month: string; period: number; status: string; closed_by: string | null; closed_at: string | null; can_close: boolean; blockers: string[]; can_reopen: boolean }
+export type MonthEnd = { year: number; years: Option[]; can_setup: boolean; rows: PeriodRow[] }
+export type BudgetView = { year: number; branch: string; branches: Option[]; can_save: boolean; months: string[]; rows: { id: string; label: string; type: string; amounts: string[] }[] }
 export type RbDataset = { id: string; label: string; dated: boolean; dims: Option[]; measures: Option[] }
 export type RbOptions = { datasets: RbDataset[]; periods: Option[]; branches: Option[]; schedules: Option[]; people: Option[]; max_rows: number }
 export type RbChoices = { dataset: string; dimensions: string[]; measures: string[]; period: string; from: string | null; to: string | null; branch_id: string | null
@@ -805,6 +813,17 @@ export const api = {
   postJournal: (body: Record<string, unknown>) => call<{ journal: { id: string; number: string; open: string } }>('/office-api/journals', { method: 'POST', body: JSON.stringify(body) }),
   reverseJournal: (id: string, date: string, reason: string) => call<{ journal: { id: string; number: string; open: string } }>(`/office-api/journals/${id}/reverse`, { method: 'POST', body: JSON.stringify({ date, reason }) }),
   postNow: () => call<{ posted: number; errors: string[]; message: string }>('/office-api/journals/post-now', { method: 'POST' }),
+  accounts: (query: string, signal?: AbortSignal) => call<{ currency: string; exponent: number; rows: AccountRow[] }>(`/office-api/accounts?${query}`, { signal }),
+  accountForm: () => call<AccountForm>('/office-api/accounts/form'),
+  saveAccount: (id: string | null, body: Record<string, unknown>) => call<{ account: { id: string } }>(id ? `/office-api/accounts/${id}` : '/office-api/accounts', { method: 'POST', body: JSON.stringify(body) }),
+  archiveAccount: (id: string, reason: string | null) => call<{ done: boolean }>(`/office-api/accounts/${id}/archive`, { method: 'POST', body: JSON.stringify(reason === null ? { restore: true } : { reason }) }),
+  monthEnd: (year: string) => call<MonthEnd>(`/office-api/month-end?year=${encodeURIComponent(year)}`),
+  setupYear: (year: number) => call<{ year: number }>('/office-api/month-end/year', { method: 'POST', body: JSON.stringify({ year }) }),
+  closeMonth: (id: string) => call<{ message: string }>(`/office-api/month-end/${id}/close`, { method: 'POST' }),
+  reopenMonth: (id: string, reason: string) => call<{ message: string }>(`/office-api/month-end/${id}/reopen`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  budget: (year: string, branch: string) => call<BudgetView>(`/office-api/budgets?${new URLSearchParams({ year, branch })}`),
+  spread: (annual: string) => call<{ amounts: string[] }>(`/office-api/budgets/spread?annual=${encodeURIComponent(annual)}`),
+  saveBudget: (year: number, branch: string, amounts: Record<string, string[]>) => call<{ saved: number; message: string }>('/office-api/budgets', { method: 'POST', body: JSON.stringify({ year, branch, amounts }) }),
   financialOptions: () => call<FrOptions>('/office-api/financial-reports/options'),
   shareHeadOffice: (to: string) => call<{ message: string }>('/office-api/financial-reports/share-head-office', { method: 'POST', body: JSON.stringify({ to }) }),
   withholdingCsvUrl: (month: string) => `/office-api/withholding-tax/csv?month=${encodeURIComponent(month)}`,
