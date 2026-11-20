@@ -439,6 +439,14 @@ export type Reconcile = { bank: { id: string; name: string; ledger: string | nul
   suggestions: number; statement: RecLine[]; ledger: RecLine[]; matches: { id: string; at: string; by: string | null; amount: number }[] }
 export type MoneyMoveRow = { id: string; number: string; date: string | null; from: string | null; to: string | null; amount: number; reference: string | null; note: string | null; by: string | null }
 export type MoneyMoveList = { currency: string; exponent: number; total: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; can_move: boolean; rows: MoneyMoveRow[] }
+export type AssetRow = { id: string; number: string; name: string; serial_no: string | null; kind: string | null; branch: string | null; acquired_on: string | null; cost: number; book: number; status: string }
+export type AssetList = { currency: string; exponent: number; total: number; cost: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: AssetRow[] }
+export type AssetOptions = { per: number[]; can_manage: boolean; can_classes: boolean; kinds: (Option & { life_months: number })[]; branches: Option[]; hq: string; money_accounts: Option[] }
+export type AssetDetail = AssetRow & { currency: string; exponent: number; location: string | null; residual: number; life_months: number; opening_depreciation: number; book_now: number
+  disposal: { date: string | null; reason: string; proceeds: number } | null; can_dispose: boolean; schedule: { month: string; amount: number }[] }
+export type AssetKind = { id: string; code: string; name: string; life_months: number; cost_account_id: string; accumulated_account_id: string; expense_account_id: string
+  cost_account: string | null; accumulated_account: string | null; expense_account: string | null }
+export type AssetKinds = { can_manage: boolean; accounts: { asset: Option[]; expense: Option[] } | null; rows: AssetKind[] }
 export type RbDataset = { id: string; label: string; dated: boolean; dims: Option[]; measures: Option[] }
 export type RbOptions = { datasets: RbDataset[]; periods: Option[]; branches: Option[]; schedules: Option[]; people: Option[]; max_rows: number }
 export type RbChoices = { dataset: string; dimensions: string[]; measures: string[]; period: string; from: string | null; to: string | null; branch_id: string | null
@@ -850,6 +858,13 @@ export const api = {
   reconcile: (id: string, asAt: string) => call<Reconcile>(`/office-api/bank-accounts/${id}/reconcile?as_at=${encodeURIComponent(asAt)}`),
   reconcileStep: (id: string, step: 'match' | 'auto' | 'earlier' | 'post' | 'ignore' | 'unmatch', body: Record<string, unknown> = {}) =>
     call<{ message: string }>(`/office-api/bank-accounts/${id}/reconcile/${step}`, { method: 'POST', body: JSON.stringify(body) }),
+  fixedAssets: (query: string, signal?: AbortSignal) => call<AssetList>(`/office-api/fixed-assets?${query}`, { signal }),
+  fixedAssetOptions: () => call<AssetOptions>('/office-api/fixed-assets/options'),
+  fixedAsset: (id: string) => call<{ asset: AssetDetail }>(`/office-api/fixed-assets/${id}`),
+  registerAsset: (body: Record<string, unknown>) => call<{ asset: { id: string; number: string; open: string } }>('/office-api/fixed-assets', { method: 'POST', body: JSON.stringify(body) }),
+  disposeAsset: (id: string, body: Record<string, unknown>) => call<{ message: string }>(`/office-api/fixed-assets/${id}/dispose`, { method: 'POST', body: JSON.stringify(body) }),
+  assetKinds: () => call<AssetKinds>('/office-api/asset-kinds'),
+  saveAssetKind: (id: string | null, body: Record<string, unknown>) => call<{ class: { id: string } }>(id ? `/office-api/asset-kinds/${id}` : '/office-api/asset-kinds', { method: 'POST', body: JSON.stringify(body) }),
   financialOptions: () => call<FrOptions>('/office-api/financial-reports/options'),
   shareHeadOffice: (to: string) => call<{ message: string }>('/office-api/financial-reports/share-head-office', { method: 'POST', body: JSON.stringify({ to }) }),
   withholdingCsvUrl: (month: string) => `/office-api/withholding-tax/csv?month=${encodeURIComponent(month)}`,
