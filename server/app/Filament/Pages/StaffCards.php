@@ -55,7 +55,7 @@ class StaffCards extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query(fn () => User::query()->where('is_active', true)->where('security_level', '<', SecurityLevel::Platform->value)
+            ->query(fn () => User::query()->where('tenant_id', Erp::user()?->tenant_id)->where('is_active', true)->where('security_level', '<', SecurityLevel::Platform->value) // users have no company scope of their own
                 ->with(['roleAssignments' => fn ($q) => $q->active()->with('role')]))
             ->defaultSort('name')
             ->columns([

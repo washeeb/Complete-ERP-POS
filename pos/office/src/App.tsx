@@ -83,6 +83,10 @@ import { UserPage } from './pages/UserPage'
 import { RolesPage } from './pages/RolesPage'
 import { RolePage } from './pages/RolePage'
 import { AccessRequestsPage } from './pages/AccessRequestsPage'
+import { CompanyWidePage } from './pages/CompanyWidePage'
+import { AccessReviewPage } from './pages/AccessReviewPage'
+import { ItActivityPage } from './pages/ItActivityPage'
+import { StaffCardsPage } from './pages/StaffCardsPage'
 import { StockPage } from './pages/StockPage'
 import { SalesPage } from './pages/SalesPage'
 import { TodoPage } from './pages/TodoPage'
@@ -148,7 +152,7 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
   const { dispatchToast } = useToastController(toaster)
   const [title, setTitle] = useState('')
 
-  const LIST_TITLES: Partial<Record<typeof route.page, string>> = { home: 'Home', todo: 'To-do', sales: 'Till sales', shifts: 'Till shifts', drawer: 'Till drawer', products: 'Products', stock: 'Stock on hand', movements: 'Stock ledger', adjustments: 'Stock adjustments', counts: 'Stock counts', transfers: 'Transfers', requests: 'Stock requests', customers: 'Customers', invoices: 'Invoices', suppliers: 'Suppliers', 'purchase-orders': 'Purchase orders', 'goods-received': 'Goods received', 'direct-purchases': 'Direct purchases', 'supplier-invoices': 'Invoices from suppliers', 'consignment-to-pay': 'Consignment to pay', 'reorder-levels': 'Reorder levels', 'what-to-order': 'What to order', 'suggested-levels': 'Suggested levels', 'expense-claims': 'Expense claims', 'supplier-bills': 'Supplier bills', 'supplier-payments': 'Supplier payments', 'aged-payables': 'Aged payables', 'withholding-tax': 'Withholding tax', 'financial-reports': 'Financial reports', insights: 'Insights', 'report-builder': 'Report builder', 'saved-reports': 'Saved reports', shrink: 'Shrink', 'slow-stock': 'Slow & dead stock', batches: 'Batches & expiry', returns: 'Returns', journals: 'Journals', accounts: 'Chart of accounts', 'month-end': 'Month-end', budgets: 'Budgets', 'bank-accounts': 'Bank & cash', 'money-moved': 'Money moved', 'fixed-assets': 'Fixed assets', 'asset-kinds': 'Kinds of asset', 'accounting-export': 'Export to another accounting program', 'gra-evat': 'GRA E-VAT', users: 'Users', roles: 'Roles', 'access-requests': 'Access requests' }
+  const LIST_TITLES: Partial<Record<typeof route.page, string>> = { home: 'Home', todo: 'To-do', sales: 'Till sales', shifts: 'Till shifts', drawer: 'Till drawer', products: 'Products', stock: 'Stock on hand', movements: 'Stock ledger', adjustments: 'Stock adjustments', counts: 'Stock counts', transfers: 'Transfers', requests: 'Stock requests', customers: 'Customers', invoices: 'Invoices', suppliers: 'Suppliers', 'purchase-orders': 'Purchase orders', 'goods-received': 'Goods received', 'direct-purchases': 'Direct purchases', 'supplier-invoices': 'Invoices from suppliers', 'consignment-to-pay': 'Consignment to pay', 'reorder-levels': 'Reorder levels', 'what-to-order': 'What to order', 'suggested-levels': 'Suggested levels', 'expense-claims': 'Expense claims', 'supplier-bills': 'Supplier bills', 'supplier-payments': 'Supplier payments', 'aged-payables': 'Aged payables', 'withholding-tax': 'Withholding tax', 'financial-reports': 'Financial reports', insights: 'Insights', 'report-builder': 'Report builder', 'saved-reports': 'Saved reports', shrink: 'Shrink', 'slow-stock': 'Slow & dead stock', batches: 'Batches & expiry', returns: 'Returns', journals: 'Journals', accounts: 'Chart of accounts', 'month-end': 'Month-end', budgets: 'Budgets', 'bank-accounts': 'Bank & cash', 'money-moved': 'Money moved', 'fixed-assets': 'Fixed assets', 'asset-kinds': 'Kinds of asset', 'accounting-export': 'Export to another accounting program', 'gra-evat': 'GRA E-VAT', users: 'Users', roles: 'Roles', 'access-requests': 'Access requests', 'company-wide-access': 'Company-wide access', 'who-can-do-what': 'Who can do what', 'it-activity': 'IT and support activity', 'staff-cards': 'Staff cards' }
   const shown = LIST_TITLES[route.page] ?? title
   useEffect(() => { document.title = shown ? `${shown} · ${me.company.name}` : me.company.name }, [shown, me.company.name])
 
@@ -262,6 +266,10 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
                                                                                                                 : route.page === 'roles' ? <RolesPage />
                                                                                                                 : route.page === 'role' ? <RolePage key={route.id ?? 'new'} id={route.id} />
                                                                                                                 : route.page === 'access-requests' ? <AccessRequestsPage />
+                                                                                                                : route.page === 'company-wide-access' ? <CompanyWidePage />
+                                                                                                                : route.page === 'who-can-do-what' ? <AccessReviewPage />
+                                                                                                                : route.page === 'it-activity' ? <ItActivityPage />
+                                                                                                                : route.page === 'staff-cards' ? <StaffCardsPage />
                       : <ClassicPage admin={admin} onTitle={setTitle} />}
       </Look>
       <Toaster toasterId={toaster} position="top-end" />

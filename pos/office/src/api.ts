@@ -470,6 +470,19 @@ export type RoleDetail = RoleRow & { key: string; keys: string[]; holders: numbe
 export type AccessRequestRow = { id: string; status: string; status_label: string; kind: string; summary: string; by: string | null; asked: string | null; lapses: string | null
   decided_by: string | null; note: string | null; can_decide: boolean; can_withdraw: boolean }
 export type AccessRequestList = { total: number; page: number; per: number; statuses: Record<string, string>; rows: AccessRequestRow[] }
+export type WideRow = { id: string; person: string | null; user_id: string; role: string | null; applies_to: string; allowed: boolean }
+export type WideList = { total: number; page: number; per: number; needs: number; branches: Option[]; industries: Option[]; rows: WideRow[] }
+export type ReviewWho = { name: string; id: string; where: string; via: string }
+export type AccessReviewData = { counts: { people: number; high: number; medium: number }; can_open: boolean
+  risks: { severity: 'high' | 'medium'; title: string; why: string; fix: string; who: ReviewWho[] }[]
+  notes: { tone: 'warning' | 'info'; id: string; text: string }[]
+  people: { id: string; name: string; username: string; active: boolean; owner: boolean; roles: { role: string; where: string; until: string | null }[]
+    risks: { severity: 'high' | 'medium'; title: string }[] }[] }
+export type ActivityRow = { id: string; when: string | null; who: string | null; who_kind: string | null; what: string; record: string; details: string | null; computer: string | null
+  changes: { field: string; value: string }[]; reason: string | null }
+export type ActivityList = { total: number; page: number; per: number; rows: ActivityRow[] }
+export type CardRow = { id: string; name: string; username: string; photo: string | null; roles: string[]; pin: boolean; card: boolean; card_on: string | null }
+export type CardList = { total: number; page: number; per: number; layouts: Option[]; rows: CardRow[] }
 export type RbDataset = { id: string; label: string; dated: boolean; dims: Option[]; measures: Option[] }
 export type RbOptions = { datasets: RbDataset[]; periods: Option[]; branches: Option[]; schedules: Option[]; people: Option[]; max_rows: number }
 export type RbChoices = { dataset: string; dimensions: string[]; measures: string[]; period: string; from: string | null; to: string | null; branch_id: string | null
@@ -910,6 +923,12 @@ export const api = {
   accessRequests: (query: string, signal?: AbortSignal) => call<AccessRequestList>(`/office-api/access-requests?${query}`, { signal }),
   decideRequest: (id: string, step: 'approve' | 'reject' | 'withdraw', note: string | null = null) =>
     call<UserDone & { failed?: boolean }>(`/office-api/access-requests/${id}/${step}`, { method: 'POST', body: JSON.stringify({ note }) }),
+  companyWide: (query: string, signal?: AbortSignal) => call<WideList>(`/office-api/company-wide-access?${query}`, { signal }),
+  narrowAccess: (id: string, scope_type: string, scope_id: string) => call<UserDone>(`/office-api/company-wide-access/${id}/narrow`, { method: 'POST', body: JSON.stringify({ scope_type, scope_id }) }),
+  accessReview: () => call<AccessReviewData>('/office-api/who-can-do-what'),
+  itActivity: (query: string, signal?: AbortSignal) => call<ActivityList>(`/office-api/it-activity?${query}`, { signal }),
+  staffCards: (query: string, signal?: AbortSignal) => call<CardList>(`/office-api/staff-cards?${query}`, { signal }),
+  cardsAction: (action: 'print' | 'stop', body: Record<string, unknown>) => call<UserDone>(`/office-api/staff-cards/${action}`, { method: 'POST', body: JSON.stringify(body) }),
   financialOptions: () => call<FrOptions>('/office-api/financial-reports/options'),
   shareHeadOffice: (to: string) => call<{ message: string }>('/office-api/financial-reports/share-head-office', { method: 'POST', body: JSON.stringify({ to }) }),
   withholdingCsvUrl: (month: string) => `/office-api/withholding-tax/csv?month=${encodeURIComponent(month)}`,

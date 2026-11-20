@@ -19,7 +19,7 @@ class AccessRequest extends Model
         'withdrawn' => 'Withdrawn', 'expired' => 'Lapsed (not answered in 72 hours)', 'failed' => 'Approved, but could not be done'];
 
     public const KINDS = ['user.create' => 'Add a user', 'user.update' => 'Change a user', 'access.grant' => 'Give access',
-        'role.save' => 'Change a role', 'user.pin' => 'Set a till PIN', 'user.reset_mfa' => 'Reset two-step sign-in'];
+        'role.save' => 'Change a role', 'user.pin' => 'Set a till PIN', 'user.reset_mfa' => 'Reset two-step sign-in', 'access.narrow' => 'Limit company-wide access'];
 
     protected $guarded = [];
 
