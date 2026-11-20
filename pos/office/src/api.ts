@@ -488,6 +488,17 @@ export type SettingDef = { key: string; label: string; help: string; type: 'bool
 export type SettingsData = { groups: { group: string; settings: SettingDef[] }[] }
 export type ModuleItem = { key: string; name: string; description: string; status_label: string; available: boolean; status: 'enabled' | 'reserved' | 'disabled' }
 export type ModulesData = { branch_id: string | null; branches: Option[]; sections: { label: string; modules: ModuleItem[] }[] }
+export type CredField = { key: string; label: string; secret: boolean; saved: boolean }
+export type MessagingSetupData = {
+  sms: { providers: Option[]; provider: string; sender_id: string | null; active: boolean; fields: Record<string, CredField[]>; tested: string | null }
+  whatsapp: { active: boolean; exists: boolean; fields: CredField[]; webhook: { url: string; verify_token: string } | null; tested: string | null }
+  email: { driver: string; from: string; log_only: boolean } }
+export type TemplateRow = { id: string; key: string; name: string; placeholders: string | null; channel: string; channel_label: string; subject: string | null; body: string
+  active: boolean; whatsapp_template: string | null; whatsapp_language: string | null; archived: boolean }
+export type TemplateList = { channels: Option[]; can_edit: boolean; rows: TemplateRow[] }
+export type MessageRow = { id: string; when: string | null; channel: string; to: string; reference: string | null; subject: string | null; body: string; status: string; status_label: string
+  error: string | null; provider: string | null; provider_ref: string | null; attempts: number; attachment: string | null; can_retry: boolean }
+export type MessageLog = { total: number; page: number; per: number; statuses: Option[]; channels: Option[]; rows: MessageRow[] }
 export type RbDataset = { id: string; label: string; dated: boolean; dims: Option[]; measures: Option[] }
 export type RbOptions = { datasets: RbDataset[]; periods: Option[]; branches: Option[]; schedules: Option[]; people: Option[]; max_rows: number }
 export type RbChoices = { dataset: string; dimensions: string[]; measures: string[]; period: string; from: string | null; to: string | null; branch_id: string | null
@@ -938,6 +949,14 @@ export const api = {
   saveSettings: (values: Record<string, unknown>, reason: string | null) => call<UserDone & { saved: number }>('/office-api/settings', { method: 'POST', body: JSON.stringify({ values, reason }) }),
   modules: (branch: string | null) => call<ModulesData>(`/office-api/modules${branch ? `?branch=${encodeURIComponent(branch)}` : ''}`),
   saveModules: (branch_id: string, modules: Record<string, string>, reason: string | null) => call<UserDone>('/office-api/modules', { method: 'POST', body: JSON.stringify({ branch_id, modules, reason }) }),
+  messagingSetup: () => call<MessagingSetupData>('/office-api/messaging'),
+  saveProvider: (channel: 'sms' | 'whatsapp', body: Record<string, unknown>) => call<UserDone>(`/office-api/messaging/${channel}`, { method: 'POST', body: JSON.stringify(body) }),
+  testMessage: (channel: 'sms' | 'whatsapp' | 'email', to: string) => call<UserDone & { sent: boolean }>(`/office-api/messaging/${channel}/test`, { method: 'POST', body: JSON.stringify({ to }) }),
+  messageTemplates: (query: string, signal?: AbortSignal) => call<TemplateList>(`/office-api/message-templates?${query}`, { signal }),
+  saveTemplate: (id: string, body: Record<string, unknown>) => call<UserDone>(`/office-api/message-templates/${id}`, { method: 'POST', body: JSON.stringify(body) }),
+  templateArchive: (id: string, step: 'archive' | 'restore', reason: string | null = null) => call<UserDone>(`/office-api/message-templates/${id}/${step}`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  messageLog: (query: string, signal?: AbortSignal) => call<MessageLog>(`/office-api/message-log?${query}`, { signal }),
+  retryMessage: (id: string) => call<UserDone & { row: MessageRow }>(`/office-api/message-log/${id}/retry`, { method: 'POST' }),
   financialOptions: () => call<FrOptions>('/office-api/financial-reports/options'),
   shareHeadOffice: (to: string) => call<{ message: string }>('/office-api/financial-reports/share-head-office', { method: 'POST', body: JSON.stringify({ to }) }),
   withholdingCsvUrl: (month: string) => `/office-api/withholding-tax/csv?month=${encodeURIComponent(month)}`,
