@@ -336,7 +336,7 @@ try {
         await page.waitForURL(path, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
         await page.getByText(empty).or(page.getByRole('table', { name: table }).getByRole('row').nth(1)).first().waitFor({ timeout: 30000 })
           .catch(() => problems.push(`${look} ${w}: ${link} showed neither rows nor "${empty}"`))
-        await page.screenshot({ path: out(`${link.replaceAll(' ', '-').toLowerCase()}-${look}-${w}`) })
+        await page.screenshot({ path: out(`${link.replace(/ *\/ */g, ' ').replaceAll(' ', '-').toLowerCase()}-${look}-${w}`) })
         if (link === 'Reorder levels' && look === 'top' && w === 1366) {
           const add = page.getByRole('button', { name: 'Own figure for a product' })
           if (await add.waitFor({ timeout: 10000 }).then(() => true).catch(() => false)) {
@@ -423,12 +423,14 @@ try {
         ['Money moved', /\/office\/money-moved$/, () => page.getByText('No money moved yet').or(page.getByRole('table', { name: 'Money moved' }).getByRole('row').nth(1)).first()],
         ['Bank & cash', /\/office\/bank-accounts$/, () => page.getByRole('region', { name: 'Bank and cash accounts' })],
         ['Fixed assets', /\/office\/fixed-assets$/, () => page.getByText('No fixed assets match').or(page.getByRole('table', { name: 'Fixed assets' }).getByRole('row').nth(1)).first()],
+        ['GRA E-VAT', /\/office\/gra-evat$/, () => page.getByText('Nothing reported to GRA matches').or(page.getByRole('table', { name: 'GRA reports' }).getByRole('row').nth(1)).first()],
+        ['Export to QuickBooks / Xero / Sage', /\/office\/accounting-export$/, () => page.getByRole('region', { name: 'Export the books' })],
         ['Journals', /\/office\/journals$/, () => page.getByText('No journals match').or(page.getByRole('table', { name: 'Journals' }).getByRole('row').nth(1)).first()]]) {
         await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
         await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: link, exact: true }).first().click()
         await page.waitForURL(path, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
         await ready().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
-        await page.screenshot({ path: out(`${link.replaceAll(' ', '-').toLowerCase()}-${look}-${w}`) })
+        await page.screenshot({ path: out(`${link.replace(/ *\/ */g, ' ').replaceAll(' ', '-').toLowerCase()}-${look}-${w}`) })
       }
       // Fixed assets, rebuilt (release 8): Kinds of asset opens from the register with its kinds.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()

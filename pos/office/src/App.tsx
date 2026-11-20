@@ -75,6 +75,9 @@ import { MoneyMovedPage } from './pages/MoneyMovedPage'
 import { FixedAssetsPage } from './pages/FixedAssetsPage'
 import { FixedAssetPage } from './pages/FixedAssetPage'
 import { AssetKindsPage } from './pages/AssetKindsPage'
+import { AccountingExportPage } from './pages/AccountingExportPage'
+import { EvatPage } from './pages/EvatPage'
+import { EvatReportPage } from './pages/EvatReportPage'
 import { StockPage } from './pages/StockPage'
 import { SalesPage } from './pages/SalesPage'
 import { TodoPage } from './pages/TodoPage'
@@ -140,7 +143,7 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
   const { dispatchToast } = useToastController(toaster)
   const [title, setTitle] = useState('')
 
-  const LIST_TITLES: Partial<Record<typeof route.page, string>> = { home: 'Home', todo: 'To-do', sales: 'Till sales', shifts: 'Till shifts', drawer: 'Till drawer', products: 'Products', stock: 'Stock on hand', movements: 'Stock ledger', adjustments: 'Stock adjustments', counts: 'Stock counts', transfers: 'Transfers', requests: 'Stock requests', customers: 'Customers', invoices: 'Invoices', suppliers: 'Suppliers', 'purchase-orders': 'Purchase orders', 'goods-received': 'Goods received', 'direct-purchases': 'Direct purchases', 'supplier-invoices': 'Invoices from suppliers', 'consignment-to-pay': 'Consignment to pay', 'reorder-levels': 'Reorder levels', 'what-to-order': 'What to order', 'suggested-levels': 'Suggested levels', 'expense-claims': 'Expense claims', 'supplier-bills': 'Supplier bills', 'supplier-payments': 'Supplier payments', 'aged-payables': 'Aged payables', 'withholding-tax': 'Withholding tax', 'financial-reports': 'Financial reports', insights: 'Insights', 'report-builder': 'Report builder', 'saved-reports': 'Saved reports', shrink: 'Shrink', 'slow-stock': 'Slow & dead stock', batches: 'Batches & expiry', returns: 'Returns', journals: 'Journals', accounts: 'Chart of accounts', 'month-end': 'Month-end', budgets: 'Budgets', 'bank-accounts': 'Bank & cash', 'money-moved': 'Money moved', 'fixed-assets': 'Fixed assets', 'asset-kinds': 'Kinds of asset' }
+  const LIST_TITLES: Partial<Record<typeof route.page, string>> = { home: 'Home', todo: 'To-do', sales: 'Till sales', shifts: 'Till shifts', drawer: 'Till drawer', products: 'Products', stock: 'Stock on hand', movements: 'Stock ledger', adjustments: 'Stock adjustments', counts: 'Stock counts', transfers: 'Transfers', requests: 'Stock requests', customers: 'Customers', invoices: 'Invoices', suppliers: 'Suppliers', 'purchase-orders': 'Purchase orders', 'goods-received': 'Goods received', 'direct-purchases': 'Direct purchases', 'supplier-invoices': 'Invoices from suppliers', 'consignment-to-pay': 'Consignment to pay', 'reorder-levels': 'Reorder levels', 'what-to-order': 'What to order', 'suggested-levels': 'Suggested levels', 'expense-claims': 'Expense claims', 'supplier-bills': 'Supplier bills', 'supplier-payments': 'Supplier payments', 'aged-payables': 'Aged payables', 'withholding-tax': 'Withholding tax', 'financial-reports': 'Financial reports', insights: 'Insights', 'report-builder': 'Report builder', 'saved-reports': 'Saved reports', shrink: 'Shrink', 'slow-stock': 'Slow & dead stock', batches: 'Batches & expiry', returns: 'Returns', journals: 'Journals', accounts: 'Chart of accounts', 'month-end': 'Month-end', budgets: 'Budgets', 'bank-accounts': 'Bank & cash', 'money-moved': 'Money moved', 'fixed-assets': 'Fixed assets', 'asset-kinds': 'Kinds of asset', 'accounting-export': 'Export to another accounting program', 'gra-evat': 'GRA E-VAT' }
   const shown = LIST_TITLES[route.page] ?? title
   useEffect(() => { document.title = shown ? `${shown} · ${me.company.name}` : me.company.name }, [shown, me.company.name])
 
@@ -246,6 +249,9 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
                                                                                                                 : route.page === 'fixed-assets' ? <FixedAssetsPage />
                                                                                                                 : route.page === 'fixed-asset' ? <FixedAssetPage id={route.id} />
                                                                                                                 : route.page === 'asset-kinds' ? <AssetKindsPage />
+                                                                                                                : route.page === 'accounting-export' ? <AccountingExportPage />
+                                                                                                                : route.page === 'gra-evat' ? <EvatPage />
+                                                                                                                : route.page === 'gra-evat-report' ? <EvatReportPage id={route.id} />
                       : <ClassicPage admin={admin} onTitle={setTitle} />}
       </Look>
       <Toaster toasterId={toaster} position="top-end" />
