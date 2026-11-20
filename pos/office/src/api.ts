@@ -509,6 +509,11 @@ export type DeviceFix = { when: string | null; what: string; by: string | null; 
 export type ComputerRow = { id: string; label: string; name: string | null; machine: string | null; last_user: string | null; last_seen: string | null; ip: string | null
   lookup: string | null; browser: string | null; first_seen: string | null; activity: string }
 export type ComputerList = { total: number; page: number; per: number; rows: ComputerRow[] }
+export type RefKind = 'categories' | 'brands' | 'units' | 'tax-rates' | 'tax-groups' | 'price-lists'
+export type RefRow = { id: string; name: string; products: number; archived: boolean; can_edit: boolean; can_move: boolean; can_delete: boolean; can_archive: boolean
+  archive_blockers: string[]; can_restore: boolean; values: Record<string, unknown>; [extra: string]: unknown }
+export type RefList = { kind: RefKind; can_create: boolean; archivable: boolean; rows: RefRow[] }
+export type RefOptions = { move_to: Option[]; industries?: Option[]; parents?: Option[]; default_industry?: string | null; decimals?: Option[]; merge_into?: Option[]; rates?: Option[]; branches?: Option[] }
 export type RbDataset = { id: string; label: string; dated: boolean; dims: Option[]; measures: Option[] }
 export type RbOptions = { datasets: RbDataset[]; periods: Option[]; branches: Option[]; schedules: Option[]; people: Option[]; max_rows: number }
 export type RbChoices = { dataset: string; dimensions: string[]; measures: string[]; period: string; from: string | null; to: string | null; branch_id: string | null
@@ -975,6 +980,11 @@ export const api = {
   deviceFixes: (id: string) => call<{ rows: DeviceFix[] }>(`/office-api/devices/${id}/fixes`),
   computers: (query: string, signal?: AbortSignal) => call<ComputerList>(`/office-api/computers?${query}`, { signal }),
   nameComputer: (id: string, name: string) => call<UserDone>(`/office-api/computers/${id}/name`, { method: 'POST', body: JSON.stringify({ name }) }),
+  refList: (kind: RefKind, query: string, signal?: AbortSignal) => call<RefList>(`/office-api/lists/${kind}?${query}`, { signal }),
+  refOptions: (kind: RefKind) => call<RefOptions>(`/office-api/lists/${kind}/options`),
+  refSave: (kind: RefKind, id: string | null, body: Record<string, unknown>) => call<UserDone & { id: string }>(`/office-api/lists/${kind}${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(body) }),
+  refAction: (kind: RefKind, id: string, action: 'delete' | 'move' | 'merge' | 'verify' | 'archive' | 'restore', body: Record<string, unknown> = {}) =>
+    call<UserDone>(`/office-api/lists/${kind}/${id}/${action}`, { method: 'POST', body: JSON.stringify(body) }),
   financialOptions: () => call<FrOptions>('/office-api/financial-reports/options'),
   shareHeadOffice: (to: string) => call<{ message: string }>('/office-api/financial-reports/share-head-office', { method: 'POST', body: JSON.stringify({ to }) }),
   withholdingCsvUrl: (month: string) => `/office-api/withholding-tax/csv?month=${encodeURIComponent(month)}`,

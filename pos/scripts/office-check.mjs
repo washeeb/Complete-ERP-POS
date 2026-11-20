@@ -503,6 +503,23 @@ try {
           await page.screenshot({ path: out(`settings-found-${look}-${w}`) })
         }
       }
+      // Catalogue and pricing lists, rebuilt (part 7): each opens from Stock and loads; the first category opens its form (left).
+      for (const [link, path, table] of [[/^Categories/, /\/office\/categories$/, 'Categories'], [/^Brands/, /\/office\/brands$/, 'Brands'],
+        [/^Units of measure/i, /\/office\/units$/, 'Units of measure'], [/^Tax rates/i, /\/office\/tax-rates$/, 'Tax rates'], [/^Tax groups/i, /\/office\/tax-groups$/, 'Tax groups'],
+        [/^Price lists/i, /\/office\/price-lists$/, 'Price lists']]) {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Stock/ }).first().click()
+        await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: link }).first().click()
+        await page.waitForURL(path, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${table} did not open the new screen (${page.url()})`))
+        const first = page.getByRole('table', { name: table }).getByRole('row').nth(1)
+        await first.waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${table} did not load`))
+        await page.screenshot({ path: out(`${table.replaceAll(' ', '-').toLowerCase()}-${look}-${w}`) })
+        if (table === 'Price lists' && await first.count()) {
+          await first.click()
+          await page.getByRole('dialog').getByText('Prices include tax').waitFor({ timeout: 10000 }).catch(() => problems.push(`${look} ${w}: a price list did not open its form`))
+          await page.screenshot({ path: out(`price-list-form-${look}-${w}`) })
+          await page.getByRole('dialog').getByRole('button', { name: 'Back' }).click()
+        }
+      }
       // Fixed assets, rebuilt (release 8): Kinds of asset opens from the register with its kinds.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
       await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: 'Fixed assets', exact: true }).first().click()

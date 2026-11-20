@@ -30,6 +30,7 @@ use App\Http\Controllers\Office\MessagingController as OfficeMessagingController
 use App\Http\Controllers\Office\OfficeController;
 use App\Http\Controllers\Office\ProductsController as OfficeProductsController;
 use App\Http\Controllers\Office\PurchaseOrdersController as OfficePurchaseOrdersController;
+use App\Http\Controllers\Office\ReferenceListsController as OfficeReferenceListsController;
 use App\Http\Controllers\Office\ReorderController as OfficeReorderController;
 use App\Http\Controllers\Office\ReportsController as OfficeReportsController;
 use App\Http\Controllers\Office\RequestsController as OfficeRequestsController;
@@ -320,6 +321,12 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::post('devices/{device}/{step}', [OfficeDevicesController::class, 'archive'])->whereUuid('device')->whereIn('step', ['archive', 'restore']);
     Route::get('computers', [OfficeDevicesController::class, 'computers']);
     Route::post('computers/{computer}/name', [OfficeDevicesController::class, 'nameComputer'])->whereUuid('computer');
+    Route::get('lists/{kind}', [OfficeReferenceListsController::class, 'index'])->whereIn('kind', $refKinds = ['categories', 'brands', 'units', 'tax-rates', 'tax-groups', 'price-lists']);
+    Route::get('lists/{kind}/options', [OfficeReferenceListsController::class, 'options'])->whereIn('kind', $refKinds);
+    Route::post('lists/{kind}', [OfficeReferenceListsController::class, 'save'])->whereIn('kind', $refKinds);
+    Route::post('lists/{kind}/{id}', [OfficeReferenceListsController::class, 'save'])->whereIn('kind', $refKinds)->whereUuid('id');
+    Route::post('lists/{kind}/{id}/{action}', [OfficeReferenceListsController::class, 'action'])->whereIn('kind', $refKinds)->whereUuid('id')
+        ->whereIn('action', ['delete', 'move', 'merge', 'verify', 'archive', 'restore']);
     Route::get('access-requests', [OfficeRolesController::class, 'requests']);
     Route::post('access-requests/{accessRequest}/{step}', [OfficeRolesController::class, 'decide'])->whereUuid('accessRequest')->whereIn('step', ['approve', 'reject', 'withdraw']);
     Route::get('bank-accounts', [OfficeBankingController::class, 'accounts']);

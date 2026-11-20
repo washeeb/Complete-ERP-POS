@@ -1,0 +1,5 @@
+## Catalogue and pricing reference lists in the new back office
+- **One screen and one page for six lists.** They are the same shape (a short list, a small form, a few actions), so one server screen and one page, configured per kind, replace six copies. Who may see and change each list is still that list's current rule (its Resource): catalogue lists for stock people of any branch, tax and price lists for people who hold pricing for the whole company or, for price lists, for that industry.
+- **Each kind saves only its own form's fields** (a whitelist), so the screen can never set anything else on the record. The rules stay in CatalogService: names once (per industry and parent), unit codes, a tax rate's code fixed once added (the server refuses a change), price lists that already have prices.
+- **Which lists archive and which delete is unchanged:** categories, tax rates and price lists archive; categories, brands and units delete only when unused; brands and units do not archive.
+- **Actions sit in a menu on each row;** clicking a row opens Change.
