@@ -464,6 +464,19 @@ try {
       await page.getByText('No access requests.').or(page.getByRole('table', { name: 'Access requests' }).getByRole('row').nth(1)).first().waitFor({ timeout: 20000 })
         .catch(() => problems.push(`${look} ${w}: Access requests did not load`))
       await page.screenshot({ path: out(`access-requests-${look}-${w}`) })
+      // Company-wide access, Who can do what, IT and support activity, Staff cards, rebuilt (settings and admin, part 3):
+      // each opens from People and loads (nothing is changed or printed).
+      for (const [link, path, ready, shot] of [
+        [/^Company-wide access/, /\/office\/company-wide-access$/, () => page.getByText('Nobody here.').or(page.getByRole('table', { name: 'Company-wide access' }).getByRole('row').nth(1)).first(), 'company-wide-access'],
+        [/^Who can do what/, /\/office\/who-can-do-what$/, () => page.getByRole('region', { name: "Everyone's access" }), 'who-can-do-what'],
+        [/^IT and support activity/, /\/office\/it-activity$/, () => page.getByText('Nothing in this period').or(page.getByRole('table', { name: 'IT and support activity' }).getByRole('row').nth(1)).first(), 'it-activity'],
+        [/^Staff cards/, /\/office\/staff-cards$/, () => page.getByRole('table', { name: 'Staff cards' }).getByRole('row').nth(1), 'staff-cards']]) {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /People/ }).first().click()
+        await page.getByRole('navigation', { name: 'People' }).getByRole('link', { name: link }).first().click()
+        await page.waitForURL(path, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${shot} did not open the new screen (${page.url()})`))
+        await ready().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${shot} did not load`))
+        await page.screenshot({ path: out(`${shot}-${look}-${w}`) })
+      }
       // Fixed assets, rebuilt (release 8): Kinds of asset opens from the register with its kinds.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
       await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: 'Fixed assets', exact: true }).first().click()

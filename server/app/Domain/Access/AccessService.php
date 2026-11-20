@@ -529,6 +529,15 @@ final class AccessService
         if (! in_array($scopeType, [ScopeType::Branch, ScopeType::Industry], true)) {
             throw new DomainException('Choose a branch or an industry.');
         }
+        // IT asks first, for the whole change (the new grant and taking away the company-wide one together). Asked
+        // here, outside the transaction below, so the request is kept: inside it, it was rolled back with the grant.
+        if (! $this->approving && AccessRequests::needsApproval($actor)) {
+            $this->require($actor, 'admin.roles.manage');
+            $this->assertSameTenant($actor, $assignment);
+            $where = $this->resolveScope($actor, $scopeType, $scopeId)->name ?? $scopeType->label();
+            $this->viaApproval($actor, 'access.narrow', ['assignment_id' => $assignment->id, 'scope_type' => $scopeType->value, 'scope_id' => $scopeId],
+                "Limit {$assignment->user->name}'s {$assignment->role->name} from the whole company to {$where}.", $assignment->user);
+        }
 
         return $this->recorder->transaction(function () use ($actor, $assignment, $scopeType, $scopeId) {
             $reason = "Limited to one {$scopeType->value}";

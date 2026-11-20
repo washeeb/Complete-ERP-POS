@@ -10,6 +10,7 @@ use App\Domain\Support\Recorder;
 use App\Filament\Resources\AccessRequests\AccessRequestResource;
 use App\Models\AccessRequest;
 use App\Models\Role;
+use App\Models\RoleAssignment;
 use App\Models\User;
 use App\Security\ScopeType;
 use Carbon\Carbon;
@@ -126,6 +127,8 @@ final class AccessRequests
             'role.save' => $svc->saveRole($approver, filled($p['role_id'] ?? null) ? Role::findOrFail($p['role_id']) : new Role, $p['attributes'], $p['permissions'], $p['reason'] ?? null),
             'user.pin' => $svc->setPin($approver, $subject(), $p['pin_hash'], hashed: true),
             'user.reset_mfa' => $svc->resetMfa($approver, $subject(), $p['reason']),
+            'access.narrow' => $svc->narrow($approver, RoleAssignment::withoutGlobalScopes()->where('tenant_id', $r->tenant_id)->findOrFail($p['assignment_id']),
+                ScopeType::from($p['scope_type']), $p['scope_id']),
         };
     }
 
