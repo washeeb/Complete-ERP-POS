@@ -447,6 +447,12 @@ export type AssetDetail = AssetRow & { currency: string; exponent: number; locat
 export type AssetKind = { id: string; code: string; name: string; life_months: number; cost_account_id: string; accumulated_account_id: string; expense_account_id: string
   cost_account: string | null; accumulated_account: string | null; expense_account: string | null }
 export type AssetKinds = { can_manage: boolean; accounts: { asset: Option[]; expense: Option[] } | null; rows: AssetKind[] }
+export type EvatRow = { id: string; date: string | null; number: string; type: string; type_label: string; mode: string; reference: string | null; status: string; status_label: string
+  error: string | null; attempts: number; can_retry: boolean }
+export type EvatList = { total: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; counts: Record<string, number>; rows: EvatRow[] }
+export type EvatOptions = { per: number[]; mode: string; mode_label: string; can_batch: boolean; statuses: Record<string, string>; types: Record<string, string> }
+export type EvatDetail = EvatRow & { sent: string | null; answer: string | null; batch: string | null; next_attempt: string | null }
+export type AccountingExportOptions = { formats: Record<string, string>; from: string; to: string }
 export type RbDataset = { id: string; label: string; dated: boolean; dims: Option[]; measures: Option[] }
 export type RbOptions = { datasets: RbDataset[]; periods: Option[]; branches: Option[]; schedules: Option[]; people: Option[]; max_rows: number }
 export type RbChoices = { dataset: string; dimensions: string[]; measures: string[]; period: string; from: string | null; to: string | null; branch_id: string | null
@@ -865,6 +871,13 @@ export const api = {
   disposeAsset: (id: string, body: Record<string, unknown>) => call<{ message: string }>(`/office-api/fixed-assets/${id}/dispose`, { method: 'POST', body: JSON.stringify(body) }),
   assetKinds: () => call<AssetKinds>('/office-api/asset-kinds'),
   saveAssetKind: (id: string | null, body: Record<string, unknown>) => call<{ class: { id: string } }>(id ? `/office-api/asset-kinds/${id}` : '/office-api/asset-kinds', { method: 'POST', body: JSON.stringify(body) }),
+  graEvat: (query: string, signal?: AbortSignal) => call<EvatList>(`/office-api/gra-evat?${query}`, { signal }),
+  graEvatOptions: () => call<EvatOptions>('/office-api/gra-evat/options'),
+  graEvatReport: (id: string) => call<{ report: EvatDetail }>(`/office-api/gra-evat/${id}`),
+  graEvatSend: (id: string) => call<{ report: EvatDetail; message: string }>(`/office-api/gra-evat/${id}/send`, { method: 'POST' }),
+  graEvatSendWaiting: () => call<{ sent: number; message: string }>('/office-api/gra-evat/send-waiting', { method: 'POST' }),
+  accountingExport: () => call<AccountingExportOptions>('/office-api/accounting-export'),
+  accountingExportUrl: (format: string, from: string, to: string) => `/office-api/accounting-export/file?format=${encodeURIComponent(format)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
   financialOptions: () => call<FrOptions>('/office-api/financial-reports/options'),
   shareHeadOffice: (to: string) => call<{ message: string }>('/office-api/financial-reports/share-head-office', { method: 'POST', body: JSON.stringify({ to }) }),
   withholdingCsvUrl: (month: string) => `/office-api/withholding-tax/csv?month=${encodeURIComponent(month)}`,

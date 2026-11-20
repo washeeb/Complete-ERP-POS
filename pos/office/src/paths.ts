@@ -64,6 +64,8 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/fixed-assets\/create\/?$/, app: () => `${APP}/fixed-assets?register=1` },
   { admin: new RegExp(`^/admin/fixed-assets/(${UUID})$`), app: (m) => `${APP}/fixed-assets/${m[1]}` },
   { admin: /^\/admin\/asset-classes\/?$/, app: () => `${APP}/asset-kinds` },
+  { admin: /^\/admin\/accounting-export\/?$/, app: () => `${APP}/accounting-export` },
+  { admin: /^\/admin\/gra-evat\/?$/, app: (_, q) => `${APP}/gra-evat${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/bank-accounts\/?$/, app: () => `${APP}/bank-accounts` },
   { admin: /^\/admin\/bank-reconciliation\/?$/, app: (_, q) => (q.get('bank') ? `${APP}/bank-accounts/${encodeURIComponent(q.get('bank')!)}/reconcile` : `${APP}/bank-accounts`) },
   { admin: /^\/admin\/money-transfers\/?$/, app: () => `${APP}/money-moved` },
@@ -126,7 +128,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
   | { page: 'expense-claims' } | { page: 'expense-claim'; id: string } | { page: 'expense-claim-form' }
-  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'returns' } | { page: 'journals' } | { page: 'accounts' } | { page: 'month-end' } | { page: 'budgets' } | { page: 'bank-accounts' } | { page: 'reconcile'; id: string } | { page: 'money-moved' } | { page: 'fixed-assets' } | { page: 'fixed-asset'; id: string } | { page: 'asset-kinds' } | { page: 'journal'; id: string }
+  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'returns' } | { page: 'journals' } | { page: 'accounts' } | { page: 'month-end' } | { page: 'budgets' } | { page: 'bank-accounts' } | { page: 'reconcile'; id: string } | { page: 'money-moved' } | { page: 'fixed-assets' } | { page: 'fixed-asset'; id: string } | { page: 'asset-kinds' } | { page: 'accounting-export' } | { page: 'gra-evat' } | { page: 'gra-evat-report'; id: string } | { page: 'journal'; id: string }
   | { page: 'requests' } | { page: 'request'; id: string } | { page: 'request-form' }
   | { page: 'transfers' } | { page: 'transfer'; id: string } | { page: 'transfer-form'; id: string | null } | { page: 'classic'; admin: string }
 
@@ -206,6 +208,10 @@ export function routeOf(path: string, search = ''): Route {
   const fa = path.match(new RegExp(`^/office/fixed-assets/(${UUID})/?$`))
   if (fa) return { page: 'fixed-asset', id: fa[1] }
   if (/^\/office\/asset-kinds\/?$/.test(path)) return { page: 'asset-kinds' }
+  if (/^\/office\/accounting-export\/?$/.test(path)) return { page: 'accounting-export' }
+  if (/^\/office\/gra-evat\/?$/.test(path)) return { page: 'gra-evat' }
+  const ev = path.match(new RegExp(`^/office/gra-evat/(${UUID})/?$`))
+  if (ev) return { page: 'gra-evat-report', id: ev[1] }
   const jr = path.match(new RegExp(`^/office/journals/(${UUID})/?$`))
   if (jr) return { page: 'journal', id: jr[1] }
   if (/^\/office\/requests\/?$/.test(path)) return { page: 'requests' }
@@ -274,6 +280,8 @@ export function adminEquivalent(route: Route): string | null {
     case 'money-moved': return '/admin/money-transfers'
     case 'fixed-assets': case 'fixed-asset': return '/admin/fixed-assets'
     case 'asset-kinds': return '/admin/asset-classes'
+    case 'accounting-export': return '/admin/accounting-export'
+    case 'gra-evat': case 'gra-evat-report': return '/admin/gra-evat'
     default: return null
   }
 }
