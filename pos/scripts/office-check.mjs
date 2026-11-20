@@ -416,12 +416,19 @@ try {
       for (const [link, path, ready] of [['Supplier payments', /\/office\/supplier-payments$/, () => page.getByText('No supplier payments match').or(page.getByRole('table', { name: 'Supplier payments' }).getByRole('row').nth(1)).first()],
         ['Aged payables', /\/office\/aged-payables$/, () => page.getByRole('region', { name: 'Owed to suppliers' })],
         ['Withholding tax', /\/office\/withholding-tax$/, () => page.getByRole('region', { name: 'Payments that kept tax back' })],
-        ['Reports', /\/office\/financial-reports$/, () => page.getByRole('region', { name: 'Trial balance' })]]) {
+        ['Reports', /\/office\/financial-reports$/, () => page.getByRole('region', { name: 'Trial balance' })],
+        ['Journals', /\/office\/journals$/, () => page.getByText('No journals match').or(page.getByRole('table', { name: 'Journals' }).getByRole('row').nth(1)).first()]]) {
         await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
         await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: link, exact: true }).first().click()
         await page.waitForURL(path, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
         await ready().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
         await page.screenshot({ path: out(`${link.replaceAll(' ', '-').toLowerCase()}-${look}-${w}`) })
+      }
+      // Journals, rebuilt (release 8): a journal opens from the list with its lines (nothing is posted).
+      const firstJournal = page.getByRole('table', { name: 'Journals' }).getByRole('row').nth(1)
+      if (page.url().endsWith('/office/journals') && await firstJournal.count()) {
+        await firstJournal.click()
+        await page.getByRole('region', { name: 'Journal lines' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: a journal did not open with its lines`))
       }
       // Insights, rebuilt (release 7): opens from the Insights menu with the forecast; Stock health shows its four tables.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Insights/ }).first().click()

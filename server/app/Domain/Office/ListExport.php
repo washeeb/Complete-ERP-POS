@@ -7,6 +7,7 @@ use App\Models\DirectPurchase;
 use App\Models\ExpenseClaim;
 use App\Models\GoodsReceipt;
 use App\Models\Invoice;
+use App\Models\JournalEntry;
 use App\Models\PriceList;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
@@ -37,7 +38,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final class ListExport
 {
-    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills', 'supplier-payments', 'returns'];
+    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills', 'supplier-payments', 'returns', 'journals'];
 
     public function __construct(private readonly User $user) {}
 
@@ -65,6 +66,7 @@ final class ListExport
             'supplier-bills' => SupplierBillsScreen::canView(),
             'supplier-payments' => SupplierPaymentsScreen::canView(),
             'returns' => ReturnsScreen::canView(),
+            'journals' => JournalsScreen::canView(),
             default => false,
         };
     }
@@ -115,6 +117,7 @@ final class ListExport
             'supplier-bills' => $this->supplierBills($p),
             'supplier-payments' => $this->supplierPayments($p),
             'returns' => $this->returns($p),
+            'journals' => $this->journals($p),
         };
         /** @var Builder $query */
         $count = (clone $query)->toBase()->getCountForPagination();
@@ -403,6 +406,18 @@ final class ListExport
 
                 return [$r['number'], $r['paid_on'] ?? '', $r['supplier'] ?? '', SupplierPayment::METHODS[$r['method']] ?? $r['method'], $r['from'] ?? '', $r['reference'] ?? '',
                     $this->money($r['amount']), $r['wht'] ? $this->money($r['wht']) : '', $r['certificate_no'] ?? '', $this->money($r['paid']), $r['by'] ?? ''];
+            }];
+    }
+
+    private function journals(array $p): array
+    {
+        $screen = new JournalsScreen($this->user);
+
+        return ['Journals', ['Number', 'Date', 'Kind', 'Description', 'Amount', 'Posted by'], [4], $screen->sorted($p),
+            function (JournalEntry $j) use ($screen) {
+                $r = $screen->rowOf($j);
+
+                return [$r['number'], $r['date'] ?? '', $r['kind_label'], $r['memo'] ?? '', $this->money($r['amount']), $r['by'] ?? ''];
             }];
     }
 

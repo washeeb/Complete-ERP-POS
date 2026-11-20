@@ -60,6 +60,8 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/withholding-tax-return\/?$/, app: () => `${APP}/withholding-tax` },
   { admin: /^\/admin\/report-builder\/?$/, app: (_, q) => `${APP}/report-builder${q.get('report') ? `?report=${encodeURIComponent(q.get('report')!)}` : ''}` },
   { admin: /^\/admin\/saved-reports\/?$/, app: () => `${APP}/saved-reports` },
+  { admin: /^\/admin\/journal-entries\/?$/, app: (_, q) => `${APP}/journals${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: new RegExp(`^/admin/journal-entries/(${UUID})$`), app: (m) => `${APP}/journals/${m[1]}` },
   { admin: /^\/admin\/returns\/?$/, app: (_, q) => `${APP}/returns${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/batches-expiry\/?$/, app: (_, q) => `${APP}/batches${q.get('warehouse') ? `?warehouse=${encodeURIComponent(q.get('warehouse')!)}` : ''}` },
   { admin: /^\/admin\/shrink-report\/?$/, app: (_, q) => `${APP}/shrink${q.toString() ? `?${q}` : ''}` },
@@ -114,7 +116,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
   | { page: 'expense-claims' } | { page: 'expense-claim'; id: string } | { page: 'expense-claim-form' }
-  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'returns' }
+  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'returns' } | { page: 'journals' } | { page: 'journal'; id: string }
   | { page: 'requests' } | { page: 'request'; id: string } | { page: 'request-form' }
   | { page: 'transfers' } | { page: 'transfer'; id: string } | { page: 'transfer-form'; id: string | null } | { page: 'classic'; admin: string }
 
@@ -182,6 +184,9 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/slow-stock\/?$/.test(path)) return { page: 'slow-stock' }
   if (/^\/office\/batches\/?$/.test(path)) return { page: 'batches' }
   if (/^\/office\/returns\/?$/.test(path)) return { page: 'returns' }
+  if (/^\/office\/journals\/?$/.test(path)) return { page: 'journals' }
+  const jr = path.match(new RegExp(`^/office/journals/(${UUID})/?$`))
+  if (jr) return { page: 'journal', id: jr[1] }
   if (/^\/office\/requests\/?$/.test(path)) return { page: 'requests' }
   if (/^\/office\/requests\/new\/?$/.test(path)) return { page: 'request-form' }
   const req = path.match(new RegExp(`^/office/requests/(${UUID})/?$`))
@@ -240,6 +245,7 @@ export function adminEquivalent(route: Route): string | null {
     case 'slow-stock': return '/admin/stock/slow-stock'
     case 'batches': return '/admin/batches-expiry'
     case 'returns': return '/admin/returns'
+    case 'journals': case 'journal': return '/admin/journal-entries'
     default: return null
   }
 }
