@@ -60,6 +60,9 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/withholding-tax-return\/?$/, app: () => `${APP}/withholding-tax` },
   { admin: /^\/admin\/report-builder\/?$/, app: (_, q) => `${APP}/report-builder${q.get('report') ? `?report=${encodeURIComponent(q.get('report')!)}` : ''}` },
   { admin: /^\/admin\/saved-reports\/?$/, app: () => `${APP}/saved-reports` },
+  { admin: /^\/admin\/bank-accounts\/?$/, app: () => `${APP}/bank-accounts` },
+  { admin: /^\/admin\/bank-reconciliation\/?$/, app: (_, q) => (q.get('bank') ? `${APP}/bank-accounts/${encodeURIComponent(q.get('bank')!)}/reconcile` : `${APP}/bank-accounts`) },
+  { admin: /^\/admin\/money-transfers\/?$/, app: () => `${APP}/money-moved` },
   { admin: /^\/admin\/accounts\/?$/, app: (_, q) => `${APP}/accounts${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/fiscal-periods\/?$/, app: () => `${APP}/month-end` },
   { admin: /^\/admin\/budgets\/?$/, app: (_, q) => `${APP}/budgets${q.toString() ? `?${q}` : ''}` },
@@ -119,7 +122,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
   | { page: 'expense-claims' } | { page: 'expense-claim'; id: string } | { page: 'expense-claim-form' }
-  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'returns' } | { page: 'journals' } | { page: 'accounts' } | { page: 'month-end' } | { page: 'budgets' } | { page: 'journal'; id: string }
+  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'returns' } | { page: 'journals' } | { page: 'accounts' } | { page: 'month-end' } | { page: 'budgets' } | { page: 'bank-accounts' } | { page: 'reconcile'; id: string } | { page: 'money-moved' } | { page: 'journal'; id: string }
   | { page: 'requests' } | { page: 'request'; id: string } | { page: 'request-form' }
   | { page: 'transfers' } | { page: 'transfer'; id: string } | { page: 'transfer-form'; id: string | null } | { page: 'classic'; admin: string }
 
@@ -191,6 +194,10 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/accounts\/?$/.test(path)) return { page: 'accounts' }
   if (/^\/office\/month-end\/?$/.test(path)) return { page: 'month-end' }
   if (/^\/office\/budgets\/?$/.test(path)) return { page: 'budgets' }
+  if (/^\/office\/bank-accounts\/?$/.test(path)) return { page: 'bank-accounts' }
+  const rec = path.match(new RegExp(`^/office/bank-accounts/(${UUID})/reconcile/?$`))
+  if (rec) return { page: 'reconcile', id: rec[1] }
+  if (/^\/office\/money-moved\/?$/.test(path)) return { page: 'money-moved' }
   const jr = path.match(new RegExp(`^/office/journals/(${UUID})/?$`))
   if (jr) return { page: 'journal', id: jr[1] }
   if (/^\/office\/requests\/?$/.test(path)) return { page: 'requests' }
@@ -255,6 +262,8 @@ export function adminEquivalent(route: Route): string | null {
     case 'accounts': return '/admin/accounts'
     case 'month-end': return '/admin/fiscal-periods'
     case 'budgets': return '/admin/budgets'
+    case 'bank-accounts': case 'reconcile': return '/admin/bank-accounts'
+    case 'money-moved': return '/admin/money-transfers'
     default: return null
   }
 }
