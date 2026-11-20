@@ -1,0 +1,2 @@
+### Added
+- **Pricing rules and Prices to review rebuilt in the new back office (catalog and pricing setup, part 8).** Pricing rules: the rules that work out selling prices from the latest cost (whole company, a category or one product, on a price list), New rule and Change with a worked example, Apply the rules to all products now, Archive and Restore. Prices to review: prices the rules worked out that wait for a manager, Approve or Keep current, one or many at once.

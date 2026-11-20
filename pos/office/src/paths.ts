@@ -83,6 +83,8 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/tax-rates\/?$/, app: (_, q) => `${APP}/tax-rates${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/tax-groups\/?$/, app: (_, q) => `${APP}/tax-groups${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/price-lists\/?$/, app: (_, q) => `${APP}/price-lists${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/pricing-rules\/?$/, app: () => `${APP}/pricing-rules` },
+  { admin: /^\/admin\/prices-to-review\/?$/, app: () => `${APP}/prices-to-review` },
   { admin: /^\/admin\/roles\/?$/, app: (_, q) => `${APP}/roles${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/roles\/create\/?$/, app: () => `${APP}/roles/new` },
   { admin: new RegExp(`^/admin/roles/(${UUID})(/edit)?$`), app: (m) => `${APP}/roles/${m[1]}` },
@@ -153,7 +155,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
   | { page: 'expense-claims' } | { page: 'expense-claim'; id: string } | { page: 'expense-claim-form' }
-  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'returns' } | { page: 'journals' } | { page: 'accounts' } | { page: 'month-end' } | { page: 'budgets' } | { page: 'bank-accounts' } | { page: 'reconcile'; id: string } | { page: 'money-moved' } | { page: 'fixed-assets' } | { page: 'fixed-asset'; id: string } | { page: 'asset-kinds' } | { page: 'accounting-export' } | { page: 'gra-evat' } | { page: 'gra-evat-report'; id: string } | { page: 'users' } | { page: 'user'; id: string } | { page: 'roles' } | { page: 'role'; id: string | null } | { page: 'access-requests' } | { page: 'settings' } | { page: 'modules' } | { page: 'messaging' } | { page: 'message-templates' } | { page: 'message-log' } | { page: 'devices' } | { page: 'computers' } | { page: 'reference-list'; kind: 'categories' | 'brands' | 'units' | 'tax-rates' | 'tax-groups' | 'price-lists' } | { page: 'company-wide-access' } | { page: 'who-can-do-what' } | { page: 'it-activity' } | { page: 'staff-cards' } | { page: 'journal'; id: string }
+  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'returns' } | { page: 'journals' } | { page: 'accounts' } | { page: 'month-end' } | { page: 'budgets' } | { page: 'bank-accounts' } | { page: 'reconcile'; id: string } | { page: 'money-moved' } | { page: 'fixed-assets' } | { page: 'fixed-asset'; id: string } | { page: 'asset-kinds' } | { page: 'accounting-export' } | { page: 'gra-evat' } | { page: 'gra-evat-report'; id: string } | { page: 'users' } | { page: 'user'; id: string } | { page: 'roles' } | { page: 'role'; id: string | null } | { page: 'access-requests' } | { page: 'settings' } | { page: 'modules' } | { page: 'messaging' } | { page: 'message-templates' } | { page: 'message-log' } | { page: 'devices' } | { page: 'computers' } | { page: 'pricing-rules' } | { page: 'prices-to-review' } | { page: 'reference-list'; kind: 'categories' | 'brands' | 'units' | 'tax-rates' | 'tax-groups' | 'price-lists' } | { page: 'company-wide-access' } | { page: 'who-can-do-what' } | { page: 'it-activity' } | { page: 'staff-cards' } | { page: 'journal'; id: string }
   | { page: 'requests' } | { page: 'request'; id: string } | { page: 'request-form' }
   | { page: 'transfers' } | { page: 'transfer'; id: string } | { page: 'transfer-form'; id: string | null } | { page: 'classic'; admin: string }
 
@@ -248,6 +250,8 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/message-log\/?$/.test(path)) return { page: 'message-log' }
   if (/^\/office\/devices\/?$/.test(path)) return { page: 'devices' }
   if (/^\/office\/computers\/?$/.test(path)) return { page: 'computers' }
+  if (/^\/office\/pricing-rules\/?$/.test(path)) return { page: 'pricing-rules' }
+  if (/^\/office\/prices-to-review\/?$/.test(path)) return { page: 'prices-to-review' }
   const ref = path.match(/^\/office\/(categories|brands|units|tax-rates|tax-groups|price-lists)\/?$/)
   if (ref) return { page: 'reference-list', kind: ref[1] as 'categories' }
   if (/^\/office\/company-wide-access\/?$/.test(path)) return { page: 'company-wide-access' }
@@ -338,6 +342,8 @@ export function adminEquivalent(route: Route): string | null {
     case 'message-log': return '/admin/message-log'
     case 'devices': return '/admin/devices'
     case 'computers': return '/admin/computers'
+    case 'pricing-rules': return '/admin/pricing-rules'
+    case 'prices-to-review': return '/admin/prices-to-review'
     case 'reference-list': return `/admin/${route.kind === 'units' ? 'uoms' : route.kind}`
     case 'company-wide-access': return '/admin/company-wide-access'
     case 'who-can-do-what': return '/admin/access-review'

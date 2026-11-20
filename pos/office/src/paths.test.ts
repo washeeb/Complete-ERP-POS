@@ -117,6 +117,8 @@ describe('addresses', () => {
     expect(appPathFor('/admin/devices/create')).toBe('/office/devices?register=1')
     expect(appPathFor('/admin/computers')).toBe('/office/computers')
     expect(appPathFor('/admin/uoms')).toBe('/office/units')
+    expect(appPathFor('/admin/pricing-rules')).toBe('/office/pricing-rules')
+    expect(appPathFor('/admin/prices-to-review')).toBe('/office/prices-to-review')
     expect(appPathFor('/admin/price-lists')).toBe('/office/price-lists')
     expect(routeOf('/office/tax-groups')).toEqual({ page: 'reference-list', kind: 'tax-groups' })
     expect(appPathFor('/admin/company-wide-access')).toBe('/office/company-wide-access')
