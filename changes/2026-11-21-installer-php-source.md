@@ -1,0 +1,2 @@
+### Fixed
+- **The Ubuntu installer stopped at step 1 with "Repository … ondrej/php … changed its 'Label' value".** The Launchpad PHP PPA is frozen and renamed, and apt refuses it. The installer now takes PHP from packages.sury.org (the maintainer's own signed source) and removes the old PPA from servers installed earlier; the PHP packages keep their names, so nothing is removed or downgraded. Reading the package sources is now tried up to four times, because a source updating its mirrors briefly answers "Mirror sync in progress?". Re-run the installer as usual.

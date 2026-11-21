@@ -87,24 +87,35 @@ CADDY_DATA="/var/lib/caddy/.local/share/caddy"
 
 say "1/10 Packages: PHP ${PHP_V}, PostgreSQL ${PG_MAJOR}, Caddy (why: the server's building blocks, from their official sources)"
 export DEBIAN_FRONTEND=noninteractive
-apt-get update -q
-apt-get install -y -q software-properties-common curl ca-certificates gnupg unzip git cron debian-keyring debian-archive-keyring apt-transport-https
-# PHP's package source (ondrej/php). Adding it asks Launchpad's website, which is sometimes unreachable: an update
-# skips it when the source is already there, and a first install tries three times.
-if ! grep -rqs "ondrej/php" /etc/apt/sources.list /etc/apt/sources.list.d/; then
-  for try in 1 2 3; do
-    add-apt-repository -y ppa:ondrej/php >/dev/null && break
-    [ "$try" = 3 ] && die "could not add the PHP package source (Launchpad did not answer). Wait a few minutes and run the installer again."
-    echo "Launchpad did not answer; trying again in 20 seconds."; sleep 20
+# Reading the package sources is tried again a few times: a source updating its mirrors answers "File has unexpected
+# size … Mirror sync in progress?" for a minute or two.
+apt_update() {
+  for try in 1 2 3 4; do
+    apt-get update -q && return 0
+    [ "$try" = 4 ] && die "could not read the package sources (one was busy updating). Wait a few minutes and run the installer again."
+    echo "A package source was busy updating; trying again in 30 seconds."; sleep 30
   done
+}
+# PHP's package source is packages.sury.org: the old Launchpad PPA (ondrej/php) is frozen, and apt now stops on its
+# renamed label. A server installed earlier has the PPA, so it is taken out before apt reads it; the PHP packages keep
+# their names in the new source, so nothing is removed or downgraded.
+for f in $(grep -rls "ondrej/php" /etc/apt/sources.list.d/ 2>/dev/null || true); do rm -f "$f"; done
+[ -f /etc/apt/sources.list ] && sed -i '/ondrej\/php/d' /etc/apt/sources.list
+apt_update
+apt-get install -y -q curl ca-certificates gnupg unzip git cron debian-keyring debian-archive-keyring apt-transport-https
+if [ ! -f /usr/share/keyrings/debsuryorg-archive-keyring.gpg ]; then
+  curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 https://packages.sury.org/debsuryorg-archive-keyring.deb -o /tmp/debsuryorg-archive-keyring.deb \
+    || die "could not reach packages.sury.org for PHP's signing key. Wait a few minutes and run the installer again."
+  dpkg -i /tmp/debsuryorg-archive-keyring.deb >/dev/null
 fi
+echo "deb [signed-by=/usr/share/keyrings/debsuryorg-archive-keyring.gpg] https://packages.sury.org/php/ ${VERSION_CODENAME} main" > /etc/apt/sources.list.d/php.list
 install -d /usr/share/postgresql-common/pgdg
 curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
 echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" > /etc/apt/sources.list.d/pgdg.list
 # Caddy's own signed package source (the web server; it fetches and renews certificates by itself).
 curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 https://dl.cloudsmith.io/public/caddy/stable/gpg.key | gpg --dearmor --yes -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
 curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt -o /etc/apt/sources.list.d/caddy-stable.list
-apt-get update -q
+apt_update
 apt-get install -y -q caddy "php${PHP_V}-fpm" "php${PHP_V}-cli" "php${PHP_V}-pgsql" "php${PHP_V}-intl" "php${PHP_V}-bcmath" "php${PHP_V}-mbstring" \
   "php${PHP_V}-xml" "php${PHP_V}-curl" "php${PHP_V}-zip" "php${PHP_V}-gd" "postgresql-${PG_MAJOR}" "postgresql-client-${PG_MAJOR}"
 if ! command -v composer >/dev/null; then

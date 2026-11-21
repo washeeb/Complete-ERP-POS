@@ -121,7 +121,10 @@ sudo -u postgres psql -c "CREATE DATABASE erp OWNER erp ENCODING 'UTF8';"
 ## 5.4 Install PHP 8.4, Caddy, Composer and Node.js
 
 ```
-sudo add-apt-repository -y ppa:ondrej/php
+sudo apt install -y lsb-release ca-certificates curl
+curl -sSLo /tmp/debsuryorg-archive-keyring.deb https://packages.sury.org/debsuryorg-archive-keyring.deb
+sudo dpkg -i /tmp/debsuryorg-archive-keyring.deb
+echo "deb [signed-by=/usr/share/keyrings/debsuryorg-archive-keyring.gpg] https://packages.sury.org/php/ $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/php.list
 sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
 curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/gpg.key | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
 curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt | sudo tee /etc/apt/sources.list.d/caddy-stable.list
@@ -133,7 +136,7 @@ sudo apt install -y nodejs
 ```
 
 **Why:**
-- **PHP** runs the software, and **PHP-FPM** lets several requests run at the same time.
+- **PHP** runs the software, and **PHP-FPM** lets several requests run at the same time. It comes from packages.sury.org, the PHP maintainer's own signed package source (the first four lines add it). The older Launchpad source (`ppa:ondrej/php`) is frozen and makes `apt update` stop with "changed its 'Label' value", so don't add it; the installer removes it from servers set up earlier.
 - **Caddy** is the web server that receives the tills' and browsers' requests. It gets and renews https certificates by itself. It comes from its makers' own signed package source.
 - **Composer** and **Node.js** are used during installation.
 

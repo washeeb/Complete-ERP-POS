@@ -63,8 +63,12 @@ jobs:
           echo 'server { listen 80; root /var/www/html; }' | sudo tee /etc/nginx/sites-available/seslabs >/dev/null
           sudo rm -f /etc/nginx/sites-enabled/default && sudo ln -sf /etc/nginx/sites-available/seslabs /etc/nginx/sites-enabled/seslabs
           sudo systemctl restart nginx
+          # Older installs added the Launchpad PHP PPA, now frozen and renamed so apt stops on it: the script moves to packages.sury.org.
+          sudo add-apt-repository -y ppa:ondrej/php || true
           sudo bash installer/ubuntu/install.sh --source "$GITHUB_WORKSPACE" --ci
           ! systemctl is-active --quiet nginx   # retired: it served only our site
+          ! grep -rqs 'ondrej/php' /etc/apt/sources.list.d/
+          grep -q 'packages.sury.org/php' /etc/apt/sources.list.d/php.list
       - name: The server answers and runs again as an update
         run: |
           # Over https with the server's own certificate (the script made this machine trust it).
