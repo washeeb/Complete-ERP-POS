@@ -83,6 +83,9 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/tax-rates\/?$/, app: (_, q) => `${APP}/tax-rates${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/tax-groups\/?$/, app: (_, q) => `${APP}/tax-groups${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/price-lists\/?$/, app: (_, q) => `${APP}/price-lists${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/nhis-claims\/?$/, app: () => `${APP}/nhis-claims` },
+  { admin: new RegExp(`^/admin/nhis-claims/(${UUID})$`), app: (m) => `${APP}/nhis-claims/${m[1]}` },
+  { admin: /^\/admin\/medicine-signoffs\/?$/, app: () => `${APP}/medicine-signoffs` },
   { admin: /^\/admin\/prescriptions\/?$/, app: () => `${APP}/prescriptions` },
   { admin: new RegExp(`^/admin/prescriptions/(${UUID})$`), app: (m) => `${APP}/prescriptions?open=${m[1]}` },
   { admin: /^\/admin\/refill-reminders\/?$/, app: () => `${APP}/refill-reminders` },
@@ -165,7 +168,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
   | { page: 'expense-claims' } | { page: 'expense-claim'; id: string } | { page: 'expense-claim-form' }
-  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'returns' } | { page: 'journals' } | { page: 'accounts' } | { page: 'month-end' } | { page: 'budgets' } | { page: 'bank-accounts' } | { page: 'reconcile'; id: string } | { page: 'money-moved' } | { page: 'fixed-assets' } | { page: 'fixed-asset'; id: string } | { page: 'asset-kinds' } | { page: 'accounting-export' } | { page: 'gra-evat' } | { page: 'gra-evat-report'; id: string } | { page: 'users' } | { page: 'user'; id: string } | { page: 'roles' } | { page: 'role'; id: string | null } | { page: 'access-requests' } | { page: 'settings' } | { page: 'modules' } | { page: 'messaging' } | { page: 'message-templates' } | { page: 'message-log' } | { page: 'devices' } | { page: 'computers' } | { page: 'pricing-rules' } | { page: 'promotions' } | { page: 'price-list' } | { page: 'prescriptions' } | { page: 'refill-reminders' } | { page: 'drug-interactions' } | { page: 'controlled-drug-register' } | { page: 'shared-products' } | { page: 'prices-to-review' } | { page: 'reference-list'; kind: 'categories' | 'brands' | 'units' | 'tax-rates' | 'tax-groups' | 'price-lists' } | { page: 'company-wide-access' } | { page: 'who-can-do-what' } | { page: 'it-activity' } | { page: 'staff-cards' } | { page: 'journal'; id: string }
+  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'returns' } | { page: 'journals' } | { page: 'accounts' } | { page: 'month-end' } | { page: 'budgets' } | { page: 'bank-accounts' } | { page: 'reconcile'; id: string } | { page: 'money-moved' } | { page: 'fixed-assets' } | { page: 'fixed-asset'; id: string } | { page: 'asset-kinds' } | { page: 'accounting-export' } | { page: 'gra-evat' } | { page: 'gra-evat-report'; id: string } | { page: 'users' } | { page: 'user'; id: string } | { page: 'roles' } | { page: 'role'; id: string | null } | { page: 'access-requests' } | { page: 'settings' } | { page: 'modules' } | { page: 'messaging' } | { page: 'message-templates' } | { page: 'message-log' } | { page: 'devices' } | { page: 'computers' } | { page: 'pricing-rules' } | { page: 'promotions' } | { page: 'price-list' } | { page: 'prescriptions' } | { page: 'nhis-claims' } | { page: 'nhis-claim'; id: string } | { page: 'medicine-signoffs' } | { page: 'refill-reminders' } | { page: 'drug-interactions' } | { page: 'controlled-drug-register' } | { page: 'shared-products' } | { page: 'prices-to-review' } | { page: 'reference-list'; kind: 'categories' | 'brands' | 'units' | 'tax-rates' | 'tax-groups' | 'price-lists' } | { page: 'company-wide-access' } | { page: 'who-can-do-what' } | { page: 'it-activity' } | { page: 'staff-cards' } | { page: 'journal'; id: string }
   | { page: 'requests' } | { page: 'request'; id: string } | { page: 'request-form' }
   | { page: 'transfers' } | { page: 'transfer'; id: string } | { page: 'transfer-form'; id: string | null } | { page: 'classic'; admin: string }
 
@@ -264,6 +267,10 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/promotions\/?$/.test(path)) return { page: 'promotions' }
   if (/^\/office\/price-list\/?$/.test(path)) return { page: 'price-list' }
   if (/^\/office\/prescriptions\/?$/.test(path)) return { page: 'prescriptions' }
+  if (/^\/office\/nhis-claims\/?$/.test(path)) return { page: 'nhis-claims' }
+  const nhisClaim = path.match(new RegExp(`^/office/nhis-claims/(${UUID})/?$`))
+  if (nhisClaim) return { page: 'nhis-claim', id: nhisClaim[1] }
+  if (/^\/office\/medicine-signoffs\/?$/.test(path)) return { page: 'medicine-signoffs' }
   if (/^\/office\/refill-reminders\/?$/.test(path)) return { page: 'refill-reminders' }
   if (/^\/office\/drug-interactions\/?$/.test(path)) return { page: 'drug-interactions' }
   if (/^\/office\/controlled-drug-register\/?$/.test(path)) return { page: 'controlled-drug-register' }
@@ -363,6 +370,9 @@ export function adminEquivalent(route: Route): string | null {
     case 'promotions': return '/admin/promotions'
     case 'price-list': return '/admin/price-list'
     case 'prescriptions': return '/admin/prescriptions'
+    case 'nhis-claims': return '/admin/nhis-claims'
+    case 'nhis-claim': return `/admin/nhis-claims/${route.id}`
+    case 'medicine-signoffs': return '/admin/medicine-signoffs'
     case 'refill-reminders': return '/admin/refill-reminders'
     case 'drug-interactions': return '/admin/drug-interactions'
     case 'controlled-drug-register': return '/admin/controlled-drug-register'

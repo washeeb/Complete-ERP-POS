@@ -531,6 +531,17 @@ export type PromotionOptions = { types: Option[]; currency: string; industries: 
 export type PromotionValues = { name: string; industry_id: string; is_active: boolean; type: string; coupon_code: string; percent: string; amount: string; min_spend: string
   buy_qty: string; get_qty: string; bundle_qty: string; product_ids: string[]; products?: Option[]; category_ids: string[]; starts_at: string; ends_at: string; days: string[]
   time_from: string; time_to: string; branch_ids: string[]; archived_branches?: Option[]; price_list_ids: string[] }
+export type NhisClaimRow = { id: string; number: string; branch: string | null; period_to: string | null; claimed: number; paid: number | null; rejected: number | null; status: string; status_label: string }
+export type NhisClaimList = { total: number; page: number; per: number; dir: 'asc' | 'desc'; currency: string; exponent: number; statuses: Option[]; branches: Option[]
+  default_branch: string | null; default_up_to: string; today: string; rows: NhisClaimRow[] }
+export type NhisClaimLine = { id: string; at: string | null; receipt: string | null; sale_id: string | null; patient: string | null; nhis_no: string | null; amount: number }
+export type NhisClaimDetail = { id: string; number: string; status: string; status_label: string; branch: string | null; period_from: string | null; period_to: string | null
+  claimed: number; paid: number | null; rejected: number | null; reference: string | null; prepared_by: string | null; submitted_by: string | null; submitted_at: string | null
+  settled_by: string | null; paid_on: string | null; paid_method: string | null; note: string | null; methods: Option[]; today: string; download: string | null
+  currency: string; exponent: number; lines: { total: number; page: number; per: number; rows: NhisClaimLine[] } }
+export type SignoffRow = { id: string; at: string; receipt: string; branch: string | null; sold_by: string | null; medicines: string; controlled: boolean
+  signed_by: string | null; signed_at: string | null; note: string | null }
+export type SignoffList = { total: number; page: number; per: number; from: string; to: string; branches: Option[]; can_sign: boolean; capped: boolean; rows: SignoffRow[] }
 export type PrescriptionRow = { id: string; number: string; dispensed_at: string | null; patient: string | null; prescriber: string; pharmacist: string | null; warnings: number; offline: boolean }
 export type PrescriptionList = { total: number; page: number; per: number; dir: 'asc' | 'desc'; rows: PrescriptionRow[] }
 export type PrescriptionDetail = { id: string; number: string; dispensed_at: string | null; patient: string | null; receipt: string | null; sale_id: string | null
@@ -1031,6 +1042,13 @@ export const api = {
   ruleArchive: (id: string, step: 'archive' | 'restore', reason: string | null = null) => call<UserDone>(`/office-api/pricing-rules/${id}/${step}`, { method: 'POST', body: JSON.stringify({ reason }) }),
   pricesToReview: (query: string, signal?: AbortSignal) => call<SuggestionList>(`/office-api/prices-to-review?${query}`, { signal }),
   decidePrices: (step: 'approve' | 'keep', ids: string[]) => call<UserDone>(`/office-api/prices-to-review/${step}`, { method: 'POST', body: JSON.stringify({ ids }) }),
+  nhisClaims: (query: string, signal?: AbortSignal) => call<NhisClaimList>(`/office-api/nhis-claims?${query}`, { signal }),
+  nhisUnclaimed: (branch: string, upTo: string) => call<{ sales: number; amount: number; currency: string; exponent: number }>(`/office-api/nhis-claims/unclaimed?branch=${branch}&up_to=${upTo}`),
+  prepareNhisClaim: (branch: string, upTo: string) => call<UserDone & { id: string }>('/office-api/nhis-claims', { method: 'POST', body: JSON.stringify({ branch, up_to: upTo }) }),
+  nhisClaim: (id: string, query = '') => call<NhisClaimDetail>(`/office-api/nhis-claims/${id}${query ? `?${query}` : ''}`),
+  nhisClaimStep: (id: string, step: 'submit' | 'settle' | 'withdraw', body: Record<string, string>) => call<UserDone>(`/office-api/nhis-claims/${id}/${step}`, { method: 'POST', body: JSON.stringify(body) }),
+  signoffs: (query: string, signal?: AbortSignal) => call<SignoffList>(`/office-api/medicine-signoffs?${query}`, { signal }),
+  signOff: (ids: string[], note: string) => call<UserDone>('/office-api/medicine-signoffs', { method: 'POST', body: JSON.stringify({ ids, note }) }),
   prescriptions: (query: string, signal?: AbortSignal) => call<PrescriptionList>(`/office-api/prescriptions?${query}`, { signal }),
   prescription: (id: string) => call<PrescriptionDetail>(`/office-api/prescriptions/${id}`),
   refillReminders: (query: string, signal?: AbortSignal) => call<RefillReminderList>(`/office-api/refill-reminders?${query}`, { signal }),
