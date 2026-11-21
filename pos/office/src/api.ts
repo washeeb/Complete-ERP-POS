@@ -573,6 +573,26 @@ export type CashSetupData = {
   vaults: { id: string; name: string; branch: string; standard_float: number; active: boolean }[]
   own_vaults: OwnVault[]; branches: Option[]
 }
+export type CoRow = { id: string; quote: string; order: string | null; customer: string | null; currency: string; total: number; status: string; created_at: string | null; by: string | null }
+export type CoList = { currency: string; exponent: number; total: number; quotes: number; held: number; open: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: CoRow[] }
+export type CoOptions = { statuses: Option[]; people: Option[]; per: number[]; can_create: boolean }
+export type CoDeliverLine = { id: string; item: string; ordered: string; delivered: string; qty: string }
+export type CoDetail = {
+  currency: string; exponent: number; id: string; label: string; quote: string; order: string | null; status: string; status_label: string
+  tone: 'warning' | 'danger' | 'informative' | 'success' | 'subtle'
+  customer: { name: string | null; open: string | null }; warehouse: string | null; net: number; tax: number; total: number
+  customer_ref: string | null; valid_until: string | null; created_by: string | null; created_at: string | null; released_by: string | null
+  hold_reason: string | null; close_reason: string | null; note: string | null
+  lines: { sku: string; name: string; ordered: string; delivered: string; price: number; total: number }[]
+  actions: { print: string; edit: boolean; confirm: boolean; release: boolean; deliver: { lines: CoDeliverLine[] } | null; waybill: string | null; invoices: string | null; cancel: string | null }
+}
+export type CoLine = { product_uom_id: string; qty: string; label: string | null }
+export type CoValues = { customer_id: string; customer_label: string | null; warehouse_id: string; valid_until: string; customer_ref: string; note: string; lines: CoLine[] }
+export type CoForm = { id: string | null; number: string | null; values: CoValues; warehouses: Option[]; can_add_customer: boolean }
+export type CustomerOption = { id: string; label: string; detail: string }
+export type CpRow = { id: string; number: string; received_on: string | null; customer: string | null; customer_id: string; method: string; reference: string | null; amount: number; currency: string; by: string | null; print: string }
+export type CpList = { currency: string; exponent: number; total: number; sum: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; open_customer: boolean; rows: CpRow[] }
+export type CpOptions = { methods: Option[]; people: Option[]; per: number[] }
 export type ExpiryList = { total: number; page: number; per: number; currency: string; exponent: number; value: number; rows: ExpiryRow[] }
 export type ExpiryOptions = { statuses: Option[]; warehouses: Option[]; suppliers: Option[]; settlements: Option[]; reasons: Option[]; methods: Option[]
   evidence: 'reason' | 'method_witness' | 'method_witness_certificate'; today: string; month_start: string; can_mark_down: boolean }
@@ -1118,6 +1138,21 @@ export const api = {
   saveVault: (id: string, body: { float: string; is_active: boolean }) => call<CashDone>(`/office-api/cash/setup/vaults/${id}`, { method: 'POST', body: JSON.stringify(body) }),
   saveOwnVault: (body: { id?: string; name: string; branch: string; holder: string; till: string; float: string; is_active: boolean }) => call<CashDone>('/office-api/cash/setup/own-vaults', { method: 'POST', body: JSON.stringify(body) }),
   lendVault: (id: string, body: { user: string; reason: string }) => call<CashDone>(`/office-api/cash/setup/vaults/${id}/lend`, { method: 'POST', body: JSON.stringify(body) }),
+  customerOrders: (query: string, signal?: AbortSignal) => call<CoList>(`/office-api/customer-orders?${query}`, { signal }),
+  customerOrdersOptions: () => call<CoOptions>('/office-api/customer-orders/options'),
+  customerOrder: (id: string) => call<CoDetail>(`/office-api/customer-orders/${id}`),
+  customerOrderForm: (id?: string) => call<CoForm>(id ? `/office-api/customer-orders/${id}/form` : '/office-api/customer-orders/form'),
+  coCustomers: (q: string, signal?: AbortSignal) => call<{ results: CustomerOption[] }>(`/office-api/customer-orders/customers?q=${encodeURIComponent(q)}`, { signal }),
+  coUnits: (q: string, signal?: AbortSignal) => call<{ results: UnitOption[] }>(`/office-api/customer-orders/units?q=${encodeURIComponent(q)}`, { signal }),
+  coAvailable: (unit: string, warehouse: string) => call<{ available: string | null }>(`/office-api/customer-orders/available?unit=${unit}&warehouse=${warehouse}`),
+  coAddCustomer: (body: { name: string; phone?: string; email?: string }) => call<{ id: string; label: string; existed: boolean }>('/office-api/customer-orders/add-customer', { method: 'POST', body: JSON.stringify(body) }),
+  saveCustomerOrder: (id: string | null, body: Omit<CoValues, 'customer_label' | 'lines'> & { lines: { product_uom_id: string; qty: string }[] }) =>
+    call<{ id: string }>(id ? `/office-api/customer-orders/${id}` : '/office-api/customer-orders', { method: 'POST', body: JSON.stringify(body) }),
+  customerOrderAction: (id: string, action: 'confirm' | 'release' | 'deliver' | 'cancel', body: Record<string, unknown> = {}) =>
+    call<{ message: string; held: boolean; order: CoDetail }>(`/office-api/customer-orders/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  customerPayments: (query: string, signal?: AbortSignal) => call<CpList>(`/office-api/customer-payments?${query}`, { signal }),
+  customerPaymentsOptions: () => call<CpOptions>('/office-api/customer-payments/options'),
+  agedReceivables: () => call<Aging>('/office-api/aged-receivables'),
   markDownBatches: (keys: string[], percent: string) => call<UserDone>('/office-api/expiry/markdown', { method: 'POST', body: JSON.stringify({ keys, percent }) }),
   nhisClaims: (query: string, signal?: AbortSignal) => call<NhisClaimList>(`/office-api/nhis-claims?${query}`, { signal }),
   nhisUnclaimed: (branch: string, upTo: string) => call<{ sales: number; amount: number; currency: string; exponent: number }>(`/office-api/nhis-claims/unclaimed?branch=${branch}&up_to=${upTo}`),
