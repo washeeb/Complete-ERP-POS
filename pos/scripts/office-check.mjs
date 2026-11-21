@@ -8,6 +8,9 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from '@playwright/test'
 
+/** A menu link by its name, with or without the count badge some items carry ("Invoices from suppliers 1"). */
+const menuName = (name) => new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\d*$`)
+
 const here = dirname(fileURLToPath(import.meta.url))
 const base = process.env.LAYOUT_BASE ?? 'http://127.0.0.1:8010'
 const out = (name) => resolve(here, `../../.local-secrets/office-${name}.png`)
@@ -63,7 +66,7 @@ try {
       await page.screenshot({ path: out(`home-${look}-${w}`), fullPage: true })
       // Till sales, rebuilt: from the menu it opens the new list (not the framed one); a filter narrows it; a row opens the sale.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Sales/ }).first().click()
-      await page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: 'Till sales', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: menuName('Till sales') }).first().click()
       await page.waitForURL(/\/office\/sales$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Till sales did not open the new screen (${page.url()})`))
       await page.getByRole('heading', { name: 'Till sales', level: 1 }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: no Till sales heading`))
       await page.getByRole('button', { name: 'All', exact: true }).click()
@@ -80,7 +83,7 @@ try {
       // Till shifts and Till drawer, rebuilt: from the menu, rows (or "no … match"); a shift opens with the report's figures.
       for (const [link, url, heading, empty] of [['Till shifts', /\/office\/shifts$/, 'Till shifts', 'No shifts match'], ['Till drawer', /\/office\/drawer$/, 'Till drawer', 'Nothing went in or out']]) {
         await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Sales/ }).first().click()
-        await page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: link, exact: true }).first().click()
+        await page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: menuName(link) }).first().click()
         await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
         await page.getByRole('button', { name: 'All', exact: true }).click().catch(() => undefined)
         const row = page.getByRole('table', { name: heading }).getByRole('row').nth(1)
@@ -118,7 +121,7 @@ try {
       // Customers, rebuilt (release 4): from the Sales menu, rows (or "No customers match"); a row opens the customer with
       // their account and open items; the payment and credit dialogs and the add form are drawn and left (nothing saved).
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Sales/ }).first().click()
-      await page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: 'Customers', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: menuName('Customers') }).first().click()
       await page.waitForURL(/\/office\/customers$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Customers did not open the new screen (${page.url()})`))
       const custRow = page.getByRole('table', { name: 'Customers' }).getByRole('row').nth(1)
       await Promise.race([custRow.waitFor({ timeout: 20000 }), page.getByText('No customers match').waitFor({ timeout: 20000 })])
@@ -159,7 +162,7 @@ try {
       // Invoices, rebuilt (release 4): from the Sales menu, rows (or "No invoices match"); a row opens the invoice with
       // its lines and what settled it; at one size the Credit note dialog is drawn and left (nothing issued).
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Sales/ }).first().click()
-      await page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: 'Invoices', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: menuName('Invoices') }).first().click()
       await page.waitForURL(/\/office\/invoices$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Invoices did not open the new screen (${page.url()})`))
       const invRow = page.getByRole('table', { name: 'Invoices' }).getByRole('row').nth(1)
       await Promise.race([invRow.waitFor({ timeout: 20000 }), page.getByText('No invoices match').waitFor({ timeout: 20000 })])
@@ -187,7 +190,7 @@ try {
       // Suppliers, rebuilt (release 5): from the Purchasing menu, rows (or "No suppliers match"); a row opens the supplier
       // with its products and documents; at one size the Scorecard dialog and the add form are drawn and left (nothing saved).
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Purchasing/ }).first().click()
-      await page.getByRole('navigation', { name: 'Purchasing' }).getByRole('link', { name: 'Suppliers', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Purchasing' }).getByRole('link', { name: menuName('Suppliers') }).first().click()
       await page.waitForURL(/\/office\/suppliers$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Suppliers did not open the new screen (${page.url()})`))
       const supRow = page.getByRole('table', { name: 'Suppliers' }).getByRole('row').nth(1)
       await Promise.race([supRow.waitFor({ timeout: 20000 }), page.getByText('No suppliers match').waitFor({ timeout: 20000 })])
@@ -224,7 +227,7 @@ try {
       // Purchase orders, rebuilt (release 5): from the Purchasing menu, rows (or "No purchase orders match"); a row opens
       // the order with its lines; at one size the new-order form is drawn and left (Save stays off until a line is filled).
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Purchasing/ }).first().click()
-      await page.getByRole('navigation', { name: 'Purchasing' }).getByRole('link', { name: 'Purchase orders', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Purchasing' }).getByRole('link', { name: menuName('Purchase orders') }).first().click()
       await page.waitForURL(/\/office\/purchase-orders$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Purchase orders did not open the new screen (${page.url()})`))
       const poRow = page.getByRole('table', { name: 'Purchase orders' }).getByRole('row').nth(1)
       await Promise.race([poRow.waitFor({ timeout: 20000 }), page.getByText('No purchase orders match').waitFor({ timeout: 20000 })])
@@ -250,7 +253,7 @@ try {
 
       // Goods received, rebuilt (release 5): from the Purchasing menu, rows (or "No goods received notes match"); a row opens the note.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Purchasing/ }).first().click()
-      await page.getByRole('navigation', { name: 'Purchasing' }).getByRole('link', { name: 'Goods received', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Purchasing' }).getByRole('link', { name: menuName('Goods received') }).first().click()
       await page.waitForURL(/\/office\/goods-received$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Goods received did not open the new screen (${page.url()})`))
       const grnRow = page.getByRole('table', { name: 'Goods received' }).getByRole('row').nth(1)
       await Promise.race([grnRow.waitFor({ timeout: 20000 }), page.getByText('No goods received notes match').waitFor({ timeout: 20000 })])
@@ -276,7 +279,7 @@ try {
       // Direct purchases, rebuilt (release 5): from the Purchasing menu, rows (or "No direct purchases match"); a row opens it;
       // at one size the form is drawn (Save off while empty) and the Scan dialog opened and left (nothing read or saved).
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Purchasing/ }).first().click()
-      await page.getByRole('navigation', { name: 'Purchasing' }).getByRole('link', { name: 'Direct purchases', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Purchasing' }).getByRole('link', { name: menuName('Direct purchases') }).first().click()
       await page.waitForURL(/\/office\/direct-purchases$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Direct purchases did not open the new screen (${page.url()})`))
       const dpRow = page.getByRole('table', { name: 'Direct purchases' }).getByRole('row').nth(1)
       await Promise.race([dpRow.waitFor({ timeout: 20000 }), page.getByText('No direct purchases match').waitFor({ timeout: 20000 })])
@@ -319,7 +322,7 @@ try {
       for (const [link, path, ready] of [['Invoices from suppliers', /\/office\/supplier-invoices$/, () => page.getByText('No invoices from suppliers here').or(page.getByRole('table', { name: 'Invoices from suppliers' }).getByRole('row').nth(1))],
         ['Consignment to pay', /\/office\/consignment-to-pay$/, () => page.getByRole('region', { name: 'Owed for consigned goods sold' })]]) {
         await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Purchasing/ }).first().click()
-        await page.getByRole('navigation', { name: 'Purchasing' }).getByRole('link', { name: link, exact: true }).first().click()
+        await page.getByRole('navigation', { name: 'Purchasing' }).getByRole('link', { name: menuName(link) }).first().click()
         await page.waitForURL(path, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
         await ready().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${link} did not show its list`))
         await page.screenshot({ path: out(`${link.split(' ')[0].toLowerCase()}-${look}-${w}`) })
@@ -330,7 +333,7 @@ try {
       for (const [link, path, table, empty] of [['Reorder levels', /\/office\/reorder-levels$/, 'Reorder levels', 'No product has its own figure'],
         ['What to order', /\/office\/what-to-order$/, 'What to order', 'Nothing to order'], ['Suggested levels', /\/office\/suggested-levels$/, 'Suggested levels', 'No suggestions']]) {
         await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Purchasing/ }).first().click()
-        const item = page.getByRole('navigation', { name: 'Purchasing' }).getByRole('link', { name: link, exact: true }).first()
+        const item = page.getByRole('navigation', { name: 'Purchasing' }).getByRole('link', { name: menuName(link) }).first()
         if (!(await item.isVisible().catch(() => false))) { await page.keyboard.press('Escape'); continue } // Suggested levels is hidden while smart levels are off
         await item.click()
         await page.waitForURL(path, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
@@ -353,7 +356,7 @@ try {
       // Expense claims, rebuilt (release 6): from the Finance menu, rows (or "No expense claims match"); a row opens the claim;
       // at one size the New claim form is drawn (Submit off while empty) and left.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
-      await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: 'Expense claims', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: menuName('Expense claims') }).first().click()
       await page.waitForURL(/\/office\/expense-claims$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Expense claims did not open the new screen (${page.url()})`))
       const ecRow = page.getByRole('table', { name: 'Expense claims' }).getByRole('row').nth(1)
       await page.getByText('No expense claims match').or(ecRow).first().waitFor({ timeout: 20000 })
@@ -381,7 +384,7 @@ try {
       // Supplier bills, rebuilt (release 6): from the Finance menu, rows (or "No supplier bills match"); a row opens the bill;
       // at one size Enter a bill is opened, a supplier chosen and what is still to bill shown (nothing saved).
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
-      await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: 'Supplier bills', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: menuName('Supplier bills') }).first().click()
       await page.waitForURL(/\/office\/supplier-bills$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Supplier bills did not open the new screen (${page.url()})`))
       const sbRow = page.getByRole('table', { name: 'Supplier bills' }).getByRole('row').nth(1)
       await page.getByText('No supplier bills match').or(sbRow).first().waitFor({ timeout: 20000 })
@@ -427,7 +430,7 @@ try {
         ['Export to QuickBooks / Xero / Sage', /\/office\/accounting-export$/, () => page.getByRole('region', { name: 'Export the books' })],
         ['Journals', /\/office\/journals$/, () => page.getByText('No journals match').or(page.getByRole('table', { name: 'Journals' }).getByRole('row').nth(1)).first()]]) {
         await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
-        await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: link, exact: true }).first().click()
+        await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: menuName(link) }).first().click()
         await page.waitForURL(path, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
         await ready().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
         await page.screenshot({ path: out(`${link.replace(/ *\/ */g, ' ').replaceAll(' ', '-').toLowerCase()}-${look}-${w}`) })
@@ -435,7 +438,7 @@ try {
       // Users, rebuilt (settings and admin, part 1): opens from People and lists users; the first one opens with its access
       // (nothing is changed).
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /People/ }).first().click()
-      await page.getByRole('navigation', { name: 'People' }).getByRole('link', { name: 'Users', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'People' }).getByRole('link', { name: menuName('Users') }).first().click()
       await page.waitForURL(/\/office\/users$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Users did not open the new screen (${page.url()})`))
       const firstUser = page.getByRole('table', { name: 'Users' }).getByRole('row').nth(1)
       await firstUser.waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Users did not load`))
@@ -448,7 +451,7 @@ try {
       // Roles and access requests, rebuilt (settings and admin, part 2): Roles lists and the first opens with its permissions;
       // Access requests opens from the menu (nothing is changed or decided).
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /People/ }).first().click()
-      await page.getByRole('navigation', { name: 'People' }).getByRole('link', { name: 'Roles', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'People' }).getByRole('link', { name: menuName('Roles') }).first().click()
       await page.waitForURL(/\/office\/roles$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Roles did not open the new screen (${page.url()})`))
       const firstRole = page.getByRole('table', { name: 'Roles' }).getByRole('row').nth(1)
       await firstRole.waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Roles did not load`))
@@ -487,7 +490,7 @@ try {
         ['Computers', /\/office\/computers$/, () => page.getByText('No computers yet.').or(page.getByRole('table', { name: 'Computers' }).getByRole('row').nth(1)).first(), 'computers'],
         ['Message log', /\/office\/message-log$/, () => page.getByText('No messages match.').or(page.getByRole('table', { name: 'Message log' }).getByRole('row').nth(1)).first(), 'message-log']]) {
         await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Setup/ }).first().click()
-        await page.getByRole('navigation', { name: 'Setup' }).getByRole('link', { name: link, exact: true }).first().click()
+        await page.getByRole('navigation', { name: 'Setup' }).getByRole('link', { name: menuName(link) }).first().click()
         await page.waitForURL(path, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${shot} did not open the new screen (${page.url()})`))
         await ready().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${shot} did not load`))
         await page.screenshot({ path: out(`${shot}-${look}-${w}`) })
@@ -612,7 +615,7 @@ try {
       for (const [link, url, region] of [['Close the day', /\/office\/close-day/, 'Close the day'], ['Cash desk', /\/office\/cash-desk/, 'Vaults'],
         ['Income control', /\/office\/income-control/, 'Handovers to receive'], ['Shifts and vaults', /\/office\/cash-setup/, 'Shifts']]) {
         await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Sales/ }).first().click()
-        const a = page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: link, exact: true }).first()
+        const a = page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: menuName(link) }).first()
         if (!await a.count()) {
           if (link === 'Close the day' || link === 'Shifts and vaults') problems.push(`${look} ${w}: Sales → Cash has no ${link} link`)
           await page.keyboard.press('Escape')
@@ -625,7 +628,7 @@ try {
       }
       // Fixed assets, rebuilt (release 8): Kinds of asset opens from the register with its kinds.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
-      await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: 'Fixed assets', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: menuName('Fixed assets') }).first().click()
       const kinds = page.getByRole('button', { name: 'Kinds of asset' })
       await kinds.waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Fixed assets did not offer Kinds of asset`))
       if (await kinds.count()) {
@@ -635,7 +638,7 @@ try {
       }
       // Bank & cash, rebuilt (release 8): an account's Reconcile opens with the summary and both lists (nothing is matched).
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
-      await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: 'Bank & cash', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: menuName('Bank & cash') }).first().click()
       await page.getByRole('region', { name: 'Bank and cash accounts' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Bank & cash did not load`))
       const reconcile = page.getByRole('button', { name: 'Reconcile', exact: true }).first()
       if (await reconcile.count()) {
@@ -644,7 +647,7 @@ try {
         await page.screenshot({ path: out(`reconcile-${look}-${w}`) })
       }
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
-      await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: 'Journals', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: menuName('Journals') }).first().click()
       await page.waitForURL(/\/office\/journals$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Journals did not open again (${page.url()})`))
       await page.getByText('No journals match').or(page.getByRole('table', { name: 'Journals' }).getByRole('row').nth(1)).first().waitFor({ timeout: 20000 }).catch(() => undefined)
       // Journals, rebuilt (release 8): a journal opens from the list with its lines (nothing is posted).
@@ -655,7 +658,7 @@ try {
       }
       // Insights, rebuilt (release 7): opens from the Insights menu with the forecast; Stock health shows its four tables.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Insights/ }).first().click()
-      await page.getByRole('navigation', { name: 'Insights' }).getByRole('link', { name: 'Insights', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Insights' }).getByRole('link', { name: menuName('Insights') }).first().click()
       await page.waitForURL(/\/office\/insights$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Insights did not open the new screen (${page.url()})`))
       await page.getByRole('region', { name: 'Demand forecast and reorder' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Insights did not load`))
       await page.getByRole('tab', { name: 'Stock health' }).click()
@@ -663,7 +666,7 @@ try {
       await page.screenshot({ path: out(`insights-${look}-${w}`) })
       // Returns, rebuilt (release 7): opens from the Sales menu and loads.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Sales/ }).first().click()
-      await page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: 'Returns', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: menuName('Returns') }).first().click()
       await page.waitForURL(/\/office\/returns$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Returns did not open the new screen (${page.url()})`))
       await page.getByText('No returns match').or(page.getByRole('table', { name: 'Returns' }).getByRole('row').nth(1)).first().waitFor({ timeout: 20000 })
         .catch(() => problems.push(`${look} ${w}: Returns did not load`))
@@ -674,7 +677,7 @@ try {
         ['Slow & dead stock', /\/office\/slow-stock$/, () => page.getByRole('region', { name: 'Slow and dead stock' })],
         ['Batches & expiry', /\/office\/batches$/, () => page.getByRole('region', { name: 'Expired — take off the shelf' })]]) {
         await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Stock/ }).first().click()
-        await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: link, exact: true }).first().click()
+        await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: menuName(link) }).first().click()
         await page.waitForURL(path, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
         await ready().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
         await page.screenshot({ path: out(`${link.replaceAll(' ', '-').replace('&', 'and').toLowerCase()}-${look}-${w}`) })
@@ -682,7 +685,7 @@ try {
       // Report builder and Saved reports, rebuilt (release 7): both open from the Insights menu; the builder runs its first
       // report, and a line of it opens the rows behind it (nothing is saved).
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Insights/ }).first().click()
-      await page.getByRole('navigation', { name: 'Insights' }).getByRole('link', { name: 'Report builder', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Insights' }).getByRole('link', { name: menuName('Report builder') }).first().click()
       await page.waitForURL(/\/office\/report-builder$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Report builder did not open the new screen (${page.url()})`))
       await page.getByRole('region', { name: 'Report choices' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Report builder did not load`))
       await page.getByText(/ · /).first().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Report builder did not run its report`))
@@ -693,7 +696,7 @@ try {
       }
       await page.screenshot({ path: out(`report-builder-${look}-${w}`) })
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Insights/ }).first().click()
-      await page.getByRole('navigation', { name: 'Insights' }).getByRole('link', { name: 'Saved reports', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Insights' }).getByRole('link', { name: menuName('Saved reports') }).first().click()
       await page.waitForURL(/\/office\/saved-reports$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Saved reports did not open the new screen (${page.url()})`))
       await page.getByText('No saved reports yet').or(page.getByRole('table', { name: 'Saved reports' }).getByRole('row').nth(1)).first().waitFor({ timeout: 20000 })
         .catch(() => problems.push(`${look} ${w}: Saved reports did not load`))
@@ -741,7 +744,7 @@ try {
       // Products, rebuilt: from the menu, rows with prices and stock; a row opens the product with its stock and movements.
       const area = page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Stock/ }).first()
       await area.click()
-      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: 'Products', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: menuName('Products') }).first().click()
       await page.waitForURL(/\/office\/products$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Products did not open the new screen (${page.url()})`))
       const productRow = page.getByRole('table', { name: 'Products' }).getByRole('row').nth(1)
       await Promise.race([productRow.waitFor({ timeout: 20000 }), page.getByText('No products match').waitFor({ timeout: 20000 })])
@@ -788,7 +791,7 @@ try {
       // Stock on hand and the stock ledger, rebuilt: rows (or "Nothing matches"); the adjustment form opens and is cancelled.
       for (const [link, url, heading, empty] of [['Stock on hand', /\/office\/stock$/, 'Stock on hand', 'Nothing matches'], ['Stock ledger', /\/office\/stock\/movements$/, 'Stock ledger', 'No movements match']]) {
         await area.click()
-        await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: link, exact: true }).first().click()
+        await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: menuName(link) }).first().click()
         await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
         const first = page.getByRole('table', { name: heading }).getByRole('row').nth(1)
         await Promise.race([first.waitFor({ timeout: 20000 }), page.getByText(empty).waitFor({ timeout: 20000 })]).catch(() => problems.push(`${look} ${w}: ${link} showed neither rows nor "${empty}"`))
@@ -816,7 +819,7 @@ try {
 
       // Stock adjustments, rebuilt: the list, a document, and the draft form: a product picked shows what the warehouse holds.
       await area.click()
-      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: 'Stock adjustments', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: menuName('Stock adjustments') }).first().click()
       await page.waitForURL(/\/office\/adjustments$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Stock adjustments did not open the new screen (${page.url()})`))
       const adjRow = page.getByRole('table', { name: 'Stock adjustments' }).getByRole('row').nth(1)
       await Promise.race([adjRow.waitFor({ timeout: 20000 }), page.getByText('No adjustments match').waitFor({ timeout: 20000 })])
@@ -864,7 +867,7 @@ try {
 
       // Stock counts, rebuilt: the list and the Start dialog; one count drawn from a made-up answer, with Enter counts (nothing saved).
       await area.click()
-      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: 'Stock counts', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: menuName('Stock counts') }).first().click()
       await page.waitForURL(/\/office\/counts$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Stock counts did not open the new screen (${page.url()})`))
       const countRow = page.getByRole('table', { name: 'Stock counts' }).getByRole('row').nth(1)
       await Promise.race([countRow.waitFor({ timeout: 20000 }), page.getByText('No counts match').waitFor({ timeout: 20000 })])
@@ -899,7 +902,7 @@ try {
       // Transfers, rebuilt: the list, a real transfer, the draft form (a product shows what can be sent), and Receive on a
       // transfer drawn from a made-up answer (nothing saved).
       await area.click()
-      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: 'Transfers', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: menuName('Transfers') }).first().click()
       await page.waitForURL(/\/office\/transfers$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Transfers did not open the new screen (${page.url()})`))
       const trRow = page.getByRole('table', { name: 'Transfers' }).getByRole('row').nth(1)
       await Promise.race([trRow.waitFor({ timeout: 20000 }), page.getByText('No transfers match').waitFor({ timeout: 20000 })])
@@ -949,7 +952,7 @@ try {
       // Stock requests, rebuilt: the list, a real request, the "Ask for stock" form (a product shows what both sides hold),
       // and Send on a request between industries drawn from a made-up answer (nothing saved).
       await area.click()
-      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: 'Stock requests', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: menuName('Stock requests') }).first().click()
       await page.waitForURL(/\/office\/requests$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Stock requests did not open the new screen (${page.url()})`))
       const rqRow = page.getByRole('table', { name: 'Stock requests' }).getByRole('row').nth(1)
       await Promise.race([rqRow.waitFor({ timeout: 20000 }), page.getByText('No stock requests match').waitFor({ timeout: 20000 })])
@@ -1007,7 +1010,7 @@ try {
 
       // Waybills is still the current page: it opens inside, and the address follows.
       await area.click()
-      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: 'Waybills', exact: true }).first().click()
+      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: menuName('Waybills') }).first().click()
       await page.waitForURL(/\/office\/a\/waybills/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Waybills did not open at /office/a/waybills (${page.url()})`))
       await page.waitForFunction(() => {
         const f = document.querySelector('iframe[title="Page"]')
