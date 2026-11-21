@@ -685,6 +685,28 @@ try {
           await page.goBack()
         }
       }
+      // Returns to suppliers, Waybills, Bins and My day, rebuilt (part 17): each opens from Stock with its list (or its empty
+      // line); a return to a supplier opens with its lines; My day shows its figures.
+      for (const [link, url, ready] of [
+        ['Returns to suppliers', /\/office\/supplier-returns$/, () => page.getByText(/No returns match/).or(page.getByRole('table', { name: 'Returns to suppliers' }).getByRole('row').nth(1))],
+        ['Waybills', /\/office\/waybills$/, () => page.getByText(/No waybills match/).or(page.getByRole('table', { name: 'Waybills' }).getByRole('row').nth(1))],
+        ['Bins', /\/office\/bins$/, () => page.getByText(/No bins/).or(page.getByRole('table', { name: 'Bins' }).getByRole('row').nth(1))],
+        ['My day', /\/office\/my-day/, () => page.getByText('Low stock', { exact: true })]]) {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Stock/ }).first().click()
+        const l = page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: menuName(link) }).first()
+        if (!await l.count()) { problems.push(`${look} ${w}: Stock has no ${link} link`); await page.keyboard.press('Escape'); continue }
+        await l.click()
+        await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await ready().first().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        await page.screenshot({ path: out(`${link.split(' ')[0].toLowerCase()}-floor-${look}-${w}`) })
+        const firstReturn = page.getByRole('table', { name: 'Returns to suppliers' }).getByRole('row').nth(1)
+        if (link === 'Returns to suppliers' && await firstReturn.count()) {
+          await firstReturn.click()
+          await page.getByRole('region', { name: 'Lines' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: a return to a supplier did not open with its lines`))
+          await page.screenshot({ path: out(`supplier-return-${look}-${w}`) })
+          await page.goBack()
+        }
+      }
       // Fixed assets, rebuilt (release 8): Kinds of asset opens from the register with its kinds.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
       await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: menuName('Fixed assets') }).first().click()
@@ -1067,17 +1089,17 @@ try {
         await page.unroute(`**/office-api/requests/${fakeRq}`)
       }
 
-      // Waybills is still the current page: it opens inside, and the address follows.
+      // Cost runs is still the current page (until part 19; then use another page not yet rebuilt): it opens inside, and the address follows.
       await area.click()
-      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: menuName('Waybills') }).first().click()
-      await page.waitForURL(/\/office\/a\/waybills/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Waybills did not open at /office/a/waybills (${page.url()})`))
+      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: menuName('Cost runs') }).first().click()
+      await page.waitForURL(/\/office\/a\/stock-cost-runs/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Cost runs did not open at /office/a/stock-cost-runs (${page.url()})`))
       await page.waitForFunction(() => {
         const f = document.querySelector('iframe[title="Page"]')
-        return f?.contentWindow?.location.pathname === '/admin/waybills' && !!f.contentDocument?.querySelector('h1')
-      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Waybills page did not open inside`))
+        return f?.contentWindow?.location.pathname === '/admin/stock-cost-runs' && !!f.contentDocument?.querySelector('h1')
+      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Cost runs page did not open inside`))
       const f = await frameReady()
       await f.locator('.fi-ta-table, .fi-ta-empty-state').first().waitFor({ timeout: 20000 })
-        .catch(() => problems.push(`${look} ${w}: the Waybills list did not show inside`))
+        .catch(() => problems.push(`${look} ${w}: the Cost runs list did not show inside`))
       const chrome = await f.locator('.fi-sidebar, .fi-topbar').evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== 'none').length)
       if (chrome) problems.push(`${look} ${w}: the embedded page still shows its own menu`)
       await page.waitForTimeout(600) // the page's own loader fades out
@@ -1086,17 +1108,17 @@ try {
       // Recent lists the page just opened; the star adds it to favourites and takes it off again.
       const nav = page.getByRole('navigation', { name: 'Menu' })
       await (look === 'top' ? nav.getByRole('button', { name: 'Recent pages' }) : nav.getByRole('button', { name: 'Recent' })).click()
-      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /Waybills/ }).first().waitFor({ timeout: 5000 })
-        .catch(() => problems.push(`${look} ${w}: Recent does not list Waybills`))
+      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /Cost runs/i }).first().waitFor({ timeout: 5000 })
+        .catch(() => problems.push(`${look} ${w}: Recent does not list Cost runs`))
       await page.keyboard.press('Escape')
       const star = look === 'top' ? nav.getByRole('button', { name: 'Favourites' }) : nav.getByRole('button', { name: 'Favourites' })
       await star.click()
       const fav = page.getByRole('dialog', { name: 'Favourite pages' })
       await fav.getByRole('button', { name: /^Add “/ }).click().catch(() => problems.push(`${look} ${w}: Favourites has no "Add this page"`))
-      await fav.getByRole('link', { name: /Waybills/ }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Waybills did not become a favourite`))
+      await fav.getByRole('link', { name: /Cost runs/i }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Cost runs did not become a favourite`))
       await page.screenshot({ path: out(`favourites-${look}-${w}`) })
       await fav.getByRole('button', { name: /^Take “/ }).last().click().catch(() => undefined) // leave the dev account as it was
-      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Waybills could not be taken off favourites`))
+      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Cost runs could not be taken off favourites`))
       await page.keyboard.press('Escape')
 
       // Search: Ctrl+K, type, a page of the menu is offered.

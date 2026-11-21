@@ -1,0 +1,4 @@
+## The stock floor in the new back office
+- **The remaining Stock and Purchasing screens come in three parts** (17: returns to suppliers, waybills, bins, My day; 18: purchase requests, RFQs, contracts; 19: landed costs, cost runs, estimated costs, spend analytics), each small enough to review.
+- **New waybill lists only documents from branches where the person may make that kind of waybill** (deliveries: sales.deliver; transfers: stock.transfer from their stores; returns: stock.expiry; goods received: stock.receive). The service already refused the rest; the list no longer shows other branches' documents.
+- **My day links to the rebuilt screens** (What to order on that store, Expiry & returns, Stock on hand, Adjustments, Transfers, Purchase orders, the count), and starts the cycle count only in a store the person may see.

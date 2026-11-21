@@ -30,7 +30,7 @@ export function WhatToOrderPage() {
   const page = usePageStyles()
   const s = useStyles()
   const [options, setOptions] = useState<{ warehouses: Choice[]; suppliers: Choice[] } | null>(null)
-  const [warehouse, setWarehouse] = useState('')
+  const [warehouse, setWarehouse] = useState(() => new URLSearchParams(location.search).get('warehouse') ?? '') // e.g. from My day's Low stock
   const [supplier, setSupplier] = useState('')
   const [changes, setChanges] = useState<Record<string, OrderChange>>({})
   const [data, setData] = useState<OrderList | null>(null)
