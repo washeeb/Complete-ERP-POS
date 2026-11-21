@@ -117,6 +117,10 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/returns\/?$/, app: (_, q) => `${APP}/returns${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/(grocery|pharmacy)\/markdowns\/?$/, app: (m, q) => `${APP}/${m[1]}/markdowns${q.get('warehouse') ? `?warehouse=${encodeURIComponent(q.get('warehouse')!)}` : ''}` },
   { admin: /^\/admin\/expiry-returns\/?$/, app: () => `${APP}/expiry` },
+  { admin: /^\/admin\/cash\/close-day\/?$/, app: (_, q) => `${APP}/close-day${q.toString() ? `?${q.toString()}` : ''}` },
+  { admin: /^\/admin\/cash-desk\/?$/, app: () => `${APP}/cash-desk` },
+  { admin: /^\/admin\/income-control\/?$/, app: () => `${APP}/income-control` },
+  { admin: /^\/admin\/cash-setup\/?$/, app: () => `${APP}/cash-setup` },
   { admin: /^\/admin\/batches-expiry\/?$/, app: (_, q) => `${APP}/batches${q.get('warehouse') ? `?warehouse=${encodeURIComponent(q.get('warehouse')!)}` : ''}` },
   { admin: /^\/admin\/shrink-report\/?$/, app: (_, q) => `${APP}/shrink${q.toString() ? `?${q}` : ''}` },
   { admin: /^\/admin\/stock\/slow-stock\/?$/, app: (_, q) => `${APP}/slow-stock${q.toString() ? `?${q}` : ''}` },
@@ -170,7 +174,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
   | { page: 'expense-claims' } | { page: 'expense-claim'; id: string } | { page: 'expense-claim-form' }
-  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'expiry' } | { page: 'markdowns'; industry: 'grocery' | 'pharmacy' } | { page: 'returns' } | { page: 'journals' } | { page: 'accounts' } | { page: 'month-end' } | { page: 'budgets' } | { page: 'bank-accounts' } | { page: 'reconcile'; id: string } | { page: 'money-moved' } | { page: 'fixed-assets' } | { page: 'fixed-asset'; id: string } | { page: 'asset-kinds' } | { page: 'accounting-export' } | { page: 'gra-evat' } | { page: 'gra-evat-report'; id: string } | { page: 'users' } | { page: 'user'; id: string } | { page: 'roles' } | { page: 'role'; id: string | null } | { page: 'access-requests' } | { page: 'settings' } | { page: 'modules' } | { page: 'messaging' } | { page: 'message-templates' } | { page: 'message-log' } | { page: 'devices' } | { page: 'computers' } | { page: 'pricing-rules' } | { page: 'promotions' } | { page: 'price-list' } | { page: 'prescriptions' } | { page: 'nhis-claims' } | { page: 'nhis-claim'; id: string } | { page: 'medicine-signoffs' } | { page: 'refill-reminders' } | { page: 'drug-interactions' } | { page: 'controlled-drug-register' } | { page: 'shared-products' } | { page: 'prices-to-review' } | { page: 'reference-list'; kind: 'categories' | 'brands' | 'units' | 'tax-rates' | 'tax-groups' | 'price-lists' } | { page: 'company-wide-access' } | { page: 'who-can-do-what' } | { page: 'it-activity' } | { page: 'staff-cards' } | { page: 'journal'; id: string }
+  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'expiry' } | { page: 'close-day' } | { page: 'cash-desk' } | { page: 'income-control' } | { page: 'cash-setup' } | { page: 'markdowns'; industry: 'grocery' | 'pharmacy' } | { page: 'returns' } | { page: 'journals' } | { page: 'accounts' } | { page: 'month-end' } | { page: 'budgets' } | { page: 'bank-accounts' } | { page: 'reconcile'; id: string } | { page: 'money-moved' } | { page: 'fixed-assets' } | { page: 'fixed-asset'; id: string } | { page: 'asset-kinds' } | { page: 'accounting-export' } | { page: 'gra-evat' } | { page: 'gra-evat-report'; id: string } | { page: 'users' } | { page: 'user'; id: string } | { page: 'roles' } | { page: 'role'; id: string | null } | { page: 'access-requests' } | { page: 'settings' } | { page: 'modules' } | { page: 'messaging' } | { page: 'message-templates' } | { page: 'message-log' } | { page: 'devices' } | { page: 'computers' } | { page: 'pricing-rules' } | { page: 'promotions' } | { page: 'price-list' } | { page: 'prescriptions' } | { page: 'nhis-claims' } | { page: 'nhis-claim'; id: string } | { page: 'medicine-signoffs' } | { page: 'refill-reminders' } | { page: 'drug-interactions' } | { page: 'controlled-drug-register' } | { page: 'shared-products' } | { page: 'prices-to-review' } | { page: 'reference-list'; kind: 'categories' | 'brands' | 'units' | 'tax-rates' | 'tax-groups' | 'price-lists' } | { page: 'company-wide-access' } | { page: 'who-can-do-what' } | { page: 'it-activity' } | { page: 'staff-cards' } | { page: 'journal'; id: string }
   | { page: 'requests' } | { page: 'request'; id: string } | { page: 'request-form' }
   | { page: 'transfers' } | { page: 'transfer'; id: string } | { page: 'transfer-form'; id: string | null } | { page: 'classic'; admin: string }
 
@@ -238,6 +242,10 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/slow-stock\/?$/.test(path)) return { page: 'slow-stock' }
   if (/^\/office\/batches\/?$/.test(path)) return { page: 'batches' }
   if (/^\/office\/expiry\/?$/.test(path)) return { page: 'expiry' }
+  if (/^\/office\/close-day\/?$/.test(path)) return { page: 'close-day' }
+  if (/^\/office\/cash-desk\/?$/.test(path)) return { page: 'cash-desk' }
+  if (/^\/office\/income-control\/?$/.test(path)) return { page: 'income-control' }
+  if (/^\/office\/cash-setup\/?$/.test(path)) return { page: 'cash-setup' }
   const markdowns = path.match(/^\/office\/(grocery|pharmacy)\/markdowns\/?$/)
   if (markdowns) return { page: 'markdowns', industry: markdowns[1] as 'grocery' | 'pharmacy' }
   if (/^\/office\/returns\/?$/.test(path)) return { page: 'returns' }
@@ -351,6 +359,10 @@ export function adminEquivalent(route: Route): string | null {
     case 'slow-stock': return '/admin/stock/slow-stock'
     case 'batches': return '/admin/batches-expiry'
     case 'expiry': return '/admin/expiry-returns'
+    case 'close-day': return '/admin/cash/close-day'
+    case 'cash-desk': return '/admin/cash-desk'
+    case 'income-control': return '/admin/income-control'
+    case 'cash-setup': return '/admin/cash-setup'
     case 'markdowns': return `/admin/${route.industry}/markdowns`
     case 'returns': return '/admin/returns'
     case 'journals': case 'journal': return '/admin/journal-entries'

@@ -533,6 +533,46 @@ export type PromotionValues = { name: string; industry_id: string; is_active: bo
   time_from: string; time_to: string; branch_ids: string[]; archived_branches?: Option[]; price_list_ids: string[] }
 export type ExpiryRow = { id: string; warehouse_id: string; warehouse: string; product: string; sku: string; controlled: boolean; batch_no: string; expires_on: string
   days_left: number; on_hand: string; value: number; supplier_id: string | null; supplier: string | null; returnable: boolean }
+export type Denomination = { key: string; label: string; value: number; kind: 'note' | 'coin' }
+export type CashCount = { denoms?: Record<string, number>; amount?: string }
+export type CashDone = { message: string; status?: 'recount' | 'received' }
+export type DayCheck = { key: string; label: string; status: 'ok' | 'warn' | 'fail'; detail: string }
+export type CloseDayData = {
+  currency: string; exponent: number; branches: Option[]; branch: string | null; date: string; today: string; checks: DayCheck[]; cash_counted: number; over_short: number
+  closed: { by: string; at: string | null; problems: number; note: string | null; deposit_recorded: boolean } | null
+  form: { banked: string; bank_ref: string; safe: string; bank_account: string; note: string }
+  bank_accounts: Option[]; deposits_here: boolean
+  recent: { date: string; by: string; cash_counted: number; over_short: number; banked: number | null; bank_ref: string | null; statement: string; safe: number | null; problems: number; note: string | null }[]
+}
+export type DeskRow = {
+  vault_id: string; vault: string; shift: string; standard_float: number
+  session: { id: string; status: string; status_label: string; teller: string | null; float: number; from_day: string | null; recount_asked: boolean; cashier: string | null } | null
+}
+export type CashDeskData = {
+  currency: string; exponent: number; branches: Option[]; branch: string | null; rows: DeskRow[]; mine: Option[]; denominations: Denomination[]
+  can: { issue: boolean; receive: boolean; hand_over: boolean }
+}
+export type IncomeData = {
+  currency: string; exponent: number; today: string; banks: Option[]; treatments: Option[]; denominations: Denomination[]
+  waiting: { id: string; number: string; branch: string | null; cashier: string; at: string | null; recount: boolean }[]
+  differences: { id: string; at: string | null; branch: string | null; stage: string; person: string; amount: number }[]
+  received: {
+    id: string; number: string; branch: string | null; cashier: string; controller: string | null; at: string | null; declared: number; counted: number | null; deposited: boolean
+    sessions: { vault: string | null; date: string; teller: string | null; expected: number | null; teller_count: number | null; cashier_count: number | null }[]
+  }[]
+  can: { receive: boolean; decide: boolean; deposit: boolean }
+}
+export type ShiftTemplateRow = { id: string; name: string; starts_at: string; ends_at: string; sort: number; active: boolean }
+export type OwnVault = {
+  id: string; name: string; holder_id: string | null; holder: string | null; branch_id: string; branch: string; till_id: string | null; till: string | null
+  standard_float: number; active: boolean; in_use: string | null; lent: { to: string; by: string } | null
+}
+export type CashSetupData = {
+  currency: string; exponent: number; personal: boolean; enabled: boolean; till_required: boolean; can_lend: boolean
+  templates: ShiftTemplateRow[]; next_sort: number; next_vault: string
+  vaults: { id: string; name: string; branch: string; standard_float: number; active: boolean }[]
+  own_vaults: OwnVault[]; branches: Option[]
+}
 export type ExpiryList = { total: number; page: number; per: number; currency: string; exponent: number; value: number; rows: ExpiryRow[] }
 export type ExpiryOptions = { statuses: Option[]; warehouses: Option[]; suppliers: Option[]; settlements: Option[]; reasons: Option[]; methods: Option[]
   evidence: 'reason' | 'method_witness' | 'method_witness_certificate'; today: string; month_start: string; can_mark_down: boolean }
@@ -1060,6 +1100,24 @@ export const api = {
     return json as UserDone & { open: string }
   },
   returnBatches: (body: Record<string, unknown>) => call<UserDone & { open: string }>('/office-api/expiry/return', { method: 'POST', body: JSON.stringify(body) }),
+  closeDay: (query: string, signal?: AbortSignal) => call<CloseDayData>(`/office-api/cash/close-day?${query}`, { signal }),
+  closeTheDay: (body: Record<string, string>) => call<CashDone>('/office-api/cash/close-day', { method: 'POST', body: JSON.stringify(body) }),
+  cashDesk: (query: string, signal?: AbortSignal) => call<CashDeskData>(`/office-api/cash/desk?${query}`, { signal }),
+  cashTellers: (vault: string) => call<{ tellers: Option[] }>(`/office-api/cash/desk/tellers?vault=${vault}`),
+  issueFloat: (body: { vault: string; teller: string; float: string; note: string }) => call<CashDone>('/office-api/cash/desk/issue', { method: 'POST', body: JSON.stringify(body) }),
+  takeBackFloat: (session: string, reason: string) => call<CashDone>(`/office-api/cash/desk/${session}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  receiveVault: (session: string, body: CashCount) => call<CashDone>(`/office-api/cash/desk/${session}/receive`, { method: 'POST', body: JSON.stringify(body) }),
+  handOver: (body: { branch: string; sessions: string[]; note: string }) => call<CashDone>('/office-api/cash/desk/hand-over', { method: 'POST', body: JSON.stringify(body) }),
+  income: (_query: string, signal?: AbortSignal) => call<IncomeData>('/office-api/cash/income', { signal }),
+  receiveHandover: (id: string, body: CashCount) => call<CashDone>(`/office-api/cash/income/${id}/receive`, { method: 'POST', body: JSON.stringify(body) }),
+  decideDifference: (id: string, body: { treatment: string; months: string; reason: string }) => call<CashDone>(`/office-api/cash/income/differences/${id}`, { method: 'POST', body: JSON.stringify(body) }),
+  recordDeposit: (id: string, body: { bank: string; amount: string; date: string; slip: string }) => call<CashDone>(`/office-api/cash/income/${id}/deposit`, { method: 'POST', body: JSON.stringify(body) }),
+  cashSetup: (_query: string, signal?: AbortSignal) => call<CashSetupData>('/office-api/cash/setup', { signal }),
+  cashSellers: (branch: string) => call<{ people: Option[]; tills: Option[] }>(`/office-api/cash/setup/sellers?branch=${branch}`),
+  saveShiftTemplate: (body: { id?: string; name: string; starts_at: string; ends_at: string; sort: number; is_active: boolean }) => call<CashDone>('/office-api/cash/setup/shifts', { method: 'POST', body: JSON.stringify(body) }),
+  saveVault: (id: string, body: { float: string; is_active: boolean }) => call<CashDone>(`/office-api/cash/setup/vaults/${id}`, { method: 'POST', body: JSON.stringify(body) }),
+  saveOwnVault: (body: { id?: string; name: string; branch: string; holder: string; till: string; float: string; is_active: boolean }) => call<CashDone>('/office-api/cash/setup/own-vaults', { method: 'POST', body: JSON.stringify(body) }),
+  lendVault: (id: string, body: { user: string; reason: string }) => call<CashDone>(`/office-api/cash/setup/vaults/${id}/lend`, { method: 'POST', body: JSON.stringify(body) }),
   markDownBatches: (keys: string[], percent: string) => call<UserDone>('/office-api/expiry/markdown', { method: 'POST', body: JSON.stringify({ keys, percent }) }),
   nhisClaims: (query: string, signal?: AbortSignal) => call<NhisClaimList>(`/office-api/nhis-claims?${query}`, { signal }),
   nhisUnclaimed: (branch: string, upTo: string) => call<{ sales: number; amount: number; currency: string; exponent: number }>(`/office-api/nhis-claims/unclaimed?branch=${branch}&up_to=${upTo}`),
