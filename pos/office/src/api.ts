@@ -531,6 +531,20 @@ export type PromotionOptions = { types: Option[]; currency: string; industries: 
 export type PromotionValues = { name: string; industry_id: string; is_active: boolean; type: string; coupon_code: string; percent: string; amount: string; min_spend: string
   buy_qty: string; get_qty: string; bundle_qty: string; product_ids: string[]; products?: Option[]; category_ids: string[]; starts_at: string; ends_at: string; days: string[]
   time_from: string; time_to: string; branch_ids: string[]; archived_branches?: Option[]; price_list_ids: string[] }
+export type PrescriptionRow = { id: string; number: string; dispensed_at: string | null; patient: string | null; prescriber: string; pharmacist: string | null; warnings: number; offline: boolean }
+export type PrescriptionList = { total: number; page: number; per: number; dir: 'asc' | 'desc'; rows: PrescriptionRow[] }
+export type PrescriptionDetail = { id: string; number: string; dispensed_at: string | null; patient: string | null; receipt: string | null; sale_id: string | null
+  prescriber: string; prescriber_reg_no: string | null; facility: string | null; reference: string | null; issued_on: string | null; pharmacist: string | null; offline: boolean
+  medicines: string[]; warnings: { severity: string; message: string }[] }
+export type RefillReminderRow = { id: string; status: string; status_label: string; customer: string | null; phone: string | null; medicine: string; sold: string
+  runs_out_on: string | null; remind_on: string | null; branch: string | null; sent_at: string | null; channel: string | null; cancelled_by: string | null; can_act: boolean }
+export type RefillReminderList = { total: number; page: number; per: number; dir: 'asc' | 'desc'; statuses: Option[]; rows: RefillReminderRow[] }
+export type DrugInteractionRow = { id: string; ingredient_a: string; ingredient_b: string; severity: string; severity_label: string; note: string }
+export type DrugInteractionList = { total: number; page: number; per: number; can_manage: boolean; severities: Option[]; starter: number; unchecked: number; rows: DrugInteractionRow[] }
+export type DrugInteractionValues = { ingredient_a: string; ingredient_b: string; severity: string; note: string }
+export type RegisterRow = { at: string; entry: string; ref: string | null; batch: string | null; patient: string | null; prescriber: string | null; by: string | null; qty: string; balance: string }
+export type ControlledRegister = { warehouses: Option[]; warehouse: string; from: string; to: string; bad_period: boolean; can_claims: boolean; print: string | null; claims: string
+  products: { id: string; name: string; opening: string; closing: string; rows: RegisterRow[] }[] }
 export type PriceListRow = { id: string; sku: string; product: string; category: string | null; brand: string | null; unit: string; net: number | null; tax: number | null
   gross: number | null; on_hand: string | null; cost: number | null; margin: string | null }
 export type PriceListPage = { total: number; page: number; per: number; currency: string; exponent: number; list: string | null; list_id: string | null; ticked: number | null
@@ -1017,6 +1031,14 @@ export const api = {
   ruleArchive: (id: string, step: 'archive' | 'restore', reason: string | null = null) => call<UserDone>(`/office-api/pricing-rules/${id}/${step}`, { method: 'POST', body: JSON.stringify({ reason }) }),
   pricesToReview: (query: string, signal?: AbortSignal) => call<SuggestionList>(`/office-api/prices-to-review?${query}`, { signal }),
   decidePrices: (step: 'approve' | 'keep', ids: string[]) => call<UserDone>(`/office-api/prices-to-review/${step}`, { method: 'POST', body: JSON.stringify({ ids }) }),
+  prescriptions: (query: string, signal?: AbortSignal) => call<PrescriptionList>(`/office-api/prescriptions?${query}`, { signal }),
+  prescription: (id: string) => call<PrescriptionDetail>(`/office-api/prescriptions/${id}`),
+  refillReminders: (query: string, signal?: AbortSignal) => call<RefillReminderList>(`/office-api/refill-reminders?${query}`, { signal }),
+  refillReminder: (id: string, step: 'send' | 'cancel') => call<UserDone>(`/office-api/refill-reminders/${id}/${step}`, { method: 'POST' }),
+  drugInteractions: (query: string, signal?: AbortSignal) => call<DrugInteractionList>(`/office-api/drug-interactions?${query}`, { signal }),
+  saveDrugInteraction: (id: string | null, values: DrugInteractionValues) => call<UserDone>(`/office-api/drug-interactions${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(values) }),
+  drugInteractionStarter: () => call<UserDone>('/office-api/drug-interactions/starter', { method: 'POST' }),
+  controlledRegister: (query: string, signal?: AbortSignal) => call<ControlledRegister>(`/office-api/controlled-drug-register?${query}`, { signal }),
   priceList: (query: string, signal?: AbortSignal) => call<PriceListPage>(`/office-api/price-list?${query}`, { signal }),
   priceListOptions: () => call<PriceListOptions>('/office-api/price-list/options'),
   priceListProducts: (q: string) => call<{ rows: Option[] }>(`/office-api/price-list/products?q=${encodeURIComponent(q)}`),
