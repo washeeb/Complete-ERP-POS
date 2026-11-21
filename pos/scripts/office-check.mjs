@@ -568,17 +568,23 @@ try {
           .catch(() => problems.push(`${look} ${w}: Shared products did not load`))
         await page.screenshot({ path: out(`shared-products-${look}-${w}`) })
       } else await page.keyboard.press('Escape')
-      // Pharmacy, rebuilt (part 11), where the pharmacy module is on: each screen opens from the Pharmacy menu and loads.
-      const pharmacy = page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Pharmacy/ }).first()
-      if (await pharmacy.count()) {
+      // Pharmacy, rebuilt (part 11), where the pharmacy module is on: each screen opens from Industries → Pharmacy and loads.
+      const industries = () => page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Industries/ }).first()
+      let pharmacy = false
+      if (await industries().count()) {
+        await industries().click()
+        pharmacy = await page.getByRole('navigation', { name: 'Industries' }).getByRole('link', { name: /^Prescriptions/i }).count() > 0
+        await page.keyboard.press('Escape')
+      }
+      if (pharmacy) {
         for (const [link, url, table, empty] of [
           [/^Prescriptions/i, /\/office\/prescriptions$/, 'Prescriptions', 'No prescriptions dispensed yet.'],
           [/^Drug interactions/i, /\/office\/drug-interactions$/, 'Drug interactions', /No interactions yet/],
           [/^Refill reminders/i, /\/office\/refill-reminders$/, 'Refill reminders', 'No reminders here.'],
           [/^Controlled-drug register/i, /\/office\/controlled-drug-register/, null, /No controlled medicines moved|Opening /]]) {
-          await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Pharmacy/ }).first().click()
-          const a = page.getByRole('navigation', { name: 'Pharmacy' }).getByRole('link', { name: link }).first()
-          if (!await a.count()) { await page.keyboard.press('Escape'); continue }
+          await industries().click()
+          const a = page.getByRole('navigation', { name: 'Industries' }).getByRole('link', { name: link }).first()
+          if (!await a.count()) { problems.push(`${look} ${w}: Industries → Pharmacy has no ${link} link`); await page.keyboard.press('Escape'); continue }
           await a.click()
           await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
           const loaded = table ? page.getByText(empty).or(page.getByRole('table', { name: table }).getByRole('row').nth(1)).first() : page.getByText(empty).first()
