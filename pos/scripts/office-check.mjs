@@ -707,6 +707,42 @@ try {
           await page.goBack()
         }
       }
+      // Landed costs, Cost runs, Estimated costs and Spend analytics, rebuilt (part 19): each opens from its menu with its list,
+      // empty line or figures; Cost runs' New button opens the form and Landed costs' Spread opens its dialog (nothing is saved).
+      for (const [group, link, url, ready] of [
+        ['Purchasing', 'Landed costs', /\/office\/landed-costs$/, () => page.getByText(/No landed costs match/).or(page.getByRole('table', { name: 'Landed costs' }).getByRole('row').nth(1))],
+        ['Stock', 'Cost runs', /\/office\/cost-runs$/, () => page.getByText(/No cost runs match/).or(page.getByRole('table', { name: 'Cost runs' }).getByRole('row').nth(1))],
+        ['Stock', 'Estimated costs', /\/office\/estimated-costs$/, () => page.getByText(/No estimated costs/).or(page.getByRole('table', { name: 'Estimated costs' }).getByRole('row').nth(1))],
+        ['Purchasing', 'Spend analytics', /\/office\/spend-analytics$/, () => page.getByRole('region', { name: 'Spend by month' })]]) {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: new RegExp(group) }).first().click()
+        const l = page.getByRole('navigation', { name: group }).getByRole('link', { name: menuName(link) }).first()
+        if (!await l.count()) { problems.push(`${look} ${w}: ${group} has no ${link} link`); await page.keyboard.press('Escape'); continue }
+        await l.click()
+        await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await ready().first().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        await page.screenshot({ path: out(`${link.split(' ')[0].toLowerCase()}-cost-${look}-${w}`) })
+        if (link === 'Cost runs') {
+          const btn = page.getByRole('button', { name: 'New cost run' })
+          await btn.waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Cost runs has no New cost run`))
+          if (await btn.count()) {
+            await btn.click()
+            await page.getByRole('region', { name: 'How to work out the cost' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: New cost run did not open the form`))
+            await page.screenshot({ path: out(`cost-run-form-${look}-${w}`) })
+            await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+          }
+        }
+        if (link === 'Landed costs') {
+          const btn = page.getByRole('button', { name: 'Spread freight and duty' })
+          await btn.waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Landed costs has no Spread freight and duty`))
+          if (await btn.count()) {
+            await btn.click()
+            const dlg = page.getByRole('dialog', { name: 'Spread freight and duty' })
+            await dlg.waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Spread freight and duty did not open`))
+            await page.screenshot({ path: out(`landed-spread-${look}-${w}`) })
+            await dlg.getByRole('button', { name: 'Back', exact: true }).click().catch(() => page.keyboard.press('Escape'))
+          }
+        }
+      }
       // Purchase requests, Requests for quotation and Contracts and blanket orders, rebuilt (part 18): each opens from Purchasing
       // with its list (or its empty line), and its New button opens the form (nothing is saved).
       for (const [link, url, table, empty, create, region] of [
@@ -1112,17 +1148,17 @@ try {
         await page.unroute(`**/office-api/requests/${fakeRq}`)
       }
 
-      // Cost runs is still the current page (until part 19; then use another page not yet rebuilt): it opens inside, and the address follows.
-      await area.click()
-      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: menuName('Cost runs') }).first().click()
-      await page.waitForURL(/\/office\/a\/stock-cost-runs/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Cost runs did not open at /office/a/stock-cost-runs (${page.url()})`))
+      // Sales → CRM → Leads is still the current page (not rebuilt yet; Cost runs was rebuilt in part 19): it opens inside, and the address follows.
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Sales/ }).first().click()
+      await page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: menuName('Leads') }).first().click()
+      await page.waitForURL(/\/office\/a\/crm-leads/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Leads did not open at /office/a/crm-leads (${page.url()})`))
       await page.waitForFunction(() => {
         const f = document.querySelector('iframe[title="Page"]')
-        return f?.contentWindow?.location.pathname === '/admin/stock-cost-runs' && !!f.contentDocument?.querySelector('h1')
-      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Cost runs page did not open inside`))
+        return f?.contentWindow?.location.pathname === '/admin/crm-leads' && !!f.contentDocument?.querySelector('h1')
+      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Leads page did not open inside`))
       const f = await frameReady()
       await f.locator('.fi-ta-table, .fi-ta-empty-state').first().waitFor({ timeout: 20000 })
-        .catch(() => problems.push(`${look} ${w}: the Cost runs list did not show inside`))
+        .catch(() => problems.push(`${look} ${w}: the Leads list did not show inside`))
       const chrome = await f.locator('.fi-sidebar, .fi-topbar').evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== 'none').length)
       if (chrome) problems.push(`${look} ${w}: the embedded page still shows its own menu`)
       await page.waitForTimeout(600) // the page's own loader fades out
@@ -1131,17 +1167,17 @@ try {
       // Recent lists the page just opened; the star adds it to favourites and takes it off again.
       const nav = page.getByRole('navigation', { name: 'Menu' })
       await (look === 'top' ? nav.getByRole('button', { name: 'Recent pages' }) : nav.getByRole('button', { name: 'Recent' })).click()
-      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /Cost runs/i }).first().waitFor({ timeout: 5000 })
-        .catch(() => problems.push(`${look} ${w}: Recent does not list Cost runs`))
+      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /Leads/i }).first().waitFor({ timeout: 5000 })
+        .catch(() => problems.push(`${look} ${w}: Recent does not list Leads`))
       await page.keyboard.press('Escape')
       const star = look === 'top' ? nav.getByRole('button', { name: 'Favourites' }) : nav.getByRole('button', { name: 'Favourites' })
       await star.click()
       const fav = page.getByRole('dialog', { name: 'Favourite pages' })
       await fav.getByRole('button', { name: /^Add “/ }).click().catch(() => problems.push(`${look} ${w}: Favourites has no "Add this page"`))
-      await fav.getByRole('link', { name: /Cost runs/i }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Cost runs did not become a favourite`))
+      await fav.getByRole('link', { name: /Leads/i }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Leads did not become a favourite`))
       await page.screenshot({ path: out(`favourites-${look}-${w}`) })
       await fav.getByRole('button', { name: /^Take “/ }).last().click().catch(() => undefined) // leave the dev account as it was
-      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Cost runs could not be taken off favourites`))
+      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Leads could not be taken off favourites`))
       await page.keyboard.press('Escape')
 
       // Search: Ctrl+K, type, a page of the menu is offered.

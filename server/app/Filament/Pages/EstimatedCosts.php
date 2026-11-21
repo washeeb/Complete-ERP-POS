@@ -47,21 +47,21 @@ class EstimatedCosts extends Page implements HasTable
 
     public function getSubheading(): ?string
     {
-        $row = DB::query()->fromSub($this->withRealCost($this->baseQuery())->toBase(), 'x')
+        $row = DB::query()->fromSub(self::withRealCost(self::baseQuery())->toBase(), 'x')
             ->selectRaw('COUNT(*) AS n, COUNT(real_cost) AS d, AVG(CASE WHEN real_cost > 0 THEN price / real_cost END) AS f')->first();
         $real = $row->d ? ' Real factor so far: '.number_format((float) $row->f, 2).' on '.$row->d.' product(s).' : ' No deliveries yet to compare with.';
 
         return $row->n.' product(s) carry an estimated cost until a delivery replaces it.'.$real;
     }
 
-    private function baseQuery(): Builder
+    public static function baseQuery(): Builder
     {
         return StockCostRunLine::query()->join('stock_cost_runs as r', 'r.id', '=', 'stock_cost_run_lines.stock_cost_run_id')
             ->where('r.status', 'posted')->whereNull('r.reverses_id')->where('stock_cost_run_lines.kind', 'estimate');
     }
 
     /** The first delivery after the run, per base unit. */
-    private function withRealCost(Builder $query): Builder
+    public static function withRealCost(Builder $query): Builder
     {
         $real = DB::table('goods_receipt_lines as g')->join('goods_receipts as gr', 'gr.id', '=', 'g.goods_receipt_id')
             ->whereColumn('g.product_id', 'stock_cost_run_lines.product_id')->where('gr.status', 'posted')->whereColumn('gr.posted_at', '>', 'r.posted_at')
@@ -75,7 +75,7 @@ class EstimatedCosts extends Page implements HasTable
         $money = fn ($state) => $state === null ? '—' : FinanceUi::money((int) round((float) $state));
 
         return $table
-            ->query(fn () => $this->withRealCost($this->baseQuery())->with('product', 'warehouse'))
+            ->query(fn () => self::withRealCost(self::baseQuery())->with('product', 'warehouse'))
             ->columns([
                 TextColumn::make('product.name')->label('Product')->limit(40),
                 TextColumn::make('warehouse.name')->label('Store'),

@@ -62,6 +62,12 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/purchase-agreements\/create\/?$/, app: () => `${APP}/agreements/new` },
   { admin: new RegExp(`^/admin/purchase-agreements/(${UUID})$`), app: (m) => `${APP}/agreements/${m[1]}` },
   { admin: new RegExp(`^/admin/purchase-agreements/(${UUID})/edit$`), app: (m) => `${APP}/agreements/${m[1]}/edit` },
+  { admin: /^\/admin\/landed-costs\/?$/, app: (_, q) => `${APP}/landed-costs${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/stock-cost-runs\/?$/, app: (_, q) => `${APP}/cost-runs${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/stock-cost-runs\/create\/?$/, app: () => `${APP}/cost-runs/new` },
+  { admin: new RegExp(`^/admin/stock-cost-runs/(${UUID})$`), app: (m) => `${APP}/cost-runs/${m[1]}` },
+  { admin: /^\/admin\/estimated-costs\/?$/, app: () => `${APP}/estimated-costs` },
+  { admin: /^\/admin\/spend-analytics\/?$/, app: () => `${APP}/spend-analytics` },
   { admin: /^\/admin\/purchase-orders\/?$/, app: (_, q) => `${APP}/purchase-orders${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/purchase-orders\/create\/?$/, app: () => `${APP}/purchase-orders/new` },
   { admin: new RegExp(`^/admin/purchase-orders/(${UUID})$`), app: (m) => `${APP}/purchase-orders/${m[1]}` },
@@ -204,6 +210,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'purchase-requests' } | { page: 'purchase-request'; id: string } | { page: 'purchase-request-form' }
   | { page: 'rfqs' } | { page: 'rfq'; id: string } | { page: 'rfq-form' }
   | { page: 'agreements' } | { page: 'agreement'; id: string } | { page: 'agreement-form'; id: string | null }
+  | { page: 'landed-costs' } | { page: 'cost-runs' } | { page: 'cost-run'; id: string } | { page: 'cost-run-form' } | { page: 'estimated-costs' } | { page: 'spend-analytics' }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
@@ -274,6 +281,13 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/agreements\/new\/?$/.test(path)) return { page: 'agreement-form', id: null }
   const agr = path.match(new RegExp(`^/office/agreements/(${UUID})(/edit)?/?$`))
   if (agr) return agr[2] ? { page: 'agreement-form', id: agr[1] } : { page: 'agreement', id: agr[1] }
+  if (/^\/office\/landed-costs\/?$/.test(path)) return { page: 'landed-costs' }
+  if (/^\/office\/cost-runs\/?$/.test(path)) return { page: 'cost-runs' }
+  if (/^\/office\/cost-runs\/new\/?$/.test(path)) return { page: 'cost-run-form' }
+  const crun = path.match(new RegExp(`^/office/cost-runs/(${UUID})/?$`))
+  if (crun) return { page: 'cost-run', id: crun[1] }
+  if (/^\/office\/estimated-costs\/?$/.test(path)) return { page: 'estimated-costs' }
+  if (/^\/office\/spend-analytics\/?$/.test(path)) return { page: 'spend-analytics' }
   if (/^\/office\/purchase-orders\/?$/.test(path)) return { page: 'purchase-orders' }
   if (/^\/office\/purchase-orders\/new\/?$/.test(path)) return { page: 'purchase-order-form', id: null }
   const po = path.match(new RegExp(`^/office/purchase-orders/(${UUID})(/edit)?/?$`))
@@ -432,6 +446,12 @@ export function adminEquivalent(route: Route): string | null {
     case 'agreements': return '/admin/purchase-agreements'
     case 'agreement': return `/admin/purchase-agreements/${route.id}`
     case 'agreement-form': return route.id ? `/admin/purchase-agreements/${route.id}/edit` : '/admin/purchase-agreements/create'
+    case 'landed-costs': return '/admin/landed-costs'
+    case 'cost-runs': return '/admin/stock-cost-runs'
+    case 'cost-run': return `/admin/stock-cost-runs/${route.id}`
+    case 'cost-run-form': return '/admin/stock-cost-runs/create'
+    case 'estimated-costs': return '/admin/estimated-costs'
+    case 'spend-analytics': return '/admin/spend-analytics'
     case 'goods-received': case 'goods-receipt': return '/admin/goods-receipts'
     case 'direct-purchases': case 'direct-purchase': case 'direct-purchase-form': return '/admin/direct-purchases'
     case 'supplier-invoices': return '/admin/supplier-invoices'
