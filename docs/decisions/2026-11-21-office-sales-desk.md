@@ -1,0 +1,5 @@
+## The rest of Sales in the new back office
+- **Phone notifications on Windows:** probed on a Windows PC: making the notification key and encrypting a message both failed ("Unable to create the key" / "Unable to create the local key"), in the app and in tests, because PHP on Windows has no OpenSSL configuration. The library makes its per-message key in a private method, so the app cannot pass a configuration there; PHP reads `OPENSSL_CONF` only when it starts. So: the company key is made by the app with a shipped configuration file (`PhonePush::newKeys`, same format as the library's), and the Windows installer sets `OPENSSL_CONF` for every PHP it starts. With it set, encrypting a message was proved to work. Every Windows install gets this on its next update.
+- **Back-office returns are listed by branch** (where the person enters or approves returns), not company-wide: missing scope is not global scope.
+- **Return goods lives on the rebuilt sale page**, as on the current one, so a return can be started without leaving the new back office.
+- **Approving a till request keeps one endpoint** (the To-do's), so the To-do and Till requests cannot behave differently.

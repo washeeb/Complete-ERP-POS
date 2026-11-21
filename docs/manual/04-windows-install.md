@@ -96,7 +96,8 @@ sys_temp_dir = "C:\SESLabs\tmp"
 
    **Why:** these extensions let PHP talk to PostgreSQL (`pdo_pgsql`), handle money and text in every language (`bcmath`, which is built in, `intl`, `mbstring`), and protect secrets (`sodium`, `openssl`).
 6. Add PHP to the system path, so Windows finds `php` from any folder: Start → type `environment` → **Edit the system environment variables** → **Environment Variables…** → under *System variables* select **Path** → **Edit** → **New** → type `C:\php` → **OK** three times.
-7. Close PowerShell and open it again (it reads the new path only when it starts).
+7. Add one more system variable the same way: under *System variables* press **New…**, name `OPENSSL_CONF`, value `C:\SESLabs\server\resources\openssl\openssl.cnf` (the file is there once step 4.5 is done). **Why:** PHP for Windows comes without an OpenSSL settings file, and without one it cannot make the keys that phone notifications (till requests) need. The installer does this for you.
+8. Close PowerShell and open it again (it reads the new path only when it starts).
 
 **Check:** type `php --version`. It shows `PHP 8.4…`. Then type `php -m` and make sure the list contains `bcmath`, `intl`, `pdo_pgsql`, `pgsql` and `sodium`.
 

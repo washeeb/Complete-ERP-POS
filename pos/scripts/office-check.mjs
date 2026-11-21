@@ -668,6 +668,23 @@ try {
         await page.getByRole('region', { name: 'Owed by customers' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Aged receivables did not load`))
         await page.screenshot({ path: out(`aged-receivables-${look}-${w}`) })
       }
+      // Till requests, Back-office returns, Review queue and Gift cards & credit, rebuilt (part 16): each opens from Sales and
+      // shows its list (or its empty line); a back-office return opens with its goods.
+      for (const [link, url, table, empty] of [['Till requests', /\/office\/till-requests/, 'Till requests', /Nothing waiting/],
+        ['Back-office returns', /\/office\/office-returns$/, 'Back-office returns', /No returns match/], ['Review queue', /\/office\/review-queue$/, 'Review queue', /Nothing to review/],
+        ['Gift cards & credit', /\/office\/gift-cards$/, 'Gift cards and credit', /No gift cards/]]) {
+        if (!await salesLink(link)) continue
+        await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        const first = page.getByRole('table', { name: table }).getByRole('row').nth(1)
+        await page.getByText(empty).or(first).first().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        await page.screenshot({ path: out(`${link.split(' ')[0].toLowerCase()}-desk-${look}-${w}`) })
+        if (link === 'Back-office returns' && await first.count()) {
+          await first.click()
+          await page.getByRole('region', { name: 'Goods' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: a back-office return did not open with its goods`))
+          await page.screenshot({ path: out(`office-return-${look}-${w}`) })
+          await page.goBack()
+        }
+      }
       // Fixed assets, rebuilt (release 8): Kinds of asset opens from the register with its kinds.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
       await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: menuName('Fixed assets') }).first().click()
