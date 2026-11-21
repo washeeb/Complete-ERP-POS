@@ -34,6 +34,12 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/suppliers\/?$/, app: (_, q) => `${APP}/suppliers${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/suppliers\/create\/?$/, app: () => `${APP}/suppliers/new` },
   { admin: new RegExp(`^/admin/suppliers/(${UUID})/edit$`), app: (m) => `${APP}/suppliers/${m[1]}` },
+  { admin: /^\/admin\/customer-orders\/?$/, app: (_, q) => `${APP}/customer-orders${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/customer-orders\/create\/?$/, app: () => `${APP}/customer-orders/new` },
+  { admin: new RegExp(`^/admin/customer-orders/(${UUID})$`), app: (m) => `${APP}/customer-orders/${m[1]}` },
+  { admin: new RegExp(`^/admin/customer-orders/(${UUID})/edit$`), app: (m) => `${APP}/customer-orders/${m[1]}/edit` },
+  { admin: /^\/admin\/customer-payments\/?$/, app: (_, q) => `${APP}/customer-payments${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/aged-receivables\/?$/, app: () => `${APP}/aged-receivables` },
   { admin: /^\/admin\/purchase-orders\/?$/, app: (_, q) => `${APP}/purchase-orders${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/purchase-orders\/create\/?$/, app: () => `${APP}/purchase-orders/new` },
   { admin: new RegExp(`^/admin/purchase-orders/(${UUID})$`), app: (m) => `${APP}/purchase-orders/${m[1]}` },
@@ -170,6 +176,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'invoices' } | { page: 'invoice'; id: string }
   | { page: 'suppliers' } | { page: 'supplier'; id: string } | { page: 'supplier-form'; id: string | null }
   | { page: 'purchase-orders' } | { page: 'purchase-order'; id: string } | { page: 'purchase-order-form'; id: string | null }
+  | { page: 'customer-orders' } | { page: 'customer-order'; id: string } | { page: 'customer-order-form'; id: string | null } | { page: 'customer-payments' } | { page: 'aged-receivables' }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
@@ -207,6 +214,12 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/suppliers\/new\/?$/.test(path)) return { page: 'supplier-form', id: null }
   const sup = path.match(new RegExp(`^/office/suppliers/(${UUID})(/edit)?/?$`))
   if (sup) return sup[2] ? { page: 'supplier-form', id: sup[1] } : { page: 'supplier', id: sup[1] }
+  if (/^\/office\/customer-orders\/?$/.test(path)) return { page: 'customer-orders' }
+  if (/^\/office\/customer-orders\/new\/?$/.test(path)) return { page: 'customer-order-form', id: null }
+  const co = path.match(new RegExp(`^/office/customer-orders/(${UUID})(/edit)?/?$`))
+  if (co) return co[2] ? { page: 'customer-order-form', id: co[1] } : { page: 'customer-order', id: co[1] }
+  if (/^\/office\/customer-payments\/?$/.test(path)) return { page: 'customer-payments' }
+  if (/^\/office\/aged-receivables\/?$/.test(path)) return { page: 'aged-receivables' }
   if (/^\/office\/purchase-orders\/?$/.test(path)) return { page: 'purchase-orders' }
   if (/^\/office\/purchase-orders\/new\/?$/.test(path)) return { page: 'purchase-order-form', id: null }
   const po = path.match(new RegExp(`^/office/purchase-orders/(${UUID})(/edit)?/?$`))
@@ -339,6 +352,11 @@ export function adminEquivalent(route: Route): string | null {
     case 'invoices': case 'invoice': return '/admin/invoices'
     case 'suppliers': case 'supplier': case 'supplier-form': return '/admin/suppliers'
     case 'purchase-orders': case 'purchase-order': case 'purchase-order-form': return '/admin/purchase-orders'
+    case 'customer-orders': return '/admin/customer-orders'
+    case 'customer-order': return `/admin/customer-orders/${route.id}`
+    case 'customer-order-form': return route.id ? `/admin/customer-orders/${route.id}/edit` : '/admin/customer-orders/create'
+    case 'customer-payments': return '/admin/customer-payments'
+    case 'aged-receivables': return '/admin/aged-receivables'
     case 'goods-received': case 'goods-receipt': return '/admin/goods-receipts'
     case 'direct-purchases': case 'direct-purchase': case 'direct-purchase-form': return '/admin/direct-purchases'
     case 'supplier-invoices': return '/admin/supplier-invoices'
