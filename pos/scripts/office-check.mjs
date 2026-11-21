@@ -581,7 +581,9 @@ try {
           [/^Prescriptions/i, /\/office\/prescriptions$/, 'Prescriptions', 'No prescriptions dispensed yet.'],
           [/^Drug interactions/i, /\/office\/drug-interactions$/, 'Drug interactions', /No interactions yet/],
           [/^Refill reminders/i, /\/office\/refill-reminders$/, 'Refill reminders', 'No reminders here.'],
-          [/^Controlled-drug register/i, /\/office\/controlled-drug-register/, null, /No controlled medicines moved|Opening /]]) {
+          [/^Controlled-drug register/i, /\/office\/controlled-drug-register/, null, /No controlled medicines moved|Opening /],
+          [/^NHIS claims/i, /\/office\/nhis-claims$/, 'NHIS claims', /No NHIS claims yet/],
+          [/^Sales to sign off/i, /\/office\/medicine-signoffs$/, 'Sales to sign off', /Nothing to sign off/]]) {
           await industries().click()
           const a = page.getByRole('navigation', { name: 'Industries' }).getByRole('link', { name: link }).first()
           if (!await a.count()) { problems.push(`${look} ${w}: Industries → Pharmacy has no ${link} link`); await page.keyboard.press('Escape'); continue }

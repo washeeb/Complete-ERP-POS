@@ -44,6 +44,12 @@ class Sale extends Model
         return $this->belongsTo(Branch::class);
     }
 
+    /** The named customer (or patient), when the till chose one. */
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
     public function till(): BelongsTo
     {
         return $this->belongsTo(Till::class);
