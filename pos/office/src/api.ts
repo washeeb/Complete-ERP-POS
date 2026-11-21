@@ -37,7 +37,7 @@ export type SaleDetail = {
   lines: { name: string; qty: string; unit_price: number; tax: number; total: number; dosage: string | null }[]
   tax_breakdown: { name: string; amount: number }[]
   payments: { method: string; amount: number; reference: string | null }[]
-  actions: { print: string; preview: string; save_customer: boolean }
+  actions: { print: string; preview: string; save_customer: boolean; return: boolean }
 }
 export type ShiftRow = {
   id: string; where: string; status: 'open' | 'closed'; shift_name: string | null; opened_by: string | null; sellers: string | null
@@ -593,6 +593,25 @@ export type CustomerOption = { id: string; label: string; detail: string }
 export type CpRow = { id: string; number: string; received_on: string | null; customer: string | null; customer_id: string; method: string; reference: string | null; amount: number; currency: string; by: string | null; print: string }
 export type CpList = { currency: string; exponent: number; total: number; sum: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; open_customer: boolean; rows: CpRow[] }
 export type CpOptions = { methods: Option[]; people: Option[]; per: number[] }
+export type TillRequestRow = {
+  id: string; asked: string | null; expires_at: string | null; till: string | null; branch: string | null; cashier: string; what: string; summary: string; reason: string | null
+  items: string | null; amount: string | null; status: string; status_label: string; answered_by: string | null; can_decide: boolean
+}
+export type TillRequestList = { show: 'pending' | 'answered' | 'all'; one: string | null; total: number; page: number; per: number; rows: TillRequestRow[]; push: { key: string; has_device: boolean } }
+export type OfficeReturnRow = { id: string; number: string; entered: string | null; receipt: string | null; refund: number; refund_as: string; reason: string; status: string; status_label: string; by: string | null }
+export type OfficeReturnList = { currency: string; exponent: number; total: number; waiting: number; page: number; per: number; statuses: Option[]; rows: OfficeReturnRow[] }
+export type OfficeReturnDoc = {
+  currency: string; exponent: number; id: string; number: string; status: string; status_label: string; receipt: string | null; original: string | null
+  refund: number; refund_as: string; paid_from: string | null; reason: string; details: string | null; reference: string | null; goes_to: string | null
+  entered_by: string | null; approved_by: string | null; return_no: string | null; cancel_reason: string | null
+  lines: { item: string; qty: string; condition: string }[]
+  actions: { approve: boolean; why_not: string | null; cancel: boolean; slip: string | null }
+}
+export type ReturnForm = { lines: { line_id: string; name: string; can: string }[]; warehouse_id: string; warehouses: Option[]; reasons: Option[]; refunds: Option[]; accounts: Option[] }
+export type ReviewRow = { id: string; at: string | null; type: string; type_label: string; mild: boolean; branch: string | null; summary: string; status: string; resolution: string | null; resolved: string | null; sale: string | null }
+export type ReviewList = { status: 'open' | 'resolved' | 'all'; total: number; page: number; per: number; types: Option[]; rows: ReviewRow[] }
+export type GiftCardRow = { id: string; code: string; kind: string; customer: string | null; balance: number; last_used: string | null; status: string }
+export type GiftCardList = { currency: string; exponent: number; total: number; page: number; per: number; kinds: Option[]; rows: GiftCardRow[]; paid_by: Option[]; can_sell: boolean }
 export type ExpiryList = { total: number; page: number; per: number; currency: string; exponent: number; value: number; rows: ExpiryRow[] }
 export type ExpiryOptions = { statuses: Option[]; warehouses: Option[]; suppliers: Option[]; settlements: Option[]; reasons: Option[]; methods: Option[]
   evidence: 'reason' | 'method_witness' | 'method_witness_certificate'; today: string; month_start: string; can_mark_down: boolean }
@@ -1153,6 +1172,21 @@ export const api = {
   customerPayments: (query: string, signal?: AbortSignal) => call<CpList>(`/office-api/customer-payments?${query}`, { signal }),
   customerPaymentsOptions: () => call<CpOptions>('/office-api/customer-payments/options'),
   agedReceivables: () => call<Aging>('/office-api/aged-receivables'),
+  tillRequests: (query: string, signal?: AbortSignal) => call<TillRequestList>(`/office-api/till-requests?${query}`, { signal }),
+  tillPush: (body: { endpoint: string; public_key: string; auth_token: string; device: string }) => call<{ message: string }>('/office-api/till-requests/push', { method: 'POST', body: JSON.stringify(body) }),
+  officeReturns: (query: string, signal?: AbortSignal) => call<OfficeReturnList>(`/office-api/office-returns?${query}`, { signal }),
+  officeReturn: (id: string) => call<OfficeReturnDoc>(`/office-api/office-returns/${id}`),
+  officeReturnStep: (id: string, step: 'approve' | 'cancel', reason?: string) =>
+    call<{ message: string; doc: OfficeReturnDoc }>(`/office-api/office-returns/${id}/${step}`, { method: 'POST', body: JSON.stringify({ reason: reason ?? null }) }),
+  returnForm: (sale: string) => call<ReturnForm>(`/office-api/sales/${sale}/return`),
+  submitReturn: (sale: string, body: Record<string, unknown>) => call<{ id: string; message: string }>(`/office-api/sales/${sale}/return`, { method: 'POST', body: JSON.stringify(body) }),
+  reviewQueue: (query: string, signal?: AbortSignal) => call<ReviewList>(`/office-api/review-queue?${query}`, { signal }),
+  resolveReview: (id: string, resolution: string) => call<{ message: string }>(`/office-api/review-queue/${id}/resolve`, { method: 'POST', body: JSON.stringify({ resolution }) }),
+  giftCards: (query: string, signal?: AbortSignal) => call<GiftCardList>(`/office-api/gift-cards?${query}`, { signal }),
+  giftCardHistory: (id: string) => call<{ rows: { at: string; type: string; doc: string | null; amount: number }[] }>(`/office-api/gift-cards/${id}/history`),
+  giftCardCustomers: (q: string, signal?: AbortSignal) => call<{ results: CustomerOption[] }>(`/office-api/gift-cards/customers?q=${encodeURIComponent(q)}`, { signal }),
+  sellGiftCard: (body: { amount: string; paid_by: string; reference: string; code: string; customer_id: string }) =>
+    call<{ message: string; code: string }>('/office-api/gift-cards', { method: 'POST', body: JSON.stringify(body) }),
   markDownBatches: (keys: string[], percent: string) => call<UserDone>('/office-api/expiry/markdown', { method: 'POST', body: JSON.stringify({ keys, percent }) }),
   nhisClaims: (query: string, signal?: AbortSignal) => call<NhisClaimList>(`/office-api/nhis-claims?${query}`, { signal }),
   nhisUnclaimed: (branch: string, upTo: string) => call<{ sales: number; amount: number; currency: string; exponent: number }>(`/office-api/nhis-claims/unclaimed?branch=${branch}&up_to=${upTo}`),

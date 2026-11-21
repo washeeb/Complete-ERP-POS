@@ -169,7 +169,9 @@ final class SalesScreen
             'tax_breakdown' => collect($s->tax_breakdown ?? [])->map(fn ($t) => ['name' => (string) ($t['name'] ?? ''), 'amount' => (int) ($t['amount_minor'] ?? 0)])->all(),
             'payments' => $s->payments->map(fn ($p) => ['method' => (SalePayment::METHODS[$p->method] ?? $p->method).($p->provider ? ' · '.(SalePayment::MOMO_PROVIDERS[$p->provider] ?? $p->provider) : ''),
                 'amount' => $m($p->amount_minor), 'reference' => $p->reference])->all(),
-            'actions' => ['print' => route('print.receipt', ['sale' => $s->id, 'print' => 1]), 'preview' => route('print.receipt', $s->id), 'save_customer' => $canSaveCustomer],
+            'actions' => ['print' => route('print.receipt', ['sale' => $s->id, 'print' => 1]), 'preview' => route('print.receipt', $s->id), 'save_customer' => $canSaveCustomer,
+                // Back-office return (part 16): goods coming back from this receipt, approved by someone else.
+                'return' => $s->kind === 'sale' && $s->status === 'posted' && Erp::canAnywhere('returns.office')],
         ];
     }
 
