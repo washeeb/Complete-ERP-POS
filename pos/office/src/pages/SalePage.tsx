@@ -2,12 +2,13 @@ import {
   Badge, Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Input, Link, makeStyles, MessageBar, MessageBarBody,
   Spinner, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, tokens,
 } from '@fluentui/react-components'
-import { ArrowLeftRegular, EyeRegular, PersonAddRegular, PrintRegular, WindowArrowUpRegular } from '@fluentui/react-icons'
+import { ArrowLeftRegular, ArrowUndoRegular, EyeRegular, PersonAddRegular, PrintRegular, WindowArrowUpRegular } from '@fluentui/react-icons'
 import { useEffect, useState } from 'react'
 import { api, type SaleDetail } from '../api'
 import { money } from '../home/format'
 import { navigate } from '../nav'
 import { classicPathFor } from '../paths'
+import { ReturnGoods } from './ReturnGoods'
 
 const useStyles = makeStyles({
   page: { flex: '1 1 auto', overflowY: 'auto', padding: '16px 20px 32px', '@media (max-width: 760px)': { padding: '12px 10px 24px' } },
@@ -32,6 +33,7 @@ export function SalePage({ id, onTitle }: { id: string; onTitle: (t: string) => 
   const [sale, setSale] = useState<SaleDetail | null>(null)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [returning, setReturning] = useState(false)
   const [done, setDone] = useState('')
 
   useEffect(() => {
@@ -54,10 +56,12 @@ export function SalePage({ id, onTitle }: { id: string; onTitle: (t: string) => 
           <Button icon={<EyeRegular />} onClick={() => window.open(sale.actions.preview, '_blank', 'noopener')}>Print preview</Button>
           <Button appearance="primary" icon={<PrintRegular />} onClick={() => window.open(sale.actions.print, '_blank', 'noopener')}>Print copy</Button>
           {sale.actions.save_customer && <Button icon={<PersonAddRegular />} onClick={() => setSaving(true)}>Save as customer</Button>}
+          {sale.actions.return && <Button icon={<ArrowUndoRegular />} onClick={() => { setDone(''); setReturning(true) }}>Return goods</Button>}
           <Link href={classicPathFor(`/admin/sales/${sale.id}`)} onClick={(e) => { e.preventDefault(); navigate(classicPathFor(`/admin/sales/${sale.id}`)) }}><WindowArrowUpRegular /> Classic version</Link>
         </div>
       </div>
       {done && <MessageBar intent="success" style={{ marginBottom: 12 }}><MessageBarBody>{done}</MessageBarBody></MessageBar>}
+      {returning && <ReturnGoods saleId={sale.id} onClose={() => setReturning(false)} onDone={(r) => { setReturning(false); navigate(`/office/office-returns/${r.id}`) }} />}
 
       <section className={s.panel}>
         <div className={s.facts}>

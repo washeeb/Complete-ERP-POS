@@ -255,6 +255,8 @@ Set-Content "$Dir\php-worker.cmd" @"
 @echo off
 rem Written by install.ps1: one PHP worker for the web server, on the port given. Restarts PHP if it stops.
 set PHP_FCGI_MAX_REQUESTS=0
+rem PHP on Windows comes without an OpenSSL configuration: without one it cannot make keys (phone notifications).
+set OPENSSL_CONF=$Dir\server\resources\openssl\openssl.cnf
 :run
 "$PhpDir\php-cgi.exe" -b 127.0.0.1:%1
 ping -n 3 127.0.0.1 >nul
@@ -281,6 +283,11 @@ if ((Test-Path "$Dir\server\.env") -and (Test-Path "$Dir\server\artisan") -and -
 # Code is replaced; .env and storage (uploads, backups, logs) are kept on updates.
 robocopy "$src\server" "$Dir\server" /MIR /XD "$src\server\storage" "$src\server\vendor" /XF .env /NFL /NDL /NJH /NJS /NP | Out-Null
 if ($LASTEXITCODE -ge 8) { Die 'Copying the software failed.' }
+# PHP on Windows comes without an OpenSSL configuration, and without one it cannot make keys: phone notifications (till
+# requests) could not be turned on or sent. Point every PHP the system starts at the one shipped with the server.
+$sslConf = "$Dir\server\resources\openssl\openssl.cnf"
+[Environment]::SetEnvironmentVariable('OPENSSL_CONF', $sslConf, 'Machine')
+$env:OPENSSL_CONF = $sslConf
 foreach ($d in 'storage\app\private', 'storage\framework\cache', 'storage\framework\sessions', 'storage\framework\views', 'storage\logs', 'bootstrap\cache') {
   New-Item -ItemType Directory -Force "$Dir\server\$d" | Out-Null
 }

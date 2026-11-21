@@ -1,0 +1,5 @@
+# Minimal OpenSSL configuration for making keys (App\Domain\Messaging\PhonePush). Windows PHP builds ship without one,
+# and without it openssl_pkey_new() fails ("Unable to create the key"); Linux and Docker work with it the same.
+[req]
+distinguished_name = dn
+[dn]

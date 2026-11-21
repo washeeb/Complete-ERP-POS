@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Minishlink\WebPush\Subscription;
-use Minishlink\WebPush\VAPID;
 use Minishlink\WebPush\WebPush;
 use Throwable;
 
@@ -107,11 +106,31 @@ final class PhonePush
     }
 
     /** @return array{publicKey: string, privateKey: string} */
+    /**
+     * A new P-256 key pair as Web Push wants it (base64url: the 65-byte public point, the 32-byte private number), the same
+     * as VAPID::createVapidKeys() makes. Made here with a configuration file shipped with the server, because Windows PHP
+     * builds come without one and the library's way then fails with "Unable to create the key".
+     *
+     * @return array{publicKey: string, privateKey: string}
+     */
+    public static function newKeys(): array
+    {
+        $key = openssl_pkey_new(['private_key_type' => OPENSSL_KEYTYPE_EC, 'curve_name' => 'prime256v1', 'config' => resource_path('openssl/openssl.cnf')]);
+        $ec = $key ? (openssl_pkey_get_details($key)['ec'] ?? null) : null;
+        if (! $ec) {
+            throw new \RuntimeException('Could not make the notification key: '.(openssl_error_string() ?: 'OpenSSL refused.'));
+        }
+        $pad = fn (string $b) => str_pad($b, 32, "\0", STR_PAD_LEFT);
+        $b64 = fn (string $b) => rtrim(strtr(base64_encode($b), '+/', '-_'), '=');
+
+        return ['publicKey' => $b64("\x04".$pad($ec['x']).$pad($ec['y'])), 'privateKey' => $b64($pad($ec['d']))];
+    }
+
     private function keys(string $tenantId): array
     {
         $row = DB::table('web_push_keys')->where('tenant_id', $tenantId)->first();
         if (! $row) {
-            $new = VAPID::createVapidKeys();
+            $new = self::newKeys();
             DB::table('web_push_keys')->insertOrIgnore(['id' => (string) Str::uuid7(), 'tenant_id' => $tenantId, 'public_key' => $new['publicKey'],
                 'private_key' => Crypt::encryptString($new['privateKey']), 'created_at' => now(), 'updated_at' => now()]);
             $row = DB::table('web_push_keys')->where('tenant_id', $tenantId)->first();
