@@ -136,7 +136,7 @@ sudo apt install -y nodejs
 ```
 
 **Why:**
-- **PHP** runs the software, and **PHP-FPM** lets several requests run at the same time. It comes from packages.sury.org, the PHP maintainer's own signed package source (the first four lines add it). The older Launchpad source (`ppa:ondrej/php`) is frozen and makes `apt update` stop with "changed its 'Label' value", so don't add it; the installer removes it from servers set up earlier.
+- **PHP** runs the software, and **PHP-FPM** lets several requests run at the same time. It comes from packages.sury.org, the PHP maintainer's own signed package source (the first four lines add it). The older Launchpad source (`ppa:ondrej/php`) is frozen and makes `apt update` stop with "changed its 'Label' value", so don't add it; the installer removes it from servers set up earlier. packages.sury.org republishes about every hour, and for a while afterwards `apt update` may say "File has unexpected size … Mirror sync in progress?" for it: on a server that already has PHP the installer carries on; on a new server wait a few minutes and run it again.
 - **Caddy** is the web server that receives the tills' and browsers' requests. It gets and renews https certificates by itself. It comes from its makers' own signed package source.
 - **Composer** and **Node.js** are used during installation.
 
