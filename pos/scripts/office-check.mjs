@@ -608,6 +608,21 @@ try {
           .catch(() => problems.push(`${look} ${w}: Expiry & returns did not load its filters`))
         await page.screenshot({ path: out(`expiry-${look}-${w}`) })
       } else await page.keyboard.press('Escape')
+      // The Cash area, rebuilt (part 14): each screen opens from Sales → Cash and loads (Cash desk and Income control only with cash control on).
+      for (const [link, url, region] of [['Close the day', /\/office\/close-day/, 'Close the day'], ['Cash desk', /\/office\/cash-desk/, 'Vaults'],
+        ['Income control', /\/office\/income-control/, 'Handovers to receive'], ['Shifts and vaults', /\/office\/cash-setup/, 'Shifts']]) {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Sales/ }).first().click()
+        const a = page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: link, exact: true }).first()
+        if (!await a.count()) {
+          if (link === 'Close the day' || link === 'Shifts and vaults') problems.push(`${look} ${w}: Sales → Cash has no ${link} link`)
+          await page.keyboard.press('Escape')
+          continue
+        }
+        await a.click()
+        await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await page.getByRole('region', { name: region, exact: true }).waitFor({ timeout: 30000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        await page.screenshot({ path: out(`cash-${link.toLowerCase().replace(/ /g, '-')}-${look}-${w}`) })
+      }
       // Fixed assets, rebuilt (release 8): Kinds of asset opens from the register with its kinds.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
       await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: 'Fixed assets', exact: true }).first().click()
