@@ -11,6 +11,7 @@ use App\Models\Invoice;
 use App\Models\JournalEntry;
 use App\Models\PriceList;
 use App\Models\Product;
+use App\Models\ProductUom;
 use App\Models\PurchaseOrder;
 use App\Models\ReorderRule;
 use App\Models\Sale;
@@ -39,7 +40,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final class ListExport
 {
-    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills', 'supplier-payments', 'returns', 'journals', 'fixed-assets'];
+    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills', 'supplier-payments', 'returns', 'journals', 'fixed-assets', 'price-list'];
 
     public function __construct(private readonly User $user) {}
 
@@ -69,6 +70,7 @@ final class ListExport
             'returns' => ReturnsScreen::canView(),
             'journals' => JournalsScreen::canView(),
             'fixed-assets' => AssetsScreen::canView(),
+            'price-list' => PriceListScreen::canView(),
             default => false,
         };
     }
@@ -121,6 +123,7 @@ final class ListExport
             'returns' => $this->returns($p),
             'journals' => $this->journals($p),
             'fixed-assets' => $this->fixedAssets($p),
+            'price-list' => $this->priceList($p),
         };
         /** @var Builder $query */
         $count = (clone $query)->toBase()->getCountForPagination();
@@ -427,6 +430,22 @@ final class ListExport
             }];
     }
 
+    /** The price list as the screen shows it; cost and margin only for people who may set prices. */
+    private function priceList(array $p): array
+    {
+        $screen = new PriceListScreen($this->user);
+        $cost = PriceListScreen::mayCost();
+
+        return ['Price list: '.($screen->list($p)?->name ?? '—'), array_merge(['SKU', 'Product', 'Category', 'Brand', 'Unit', 'Before tax', 'VAT and levies', 'Customer pays', 'In stock'],
+            $cost ? ['Cost', 'Margin'] : []), $cost ? [5, 6, 7, 8, 9] : [5, 6, 7, 8], $screen->query($p),
+            function (ProductUom $u) use ($screen, $p, $cost) {
+                $r = $screen->rowOf($u, $p);
+
+                return array_merge([$r['sku'], $r['product'], $r['category'] ?? '', $r['brand'] ?? '', $r['unit'], $this->money($r['net']), $this->money($r['tax']), $this->money($r['gross']),
+                    $r['on_hand'] ?? ''], $cost ? [$this->money($r['cost']), $r['margin'] ?? ''] : []);
+            }];
+    }
+
     private function journals(array $p): array
     {
         $screen = new JournalsScreen($this->user);
@@ -457,7 +476,7 @@ final class ListExport
     {
         $names = ['q' => 'Search', 'period' => 'Period', 'from' => 'From', 'to' => 'Until', 'status' => 'Status', 'kind' => 'Kind', 'level' => 'Stock',
             'stock' => 'Stock', 'reason' => 'Reason', 'warehouse' => 'Warehouse', 'difference' => 'Difference on arrival', 'from_wh' => 'From warehouse', 'to_wh' => 'To warehouse', 'active' => 'For sale', 'schedule' => 'Medicine schedule', 'min' => 'Total from', 'max' => 'Total up to',
-            'os_min' => 'Over/short from', 'os_max' => 'Over/short up to', 'vault_waiting' => 'Vaults waiting', 'waiting' => 'Waiting on you', 'cross' => 'Between industries', 'owing' => 'Owes money', 'credit' => 'Credit customers', 'show' => 'Show', 'overdue' => 'Past due date', 'owed' => 'Still owed', 'unverified' => 'Bank details not checked', 'supplier' => 'Supplier', 'settlement' => 'Payment', 'set_by' => 'Set by', 'mine' => 'My claims', 'method' => 'Method', 'sort' => null, 'dir' => null];
+            'os_min' => 'Over/short from', 'os_max' => 'Over/short up to', 'vault_waiting' => 'Vaults waiting', 'waiting' => 'Waiting on you', 'cross' => 'Between industries', 'owing' => 'Owes money', 'credit' => 'Credit customers', 'show' => 'Show', 'overdue' => 'Past due date', 'owed' => 'Still owed', 'unverified' => 'Bank details not checked', 'supplier' => 'Supplier', 'settlement' => 'Payment', 'set_by' => 'Set by', 'mine' => 'My claims', 'method' => 'Method', 'list' => null, 'only' => null, 'category' => 'Category', 'brand' => 'Brand', 'product' => 'Product', 'in_stock' => 'In stock only', 'priced' => 'With a price only', 'sort' => null, 'dir' => null];
         $periods = ['today' => 'Today', '7' => '7 days', '30' => '30 days', '90' => '90 days'];
         $out = [];
         foreach ($p as $k => $v) {

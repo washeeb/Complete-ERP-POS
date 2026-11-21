@@ -550,6 +550,24 @@ try {
           await page.getByRole('dialog').getByRole('button', { name: 'Back' }).click()
         }
       }
+      // Price list and Shared products, rebuilt (part 10): the price list opens from Stock with its rows and Export;
+      // Shared products only where the company has industries (it shows its list or "No shared products").
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Stock/ }).first().click()
+      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: /^Price list$/i }).first().click()
+      await page.waitForURL(/\/office\/price-list$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Price list did not open the new screen (${page.url()})`))
+      await page.getByText('No products match.').or(page.getByRole('table', { name: 'Price list' }).getByRole('row').nth(1)).first().waitFor({ timeout: 30000 })
+        .catch(() => problems.push(`${look} ${w}: Price list did not load`))
+      if (!await page.getByRole('button', { name: /Export/ }).count()) problems.push(`${look} ${w}: Price list has no Export`)
+      await page.screenshot({ path: out(`price-list-${look}-${w}`) })
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Stock/ }).first().click()
+      const shared = page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: /^Shared products/i }).first()
+      if (await shared.count()) {
+        await shared.click()
+        await page.waitForURL(/\/office\/shared-products$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Shared products did not open the new screen (${page.url()})`))
+        await page.getByText(/No shared products/).or(page.getByRole('table', { name: 'Shared products' }).getByRole('row').nth(1)).first().waitFor({ timeout: 30000 })
+          .catch(() => problems.push(`${look} ${w}: Shared products did not load`))
+        await page.screenshot({ path: out(`shared-products-${look}-${w}`) })
+      } else await page.keyboard.press('Escape')
       // Fixed assets, rebuilt (release 8): Kinds of asset opens from the register with its kinds.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
       await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: 'Fixed assets', exact: true }).first().click()

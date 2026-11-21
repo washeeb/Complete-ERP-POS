@@ -16,6 +16,7 @@ use App\Http\Controllers\Office\AssetsController as OfficeAssetsController;
 use App\Http\Controllers\Office\BankingController as OfficeBankingController;
 use App\Http\Controllers\Office\BatchesController as OfficeBatchesController;
 use App\Http\Controllers\Office\BooksController as OfficeBooksController;
+use App\Http\Controllers\Office\CatalogToolsController as OfficeCatalogToolsController;
 use App\Http\Controllers\Office\CountsController as OfficeCountsController;
 use App\Http\Controllers\Office\CustomersController as OfficeCustomersController;
 use App\Http\Controllers\Office\DevicesController as OfficeDevicesController;
@@ -338,6 +339,12 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::post('pricing-rules/{rule}/{step}', [OfficePricingController::class, 'archive'])->whereUuid('rule')->whereIn('step', ['archive', 'restore']);
     Route::get('prices-to-review', [OfficePricingController::class, 'suggestions']);
     Route::post('prices-to-review/{step}', [OfficePricingController::class, 'decide'])->whereIn('step', ['approve', 'keep']);
+    Route::get('price-list', [OfficeCatalogToolsController::class, 'priceList']);
+    Route::get('price-list/options', [OfficeCatalogToolsController::class, 'priceListOptions']);
+    Route::get('price-list/products', [OfficeCatalogToolsController::class, 'priceListProducts']);
+    Route::get('shared-products', [OfficeCatalogToolsController::class, 'shared']);
+    Route::post('shared-products/move-all', [OfficeCatalogToolsController::class, 'moveAll']);
+    Route::post('shared-products/move-suggested', [OfficeCatalogToolsController::class, 'moveSuggested']);
     Route::get('promotions', [OfficePromotionsController::class, 'index']);
     Route::get('promotions/options', [OfficePromotionsController::class, 'options']);
     Route::get('promotions/products', [OfficePromotionsController::class, 'products']);
@@ -404,7 +411,7 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::get('saved-reports/{report}', [OfficeReportsController::class, 'savedReport'])->whereUuid('report');
     Route::delete('saved-reports/{report}', [OfficeReportsController::class, 'deleteReport'])->whereUuid('report');
     Route::post('saved-reports/{report}/send', [OfficeReportsController::class, 'sendReport'])->whereUuid('report');
-    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills', 'supplier-payments', 'returns', 'journals', 'fixed-assets']);
+    Route::get('export/{list}', [OfficeExportController::class, 'export'])->whereIn('list', ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills', 'supplier-payments', 'returns', 'journals', 'fixed-assets', 'price-list']);
 });
 
 // The till app (built into public/pos by `npm run build:server` in pos/). Its files are served directly by the web server;

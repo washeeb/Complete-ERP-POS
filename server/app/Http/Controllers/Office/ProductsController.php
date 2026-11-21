@@ -155,7 +155,7 @@ class ProductsController extends Controller
         if ($data['to'] === 'prices') {
             session()->put('price_list.products', $ids);
 
-            return response()->json(['url' => ProductsScreen::path(PriceListExport::getUrl())]);
+            return response()->json(['url' => ProductsScreen::path(PriceListExport::getUrl()).'?only=1']); // the new price list shows only these
         }
         session()->put('stock_cost_run.products', $ids); // hundreds may be ticked: too long for an address
 
