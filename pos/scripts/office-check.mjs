@@ -506,12 +506,12 @@ try {
       // Catalogue and pricing lists, rebuilt (part 7): each opens from Stock and loads; the first category opens its form (left).
       for (const [link, path, table] of [[/^Categories/, /\/office\/categories$/, 'Categories'], [/^Brands/, /\/office\/brands$/, 'Brands'],
         [/^Units of measure/i, /\/office\/units$/, 'Units of measure'], [/^Tax rates/i, /\/office\/tax-rates$/, 'Tax rates'], [/^Tax groups/i, /\/office\/tax-groups$/, 'Tax groups'],
-        [/^Price lists/i, /\/office\/price-lists$/, 'Price lists']]) {
+        [/^Price lists/i, /\/office\/price-lists$/, 'Price lists'], [/^Pricing rules/i, /\/office\/pricing-rules$/, 'Pricing rules']]) {
         await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Stock/ }).first().click()
         await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: link }).first().click()
         await page.waitForURL(path, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${table} did not open the new screen (${page.url()})`))
         const first = page.getByRole('table', { name: table }).getByRole('row').nth(1)
-        await first.waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${table} did not load`))
+        await (table === 'Pricing rules' ? page.getByText(/No pricing rules/).or(first).first() : first).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${table} did not load`))
         await page.screenshot({ path: out(`${table.replaceAll(' ', '-').toLowerCase()}-${look}-${w}`) })
         if (table === 'Price lists' && await first.count()) {
           await first.click()
@@ -520,6 +520,13 @@ try {
           await page.getByRole('dialog').getByRole('button', { name: 'Back' }).click()
         }
       }
+      // Prices to review, rebuilt (part 8): opens from Stock and loads (nothing is approved).
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Stock/ }).first().click()
+      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: /^Prices to review/i }).first().click()
+      await page.waitForURL(/\/office\/prices-to-review$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Prices to review did not open the new screen (${page.url()})`))
+      await page.getByText('No prices waiting.').or(page.getByRole('table', { name: 'Prices to review' }).getByRole('row').nth(1)).first().waitFor({ timeout: 20000 })
+        .catch(() => problems.push(`${look} ${w}: Prices to review did not load`))
+      await page.screenshot({ path: out(`prices-to-review-${look}-${w}`) })
       // Fixed assets, rebuilt (release 8): Kinds of asset opens from the register with its kinds.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
       await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: 'Fixed assets', exact: true }).first().click()

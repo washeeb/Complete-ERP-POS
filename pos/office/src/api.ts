@@ -514,6 +514,16 @@ export type RefRow = { id: string; name: string; products: number; archived: boo
   archive_blockers: string[]; can_restore: boolean; values: Record<string, unknown>; [extra: string]: unknown }
 export type RefList = { kind: RefKind; can_create: boolean; archivable: boolean; rows: RefRow[] }
 export type RefOptions = { move_to: Option[]; industries?: Option[]; parents?: Option[]; default_industry?: string | null; decimals?: Option[]; merge_into?: Option[]; rates?: Option[]; branches?: Option[] }
+export type RuleValues = { scope: string; category_id: string | null; product_id: string | null; product?: string | null; price_list_id: string; method: string; value: string
+  amount: string; tax_mode: string; round_minor: string; round_mode: string; on_change: string; is_active: boolean }
+export type PricingRuleRow = { id: string; applies_to: string; price_list: string | null; rule: string; gives: string; rounding: string; on_change: string; active: boolean; archived: boolean
+  can_edit: boolean; can_archive: boolean; can_restore: boolean; values: RuleValues }
+export type PricingRuleList = { can_create: boolean; rows: PricingRuleRow[] }
+export type PricingRuleOptions = { scopes: Option[]; methods: Option[]; tax_modes: Option[]; rounding: Option[]; on_change: Option[]; currency: string; price_lists: Option[]; default_list: string | null
+  categories: Option[] }
+export type SuggestionRow = { id: string; product: string | null; sku: string | null; unit: string | null; price_list: string | null; cost: number; now: number | null; new: number
+  change: string; why: string | null; since: string | null }
+export type SuggestionList = { total: number; page: number; per: number; currency: string; exponent: number; rows: SuggestionRow[] }
 export type RbDataset = { id: string; label: string; dated: boolean; dims: Option[]; measures: Option[] }
 export type RbOptions = { datasets: RbDataset[]; periods: Option[]; branches: Option[]; schedules: Option[]; people: Option[]; max_rows: number }
 export type RbChoices = { dataset: string; dimensions: string[]; measures: string[]; period: string; from: string | null; to: string | null; branch_id: string | null
@@ -985,6 +995,14 @@ export const api = {
   refSave: (kind: RefKind, id: string | null, body: Record<string, unknown>) => call<UserDone & { id: string }>(`/office-api/lists/${kind}${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(body) }),
   refAction: (kind: RefKind, id: string, action: 'delete' | 'move' | 'merge' | 'verify' | 'archive' | 'restore', body: Record<string, unknown> = {}) =>
     call<UserDone>(`/office-api/lists/${kind}/${id}/${action}`, { method: 'POST', body: JSON.stringify(body) }),
+  pricingRules: (query: string, signal?: AbortSignal) => call<PricingRuleList>(`/office-api/pricing-rules?${query}`, { signal }),
+  pricingOptions: () => call<PricingRuleOptions>('/office-api/pricing-rules/options'),
+  pricingProducts: (q: string) => call<{ rows: Option[] }>(`/office-api/pricing-rules/products?q=${encodeURIComponent(q)}`),
+  saveRule: (id: string | null, body: Record<string, unknown>) => call<UserDone & { id: string }>(id ? `/office-api/pricing-rules/${id}` : '/office-api/pricing-rules', { method: 'POST', body: JSON.stringify(body) }),
+  applyRules: () => call<UserDone>('/office-api/pricing-rules/apply-all', { method: 'POST' }),
+  ruleArchive: (id: string, step: 'archive' | 'restore', reason: string | null = null) => call<UserDone>(`/office-api/pricing-rules/${id}/${step}`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  pricesToReview: (query: string, signal?: AbortSignal) => call<SuggestionList>(`/office-api/prices-to-review?${query}`, { signal }),
+  decidePrices: (step: 'approve' | 'keep', ids: string[]) => call<UserDone>(`/office-api/prices-to-review/${step}`, { method: 'POST', body: JSON.stringify({ ids }) }),
   financialOptions: () => call<FrOptions>('/office-api/financial-reports/options'),
   shareHeadOffice: (to: string) => call<{ message: string }>('/office-api/financial-reports/share-head-office', { method: 'POST', body: JSON.stringify({ to }) }),
   withholdingCsvUrl: (month: string) => `/office-api/withholding-tax/csv?month=${encodeURIComponent(month)}`,

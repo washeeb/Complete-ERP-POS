@@ -28,6 +28,7 @@ use App\Http\Controllers\Office\InvoicesController as OfficeInvoicesController;
 use App\Http\Controllers\Office\JournalsController as OfficeJournalsController;
 use App\Http\Controllers\Office\MessagingController as OfficeMessagingController;
 use App\Http\Controllers\Office\OfficeController;
+use App\Http\Controllers\Office\PricingController as OfficePricingController;
 use App\Http\Controllers\Office\ProductsController as OfficeProductsController;
 use App\Http\Controllers\Office\PurchaseOrdersController as OfficePurchaseOrdersController;
 use App\Http\Controllers\Office\ReferenceListsController as OfficeReferenceListsController;
@@ -327,6 +328,15 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::post('lists/{kind}/{id}', [OfficeReferenceListsController::class, 'save'])->whereIn('kind', $refKinds)->whereUuid('id');
     Route::post('lists/{kind}/{id}/{action}', [OfficeReferenceListsController::class, 'action'])->whereIn('kind', $refKinds)->whereUuid('id')
         ->whereIn('action', ['delete', 'move', 'merge', 'verify', 'archive', 'restore']);
+    Route::get('pricing-rules', [OfficePricingController::class, 'rules']);
+    Route::get('pricing-rules/options', [OfficePricingController::class, 'options']);
+    Route::get('pricing-rules/products', [OfficePricingController::class, 'products']);
+    Route::post('pricing-rules', [OfficePricingController::class, 'save']);
+    Route::post('pricing-rules/apply-all', [OfficePricingController::class, 'applyAll']);
+    Route::post('pricing-rules/{rule}', [OfficePricingController::class, 'save'])->whereUuid('rule');
+    Route::post('pricing-rules/{rule}/{step}', [OfficePricingController::class, 'archive'])->whereUuid('rule')->whereIn('step', ['archive', 'restore']);
+    Route::get('prices-to-review', [OfficePricingController::class, 'suggestions']);
+    Route::post('prices-to-review/{step}', [OfficePricingController::class, 'decide'])->whereIn('step', ['approve', 'keep']);
     Route::get('access-requests', [OfficeRolesController::class, 'requests']);
     Route::post('access-requests/{accessRequest}/{step}', [OfficeRolesController::class, 'decide'])->whereUuid('accessRequest')->whereIn('step', ['approve', 'reject', 'withdraw']);
     Route::get('bank-accounts', [OfficeBankingController::class, 'accounts']);
