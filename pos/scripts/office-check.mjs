@@ -587,6 +587,7 @@ try {
           [/^Controlled-drug register/i, /\/office\/controlled-drug-register/, null, /No controlled medicines moved|Opening /],
           [/^NHIS claims/i, /\/office\/nhis-claims$/, 'NHIS claims', /No NHIS claims yet/],
           [/^Sales to sign off/i, /\/office\/medicine-signoffs$/, 'Sales to sign off', /Nothing to sign off/],
+          [/^Health checks/i, /\/office\/health-checks$/, 'Health checks', 'No readings yet.'],
           [/^Near-expiry markdowns/i, /\/office\/pharmacy\/markdowns/, null, /Expiring soon/]]) {
           await industries().click()
           const a = page.getByRole('navigation', { name: 'Industries' }).getByRole('link', { name: link }).first()
@@ -706,6 +707,47 @@ try {
           await page.screenshot({ path: out(`supplier-return-${look}-${w}`) })
           await page.goBack()
         }
+      }
+      // Branches, Industries, Legal entities and Branding, rebuilt (part 20): each opens from Setup → Company and loads; New branch
+      // opens the form, and a branch opens with its stores and tills (nothing is saved). Scale items opens from Industries →
+      // Grocery where the grocery module is on.
+      for (const [link, url, ready] of [
+        ['Branches', /\/office\/branches$/, () => page.getByRole('table', { name: 'Branches' }).getByRole('row').nth(1)],
+        ['Industries', /\/office\/industries$/, () => page.getByText('No industries.').or(page.getByRole('table', { name: 'Industries' }).getByRole('row').nth(1))],
+        ['Legal entities', /\/office\/legal-entities$/, () => page.getByText(/No legal entities match/).or(page.getByRole('table', { name: 'Legal entities' }).getByRole('row').nth(1))],
+        ['Branding', /\/office\/branding$/, () => page.getByRole('region', { name: 'Logo and icon' })]]) {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Setup/ }).first().click()
+        const l = page.getByRole('navigation', { name: 'Setup' }).getByRole('link', { name: menuName(link) }).first()
+        if (!await l.count()) { problems.push(`${look} ${w}: Setup has no ${link} link`); await page.keyboard.press('Escape'); continue }
+        await l.click()
+        await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await ready().first().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        await page.screenshot({ path: out(`company-${link.split(' ')[0].toLowerCase()}-${look}-${w}`) })
+        if (link === 'Branches') {
+          await page.getByRole('table', { name: 'Branches' }).getByRole('row').nth(1).click()
+          await page.getByRole('region', { name: 'Tills', exact: true }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: a branch did not open with its tills`))
+          await page.screenshot({ path: out(`company-branch-${look}-${w}`) })
+          await page.goBack()
+          const add = page.getByRole('button', { name: 'New branch' })
+          await add.waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Branches has no New branch`))
+          if (await add.count()) {
+            await add.click()
+            await page.getByLabel('Tills to create').waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: New branch did not open the form`))
+            await page.screenshot({ path: out(`company-branch-new-${look}-${w}`) })
+            await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+          }
+        }
+      }
+      if (await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Industries/ }).count()) {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Industries/ }).first().click()
+        const scale = page.getByRole('navigation', { name: 'Industries' }).getByRole('link', { name: /^Scale items/i }).first()
+        if (await scale.count()) {
+          await scale.click()
+          await page.waitForURL(/\/office\/scale-items$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Scale items did not open the new screen (${page.url()})`))
+          await page.getByText('No product has a scale code yet.').or(page.getByRole('table', { name: 'Scale items' }).getByRole('row').nth(1)).first().waitFor({ timeout: 20000 })
+            .catch(() => problems.push(`${look} ${w}: Scale items did not load`))
+          await page.screenshot({ path: out(`grocery-scale-${look}-${w}`) })
+        } else await page.keyboard.press('Escape')
       }
       // Landed costs, Cost runs, Estimated costs and Spend analytics, rebuilt (part 19): each opens from its menu with its list,
       // empty line or figures; Cost runs' New button opens the form and Landed costs' Spread opens its dialog (nothing is saved).

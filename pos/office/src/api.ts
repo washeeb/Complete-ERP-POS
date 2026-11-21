@@ -718,6 +718,29 @@ export type SpendData = Money & { from: string; to: string; branch: string; bran
   rfq: { saved: number; rfqs: number; quotes_per_rfq: number | null; response_pct: number | null }
   months: { month: string; spend: number }[]; suppliers: { name: string; spend: number; share: number; bills: number }[]
   categories: { name: string; spend: number; share: number }[]; departments: { name: string; spend: number }[] }
+export type Archivable = { archived: boolean; archived_note?: string | null; can_archive: boolean; archive_blockers: string[]; can_restore: boolean }
+export type BranchRow = { id: string; code: string; name: string; hq: boolean; industry: string | null; tills: number; modules: string; archived: boolean }
+export type BranchList = { total: number; page: number; per: number; can_create: boolean; rows: BranchRow[] }
+export type OwnSetting = { key: string; label: string; help: string; type: string; options: Option[] | null; min: number | null; max: number | null
+  company: string; value: string; may_change: boolean; who: string | null }
+export type BranchDetail = Partial<Archivable> & {
+  id: string | null; code?: string; hq?: boolean; can_edit?: boolean; legal_entities: Option[]; industries: Option[]
+  values: { name: string; legal_entity_id: string; industry_id?: string; phone: string; address: string; tills?: string }
+  sections?: { prefix: string; title: string; about: string; fields: OwnSetting[] }[]
+  stores?: (Archivable & { id: string; code: string; name: string })[]
+  tills?: (Archivable & { id: string; code: string; name: string; warehouse_id: string; store: string | null })[]
+}
+export type IndustryRow = Archivable & { id: string; code: string; name: string; module_key: string; module: string; branches: number; legal_entity_id: string; books: string | null; sort: number }
+export type IndustryList = { can_create: boolean; modules: Option[]; legal_entities: Option[]; rows: IndustryRow[] }
+export type EntityRow = Archivable & { id: string; name: string; registration_no: string; tin: string; vat_no: string; address: string; primary: boolean }
+export type EntityList = { can_create: boolean; can_edit: boolean; rows: EntityRow[] }
+export type BrandingData = { company: string; color: string; menu_color: string; default_color: string; shown_color: string; receipt_logo: boolean; suggestion: string | null
+  logo_url: string | null; logo_dark_url: string | null; icon_url: string; assets: { kind: 'logo' | 'logo_dark' | 'icon'; label: string; hint: string; url: string | null; about: string | null }[] }
+export type ReadingRow = { id: string; taken_at: string | null; person: string; customer_id: string | null; kind: string; reading: string; flag: string | null; flag_label: string
+  tone: string; note: string | null; branch: string | null; by: string | null }
+export type ReadingList = { total: number; page: number; per: number; patient_name: string | null; kinds: Option[]; flags: Option[]; can_service: boolean; rows: ReadingRow[] }
+export type ReadingForm = { branches: Option[]; branch: string; kinds: Option[]; results: Record<string, Option[]>; currency: string; exponent: number; tax_groups: Option[] }
+export type ScaleData = { prefixes: string; currency: string; exponent: number; rows: { id: string; plu: string; sku: string | null; name: string; unit: string | null; price: number | null }[] }
 export type AgreementForm = { id: string | null; number: string | null; values: AgreementValues; currency: string; suppliers: Option[]; kinds: Option[]; accounts: Option[] }
 export type ExpiryList = { total: number; page: number; per: number; currency: string; exponent: number; value: number; rows: ExpiryRow[] }
 export type ExpiryOptions = { statuses: Option[]; warehouses: Option[]; suppliers: Option[]; settlements: Option[]; reasons: Option[]; methods: Option[]
@@ -1361,6 +1384,37 @@ export const api = {
     call<{ message: string; run: CostRunDetail }>(`/office-api/cost-runs/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
   estimatedCosts: (query: string, signal?: AbortSignal) => call<EstimateList>(`/office-api/estimated-costs?${query}`, { signal }),
   spendAnalytics: (query: string, signal?: AbortSignal) => call<SpendData>(`/office-api/spend-analytics?${query}`, { signal }),
+  branches: (query: string, signal?: AbortSignal) => call<BranchList>(`/office-api/branches?${query}`, { signal }),
+  branch: (id: string | null) => call<BranchDetail>(id ? `/office-api/branches/${id}` : '/office-api/branches/form'),
+  createBranch: (body: Record<string, unknown>) => call<{ id: string }>('/office-api/branches', { method: 'POST', body: JSON.stringify(body) }),
+  saveBranch: (id: string, body: Record<string, unknown>) => call<{ message: string; branch: BranchDetail }>(`/office-api/branches/${id}`, { method: 'POST', body: JSON.stringify(body) }),
+  saveStore: (id: string, body: Record<string, unknown>) => call<{ message: string; branch: BranchDetail }>(`/office-api/branches/${id}/stores`, { method: 'POST', body: JSON.stringify(body) }),
+  saveTill: (id: string, body: Record<string, unknown>) => call<{ message: string; branch: BranchDetail }>(`/office-api/branches/${id}/tills`, { method: 'POST', body: JSON.stringify(body) }),
+  companyArchive: (kind: 'branch' | 'store' | 'till' | 'industry' | 'legal_entity', id: string, restore: boolean, reason: string) =>
+    call<{ message: string }>('/office-api/company/archive', { method: 'POST', body: JSON.stringify({ kind, id, restore, reason: restore ? null : reason }) }),
+  industries: (query: string, signal?: AbortSignal) => call<IndustryList>(`/office-api/industries?${query}`, { signal }),
+  saveIndustry: (id: string | null, body: Record<string, unknown>) => call<{ id: string; message: string }>(id ? `/office-api/industries/${id}` : '/office-api/industries', { method: 'POST', body: JSON.stringify(body) }),
+  legalEntities: (query: string, signal?: AbortSignal) => call<EntityList>(`/office-api/legal-entities?${query}`, { signal }),
+  saveLegalEntity: (id: string | null, body: Record<string, unknown>) => call<{ id: string; message: string }>(id ? `/office-api/legal-entities/${id}` : '/office-api/legal-entities', { method: 'POST', body: JSON.stringify(body) }),
+  branding: () => call<BrandingData>('/office-api/branding'),
+  saveBranding: (body: Record<string, unknown>) => call<{ message: string; branding: BrandingData }>('/office-api/branding', { method: 'POST', body: JSON.stringify(body) }),
+  brandRemove: (kind: string) => call<{ message: string; branding: BrandingData }>(`/office-api/branding/${kind}/remove`, { method: 'POST' }),
+  /** Upload a brand image (a form, for the file). */
+  brandUpload: async (kind: string, file: File) => {
+    const body = new FormData()
+    body.append('file', file)
+    const res = await fetch(`/office-api/branding/${kind}`, { method: 'POST', body, credentials: 'same-origin',
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
+    const j = await res.json().catch(() => ({}))
+    if (!res.ok) throw new ApiError(j.detail ?? j.message ?? `Error ${res.status}`, res.status, j.error ?? 'error')
+    return j as { message: string; branding: BrandingData }
+  },
+  healthChecks: (query: string, signal?: AbortSignal) => call<ReadingList>(`/office-api/health-checks?${query}`, { signal }),
+  readingForm: () => call<ReadingForm>('/office-api/health-checks/form'),
+  patients: (q: string, signal?: AbortSignal) => call<{ results: { id: string; label: string; detail?: string }[] }>(`/office-api/health-checks/patients?q=${encodeURIComponent(q)}`, { signal }),
+  recordReading: (body: Record<string, unknown>) => call<{ id: string; message: string }>('/office-api/health-checks', { method: 'POST', body: JSON.stringify(body) }),
+  addFeeService: (body: Record<string, unknown>) => call<{ id: string; message: string }>('/office-api/health-checks/service', { method: 'POST', body: JSON.stringify(body) }),
+  scaleItems: () => call<ScaleData>('/office-api/scale-items'),
   markDownBatches: (keys: string[], percent: string) => call<UserDone>('/office-api/expiry/markdown', { method: 'POST', body: JSON.stringify({ keys, percent }) }),
   nhisClaims: (query: string, signal?: AbortSignal) => call<NhisClaimList>(`/office-api/nhis-claims?${query}`, { signal }),
   nhisUnclaimed: (branch: string, upTo: string) => call<{ sales: number; amount: number; currency: string; exponent: number }>(`/office-api/nhis-claims/unclaimed?branch=${branch}&up_to=${upTo}`),
