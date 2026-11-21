@@ -4,6 +4,7 @@ use App\Domain\Pharmacy\HealthReadings;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\DomainException;
 use App\Filament\Pages\HealthReadingsPage;
+use App\Models\AuditEvent;
 use App\Models\Customer;
 use App\Models\HealthReading;
 use App\Models\Product;
@@ -47,4 +48,26 @@ it('sets up a fee service, records and lists readings on the page', function () 
     Livewire::test(HealthReadingsPage::class)->callAction('take', ['branch_id' => $this->branch, 'kind' => 'bp', 'systolic' => '150', 'diastolic' => '95'])->assertHasNoActionErrors();
     Livewire::test(HealthReadingsPage::class)->assertCountTableRecords(1)->assertSee('150/95 mmHg')->assertSee('High')->filterTable('flag', ['normal'])->assertCountTableRecords(0);
     expect(HealthReading::sole()->taken_by_name)->toBe('Ama Owner');
+});
+
+it('records HB, HIV and typhoid tests and wound dressings, and keeps an HIV result out of the audit log', function () {
+    expect(HealthReadings::flag('hb', null, null, 6.5))->toBe('urgent')->and(HealthReadings::flag('hb', null, null, 10.0))->toBe('low')
+        ->and(HealthReadings::flag('hb', null, null, 13.5))->toBe('normal')->and(HealthReadings::flag('hiv', null, null, null, 'reactive'))->toBe('urgent')
+        ->and(HealthReadings::flag('hiv', null, null, null, 'invalid'))->toBe('retest')->and(HealthReadings::flag('typhoid', null, null, null, 'positive'))->toBe('high');
+
+    $hb = $this->svc->record($this->a, ['kind' => 'hb', 'branch_id' => $this->branch, 'value' => '11.2']);
+    expect($hb->summary())->toBe('11.2 g/dL')->and($hb->flag)->toBe('low');
+    expect(fn () => $this->svc->record($this->a, ['kind' => 'hb', 'branch_id' => $this->branch, 'value' => '112']))->toThrow(DomainException::class, 'g/dL');
+    expect(fn () => $this->svc->record($this->a, ['kind' => 'typhoid', 'branch_id' => $this->branch, 'result' => 'maybe']))->toThrow(DomainException::class, 'test result');
+    expect($this->svc->record($this->a, ['kind' => 'typhoid', 'branch_id' => $this->branch, 'result' => 'negative'])->summary())->toBe('Negative');
+    expect(fn () => $this->svc->record($this->a, ['kind' => 'wound', 'branch_id' => $this->branch]))->toThrow(DomainException::class, 'what was done');
+    $w = $this->svc->record($this->a, ['kind' => 'wound', 'branch_id' => $this->branch, 'note' => 'Left leg cleaned and dressed']);
+    expect($w->flag)->toBe('done')->and($w->summary())->toBe('Left leg cleaned and dressed');
+
+    $hiv = $this->svc->record($this->a, ['kind' => 'hiv', 'branch_id' => $this->branch, 'result' => 'reactive', 'note' => 'Referred']);
+    expect($hiv->result)->toBe('reactive')->and($hiv->flag)->toBe('urgent')->and($hiv->summary())->toBe('Reactive');
+    $audit = AuditEvent::where('subject_id', $hiv->id)->sole()->changes;
+    expect($audit['result'])->toBe(['[redacted]', '[recorded]'])->and($audit['flag'])->toBe(['[redacted]', '[recorded]'])->and($audit['note'])->toBe(['[redacted]', '[recorded]'])
+        ->and(json_encode($audit))->not->toContain('reactive')->and($audit['kind'][1])->toBe('hiv');
+    expect(AuditEvent::where('subject_id', $hb->id)->sole()->changes['flag'][1])->toBe('low'); // other checks are logged as before
 });

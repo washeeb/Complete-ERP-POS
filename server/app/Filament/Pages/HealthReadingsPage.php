@@ -16,6 +16,7 @@ use App\Models\TaxGroup;
 use App\Models\Uom;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -83,8 +84,12 @@ class HealthReadingsPage extends Page implements HasTable
                     TextInput::make('systolic')->label('Top number (systolic)')->numeric()->visible(fn (Get $get) => $get('kind') === 'bp'),
                     TextInput::make('diastolic')->label('Bottom number (diastolic)')->numeric()->visible(fn (Get $get) => $get('kind') === 'bp'),
                     TextInput::make('pulse')->label('Pulse')->numeric()->visible(fn (Get $get) => $get('kind') === 'bp'),
-                    TextInput::make('value')->label(fn (Get $get) => ['sugar' => 'Reading (mmol/L)', 'weight' => 'Weight (kg)', 'temperature' => 'Temperature (°C)'][$get('kind')] ?? 'Reading')->numeric()->visible(fn (Get $get) => $get('kind') !== 'bp'),
-                    Textarea::make('note')->label('Note')->rows(2)->maxLength(255),
+                    TextInput::make('value')->label(fn (Get $get) => ['sugar' => 'Reading (mmol/L)', 'weight' => 'Weight (kg)', 'temperature' => 'Temperature (°C)', 'hb' => 'HB (g/dL)'][$get('kind')] ?? 'Reading')
+                        ->numeric()->visible(fn (Get $get) => ! in_array($get('kind'), ['bp', 'hiv', 'typhoid', 'wound'], true)),
+                    Radio::make('result')->label('Result')->options(fn (Get $get) => HealthReading::RESULTS[$get('kind')] ?? [])
+                        ->visible(fn (Get $get) => isset(HealthReading::RESULTS[$get('kind')]))->required(fn (Get $get) => isset(HealthReading::RESULTS[$get('kind')])),
+                    Textarea::make('note')->label(fn (Get $get) => $get('kind') === 'wound' ? 'What was done' : 'Note')->rows(2)->maxLength(255)
+                        ->required(fn (Get $get) => $get('kind') === 'wound')->placeholder(fn (Get $get) => $get('kind') === 'wound' ? 'e.g. left leg cleaned and dressed' : null),
                 ])
                 ->action(fn (array $data) => Erp::run(fn ($actor) => app(HealthReadings::class)->record($actor, $data), 'Reading saved')),
         ];
@@ -110,7 +115,7 @@ class HealthReadingsPage extends Page implements HasTable
                 TextColumn::make('kind')->label('Measured')->formatStateUsing(fn ($state) => HealthReading::KINDS[$state] ?? $state),
                 TextColumn::make('reading')->label('Reading')->weight('bold')->state(fn (HealthReading $r) => $r->summary()),
                 TextColumn::make('flag')->label('Result')->badge()->formatStateUsing(fn ($state) => HealthReading::FLAGS[$state] ?? $state)
-                    ->color(fn ($state) => ['urgent' => 'danger', 'high' => 'warning', 'low' => 'warning', 'normal' => 'success'][$state] ?? 'gray'),
+                    ->color(fn ($state) => ['urgent' => 'danger', 'high' => 'warning', 'low' => 'warning', 'retest' => 'warning', 'normal' => 'success'][$state] ?? 'gray'),
                 TextColumn::make('note')->limit(40)->placeholder('—')->toggleable(),
                 TextColumn::make('branch.code')->label('Branch')->toggleable(),
                 TextColumn::make('taken_by_name')->asPerson('taken_by')->label('Taken by'),

@@ -461,3 +461,18 @@ it('keeps a reading sold at the till against the customer, and never refuses a s
     $this->withToken($this->token)->postJson('/api/v1/pos/sales', $bad)->assertCreated();
     expect(HealthReading::count())->toBe(1);
 });
+
+it('never prints an HIV result on the receipt, even when a till sends one', function () {
+    $tax = TaxGroup::query()->first();
+    $this->actingAs(withMfa($this->owner), 'web');
+    $test = app(CatalogService::class)->saveProduct(actorFor($this->owner), new Product, ['name' => 'HIV test', 'base_uom_id' => Uom::where('code', 'PC')->value('id'), 'tax_group_id' => $tax->id,
+        'track_stock' => false, 'is_active' => true, 'reading_kind' => 'hiv', 'prices' => [['price_list_id' => PriceList::where('is_default', true)->value('id'), 'uom_id' => Uom::where('code', 'PC')->value('id'), 'min_qty' => '1', 'amount' => '20.00']]])->fresh(['units', 'prices']);
+    app('auth')->forgetGuards();
+    $this->withToken($this->token)->getJson('/api/v1/pos/bootstrap')->assertOk();
+
+    $sale = cart($this, [[$test, true, '1']]);
+    $sale['lines'][0]['reading'] = ['result' => 'reactive'];
+    $sale['lines'][0]['note'] = 'Reactive'; // an older till, or a mistake: the server keeps only "HIV test done"
+    $this->withToken($this->token)->postJson('/api/v1/pos/sales', $sale)->assertCreated();
+    expect(HealthReading::sole()->result)->toBe('reactive')->and(DB::table('sale_lines')->value('note'))->toBe('HIV test done');
+});
