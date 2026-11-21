@@ -8,7 +8,9 @@ use App\Domain\Inventory\StockAdjustmentService;
 use App\Domain\Support\Actor;
 use App\Filament\Pages\BatchesExpiry;
 use App\Filament\Pages\ExpiryReturns;
+use App\Filament\Pages\GroceryMarkdowns;
 use App\Filament\Pages\ImportData;
+use App\Filament\Pages\PharmacyMarkdowns;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
@@ -25,20 +27,25 @@ use Illuminate\Support\Facades\DB;
  * Batches & expiry in the new back office (release 7 of the rewrite), as the current page (whose queries it uses):
  * for one store, the batches expiring soon with the suggested markdown (Apply, then print the stickers), the markdowns
  * on the shelf now (Withdraw), what has expired, every batch on hand, Correct expiry, and Add or move a batch (a draft
- * stock adjustment, posted as usual).
+ * stock adjustment, posted as usual). With a kind (grocery or pharmacy, part 13) it is that industry's Near-expiry
+ * markdowns page: the same work for the stores that run it, without the full batch list, for the people that page lets in.
  */
 final class BatchesScreen
 {
-    public function __construct(private readonly User $user) {}
+    /** The industries' markdown pages (Grocery → Markdowns, Pharmacy → Near-expiry markdowns). */
+    public const KINDS = ['grocery' => GroceryMarkdowns::class, 'pharmacy' => PharmacyMarkdowns::class];
 
-    public static function canView(): bool
+    public function __construct(private readonly User $user, private readonly ?string $kind = null) {}
+
+    public static function canView(?string $kind = null): bool
     {
-        return BatchesExpiry::canAccess();
+        return $kind === null ? BatchesExpiry::canAccess() : (isset(self::KINDS[$kind]) && self::KINDS[$kind]::canAccess());
     }
 
     private function page(?string $warehouse): BatchesExpiry
     {
-        $page = new BatchesExpiry;
+        $class = $this->kind === null ? BatchesExpiry::class : self::KINDS[$this->kind];
+        $page = new $class;
         $page->warehouse = (string) $warehouse;
         $page->updatedWarehouse();
 
@@ -64,7 +71,7 @@ final class BatchesScreen
         $markdowns = $markDown ? $page->markdowns() : collect();
 
         return [
-            'warehouse' => $page->warehouse, 'warehouses' => PurchaseOrdersScreen::choices($page->warehouses()),
+            'kind' => $this->kind, 'warehouse' => $page->warehouse, 'warehouses' => PurchaseOrdersScreen::choices($page->warehouses()),
             'can_mark_down' => $markDown, 'can_correct' => $page->canCorrect(), 'can_add' => $w && Erp::can('stock.adjust', $w),
             'suggestions' => $markDown ? array_map(fn ($s) => ['batch_id' => $s->batch_id, 'product' => $s->name, 'sku' => $s->sku, 'batch_no' => $s->batch_no,
                 'expires' => self::day($s->expires_on, 'j M'), 'days_left' => $s->days_left, 'on_hand' => Fields::qty((string) $s->on_hand),
@@ -73,7 +80,7 @@ final class BatchesScreen
                 'price' => FinanceUi::money((int) $m->price_minor), 'until' => $m->valid_until?->format('j M'), 'code' => $m->code])->all(),
             'labels' => $markdowns->isNotEmpty() ? route('print.markdown-labels', ['ids' => $markdowns->pluck('id')->implode(',')], false) : null,
             'expired' => $page->expired()->map(fn ($b) => self::batch($b))->all(),
-            'batches' => $page->batches()->map(fn ($b) => self::batch($b))->all(),
+            'batches' => $page->markdownsOnly ? [] : $page->batches()->map(fn ($b) => self::batch($b))->all(),
             'expiry_returns' => ExpiryReturns::canAccess() ? ExpiryReturns::getUrl(isAbsolute: false) : null,
             'sheet' => ImportData::getUrl(['type' => 'opening_batches'], isAbsolute: false),
         ];

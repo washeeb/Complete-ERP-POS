@@ -22,30 +22,30 @@ class BatchesController extends Controller
 {
     public function show(Request $request): JsonResponse
     {
-        $this->allowed();
+        $this->allowed($request);
 
-        return response()->json((new BatchesScreen($request->user()))->show($request->query('warehouse')));
+        return response()->json(($this->screen($request))->show($request->query('warehouse')));
     }
 
     public function products(Request $request): JsonResponse
     {
-        $this->allowed();
+        $this->allowed($request);
 
-        return response()->json(['products' => (new BatchesScreen($request->user()))->products((string) $request->query('q', ''))]);
+        return response()->json(['products' => ($this->screen($request))->products((string) $request->query('q', ''))]);
     }
 
     public function productBatches(Request $request): JsonResponse
     {
-        $this->allowed();
+        $this->allowed($request);
         $d = $request->validate(['warehouse' => ['required', 'uuid'], 'product' => ['required', 'uuid']]);
         $this->mine($d['warehouse']);
 
-        return response()->json(['batches' => (new BatchesScreen($request->user()))->productBatches($d['warehouse'], $d['product'])]);
+        return response()->json(['batches' => ($this->screen($request))->productBatches($d['warehouse'], $d['product'])]);
     }
 
     public function apply(Request $request): JsonResponse
     {
-        $this->allowed();
+        $this->allowed($request);
         $d = $request->validate(['warehouse' => ['required', 'uuid'], 'batch' => ['required', 'uuid'], 'percent' => ['required', 'numeric']], ['percent.required' => 'Type the % off.']);
         $this->mine($d['warehouse']);
 
@@ -54,14 +54,14 @@ class BatchesController extends Controller
 
     public function withdraw(Request $request, string $markdown): JsonResponse
     {
-        $this->allowed();
+        $this->allowed($request);
 
         return $this->act($request, fn ($screen, $actor) => ['message' => 'Markdown '.$screen->withdraw($actor, $markdown)->code.' withdrawn.']);
     }
 
     public function correct(Request $request): JsonResponse
     {
-        $this->allowed();
+        $this->allowed($request);
         $d = $request->validate(['batch' => ['required', 'uuid'], 'expires_on' => ['required', 'date'], 'reason' => ['required', 'string', 'max:255']],
             ['expires_on.required' => 'Choose the expiry date.', 'reason.required' => 'Say why.']);
 
@@ -71,7 +71,7 @@ class BatchesController extends Controller
     /** Add or move a batch: a draft stock adjustment, opened next for checking and posting. */
     public function addBatch(Request $request): JsonResponse
     {
-        $this->allowed();
+        $this->allowed($request);
         $d = $request->validate([
             'warehouse' => ['required', 'uuid'], 'kind' => ['required', 'in:found,move'], 'product_id' => ['required', 'uuid'],
             'from_batch_id' => ['required_if:kind,move', 'nullable', 'uuid'], 'batch_no' => ['required', 'string', 'max:60'], 'expires_on' => ['required', 'date'],
@@ -100,7 +100,7 @@ class BatchesController extends Controller
 
     private function act(Request $request, callable $fn): JsonResponse
     {
-        $screen = new BatchesScreen($request->user());
+        $screen = $this->screen($request);
         try {
             return response()->json(DB::transaction(fn () => $fn($screen, Actor::user($request->user(), 'web'))));
         } catch (AccessDenied $e) {
@@ -110,9 +110,22 @@ class BatchesController extends Controller
         }
     }
 
-    private function allowed(): void
+    /** Batches & expiry, or an industry's markdowns page (?industry=grocery|pharmacy), as the person may open it. */
+    private function kind(Request $request): ?string
+    {
+        $kind = (string) $request->input('industry', '');
+
+        return array_key_exists($kind, BatchesScreen::KINDS) ? $kind : null;
+    }
+
+    private function screen(Request $request): BatchesScreen
+    {
+        return new BatchesScreen($request->user(), $this->kind($request));
+    }
+
+    private function allowed(Request $request): void
     {
         Filament::setCurrentPanel(Filament::getPanel('admin'));
-        abort_unless(BatchesScreen::canView(), 403, 'You cannot see batches.');
+        abort_unless(BatchesScreen::canView($this->kind($request)), 403, 'You cannot see batches.');
     }
 }

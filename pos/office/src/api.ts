@@ -408,7 +408,7 @@ export type SlowRow = { id: string; sku: string; name: string; on_hand: string; 
   move_to: { id: string; code: string; name: string; sold: string } | null; supplier: string | null }
 export type SlowView = { warehouse: string; warehouses: Option[]; days: number; periods: Option[]; count: number; value: string; can_move: boolean; rows: SlowRow[] }
 export type BatchRow = { batch_id: string; product: string; sku: string; batch_no: string; expires_on: string | null; expires: string | null; on_hand: string }
-export type BatchesView = { warehouse: string; warehouses: Option[]; can_mark_down: boolean; can_correct: boolean; can_add: boolean
+export type BatchesView = { kind: 'grocery' | 'pharmacy' | null; warehouse: string; warehouses: Option[]; can_mark_down: boolean; can_correct: boolean; can_add: boolean
   suggestions: { batch_id: string; product: string; sku: string; batch_no: string; expires: string; days_left: number; on_hand: string; percent: string }[]
   markdowns: { id: string; product: string | null; batch_no: string | null; percent: number; price: string; until: string | null; code: string }[]
   labels: string | null; expired: BatchRow[]; batches: BatchRow[]; expiry_returns: string | null; sheet: string }
@@ -531,6 +531,11 @@ export type PromotionOptions = { types: Option[]; currency: string; industries: 
 export type PromotionValues = { name: string; industry_id: string; is_active: boolean; type: string; coupon_code: string; percent: string; amount: string; min_spend: string
   buy_qty: string; get_qty: string; bundle_qty: string; product_ids: string[]; products?: Option[]; category_ids: string[]; starts_at: string; ends_at: string; days: string[]
   time_from: string; time_to: string; branch_ids: string[]; archived_branches?: Option[]; price_list_ids: string[] }
+export type ExpiryRow = { id: string; warehouse_id: string; warehouse: string; product: string; sku: string; controlled: boolean; batch_no: string; expires_on: string
+  days_left: number; on_hand: string; value: number; supplier_id: string | null; supplier: string | null; returnable: boolean }
+export type ExpiryList = { total: number; page: number; per: number; currency: string; exponent: number; value: number; rows: ExpiryRow[] }
+export type ExpiryOptions = { statuses: Option[]; warehouses: Option[]; suppliers: Option[]; settlements: Option[]; reasons: Option[]; methods: Option[]
+  evidence: 'reason' | 'method_witness' | 'method_witness_certificate'; today: string; month_start: string; can_mark_down: boolean }
 export type NhisClaimRow = { id: string; number: string; branch: string | null; period_to: string | null; claimed: number; paid: number | null; rejected: number | null; status: string; status_label: string }
 export type NhisClaimList = { total: number; page: number; per: number; dir: 'asc' | 'desc'; currency: string; exponent: number; statuses: Option[]; branches: Option[]
   default_branch: string | null; default_up_to: string; today: string; rows: NhisClaimRow[] }
@@ -931,13 +936,14 @@ export const api = {
   slowStock: (query: string, signal?: AbortSignal) => call<SlowView>(`/office-api/slow-stock?${query}`, { signal }),
   moveSlowStock: (warehouse: string, product: string, to: string) =>
     call<{ transfer: { id: string; number: string; open: string } }>('/office-api/slow-stock/move', { method: 'POST', body: JSON.stringify({ warehouse, product, to }) }),
-  batches: (warehouse: string) => call<BatchesView>(`/office-api/batches?warehouse=${encodeURIComponent(warehouse)}`),
-  batchProducts: (q: string) => call<{ products: Option[] }>(`/office-api/batches/products?q=${encodeURIComponent(q)}`),
-  productBatches: (warehouse: string, product: string) => call<{ batches: Option[] }>(`/office-api/batches/product-batches?${new URLSearchParams({ warehouse, product })}`),
-  applyMarkdown: (warehouse: string, batch: string, percent: string) => call<{ message: string }>('/office-api/batches/markdowns', { method: 'POST', body: JSON.stringify({ warehouse, batch, percent }) }),
-  withdrawMarkdown: (id: string) => call<{ message: string }>(`/office-api/batches/markdowns/${id}/withdraw`, { method: 'POST' }),
-  correctExpiry: (batch: string, expires_on: string, reason: string) => call<{ message: string }>('/office-api/batches/correct', { method: 'POST', body: JSON.stringify({ batch, expires_on, reason }) }),
-  addBatch: (body: Record<string, unknown>) => call<{ adjustment: { id: string; number: string; open: string } }>('/office-api/batches/add', { method: 'POST', body: JSON.stringify(body) }),
+  // industry: grocery | pharmacy for that industry's Near-expiry markdowns page (same work, its stores, its people)
+  batches: (warehouse: string, industry = '') => call<BatchesView>(`/office-api/batches?${new URLSearchParams({ warehouse, industry })}`),
+  batchProducts: (q: string, industry = '') => call<{ products: Option[] }>(`/office-api/batches/products?${new URLSearchParams({ q, industry })}`),
+  productBatches: (warehouse: string, product: string, industry = '') => call<{ batches: Option[] }>(`/office-api/batches/product-batches?${new URLSearchParams({ warehouse, product, industry })}`),
+  applyMarkdown: (warehouse: string, batch: string, percent: string, industry = '') => call<{ message: string }>(`/office-api/batches/markdowns?industry=${industry}`, { method: 'POST', body: JSON.stringify({ warehouse, batch, percent }) }),
+  withdrawMarkdown: (id: string, industry = '') => call<{ message: string }>(`/office-api/batches/markdowns/${id}/withdraw?industry=${industry}`, { method: 'POST' }),
+  correctExpiry: (batch: string, expires_on: string, reason: string, industry = '') => call<{ message: string }>(`/office-api/batches/correct?industry=${industry}`, { method: 'POST', body: JSON.stringify({ batch, expires_on, reason }) }),
+  addBatch: (body: Record<string, unknown>, industry = '') => call<{ adjustment: { id: string; number: string; open: string } }>(`/office-api/batches/add?industry=${industry}`, { method: 'POST', body: JSON.stringify(body) }),
   returns: (query: string, signal?: AbortSignal) => call<ReturnsList>(`/office-api/returns?${query}`, { signal }),
   returnsOptions: () => call<ReturnsOptions>('/office-api/returns/options'),
   journals: (query: string, signal?: AbortSignal) => call<JournalList>(`/office-api/journals?${query}`, { signal }),
@@ -1042,6 +1048,19 @@ export const api = {
   ruleArchive: (id: string, step: 'archive' | 'restore', reason: string | null = null) => call<UserDone>(`/office-api/pricing-rules/${id}/${step}`, { method: 'POST', body: JSON.stringify({ reason }) }),
   pricesToReview: (query: string, signal?: AbortSignal) => call<SuggestionList>(`/office-api/prices-to-review?${query}`, { signal }),
   decidePrices: (step: 'approve' | 'keep', ids: string[]) => call<UserDone>(`/office-api/prices-to-review/${step}`, { method: 'POST', body: JSON.stringify({ ids }) }),
+  expiry: (query: string, signal?: AbortSignal) => call<ExpiryList>(`/office-api/expiry?${query}`, { signal }),
+  expiryOptions: () => call<ExpiryOptions>('/office-api/expiry/options'),
+  disposalRegister: (warehouse: string, from: string, to: string) => call<{ url: string }>(`/office-api/expiry/register?${new URLSearchParams({ warehouse, from, to })}`),
+  /** Dispose: sent as a form, because the certificate may be a file. */
+  disposeBatches: async (body: FormData) => {
+    const res = await fetch('/office-api/expiry/dispose', { method: 'POST', body, credentials: 'same-origin',
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) throw new ApiError(json.detail ?? json.message ?? 'The disposal could not be prepared.', res.status, json.error ?? 'error')
+    return json as UserDone & { open: string }
+  },
+  returnBatches: (body: Record<string, unknown>) => call<UserDone & { open: string }>('/office-api/expiry/return', { method: 'POST', body: JSON.stringify(body) }),
+  markDownBatches: (keys: string[], percent: string) => call<UserDone>('/office-api/expiry/markdown', { method: 'POST', body: JSON.stringify({ keys, percent }) }),
   nhisClaims: (query: string, signal?: AbortSignal) => call<NhisClaimList>(`/office-api/nhis-claims?${query}`, { signal }),
   nhisUnclaimed: (branch: string, upTo: string) => call<{ sales: number; amount: number; currency: string; exponent: number }>(`/office-api/nhis-claims/unclaimed?branch=${branch}&up_to=${upTo}`),
   prepareNhisClaim: (branch: string, upTo: string) => call<UserDone & { id: string }>('/office-api/nhis-claims', { method: 'POST', body: JSON.stringify({ branch, up_to: upTo }) }),
