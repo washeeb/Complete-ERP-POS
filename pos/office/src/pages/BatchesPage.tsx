@@ -32,7 +32,10 @@ const END = { style: { justifyContent: 'flex-end' } }
  * now (Withdraw), what has expired (take it off the shelf; dispose or return it from Expiry & returns), and every
  * batch on hand. Correct expiry fixes a date typed wrongly; Add or move a batch makes a draft stock adjustment.
  */
-export function BatchesPage() {
+const TITLES = { grocery: 'Markdowns', pharmacy: 'Near-expiry markdowns' }
+
+/** With an industry: that industry's Near-expiry markdowns page (Grocery → Markdowns, Pharmacy → Near-expiry markdowns), without the full batch list. */
+export function BatchesPage({ industry = '' }: { industry?: '' | 'grocery' | 'pharmacy' }) {
   const page = usePageStyles()
   const s = useStyles()
   const [params, set] = useQueryParams()
@@ -46,9 +49,9 @@ export function BatchesPage() {
   const [adding, setAdding] = useState(false)
   const warehouse = str(params, 'warehouse')
   useEffect(() => {
-    api.batches(warehouse).then((d) => { setData(d); setError(''); setPercent(Object.fromEntries(d.suggestions.map((x) => [x.batch_id, x.percent]))) })
+    api.batches(warehouse, industry).then((d) => { setData(d); setError(''); setPercent(Object.fromEntries(d.suggestions.map((x) => [x.batch_id, x.percent]))) })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)))
-  }, [warehouse, nonce])
+  }, [warehouse, nonce, industry])
 
   if (error && !data) return <div className={page.page}><MessageBar intent="error"><MessageBarBody>{error}</MessageBarBody></MessageBar></div>
   if (!data) return <div className={page.page}><Spinner label="Reading the batches…" /></div>
@@ -82,8 +85,10 @@ export function BatchesPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Batches & expiry" hint="Batches by expiry date for one store: mark down what expires soon, take expired stock off the shelf, and correct a batch typed wrongly."
-        classic={`/admin/batches-expiry${warehouse ? `?warehouse=${warehouse}` : ''}`} />
+      {industry ? <PageHead title={TITLES[industry]} hint={`Near-expiry markdowns and their stickers, and expired stock to take off the shelf, for the ${industry === 'grocery' ? 'grocery stores' : 'pharmacies'}.`}
+        classic={`/admin/${industry}/markdowns${warehouse ? `?warehouse=${warehouse}` : ''}`} />
+        : <PageHead title="Batches & expiry" hint="Batches by expiry date for one store: mark down what expires soon, take expired stock off the shelf, and correct a batch typed wrongly."
+          classic={`/admin/batches-expiry${warehouse ? `?warehouse=${warehouse}` : ''}`} />}
       <div className={s.bar}>
         <Field label="Warehouse">
           <Dropdown aria-label="Warehouse" value={where} selectedOptions={[data.warehouse]} style={{ minWidth: 240 }} onOptionSelect={(_, d) => d.optionValue && set({ warehouse: d.optionValue })}>
@@ -109,7 +114,7 @@ export function BatchesPage() {
                   <TableCell>{x.expires} <Text size={200} className={s.muted}>({x.days_left} d)</Text></TableCell><TableCell className={s.end}>{x.on_hand}</TableCell>
                   <TableCell><Input className={s.pct} inputMode="decimal" aria-label={`Percent off ${x.product}`} value={percent[x.batch_id] ?? ''}
                     onChange={(_, d) => setPercent({ ...percent, [x.batch_id]: d.value })} contentAfter="%" /></TableCell>
-                  <TableCell><Button size="small" disabled={busy !== ''} onClick={() => run(x.batch_id, () => api.applyMarkdown(data.warehouse, x.batch_id, percent[x.batch_id] ?? ''))}>
+                  <TableCell><Button size="small" disabled={busy !== ''} onClick={() => run(x.batch_id, () => api.applyMarkdown(data.warehouse, x.batch_id, percent[x.batch_id] ?? '', industry))}>
                     {busy === x.batch_id ? 'Applying…' : 'Apply'}</Button></TableCell>
                 </TableRow>
               ))}</TableBody>
@@ -124,7 +129,7 @@ export function BatchesPage() {
                   <TableCell>{m.product}</TableCell><TableCell>{m.batch_no}</TableCell><TableCell>{m.percent} % off · {m.price}</TableCell>
                   <TableCell>until {m.until}</TableCell><TableCell className={s.mono}>{m.code}</TableCell>
                   <TableCell><Button size="small" appearance="subtle" disabled={busy !== ''} style={{ color: 'var(--zx-bad)' }}
-                    onClick={() => run(m.id, () => api.withdrawMarkdown(m.id))}>{busy === m.id ? 'Withdrawing…' : 'Withdraw'}</Button></TableCell>
+                    onClick={() => run(m.id, () => api.withdrawMarkdown(m.id, industry))}>{busy === m.id ? 'Withdrawing…' : 'Withdraw'}</Button></TableCell>
                 </TableRow>
               ))}</TableBody>
             </Table>
@@ -137,7 +142,7 @@ export function BatchesPage() {
         {batchTable(data.expired, 'Expired batches', 'Nothing expired in stock.', true)}
       </>)}
 
-      <Accordion collapsible>
+      {!industry && <Accordion collapsible>
         <AccordionItem value="all">
           <AccordionHeader>All batches on hand ({data.batches.length >= 500 ? 'the first 500, earliest expiry first' : data.batches.length.toLocaleString('en-GB')})</AccordionHeader>
           <AccordionPanel>
@@ -145,22 +150,22 @@ export function BatchesPage() {
               batchTable(data.batches, 'All batches on hand', 'No batches in this store.', false))}
           </AccordionPanel>
         </AccordionItem>
-      </Accordion>
+      </Accordion>}
 
-      {correcting && <CorrectExpiry batch={correcting} onClose={() => setCorrecting(null)} onDone={(m) => { setCorrecting(null); setDone(m); setNonce((n) => n + 1) }} />}
-      {adding && <AddBatch warehouse={data.warehouse} onClose={() => setAdding(false)} onDone={(open) => navigate(open)} />}
+      {correcting && <CorrectExpiry industry={industry} batch={correcting} onClose={() => setCorrecting(null)} onDone={(m) => { setCorrecting(null); setDone(m); setNonce((n) => n + 1) }} />}
+      {adding && <AddBatch industry={industry} warehouse={data.warehouse} onClose={() => setAdding(false)} onDone={(open) => navigate(open)} />}
     </div>
   )
 }
 
 /** Correct a batch's expiry date (or add a missing one); the stock stays in the batch. */
-function CorrectExpiry({ batch, onClose, onDone }: { batch: BatchRow; onClose: () => void; onDone: (message: string) => void }) {
+function CorrectExpiry({ industry, batch, onClose, onDone }: { industry: string; batch: BatchRow; onClose: () => void; onDone: (message: string) => void }) {
   const s = useStyles()
   const [date, setDate] = useState(batch.expires_on ?? '')
   const [reason, setReason] = useState('')
   return (
     <Ask title={`Expiry of batch ${batch.batch_no}`} go="Correct" ready={date !== '' && reason.trim() !== ''} onClose={onClose}
-      run={async () => onDone((await api.correctExpiry(batch.batch_id, date, reason)).message)}>
+      run={async () => onDone((await api.correctExpiry(batch.batch_id, date, reason, industry)).message)}>
       <div className={s.form}>
         <Text>For an expiry date typed wrongly, or missing. The stock stays in this batch. A wrong batch number: use Add or move a batch to move the stock to the right batch.</Text>
         <Field label="Expiry date" required><Input type="date" value={date} onChange={(_, d) => setDate(d.value)} /></Field>
@@ -171,7 +176,7 @@ function CorrectExpiry({ batch, onClose, onDone }: { batch: BatchRow; onClose: (
 }
 
 /** Add or move a batch: a draft stock adjustment for the store, opened next to check and post (approved above the limit). */
-function AddBatch({ warehouse, onClose, onDone }: { warehouse: string; onClose: () => void; onDone: (open: string) => void }) {
+function AddBatch({ industry, warehouse, onClose, onDone }: { industry: string; warehouse: string; onClose: () => void; onDone: (open: string) => void }) {
   const s = useStyles()
   const [kind, setKind] = useState<'found' | 'move'>('found')
   const [text, setText] = useState('')
@@ -186,19 +191,19 @@ function AddBatch({ warehouse, onClose, onDone }: { warehouse: string; onClose: 
   const [note, setNote] = useState('')
   useEffect(() => {
     if (text.trim().length < 2 || text === product?.label) return
-    const t = setTimeout(() => { api.batchProducts(text).then((d) => setFound(d.products)).catch(() => setFound([])) }, 250)
+    const t = setTimeout(() => { api.batchProducts(text, industry).then((d) => setFound(d.products)).catch(() => setFound([])) }, 250)
     return () => clearTimeout(t)
   }, [text, product])
   useEffect(() => {
     setFrom('')
     if (!product || kind !== 'move') { setFromBatches([]); return }
-    api.productBatches(warehouse, product.id).then((d) => setFromBatches(d.batches)).catch(() => setFromBatches([]))
+    api.productBatches(warehouse, product.id, industry).then((d) => setFromBatches(d.batches)).catch(() => setFromBatches([]))
   }, [product, kind, warehouse])
   const ready = !!product && batchNo.trim() !== '' && expires !== '' && Number(qty) > 0 && (kind === 'found' || from !== '')
   return (
     <Ask title="Add or move a batch" go="Make the draft adjustment" ready={ready} onClose={onClose} width={560}
       run={async () => onDone((await api.addBatch({ warehouse, kind, product_id: product!.id, from_batch_id: kind === 'move' ? from : null, batch_no: batchNo,
-        expires_on: expires, qty, unit_cost: kind === 'found' && cost !== '' ? cost : null, note: note || null })).adjustment.open)}>
+        expires_on: expires, qty, unit_cost: kind === 'found' && cost !== '' ? cost : null, note: note || null }, industry)).adjustment.open)}>
       <div className={s.form}>
         <Text>Makes a draft stock adjustment for this store. Check it and post it as usual (a manager approves it above the limit).</Text>
         <Field label="What happened">

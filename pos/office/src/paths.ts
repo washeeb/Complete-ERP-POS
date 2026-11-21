@@ -115,6 +115,8 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/journal-entries\/?$/, app: (_, q) => `${APP}/journals${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: new RegExp(`^/admin/journal-entries/(${UUID})$`), app: (m) => `${APP}/journals/${m[1]}` },
   { admin: /^\/admin\/returns\/?$/, app: (_, q) => `${APP}/returns${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/(grocery|pharmacy)\/markdowns\/?$/, app: (m, q) => `${APP}/${m[1]}/markdowns${q.get('warehouse') ? `?warehouse=${encodeURIComponent(q.get('warehouse')!)}` : ''}` },
+  { admin: /^\/admin\/expiry-returns\/?$/, app: () => `${APP}/expiry` },
   { admin: /^\/admin\/batches-expiry\/?$/, app: (_, q) => `${APP}/batches${q.get('warehouse') ? `?warehouse=${encodeURIComponent(q.get('warehouse')!)}` : ''}` },
   { admin: /^\/admin\/shrink-report\/?$/, app: (_, q) => `${APP}/shrink${q.toString() ? `?${q}` : ''}` },
   { admin: /^\/admin\/stock\/slow-stock\/?$/, app: (_, q) => `${APP}/slow-stock${q.toString() ? `?${q}` : ''}` },
@@ -168,7 +170,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
   | { page: 'expense-claims' } | { page: 'expense-claim'; id: string } | { page: 'expense-claim-form' }
-  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'returns' } | { page: 'journals' } | { page: 'accounts' } | { page: 'month-end' } | { page: 'budgets' } | { page: 'bank-accounts' } | { page: 'reconcile'; id: string } | { page: 'money-moved' } | { page: 'fixed-assets' } | { page: 'fixed-asset'; id: string } | { page: 'asset-kinds' } | { page: 'accounting-export' } | { page: 'gra-evat' } | { page: 'gra-evat-report'; id: string } | { page: 'users' } | { page: 'user'; id: string } | { page: 'roles' } | { page: 'role'; id: string | null } | { page: 'access-requests' } | { page: 'settings' } | { page: 'modules' } | { page: 'messaging' } | { page: 'message-templates' } | { page: 'message-log' } | { page: 'devices' } | { page: 'computers' } | { page: 'pricing-rules' } | { page: 'promotions' } | { page: 'price-list' } | { page: 'prescriptions' } | { page: 'nhis-claims' } | { page: 'nhis-claim'; id: string } | { page: 'medicine-signoffs' } | { page: 'refill-reminders' } | { page: 'drug-interactions' } | { page: 'controlled-drug-register' } | { page: 'shared-products' } | { page: 'prices-to-review' } | { page: 'reference-list'; kind: 'categories' | 'brands' | 'units' | 'tax-rates' | 'tax-groups' | 'price-lists' } | { page: 'company-wide-access' } | { page: 'who-can-do-what' } | { page: 'it-activity' } | { page: 'staff-cards' } | { page: 'journal'; id: string }
+  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'expiry' } | { page: 'markdowns'; industry: 'grocery' | 'pharmacy' } | { page: 'returns' } | { page: 'journals' } | { page: 'accounts' } | { page: 'month-end' } | { page: 'budgets' } | { page: 'bank-accounts' } | { page: 'reconcile'; id: string } | { page: 'money-moved' } | { page: 'fixed-assets' } | { page: 'fixed-asset'; id: string } | { page: 'asset-kinds' } | { page: 'accounting-export' } | { page: 'gra-evat' } | { page: 'gra-evat-report'; id: string } | { page: 'users' } | { page: 'user'; id: string } | { page: 'roles' } | { page: 'role'; id: string | null } | { page: 'access-requests' } | { page: 'settings' } | { page: 'modules' } | { page: 'messaging' } | { page: 'message-templates' } | { page: 'message-log' } | { page: 'devices' } | { page: 'computers' } | { page: 'pricing-rules' } | { page: 'promotions' } | { page: 'price-list' } | { page: 'prescriptions' } | { page: 'nhis-claims' } | { page: 'nhis-claim'; id: string } | { page: 'medicine-signoffs' } | { page: 'refill-reminders' } | { page: 'drug-interactions' } | { page: 'controlled-drug-register' } | { page: 'shared-products' } | { page: 'prices-to-review' } | { page: 'reference-list'; kind: 'categories' | 'brands' | 'units' | 'tax-rates' | 'tax-groups' | 'price-lists' } | { page: 'company-wide-access' } | { page: 'who-can-do-what' } | { page: 'it-activity' } | { page: 'staff-cards' } | { page: 'journal'; id: string }
   | { page: 'requests' } | { page: 'request'; id: string } | { page: 'request-form' }
   | { page: 'transfers' } | { page: 'transfer'; id: string } | { page: 'transfer-form'; id: string | null } | { page: 'classic'; admin: string }
 
@@ -235,6 +237,9 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/shrink\/?$/.test(path)) return { page: 'shrink' }
   if (/^\/office\/slow-stock\/?$/.test(path)) return { page: 'slow-stock' }
   if (/^\/office\/batches\/?$/.test(path)) return { page: 'batches' }
+  if (/^\/office\/expiry\/?$/.test(path)) return { page: 'expiry' }
+  const markdowns = path.match(/^\/office\/(grocery|pharmacy)\/markdowns\/?$/)
+  if (markdowns) return { page: 'markdowns', industry: markdowns[1] as 'grocery' | 'pharmacy' }
   if (/^\/office\/returns\/?$/.test(path)) return { page: 'returns' }
   if (/^\/office\/journals\/?$/.test(path)) return { page: 'journals' }
   if (/^\/office\/accounts\/?$/.test(path)) return { page: 'accounts' }
@@ -345,6 +350,8 @@ export function adminEquivalent(route: Route): string | null {
     case 'shrink': return '/admin/shrink-report'
     case 'slow-stock': return '/admin/stock/slow-stock'
     case 'batches': return '/admin/batches-expiry'
+    case 'expiry': return '/admin/expiry-returns'
+    case 'markdowns': return `/admin/${route.industry}/markdowns`
     case 'returns': return '/admin/returns'
     case 'journals': case 'journal': return '/admin/journal-entries'
     case 'accounts': return '/admin/accounts'

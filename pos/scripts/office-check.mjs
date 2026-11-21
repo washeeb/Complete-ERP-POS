@@ -583,7 +583,8 @@ try {
           [/^Refill reminders/i, /\/office\/refill-reminders$/, 'Refill reminders', 'No reminders here.'],
           [/^Controlled-drug register/i, /\/office\/controlled-drug-register/, null, /No controlled medicines moved|Opening /],
           [/^NHIS claims/i, /\/office\/nhis-claims$/, 'NHIS claims', /No NHIS claims yet/],
-          [/^Sales to sign off/i, /\/office\/medicine-signoffs$/, 'Sales to sign off', /Nothing to sign off/]]) {
+          [/^Sales to sign off/i, /\/office\/medicine-signoffs$/, 'Sales to sign off', /Nothing to sign off/],
+          [/^Near-expiry markdowns/i, /\/office\/pharmacy\/markdowns/, null, /Expiring soon/]]) {
           await industries().click()
           const a = page.getByRole('navigation', { name: 'Industries' }).getByRole('link', { name: link }).first()
           if (!await a.count()) { problems.push(`${look} ${w}: Industries → Pharmacy has no ${link} link`); await page.keyboard.press('Escape'); continue }
@@ -591,9 +592,22 @@ try {
           await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
           const loaded = table ? page.getByText(empty).or(page.getByRole('table', { name: table }).getByRole('row').nth(1)).first() : page.getByText(empty).first()
           await loaded.waitFor({ timeout: 30000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
-          await page.screenshot({ path: out(`pharmacy-${String(table ?? 'register').toLowerCase().replace(/ /g, '-')}-${look}-${w}`) })
+          await page.screenshot({ path: out(`pharmacy-${String(table ?? (String(url).includes('markdowns') ? 'markdowns' : 'register')).toLowerCase().replace(/ /g, '-')}-${look}-${w}`) })
         }
       }
+      // Expiry & returns, rebuilt (part 13): opens from Stock with its list (or "Nothing here").
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Stock/ }).first().click()
+      const expiry = page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: /^Expiry & returns/i }).first()
+      if (await expiry.count()) {
+        await expiry.click()
+        await page.waitForURL(/\/office\/expiry/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Expiry & returns did not open the new screen (${page.url()})`))
+        await page.getByText(/Nothing here/).or(page.getByRole('table', { name: 'Expiring batches' }).getByRole('row').nth(1)).first().waitFor({ timeout: 30000 })
+          .catch(() => problems.push(`${look} ${w}: Expiry & returns did not load`))
+        // Its filters come in a second answer, which may arrive after the rows.
+        await page.waitForFunction(() => /\S/.test(document.querySelector('[aria-label="Show"]')?.textContent ?? ''), null, { timeout: 15000 })
+          .catch(() => problems.push(`${look} ${w}: Expiry & returns did not load its filters`))
+        await page.screenshot({ path: out(`expiry-${look}-${w}`) })
+      } else await page.keyboard.press('Escape')
       // Fixed assets, rebuilt (release 8): Kinds of asset opens from the register with its kinds.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
       await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: 'Fixed assets', exact: true }).first().click()
