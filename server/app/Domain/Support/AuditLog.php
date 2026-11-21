@@ -32,6 +32,14 @@ final class AuditLog
         ?string $reason = null,
         ?string $branchId = null,
     ): AuditEvent {
+        if (! is_string($subject) && method_exists($subject, 'auditRedacted')) {
+            foreach ($subject->auditRedacted() as $field) {
+                if (array_key_exists($field, $changes)) {
+                    $changes[$field] = ['[redacted]', '[recorded]'];
+                }
+            }
+        }
+
         return $this->recordRef($actor, $action, is_string($subject) ? $subject : self::typeOf($subject),
             is_string($subject) ? null : (string) $subject->getKey(), $changes, $reason, $branchId);
     }

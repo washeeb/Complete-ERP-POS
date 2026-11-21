@@ -33,6 +33,7 @@ use App\Domain\Sync\ReviewQueue;
 use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\Device;
+use App\Models\HealthReading;
 use App\Models\Markdown;
 use App\Models\PatientProfile;
 use App\Models\Prescription;
@@ -193,6 +194,7 @@ final class SaleService
             }
             $unitPrice = (int) $l['unit_price_minor'];
             $note = isset($l['note']) ? mb_substr(trim((string) $l['note']), 0, 255) ?: null : null;
+            $note = HealthReading::RECEIPT_ONLY_DONE[$product->reading_kind ?? ''] ?? $note; // an HIV result never prints
             $dosage = isset($l['dosage']) ? Caps::upper(mb_substr(trim((string) $l['dosage']), 0, 255)) ?: null : null; // the directions given to the patient
             $diningItem = isset($l['dining_item_id']) ? (string) $l['dining_item_id'] : null;
             if (! empty($l['service_charge'])) {
