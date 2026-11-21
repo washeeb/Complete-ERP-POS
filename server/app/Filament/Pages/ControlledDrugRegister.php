@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Domain\Modules\EnabledModules;
 use App\Domain\Pharmacy\PharmacyReports;
 use App\Filament\Resources\Prescriptions\PrescriptionResource;
 use App\Filament\Support\Erp;
@@ -57,7 +58,8 @@ class ControlledDrugRegister extends Page
     {
         $ids = PrescriptionResource::branchIds();
 
-        return Warehouse::when($ids !== null, fn ($q) => $q->whereIn('branch_id', $ids))->orderBy('code')->get()->mapWithKeys(fn ($w) => [$w->id => "{$w->code} · {$w->name}"])->all();
+        // Only stores of branches with pharmacy on: a controlled medicine never moves in a grocery or restaurant store.
+        return Warehouse::whereIn('branch_id', app(EnabledModules::class)->branches('pharmacy'))->when($ids !== null, fn ($q) => $q->whereIn('branch_id', $ids))->orderBy('code')->get()->mapWithKeys(fn ($w) => [$w->id => "{$w->code} · {$w->name}"])->all();
     }
 
     public function register(): array

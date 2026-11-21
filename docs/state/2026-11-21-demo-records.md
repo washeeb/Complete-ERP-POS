@@ -1,0 +1,4 @@
+## Demo records (branch `health-tests`)
+- `App\Console\Commands\DemoRecordsCommand` (`erp:demo-records --as=`): one step per kind, each in its own transaction and only when that kind has no record yet; a step that cannot be made (no supplier, stock or sale) is reported and the rest still run. Never in production. The pharmacy part enrols a sample till device at the pharmacy branch and adds a sample pharmacist (`demo.pharmacist`, random password kept nowhere, never signs in); with cash control on, the owner issues their float.
+- Run on the dev demo company 2026-11-21 (with cash control, `refill.reminders` and `pharmacy.nhis_at_till` switched on there). Still empty on purpose: GRA E-VAT submissions (feature off) and access requests (only with an IT Admin, which would take user management from the owner).
+- **Tests:** `DemoRecordsTest`.

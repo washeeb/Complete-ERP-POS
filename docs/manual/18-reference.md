@@ -79,6 +79,7 @@ After changing `.env`, run `php artisan optimize`.
 |---|---|
 | `php artisan erp:install` | Create the company and owner (once) |
 | `php artisan erp:demo-catalog --as=<email>` | Sample products and stock — **test installations only** |
+| `php artisan erp:demo-records --as=<owner-email>` | A sample of every kind of record a test company has none of yet (bank, bills, pharmacy sales, health checks, cash…), so every screen has something to open — **test installations only** |
 | `php artisan migrate --seed --force` | Create or update the database structure (installation and updates) |
 | `php artisan optimize` / `optimize:clear` | Apply `.env` changes / clear cached settings |
 | `php artisan schedule:work` | The scheduler (normally runs as a task or cron, not by hand) |

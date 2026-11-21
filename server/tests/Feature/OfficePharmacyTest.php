@@ -114,6 +114,9 @@ it('keeps the interaction table and shows the controlled-drug register', functio
     $mor = $mor->fresh();
     app(InventoryService::class)->adjust(actorFor($this->owner), $this->wh, $mor, $mor->units->first(), '20', 'opening', '', null, '10.00', 'M-1', now()->addYear()->toDateString());
     $reg = $this->getJson('/office-api/controlled-drug-register?warehouse='.$this->wh->id)->assertOk()->json();
+    // Only the stores of branches with pharmacy on (here HQ): never Branch A's grocery store.
+    expect(collect($reg['warehouses'])->pluck('id')->all())->toBe(Warehouse::where('branch_id', $this->hq->id)->orderBy('code')->pluck('id')->all())
+        ->and(Warehouse::where('branch_id', $this->branches['BA']->id)->exists())->toBeTrue();
     expect($reg['warehouse'])->toBe($this->wh->id)->and($reg['products'])->toHaveCount(1)->and($reg['products'][0]['closing'])->toBe('20')
         ->and($reg['products'][0]['rows'][0]['batch'])->toBe('M-1')->and($reg['print'])->toContain('/print/controlled-register')->and($reg['can_claims'])->toBeTrue();
     expect($this->getJson('/office-api/controlled-drug-register?from=2026-12-31&to=2026-01-01')->json('bad_period'))->toBeTrue();

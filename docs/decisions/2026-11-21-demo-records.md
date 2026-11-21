@@ -1,0 +1,7 @@
+## Sample records for every screen
+- **Through the services, not inserted rows**, so the samples obey the same rules, numbering, audit and outbox as real ones, and stay right as the rules change.
+- **Only kinds that have no record yet**, so it can run on a demo that already has data and run again safely ("seeders only add missing rows").
+- **A sample pharmacist, not the owner, sells at the pharmacy till:** with cash control on nobody may issue a float to themselves, and a pharmacist's sale is what makes a prescription and the controlled-drug register. The account never signs in; its password is random and not kept.
+- **Not made:** GRA E-VAT submissions (the feature stays off until it is set up) and access requests (they only exist once an IT Admin does, and adding one would take user management from the owner). The message is logged as "not set up", as a real one would be without a provider.
+- **The browser check matches menu links with or without their count badge.** With the samples in place, a menu item's red count (e.g. one invoice from a supplier waiting) became part of the link's name, and the exact-name match failed: a check that passed only because the demo had nothing waiting.
+- **The controlled-drug register offers only pharmacy stores.** With samples in a multi-industry demo it opened on Branch A's grocery store (the first by code) and looked empty, though the controlled medicine had moved in the pharmacy's store.

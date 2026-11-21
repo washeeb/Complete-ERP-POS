@@ -2,6 +2,7 @@
 
 namespace App\Domain\Office;
 
+use App\Domain\Modules\EnabledModules;
 use App\Domain\Pharmacy\InteractionStarter;
 use App\Domain\Pharmacy\PharmacyReports;
 use App\Domain\Pharmacy\PharmacyService;
@@ -134,12 +135,15 @@ final class PharmacyScreen
             ])->all()];
     }
 
-    /** Warehouses in the branches where the person dispenses or manages the pharmacy (as the current page). */
+    /**
+     * Warehouses in the branches where the person dispenses or manages the pharmacy and pharmacy is on (as the current
+     * page): a controlled medicine only moves in a pharmacy's store, so a grocery or restaurant store is never offered.
+     */
     public function warehouses(): array
     {
         $ids = PrescriptionResource::branchIds();
 
-        return Warehouse::when($ids !== null, fn ($q) => $q->whereIn('branch_id', $ids))->orderBy('code')->get()
+        return Warehouse::whereIn('branch_id', app(EnabledModules::class)->branches('pharmacy'))->when($ids !== null, fn ($q) => $q->whereIn('branch_id', $ids))->orderBy('code')->get()
             ->map(fn ($w) => ['id' => $w->id, 'label' => "{$w->code} · {$w->name}"])->all();
     }
 

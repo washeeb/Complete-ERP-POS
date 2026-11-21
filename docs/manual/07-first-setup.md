@@ -2,7 +2,7 @@
 
 Do these steps once, at head office, in this order. Allow a day for a single shop, longer for a chain (most of the time goes into products and prices).
 
-**Tip:** Practise first on a **test installation** with made-up products: `php artisan erp:demo-catalog --as=<owner-email>` fills it with sample products and stock. Never run that command on your live system.
+**Tip:** Practise first on a **test installation** with made-up products: `php artisan erp:demo-catalog --as=<owner-email>` fills it with sample products and stock, and `php artisan erp:demo-records --as=<owner-email>` adds a sample of every other kind of record (bank statement, bills, pharmacy sales, health checks, cash) so every screen has something to practise on. Never run these commands on your live system: they add made-up records.
 
 ## Step 1 — Sign in for the first time
 
