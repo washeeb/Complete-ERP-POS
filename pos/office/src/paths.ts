@@ -52,6 +52,16 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: new RegExp(`^/admin/waybills/(${UUID})$`), app: (m) => `${APP}/waybills/${m[1]}` },
   { admin: /^\/admin\/bins\/?$/, app: () => `${APP}/bins` },
   { admin: /^\/admin\/stock\/my-day\/?$/, app: () => `${APP}/my-day` },
+  { admin: /^\/admin\/purchase-requests\/?$/, app: (_, q) => `${APP}/purchase-requests${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/purchase-requests\/create\/?$/, app: () => `${APP}/purchase-requests/new` },
+  { admin: new RegExp(`^/admin/purchase-requests/(${UUID})$`), app: (m) => `${APP}/purchase-requests/${m[1]}` },
+  { admin: /^\/admin\/rfqs\/?$/, app: (_, q) => `${APP}/rfqs${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/rfqs\/create\/?$/, app: () => `${APP}/rfqs/new` },
+  { admin: new RegExp(`^/admin/rfqs/(${UUID})$`), app: (m) => `${APP}/rfqs/${m[1]}` },
+  { admin: /^\/admin\/purchase-agreements\/?$/, app: (_, q) => `${APP}/agreements${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/purchase-agreements\/create\/?$/, app: () => `${APP}/agreements/new` },
+  { admin: new RegExp(`^/admin/purchase-agreements/(${UUID})$`), app: (m) => `${APP}/agreements/${m[1]}` },
+  { admin: new RegExp(`^/admin/purchase-agreements/(${UUID})/edit$`), app: (m) => `${APP}/agreements/${m[1]}/edit` },
   { admin: /^\/admin\/purchase-orders\/?$/, app: (_, q) => `${APP}/purchase-orders${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/purchase-orders\/create\/?$/, app: () => `${APP}/purchase-orders/new` },
   { admin: new RegExp(`^/admin/purchase-orders/(${UUID})$`), app: (m) => `${APP}/purchase-orders/${m[1]}` },
@@ -191,6 +201,9 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'customer-orders' } | { page: 'customer-order'; id: string } | { page: 'customer-order-form'; id: string | null } | { page: 'customer-payments' } | { page: 'aged-receivables' }
   | { page: 'till-requests' } | { page: 'office-returns' } | { page: 'office-return'; id: string } | { page: 'review-queue' } | { page: 'gift-cards' }
   | { page: 'supplier-returns' } | { page: 'supplier-return'; id: string } | { page: 'waybills' } | { page: 'waybill'; id: string } | { page: 'waybill-form' } | { page: 'bins' } | { page: 'my-day' }
+  | { page: 'purchase-requests' } | { page: 'purchase-request'; id: string } | { page: 'purchase-request-form' }
+  | { page: 'rfqs' } | { page: 'rfq'; id: string } | { page: 'rfq-form' }
+  | { page: 'agreements' } | { page: 'agreement'; id: string } | { page: 'agreement-form'; id: string | null }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
@@ -249,6 +262,18 @@ export function routeOf(path: string, search = ''): Route {
   if (wb) return { page: 'waybill', id: wb[1] }
   if (/^\/office\/bins\/?$/.test(path)) return { page: 'bins' }
   if (/^\/office\/my-day\/?$/.test(path)) return { page: 'my-day' }
+  if (/^\/office\/purchase-requests\/?$/.test(path)) return { page: 'purchase-requests' }
+  if (/^\/office\/purchase-requests\/new\/?$/.test(path)) return { page: 'purchase-request-form' }
+  const preq = path.match(new RegExp(`^/office/purchase-requests/(${UUID})/?$`))
+  if (preq) return { page: 'purchase-request', id: preq[1] }
+  if (/^\/office\/rfqs\/?$/.test(path)) return { page: 'rfqs' }
+  if (/^\/office\/rfqs\/new\/?$/.test(path)) return { page: 'rfq-form' }
+  const rfq = path.match(new RegExp(`^/office/rfqs/(${UUID})/?$`))
+  if (rfq) return { page: 'rfq', id: rfq[1] }
+  if (/^\/office\/agreements\/?$/.test(path)) return { page: 'agreements' }
+  if (/^\/office\/agreements\/new\/?$/.test(path)) return { page: 'agreement-form', id: null }
+  const agr = path.match(new RegExp(`^/office/agreements/(${UUID})(/edit)?/?$`))
+  if (agr) return agr[2] ? { page: 'agreement-form', id: agr[1] } : { page: 'agreement', id: agr[1] }
   if (/^\/office\/purchase-orders\/?$/.test(path)) return { page: 'purchase-orders' }
   if (/^\/office\/purchase-orders\/new\/?$/.test(path)) return { page: 'purchase-order-form', id: null }
   const po = path.match(new RegExp(`^/office/purchase-orders/(${UUID})(/edit)?/?$`))
@@ -398,6 +423,15 @@ export function adminEquivalent(route: Route): string | null {
     case 'waybill-form': return '/admin/waybills/create'
     case 'bins': return '/admin/bins'
     case 'my-day': return '/admin/stock/my-day'
+    case 'purchase-requests': return '/admin/purchase-requests'
+    case 'purchase-request': return `/admin/purchase-requests/${route.id}`
+    case 'purchase-request-form': return '/admin/purchase-requests/create'
+    case 'rfqs': return '/admin/rfqs'
+    case 'rfq': return `/admin/rfqs/${route.id}`
+    case 'rfq-form': return '/admin/rfqs/create'
+    case 'agreements': return '/admin/purchase-agreements'
+    case 'agreement': return `/admin/purchase-agreements/${route.id}`
+    case 'agreement-form': return route.id ? `/admin/purchase-agreements/${route.id}/edit` : '/admin/purchase-agreements/create'
     case 'goods-received': case 'goods-receipt': return '/admin/goods-receipts'
     case 'direct-purchases': case 'direct-purchase': case 'direct-purchase-form': return '/admin/direct-purchases'
     case 'supplier-invoices': return '/admin/supplier-invoices'

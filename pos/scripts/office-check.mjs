@@ -707,6 +707,29 @@ try {
           await page.goBack()
         }
       }
+      // Purchase requests, Requests for quotation and Contracts and blanket orders, rebuilt (part 18): each opens from Purchasing
+      // with its list (or its empty line), and its New button opens the form (nothing is saved).
+      for (const [link, url, table, empty, create, region] of [
+        ['Purchase requests', /\/office\/purchase-requests$/, 'Purchase requests', /No purchase requests match/, 'New purchase request', 'Request'],
+        ['Requests for quotation', /\/office\/rfqs$/, 'Requests for quotation', /No requests for quotation match/, 'New request for quotation', 'Request'],
+        ['Contracts and blanket orders', /\/office\/agreements$/, 'Contracts and blanket orders', /No contracts or blanket orders match/, 'New agreement', 'Agreement']]) {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Purchasing/ }).first().click()
+        const l = page.getByRole('navigation', { name: 'Purchasing' }).getByRole('link', { name: menuName(link) }).first()
+        if (!await l.count()) { problems.push(`${look} ${w}: Purchasing has no ${link} link`); await page.keyboard.press('Escape'); continue }
+        await l.click()
+        await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await page.getByText(empty).or(page.getByRole('table', { name: table }).getByRole('row').nth(1)).first().waitFor({ timeout: 20000 })
+          .catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        await page.screenshot({ path: out(`${link.split(' ')[0].toLowerCase()}-proc-${look}-${w}`) })
+        const btn = page.getByRole('button', { name: create })
+        await btn.waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} has no ${create}`))
+        if (await btn.count()) {
+          await btn.click()
+          await page.getByRole('region', { name: region }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${create} did not open the form`))
+          await page.screenshot({ path: out(`${link.split(' ')[0].toLowerCase()}-proc-form-${look}-${w}`) })
+          await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+        }
+      }
       // Fixed assets, rebuilt (release 8): Kinds of asset opens from the register with its kinds.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
       await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: menuName('Fixed assets') }).first().click()

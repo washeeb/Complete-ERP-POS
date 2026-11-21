@@ -18,7 +18,7 @@ const menu: Menu = {
 
 describe('addresses', () => {
   it('opens a current back-office page inside the new one, and back', () => {
-    expect(appPathFor('/admin/rfqs?tableSearch=rice')).toBe('/office/a/rfqs?tableSearch=rice')
+    expect(appPathFor('/admin/crm-leads?tableSearch=rice')).toBe('/office/a/crm-leads?tableSearch=rice')
     expect(appPathFor('/admin/products/abc/edit')).toBe('/office/a/products/abc/edit')
     expect(appPathFor('/admin')).toBe('/office/')
     expect(appPathFor('https://evil.example/admin')).toBe('/office/') // never another site
@@ -147,6 +147,11 @@ describe('addresses', () => {
     expect(appPathFor('/admin/waybills/0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b')).toBe('/office/waybills/0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b')
     expect(appPathFor('/admin/bins')).toBe('/office/bins')
     expect(appPathFor('/admin/stock/my-day')).toBe('/office/my-day')
+    expect(appPathFor('/admin/purchase-requests/create')).toBe('/office/purchase-requests/new')
+    expect(appPathFor('/admin/rfqs?tableSearch=RFQ-1')).toBe('/office/rfqs?q=RFQ-1')
+    expect(appPathFor('/admin/rfqs/0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b')).toBe('/office/rfqs/0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b')
+    expect(appPathFor('/admin/purchase-agreements/0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b/edit')).toBe('/office/agreements/0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b/edit')
+    expect(routeOf('/office/agreements/new')).toEqual({ page: 'agreement-form', id: null })
     expect(appPathFor('/admin/cash/close-day')).toBe('/office/close-day')
     expect(appPathFor('/admin/cash/close-day?branch=abc&date=2026-11-20')).toBe('/office/close-day?branch=abc&date=2026-11-20')
     expect(appPathFor('/admin/cash-desk')).toBe('/office/cash-desk')
