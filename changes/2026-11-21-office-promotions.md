@@ -1,0 +1,2 @@
+### Added
+- **Promotions rebuilt in the new back office (catalog and pricing setup, part 9).** The list of promotions and coupons (search by name or code, kind, running or switched off, in use or archived), New promotion and Change with the same fields as now (the numbers each kind needs, what it applies to, when and where, happy hours), Archive and Restore. The classic New and Change links open the new form.
