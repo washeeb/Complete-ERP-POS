@@ -642,6 +642,50 @@ export type MyDay = {
   checks: { usual: number | null; larger: { when: string; name: string; sku: string; reason: string; by: string; value: number; open: string | null }[]
     again: { name: string; sku: string; times: number; value: number }[]; duplicates: { name: string; skus: string }[] } | null
 }
+export type SpendLine = { kind: 'stock' | 'service'; product_uom_id: string; label: string | null; account_id: string; description: string; uom_code: string }
+export type PrRow = { id: string; number: string; asked_on: string | null; store: string | null; lines: number; needed_by: string | null; by: string | null; status: string; status_label: string; tone: string }
+export type PrList = { total: number; waiting: number; page: number; per: number; statuses: Option[]; can_create: boolean; rows: PrRow[] }
+export type PrDetail = {
+  currency: string; exponent: number; id: string; number: string; status: string; status_label: string; tone: string; store: string | null; needed_by: string | null
+  by: string | null; asked_at: string | null; closed_reason: string | null; note: string | null
+  order: { number: string | null; open: string } | null; rfq: { number: string; open: string } | null
+  budget: { account: string; budget: number; spent: number; committed: number; this: number; left: number }[]
+  lines: { no: number; sku: string | null; name: string; qty: string; note: string | null }[]
+  actions: { order: { suppliers: Option[] } | null; quotes: { suppliers: Option[]; closes_at: string } | null; reject: boolean; cancel: boolean }
+}
+export type PrForm = { warehouses: Option[]; warehouse_id: string; departments: Option[]; accounts: Option[]; today: string }
+export type RfqRow = { id: string; number: string; title: string; deliver_to: string | null; items: number; quotes: string; closes_at: string | null; status: string; status_label: string; tone: string }
+export type RfqList = { total: number; page: number; per: number; statuses: Option[]; can_create: boolean; rows: RfqRow[] }
+export type RfqInvitation = {
+  id: string; supplier: string | null; status: string; status_label: string; sent: string | null; seen: string | null; answer: string | null; total: number | null
+  order: { number: string | null; open: string } | null; email: string | null; phone: string | null; link: string | null
+}
+export type RfqDetail = {
+  currency: string; exponent: number; id: string; number: string; title: string; status: string; status_label: string; tone: string; deliver_to: string | null
+  closes_at: string | null; needed_by: string | null; made_by: string | null; request: { number: string | null; open: string } | null; awarded: string | null
+  award_note: string | null; cancelled_reason: string | null; terms: string | null; unsealed: boolean
+  lines: { id: string; no: number; item: string; qty: string; plain_qty: string; note: string | null }[]
+  invitations: RfqInvitation[]
+  comparison: { suppliers: { id: string; name: string; best: boolean }[]; lines: { item: string; cells: string[] }[]; rows: { label: string; cells: string[] }[] } | null
+  actions: {
+    send: { channels: Option[] } | null; links: boolean; invite: { suppliers: Option[] } | null; enter_quote: boolean; close: { early: boolean } | null
+    award: { lines: { id: string; item: string; suggested: string | null; options: Option[] }[] } | null; cancel: boolean
+  }
+}
+export type RfqForm = { warehouses: Option[]; warehouse_id: string; suppliers: Option[]; closes_at: string; today: string }
+export type AgreementRow = { id: string; number: string; supplier: string | null; title: string; kind: string; ends_on: string | null; status_label: string; tone: string }
+export type AgreementList = { total: number; page: number; per: number; statuses: Option[]; suppliers: Option[]; can_create: boolean; rows: AgreementRow[] }
+export type AgreementDetail = {
+  currency: string; exponent: number; id: string; number: string; status: string; status_label: string; tone: string; supplier: string | null; supplier_open: string | null
+  kind: string; title: string; starts_on: string | null; ends_on: string | null; used: number; cap: number | null; made_by: string | null; approved_by: string | null
+  closed_reason: string | null; terms: string | null; file: { name: string; open: string } | null
+  lines: { no: number; item: string; price: number; uom: string; ordered: string; left: string }[]
+  orders: { id: string; number: string; status: string; total: number; open: string }[]
+  actions: { edit: boolean; activate: boolean; release: { warehouses: Option[]; lines: { id: string; item: string }[] } | null; close: boolean }
+}
+export type AgreementLine = SpendLine & { unit_cost: string; max_qty: string; note: string }
+export type AgreementValues = { supplier_id: string; kind: string; title: string; starts_on: string; ends_on: string; value_cap: string; terms: string; file_name: string | null; lines: AgreementLine[] }
+export type AgreementForm = { id: string | null; number: string | null; values: AgreementValues; currency: string; suppliers: Option[]; kinds: Option[]; accounts: Option[] }
 export type ExpiryList = { total: number; page: number; per: number; currency: string; exponent: number; value: number; rows: ExpiryRow[] }
 export type ExpiryOptions = { statuses: Option[]; warehouses: Option[]; suppliers: Option[]; settlements: Option[]; reasons: Option[]; methods: Option[]
   evidence: 'reason' | 'method_witness' | 'method_witness_certificate'; today: string; month_start: string; can_mark_down: boolean }
@@ -1244,6 +1288,33 @@ export const api = {
   archiveBin: (id: string, step: 'archive' | 'restore', reason = '') => call<{ message: string }>(`/office-api/bins/${id}/${step}`, { method: 'POST', body: JSON.stringify({ reason }) }),
   myDay: (query: string, signal?: AbortSignal) => call<MyDay>(`/office-api/my-day?${query}`, { signal }),
   startCycle: (warehouse: string) => call<{ open: string; message: string }>('/office-api/my-day/start-cycle', { method: 'POST', body: JSON.stringify({ warehouse }) }),
+  procurementUnits: (q: string, signal?: AbortSignal) => call<{ results: UnitOption[] }>(`/office-api/procurement/units?q=${encodeURIComponent(q)}`, { signal }),
+  procurementAvailable: (unit: string, warehouse: string) => call<{ available: string | null }>(`/office-api/procurement/available?unit=${unit}&warehouse=${warehouse}`),
+  purchaseRequests: (query: string, signal?: AbortSignal) => call<PrList>(`/office-api/purchase-requests?${query}`, { signal }),
+  purchaseRequest: (id: string) => call<PrDetail>(`/office-api/purchase-requests/${id}`),
+  purchaseRequestForm: () => call<PrForm>('/office-api/purchase-requests/form'),
+  savePurchaseRequest: (body: Record<string, unknown>) => call<{ id: string }>('/office-api/purchase-requests', { method: 'POST', body: JSON.stringify(body) }),
+  purchaseRequestAction: (id: string, action: 'order' | 'quotes' | 'reject' | 'cancel', body: Record<string, unknown> = {}) =>
+    call<{ message: string; open?: string; request?: PrDetail }>(`/office-api/purchase-requests/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  rfqs: (query: string, signal?: AbortSignal) => call<RfqList>(`/office-api/rfqs?${query}`, { signal }),
+  rfq: (id: string) => call<RfqDetail>(`/office-api/rfqs/${id}`),
+  rfqForm: () => call<RfqForm>('/office-api/rfqs/form'),
+  saveRfq: (body: Record<string, unknown>) => call<{ id: string }>('/office-api/rfqs', { method: 'POST', body: JSON.stringify(body) }),
+  rfqAction: (id: string, action: 'send' | 'invite' | 'quote' | 'close' | 'award' | 'cancel', body: Record<string, unknown> = {}) =>
+    call<{ message: string; open?: string | null; rfq: RfqDetail }>(`/office-api/rfqs/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  agreements: (query: string, signal?: AbortSignal) => call<AgreementList>(`/office-api/agreements?${query}`, { signal }),
+  agreement: (id: string) => call<AgreementDetail>(`/office-api/agreements/${id}`),
+  agreementForm: (id?: string) => call<AgreementForm>(id ? `/office-api/agreements/${id}/form` : '/office-api/agreements/form'),
+  /** Save a draft agreement: a form, for the signed copy; the lines go as JSON. */
+  saveAgreement: async (id: string | null, body: FormData) => {
+    const res = await fetch(id ? `/office-api/agreements/${id}` : '/office-api/agreements', { method: 'POST', body, credentials: 'same-origin',
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
+    const j = await res.json().catch(() => ({}))
+    if (!res.ok) throw new ApiError(j.detail ?? j.message ?? `Error ${res.status}`, res.status, j.error ?? 'error')
+    return j as { id: string }
+  },
+  agreementAction: (id: string, action: 'activate' | 'release' | 'close', body: Record<string, unknown> = {}) =>
+    call<{ message: string; open?: string; agreement?: AgreementDetail }>(`/office-api/agreements/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
   markDownBatches: (keys: string[], percent: string) => call<UserDone>('/office-api/expiry/markdown', { method: 'POST', body: JSON.stringify({ keys, percent }) }),
   nhisClaims: (query: string, signal?: AbortSignal) => call<NhisClaimList>(`/office-api/nhis-claims?${query}`, { signal }),
   nhisUnclaimed: (branch: string, upTo: string) => call<{ sales: number; amount: number; currency: string; exponent: number }>(`/office-api/nhis-claims/unclaimed?branch=${branch}&up_to=${upTo}`),
