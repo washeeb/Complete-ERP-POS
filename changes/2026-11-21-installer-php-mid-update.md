@@ -1,0 +1,2 @@
+### Fixed
+- **An update stopped at step 1 with "File has unexpected size … Mirror sync in progress?" from packages.sury.org.** PHP's package source publishes about every hour, and its network then serves a new package list with the old index for up to an hour. When only that source fails and PHP is already installed, the installer now says so and carries on with the PHP the server has; a first install still waits for it.

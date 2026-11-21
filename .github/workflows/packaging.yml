@@ -57,6 +57,8 @@ jobs:
         run: |
           (cd pos && npm ci && POS_OUT_DIR=$GITHUB_WORKSPACE/server/public/pos npm run build:server)
           (cd server && npm ci && npm run build)
+      - name: The script carries on only when PHP's package source alone is mid-update
+        run: bash installer/ubuntu/test-apt-update.sh
       - name: Install with the script (over an earlier nginx-based installation, as an update would find it)
         run: |
           sudo apt-get install -y -q nginx
@@ -80,6 +82,12 @@ jobs:
           sudo bash installer/ubuntu/install.sh --source "$GITHUB_WORKSPACE" --ci
           curl -fsS https://localhost/up
           cd /var/www/seslabs/server && sudo -u www-data php artisan erp:backup && sudo -u www-data php artisan erp:backup --verify
+      - name: An update carries on when only PHP's package source is unreadable (it is mid-update about every hour)
+        run: |
+          echo '127.0.0.1 packages.sury.org' | sudo tee -a /etc/hosts >/dev/null
+          sudo bash installer/ubuntu/install.sh --source "$GITHUB_WORKSPACE" --ci
+          curl -fsS https://localhost/up
+          sudo sed -i '/packages.sury.org/d' /etc/hosts
       - name: A second client on the same server (shared-server copy), kept apart from the first
         run: |
           sudo bash installer/ubuntu/install.sh --source "$GITHUB_WORKSPACE" --ci --instance demo --domain demo.localhost

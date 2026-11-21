@@ -88,13 +88,28 @@ CADDY_DATA="/var/lib/caddy/.local/share/caddy"
 say "1/10 Packages: PHP ${PHP_V}, PostgreSQL ${PG_MAJOR}, Caddy (why: the server's building blocks, from their official sources)"
 export DEBIAN_FRONTEND=noninteractive
 # Reading the package sources is tried again a few times: a source updating its mirrors answers "File has unexpected
-# size … Mirror sync in progress?" for a minute or two.
+# size … Mirror sync in progress?". PHP's source (packages.sury.org) does that for up to an hour after each hourly
+# publish (its network keeps the old index while serving the new list), so when only that source fails and PHP is
+# already installed, an update carries on with the PHP it has; a first install still needs it and stops.
+only_php_source_failed() { # $1: what apt-get update printed. True when every error is about packages.sury.org.
+  local errs others
+  errs="$(grep '^E: ' "$1" | grep -v 'Some index files failed to download' || true)"
+  others="$(printf '%s\n' "$errs" | grep -v 'packages.sury.org' | grep -v '^$' || true)"
+  [ -n "$errs" ] && [ -z "$others" ]
+}
 apt_update() {
+  local log=/tmp/zionex-apt-update.log
   for try in 1 2 3 4; do
-    apt-get update -q && return 0
-    [ "$try" = 4 ] && die "could not read the package sources (one was busy updating). Wait a few minutes and run the installer again."
+    if apt-get update -q 2>&1 | tee "$log"; then return 0; fi
+    [ "$try" = 4 ] && break
     echo "A package source was busy updating; trying again in 30 seconds."; sleep 30
   done
+  if only_php_source_failed "$log" && dpkg -s "php${PHP_V}-fpm" >/dev/null 2>&1; then
+    echo "Note: PHP's package source (packages.sury.org) is in the middle of an update. PHP ${PHP_V} is already installed, so the"
+    echo "installation carries on with it; PHP's own updates come the next time the installer or the server's updates run."
+    return 0
+  fi
+  die "could not read the package sources (one was busy updating). Wait a few minutes and run the installer again."
 }
 # PHP's package source is packages.sury.org: the old Launchpad PPA (ondrej/php) is frozen, and apt now stops on its
 # renamed label. A server installed earlier has the PPA, so it is taken out before apt reads it; the PHP packages keep
