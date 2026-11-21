@@ -612,6 +612,36 @@ export type ReviewRow = { id: string; at: string | null; type: string; type_labe
 export type ReviewList = { status: 'open' | 'resolved' | 'all'; total: number; page: number; per: number; types: Option[]; rows: ReviewRow[] }
 export type GiftCardRow = { id: string; code: string; kind: string; customer: string | null; balance: number; last_used: string | null; status: string }
 export type GiftCardList = { currency: string; exponent: number; total: number; page: number; per: number; kinds: Option[]; rows: GiftCardRow[]; paid_by: Option[]; can_sell: boolean }
+export type SupplierReturnRow = { id: string; number: string; date: string | null; supplier: string | null; store: string | null; reason: string; settlement: string; settled: string | null; lines: number; value: number; status: string; status_label: string }
+export type SupplierReturnList = { currency: string; exponent: number; total: number; waiting: number; page: number; per: number; statuses: Option[]; settlements: Option[]; suppliers: Option[]; rows: SupplierReturnRow[] }
+export type SupplierReturnDoc = {
+  currency: string; exponent: number; id: string; number: string; status: string; status_label: string; supplier: string | null; supplier_open: string | null; store: string | null
+  reason: string; settlement: string; settlement_label: string; value: number; prepared_by: string | null; prepared_at: string | null; approved_by: string | null; approved_at: string | null
+  settlement_ref: string | null; settled: string | null; refund: number | null; note: string | null
+  lines: { no: number; sku: string | null; name: string | null; batch: string | null; expires_on: string | null; qty: string; value: number }[]
+  actions: { post: boolean; cancel: boolean; settle: { label: string; refund: number | null; accounts: Option[] | null; replacement: boolean } | null; waybill: string | null; print: string }
+}
+export type WaybillRow = { id: string; number: string; date: string | null; kind: string; source: string | null; to: string | null; vehicle: string | null; driver: string | null; status: string; status_label: string }
+export type WaybillList = { total: number; page: number; per: number; statuses: Option[]; kinds: Option[]; can_create: boolean; rows: WaybillRow[] }
+export type WaybillDoc = {
+  id: string; number: string; status: string; status_label: string; kind: string; source: string | null; reference: string | null; from: string | null; from_address: string | null
+  to: string | null; to_address: string; vehicle: string | null; packages: string; prepared: string; dispatched: string | null; received: string | null; pod: string | null
+  pod_note: string | null; notes: string | null; cancel_reason: string | null; lines: { sku: string; name: string; qty: string }[]
+  actions: { print: string; dispatch: { transporter: string | null; driver_name: string | null; driver_phone: string | null; vehicle_no: string | null } | null; deliver: boolean; cancel: boolean }
+}
+export type BinRow = {
+  id: string; code: string; name: string | null; warehouse_id: string; warehouse: string | null; kind: string; pick_order: number; active: boolean; archived: boolean
+  holds: string; products: Option[]; can_edit: boolean; can_move: boolean; can_archive: boolean; can_restore: boolean
+}
+export type BinList = { total: number; page: number; per: number; warehouses: Option[]; can_create: boolean; rows: BinRow[] }
+export type MyDayCard = { label: string; value: number; hint: string; url: string | null; tone: 'ok' | 'warning' | 'danger' | 'info' }
+export type MyDay = {
+  warehouses: Option[]; warehouse: string | null; cards: MyDayCard[]; currency?: string; exponent?: number
+  cycle: { on: false } | { on: true; per_day: number; started: { number: string; status: string; open: string } | null
+    due: { name: string; sku: string; class: string; last_counted: string | null; often_wrong: boolean }[]; wrong: string[]; can_start: boolean }
+  checks: { usual: number | null; larger: { when: string; name: string; sku: string; reason: string; by: string; value: number; open: string | null }[]
+    again: { name: string; sku: string; times: number; value: number }[]; duplicates: { name: string; skus: string }[] } | null
+}
 export type ExpiryList = { total: number; page: number; per: number; currency: string; exponent: number; value: number; rows: ExpiryRow[] }
 export type ExpiryOptions = { statuses: Option[]; warehouses: Option[]; suppliers: Option[]; settlements: Option[]; reasons: Option[]; methods: Option[]
   evidence: 'reason' | 'method_witness' | 'method_witness_certificate'; today: string; month_start: string; can_mark_down: boolean }
@@ -1187,6 +1217,33 @@ export const api = {
   giftCardCustomers: (q: string, signal?: AbortSignal) => call<{ results: CustomerOption[] }>(`/office-api/gift-cards/customers?q=${encodeURIComponent(q)}`, { signal }),
   sellGiftCard: (body: { amount: string; paid_by: string; reference: string; code: string; customer_id: string }) =>
     call<{ message: string; code: string }>('/office-api/gift-cards', { method: 'POST', body: JSON.stringify(body) }),
+  supplierReturns: (query: string, signal?: AbortSignal) => call<SupplierReturnList>(`/office-api/supplier-returns?${query}`, { signal }),
+  supplierReturn: (id: string) => call<SupplierReturnDoc>(`/office-api/supplier-returns/${id}`),
+  supplierReturnStep: (id: string, step: 'post' | 'settle' | 'cancel', body: Record<string, unknown> = {}) =>
+    call<{ message: string; doc: SupplierReturnDoc }>(`/office-api/supplier-returns/${id}/${step}`, { method: 'POST', body: JSON.stringify(body) }),
+  waybills: (query: string, signal?: AbortSignal) => call<WaybillList>(`/office-api/waybills?${query}`, { signal }),
+  waybill: (id: string) => call<WaybillDoc>(`/office-api/waybills/${id}`),
+  waybillForm: (kind: string) => call<{ kinds: Option[]; sources: Option[] }>(`/office-api/waybills/form?kind=${encodeURIComponent(kind)}`),
+  prepareWaybill: (body: Record<string, unknown>) => call<{ id: string }>('/office-api/waybills', { method: 'POST', body: JSON.stringify(body) }),
+  waybillStep: (id: string, step: 'dispatch' | 'cancel', body: Record<string, unknown>) =>
+    call<{ message: string; waybill: WaybillDoc }>(`/office-api/waybills/${id}/${step}`, { method: 'POST', body: JSON.stringify(body) }),
+  /** Mark delivered, with the signed copy or a photo (a form, for the file). */
+  deliverWaybill: async (id: string, body: FormData) => {
+    const res = await fetch(`/office-api/waybills/${id}/deliver`, { method: 'POST', body, credentials: 'same-origin',
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
+    const j = await res.json().catch(() => ({}))
+    if (!res.ok) throw new ApiError(j.detail ?? j.message ?? `Error ${res.status}`, res.status, j.error ?? 'error')
+    return j as { message: string; waybill: WaybillDoc }
+  },
+  bins: (query: string, signal?: AbortSignal) => call<BinList>(`/office-api/bins?${query}`, { signal }),
+  binHelp: (warehouse: string, except = '', product = '') =>
+    call<{ next_code: string; bins: Option[]; units: Option[] }>(`/office-api/bins/help?warehouse=${warehouse}&except=${except}&product=${product}`),
+  saveBin: (body: { id?: string; warehouse_id?: string; code: string; name: string; pick_order: string }) => call<{ message: string }>('/office-api/bins', { method: 'POST', body: JSON.stringify(body) }),
+  moveBinStock: (id: string, body: { product_id: string; product_uom_id: string; qty: string; to_bin_id: string }) =>
+    call<{ message: string }>(`/office-api/bins/${id}/move`, { method: 'POST', body: JSON.stringify(body) }),
+  archiveBin: (id: string, step: 'archive' | 'restore', reason = '') => call<{ message: string }>(`/office-api/bins/${id}/${step}`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  myDay: (query: string, signal?: AbortSignal) => call<MyDay>(`/office-api/my-day?${query}`, { signal }),
+  startCycle: (warehouse: string) => call<{ open: string; message: string }>('/office-api/my-day/start-cycle', { method: 'POST', body: JSON.stringify({ warehouse }) }),
   markDownBatches: (keys: string[], percent: string) => call<UserDone>('/office-api/expiry/markdown', { method: 'POST', body: JSON.stringify({ keys, percent }) }),
   nhisClaims: (query: string, signal?: AbortSignal) => call<NhisClaimList>(`/office-api/nhis-claims?${query}`, { signal }),
   nhisUnclaimed: (branch: string, upTo: string) => call<{ sales: number; amount: number; currency: string; exponent: number }>(`/office-api/nhis-claims/unclaimed?branch=${branch}&up_to=${upTo}`),

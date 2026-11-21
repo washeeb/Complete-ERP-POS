@@ -45,6 +45,13 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: new RegExp(`^/admin/office-returns/(${UUID})$`), app: (m) => `${APP}/office-returns/${m[1]}` },
   { admin: /^\/admin\/review-items\/?$/, app: () => `${APP}/review-queue` },
   { admin: /^\/admin\/stored-values\/?$/, app: () => `${APP}/gift-cards` },
+  { admin: /^\/admin\/supplier-returns\/?$/, app: (_, q) => `${APP}/supplier-returns${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: new RegExp(`^/admin/supplier-returns/(${UUID})$`), app: (m) => `${APP}/supplier-returns/${m[1]}` },
+  { admin: /^\/admin\/waybills\/?$/, app: (_, q) => `${APP}/waybills${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/waybills\/create\/?$/, app: (_, q) => `${APP}/waybills/new${q.get('kind') ? `?kind=${encodeURIComponent(q.get('kind')!)}&source=${encodeURIComponent(q.get('source') ?? '')}` : ''}` },
+  { admin: new RegExp(`^/admin/waybills/(${UUID})$`), app: (m) => `${APP}/waybills/${m[1]}` },
+  { admin: /^\/admin\/bins\/?$/, app: () => `${APP}/bins` },
+  { admin: /^\/admin\/stock\/my-day\/?$/, app: () => `${APP}/my-day` },
   { admin: /^\/admin\/purchase-orders\/?$/, app: (_, q) => `${APP}/purchase-orders${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/purchase-orders\/create\/?$/, app: () => `${APP}/purchase-orders/new` },
   { admin: new RegExp(`^/admin/purchase-orders/(${UUID})$`), app: (m) => `${APP}/purchase-orders/${m[1]}` },
@@ -183,6 +190,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'purchase-orders' } | { page: 'purchase-order'; id: string } | { page: 'purchase-order-form'; id: string | null }
   | { page: 'customer-orders' } | { page: 'customer-order'; id: string } | { page: 'customer-order-form'; id: string | null } | { page: 'customer-payments' } | { page: 'aged-receivables' }
   | { page: 'till-requests' } | { page: 'office-returns' } | { page: 'office-return'; id: string } | { page: 'review-queue' } | { page: 'gift-cards' }
+  | { page: 'supplier-returns' } | { page: 'supplier-return'; id: string } | { page: 'waybills' } | { page: 'waybill'; id: string } | { page: 'waybill-form' } | { page: 'bins' } | { page: 'my-day' }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
@@ -232,6 +240,15 @@ export function routeOf(path: string, search = ''): Route {
   if (oret) return { page: 'office-return', id: oret[1] }
   if (/^\/office\/review-queue\/?$/.test(path)) return { page: 'review-queue' }
   if (/^\/office\/gift-cards\/?$/.test(path)) return { page: 'gift-cards' }
+  if (/^\/office\/supplier-returns\/?$/.test(path)) return { page: 'supplier-returns' }
+  const sret = path.match(new RegExp(`^/office/supplier-returns/(${UUID})/?$`))
+  if (sret) return { page: 'supplier-return', id: sret[1] }
+  if (/^\/office\/waybills\/?$/.test(path)) return { page: 'waybills' }
+  if (/^\/office\/waybills\/new\/?$/.test(path)) return { page: 'waybill-form' }
+  const wb = path.match(new RegExp(`^/office/waybills/(${UUID})/?$`))
+  if (wb) return { page: 'waybill', id: wb[1] }
+  if (/^\/office\/bins\/?$/.test(path)) return { page: 'bins' }
+  if (/^\/office\/my-day\/?$/.test(path)) return { page: 'my-day' }
   if (/^\/office\/purchase-orders\/?$/.test(path)) return { page: 'purchase-orders' }
   if (/^\/office\/purchase-orders\/new\/?$/.test(path)) return { page: 'purchase-order-form', id: null }
   const po = path.match(new RegExp(`^/office/purchase-orders/(${UUID})(/edit)?/?$`))
@@ -374,6 +391,13 @@ export function adminEquivalent(route: Route): string | null {
     case 'office-return': return `/admin/office-returns/${route.id}`
     case 'review-queue': return '/admin/review-items'
     case 'gift-cards': return '/admin/stored-values'
+    case 'supplier-returns': return '/admin/supplier-returns'
+    case 'supplier-return': return `/admin/supplier-returns/${route.id}`
+    case 'waybills': return '/admin/waybills'
+    case 'waybill': return `/admin/waybills/${route.id}`
+    case 'waybill-form': return '/admin/waybills/create'
+    case 'bins': return '/admin/bins'
+    case 'my-day': return '/admin/stock/my-day'
     case 'goods-received': case 'goods-receipt': return '/admin/goods-receipts'
     case 'direct-purchases': case 'direct-purchase': case 'direct-purchase-form': return '/admin/direct-purchases'
     case 'supplier-invoices': return '/admin/supplier-invoices'

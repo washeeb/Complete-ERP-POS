@@ -18,7 +18,7 @@ const menu: Menu = {
 
 describe('addresses', () => {
   it('opens a current back-office page inside the new one, and back', () => {
-    expect(appPathFor('/admin/waybills?tableSearch=rice')).toBe('/office/a/waybills?tableSearch=rice')
+    expect(appPathFor('/admin/rfqs?tableSearch=rice')).toBe('/office/a/rfqs?tableSearch=rice')
     expect(appPathFor('/admin/products/abc/edit')).toBe('/office/a/products/abc/edit')
     expect(appPathFor('/admin')).toBe('/office/')
     expect(appPathFor('https://evil.example/admin')).toBe('/office/') // never another site
@@ -139,6 +139,14 @@ describe('addresses', () => {
     expect(appPathFor('/admin/office-returns/0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b')).toBe('/office/office-returns/0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b')
     expect(appPathFor('/admin/review-items')).toBe('/office/review-queue')
     expect(appPathFor('/admin/stored-values')).toBe('/office/gift-cards')
+    expect(appPathFor('/admin/supplier-returns')).toBe('/office/supplier-returns')
+    expect(appPathFor('/admin/supplier-returns/0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b')).toBe('/office/supplier-returns/0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b')
+    expect(appPathFor('/admin/waybills')).toBe('/office/waybills')
+    expect(appPathFor('/admin/waybills?tableSearch=GR')).toBe('/office/waybills?q=GR')
+    expect(appPathFor('/admin/waybills/create?kind=delivery&source=abc')).toBe('/office/waybills/new?kind=delivery&source=abc')
+    expect(appPathFor('/admin/waybills/0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b')).toBe('/office/waybills/0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b')
+    expect(appPathFor('/admin/bins')).toBe('/office/bins')
+    expect(appPathFor('/admin/stock/my-day')).toBe('/office/my-day')
     expect(appPathFor('/admin/cash/close-day')).toBe('/office/close-day')
     expect(appPathFor('/admin/cash/close-day?branch=abc&date=2026-11-20')).toBe('/office/close-day?branch=abc&date=2026-11-20')
     expect(appPathFor('/admin/cash-desk')).toBe('/office/cash-desk')
