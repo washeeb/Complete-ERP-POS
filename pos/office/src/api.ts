@@ -524,6 +524,13 @@ export type PricingRuleOptions = { scopes: Option[]; methods: Option[]; tax_mode
 export type SuggestionRow = { id: string; product: string | null; sku: string | null; unit: string | null; price_list: string | null; cost: number; now: number | null; new: number
   change: string; why: string | null; since: string | null }
 export type SuggestionList = { total: number; page: number; per: number; currency: string; exponent: number; rows: SuggestionRow[] }
+export type PromotionRow = { id: string; name: string; coupon: string | null; type: string; offer: string; when: string; running: boolean; archived: boolean
+  can_edit: boolean; can_archive: boolean; can_restore: boolean }
+export type PromotionList = { total: number; page: number; per: number; can_create: boolean; rows: PromotionRow[] }
+export type PromotionOptions = { types: Option[]; currency: string; industries: Option[]; default_industry: string | null; categories: Option[]; branches: Option[]; price_lists: Option[] }
+export type PromotionValues = { name: string; industry_id: string; is_active: boolean; type: string; coupon_code: string; percent: string; amount: string; min_spend: string
+  buy_qty: string; get_qty: string; bundle_qty: string; product_ids: string[]; products?: Option[]; category_ids: string[]; starts_at: string; ends_at: string; days: string[]
+  time_from: string; time_to: string; branch_ids: string[]; archived_branches?: Option[]; price_list_ids: string[] }
 export type RbDataset = { id: string; label: string; dated: boolean; dims: Option[]; measures: Option[] }
 export type RbOptions = { datasets: RbDataset[]; periods: Option[]; branches: Option[]; schedules: Option[]; people: Option[]; max_rows: number }
 export type RbChoices = { dataset: string; dimensions: string[]; measures: string[]; period: string; from: string | null; to: string | null; branch_id: string | null
@@ -1003,6 +1010,12 @@ export const api = {
   ruleArchive: (id: string, step: 'archive' | 'restore', reason: string | null = null) => call<UserDone>(`/office-api/pricing-rules/${id}/${step}`, { method: 'POST', body: JSON.stringify({ reason }) }),
   pricesToReview: (query: string, signal?: AbortSignal) => call<SuggestionList>(`/office-api/prices-to-review?${query}`, { signal }),
   decidePrices: (step: 'approve' | 'keep', ids: string[]) => call<UserDone>(`/office-api/prices-to-review/${step}`, { method: 'POST', body: JSON.stringify({ ids }) }),
+  promotions: (query: string, signal?: AbortSignal) => call<PromotionList>(`/office-api/promotions?${query}`, { signal }),
+  promotionOptions: () => call<PromotionOptions>('/office-api/promotions/options'),
+  promotionProducts: (q: string) => call<{ rows: Option[] }>(`/office-api/promotions/products?q=${encodeURIComponent(q)}`),
+  promotion: (id: string) => call<{ id: string; values: PromotionValues }>(`/office-api/promotions/${id}`),
+  savePromotion: (id: string | null, body: Record<string, unknown>) => call<UserDone & { id: string }>(id ? `/office-api/promotions/${id}` : '/office-api/promotions', { method: 'POST', body: JSON.stringify(body) }),
+  promotionArchive: (id: string, step: 'archive' | 'restore', reason: string | null = null) => call<UserDone>(`/office-api/promotions/${id}/${step}`, { method: 'POST', body: JSON.stringify({ reason }) }),
   financialOptions: () => call<FrOptions>('/office-api/financial-reports/options'),
   shareHeadOffice: (to: string) => call<{ message: string }>('/office-api/financial-reports/share-head-office', { method: 'POST', body: JSON.stringify({ to }) }),
   withholdingCsvUrl: (month: string) => `/office-api/withholding-tax/csv?month=${encodeURIComponent(month)}`,

@@ -527,6 +527,29 @@ try {
       await page.getByText('No prices waiting.').or(page.getByRole('table', { name: 'Prices to review' }).getByRole('row').nth(1)).first().waitFor({ timeout: 20000 })
         .catch(() => problems.push(`${look} ${w}: Prices to review did not load`))
       await page.screenshot({ path: out(`prices-to-review-${look}-${w}`) })
+      // Promotions, rebuilt (part 9): opens from Stock and loads; New promotion shows the form with its sections (nothing is saved).
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Stock/ }).first().click()
+      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: /^Promotions/i }).first().click()
+      await page.waitForURL(/\/office\/promotions$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Promotions did not open the new screen (${page.url()})`))
+      await page.getByText(/No promotions here/).or(page.getByRole('table', { name: 'Promotions' }).getByRole('row').nth(1)).first().waitFor({ timeout: 20000 })
+        .catch(() => problems.push(`${look} ${w}: Promotions did not load`))
+      await page.screenshot({ path: out(`promotions-${look}-${w}`) })
+      const newPromo = page.getByRole('button', { name: 'New promotion' })
+      if (await newPromo.count()) {
+        await newPromo.click()
+        await page.getByRole('dialog').getByText('When and where').waitFor({ timeout: 10000 }).catch(() => problems.push(`${look} ${w}: New promotion did not open its form`))
+        await page.waitForTimeout(400) // the dialog fades in
+        await page.screenshot({ path: out(`promotion-form-${look}-${w}`) })
+        await page.getByRole('dialog').getByRole('button', { name: 'Back' }).click()
+        const firstPromo = page.getByRole('table', { name: 'Promotions' }).getByRole('row').nth(1)
+        if (await firstPromo.count()) { // an existing one opens with its values filled in
+          await firstPromo.click()
+          await page.getByRole('dialog').getByRole('textbox', { name: /Name/ }).first().waitFor({ timeout: 10000 }).catch(() => undefined)
+          const name = await page.getByRole('dialog').getByRole('textbox', { name: /Name/ }).first().inputValue().catch(() => '')
+          if (!name) problems.push(`${look} ${w}: a promotion did not open with its values`)
+          await page.getByRole('dialog').getByRole('button', { name: 'Back' }).click()
+        }
+      }
       // Fixed assets, rebuilt (release 8): Kinds of asset opens from the register with its kinds.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
       await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: 'Fixed assets', exact: true }).first().click()
