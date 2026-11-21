@@ -626,6 +626,48 @@ try {
         await page.getByRole('region', { name: region, exact: true }).waitFor({ timeout: 30000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
         await page.screenshot({ path: out(`cash-${link.toLowerCase().replace(/ /g, '-')}-${look}-${w}`) })
       }
+      // Quotes & orders, Payments received and Aged receivables, rebuilt (part 15): each opens from Sales; a quote or order
+      // opens with its lines, and New quotation opens the form (nothing is saved).
+      const salesLink = async (name) => {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Sales/ }).first().click()
+        const l = page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: menuName(name) }).first()
+        if (!await l.count()) { problems.push(`${look} ${w}: Sales has no ${name} link`); await page.keyboard.press('Escape'); return false }
+        await l.click()
+        return true
+      }
+      if (await salesLink('Quotes & orders')) {
+        await page.waitForURL(/\/office\/customer-orders$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Quotes & orders did not open the new screen (${page.url()})`))
+        const firstOrder = page.getByRole('table', { name: 'Quotes and orders' }).getByRole('row').nth(1)
+        await page.getByText(/No quotes or orders match/).or(firstOrder).first().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Quotes & orders did not load`))
+        await page.screenshot({ path: out(`customer-orders-${look}-${w}`) })
+        if (await firstOrder.count()) {
+          await firstOrder.click()
+          await page.getByRole('region', { name: 'Lines' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: a quote or order did not open with its lines`))
+          await page.screenshot({ path: out(`customer-order-${look}-${w}`), fullPage: true })
+          await page.goBack()
+        }
+        // The button comes with the page's options, a moment after the list: wait for it (the owner may always quote).
+        const newQuote = page.getByRole('button', { name: 'New quotation' })
+        await newQuote.waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Quotes & orders has no New quotation`))
+        if (await newQuote.count()) {
+          await newQuote.click()
+          await page.getByRole('region', { name: 'Quotation' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: New quotation did not open the form`))
+          if (await page.getByRole('button', { name: 'Save quotation' }).isEnabled()) problems.push(`${look} ${w}: Save quotation is on with nothing filled in`)
+          await page.screenshot({ path: out(`customer-order-form-${look}-${w}`) })
+          await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+        }
+      }
+      if (await salesLink('Payments received')) {
+        await page.waitForURL(/\/office\/customer-payments$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Payments received did not open the new screen (${page.url()})`))
+        await page.getByText(/No payments match/).or(page.getByRole('table', { name: 'Payments received' }).getByRole('row').nth(1)).first().waitFor({ timeout: 20000 })
+          .catch(() => problems.push(`${look} ${w}: Payments received did not load`))
+        await page.screenshot({ path: out(`customer-payments-${look}-${w}`) })
+      }
+      if (await salesLink('Aged receivables')) {
+        await page.waitForURL(/\/office\/aged-receivables$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Aged receivables did not open the new screen (${page.url()})`))
+        await page.getByRole('region', { name: 'Owed by customers' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Aged receivables did not load`))
+        await page.screenshot({ path: out(`aged-receivables-${look}-${w}`) })
+      }
       // Fixed assets, rebuilt (release 8): Kinds of asset opens from the register with its kinds.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Finance/ }).first().click()
       await page.getByRole('navigation', { name: 'Finance' }).getByRole('link', { name: menuName('Fixed assets') }).first().click()

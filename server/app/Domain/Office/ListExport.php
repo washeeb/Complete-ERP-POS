@@ -3,6 +3,8 @@
 namespace App\Domain\Office;
 
 use App\Models\Customer;
+use App\Models\CustomerOrder;
+use App\Models\CustomerPayment;
 use App\Models\DirectPurchase;
 use App\Models\ExpenseClaim;
 use App\Models\FixedAsset;
@@ -40,7 +42,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final class ListExport
 {
-    public const LISTS = ['sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills', 'supplier-payments', 'returns', 'journals', 'fixed-assets', 'price-list'];
+    public const LISTS = ['customer-orders', 'customer-payments', 'sales', 'shifts', 'drawer', 'products', 'stock', 'movements', 'adjustments', 'counts', 'transfers', 'requests', 'customers', 'invoices', 'suppliers', 'purchase-orders', 'goods-receipts', 'direct-purchases', 'supplier-invoices', 'reorder-rules', 'expense-claims', 'supplier-bills', 'supplier-payments', 'returns', 'journals', 'fixed-assets', 'price-list'];
 
     public function __construct(private readonly User $user) {}
 
@@ -60,6 +62,8 @@ final class ListExport
             'invoices' => InvoicesScreen::canView(),
             'suppliers' => SuppliersScreen::canView(),
             'purchase-orders' => PurchaseOrdersScreen::canView(),
+            'customer-orders' => CustomerOrdersScreen::canView(),
+            'customer-payments' => ReceivablesScreen::canViewPayments(),
             'goods-receipts' => GoodsReceiptsScreen::canView(),
             'direct-purchases' => DirectPurchasesScreen::canView(),
             'supplier-invoices' => SupplierInvoicesScreen::canView(),
@@ -113,6 +117,8 @@ final class ListExport
             'invoices' => $this->invoices($p),
             'suppliers' => $this->suppliers($p),
             'purchase-orders' => $this->purchaseOrders($p),
+            'customer-orders' => $this->customerOrders($p),
+            'customer-payments' => $this->customerPayments($p),
             'goods-receipts' => $this->goodsReceipts($p),
             'direct-purchases' => $this->directPurchases($p),
             'supplier-invoices' => $this->supplierInvoices($p),
@@ -320,6 +326,31 @@ final class ListExport
 
                 return [$r['number'], $r['supplier'] ?? '', $r['to'] ?? '', $this->money($r['total'], $r['currency']), $r['expected_on'] ?? '',
                     PurchaseOrder::STATUSES[$r['status']] ?? $r['status'], $this->at($r['created_at'])];
+            }];
+    }
+
+    private function customerOrders(array $p): array
+    {
+        $screen = new CustomerOrdersScreen($this->user);
+
+        return ['Quotes and orders', ['Quote', 'Order', 'Customer', 'Total', 'Status', 'Created', 'Entered by'], [3], $screen->sorted($p)->with('customer'),
+            function (CustomerOrder $o) use ($screen) {
+                $r = $screen->rowOf($o);
+
+                return [$r['quote'] ?? '', $r['order'] ?? '', $r['customer'] ?? '', $this->money($r['total'], $r['currency']),
+                    CustomerOrder::STATUSES[$r['status']] ?? $r['status'], $this->at($r['created_at']), $r['by'] ?? ''];
+            }];
+    }
+
+    private function customerPayments(array $p): array
+    {
+        $screen = new ReceivablesScreen($this->user);
+
+        return ['Payments received', ['Receipt', 'Date', 'Customer', 'Method', 'Reference', 'Amount', 'Received by'], [5], $screen->sorted($p)->with('customer'),
+            function (CustomerPayment $c) use ($screen) {
+                $r = $screen->rowOf($c);
+
+                return [$r['number'], $r['received_on'] ?? '', $r['customer'] ?? '', $r['method'], $r['reference'] ?? '', $this->money($r['amount'], $r['currency']), $r['by'] ?? ''];
             }];
     }
 
