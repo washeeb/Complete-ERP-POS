@@ -685,6 +685,39 @@ export type AgreementDetail = {
 }
 export type AgreementLine = SpendLine & { unit_cost: string; max_qty: string; note: string }
 export type AgreementValues = { supplier_id: string; kind: string; title: string; starts_on: string; ends_on: string; value_cap: string; terms: string; file_name: string | null; lines: AgreementLine[] }
+export type Money = { currency: string; exponent: number }
+export type LandedRow = { id: string; number: string; date: string | null; charges: string; method: string; total: number; to_stock: number; to_cogs: number; by: string | null }
+export type LandedList = Money & { total: number; page: number; per: number; can_spread: boolean; rows: LandedRow[] }
+export type LandedLines = Money & { number: string; note: string | null; charges: { kind: string; description: string; amount: number }[]
+  lines: { product: string; allocated: number; to_stock: number; to_cogs: number; before: string | null; after: string | null }[] }
+export type SpreadForm = Money & { methods: Option[]; kinds: Option[]; receipts: Option[] }
+export type CostRunRow = { id: string; number: string; status: string; status_label: string; tone: string; factor: string; effective_on: string | null
+  stock_value: number; catch_up: number; lines: number; skipped: number; by: string | null }
+export type CostRunList = Money & { total: number; waiting: number; page: number; per: number; statuses: Option[]; can_create: boolean; rows: CostRunRow[] }
+export type CostRunLine = { id: string; product: string; sku: string | null; store: string | null; kind: string; kind_label: string; tone: string; why: string | null
+  on_hand: string; price: number | null; factor: string | null; old_cost: number | null; new_cost: number | null; stock_value: number | null; sold: string; catch_up: number | null }
+export type CostRunDetail = Money & {
+  id: string; number: string; status: string; status_label: string; tone: string; done: boolean; nothing: number | null
+  stock_value: number; catch_up: number; lines_count: number; skipped: number; already_costed: number; factor: string; tax_mode: string; price_list: string | null
+  effective_on: string | null; account: string | null; prepared_by: string | null; posted_by: string | null; reason: string | null; note: string | null
+  reverses: { number: string | null; open: string } | null; reversed_by: { number: string; open: string } | null; kinds: Option[]
+  products: { total: number; page: number; per: number; rows: CostRunLine[] }
+  actions: { recalculate: boolean; replace: boolean; submit: boolean; post: boolean; cancel: boolean; undo: boolean }
+}
+export type CostRunValues = { method: string; value: string; price_list_id: string; tax_mode: string; effective_on: string; catch_up: boolean; overwrite: boolean
+  products: { id: string; label: string; detail?: string | null }[] }
+export type CostRunForm = Money & { methods: Option[]; tax_modes: Option[]; price_lists: Option[]; categories: Option[]; brands: Option[]; suppliers: Option[]
+  warehouses: Option[]; accounts: Option[] | null; values: CostRunValues }
+export type EstimateRow = { id: string; product: string; store: string | null; price: number | null; estimate: number | null; real: number | null; difference: string | null; real_factor: string | null }
+export type EstimateList = Money & { summary: string; total: number; page: number; per: number; rows: EstimateRow[] }
+export type SpendData = Money & { from: string; to: string; branch: string; branches: Option[]
+  totals: { spend: number; bills: number; suppliers: number }
+  compliance: { on_order: number; on_contract: number; received_no_order: number; no_order: number; on_order_pct: number; on_contract_pct: number }
+  concentration: { top1: number; top5: number }
+  variance: { variance: number; above: number; bills_above: number; held: number }
+  rfq: { saved: number; rfqs: number; quotes_per_rfq: number | null; response_pct: number | null }
+  months: { month: string; spend: number }[]; suppliers: { name: string; spend: number; share: number; bills: number }[]
+  categories: { name: string; spend: number; share: number }[]; departments: { name: string; spend: number }[] }
 export type AgreementForm = { id: string | null; number: string | null; values: AgreementValues; currency: string; suppliers: Option[]; kinds: Option[]; accounts: Option[] }
 export type ExpiryList = { total: number; page: number; per: number; currency: string; exponent: number; value: number; rows: ExpiryRow[] }
 export type ExpiryOptions = { statuses: Option[]; warehouses: Option[]; suppliers: Option[]; settlements: Option[]; reasons: Option[]; methods: Option[]
@@ -1315,6 +1348,19 @@ export const api = {
   },
   agreementAction: (id: string, action: 'activate' | 'release' | 'close', body: Record<string, unknown> = {}) =>
     call<{ message: string; open?: string; agreement?: AgreementDetail }>(`/office-api/agreements/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  landedCosts: (query: string, signal?: AbortSignal) => call<LandedList>(`/office-api/landed-costs?${query}`, { signal }),
+  landedCost: (id: string) => call<LandedLines>(`/office-api/landed-costs/${id}`),
+  spreadForm: () => call<SpreadForm>('/office-api/landed-costs/form'),
+  spreadLanded: (body: Record<string, unknown>) => call<{ id: string; message: string }>('/office-api/landed-costs', { method: 'POST', body: JSON.stringify(body) }),
+  costRuns: (query: string, signal?: AbortSignal) => call<CostRunList>(`/office-api/cost-runs?${query}`, { signal }),
+  costRun: (id: string, query = '') => call<CostRunDetail>(`/office-api/cost-runs/${id}${query ? `?${query}` : ''}`),
+  costRunForm: () => call<CostRunForm>('/office-api/cost-runs/form'),
+  costRunProducts: (q: string, signal?: AbortSignal) => call<{ results: { id: string; label: string; detail?: string }[] }>(`/office-api/cost-runs/products?q=${encodeURIComponent(q)}`, { signal }),
+  saveCostRun: (body: Record<string, unknown>) => call<{ id: string }>('/office-api/cost-runs', { method: 'POST', body: JSON.stringify(body) }),
+  costRunAction: (id: string, action: 'recalculate' | 'replace' | 'submit' | 'post' | 'cancel' | 'undo', body: Record<string, unknown> = {}) =>
+    call<{ message: string; run: CostRunDetail }>(`/office-api/cost-runs/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  estimatedCosts: (query: string, signal?: AbortSignal) => call<EstimateList>(`/office-api/estimated-costs?${query}`, { signal }),
+  spendAnalytics: (query: string, signal?: AbortSignal) => call<SpendData>(`/office-api/spend-analytics?${query}`, { signal }),
   markDownBatches: (keys: string[], percent: string) => call<UserDone>('/office-api/expiry/markdown', { method: 'POST', body: JSON.stringify({ keys, percent }) }),
   nhisClaims: (query: string, signal?: AbortSignal) => call<NhisClaimList>(`/office-api/nhis-claims?${query}`, { signal }),
   nhisUnclaimed: (branch: string, upTo: string) => call<{ sales: number; amount: number; currency: string; exponent: number }>(`/office-api/nhis-claims/unclaimed?branch=${branch}&up_to=${upTo}`),
