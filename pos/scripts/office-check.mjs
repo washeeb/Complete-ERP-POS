@@ -736,6 +736,47 @@ try {
           }
         }
       }
+      // Projects, rebuilt (part 27), where the projects add-on is on: each opens from Sales and loads; New project opens its
+      // form, the first project opens with its figures and costs, and Add time opens its dialog (nothing is saved).
+      for (const [link, url, ready] of [
+        ['Projects', /\/office\/projects$/, () => page.getByText('No projects match.').or(page.getByRole('table', { name: 'Projects' }).getByRole('row').nth(1))],
+        ['My time', /\/office\/my-time/, () => page.getByText(/^No time this week/).or(page.getByRole('table', { name: 'My time' }).getByRole('row').nth(1))],
+        ['Time to approve', /\/office\/time-approvals/, () => page.getByRole('region', { name: 'Nothing to approve' }).or(page.getByRole('button', { name: /^Approve ticked/ }))],
+        ['Hourly rates', /\/office\/project-rates/, () => page.getByText(/Nobody logs time on projects yet/).or(page.getByRole('table', { name: 'Hourly rates' }).getByRole('row').nth(1))]]) {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Sales/ }).first().click()
+        const l = page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: menuName(link) }).first()
+        if (!await l.count()) { await page.keyboard.press('Escape'); continue }
+        await l.click()
+        await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await ready().first().waitFor({ timeout: 30000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        await page.screenshot({ path: out(`projects-${link.toLowerCase().replace(/ /g, '-')}-${look}-${w}`) })
+        if (link === 'Projects') {
+          const first = page.getByRole('table', { name: 'Projects' }).getByRole('row').nth(1)
+          if (await first.count() && !await page.getByText('No projects match.').count()) {
+            await first.click()
+            await page.getByRole('region', { name: 'How it is doing' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: a project did not open with its figures`))
+            await page.getByRole('region', { name: 'Costs' }).waitFor({ timeout: 10000 }).catch(() => problems.push(`${look} ${w}: a project did not show its costs`))
+            await page.screenshot({ path: out(`projects-one-${look}-${w}`) })
+            await page.goBack()
+          }
+          const b = page.getByRole('button', { name: 'New project' })
+          // After going back the list loads again: wait for its button rather than counting at once.
+          if (await b.waitFor({ timeout: 15000 }).then(() => true, () => false)) {
+            await b.click()
+            await page.getByRole('region', { name: 'Project', exact: true }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: New project did not open the form`))
+            await page.screenshot({ path: out(`projects-new-${look}-${w}`) })
+            await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+          }
+        }
+        if (link === 'My time') {
+          await page.getByRole('button', { name: 'Add time' }).click()
+          const dlg = page.getByRole('dialog')
+          await dlg.waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Add time did not open its dialog`))
+          await page.screenshot({ path: out(`projects-add-time-${look}-${w}`) })
+          await dlg.getByRole('button', { name: 'Back' }).click().catch(() => page.keyboard.press('Escape'))
+          await dlg.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => problems.push(`${look} ${w}: Add time's dialog did not close`))
+        }
+      }
       // Go-live and Import data, rebuilt (part 24): each opens from Setup and loads. Nothing is planned, uploaded or imported.
       for (const [link, url, ready] of [
         ['Go-live', /\/office\/go-live$/, () => page.getByRole('table', { name: 'Checklist' }).getByRole('row').first()],

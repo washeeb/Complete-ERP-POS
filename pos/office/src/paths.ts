@@ -108,6 +108,12 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/crm-campaigns\/create\/?$/, app: () => `${APP}/crm/campaigns/new` },
   { admin: new RegExp(`^/admin/crm-campaigns/(${UUID})(/edit)?$`), app: (m) => `${APP}/crm/campaigns/${m[1]}` },
   { admin: /^\/admin\/crm-stages\/?$/, app: () => `${APP}/crm/stages` },
+  { admin: /^\/admin\/projects\/?$/, app: (_, q) => `${APP}/projects${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/projects\/create\/?$/, app: (_, q) => `${APP}/projects/new${q.get('customer') ? `?customer=${encodeURIComponent(q.get('customer')!)}` : ''}` },
+  { admin: new RegExp(`^/admin/projects/(${UUID})(/edit)?$`), app: (m) => `${APP}/projects/${m[1]}` },
+  { admin: /^\/admin\/my-time\/?$/, app: (_, q) => `${APP}/my-time${q.get('week') ? `?week=${encodeURIComponent(q.get('week')!)}` : ''}` },
+  { admin: /^\/admin\/time-approvals\/?$/, app: () => `${APP}/time-approvals` },
+  { admin: /^\/admin\/project-rates\/?$/, app: () => `${APP}/project-rates` },
   { admin: /^\/admin\/staff-calendar\/?$/, app: (_, q) => `${APP}/services/calendar${q.toString() ? `?${q.toString()}` : ''}` },
   { admin: /^\/admin\/appointments\/?$/, app: () => `${APP}/services/appointments` },
   { admin: /^\/admin\/service-passes\/?$/, app: () => `${APP}/services/passes` },
@@ -266,6 +272,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'api-clients' } | { page: 'mobile-money' } | { page: 'support-access' } | { page: 'sync-center' }
   | { page: 'go-live' } | { page: 'import' }
   | { page: 'svc-calendar' } | { page: 'svc-appointments' } | { page: 'svc-passes' } | { page: 'svc-memberships' } | { page: 'svc-plans' } | { page: 'svc-commissions' } | { page: 'svc-keys' }
+  | { page: 'projects' } | { page: 'project'; id: string | null } | { page: 'my-time' } | { page: 'time-approvals' } | { page: 'project-rates' }
   | { page: 'crm-pipeline' } | { page: 'crm-leads' } | { page: 'crm-lead'; id: string | null } | { page: 'crm-deals' } | { page: 'crm-deal'; id: string | null }
   | { page: 'crm-follow-ups' } | { page: 'crm-campaigns' } | { page: 'crm-campaign'; id: string | null } | { page: 'crm-stages' }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
@@ -391,6 +398,13 @@ export function routeOf(path: string, search = ''): Route {
   const crc = path.match(new RegExp(`^/office/crm/campaigns/(${UUID})/?$`))
   if (crc) return { page: 'crm-campaign', id: crc[1] }
   if (/^\/office\/crm\/stages\/?$/.test(path)) return { page: 'crm-stages' }
+  if (/^\/office\/projects\/?$/.test(path)) return { page: 'projects' }
+  if (/^\/office\/projects\/new\/?$/.test(path)) return { page: 'project', id: null }
+  const prj = path.match(new RegExp(`^/office/projects/(${UUID})/?$`))
+  if (prj) return { page: 'project', id: prj[1] }
+  if (/^\/office\/my-time\/?$/.test(path)) return { page: 'my-time' }
+  if (/^\/office\/time-approvals\/?$/.test(path)) return { page: 'time-approvals' }
+  if (/^\/office\/project-rates\/?$/.test(path)) return { page: 'project-rates' }
   if (/^\/office\/services\/calendar\/?$/.test(path)) return { page: 'svc-calendar' }
   if (/^\/office\/services\/appointments\/?$/.test(path)) return { page: 'svc-appointments' }
   if (/^\/office\/services\/passes\/?$/.test(path)) return { page: 'svc-passes' }
@@ -599,6 +613,11 @@ export function adminEquivalent(route: Route): string | null {
     case 'crm-campaigns': return '/admin/crm-campaigns'
     case 'crm-campaign': return route.id ? `/admin/crm-campaigns/${route.id}/edit` : '/admin/crm-campaigns/create'
     case 'crm-stages': return '/admin/crm-stages'
+    case 'projects': return '/admin/projects'
+    case 'project': return route.id ? `/admin/projects/${route.id}/edit` : '/admin/projects/create'
+    case 'my-time': return '/admin/my-time'
+    case 'time-approvals': return '/admin/time-approvals'
+    case 'project-rates': return '/admin/project-rates'
     case 'svc-calendar': return '/admin/staff-calendar'
     case 'svc-appointments': return '/admin/appointments'
     case 'svc-passes': return '/admin/service-passes'
