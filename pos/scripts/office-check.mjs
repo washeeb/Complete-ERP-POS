@@ -864,6 +864,40 @@ try {
           await page.screenshot({ path: out(`grocery-scale-${look}-${w}`) })
         } else await page.keyboard.press('Escape')
       }
+      // Services, rebuilt (part 26), where the services module is on: each opens from More (or its own Services tab) and loads; Book
+      // appointment and Sign up a customer open their dialogs (nothing is saved). Pages not in the menu (module off) are skipped.
+      for (const [link, url, ready, button] of [
+        ['Staff calendar', /\/office\/services\/calendar/, () => page.getByRole('region', { name: 'Day' }), 'Book appointment'],
+        ['Appointments', /\/office\/services\/appointments/, () => page.getByText('No appointments match.').or(page.getByRole('table', { name: 'Appointments' }).getByRole('row').nth(1)), null],
+        ['Prepaid passes', /\/office\/services\/passes/, () => page.getByText('No passes match.').or(page.getByRole('table', { name: 'Prepaid passes' }).getByRole('row').nth(1)), null],
+        ['Memberships', /\/office\/services\/memberships/, () => page.getByText('No memberships match.').or(page.getByRole('table', { name: 'Memberships' }).getByRole('row').nth(1)), 'Sign up a customer'],
+        ['Membership plans', /\/office\/services\/plans/, () => page.getByText('No plans yet.').or(page.getByRole('table', { name: 'Membership plans' }).getByRole('row').nth(1)), 'New plan'],
+        ['Commissions', /\/office\/services\/commissions/, () => page.getByRole('region', { name: 'By staff member' }), null],
+        ['Licence keys', /\/office\/services\/keys/, () => page.getByText('No keys match.').or(page.getByRole('table', { name: 'Licence keys' }).getByRole('row').nth(1)), 'Load keys']]) {
+        // Services is not one of the named tabs, so it sits under More (a More holding only Services takes its name).
+        const menu = page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /^(More|Services)\b/ }).first()
+        if (!await menu.waitFor({ timeout: 10000 }).then(() => true, () => false)) break
+        const tab = /^Services/.test((await menu.innerText()).trim()) ? 'Services' : 'More'
+        await menu.click()
+        const l = page.getByRole('navigation', { name: tab }).getByRole('link', { name: menuName(link) }).first()
+        if (!await l.count()) { await page.keyboard.press('Escape'); continue }
+        await l.click()
+        await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await ready().first().waitFor({ timeout: 30000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        await page.screenshot({ path: out(`services-${link.toLowerCase().replace(/ /g, '-')}-${look}-${w}`) })
+        if (button) {
+          const b = page.getByRole('button', { name: button })
+          if (await b.count()) {
+            await b.first().click()
+            const dlg = page.getByRole('dialog')
+            await dlg.waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${button} did not open its dialog`))
+            await page.screenshot({ path: out(`services-${button.toLowerCase().replace(/ /g, '-')}-${look}-${w}`) })
+            await dlg.getByRole('button', { name: 'Back' }).click().catch(() => page.keyboard.press('Escape'))
+            // While a dialog closes, the page behind it is hidden from the accessibility tree: wait until it is gone.
+            await dlg.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => problems.push(`${look} ${w}: ${button}'s dialog did not close`))
+          } else problems.push(`${look} ${w}: ${link} has no ${button}`)
+        }
+      }
       // Landed costs, Cost runs, Estimated costs and Spend analytics, rebuilt (part 19): each opens from its menu with its list,
       // empty line or figures; Cost runs' New button opens the form and Landed costs' Spread opens its dialog (nothing is saved).
       for (const [group, link, url, ready] of [
