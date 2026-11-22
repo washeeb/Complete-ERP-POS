@@ -63,7 +63,10 @@ it('adds an account, moves money, imports a statement and reconciles it', functi
     $done = $this->getJson("/office-api/bank-accounts/{$id}/reconcile?as_at=2026-10-31")->json();
     expect($done['summary'])->toMatchArray(['ledger' => 348750, 'statement' => 348750, 'difference' => 0])->and($done['statement'])->toBe([])->and($done['matches'])->not->toBeEmpty();
 
-    $this->postJson("/office-api/bank-accounts/{$id}/reconcile/unmatch", ['match_id' => $done['matches'][0]['id']])->assertOk();
+    // Newest first: matched earlier (the opening balance), then the bank charge, then the deposit (all in the same second).
+    expect(collect($done['matches'])->pluck('amount')->all())->toBe([100000, -1250, 250000]);
+    $deposit = collect($done['matches'])->firstWhere('amount', 250000);
+    $this->postJson("/office-api/bank-accounts/{$id}/reconcile/unmatch", ['match_id' => $deposit['id']])->assertOk();
     $undone = $this->getJson("/office-api/bank-accounts/{$id}/reconcile?as_at=2026-10-31")->json(); // both lines are back to match; the difference does not move
     expect($undone['statement'])->toHaveCount(1)->and($undone['ledger'])->not->toBeEmpty()->and($undone['summary']['difference'])->toBe(0);
 });
