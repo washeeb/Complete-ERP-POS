@@ -708,6 +708,39 @@ try {
           await page.goBack()
         }
       }
+      // HR & payroll, rebuilt (part 21): each opens from People and loads; Add employee opens the form and Prepare payroll its
+      // dialog (nothing is saved). My leave & payslips only shows for someone who is an employee.
+      for (const [link, url, ready] of [
+        ['Employees', /\/office\/employees$/, () => page.getByText('No employees match.').or(page.getByRole('table', { name: 'Employees' }).getByRole('row').nth(1))],
+        ['Timesheets', /\/office\/timesheets/, () => page.getByRole('region', { name: 'Hours this month' })],
+        ['Leave', /\/office\/leave$/, () => page.getByText('No leave requests match.').or(page.getByRole('table', { name: 'Leave' }).getByRole('row').nth(1))],
+        ['Payroll', /\/office\/payroll$/, () => page.getByText('No payroll yet.').or(page.getByRole('table', { name: 'Payroll' }).getByRole('row').nth(1))],
+        ['Loans & advances', /\/office\/loans$/, () => page.getByText('No loans or advances.').or(page.getByRole('table', { name: 'Loans and advances' }).getByRole('row').nth(1))],
+        ['My leave & payslips', /\/office\/my-hr$/, () => page.getByRole('region', { name: 'My payslips' })]]) {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /People/ }).first().click()
+        const l = page.getByRole('navigation', { name: 'People' }).getByRole('link', { name: menuName(link) }).first()
+        if (!await l.count()) {
+          if (link !== 'My leave & payslips') problems.push(`${look} ${w}: People has no ${link} link`)
+          await page.keyboard.press('Escape')
+          continue
+        }
+        await l.click()
+        await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await ready().first().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        await page.screenshot({ path: out(`hr-${link.split(' ')[0].toLowerCase()}-${look}-${w}`) })
+        if (link === 'Employees' && await page.getByRole('button', { name: 'Add employee' }).count()) {
+          await page.getByRole('button', { name: 'Add employee' }).click()
+          await page.getByRole('region', { name: 'Pay (per month)' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Add employee did not open the form`))
+          await page.screenshot({ path: out(`hr-employee-form-${look}-${w}`) })
+          await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+        }
+        if (link === 'Payroll' && await page.getByRole('button', { name: 'Prepare payroll' }).count()) {
+          await page.getByRole('button', { name: 'Prepare payroll' }).click()
+          const dlg = page.getByRole('dialog', { name: 'Prepare payroll' })
+          await dlg.waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Prepare payroll did not open`))
+          await dlg.getByRole('button', { name: 'Back', exact: true }).click().catch(() => page.keyboard.press('Escape'))
+        }
+      }
       // Branches, Industries, Legal entities and Branding, rebuilt (part 20): each opens from Setup → Company and loads; New branch
       // opens the form, and a branch opens with its stores and tills (nothing is saved). Scale items opens from Industries →
       // Grocery where the grocery module is on.
