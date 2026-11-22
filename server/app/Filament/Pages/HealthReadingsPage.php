@@ -95,7 +95,7 @@ class HealthReadingsPage extends Page implements HasTable
         ];
     }
 
-    private static function addService($actor, array $data): Product
+    public static function addService($actor, array $data): Product
     {
         $list = PriceList::where('is_default', true)->firstOrFail();
         $uom = Uom::firstOrCreate(['code' => 'SVC'], ['name' => 'Service', 'decimals' => 0]);

@@ -68,6 +68,14 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: new RegExp(`^/admin/stock-cost-runs/(${UUID})$`), app: (m) => `${APP}/cost-runs/${m[1]}` },
   { admin: /^\/admin\/estimated-costs\/?$/, app: () => `${APP}/estimated-costs` },
   { admin: /^\/admin\/spend-analytics\/?$/, app: () => `${APP}/spend-analytics` },
+  { admin: /^\/admin\/branches\/?$/, app: (_, q) => `${APP}/branches${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/branches\/create\/?$/, app: () => `${APP}/branches/new` },
+  { admin: new RegExp(`^/admin/branches/(${UUID})(/edit)?$`), app: (m) => `${APP}/branches/${m[1]}` },
+  { admin: /^\/admin\/industries\/?$/, app: () => `${APP}/industries` },
+  { admin: /^\/admin\/legal-entities\/?$/, app: () => `${APP}/legal-entities` },
+  { admin: /^\/admin\/branding\/?$/, app: () => `${APP}/branding` },
+  { admin: /^\/admin\/health-checks\/?$/, app: () => `${APP}/health-checks` },
+  { admin: /^\/admin\/grocery\/scale-items\/?$/, app: () => `${APP}/scale-items` },
   { admin: /^\/admin\/purchase-orders\/?$/, app: (_, q) => `${APP}/purchase-orders${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/purchase-orders\/create\/?$/, app: () => `${APP}/purchase-orders/new` },
   { admin: new RegExp(`^/admin/purchase-orders/(${UUID})$`), app: (m) => `${APP}/purchase-orders/${m[1]}` },
@@ -211,6 +219,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'rfqs' } | { page: 'rfq'; id: string } | { page: 'rfq-form' }
   | { page: 'agreements' } | { page: 'agreement'; id: string } | { page: 'agreement-form'; id: string | null }
   | { page: 'landed-costs' } | { page: 'cost-runs' } | { page: 'cost-run'; id: string } | { page: 'cost-run-form' } | { page: 'estimated-costs' } | { page: 'spend-analytics' }
+  | { page: 'branches' } | { page: 'branch'; id: string | null } | { page: 'industries' } | { page: 'legal-entities' } | { page: 'branding' } | { page: 'health-checks' } | { page: 'scale-items' }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
@@ -288,6 +297,15 @@ export function routeOf(path: string, search = ''): Route {
   if (crun) return { page: 'cost-run', id: crun[1] }
   if (/^\/office\/estimated-costs\/?$/.test(path)) return { page: 'estimated-costs' }
   if (/^\/office\/spend-analytics\/?$/.test(path)) return { page: 'spend-analytics' }
+  if (/^\/office\/branches\/?$/.test(path)) return { page: 'branches' }
+  if (/^\/office\/branches\/new\/?$/.test(path)) return { page: 'branch', id: null }
+  const brn = path.match(new RegExp(`^/office/branches/(${UUID})/?$`))
+  if (brn) return { page: 'branch', id: brn[1] }
+  if (/^\/office\/industries\/?$/.test(path)) return { page: 'industries' }
+  if (/^\/office\/legal-entities\/?$/.test(path)) return { page: 'legal-entities' }
+  if (/^\/office\/branding\/?$/.test(path)) return { page: 'branding' }
+  if (/^\/office\/health-checks\/?$/.test(path)) return { page: 'health-checks' }
+  if (/^\/office\/scale-items\/?$/.test(path)) return { page: 'scale-items' }
   if (/^\/office\/purchase-orders\/?$/.test(path)) return { page: 'purchase-orders' }
   if (/^\/office\/purchase-orders\/new\/?$/.test(path)) return { page: 'purchase-order-form', id: null }
   const po = path.match(new RegExp(`^/office/purchase-orders/(${UUID})(/edit)?/?$`))
@@ -452,6 +470,13 @@ export function adminEquivalent(route: Route): string | null {
     case 'cost-run-form': return '/admin/stock-cost-runs/create'
     case 'estimated-costs': return '/admin/estimated-costs'
     case 'spend-analytics': return '/admin/spend-analytics'
+    case 'branches': return '/admin/branches'
+    case 'branch': return route.id ? `/admin/branches/${route.id}/edit` : '/admin/branches/create'
+    case 'industries': return '/admin/industries'
+    case 'legal-entities': return '/admin/legal-entities'
+    case 'branding': return '/admin/branding'
+    case 'health-checks': return '/admin/health-checks'
+    case 'scale-items': return '/admin/grocery/scale-items'
     case 'goods-received': case 'goods-receipt': return '/admin/goods-receipts'
     case 'direct-purchases': case 'direct-purchase': case 'direct-purchase-form': return '/admin/direct-purchases'
     case 'supplier-invoices': return '/admin/supplier-invoices'
