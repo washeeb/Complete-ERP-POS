@@ -856,6 +856,27 @@ export type CrmCampaignForm = { currency: string; exponent: number; id: string |
   values: { name: string; industry_id: string; channel: string; subject: string; whatsapp_template: string; body: string; send_at: string
     audience: { tags: string[]; branch_id: string; min_spent: string; bought_within_days: string; not_bought_days: string; include_leads: boolean } } }
 export type CrmStageList = { kinds: Option[]; rows: (Archivable & { id: string; sort: number; name: string; kind: string; kind_label: string; probability: number; deals: number })[] }
+export type EquipmentValues = { name: string; status: string; owner: string; category: string; branch_id: string; location: string; customer_id: string; customer_name: string | null
+  make: string; model: string; serial_no: string; supplier_id: string; acquired_on: string; warranty_until: string; contract_until: string; fixed_asset_id: string; meter_unit: string; notes: string }
+export type PlanValuesM = { name: string; every_days: string; every_meter: string; last_done_on: string; lead_days: string; assigned_to: string; is_active: boolean; checklist: string[] }
+export type EquipmentList = { total: number; page: number; per: number; statuses: Option[]; categories: Option[]; can_create: boolean
+  rows: (Archivable & { id: string; number: string; name: string; where: string; category: string; status: string; status_label: string; tone: string; warranty: string | null
+    warranty_over: boolean; meter: string | null; next: string | null })[] }
+export type EquipmentDetail = { currency: string; exponent: number; id: string | null; number: string | null; status_label: string | null; tone: string | null; statuses: Option[]
+  categories: Option[]; branches: Option[]; suppliers: Option[]; fixed_assets: Option[]; values: EquipmentValues
+  actions: { edit: boolean; breakdown?: boolean; meter?: boolean; plans?: boolean }; archive?: Archivable & { archived_note: string | null }; meter?: string | null; meter_unit?: string | null; people?: Option[]
+  plans?: { id: string; name: string; every: string; last: string | null; next: string | null; late: boolean; who: string | null; active: boolean; values: PlanValuesM }[]
+  orders?: { id: string; number: string; title: string; kind: string; status_label: string; tone: string; cost: number; down: string | null; done: string | null }[] }
+export type WorkOrderList = { currency: string; exponent: number; total: number; page: number; per: number; open: string; kinds: Option[]; can_create: boolean; work: boolean
+  rows: { id: string; number: string; title: string; asset: string | null; kind: string; priority: string; priority_tone: string; status_label: string; tone: string
+    due: string | null; late: boolean; who: string | null; cost: number }[] }
+export type WorkOrderValues = { asset_id: string; kind: string; priority: string; title: string; due_on: string; assigned_to: string; down: boolean; details: string }
+export type WorkOrderForm = { assets: Option[]; kinds: Option[]; priorities: Option[]; people: Option[]; values: WorkOrderValues }
+export type WorkOrderDetail = { currency: string; exponent: number; id: string; number: string; title: string; status: string; status_label: string; tone: string
+  asset: { id: string; name: string; where: string | null; open: string } | null; kind: string; who: string | null; due: string | null; down: string; paid_by: string
+  invoice: DocLink | null; details: string | null; outcome: string | null; labour: string; labour_minor: number; parts_minor: number; outside_minor: number; total: number
+  checklist: { item: string; done: boolean }[]; parts: { id: string; name: string | null; qty: string; cost: number }[]; meter_unit: string | null; warehouses: Option[]
+  actions: { start: boolean; labour: boolean; parts: boolean; parts_back: boolean; wait: boolean; complete: boolean; cancel: boolean; invoice: boolean } }
 export type BookingValues = { branch_id: string; guest_name: string; phone: string; party_size: string; starts_at: string; duration_minutes: string; dining_table_id: string; note: string }
 export type BookingList = { currency: string; exponent: number; total: number; page: number; per: number; upcoming: boolean; statuses: Option[]; can_create: boolean
   rows: { id: string; number: string; when: string | null; name: string; phone: string | null; guests: number; table: string | null; branch: string | null; status: string
@@ -1705,6 +1726,25 @@ export const api = {
   saveCrmStage: (id: string | null, body: Record<string, unknown>) => call<{ id: string; message: string }>(id ? `/office-api/crm/stages/${id}` : '/office-api/crm/stages', { method: 'POST', body: JSON.stringify(body) }),
   archiveCrmStage: (id: string, restore: boolean, reason: string) =>
     call<{ message: string }>(`/office-api/crm/stages/${id}/archive`, { method: 'POST', body: JSON.stringify({ restore, reason: restore ? null : reason }) }),
+  equipment: (query: string, signal?: AbortSignal) => call<EquipmentList>(`/office-api/maintenance/equipment?${query}`, { signal }),
+  asset: (id: string | null) => call<EquipmentDetail>(id ? `/office-api/maintenance/equipment/${id}` : '/office-api/maintenance/equipment/form'),
+  saveAsset: (id: string | null, body: Record<string, unknown>) =>
+    call<{ id: string; message: string }>(`/office-api/maintenance/equipment${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(body) }),
+  assetAction: (id: string, action: 'breakdown' | 'meter', body: Record<string, unknown>) =>
+    call<{ message: string; open?: string }>(`/office-api/maintenance/equipment/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  archiveAsset: (id: string, restore: boolean, reason: string) =>
+    call<{ message: string }>(`/office-api/maintenance/equipment/${id}/archive`, { method: 'POST', body: JSON.stringify({ restore, reason: restore ? null : reason }) }),
+  saveMaintPlan: (asset: string, id: string | null, body: Record<string, unknown>) =>
+    call<{ id: string; message: string }>(`/office-api/maintenance/equipment/${asset}/plans${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(body) }),
+  maintCustomers: (q: string, signal?: AbortSignal) => call<{ results: { id: string; label: string; detail?: string }[] }>(`/office-api/maintenance/customers?q=${encodeURIComponent(q)}`, { signal }),
+  maintUnits: (q: string, signal?: AbortSignal) => call<{ results: UnitOption[] }>(`/office-api/maintenance/units?q=${encodeURIComponent(q)}`, { signal }),
+  maintServices: (q: string, signal?: AbortSignal) => call<{ results: { id: string; label: string; detail?: string }[] }>(`/office-api/maintenance/services?q=${encodeURIComponent(q)}`, { signal }),
+  workOrders: (query: string, signal?: AbortSignal) => call<WorkOrderList>(`/office-api/maintenance/orders?${query}`, { signal }),
+  workOrderForm: (asset = '') => call<WorkOrderForm>(`/office-api/maintenance/orders/form${asset ? `?asset=${encodeURIComponent(asset)}` : ''}`),
+  openWorkOrder: (body: Record<string, unknown>) => call<{ id: string; message: string }>('/office-api/maintenance/orders', { method: 'POST', body: JSON.stringify(body) }),
+  workOrder: (id: string) => call<WorkOrderDetail>(`/office-api/maintenance/orders/${id}`),
+  workOrderAction: (id: string, action: 'start' | 'labour' | 'parts' | 'parts_back' | 'wait' | 'complete' | 'invoice' | 'cancel', body: Record<string, unknown> = {}) =>
+    call<{ message: string; open?: string }>(`/office-api/maintenance/orders/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
   restBookings: (query: string, signal?: AbortSignal) => call<BookingList>(`/office-api/restaurant/bookings?${query}`, { signal }),
   restBookingForm: (branch = '') => call<TableBookingForm>(`/office-api/restaurant/bookings/form${branch ? `?branch=${branch}` : ''}`),
   saveBooking: (id: string | null, body: Record<string, unknown>) =>

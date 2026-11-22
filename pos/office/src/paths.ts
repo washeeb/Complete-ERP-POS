@@ -108,6 +108,12 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/crm-campaigns\/create\/?$/, app: () => `${APP}/crm/campaigns/new` },
   { admin: new RegExp(`^/admin/crm-campaigns/(${UUID})(/edit)?$`), app: (m) => `${APP}/crm/campaigns/${m[1]}` },
   { admin: /^\/admin\/crm-stages\/?$/, app: () => `${APP}/crm/stages` },
+  { admin: /^\/admin\/equipment\/?$/, app: (_, q) => `${APP}/maintenance/equipment${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/equipment\/create\/?$/, app: () => `${APP}/maintenance/equipment/new` },
+  { admin: new RegExp(`^/admin/equipment/(${UUID})(/edit)?$`), app: (m) => `${APP}/maintenance/equipment/${m[1]}` },
+  { admin: /^\/admin\/maintenance-orders\/?$/, app: (_, q) => `${APP}/maintenance/orders${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/maintenance-orders\/create\/?$/, app: (_, q) => `${APP}/maintenance/orders/new${q.get('asset') ? `?asset=${encodeURIComponent(q.get('asset')!)}` : ''}` },
+  { admin: new RegExp(`^/admin/maintenance-orders/(${UUID})$`), app: (m) => `${APP}/maintenance/orders/${m[1]}` },
   { admin: /^\/admin\/reservations\/?$/, app: (_, q) => `${APP}/restaurant/bookings${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/dining-orders\/?$/, app: (_, q) => `${APP}/restaurant/bills${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: new RegExp(`^/admin/dining-orders/(${UUID})$`), app: (m) => `${APP}/restaurant/bills?bill=${m[1]}` },
@@ -290,6 +296,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'tickets' } | { page: 'ticket-new' } | { page: 'ticket'; id: string } | { page: 'service-levels' }
   | { page: 'ask' } | { page: 'alerts' } | { page: 'ai-usage' }
   | { page: 'rest-bookings' } | { page: 'rest-bills' } | { page: 'rest-tables' } | { page: 'rest-stations' } | { page: 'rest-modifiers' } | { page: 'rest-report' }
+  | { page: 'mnt-equipment' } | { page: 'mnt-asset'; id: string | null } | { page: 'mnt-orders' } | { page: 'mnt-order-new' } | { page: 'mnt-order'; id: string }
   | { page: 'crm-pipeline' } | { page: 'crm-leads' } | { page: 'crm-lead'; id: string | null } | { page: 'crm-deals' } | { page: 'crm-deal'; id: string | null }
   | { page: 'crm-follow-ups' } | { page: 'crm-campaigns' } | { page: 'crm-campaign'; id: string | null } | { page: 'crm-stages' }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
@@ -415,6 +422,14 @@ export function routeOf(path: string, search = ''): Route {
   const crc = path.match(new RegExp(`^/office/crm/campaigns/(${UUID})/?$`))
   if (crc) return { page: 'crm-campaign', id: crc[1] }
   if (/^\/office\/crm\/stages\/?$/.test(path)) return { page: 'crm-stages' }
+  if (/^\/office\/maintenance\/equipment\/?$/.test(path)) return { page: 'mnt-equipment' }
+  if (/^\/office\/maintenance\/equipment\/new\/?$/.test(path)) return { page: 'mnt-asset', id: null }
+  const mas = path.match(new RegExp(`^/office/maintenance/equipment/(${UUID})/?$`))
+  if (mas) return { page: 'mnt-asset', id: mas[1] }
+  if (/^\/office\/maintenance\/orders\/?$/.test(path)) return { page: 'mnt-orders' }
+  if (/^\/office\/maintenance\/orders\/new\/?$/.test(path)) return { page: 'mnt-order-new' }
+  const mor = path.match(new RegExp(`^/office/maintenance/orders/(${UUID})/?$`))
+  if (mor) return { page: 'mnt-order', id: mor[1] }
   if (/^\/office\/restaurant\/bookings\/?$/.test(path)) return { page: 'rest-bookings' }
   if (/^\/office\/restaurant\/bills\/?$/.test(path)) return { page: 'rest-bills' }
   if (/^\/office\/restaurant\/tables\/?$/.test(path)) return { page: 'rest-tables' }
@@ -644,6 +659,11 @@ export function adminEquivalent(route: Route): string | null {
     case 'crm-campaigns': return '/admin/crm-campaigns'
     case 'crm-campaign': return route.id ? `/admin/crm-campaigns/${route.id}/edit` : '/admin/crm-campaigns/create'
     case 'crm-stages': return '/admin/crm-stages'
+    case 'mnt-equipment': return '/admin/equipment'
+    case 'mnt-asset': return route.id ? `/admin/equipment/${route.id}/edit` : '/admin/equipment/create'
+    case 'mnt-orders': return '/admin/maintenance-orders'
+    case 'mnt-order-new': return '/admin/maintenance-orders/create'
+    case 'mnt-order': return `/admin/maintenance-orders/${route.id}`
     case 'rest-bookings': return '/admin/reservations'
     case 'rest-bills': return '/admin/dining-orders'
     case 'rest-tables': return '/admin/dining-tables'

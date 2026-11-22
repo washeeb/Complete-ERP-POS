@@ -18,7 +18,7 @@ const menu: Menu = {
 
 describe('addresses', () => {
   it('opens a current back-office page inside the new one, and back', () => {
-    expect(appPathFor('/admin/equipment?tableSearch=generator')).toBe('/office/a/equipment?tableSearch=generator')
+    expect(appPathFor('/admin/sensors?tableSearch=fridge')).toBe('/office/a/sensors?tableSearch=fridge')
     expect(appPathFor('/admin/products/abc/edit')).toBe('/office/a/products/abc/edit')
     expect(appPathFor('/admin')).toBe('/office/')
     expect(appPathFor('https://evil.example/admin')).toBe('/office/') // never another site
@@ -222,6 +222,12 @@ describe('addresses', () => {
     expect(appPathFor('/admin/kitchen-stations')).toBe('/office/restaurant/stations')
     expect(appPathFor('/admin/modifier-groups')).toBe('/office/restaurant/modifiers')
     expect(appPathFor('/admin/restaurant-report?from=2026-11-01')).toBe('/office/restaurant/tips-voids?from=2026-11-01')
+    expect(appPathFor('/admin/equipment?tableSearch=generator')).toBe('/office/maintenance/equipment?q=generator')
+    expect(appPathFor('/admin/equipment/create')).toBe('/office/maintenance/equipment/new')
+    expect(appPathFor('/admin/equipment/0190c3a4-5b6d-7e8f-9a0b-1c2d3e4f5a6b/edit')).toBe('/office/maintenance/equipment/0190c3a4-5b6d-7e8f-9a0b-1c2d3e4f5a6b')
+    expect(appPathFor('/admin/maintenance-orders')).toBe('/office/maintenance/orders')
+    expect(appPathFor('/admin/maintenance-orders/create?asset=0190c3a4-5b6d-7e8f-9a0b-1c2d3e4f5a6b')).toBe('/office/maintenance/orders/new?asset=0190c3a4-5b6d-7e8f-9a0b-1c2d3e4f5a6b')
+    expect(appPathFor('/admin/maintenance-orders/0190c3a4-5b6d-7e8f-9a0b-1c2d3e4f5a6b')).toBe('/office/maintenance/orders/0190c3a4-5b6d-7e8f-9a0b-1c2d3e4f5a6b')
     expect(appPathFor('/admin/import-data?type=products')).toBe('/office/import?type=products')
     expect(appPathFor('/admin/import-data?type=stock_count&context=abc&show=xyz')).toBe('/office/import?type=stock_count&context=abc&show=xyz')
     expect(appPathFor('/admin/cash/close-day')).toBe('/office/close-day')
