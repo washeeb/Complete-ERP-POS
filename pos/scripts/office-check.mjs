@@ -777,6 +777,42 @@ try {
           await dlg.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => problems.push(`${look} ${w}: Add time's dialog did not close`))
         }
       }
+      // Service desk, rebuilt (part 28), where the add-on is on: Tickets and Deadlines open from Sales and load; the first ticket
+      // opens with its conversation, New ticket opens its form and Note its dialog (nothing is saved).
+      for (const [link, url, ready] of [
+        ['Tickets', /\/office\/tickets$/, () => page.getByText(/^No tickets\./).or(page.getByRole('table', { name: 'Tickets' }).getByRole('row').nth(1))],
+        ['Deadlines', /\/office\/service-levels/, () => page.getByRole('table', { name: 'Deadlines' }).getByRole('row').nth(1)]]) {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Sales/ }).first().click()
+        const l = page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: menuName(link) }).first()
+        if (!await l.count()) { await page.keyboard.press('Escape'); continue }
+        await l.click()
+        await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await ready().first().waitFor({ timeout: 30000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        await page.screenshot({ path: out(`desk-${link.toLowerCase()}-${look}-${w}`) })
+        if (link !== 'Tickets') continue
+        const first = page.getByRole('table', { name: 'Tickets' }).getByRole('row').nth(1)
+        if (await first.count() && !await page.getByText(/^No tickets\./).count()) {
+          await first.click()
+          await page.getByRole('region', { name: 'Conversation' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: a ticket did not open with its conversation`))
+          await page.screenshot({ path: out(`desk-ticket-${look}-${w}`) })
+          const note = page.getByRole('button', { name: 'Note', exact: true })
+          if (await note.count()) {
+            await note.click()
+            const dlg = page.getByRole('dialog')
+            await dlg.waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Note did not open its dialog`))
+            await dlg.getByRole('button', { name: 'Back' }).click().catch(() => page.keyboard.press('Escape'))
+            await dlg.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => problems.push(`${look} ${w}: Note's dialog did not close`))
+          }
+          await page.goBack()
+        }
+        const b = page.getByRole('button', { name: 'New ticket' })
+        if (await b.waitFor({ timeout: 15000 }).then(() => true, () => false)) {
+          await b.click()
+          await page.getByRole('region', { name: 'Ticket', exact: true }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: New ticket did not open the form`))
+          await page.screenshot({ path: out(`desk-new-${look}-${w}`) })
+          await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+        } else problems.push(`${look} ${w}: Tickets has no New ticket`)
+      }
       // Go-live and Import data, rebuilt (part 24): each opens from Setup and loads. Nothing is planned, uploaded or imported.
       for (const [link, url, ready] of [
         ['Go-live', /\/office\/go-live$/, () => page.getByRole('table', { name: 'Checklist' }).getByRole('row').first()],
