@@ -856,6 +856,16 @@ export type CrmCampaignForm = { currency: string; exponent: number; id: string |
   values: { name: string; industry_id: string; channel: string; subject: string; whatsapp_template: string; body: string; send_at: string
     audience: { tags: string[]; branch_id: string; min_spent: string; bought_within_days: string; not_bought_days: string; include_leads: boolean } } }
 export type CrmStageList = { kinds: Option[]; rows: (Archivable & { id: string; sort: number; name: string; kind: string; kind_label: string; probability: number; deals: number })[] }
+export type AnswerTable = { title: string; columns: string[]; rows: (string | number | null)[][]; note?: string | null }
+export type AskAnswer = { content: string; tables: AnswerTable[]; notice: string | null }
+export type AskData = { status: string | null; quick: Option[] }
+export type AlertList = { total: number; page: number; per: number; status: string; statuses: Option[]; kinds: Option[]; severities: Option[]; can_refresh: boolean
+  rows: { id: string; severity: string; tone: string; kind: string; title: string; detail: string | null; seen: string | null; status: string; status_label: string
+    handled: string | null; open: boolean }[] }
+export type AiUsageList = { total: number; page: number; per: number; features: Option[]; spent: string; cap: string
+  rows: { id: string; when: string | null; who: string; feature: string; model: string; question: string; cost: string; status: string }[] }
+export type AiRequestDetail = { id: string; when: string | null; who: string; feature: string; model: string; tokens: string; cost: string; status: string; error: string | null
+  took: string; prompt: string; response: string | null; tools: string[] }
 export type TicketList = { total: number; page: number; per: number; open: string; kinds: Option[]; priorities: Option[]; title: string; all: boolean; work: boolean
   can_create: boolean; create_label: string; channels: { web_form: string | null; email: string | null } | null
   rows: { id: string; number: string; subject: string; from: string; kind: string; priority: string; priority_tone: string; status_label: string; tone: string
@@ -1673,6 +1683,15 @@ export const api = {
   saveCrmStage: (id: string | null, body: Record<string, unknown>) => call<{ id: string; message: string }>(id ? `/office-api/crm/stages/${id}` : '/office-api/crm/stages', { method: 'POST', body: JSON.stringify(body) }),
   archiveCrmStage: (id: string, restore: boolean, reason: string) =>
     call<{ message: string }>(`/office-api/crm/stages/${id}/archive`, { method: 'POST', body: JSON.stringify({ restore, reason: restore ? null : reason }) }),
+  askBusiness: () => call<AskData>('/office-api/ask'),
+  askQuestion: (question: string, history: { role: 'user' | 'assistant'; content: string }[]) =>
+    call<AskAnswer>('/office-api/ask', { method: 'POST', body: JSON.stringify({ question, history }) }),
+  askQuick: (key: string) => call<AskAnswer>('/office-api/ask/quick', { method: 'POST', body: JSON.stringify({ key }) }),
+  alerts: (query: string, signal?: AbortSignal) => call<AlertList>(`/office-api/alerts?${query}`, { signal }),
+  handleAlert: (id: string, status: 'resolved' | 'dismissed', note: string) => call<{ message: string }>(`/office-api/alerts/${id}`, { method: 'POST', body: JSON.stringify({ status, note }) }),
+  refreshAlerts: () => call<{ message: string }>('/office-api/alerts/refresh', { method: 'POST' }),
+  aiUsage: (query: string, signal?: AbortSignal) => call<AiUsageList>(`/office-api/ai-usage?${query}`, { signal }),
+  aiRequest: (id: string) => call<AiRequestDetail>(`/office-api/ai-usage/${id}`),
   tickets: (query: string, signal?: AbortSignal) => call<TicketList>(`/office-api/tickets?${query}`, { signal }),
   ticketForm: () => call<TicketForm>('/office-api/tickets/form'),
   ticketCustomers: (q: string, signal?: AbortSignal) => call<{ results: { id: string; label: string; detail?: string }[] }>(`/office-api/tickets/customers?q=${encodeURIComponent(q)}`, { signal }),

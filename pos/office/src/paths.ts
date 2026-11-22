@@ -108,6 +108,9 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/crm-campaigns\/create\/?$/, app: () => `${APP}/crm/campaigns/new` },
   { admin: new RegExp(`^/admin/crm-campaigns/(${UUID})(/edit)?$`), app: (m) => `${APP}/crm/campaigns/${m[1]}` },
   { admin: /^\/admin\/crm-stages\/?$/, app: () => `${APP}/crm/stages` },
+  { admin: /^\/admin\/copilot\/?$/, app: () => `${APP}/ask` },
+  { admin: /^\/admin\/alerts\/?$/, app: (_, q) => `${APP}/alerts${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/ai-usage\/?$/, app: () => `${APP}/ai-usage` },
   { admin: /^\/admin\/tickets\/?$/, app: (_, q) => `${APP}/tickets${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/tickets\/create\/?$/, app: () => `${APP}/tickets/new` },
   { admin: new RegExp(`^/admin/tickets/(${UUID})$`), app: (m) => `${APP}/tickets/${m[1]}` },
@@ -278,6 +281,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'svc-calendar' } | { page: 'svc-appointments' } | { page: 'svc-passes' } | { page: 'svc-memberships' } | { page: 'svc-plans' } | { page: 'svc-commissions' } | { page: 'svc-keys' }
   | { page: 'projects' } | { page: 'project'; id: string | null } | { page: 'my-time' } | { page: 'time-approvals' } | { page: 'project-rates' }
   | { page: 'tickets' } | { page: 'ticket-new' } | { page: 'ticket'; id: string } | { page: 'service-levels' }
+  | { page: 'ask' } | { page: 'alerts' } | { page: 'ai-usage' }
   | { page: 'crm-pipeline' } | { page: 'crm-leads' } | { page: 'crm-lead'; id: string | null } | { page: 'crm-deals' } | { page: 'crm-deal'; id: string | null }
   | { page: 'crm-follow-ups' } | { page: 'crm-campaigns' } | { page: 'crm-campaign'; id: string | null } | { page: 'crm-stages' }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
@@ -403,6 +407,9 @@ export function routeOf(path: string, search = ''): Route {
   const crc = path.match(new RegExp(`^/office/crm/campaigns/(${UUID})/?$`))
   if (crc) return { page: 'crm-campaign', id: crc[1] }
   if (/^\/office\/crm\/stages\/?$/.test(path)) return { page: 'crm-stages' }
+  if (/^\/office\/ask\/?$/.test(path)) return { page: 'ask' }
+  if (/^\/office\/alerts\/?$/.test(path)) return { page: 'alerts' }
+  if (/^\/office\/ai-usage\/?$/.test(path)) return { page: 'ai-usage' }
   if (/^\/office\/tickets\/?$/.test(path)) return { page: 'tickets' }
   if (/^\/office\/tickets\/new\/?$/.test(path)) return { page: 'ticket-new' }
   const tkt = path.match(new RegExp(`^/office/tickets/(${UUID})/?$`))
@@ -623,6 +630,9 @@ export function adminEquivalent(route: Route): string | null {
     case 'crm-campaigns': return '/admin/crm-campaigns'
     case 'crm-campaign': return route.id ? `/admin/crm-campaigns/${route.id}/edit` : '/admin/crm-campaigns/create'
     case 'crm-stages': return '/admin/crm-stages'
+    case 'ask': return '/admin/copilot'
+    case 'alerts': return '/admin/alerts'
+    case 'ai-usage': return '/admin/ai-usage'
     case 'tickets': return '/admin/tickets'
     case 'ticket-new': return '/admin/tickets/create'
     case 'ticket': return `/admin/tickets/${route.id}`
