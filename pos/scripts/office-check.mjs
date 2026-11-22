@@ -835,6 +835,35 @@ try {
         }
         await page.screenshot({ path: out(`insights-${link.toLowerCase().replace(/ /g, '-')}-${look}-${w}`) })
       }
+      // The restaurant, rebuilt (part 30), where the module is on: each page opens from Industries and loads; New booking, New
+      // table, New kitchen station and New modifier group open their dialogs (nothing is saved).
+      for (const [link, url, ready, button] of [
+        ['Bookings', /\/office\/restaurant\/bookings/, () => page.getByText('No bookings match.').or(page.getByRole('table', { name: 'Bookings' }).getByRole('row').nth(1)), 'New booking'],
+        ['Bills', /\/office\/restaurant\/bills/, () => page.getByText('No bills match.').or(page.getByRole('table', { name: 'Bills' }).getByRole('row').nth(1)), null],
+        ['Floor plan', /\/office\/restaurant\/tables/, () => page.getByText('No tables yet.').or(page.getByRole('table', { name: 'Floor plan' }).getByRole('row').nth(1)), 'New table'],
+        ['Kitchen stations', /\/office\/restaurant\/stations/, () => page.getByText('No kitchen stations yet.').or(page.getByRole('table', { name: 'Kitchen stations' }).getByRole('row').nth(1)), 'New kitchen station'],
+        ['Modifiers', /\/office\/restaurant\/modifiers/, () => page.getByText('No modifier groups yet.').or(page.getByRole('table', { name: 'Modifiers' }).getByRole('row').nth(1)), 'New modifier group'],
+        ['Tips & voids', /\/office\/restaurant\/tips-voids/, () => page.getByRole('region', { name: 'Voided items' }), null]]) {
+        const menu = page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Industries|Restaurant/ }).first()
+        if (!await menu.waitFor({ timeout: 10000 }).then(() => true, () => false)) break
+        const tab = /^Restaurant/.test((await menu.innerText()).trim()) ? 'Restaurant' : 'Industries'
+        await menu.click()
+        const l = page.getByRole('navigation', { name: tab }).getByRole('link', { name: menuName(link) }).first()
+        if (!await l.count()) { await page.keyboard.press('Escape'); continue }
+        await l.click()
+        await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await ready().first().waitFor({ timeout: 30000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        await page.screenshot({ path: out(`restaurant-${link.toLowerCase().replace(/[ &]+/g, '-')}-${look}-${w}`) })
+        if (!button) continue
+        const b = page.getByRole('button', { name: button })
+        if (!await b.waitFor({ timeout: 10000 }).then(() => true, () => false)) { problems.push(`${look} ${w}: ${link} has no ${button}`); continue }
+        await b.click()
+        const dlg = page.getByRole('dialog')
+        await dlg.waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${button} did not open its dialog`))
+        await page.screenshot({ path: out(`restaurant-${button.toLowerCase().replace(/ /g, '-')}-${look}-${w}`) })
+        await dlg.getByRole('button', { name: 'Back' }).click().catch(() => page.keyboard.press('Escape'))
+        await dlg.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => problems.push(`${look} ${w}: ${button}'s dialog did not close`))
+      }
       // Go-live and Import data, rebuilt (part 24): each opens from Setup and loads. Nothing is planned, uploaded or imported.
       for (const [link, url, ready] of [
         ['Go-live', /\/office\/go-live$/, () => page.getByRole('table', { name: 'Checklist' }).getByRole('row').first()],
@@ -1438,18 +1467,18 @@ try {
         await page.unroute(`**/office-api/requests/${fakeRq}`)
       }
 
-      // Industries → Restaurant → Kitchen stations is still the current page (not rebuilt yet; CRM was rebuilt in part 25): it opens
+      // Stock → Equipment (maintenance) is still the current page (not rebuilt yet; the restaurant was rebuilt in part 30): it opens
       // inside, and the address follows.
-      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Industries/ }).first().click()
-      await page.getByRole('navigation', { name: 'Industries' }).getByRole('link', { name: menuName('Kitchen stations') }).first().click()
-      await page.waitForURL(/\/office\/a\/kitchen-stations/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Kitchen stations did not open at /office/a/kitchen-stations (${page.url()})`))
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Stock/ }).first().click()
+      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: menuName('Equipment') }).first().click()
+      await page.waitForURL(/\/office\/a\/equipment/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Equipment did not open at /office/a/equipment (${page.url()})`))
       await page.waitForFunction(() => {
         const f = document.querySelector('iframe[title="Page"]')
-        return f?.contentWindow?.location.pathname === '/admin/kitchen-stations' && !!f.contentDocument?.querySelector('h1')
-      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Kitchen stations page did not open inside`))
+        return f?.contentWindow?.location.pathname === '/admin/equipment' && !!f.contentDocument?.querySelector('h1')
+      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Equipment page did not open inside`))
       const f = await frameReady()
       await f.locator('.fi-ta-table, .fi-ta-empty-state').first().waitFor({ timeout: 20000 })
-        .catch(() => problems.push(`${look} ${w}: the Kitchen stations list did not show inside`))
+        .catch(() => problems.push(`${look} ${w}: the Equipment list did not show inside`))
       const chrome = await f.locator('.fi-sidebar, .fi-topbar').evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== 'none').length)
       if (chrome) problems.push(`${look} ${w}: the embedded page still shows its own menu`)
       await page.waitForTimeout(600) // the page's own loader fades out
@@ -1458,17 +1487,17 @@ try {
       // Recent lists the page just opened; the star adds it to favourites and takes it off again.
       const nav = page.getByRole('navigation', { name: 'Menu' })
       await (look === 'top' ? nav.getByRole('button', { name: 'Recent pages' }) : nav.getByRole('button', { name: 'Recent' })).click()
-      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /Kitchen stations/i }).first().waitFor({ timeout: 5000 })
-        .catch(() => problems.push(`${look} ${w}: Recent does not list Kitchen stations`))
+      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /^Equipment/i }).first().waitFor({ timeout: 5000 })
+        .catch(() => problems.push(`${look} ${w}: Recent does not list Equipment`))
       await page.keyboard.press('Escape')
       const star = look === 'top' ? nav.getByRole('button', { name: 'Favourites' }) : nav.getByRole('button', { name: 'Favourites' })
       await star.click()
       const fav = page.getByRole('dialog', { name: 'Favourite pages' })
       await fav.getByRole('button', { name: /^Add “/ }).click().catch(() => problems.push(`${look} ${w}: Favourites has no "Add this page"`))
-      await fav.getByRole('link', { name: /Kitchen stations/i }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Kitchen stations did not become a favourite`))
+      await fav.getByRole('link', { name: /^Equipment/i }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Equipment did not become a favourite`))
       await page.screenshot({ path: out(`favourites-${look}-${w}`) })
       await fav.getByRole('button', { name: /^Take “/ }).last().click().catch(() => undefined) // leave the dev account as it was
-      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Kitchen stations could not be taken off favourites`))
+      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Equipment could not be taken off favourites`))
       await page.keyboard.press('Escape')
 
       // Search: Ctrl+K, type, a page of the menu is offered.

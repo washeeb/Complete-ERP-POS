@@ -108,6 +108,13 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/crm-campaigns\/create\/?$/, app: () => `${APP}/crm/campaigns/new` },
   { admin: new RegExp(`^/admin/crm-campaigns/(${UUID})(/edit)?$`), app: (m) => `${APP}/crm/campaigns/${m[1]}` },
   { admin: /^\/admin\/crm-stages\/?$/, app: () => `${APP}/crm/stages` },
+  { admin: /^\/admin\/reservations\/?$/, app: (_, q) => `${APP}/restaurant/bookings${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/dining-orders\/?$/, app: (_, q) => `${APP}/restaurant/bills${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: new RegExp(`^/admin/dining-orders/(${UUID})$`), app: (m) => `${APP}/restaurant/bills?bill=${m[1]}` },
+  { admin: /^\/admin\/dining-tables\/?$/, app: () => `${APP}/restaurant/tables` },
+  { admin: /^\/admin\/kitchen-stations\/?$/, app: () => `${APP}/restaurant/stations` },
+  { admin: /^\/admin\/modifier-groups\/?$/, app: () => `${APP}/restaurant/modifiers` },
+  { admin: /^\/admin\/restaurant-report\/?$/, app: (_, q) => `${APP}/restaurant/tips-voids${q.toString() ? `?${q.toString()}` : ''}` },
   { admin: /^\/admin\/copilot\/?$/, app: () => `${APP}/ask` },
   { admin: /^\/admin\/alerts\/?$/, app: (_, q) => `${APP}/alerts${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/ai-usage\/?$/, app: () => `${APP}/ai-usage` },
@@ -282,6 +289,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'projects' } | { page: 'project'; id: string | null } | { page: 'my-time' } | { page: 'time-approvals' } | { page: 'project-rates' }
   | { page: 'tickets' } | { page: 'ticket-new' } | { page: 'ticket'; id: string } | { page: 'service-levels' }
   | { page: 'ask' } | { page: 'alerts' } | { page: 'ai-usage' }
+  | { page: 'rest-bookings' } | { page: 'rest-bills' } | { page: 'rest-tables' } | { page: 'rest-stations' } | { page: 'rest-modifiers' } | { page: 'rest-report' }
   | { page: 'crm-pipeline' } | { page: 'crm-leads' } | { page: 'crm-lead'; id: string | null } | { page: 'crm-deals' } | { page: 'crm-deal'; id: string | null }
   | { page: 'crm-follow-ups' } | { page: 'crm-campaigns' } | { page: 'crm-campaign'; id: string | null } | { page: 'crm-stages' }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
@@ -407,6 +415,12 @@ export function routeOf(path: string, search = ''): Route {
   const crc = path.match(new RegExp(`^/office/crm/campaigns/(${UUID})/?$`))
   if (crc) return { page: 'crm-campaign', id: crc[1] }
   if (/^\/office\/crm\/stages\/?$/.test(path)) return { page: 'crm-stages' }
+  if (/^\/office\/restaurant\/bookings\/?$/.test(path)) return { page: 'rest-bookings' }
+  if (/^\/office\/restaurant\/bills\/?$/.test(path)) return { page: 'rest-bills' }
+  if (/^\/office\/restaurant\/tables\/?$/.test(path)) return { page: 'rest-tables' }
+  if (/^\/office\/restaurant\/stations\/?$/.test(path)) return { page: 'rest-stations' }
+  if (/^\/office\/restaurant\/modifiers\/?$/.test(path)) return { page: 'rest-modifiers' }
+  if (/^\/office\/restaurant\/tips-voids\/?$/.test(path)) return { page: 'rest-report' }
   if (/^\/office\/ask\/?$/.test(path)) return { page: 'ask' }
   if (/^\/office\/alerts\/?$/.test(path)) return { page: 'alerts' }
   if (/^\/office\/ai-usage\/?$/.test(path)) return { page: 'ai-usage' }
@@ -630,6 +644,12 @@ export function adminEquivalent(route: Route): string | null {
     case 'crm-campaigns': return '/admin/crm-campaigns'
     case 'crm-campaign': return route.id ? `/admin/crm-campaigns/${route.id}/edit` : '/admin/crm-campaigns/create'
     case 'crm-stages': return '/admin/crm-stages'
+    case 'rest-bookings': return '/admin/reservations'
+    case 'rest-bills': return '/admin/dining-orders'
+    case 'rest-tables': return '/admin/dining-tables'
+    case 'rest-stations': return '/admin/kitchen-stations'
+    case 'rest-modifiers': return '/admin/modifier-groups'
+    case 'rest-report': return '/admin/restaurant-report'
     case 'ask': return '/admin/copilot'
     case 'alerts': return '/admin/alerts'
     case 'ai-usage': return '/admin/ai-usage'

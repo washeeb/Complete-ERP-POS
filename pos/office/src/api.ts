@@ -856,6 +856,28 @@ export type CrmCampaignForm = { currency: string; exponent: number; id: string |
   values: { name: string; industry_id: string; channel: string; subject: string; whatsapp_template: string; body: string; send_at: string
     audience: { tags: string[]; branch_id: string; min_spent: string; bought_within_days: string; not_bought_days: string; include_leads: boolean } } }
 export type CrmStageList = { kinds: Option[]; rows: (Archivable & { id: string; sort: number; name: string; kind: string; kind_label: string; probability: number; deals: number })[] }
+export type BookingValues = { branch_id: string; guest_name: string; phone: string; party_size: string; starts_at: string; duration_minutes: string; dining_table_id: string; note: string }
+export type BookingList = { currency: string; exponent: number; total: number; page: number; per: number; upcoming: boolean; statuses: Option[]; can_create: boolean
+  rows: { id: string; number: string; when: string | null; name: string; phone: string | null; guests: number; table: string | null; branch: string | null; status: string
+    status_label: string; tone: string; deposit: number | null; deposit_status: string | null; note: string | null; can_change: boolean; can_no_show: boolean; can_cancel: boolean
+    can_forfeit: boolean; left: number; values: BookingValues }[] }
+export type TableBookingForm = { branches: Option[]; branch: string; tables: Option[]; starts_at: string }
+export type BillList = { total: number; page: number; per: number; statuses: Option[]; kinds: Option[]
+  rows: { id: string; number: string; opened: string | null; where: string; waiter: string; status: string; status_label: string; tone: string; voids: number }[] }
+export type BillDetail = { id: string; number: string; where: string; waiter: string; status_label: string; opened: string | null; closed: string | null; guests: number; note: string | null
+  items: { id: string; qty: string; name: string; extras: string; status: string; status_label: string; void: string | null; paid: boolean }[] }
+export type TableValues = { branch_id: string; code: string; area: string; seats: string; pos_x: string; pos_y: string }
+export type TableList = { branches: Option[]; can_create: boolean; next: Record<string, string>
+  rows: (Archivable & { id: string; branch: string | null; code: string; name: string; area: string | null; seats: number; position: string; can_edit: boolean; values: TableValues })[] }
+export type StationValues = { branch_id: string; name: string; auto_print: boolean }
+export type StationList = { branches: Option[]; can_create: boolean
+  rows: (Archivable & { id: string; branch: string | null; code: string; name: string; auto_print: boolean; can_edit: boolean; values: StationValues })[] }
+export type ModifierOptionValue = { id?: string; name: string; product_id: string; product: string | null }
+export type ModifierValues = { name: string; industry_id: string; min_choices: string; max_choices: string; is_active: boolean; options: ModifierOptionValue[] }
+export type ModifierList = { can_create: boolean; industries: Option[] | null; default_industry: string
+  rows: (Archivable & { id: string; name: string; rule: string; choices: string; active: boolean; values: ModifierValues })[] }
+export type TipsVoids = { currency: string; exponent: number; from: string; to: string; tips: { name: string; bills: number; tips: number }[]
+  voids: { id: string; bill: string; added: string | null; item: string; fired: boolean; reason: string | null; by: string | null; added_by: string | null }[] }
 export type AnswerTable = { title: string; columns: string[]; rows: (string | number | null)[][]; note?: string | null }
 export type AskAnswer = { content: string; tables: AnswerTable[]; notice: string | null }
 export type AskData = { status: string | null; quick: Option[] }
@@ -1683,6 +1705,27 @@ export const api = {
   saveCrmStage: (id: string | null, body: Record<string, unknown>) => call<{ id: string; message: string }>(id ? `/office-api/crm/stages/${id}` : '/office-api/crm/stages', { method: 'POST', body: JSON.stringify(body) }),
   archiveCrmStage: (id: string, restore: boolean, reason: string) =>
     call<{ message: string }>(`/office-api/crm/stages/${id}/archive`, { method: 'POST', body: JSON.stringify({ restore, reason: restore ? null : reason }) }),
+  restBookings: (query: string, signal?: AbortSignal) => call<BookingList>(`/office-api/restaurant/bookings?${query}`, { signal }),
+  restBookingForm: (branch = '') => call<TableBookingForm>(`/office-api/restaurant/bookings/form${branch ? `?branch=${branch}` : ''}`),
+  saveBooking: (id: string | null, body: Record<string, unknown>) =>
+    call<{ id: string; message: string }>(`/office-api/restaurant/bookings${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(body) }),
+  bookingAction: (id: string, action: 'no_show' | 'cancel' | 'forfeit', reason = '') =>
+    call<{ message: string }>(`/office-api/restaurant/bookings/${id}/action`, { method: 'POST', body: JSON.stringify({ action, reason }) }),
+  restBills: (query: string, signal?: AbortSignal) => call<BillList>(`/office-api/restaurant/bills?${query}`, { signal }),
+  restBill: (id: string) => call<BillDetail>(`/office-api/restaurant/bills/${id}`),
+  restTables: (query: string, signal?: AbortSignal) => call<TableList>(`/office-api/restaurant/tables?${query}`, { signal }),
+  saveTable: (id: string | null, body: Record<string, unknown>) =>
+    call<{ id: string; message: string }>(`/office-api/restaurant/tables${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(body) }),
+  restStations: (query: string, signal?: AbortSignal) => call<StationList>(`/office-api/restaurant/stations?${query}`, { signal }),
+  saveStation: (id: string | null, body: Record<string, unknown>) =>
+    call<{ id: string; message: string }>(`/office-api/restaurant/stations${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(body) }),
+  restModifiers: (query: string, signal?: AbortSignal) => call<ModifierList>(`/office-api/restaurant/modifiers?${query}`, { signal }),
+  modifierProducts: (q: string, signal?: AbortSignal) => call<{ results: { id: string; label: string }[] }>(`/office-api/restaurant/modifiers/products?q=${encodeURIComponent(q)}`, { signal }),
+  saveModifier: (id: string | null, body: Record<string, unknown>) =>
+    call<{ id: string; message: string }>(`/office-api/restaurant/modifiers${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(body) }),
+  restArchive: (kind: 'table' | 'station' | 'modifier', id: string, restore: boolean, reason: string) =>
+    call<{ message: string }>('/office-api/restaurant/archive', { method: 'POST', body: JSON.stringify({ kind, id, restore, reason: restore ? null : reason }) }),
+  tipsVoids: (query: string, signal?: AbortSignal) => call<TipsVoids>(`/office-api/restaurant/tips-voids?${query}`, { signal }),
   askBusiness: () => call<AskData>('/office-api/ask'),
   askQuestion: (question: string, history: { role: 'user' | 'assistant'; content: string }[]) =>
     call<AskAnswer>('/office-api/ask', { method: 'POST', body: JSON.stringify({ question, history }) }),

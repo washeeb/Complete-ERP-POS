@@ -53,6 +53,7 @@ use App\Http\Controllers\Office\ReferenceListsController as OfficeReferenceLists
 use App\Http\Controllers\Office\ReorderController as OfficeReorderController;
 use App\Http\Controllers\Office\ReportsController as OfficeReportsController;
 use App\Http\Controllers\Office\RequestsController as OfficeRequestsController;
+use App\Http\Controllers\Office\RestaurantController as OfficeRestaurantController;
 use App\Http\Controllers\Office\ReturnsController as OfficeReturnsController;
 use App\Http\Controllers\Office\RolesController as OfficeRolesController;
 use App\Http\Controllers\Office\SalesController as OfficeSalesController;
@@ -708,6 +709,22 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::post('alerts/{id}', [OfficeInsightsAiController::class, 'alertHandle'])->whereUuid('id');
     Route::get('ai-usage', [OfficeInsightsAiController::class, 'usage']);
     Route::get('ai-usage/{id}', [OfficeInsightsAiController::class, 'usageShow'])->whereUuid('id');
+    // Restaurant (new look, part 30): bookings, bills, floor plan, kitchen stations, modifiers, tips & voids.
+    Route::get('restaurant/bookings', [OfficeRestaurantController::class, 'bookings']);
+    Route::get('restaurant/bookings/form', [OfficeRestaurantController::class, 'bookingForm']);
+    Route::post('restaurant/bookings/{id?}', [OfficeRestaurantController::class, 'bookingSave'])->whereUuid('id');
+    Route::post('restaurant/bookings/{id}/action', [OfficeRestaurantController::class, 'bookingAction'])->whereUuid('id');
+    Route::get('restaurant/bills', [OfficeRestaurantController::class, 'bills']);
+    Route::get('restaurant/bills/{id}', [OfficeRestaurantController::class, 'bill'])->whereUuid('id');
+    Route::get('restaurant/tables', [OfficeRestaurantController::class, 'tables']);
+    Route::post('restaurant/tables/{id?}', [OfficeRestaurantController::class, 'tableSave'])->whereUuid('id');
+    Route::get('restaurant/stations', [OfficeRestaurantController::class, 'stations']);
+    Route::post('restaurant/stations/{id?}', [OfficeRestaurantController::class, 'stationSave'])->whereUuid('id');
+    Route::get('restaurant/modifiers', [OfficeRestaurantController::class, 'modifiers']);
+    Route::get('restaurant/modifiers/products', [OfficeRestaurantController::class, 'modifierProducts']);
+    Route::post('restaurant/modifiers/{id?}', [OfficeRestaurantController::class, 'modifierSave'])->whereUuid('id');
+    Route::post('restaurant/archive', [OfficeRestaurantController::class, 'archive']);
+    Route::get('restaurant/tips-voids', [OfficeRestaurantController::class, 'report']);
     Route::get('returns', [OfficeReturnsController::class, 'index']);
     Route::get('returns/options', [OfficeReturnsController::class, 'options']);
     Route::get('returns/{sale}/slip', [OfficeReturnsController::class, 'slip'])->whereUuid('sale');
