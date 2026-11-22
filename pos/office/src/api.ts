@@ -856,6 +856,28 @@ export type CrmCampaignForm = { currency: string; exponent: number; id: string |
   values: { name: string; industry_id: string; channel: string; subject: string; whatsapp_template: string; body: string; send_at: string
     audience: { tags: string[]; branch_id: string; min_spent: string; bought_within_days: string; not_bought_days: string; include_leads: boolean } } }
 export type CrmStageList = { kinds: Option[]; rows: (Archivable & { id: string; sort: number; name: string; kind: string; kind_label: string; probability: number; deals: number })[] }
+export type SensorList = { total: number; page: number; per: number; statuses: Option[]; kinds: Option[]; branches: Option[]; can_create: boolean
+  rows: (Archivable & { id: string; name: string; where: string; reading: string; range: string; status: string; status_label: string; tone: string; last: string | null
+    battery: number | null; via: string })[] }
+export type SensorKind = { id: string; label: string; min_temp: string; max_temp: string; min_humidity: string; max_humidity: string }
+export type SensorValues = { name: string; kind: string; branch_id: string; asset_id: string; min_temp: string; max_temp: string; min_humidity: string; max_humidity: string
+  delay_minutes: string; silent_minutes: string; connection: string; connection_id: string; external_id: string }
+export type SensorAlarm = { id: string; number: string; sensor: string | null; sensor_id: string; kind: string; worst: string | null; from: string | null; for: string; status: string
+  status_label: string; tone: string; action: string | null; by: string | null; order: { number: string | null; open: string | null } | null; can_acknowledge: boolean }
+export type SensorDetail = { id: string | null; number: string | null; kinds: SensorKind[]; connections: Option[]; branches: Option[]; assets: Option[]
+  accounts: (Option & { provider: string })[]; values: SensorValues
+  actions: { edit: boolean; check?: boolean; address?: boolean; new_address?: boolean; acknowledge?: boolean }
+  status_label?: string; tone?: string; reading?: string; range?: string; last?: string | null; last_ago?: string | null; battery?: number | null; temperature?: boolean
+  min?: number | null; max?: number | null; chart?: { at: string; value: number }[]; archive?: Archivable & { archived_note: string | null }; alarms?: SensorAlarm[]
+  checks?: { id: string; when: string | null; by: string; seen: string | null; ok: boolean; note: string | null }[] }
+export type AlarmList = { total: number; page: number; per: number; open: string; actions: Option[]; rows: SensorAlarm[] }
+export type TemperatureLogData = { sensors: Option[]; sensor: string | null; month: string; this_month: string; company: string | null
+  log: { name: string; number: string; branch: string | null; period: string; range: string; lowest: string; highest: string; out: string; alarm_count: number
+    days: { date: string; min: string; max: string; avg: string; out: string; bad: boolean; checks: string[] }[]
+    alarms: { id: string; number: string; kind: string; from: string; until: string; worst: string; done: string; by: string }[] } | null }
+export type CloudValues = { provider: string; name: string; region: string; is_active: boolean; email: string; client_id: string; password: string; secret: string }
+export type CloudList = { providers: Option[]; regions: Option[]
+  rows: { id: string; name: string; provider: string; sensors: number; last: string | null; problem: string | null; active: boolean; values: CloudValues }[] }
 export type EquipmentValues = { name: string; status: string; owner: string; category: string; branch_id: string; location: string; customer_id: string; customer_name: string | null
   make: string; model: string; serial_no: string; supplier_id: string; acquired_on: string; warranty_until: string; contract_until: string; fixed_asset_id: string; meter_unit: string; notes: string }
 export type PlanValuesM = { name: string; every_days: string; every_meter: string; last_done_on: string; lead_days: string; assigned_to: string; is_active: boolean; checklist: string[] }
@@ -1726,6 +1748,22 @@ export const api = {
   saveCrmStage: (id: string | null, body: Record<string, unknown>) => call<{ id: string; message: string }>(id ? `/office-api/crm/stages/${id}` : '/office-api/crm/stages', { method: 'POST', body: JSON.stringify(body) }),
   archiveCrmStage: (id: string, restore: boolean, reason: string) =>
     call<{ message: string }>(`/office-api/crm/stages/${id}/archive`, { method: 'POST', body: JSON.stringify({ restore, reason: restore ? null : reason }) }),
+  sensors: (query: string, signal?: AbortSignal) => call<SensorList>(`/office-api/sensors?${query}`, { signal }),
+  sensor: (id: string | null) => call<SensorDetail>(id ? `/office-api/sensors/${id}` : '/office-api/sensors/form'),
+  saveSensor: (id: string | null, body: Record<string, unknown>) =>
+    call<{ id: string; message: string }>(`/office-api/sensors${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(body) }),
+  sensorAction: (id: string, action: 'check' | 'new_address', body: Record<string, unknown> = {}) =>
+    call<{ message: string }>(`/office-api/sensors/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  sensorAddress: (id: string) => call<{ url: string }>(`/office-api/sensors/${id}/address`),
+  archiveSensor: (id: string, restore: boolean, reason: string) =>
+    call<{ message: string }>(`/office-api/sensors/${id}/archive`, { method: 'POST', body: JSON.stringify({ restore, reason: restore ? null : reason }) }),
+  sensorAlarms: (query: string, signal?: AbortSignal) => call<AlarmList>(`/office-api/sensors/alarms?${query}`, { signal }),
+  acknowledgeAlarm: (id: string, action: string, notes: string) => call<{ message: string }>(`/office-api/sensors/alarms/${id}`, { method: 'POST', body: JSON.stringify({ action, notes }) }),
+  temperatureLog: (query: string, signal?: AbortSignal) => call<TemperatureLogData>(`/office-api/sensors/log?${query}`, { signal }),
+  sensorClouds: (_query = '', signal?: AbortSignal) => call<CloudList>('/office-api/sensors/clouds', { signal }),
+  saveCloud: (id: string | null, body: CloudValues) =>
+    call<{ id: string; message: string }>(`/office-api/sensors/clouds${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(body) }),
+  readCloud: (id: string) => call<{ message: string }>(`/office-api/sensors/clouds/${id}/read`, { method: 'POST' }),
   equipment: (query: string, signal?: AbortSignal) => call<EquipmentList>(`/office-api/maintenance/equipment?${query}`, { signal }),
   asset: (id: string | null) => call<EquipmentDetail>(id ? `/office-api/maintenance/equipment/${id}` : '/office-api/maintenance/equipment/form'),
   saveAsset: (id: string | null, body: Record<string, unknown>) =>

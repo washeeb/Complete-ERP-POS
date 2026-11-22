@@ -895,6 +895,39 @@ try {
           } else problems.push(`${look} ${w}: Work orders has no New work order`)
         }
       }
+      // Sensors, rebuilt (part 32), where the add-on is on: the four pages open from Stock and load; the first sensor opens
+      // with its reading now, and Record a check opens its dialog (nothing is signed).
+      for (const [link, url, ready] of [
+        ['Sensors', /\/office\/sensors$/, () => page.getByText(/^No sensors yet/).or(page.getByRole('table', { name: 'Sensors' }).getByRole('row').nth(1))],
+        ['Alarms', /\/office\/sensors\/alarms/, () => page.getByRole('region', { name: 'Alarms' })],
+        ['Temperature log', /\/office\/sensors\/log/, () => page.getByText(/^Add a fridge, cold room/).or(page.getByRole('region', { name: 'Temperature log' }))],
+        ['Sensor clouds', /\/office\/sensors\/clouds/, () => page.getByText('No sensor clouds.').or(page.getByRole('table', { name: 'Sensor clouds' }).getByRole('row').nth(1))]]) {
+        const menu = page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Stock/ }).first()
+        if (!await menu.waitFor({ timeout: 10000 }).then(() => true, () => false)) break
+        await menu.click()
+        const l = page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: menuName(link) }).first()
+        if (!await l.count()) { await page.keyboard.press('Escape'); continue }
+        await l.click()
+        await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await ready().first().waitFor({ timeout: 30000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        await page.screenshot({ path: out(`sensors-${link.toLowerCase().replace(/ /g, '-')}-${look}-${w}`) })
+        if (link !== 'Sensors') continue
+        const first = page.getByRole('table', { name: 'Sensors' }).getByRole('row').nth(1)
+        if (await first.count() && !await page.getByText(/^No sensors yet/).count()) {
+          await first.click()
+          await page.getByRole('region', { name: 'Now' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: a sensor did not open with its reading now`))
+          await page.screenshot({ path: out(`sensors-one-${look}-${w}`) })
+          const b = page.getByRole('button', { name: 'Record a check' })
+          if (await b.count()) {
+            await b.click()
+            const dlg = page.getByRole('dialog')
+            await dlg.waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Record a check did not open its dialog`))
+            await dlg.getByRole('button', { name: 'Back' }).click().catch(() => page.keyboard.press('Escape'))
+            await dlg.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => problems.push(`${look} ${w}: Record a check's dialog did not close`))
+          }
+          await page.goBack()
+        }
+      }
       // Go-live and Import data, rebuilt (part 24): each opens from Setup and loads. Nothing is planned, uploaded or imported.
       for (const [link, url, ready] of [
         ['Go-live', /\/office\/go-live$/, () => page.getByRole('table', { name: 'Checklist' }).getByRole('row').first()],
@@ -1498,18 +1531,18 @@ try {
         await page.unroute(`**/office-api/requests/${fakeRq}`)
       }
 
-      // Stock → Sensors is still the current page (not rebuilt yet; maintenance was rebuilt in part 31): it opens
+      // Sales → Online orders is still the current page (not rebuilt yet; sensors were rebuilt in part 32): it opens
       // inside, and the address follows.
-      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Stock/ }).first().click()
-      await page.getByRole('navigation', { name: 'Stock' }).getByRole('link', { name: menuName('Sensors') }).first().click()
-      await page.waitForURL(/\/office\/a\/sensors/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Sensors did not open at /office/a/sensors (${page.url()})`))
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Sales/ }).first().click()
+      await page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: menuName('Online orders') }).first().click()
+      await page.waitForURL(/\/office\/a\/sales-orders/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Online orders did not open at /office/a/sales-orders (${page.url()})`))
       await page.waitForFunction(() => {
         const f = document.querySelector('iframe[title="Page"]')
-        return f?.contentWindow?.location.pathname === '/admin/sensors' && !!f.contentDocument?.querySelector('h1')
-      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Sensors page did not open inside`))
+        return f?.contentWindow?.location.pathname === '/admin/sales-orders' && !!f.contentDocument?.querySelector('h1')
+      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Online orders page did not open inside`))
       const f = await frameReady()
       await f.locator('.fi-ta-table, .fi-ta-empty-state').first().waitFor({ timeout: 20000 })
-        .catch(() => problems.push(`${look} ${w}: the Sensors list did not show inside`))
+        .catch(() => problems.push(`${look} ${w}: the Online orders list did not show inside`))
       const chrome = await f.locator('.fi-sidebar, .fi-topbar').evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== 'none').length)
       if (chrome) problems.push(`${look} ${w}: the embedded page still shows its own menu`)
       await page.waitForTimeout(600) // the page's own loader fades out
@@ -1518,17 +1551,17 @@ try {
       // Recent lists the page just opened; the star adds it to favourites and takes it off again.
       const nav = page.getByRole('navigation', { name: 'Menu' })
       await (look === 'top' ? nav.getByRole('button', { name: 'Recent pages' }) : nav.getByRole('button', { name: 'Recent' })).click()
-      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /^Sensors/i }).first().waitFor({ timeout: 5000 })
-        .catch(() => problems.push(`${look} ${w}: Recent does not list Sensors`))
+      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /^Online orders/i }).first().waitFor({ timeout: 5000 })
+        .catch(() => problems.push(`${look} ${w}: Recent does not list Online orders`))
       await page.keyboard.press('Escape')
       const star = look === 'top' ? nav.getByRole('button', { name: 'Favourites' }) : nav.getByRole('button', { name: 'Favourites' })
       await star.click()
       const fav = page.getByRole('dialog', { name: 'Favourite pages' })
       await fav.getByRole('button', { name: /^Add “/ }).click().catch(() => problems.push(`${look} ${w}: Favourites has no "Add this page"`))
-      await fav.getByRole('link', { name: /^Sensors/i }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Sensors did not become a favourite`))
+      await fav.getByRole('link', { name: /^Online orders/i }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Online orders did not become a favourite`))
       await page.screenshot({ path: out(`favourites-${look}-${w}`) })
       await fav.getByRole('button', { name: /^Take “/ }).last().click().catch(() => undefined) // leave the dev account as it was
-      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Sensors could not be taken off favourites`))
+      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Online orders could not be taken off favourites`))
       await page.keyboard.press('Escape')
 
       // Search: Ctrl+K, type, a page of the menu is offered.

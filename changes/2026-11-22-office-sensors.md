@@ -1,0 +1,2 @@
+### Added
+- **Sensors rebuilt in the new back office (part 32).** Sensors: what each reads now, refreshed every minute; one sensor with its reading, the last 24 hours drawn, its settings, alarms and signed checks, Record a check, Sensor address and New address, archive and restore. Alarms: not closed by default, with Acknowledge (what was done). Temperature log: a month for one sensor with its daily figures, checks and alarms, printable for inspections. Sensor clouds: SensorPush and Tuya accounts, Read now; saved passwords and secrets are never shown again.
