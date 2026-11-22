@@ -95,6 +95,8 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/momo-charges\/?$/, app: () => `${APP}/mobile-money` },
   { admin: /^\/admin\/support-access-grants\/?$/, app: () => `${APP}/support-access` },
   { admin: /^\/admin\/sync-peers\/?$/, app: () => `${APP}/sync-center` },
+  { admin: /^\/admin\/go-live\/?$/, app: () => `${APP}/go-live` },
+  { admin: /^\/admin\/import-data\/?$/, app: (_, q) => `${APP}/import${q.toString() ? `?${q.toString()}` : ''}` },
   { admin: /^\/admin\/purchase-orders\/?$/, app: (_, q) => `${APP}/purchase-orders${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/purchase-orders\/create\/?$/, app: () => `${APP}/purchase-orders/new` },
   { admin: new RegExp(`^/admin/purchase-orders/(${UUID})$`), app: (m) => `${APP}/purchase-orders/${m[1]}` },
@@ -242,6 +244,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'employees' } | { page: 'employee'; id: string | null } | { page: 'timesheets' } | { page: 'leave' } | { page: 'payroll' } | { page: 'payroll-run'; id: string } | { page: 'loans' } | { page: 'my-hr' }
   | { page: 'system-health' } | { page: 'backups' } | { page: 'licence' } | { page: 'audit-log' } | { page: 'problem-reports' } | { page: 'integrations' }
   | { page: 'api-clients' } | { page: 'mobile-money' } | { page: 'support-access' } | { page: 'sync-center' }
+  | { page: 'go-live' } | { page: 'import' }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
@@ -349,6 +352,8 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/mobile-money\/?$/.test(path)) return { page: 'mobile-money' }
   if (/^\/office\/support-access\/?$/.test(path)) return { page: 'support-access' }
   if (/^\/office\/sync-center\/?$/.test(path)) return { page: 'sync-center' }
+  if (/^\/office\/go-live\/?$/.test(path)) return { page: 'go-live' }
+  if (/^\/office\/import\/?$/.test(path)) return { page: 'import' }
   if (/^\/office\/purchase-orders\/?$/.test(path)) return { page: 'purchase-orders' }
   if (/^\/office\/purchase-orders\/new\/?$/.test(path)) return { page: 'purchase-order-form', id: null }
   const po = path.match(new RegExp(`^/office/purchase-orders/(${UUID})(/edit)?/?$`))
@@ -538,6 +543,8 @@ export function adminEquivalent(route: Route): string | null {
     case 'mobile-money': return '/admin/momo-charges'
     case 'support-access': return '/admin/support-access-grants'
     case 'sync-center': return '/admin/sync-peers'
+    case 'go-live': return '/admin/go-live'
+    case 'import': return '/admin/import-data'
     case 'goods-received': case 'goods-receipt': return '/admin/goods-receipts'
     case 'direct-purchases': case 'direct-purchase': case 'direct-purchase-form': return '/admin/direct-purchases'
     case 'supplier-invoices': return '/admin/supplier-invoices'

@@ -708,6 +708,18 @@ try {
           await page.goBack()
         }
       }
+      // Go-live and Import data, rebuilt (part 24): each opens from Setup and loads. Nothing is planned, uploaded or imported.
+      for (const [link, url, ready] of [
+        ['Go-live', /\/office\/go-live$/, () => page.getByRole('table', { name: 'Checklist' }).getByRole('row').first()],
+        ['Import data (CSV / Excel)', /\/office\/import/, () => page.getByRole('region', { name: '3. Upload, check, import' })]]) {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Setup/ }).first().click()
+        const l = page.getByRole('navigation', { name: 'Setup' }).getByRole('link', { name: menuName(link) }).first()
+        if (!await l.count()) { problems.push(`${look} ${w}: Setup has no ${link} link`); await page.keyboard.press('Escape'); continue }
+        await l.click()
+        await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await ready().first().waitFor({ timeout: 30000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        await page.screenshot({ path: out(`system-${link.split(' ')[0].toLowerCase()}-${look}-${w}`) })
+      }
       // System, second half, rebuilt (part 23): API clients, Mobile money, Support access and Sync Center open from Setup and load
       // (each only where this person may see it). Nothing is made, given or synced.
       for (const [link, url, ready] of [

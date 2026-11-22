@@ -799,6 +799,28 @@ export type SyncPeerRow = { id: string; name: string; about: string; last_sync: 
   can_sync: boolean; can_resync: boolean; review: { items: { group: string; event: string; n: number }[]; groups: Option[] } | null
   groups: { key: string; label: string; mode: string }[] }
 export type SyncData = { node: string; is_branch: boolean; modes: Option[]; empty: string; rows: SyncPeerRow[] }
+export type GoLiveStep = { key: string; title: string; why: string; done: boolean; skipped: boolean; optional: boolean; by: string | null; note: string | null; link: string | null; manual: boolean }
+export type GoLiveData = { currency: string; exponent: number; exists: boolean; status: string; status_label: string; live_since: string | null; rollback_reason: string | null
+  summary: { sources: string; cutover: string; pilot: string; date: string; progress: string }
+  plan: { sources: string[]; cutover_mode: string; pilot_mode: string; go_live_on: string; parallel_until: string; pilot_branch_ids: string[]; support_email: string; pilot_report_time: string }
+  choices: { sources: Option[]; cutover: Option[]; pilot: Option[]; branches: Option[]; users: Option[] }
+  steps: GoLiveStep[]
+  figures: { rows: { label: string; money: boolean; ours: number; old: number | null; difference: number | null }[]; opening_left: number; problems: string[]; ok: boolean }
+  old_totals: { key: string; label: string; value: string }[]
+  parallel: { id: string; day: string; branch: string | null; old: number; new: number; difference: number; bad: boolean; old_cash: number | null; new_cash: number | null; note: string | null }[] | null
+  practice: { name: string } | null
+  practice_result: { name: string; logins: { name: string; email: string; username: string }[]; copied: Record<string, number>; problems: string[] } | null
+  report: { title: string; lines: string[]; warnings: string[] } | null
+  snapshot: { file: string; ago: string | null; status: string } | null; open_steps: string[]
+  actions: { snapshot: boolean; start_parallel: boolean; go_live: boolean; roll_back: boolean } }
+export type ImportPageData = { type: string; types: Option[]; sources: Option[]; description: string; asks_industry: boolean; industries: Option[]; industry: string; asks_as_of: boolean
+  as_of: string; context: string | null; contexts: Option[]; warehouses: Option[]; reasons: Option[]; categories: Option[]; current: string | null; products: boolean; new_products: boolean
+  columns: { name: string; required: string; help: string; example: string }[]
+  history: { id: string; when: string | null; who: string | null; what: string; file: string; status: string; rows: number; errors: number; checked: boolean }[] }
+export type ImportUpload = { token: string; file: string; headings: string[]; rows: Record<string, string>[]; total: number; mapping: Record<string, string> }
+export type ImportResult = { id: string; status: string; status_label: string; file: string; running: boolean
+  progress: { label: string; done: number; total: number; left: string | null } | null; total: number; ok: number; errors: number; counts: string[]; ignored: string[]
+  link: { label: string; open: string } | null; results: { row: number; ref: string; outcome: string; message: string }[] }
 export type AgreementForm = { id: string | null; number: string | null; values: AgreementValues; currency: string; suppliers: Option[]; kinds: Option[]; accounts: Option[] }
 export type ExpiryList = { total: number; page: number; per: number; currency: string; exponent: number; value: number; rows: ExpiryRow[] }
 export type ExpiryOptions = { statuses: Option[]; warehouses: Option[]; suppliers: Option[]; settlements: Option[]; reasons: Option[]; methods: Option[]
@@ -1524,6 +1546,24 @@ export const api = {
   grantSupport: (body: Record<string, unknown>) => call<{ message: string; support: SupportAccessData }>('/office-api/system/support-access', { method: 'POST', body: JSON.stringify(body) }),
   revokeSupport: (id: string) => call<{ message: string; support: SupportAccessData }>(`/office-api/system/support-access/${id}/revoke`, { method: 'POST' }),
   syncCenter: () => call<SyncData>('/office-api/system/sync'),
+  goLive: () => call<GoLiveData>('/office-api/system/go-live'),
+  goLiveAction: (action: string, body: Record<string, unknown> = {}) => call<{ message: string; golive: GoLiveData }>('/office-api/system/go-live', { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  importPage: (type: string) => call<ImportPageData>(`/office-api/system/import?type=${encodeURIComponent(type)}`),
+  importRun: (body: Record<string, unknown>) => call<{ message?: string; duplicate?: string; import?: ImportResult }>('/office-api/system/import/run', { method: 'POST', body: JSON.stringify(body) }),
+  importShow: (id: string) => call<{ import: ImportResult; message: string | null }>(`/office-api/system/import/${id}`),
+  importChecked: (id: string, skipErrors: boolean) => call<{ message: string; import: ImportResult }>(`/office-api/system/import/${id}/import`, { method: 'POST', body: JSON.stringify({ skip_errors: skipErrors }) }),
+  /** Upload an import file: kept on the server under a token; its first rows and suggested column matches come back. */
+  importUpload: async (type: string, source: string, file: File) => {
+    const body = new FormData()
+    body.append('type', type)
+    body.append('source', source)
+    body.append('file', file)
+    const res = await fetch('/office-api/system/import/upload', { method: 'POST', body, credentials: 'same-origin',
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
+    const j = await res.json().catch(() => ({}))
+    if (!res.ok) throw new ApiError(j.detail ?? j.message ?? `Error ${res.status}`, res.status, j.error ?? 'error')
+    return j as ImportUpload
+  },
   syncAction: (id: string, action: 'sync' | 'decide' | 'modes' | 'toggle' | 'resync', body: Record<string, unknown> = {}) =>
     call<{ message: string; good: boolean; sync: SyncData }>(`/office-api/system/sync/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
   addBranchServer: (body: Record<string, unknown>) => call<{ message: string; secret: ShownOnce; sync: SyncData }>('/office-api/system/sync/branch', { method: 'POST', body: JSON.stringify(body) }),
