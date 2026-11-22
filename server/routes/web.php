@@ -56,6 +56,7 @@ use App\Http\Controllers\Office\ReturnsController as OfficeReturnsController;
 use App\Http\Controllers\Office\RolesController as OfficeRolesController;
 use App\Http\Controllers\Office\SalesController as OfficeSalesController;
 use App\Http\Controllers\Office\SalesDeskController as OfficeSalesDeskController;
+use App\Http\Controllers\Office\ServiceDeskController as OfficeServiceDeskController;
 use App\Http\Controllers\Office\ServicesController as OfficeServicesController;
 use App\Http\Controllers\Office\SettingsController as OfficeSettingsController;
 use App\Http\Controllers\Office\ShiftsController as OfficeShiftsController;
@@ -688,6 +689,15 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::post('time-approvals', [OfficeProjectsController::class, 'approve']);
     Route::get('project-rates', [OfficeProjectsController::class, 'rates']);
     Route::post('project-rates/{user}', [OfficeProjectsController::class, 'rateSave'])->whereUuid('user');
+    // Service desk (new look, part 28): tickets (list, new, one with its conversation and actions) and deadlines.
+    Route::get('tickets', [OfficeServiceDeskController::class, 'index']);
+    Route::get('tickets/form', [OfficeServiceDeskController::class, 'form']);
+    Route::get('tickets/customers', [OfficeServiceDeskController::class, 'customers']);
+    Route::post('tickets', [OfficeServiceDeskController::class, 'store']);
+    Route::get('tickets/{id}', [OfficeServiceDeskController::class, 'show'])->whereUuid('id');
+    Route::post('tickets/{id}/action', [OfficeServiceDeskController::class, 'action'])->whereUuid('id');
+    Route::get('service-levels', [OfficeServiceDeskController::class, 'levels']);
+    Route::post('service-levels/{id}', [OfficeServiceDeskController::class, 'levelSave'])->whereUuid('id');
     Route::get('returns', [OfficeReturnsController::class, 'index']);
     Route::get('returns/options', [OfficeReturnsController::class, 'options']);
     Route::get('returns/{sale}/slip', [OfficeReturnsController::class, 'slip'])->whereUuid('sale');

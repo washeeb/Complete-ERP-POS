@@ -108,6 +108,10 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/crm-campaigns\/create\/?$/, app: () => `${APP}/crm/campaigns/new` },
   { admin: new RegExp(`^/admin/crm-campaigns/(${UUID})(/edit)?$`), app: (m) => `${APP}/crm/campaigns/${m[1]}` },
   { admin: /^\/admin\/crm-stages\/?$/, app: () => `${APP}/crm/stages` },
+  { admin: /^\/admin\/tickets\/?$/, app: (_, q) => `${APP}/tickets${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/tickets\/create\/?$/, app: () => `${APP}/tickets/new` },
+  { admin: new RegExp(`^/admin/tickets/(${UUID})$`), app: (m) => `${APP}/tickets/${m[1]}` },
+  { admin: /^\/admin\/service-levels\/?$/, app: () => `${APP}/service-levels` },
   { admin: /^\/admin\/projects\/?$/, app: (_, q) => `${APP}/projects${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/projects\/create\/?$/, app: (_, q) => `${APP}/projects/new${q.get('customer') ? `?customer=${encodeURIComponent(q.get('customer')!)}` : ''}` },
   { admin: new RegExp(`^/admin/projects/(${UUID})(/edit)?$`), app: (m) => `${APP}/projects/${m[1]}` },
@@ -273,6 +277,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'go-live' } | { page: 'import' }
   | { page: 'svc-calendar' } | { page: 'svc-appointments' } | { page: 'svc-passes' } | { page: 'svc-memberships' } | { page: 'svc-plans' } | { page: 'svc-commissions' } | { page: 'svc-keys' }
   | { page: 'projects' } | { page: 'project'; id: string | null } | { page: 'my-time' } | { page: 'time-approvals' } | { page: 'project-rates' }
+  | { page: 'tickets' } | { page: 'ticket-new' } | { page: 'ticket'; id: string } | { page: 'service-levels' }
   | { page: 'crm-pipeline' } | { page: 'crm-leads' } | { page: 'crm-lead'; id: string | null } | { page: 'crm-deals' } | { page: 'crm-deal'; id: string | null }
   | { page: 'crm-follow-ups' } | { page: 'crm-campaigns' } | { page: 'crm-campaign'; id: string | null } | { page: 'crm-stages' }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
@@ -398,6 +403,11 @@ export function routeOf(path: string, search = ''): Route {
   const crc = path.match(new RegExp(`^/office/crm/campaigns/(${UUID})/?$`))
   if (crc) return { page: 'crm-campaign', id: crc[1] }
   if (/^\/office\/crm\/stages\/?$/.test(path)) return { page: 'crm-stages' }
+  if (/^\/office\/tickets\/?$/.test(path)) return { page: 'tickets' }
+  if (/^\/office\/tickets\/new\/?$/.test(path)) return { page: 'ticket-new' }
+  const tkt = path.match(new RegExp(`^/office/tickets/(${UUID})/?$`))
+  if (tkt) return { page: 'ticket', id: tkt[1] }
+  if (/^\/office\/service-levels\/?$/.test(path)) return { page: 'service-levels' }
   if (/^\/office\/projects\/?$/.test(path)) return { page: 'projects' }
   if (/^\/office\/projects\/new\/?$/.test(path)) return { page: 'project', id: null }
   const prj = path.match(new RegExp(`^/office/projects/(${UUID})/?$`))
@@ -613,6 +623,10 @@ export function adminEquivalent(route: Route): string | null {
     case 'crm-campaigns': return '/admin/crm-campaigns'
     case 'crm-campaign': return route.id ? `/admin/crm-campaigns/${route.id}/edit` : '/admin/crm-campaigns/create'
     case 'crm-stages': return '/admin/crm-stages'
+    case 'tickets': return '/admin/tickets'
+    case 'ticket-new': return '/admin/tickets/create'
+    case 'ticket': return `/admin/tickets/${route.id}`
+    case 'service-levels': return '/admin/service-levels'
     case 'projects': return '/admin/projects'
     case 'project': return route.id ? `/admin/projects/${route.id}/edit` : '/admin/projects/create'
     case 'my-time': return '/admin/my-time'

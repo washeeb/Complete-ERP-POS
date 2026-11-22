@@ -856,6 +856,21 @@ export type CrmCampaignForm = { currency: string; exponent: number; id: string |
   values: { name: string; industry_id: string; channel: string; subject: string; whatsapp_template: string; body: string; send_at: string
     audience: { tags: string[]; branch_id: string; min_spent: string; bought_within_days: string; not_bought_days: string; include_leads: boolean } } }
 export type CrmStageList = { kinds: Option[]; rows: (Archivable & { id: string; sort: number; name: string; kind: string; kind_label: string; probability: number; deals: number })[] }
+export type TicketList = { total: number; page: number; per: number; open: string; kinds: Option[]; priorities: Option[]; title: string; all: boolean; work: boolean
+  can_create: boolean; create_label: string; channels: { web_form: string | null; email: string | null } | null
+  rows: { id: string; number: string; subject: string; from: string; kind: string; priority: string; priority_tone: string; status_label: string; tone: string
+    due: string | null; due_what: string | null; late: boolean; with: string | null; opened: string | null }[] }
+export type TicketValues = { kind: string; priority: string; source: string; subject: string; description: string; customer_id: string; customer_name: string | null
+  contact_name: string; contact_phone: string; contact_email: string; receipt_no: string; asset_id: string; branch_id: string; assigned_to: string }
+export type TicketForm = { staff_only: boolean; kinds: Option[]; priorities: Option[]; sources: Option[]; branches: Option[]; assets: Option[]; people: Option[]; values: TicketValues }
+export type TicketClock = { done: boolean; at: string | null; late?: boolean; waiting?: boolean }
+export type TicketDetail = { id: string; number: string; subject: string; status: string; status_label: string; tone: string; priority: string; priority_label: string; kind: string
+  source: string; description: string | null; who: string | null; contact: string; with: string | null; assigned_to: string | null; answer: TicketClock; fix: TicketClock
+  receipt: string | null; warranty: string | null; asset: string | null; asset_id: string | null; resolution: string | null; rating: number | null
+  messages: { id: string; direction: 'in' | 'out' | 'note'; who: string | null; channel: string | null; at: string | null; delivery: string | null; body: string }[]
+  channels: Option[]; priorities: Option[]; people: Option[]; assets: Option[]; me: string
+  actions: { reply: boolean; note: boolean; assign: boolean; work_order: boolean; resolve: boolean; reopen: boolean; tell: boolean } }
+export type ServiceLevelData = { rows: { id: string; priority: string; respond: string; resolve: string; values: { respond: string; resolve: string } }[] }
 export type ProjectList = { currency: string; exponent: number; total: number; page: number; per: number; status: string; statuses: Option[]; billings: Option[]; can_create: boolean
   rows: { id: string; number: string; name: string; customer: string | null; billing: string; status: string; status_label: string; tone: string; cost: number; budget: number | null
     due: string | null; late: boolean; manager: string | null }[] }
@@ -1658,6 +1673,15 @@ export const api = {
   saveCrmStage: (id: string | null, body: Record<string, unknown>) => call<{ id: string; message: string }>(id ? `/office-api/crm/stages/${id}` : '/office-api/crm/stages', { method: 'POST', body: JSON.stringify(body) }),
   archiveCrmStage: (id: string, restore: boolean, reason: string) =>
     call<{ message: string }>(`/office-api/crm/stages/${id}/archive`, { method: 'POST', body: JSON.stringify({ restore, reason: restore ? null : reason }) }),
+  tickets: (query: string, signal?: AbortSignal) => call<TicketList>(`/office-api/tickets?${query}`, { signal }),
+  ticketForm: () => call<TicketForm>('/office-api/tickets/form'),
+  ticketCustomers: (q: string, signal?: AbortSignal) => call<{ results: { id: string; label: string; detail?: string }[] }>(`/office-api/tickets/customers?q=${encodeURIComponent(q)}`, { signal }),
+  openTicket: (body: Record<string, unknown>) => call<{ id: string; message: string }>('/office-api/tickets', { method: 'POST', body: JSON.stringify(body) }),
+  ticket: (id: string) => call<TicketDetail>(`/office-api/tickets/${id}`),
+  ticketAction: (id: string, action: 'reply' | 'note' | 'assign' | 'work_order' | 'resolve' | 'reopen', body: Record<string, unknown> = {}) =>
+    call<{ message: string; open?: string }>(`/office-api/tickets/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  serviceLevels: (_query = '', signal?: AbortSignal) => call<ServiceLevelData>('/office-api/service-levels', { signal }),
+  saveServiceLevel: (id: string, body: { respond: string; resolve: string }) => call<{ message: string }>(`/office-api/service-levels/${id}`, { method: 'POST', body: JSON.stringify(body) }),
   projects: (query: string, signal?: AbortSignal) => call<ProjectList>(`/office-api/projects?${query}`, { signal }),
   project: (id: string | null, query = '') => call<ProjectDetail>(id ? `/office-api/projects/${id}` : `/office-api/projects/form${query ? `?${query}` : ''}`),
   saveProject: (id: string | null, body: Record<string, unknown>) => call<{ id: string; message: string }>(id ? `/office-api/projects/${id}` : '/office-api/projects', { method: 'POST', body: JSON.stringify(body) }),

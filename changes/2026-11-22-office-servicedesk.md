@@ -1,0 +1,2 @@
+### Added
+- **Service desk rebuilt in the new back office (part 28).** Tickets: the list (open only by default; given to me, late, kind, priority) with the time left to answer and to fix each, New ticket and, for managers, where tickets come from. One ticket with its details, deadlines and the conversation; Reply (WhatsApp, SMS or e-mail, maybe waiting for their answer), Note, Pass on, Work order, Resolve (maybe telling them) and Reopen. Staff who may only ask for help see My requests and Ask for help. Deadlines: answer and fix times per priority.
