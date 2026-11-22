@@ -85,6 +85,12 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: new RegExp(`^/admin/payroll-runs/(${UUID})$`), app: (m) => `${APP}/payroll/${m[1]}` },
   { admin: /^\/admin\/employee-loans\/?$/, app: () => `${APP}/loans` },
   { admin: /^\/admin\/my-hr\/?$/, app: () => `${APP}/my-hr` },
+  { admin: /^\/admin\/health\/?$/, app: () => `${APP}/system-health` },
+  { admin: /^\/admin\/backups\/?$/, app: () => `${APP}/backups` },
+  { admin: /^\/admin\/licence\/?$/, app: () => `${APP}/licence` },
+  { admin: /^\/admin\/audit-events\/?$/, app: (_, q) => `${APP}/audit-log${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/problem-reports\/?$/, app: () => `${APP}/problem-reports` },
+  { admin: /^\/admin\/integrations\/?$/, app: () => `${APP}/integrations` },
   { admin: /^\/admin\/purchase-orders\/?$/, app: (_, q) => `${APP}/purchase-orders${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/purchase-orders\/create\/?$/, app: () => `${APP}/purchase-orders/new` },
   { admin: new RegExp(`^/admin/purchase-orders/(${UUID})$`), app: (m) => `${APP}/purchase-orders/${m[1]}` },
@@ -230,6 +236,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'landed-costs' } | { page: 'cost-runs' } | { page: 'cost-run'; id: string } | { page: 'cost-run-form' } | { page: 'estimated-costs' } | { page: 'spend-analytics' }
   | { page: 'branches' } | { page: 'branch'; id: string | null } | { page: 'industries' } | { page: 'legal-entities' } | { page: 'branding' } | { page: 'health-checks' } | { page: 'scale-items' }
   | { page: 'employees' } | { page: 'employee'; id: string | null } | { page: 'timesheets' } | { page: 'leave' } | { page: 'payroll' } | { page: 'payroll-run'; id: string } | { page: 'loans' } | { page: 'my-hr' }
+  | { page: 'system-health' } | { page: 'backups' } | { page: 'licence' } | { page: 'audit-log' } | { page: 'problem-reports' } | { page: 'integrations' }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
@@ -327,6 +334,12 @@ export function routeOf(path: string, search = ''): Route {
   if (prun) return { page: 'payroll-run', id: prun[1] }
   if (/^\/office\/loans\/?$/.test(path)) return { page: 'loans' }
   if (/^\/office\/my-hr\/?$/.test(path)) return { page: 'my-hr' }
+  if (/^\/office\/system-health\/?$/.test(path)) return { page: 'system-health' }
+  if (/^\/office\/backups\/?$/.test(path)) return { page: 'backups' }
+  if (/^\/office\/licence\/?$/.test(path)) return { page: 'licence' }
+  if (/^\/office\/audit-log\/?$/.test(path)) return { page: 'audit-log' }
+  if (/^\/office\/problem-reports\/?$/.test(path)) return { page: 'problem-reports' }
+  if (/^\/office\/integrations\/?$/.test(path)) return { page: 'integrations' }
   if (/^\/office\/purchase-orders\/?$/.test(path)) return { page: 'purchase-orders' }
   if (/^\/office\/purchase-orders\/new\/?$/.test(path)) return { page: 'purchase-order-form', id: null }
   const po = path.match(new RegExp(`^/office/purchase-orders/(${UUID})(/edit)?/?$`))
@@ -506,6 +519,12 @@ export function adminEquivalent(route: Route): string | null {
     case 'payroll-run': return `/admin/payroll-runs/${route.id}`
     case 'loans': return '/admin/employee-loans'
     case 'my-hr': return '/admin/my-hr'
+    case 'system-health': return '/admin/health'
+    case 'backups': return '/admin/backups'
+    case 'licence': return '/admin/licence'
+    case 'audit-log': return '/admin/audit-events'
+    case 'problem-reports': return '/admin/problem-reports'
+    case 'integrations': return '/admin/integrations'
     case 'goods-received': case 'goods-receipt': return '/admin/goods-receipts'
     case 'direct-purchases': case 'direct-purchase': case 'direct-purchase-form': return '/admin/direct-purchases'
     case 'supplier-invoices': return '/admin/supplier-invoices'

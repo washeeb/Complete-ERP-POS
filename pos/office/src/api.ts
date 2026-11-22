@@ -766,6 +766,25 @@ export type LoanList = { currency: string; exponent: number; total: number; page
   form: { employees: Option[]; kinds: Option[]; accounts: Option[]; account: string; first_month: string; today: string } | null }
 export type MyHrData = { currency: string; exponent: number; name: string; types: Option[]; balances: { name: string; left: number | null; allowance: number | null }[]
   requests: LeaveRow[]; payslips: { id: string; month: string | null; net: number; open: string }[] }
+export type HealthData = { checks: { check: string; status: 'ok' | 'warning' | 'fail'; detail: string }[]; slow_over: string
+  slow: { id: string; page: string; times: number; avg: string; max: string; queries: number; last: string }[] }
+export type BackupDestinationRow = { id: string; name: string; type: string; type_label: string; keep: number; active: boolean; error: string | null; last_ok: string | null; config: Record<string, string> }
+export type BackupsData = { passphrase_set: boolean; types: Option[]; fields: Record<string, { key: string; label: string; secret: boolean }[]>; destinations: BackupDestinationRow[]
+  runs: { id: string; when: string | null; file: string; status: string; error: string | null; size: string; copies: { name: string; ok: boolean }[]; check: string | null; download: string | null }[] }
+export type LicenceData = { state: string; state_label: string; tone: string; customer: string | null; short: string | null; message: string | null; read_only: boolean
+  expires_on: string | null; days_left: number | null; usage: { label: string; used: number; max: number | null; full: boolean }[]; covers: { label: string; value: string }[]
+  last_checkin: string | null; can_manage: boolean; can_checkin: boolean; code: string | null; qr: string | null; vendor: string | null; phone: string | null; email: string | null
+  website: string | null; product: string | null }
+export type AuditRow = { id: string; seq: number; when: string | null; by: string | null; action: string; record: string; source: string; computer: string | null; ip: string | null; reason: string | null }
+export type AuditList = { total: number; page: number; per: number; sources: Option[]; computers: Option[]; can_verify: boolean; rows: AuditRow[] }
+export type AuditEntry = { seq: number; when: string | null; action: string; action_key: string; by: string | null; source: string; node: string | null; record: string; record_id: string | null
+  ip: string | null; ip_lookup: string | null; computer: string | null; computer_name: string | null; mac: string | null; local_ip: string | null; browser: string | null; app: string | null
+  reason: string | null; hash: string | null; changes: { field: string; value: string }[] }
+export type ProblemReport = { id: string; number: string; when: string | null; ago: string | null; from: string | null; source: string; page: string | null; message: string; status: string
+  status_label: string; resolution: string | null; send_error: string | null; screenshot: string | null; context: string }
+export type ProblemReportList = { total: number; page: number; per: number; status: string; statuses: Option[]; sources: Option[]; sent_to: string; rows: ProblemReport[] }
+export type IntegrationsData = { counts: Record<string, number>
+  cards: { id: string; title: string; state: string; state_label: string; always: boolean; what: string; detail: string; last_ok: string | null; failed: number; url: string | null; link: string | null }[] }
 export type AgreementForm = { id: string | null; number: string | null; values: AgreementValues; currency: string; suppliers: Option[]; kinds: Option[]; accounts: Option[] }
 export type ExpiryList = { total: number; page: number; per: number; currency: string; exponent: number; value: number; rows: ExpiryRow[] }
 export type ExpiryOptions = { statuses: Option[]; warehouses: Option[]; suppliers: Option[]; settlements: Option[]; reasons: Option[]; methods: Option[]
@@ -1467,6 +1486,20 @@ export const api = {
   loans: (query: string, signal?: AbortSignal) => call<LoanList>(`/office-api/loans?${query}`, { signal }),
   issueLoan: (body: Record<string, unknown>) => call<{ id: string; message: string }>('/office-api/loans', { method: 'POST', body: JSON.stringify(body) }),
   myHr: () => call<MyHrData>('/office-api/my-hr'),
+  systemHealth: () => call<HealthData>('/office-api/system/health'),
+  backups: () => call<BackupsData>('/office-api/system/backups'),
+  backupAction: (action: 'run' | 'verify') => call<{ message: string; good: boolean; backups: BackupsData }>('/office-api/system/backups', { method: 'POST', body: JSON.stringify({ action }) }),
+  saveDestination: (id: string | null, body: Record<string, unknown>) =>
+    call<{ message: string; backups: BackupsData }>(id ? `/office-api/system/backups/destinations/${id}` : '/office-api/system/backups/destinations', { method: 'POST', body: JSON.stringify(body) }),
+  licence: () => call<LicenceData>('/office-api/system/licence'),
+  licenceAction: (action: 'activate' | 'checkin', key = '') => call<{ message: string; good: boolean; licence: LicenceData }>('/office-api/system/licence', { method: 'POST', body: JSON.stringify({ action, key }) }),
+  auditLog: (query: string, signal?: AbortSignal) => call<AuditList>(`/office-api/system/audit?${query}`, { signal }),
+  auditEntry: (id: string) => call<AuditEntry>(`/office-api/system/audit/${id}`),
+  verifyAudit: () => call<{ good: boolean; message: string }>('/office-api/system/audit/verify', { method: 'POST' }),
+  problemReports: (query: string, signal?: AbortSignal) => call<ProblemReportList>(`/office-api/system/problem-reports?${query}`, { signal }),
+  problemReportAction: (id: string, action: 'close' | 'resend', resolution = '') =>
+    call<{ message: string; good: boolean; report: ProblemReport }>(`/office-api/system/problem-reports/${id}/action`, { method: 'POST', body: JSON.stringify({ action, resolution }) }),
+  integrations: () => call<IntegrationsData>('/office-api/system/integrations'),
   markDownBatches: (keys: string[], percent: string) => call<UserDone>('/office-api/expiry/markdown', { method: 'POST', body: JSON.stringify({ keys, percent }) }),
   nhisClaims: (query: string, signal?: AbortSignal) => call<NhisClaimList>(`/office-api/nhis-claims?${query}`, { signal }),
   nhisUnclaimed: (branch: string, upTo: string) => call<{ sales: number; amount: number; currency: string; exponent: number }>(`/office-api/nhis-claims/unclaimed?branch=${branch}&up_to=${upTo}`),

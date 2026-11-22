@@ -61,6 +61,7 @@ use App\Http\Controllers\Office\SupplierBillsController as OfficeSupplierBillsCo
 use App\Http\Controllers\Office\SupplierInvoicesController as OfficeSupplierInvoicesController;
 use App\Http\Controllers\Office\SupplierPaymentsController as OfficeSupplierPaymentsController;
 use App\Http\Controllers\Office\SuppliersController as OfficeSuppliersController;
+use App\Http\Controllers\Office\SystemController as OfficeSystemController;
 use App\Http\Controllers\Office\TransfersController as OfficeTransfersController;
 use App\Http\Controllers\Office\UsersController as OfficeUsersController;
 use App\Http\Controllers\PrintController;
@@ -573,6 +574,20 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::get('loans', [OfficeHrController::class, 'loans']);
     Route::post('loans', [OfficeHrController::class, 'loanIssue']);
     Route::get('my-hr', [OfficeHrController::class, 'mine']);
+    Route::get('system/health', [OfficeSystemController::class, 'health']);
+    Route::get('system/backups', [OfficeSystemController::class, 'backups']);
+    Route::post('system/backups', [OfficeSystemController::class, 'backupAction']);
+    Route::post('system/backups/destinations', [OfficeSystemController::class, 'destinationSave']);
+    Route::post('system/backups/destinations/{id}', [OfficeSystemController::class, 'destinationSave'])->whereUuid('id');
+    Route::get('backups/{id}/download', [OfficeSystemController::class, 'download'])->whereUuid('id');
+    Route::get('system/licence', [OfficeSystemController::class, 'licence']);
+    Route::post('system/licence', [OfficeSystemController::class, 'licenceAction']);
+    Route::get('system/audit', [OfficeSystemController::class, 'audit']);
+    Route::post('system/audit/verify', [OfficeSystemController::class, 'auditVerify']);
+    Route::get('system/audit/{id}', [OfficeSystemController::class, 'auditShow'])->whereUuid('id');
+    Route::get('system/problem-reports', [OfficeSystemController::class, 'reports']);
+    Route::post('system/problem-reports/{id}/action', [OfficeSystemController::class, 'reportAction'])->whereUuid('id');
+    Route::get('system/integrations', [OfficeSystemController::class, 'integrations']);
     Route::get('returns', [OfficeReturnsController::class, 'index']);
     Route::get('returns/options', [OfficeReturnsController::class, 'options']);
     Route::get('returns/{sale}/slip', [OfficeReturnsController::class, 'slip'])->whereUuid('sale');

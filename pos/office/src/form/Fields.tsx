@@ -97,7 +97,7 @@ export function Tags({ label, hint, className, value, onChange, placeholder }: B
 
 /** A labelled text box (type="number" for figures). */
 export function TextField({ label, hint, required, disabled, className, value, onChange, type = 'text', placeholder, maxLength, min, max, step, prefix }: Base & {
-  value: string; onChange: (v: string) => void; type?: 'text' | 'number' | 'date' | 'datetime-local'; placeholder?: string; maxLength?: number
+  value: string; onChange: (v: string) => void; type?: 'text' | 'number' | 'date' | 'datetime-local' | 'password'; placeholder?: string; maxLength?: number
   min?: number; max?: number; step?: string; prefix?: string
 }) {
   const s = useStyles()

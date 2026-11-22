@@ -708,6 +708,33 @@ try {
           await page.goBack()
         }
       }
+      // System, first half, rebuilt (part 22): each opens from Setup and loads (Integrations only where its add-on is on). Nothing
+      // is run or changed: no backup, no key, no check-in.
+      for (const [link, url, ready] of [
+        ['Health', /\/office\/system-health$/, () => page.getByRole('table', { name: 'Health checks' }).getByRole('row').nth(1)],
+        ['Backups', /\/office\/backups$/, () => page.getByRole('region', { name: 'Recent backups' })],
+        ['Licence', /\/office\/licence$/, () => page.getByRole('region', { name: 'Licence', exact: true })],
+        ['Audit log', /\/office\/audit-log/, () => page.getByRole('table', { name: 'Audit log' }).getByRole('row').nth(1)],
+        ['Problem reports', /\/office\/problem-reports$/, () => page.getByText('No problem reports here.').or(page.getByRole('table', { name: 'Problem reports' }).getByRole('row').nth(1))],
+        ['Integrations', /\/office\/integrations$/, () => page.getByText(/working/).first()]]) {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Setup/ }).first().click()
+        const l = page.getByRole('navigation', { name: 'Setup' }).getByRole('link', { name: menuName(link) }).first()
+        if (!await l.count()) {
+          if (link !== 'Integrations') problems.push(`${look} ${w}: Setup has no ${link} link`)
+          await page.keyboard.press('Escape')
+          continue
+        }
+        await l.click()
+        await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await ready().first().waitFor({ timeout: 30000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        await page.screenshot({ path: out(`system-${link.split(' ')[0].toLowerCase()}-${look}-${w}`) })
+        if (link === 'Audit log') { // a row opens the entry in full
+          await page.getByRole('table', { name: 'Audit log' }).getByRole('row').nth(1).click()
+          await page.getByRole('dialog').getByText('Changes (before → after)').waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: an audit entry did not open`))
+          await page.screenshot({ path: out(`system-audit-entry-${look}-${w}`) })
+          await page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).click()
+        }
+      }
       // HR & payroll, rebuilt (part 21): each opens from People and loads; Add employee opens the form and Prepare payroll its
       // dialog (nothing is saved). My leave & payslips only shows for someone who is an employee.
       for (const [link, url, ready] of [
