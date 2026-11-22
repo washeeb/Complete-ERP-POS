@@ -18,7 +18,7 @@ const menu: Menu = {
 
 describe('addresses', () => {
   it('opens a current back-office page inside the new one, and back', () => {
-    expect(appPathFor('/admin/kitchen-stations?tableSearch=rice')).toBe('/office/a/kitchen-stations?tableSearch=rice')
+    expect(appPathFor('/admin/equipment?tableSearch=generator')).toBe('/office/a/equipment?tableSearch=generator')
     expect(appPathFor('/admin/products/abc/edit')).toBe('/office/a/products/abc/edit')
     expect(appPathFor('/admin')).toBe('/office/')
     expect(appPathFor('https://evil.example/admin')).toBe('/office/') // never another site
@@ -215,6 +215,13 @@ describe('addresses', () => {
     expect(appPathFor('/admin/copilot')).toBe('/office/ask')
     expect(appPathFor('/admin/alerts?tableSearch=sugar')).toBe('/office/alerts?q=sugar')
     expect(appPathFor('/admin/ai-usage')).toBe('/office/ai-usage')
+    expect(appPathFor('/admin/reservations?tableSearch=kofi')).toBe('/office/restaurant/bookings?q=kofi')
+    expect(appPathFor('/admin/dining-orders')).toBe('/office/restaurant/bills')
+    expect(appPathFor('/admin/dining-orders/0190c3a4-5b6d-7e8f-9a0b-1c2d3e4f5a6b')).toBe('/office/restaurant/bills?bill=0190c3a4-5b6d-7e8f-9a0b-1c2d3e4f5a6b')
+    expect(appPathFor('/admin/dining-tables')).toBe('/office/restaurant/tables')
+    expect(appPathFor('/admin/kitchen-stations')).toBe('/office/restaurant/stations')
+    expect(appPathFor('/admin/modifier-groups')).toBe('/office/restaurant/modifiers')
+    expect(appPathFor('/admin/restaurant-report?from=2026-11-01')).toBe('/office/restaurant/tips-voids?from=2026-11-01')
     expect(appPathFor('/admin/import-data?type=products')).toBe('/office/import?type=products')
     expect(appPathFor('/admin/import-data?type=stock_count&context=abc&show=xyz')).toBe('/office/import?type=stock_count&context=abc&show=xyz')
     expect(appPathFor('/admin/cash/close-day')).toBe('/office/close-day')
