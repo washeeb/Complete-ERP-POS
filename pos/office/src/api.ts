@@ -856,6 +856,29 @@ export type CrmCampaignForm = { currency: string; exponent: number; id: string |
   values: { name: string; industry_id: string; channel: string; subject: string; whatsapp_template: string; body: string; send_at: string
     audience: { tags: string[]; branch_id: string; min_spent: string; bought_within_days: string; not_bought_days: string; include_leads: boolean } } }
 export type CrmStageList = { kinds: Option[]; rows: (Archivable & { id: string; sort: number; name: string; kind: string; kind_label: string; probability: number; deals: number })[] }
+export type ApptRow = { id: string; number: string; starts_at: string | null; starts_iso: string | null; ends: string | null; time: string | null; customer: string | null
+  phone: string | null; service: string | null; with: string | null; employee_id: string; branch_id: string; note: string | null; status: string; status_label: string; tone: string
+  can_arrive: boolean; can_no_show: boolean; can_change: boolean; can_cancel: boolean }
+export type ApptList = { total: number; page: number; per: number; upcoming: boolean; statuses: Option[]; staff: Option[]; can_book: boolean; rows: ApptRow[] }
+export type BookingForm = { branches: Option[]; branch: string; services: Option[]; staff: Option[] }
+export type CalendarData = { branch: string; date: string; branches: Option[]; staff: { id: string; name: string; job: string | null }[]; slots: string[]
+  cells: Record<string, Record<string, ApptRow[]>>; book_at?: string }
+export type PassList = { total: number; page: number; per: number; status: string; statuses: Option[]
+  rows: { id: string; number: string; customer: string | null; phone: string | null; name: string; left: string; expires: string | null; status: string; tone: string
+    void_reason: string | null; can_void: boolean }[] }
+export type MembershipList = { currency: string; exponent: number; total: number; page: number; per: number; status: string; statuses: Option[]; can_create: boolean; plans: Option[]
+  branches: Option[]; today: string
+  rows: { id: string; number: string; customer: string | null; phone: string | null; plan: string | null; price: number; since: string | null; next: string | null; ends: string | null
+    status: string; status_label: string; tone: string; can_bill: boolean; can_pause: boolean; can_resume: boolean; can_cancel: boolean }[] }
+export type PlanItem = { product_ids: string[]; sessions: string; label: string }
+export type PlanValues = { name: string; price: string; interval_months: string; product_id: string; description: string; is_active: boolean; items: PlanItem[] }
+export type PlanList = { currency: string; exponent: number; can_create: boolean; intervals: Option[]; products: Option[]; services: Option[]
+  rows: (Archivable & { id: string; code: string; name: string; price: number; interval: string; includes: string; active: boolean; values: PlanValues })[] }
+export type CommissionData = { currency: string; exponent: number; from: string; to: string; employee: string
+  rows: { id: string; name: string; number: string; lines: number; value: number; amount: number }[]
+  lines: { id: string; when: string | null; receipt: string | null; item: string; value: number; rate: string; amount: number }[] }
+export type KeyList = { total: number; page: number; per: number; statuses: Option[]; products: Option[]; branches: Option[]
+  rows: { id: string; product: string; branch: string; hint: string; status: string; status_label: string; tone: string; sold_at: string | null; receipt: string | null; can_void: boolean }[] }
 export type AgreementForm = { id: string | null; number: string | null; values: AgreementValues; currency: string; suppliers: Option[]; kinds: Option[]; accounts: Option[] }
 export type ExpiryList = { total: number; page: number; per: number; currency: string; exponent: number; value: number; rows: ExpiryRow[] }
 export type ExpiryOptions = { statuses: Option[]; warehouses: Option[]; suppliers: Option[]; settlements: Option[]; reasons: Option[]; methods: Option[]
@@ -1609,6 +1632,31 @@ export const api = {
   saveCrmStage: (id: string | null, body: Record<string, unknown>) => call<{ id: string; message: string }>(id ? `/office-api/crm/stages/${id}` : '/office-api/crm/stages', { method: 'POST', body: JSON.stringify(body) }),
   archiveCrmStage: (id: string, restore: boolean, reason: string) =>
     call<{ message: string }>(`/office-api/crm/stages/${id}/archive`, { method: 'POST', body: JSON.stringify({ restore, reason: restore ? null : reason }) }),
+  serviceCalendar: (query: string, signal?: AbortSignal) => call<CalendarData>(`/office-api/services/calendar?${query}`, { signal }),
+  appointments: (query: string, signal?: AbortSignal) => call<ApptList>(`/office-api/services/appointments?${query}`, { signal }),
+  bookingForm: (branch = '') => call<BookingForm>(`/office-api/services/appointments/form${branch ? `?branch=${branch}` : ''}`),
+  serviceStaff: (branch: string) => call<{ staff: Option[] }>(`/office-api/services/staff?branch=${branch}`),
+  serviceCustomers: (q: string, signal?: AbortSignal) => call<{ results: { id: string; label: string; detail?: string }[] }>(`/office-api/services/customers?q=${encodeURIComponent(q)}`, { signal }),
+  bookAppointment: (body: Record<string, unknown>) => call<{ id: string; message: string }>('/office-api/services/appointments', { method: 'POST', body: JSON.stringify(body) }),
+  appointmentAction: (id: string, action: 'arrived' | 'no_show' | 'change' | 'cancel', body: Record<string, unknown> = {}) =>
+    call<{ message: string }>(`/office-api/services/appointments/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  servicePasses: (query: string, signal?: AbortSignal) => call<PassList>(`/office-api/services/passes?${query}`, { signal }),
+  passHistory: (id: string) => call<{ title: string; rows: { id: string; when: string | null; item: string; sessions: string; by: string | null }[] }>(`/office-api/services/passes/${id}`),
+  voidPass: (id: string, reason: string) => call<{ message: string }>(`/office-api/services/passes/${id}/void`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  memberships: (query: string, signal?: AbortSignal) => call<MembershipList>(`/office-api/services/memberships?${query}`, { signal }),
+  enrolMember: (body: Record<string, unknown>) => call<{ id: string; message: string }>('/office-api/services/memberships', { method: 'POST', body: JSON.stringify(body) }),
+  membershipAction: (id: string, action: 'bill' | 'pause' | 'resume' | 'cancel', reason = '') =>
+    call<{ message: string }>(`/office-api/services/memberships/${id}/action`, { method: 'POST', body: JSON.stringify({ action, reason }) }),
+  membershipPlans: (query: string, signal?: AbortSignal) => call<PlanList>(`/office-api/services/plans?${query}`, { signal }),
+  savePlan: (id: string | null, body: Record<string, unknown>) => call<{ id: string; message: string }>(id ? `/office-api/services/plans/${id}` : '/office-api/services/plans', { method: 'POST', body: JSON.stringify(body) }),
+  archivePlan: (id: string, restore: boolean, reason: string) =>
+    call<{ message: string }>(`/office-api/services/plans/${id}/archive`, { method: 'POST', body: JSON.stringify({ restore, reason: restore ? null : reason }) }),
+  commissions: (query: string, signal?: AbortSignal) => call<CommissionData>(`/office-api/services/commissions?${query}`, { signal }),
+  licenceKeys: (query: string, signal?: AbortSignal) => call<KeyList>(`/office-api/services/keys?${query}`, { signal }),
+  loadKeys: (body: Record<string, unknown>) => call<{ message: string }>('/office-api/services/keys', { method: 'POST', body: JSON.stringify(body) }),
+  keysOwed: () => call<{ message: string }>('/office-api/services/keys/owed', { method: 'POST' }),
+  showKey: (id: string) => call<{ key: string }>(`/office-api/services/keys/${id}`),
+  voidKey: (id: string, reason: string) => call<{ message: string }>(`/office-api/services/keys/${id}/void`, { method: 'POST', body: JSON.stringify({ reason }) }),
   goLive: () => call<GoLiveData>('/office-api/system/go-live'),
   goLiveAction: (action: string, body: Record<string, unknown> = {}) => call<{ message: string; golive: GoLiveData }>('/office-api/system/go-live', { method: 'POST', body: JSON.stringify({ action, ...body }) }),
   importPage: (type: string) => call<ImportPageData>(`/office-api/system/import?type=${encodeURIComponent(type)}`),

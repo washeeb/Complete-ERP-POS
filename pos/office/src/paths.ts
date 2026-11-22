@@ -108,6 +108,13 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/crm-campaigns\/create\/?$/, app: () => `${APP}/crm/campaigns/new` },
   { admin: new RegExp(`^/admin/crm-campaigns/(${UUID})(/edit)?$`), app: (m) => `${APP}/crm/campaigns/${m[1]}` },
   { admin: /^\/admin\/crm-stages\/?$/, app: () => `${APP}/crm/stages` },
+  { admin: /^\/admin\/staff-calendar\/?$/, app: (_, q) => `${APP}/services/calendar${q.toString() ? `?${q.toString()}` : ''}` },
+  { admin: /^\/admin\/appointments\/?$/, app: () => `${APP}/services/appointments` },
+  { admin: /^\/admin\/service-passes\/?$/, app: () => `${APP}/services/passes` },
+  { admin: /^\/admin\/memberships\/?$/, app: () => `${APP}/services/memberships` },
+  { admin: /^\/admin\/membership-plans\/?$/, app: () => `${APP}/services/plans` },
+  { admin: /^\/admin\/commissions\/?$/, app: (_, q) => `${APP}/services/commissions${q.toString() ? `?${q.toString()}` : ''}` },
+  { admin: /^\/admin\/licence-keys\/?$/, app: () => `${APP}/services/keys` },
   { admin: /^\/admin\/go-live\/?$/, app: () => `${APP}/go-live` },
   { admin: /^\/admin\/import-data\/?$/, app: (_, q) => `${APP}/import${q.toString() ? `?${q.toString()}` : ''}` },
   { admin: /^\/admin\/purchase-orders\/?$/, app: (_, q) => `${APP}/purchase-orders${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
@@ -258,6 +265,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'system-health' } | { page: 'backups' } | { page: 'licence' } | { page: 'audit-log' } | { page: 'problem-reports' } | { page: 'integrations' }
   | { page: 'api-clients' } | { page: 'mobile-money' } | { page: 'support-access' } | { page: 'sync-center' }
   | { page: 'go-live' } | { page: 'import' }
+  | { page: 'svc-calendar' } | { page: 'svc-appointments' } | { page: 'svc-passes' } | { page: 'svc-memberships' } | { page: 'svc-plans' } | { page: 'svc-commissions' } | { page: 'svc-keys' }
   | { page: 'crm-pipeline' } | { page: 'crm-leads' } | { page: 'crm-lead'; id: string | null } | { page: 'crm-deals' } | { page: 'crm-deal'; id: string | null }
   | { page: 'crm-follow-ups' } | { page: 'crm-campaigns' } | { page: 'crm-campaign'; id: string | null } | { page: 'crm-stages' }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
@@ -383,6 +391,13 @@ export function routeOf(path: string, search = ''): Route {
   const crc = path.match(new RegExp(`^/office/crm/campaigns/(${UUID})/?$`))
   if (crc) return { page: 'crm-campaign', id: crc[1] }
   if (/^\/office\/crm\/stages\/?$/.test(path)) return { page: 'crm-stages' }
+  if (/^\/office\/services\/calendar\/?$/.test(path)) return { page: 'svc-calendar' }
+  if (/^\/office\/services\/appointments\/?$/.test(path)) return { page: 'svc-appointments' }
+  if (/^\/office\/services\/passes\/?$/.test(path)) return { page: 'svc-passes' }
+  if (/^\/office\/services\/memberships\/?$/.test(path)) return { page: 'svc-memberships' }
+  if (/^\/office\/services\/plans\/?$/.test(path)) return { page: 'svc-plans' }
+  if (/^\/office\/services\/commissions\/?$/.test(path)) return { page: 'svc-commissions' }
+  if (/^\/office\/services\/keys\/?$/.test(path)) return { page: 'svc-keys' }
   if (/^\/office\/go-live\/?$/.test(path)) return { page: 'go-live' }
   if (/^\/office\/import\/?$/.test(path)) return { page: 'import' }
   if (/^\/office\/purchase-orders\/?$/.test(path)) return { page: 'purchase-orders' }
@@ -584,6 +599,13 @@ export function adminEquivalent(route: Route): string | null {
     case 'crm-campaigns': return '/admin/crm-campaigns'
     case 'crm-campaign': return route.id ? `/admin/crm-campaigns/${route.id}/edit` : '/admin/crm-campaigns/create'
     case 'crm-stages': return '/admin/crm-stages'
+    case 'svc-calendar': return '/admin/staff-calendar'
+    case 'svc-appointments': return '/admin/appointments'
+    case 'svc-passes': return '/admin/service-passes'
+    case 'svc-memberships': return '/admin/memberships'
+    case 'svc-plans': return '/admin/membership-plans'
+    case 'svc-commissions': return '/admin/commissions'
+    case 'svc-keys': return '/admin/licence-keys'
     case 'go-live': return '/admin/go-live'
     case 'import': return '/admin/import-data'
     case 'goods-received': case 'goods-receipt': return '/admin/goods-receipts'
