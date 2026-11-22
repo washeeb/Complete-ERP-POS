@@ -81,7 +81,7 @@ class BankReconciliation extends Page
             'ledger' => $svc->unmatchedLedger($bank),
             'suggested' => $svc->suggestions($bank),
             'summary' => $svc->reconciliation($bank, $this->asAt),
-            'matches' => DB::table('bank_matches')->where('bank_account_id', $bank->id)->orderByDesc('created_at')->limit(10)->get(),
+            'matches' => DB::table('bank_matches')->where('bank_account_id', $bank->id)->orderByDesc('created_at')->orderByDesc('id')->limit(10)->get(), // uuid7 ids: true order within a second
             'accounts' => FinanceUi::accounts(withControl: false),
         ];
     }

@@ -1,0 +1,2 @@
+### Fixed
+- **Bank reconciliation: "Recent matches" are truly newest first.** Matches made in the same second (an automatic match, a posted bank charge and "matched earlier" done one after another) could be listed in any order, so the top one was not always the last made. They now keep the order they were made in, on both the current and the new page. This also ends an intermittent failure of the banking test.

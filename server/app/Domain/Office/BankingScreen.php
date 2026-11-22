@@ -115,7 +115,7 @@ final class BankingScreen
                     'amount' => (int) $l->amount_minor, 'suggested' => isset($suggested[$l->id])])->all(),
             'ledger' => array_map(fn ($l) => ['id' => $l->id, 'date' => Carbon::parse($l->entry_date)->format('j M Y'), 'number' => $l->number, 'memo' => $l->line_memo ?: $l->memo,
                 'amount' => (int) $l->amount_minor, 'suggested' => in_array($l->id, $suggested, true)], $svc->unmatchedLedger($bank)),
-            'matches' => DB::table('bank_matches')->where('bank_account_id', $bank->id)->orderByDesc('created_at')->limit(10)->get()
+            'matches' => DB::table('bank_matches')->where('bank_account_id', $bank->id)->orderByDesc('created_at')->orderByDesc('id')->limit(10)->get() // to the second; uuid7 ids keep the true order
                 ->map(fn ($m) => ['id' => $m->id, 'at' => Carbon::parse($m->created_at)->format('j M Y H:i'), 'by' => $m->matched_by_name, 'amount' => (int) $m->amount_minor])->all(),
         ];
     }
