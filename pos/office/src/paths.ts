@@ -95,6 +95,19 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/momo-charges\/?$/, app: () => `${APP}/mobile-money` },
   { admin: /^\/admin\/support-access-grants\/?$/, app: () => `${APP}/support-access` },
   { admin: /^\/admin\/sync-peers\/?$/, app: () => `${APP}/sync-center` },
+
+  { admin: /^\/admin\/crm-pipeline\/?$/, app: () => `${APP}/crm/pipeline` },
+  { admin: /^\/admin\/crm-leads\/?$/, app: (_, q) => `${APP}/crm/leads${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/crm-leads\/create\/?$/, app: () => `${APP}/crm/leads/new` },
+  { admin: new RegExp(`^/admin/crm-leads/(${UUID})(/edit)?$`), app: (m) => `${APP}/crm/leads/${m[1]}` },
+  { admin: /^\/admin\/crm-deals\/?$/, app: (_, q) => `${APP}/crm/deals${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/crm-deals\/create\/?$/, app: (_, q) => `${APP}/crm/deals/new${q.get('customer') ? `?customer=${encodeURIComponent(q.get('customer')!)}` : ''}` },
+  { admin: new RegExp(`^/admin/crm-deals/(${UUID})(/edit)?$`), app: (m) => `${APP}/crm/deals/${m[1]}` },
+  { admin: /^\/admin\/crm-follow-ups\/?$/, app: () => `${APP}/crm/follow-ups` },
+  { admin: /^\/admin\/crm-campaigns\/?$/, app: () => `${APP}/crm/campaigns` },
+  { admin: /^\/admin\/crm-campaigns\/create\/?$/, app: () => `${APP}/crm/campaigns/new` },
+  { admin: new RegExp(`^/admin/crm-campaigns/(${UUID})(/edit)?$`), app: (m) => `${APP}/crm/campaigns/${m[1]}` },
+  { admin: /^\/admin\/crm-stages\/?$/, app: () => `${APP}/crm/stages` },
   { admin: /^\/admin\/go-live\/?$/, app: () => `${APP}/go-live` },
   { admin: /^\/admin\/import-data\/?$/, app: (_, q) => `${APP}/import${q.toString() ? `?${q.toString()}` : ''}` },
   { admin: /^\/admin\/purchase-orders\/?$/, app: (_, q) => `${APP}/purchase-orders${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
@@ -245,6 +258,8 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'system-health' } | { page: 'backups' } | { page: 'licence' } | { page: 'audit-log' } | { page: 'problem-reports' } | { page: 'integrations' }
   | { page: 'api-clients' } | { page: 'mobile-money' } | { page: 'support-access' } | { page: 'sync-center' }
   | { page: 'go-live' } | { page: 'import' }
+  | { page: 'crm-pipeline' } | { page: 'crm-leads' } | { page: 'crm-lead'; id: string | null } | { page: 'crm-deals' } | { page: 'crm-deal'; id: string | null }
+  | { page: 'crm-follow-ups' } | { page: 'crm-campaigns' } | { page: 'crm-campaign'; id: string | null } | { page: 'crm-stages' }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
@@ -352,6 +367,22 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/mobile-money\/?$/.test(path)) return { page: 'mobile-money' }
   if (/^\/office\/support-access\/?$/.test(path)) return { page: 'support-access' }
   if (/^\/office\/sync-center\/?$/.test(path)) return { page: 'sync-center' }
+
+  if (/^\/office\/crm\/pipeline\/?$/.test(path)) return { page: 'crm-pipeline' }
+  if (/^\/office\/crm\/leads\/?$/.test(path)) return { page: 'crm-leads' }
+  if (/^\/office\/crm\/leads\/new\/?$/.test(path)) return { page: 'crm-lead', id: null }
+  const crl = path.match(new RegExp(`^/office/crm/leads/(${UUID})/?$`))
+  if (crl) return { page: 'crm-lead', id: crl[1] }
+  if (/^\/office\/crm\/deals\/?$/.test(path)) return { page: 'crm-deals' }
+  if (/^\/office\/crm\/deals\/new\/?$/.test(path)) return { page: 'crm-deal', id: null }
+  const crd = path.match(new RegExp(`^/office/crm/deals/(${UUID})/?$`))
+  if (crd) return { page: 'crm-deal', id: crd[1] }
+  if (/^\/office\/crm\/follow-ups\/?$/.test(path)) return { page: 'crm-follow-ups' }
+  if (/^\/office\/crm\/campaigns\/?$/.test(path)) return { page: 'crm-campaigns' }
+  if (/^\/office\/crm\/campaigns\/new\/?$/.test(path)) return { page: 'crm-campaign', id: null }
+  const crc = path.match(new RegExp(`^/office/crm/campaigns/(${UUID})/?$`))
+  if (crc) return { page: 'crm-campaign', id: crc[1] }
+  if (/^\/office\/crm\/stages\/?$/.test(path)) return { page: 'crm-stages' }
   if (/^\/office\/go-live\/?$/.test(path)) return { page: 'go-live' }
   if (/^\/office\/import\/?$/.test(path)) return { page: 'import' }
   if (/^\/office\/purchase-orders\/?$/.test(path)) return { page: 'purchase-orders' }
@@ -543,6 +574,16 @@ export function adminEquivalent(route: Route): string | null {
     case 'mobile-money': return '/admin/momo-charges'
     case 'support-access': return '/admin/support-access-grants'
     case 'sync-center': return '/admin/sync-peers'
+
+    case 'crm-pipeline': return '/admin/crm-pipeline'
+    case 'crm-leads': return '/admin/crm-leads'
+    case 'crm-lead': return route.id ? `/admin/crm-leads/${route.id}/edit` : '/admin/crm-leads/create'
+    case 'crm-deals': return '/admin/crm-deals'
+    case 'crm-deal': return route.id ? `/admin/crm-deals/${route.id}/edit` : '/admin/crm-deals/create'
+    case 'crm-follow-ups': return '/admin/crm-follow-ups'
+    case 'crm-campaigns': return '/admin/crm-campaigns'
+    case 'crm-campaign': return route.id ? `/admin/crm-campaigns/${route.id}/edit` : '/admin/crm-campaigns/create'
+    case 'crm-stages': return '/admin/crm-stages'
     case 'go-live': return '/admin/go-live'
     case 'import': return '/admin/import-data'
     case 'goods-received': case 'goods-receipt': return '/admin/goods-receipts'
