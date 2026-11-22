@@ -1,0 +1,6 @@
+## New back office, part 27: Projects (branch `office-projects`, base `main`)
+- **Server:** `App\Domain\Office\ProjectsScreen` (projects list, one project with figures, tasks, milestones and costs, My time with the running timer, approvals by person, hourly rates) and `Office\ProjectsController` (save; issue / return stock, invoice time and materials (all or chosen costs), finish, cancel, reopen; save task, save and invoice milestone; customer, service and unit searches; log, change, remove time, timer start / stop, send the week; approve / send back; save rates). Routes `office-api/projects/…`, `my-time/…`, `time-approvals`, `project-rates/…`.
+- **Client:** `ProjectsPage`, `ProjectPage`, `MyTimePage`, `TimeApprovalsPage`, `ProjectRatesPage`. Paths `/admin/projects…`, `/admin/my-time`, `/admin/time-approvals`, `/admin/project-rates` → `/office/projects…`, `/office/my-time`, `/office/time-approvals`, `/office/project-rates`.
+- **office-check:** opens each Projects page from Sales where the add-on is on, the first project with its figures and costs, New project and Add time (nothing saved).
+- **Tests:** `OfficeProjectsTest` (3).
+- **Next:** Service desk (Tickets, Deadlines), then Insights (Alerts, Ask your business, AI usage log).

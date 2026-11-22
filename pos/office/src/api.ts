@@ -856,6 +856,32 @@ export type CrmCampaignForm = { currency: string; exponent: number; id: string |
   values: { name: string; industry_id: string; channel: string; subject: string; whatsapp_template: string; body: string; send_at: string
     audience: { tags: string[]; branch_id: string; min_spent: string; bought_within_days: string; not_bought_days: string; include_leads: boolean } } }
 export type CrmStageList = { kinds: Option[]; rows: (Archivable & { id: string; sort: number; name: string; kind: string; kind_label: string; probability: number; deals: number })[] }
+export type ProjectList = { currency: string; exponent: number; total: number; page: number; per: number; status: string; statuses: Option[]; billings: Option[]; can_create: boolean
+  rows: { id: string; number: string; name: string; customer: string | null; billing: string; status: string; status_label: string; tone: string; cost: number; budget: number | null
+    due: string | null; late: boolean; manager: string | null }[] }
+export type ProjectValues = { name: string; status: string; billing: string; customer_id: string; customer_name: string | null; branch_id: string; manager_id: string; starts_on: string
+  ends_on: string; budget_cost: string; contract: string; hourly_rate: string; markup: string; service_product_id: string; service_name: string | null; description: string }
+export type ProjectFigures = { cost: number; by_kind: Record<string, number>; hours: number; invoiced: number; unbilled: number; budget: number | null; profit: number; margin: number | null
+  progress: number | null }
+export type TaskValues = { name: string; assigned_to: string; status: string; due_on: string; estimate_hours: string; billable: boolean; sort: string }
+export type MilestoneValues = { name: string; amount: string; due_on: string; status: string; sort: string }
+export type DocLink = { number: string | null; open: string }
+export type ProjectDetail = { currency: string; exponent: number; id: string | null; number: string | null; open: boolean; status: string | null; status_label: string | null; tone: string | null
+  billings: Option[]; statuses: Option[]; branches: Option[]; managers: Option[]; values: ProjectValues
+  actions: { edit: boolean; issue?: boolean; return?: boolean; invoice_time?: boolean; finish?: boolean; cancel?: boolean; reopen?: boolean; tasks?: boolean; milestones?: boolean; invoice_milestone?: boolean }
+  billed?: boolean; figures?: ProjectFigures; contract_minor?: number | null; warehouses?: Option[]; workers?: Option[]; task_statuses?: Option[]; cost_kinds?: Option[]
+  tasks?: { id: string; name: string; who: string | null; status: string; status_label: string; tone: string; due: string | null; late: boolean; hours: string; values: TaskValues }[]
+  milestones?: { id: string; name: string; amount: number; due: string | null; status: string; status_label: string; tone: string; invoice: DocLink | null; can_edit: boolean; can_invoice: boolean
+    values: MilestoneValues }[]
+  costs?: { id: string; date: string | null; kind: string; kind_label: string; description: string | null; qty: string; cost: number; bill: number | null; invoice: DocLink | null; unbilled: boolean }[] }
+export type TimeValues = { project_id: string; task_id: string; work_date: string; hours: string; note: string }
+export type MyTimeData = { week: string; from: string; to: string; today: string; total: string; previous: string; next: string | null; can_submit: boolean; projects: Option[]
+  running: { project: string | null; task: string | null; note: string | null; since: string; for: string } | null
+  rows: { id: string; day: string | null; project: string | null; task: string | null; note: string | null; hours: string; status: string; status_label: string; tone: string
+    reason: string | null; can_change: boolean; values: TimeValues }[] }
+export type TimeApprovalData = { people: { id: string; name: string; total: string
+  rows: { id: string; day: string | null; project: string | null; task: string | null; note: string | null; hours: string; billable: boolean }[] }[] }
+export type ProjectRateData = { currency: string; exponent: number; rows: { id: string; name: string; cost: number | null; bill: number | null; values: { cost: string; bill: string } }[] }
 export type ApptRow = { id: string; number: string; starts_at: string | null; starts_iso: string | null; ends: string | null; time: string | null; customer: string | null
   phone: string | null; service: string | null; with: string | null; employee_id: string; branch_id: string; note: string | null; status: string; status_label: string; tone: string
   can_arrive: boolean; can_no_show: boolean; can_change: boolean; can_cancel: boolean }
@@ -1632,6 +1658,31 @@ export const api = {
   saveCrmStage: (id: string | null, body: Record<string, unknown>) => call<{ id: string; message: string }>(id ? `/office-api/crm/stages/${id}` : '/office-api/crm/stages', { method: 'POST', body: JSON.stringify(body) }),
   archiveCrmStage: (id: string, restore: boolean, reason: string) =>
     call<{ message: string }>(`/office-api/crm/stages/${id}/archive`, { method: 'POST', body: JSON.stringify({ restore, reason: restore ? null : reason }) }),
+  projects: (query: string, signal?: AbortSignal) => call<ProjectList>(`/office-api/projects?${query}`, { signal }),
+  project: (id: string | null, query = '') => call<ProjectDetail>(id ? `/office-api/projects/${id}` : `/office-api/projects/form${query ? `?${query}` : ''}`),
+  saveProject: (id: string | null, body: Record<string, unknown>) => call<{ id: string; message: string }>(id ? `/office-api/projects/${id}` : '/office-api/projects', { method: 'POST', body: JSON.stringify(body) }),
+  projectAction: (id: string, action: 'issue' | 'return' | 'invoice_time' | 'finish' | 'cancel' | 'reopen', body: Record<string, unknown> = {}) =>
+    call<{ message: string; open?: string }>(`/office-api/projects/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  saveProjectTask: (project: string, id: string | null, body: Record<string, unknown>) =>
+    call<{ id: string; message: string }>(`/office-api/projects/${project}/tasks${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(body) }),
+  saveMilestone: (project: string, id: string | null, body: Record<string, unknown>) =>
+    call<{ id: string; message: string }>(`/office-api/projects/${project}/milestones${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(body) }),
+  invoiceMilestone: (project: string, id: string) => call<{ message: string; open: string }>(`/office-api/projects/${project}/milestones/${id}/invoice`, { method: 'POST' }),
+  projectCustomers: (q: string, signal?: AbortSignal) => call<{ results: { id: string; label: string; detail?: string }[] }>(`/office-api/projects/customers?q=${encodeURIComponent(q)}`, { signal }),
+  projectServices: (q: string, signal?: AbortSignal) => call<{ results: { id: string; label: string; detail?: string }[] }>(`/office-api/projects/services?q=${encodeURIComponent(q)}`, { signal }),
+  projectUnits: (q: string, signal?: AbortSignal) => call<{ results: UnitOption[] }>(`/office-api/projects/units?q=${encodeURIComponent(q)}`, { signal }),
+  myTime: (query: string, signal?: AbortSignal) => call<MyTimeData>(`/office-api/my-time?${query}`, { signal }),
+  timeTasks: (project: string) => call<{ tasks: Option[] }>(`/office-api/my-time/tasks?project=${encodeURIComponent(project)}`),
+  logTime: (id: string | null, body: Record<string, unknown>) => call<{ id: string; message: string }>(id ? `/office-api/my-time/${id}` : '/office-api/my-time', { method: 'POST', body: JSON.stringify(body) }),
+  removeTime: (id: string) => call<{ message: string }>(`/office-api/my-time/${id}/remove`, { method: 'POST' }),
+  timeTimer: (action: 'start' | 'stop' | 'submit', body: Record<string, unknown> = {}) =>
+    call<{ message: string }>('/office-api/my-time/timer', { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  timeApprovals: (_query = '', signal?: AbortSignal) => call<TimeApprovalData>('/office-api/time-approvals', { signal }),
+  answerTime: (ids: string[], action: 'approve' | 'reject', reason = '') =>
+    call<{ message: string }>('/office-api/time-approvals', { method: 'POST', body: JSON.stringify({ ids, action, reason: action === 'reject' ? reason : null }) }),
+  projectRates: (_query = '', signal?: AbortSignal) => call<ProjectRateData>('/office-api/project-rates', { signal }),
+  saveProjectRate: (user: string, body: { cost: string; bill: string }) =>
+    call<{ message: string }>(`/office-api/project-rates/${user}`, { method: 'POST', body: JSON.stringify({ cost: body.cost, bill: body.bill === '' ? null : body.bill }) }),
   serviceCalendar: (query: string, signal?: AbortSignal) => call<CalendarData>(`/office-api/services/calendar?${query}`, { signal }),
   appointments: (query: string, signal?: AbortSignal) => call<ApptList>(`/office-api/services/appointments?${query}`, { signal }),
   bookingForm: (branch = '') => call<BookingForm>(`/office-api/services/appointments/form${branch ? `?branch=${branch}` : ''}`),
