@@ -35,6 +35,7 @@ use App\Http\Controllers\Office\ExportController as OfficeExportController;
 use App\Http\Controllers\Office\GoLiveController as OfficeGoLiveController;
 use App\Http\Controllers\Office\GoodsReceiptsController as OfficeGoodsReceiptsController;
 use App\Http\Controllers\Office\HrController as OfficeHrController;
+use App\Http\Controllers\Office\InsightsAiController as OfficeInsightsAiController;
 use App\Http\Controllers\Office\InvoicesController as OfficeInvoicesController;
 use App\Http\Controllers\Office\JournalsController as OfficeJournalsController;
 use App\Http\Controllers\Office\MessagingController as OfficeMessagingController;
@@ -698,6 +699,15 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::post('tickets/{id}/action', [OfficeServiceDeskController::class, 'action'])->whereUuid('id');
     Route::get('service-levels', [OfficeServiceDeskController::class, 'levels']);
     Route::post('service-levels/{id}', [OfficeServiceDeskController::class, 'levelSave'])->whereUuid('id');
+    // Insights (new look, part 29): Ask your business, Alerts, AI usage log.
+    Route::get('ask', [OfficeInsightsAiController::class, 'ask']);
+    Route::post('ask', [OfficeInsightsAiController::class, 'question']);
+    Route::post('ask/quick', [OfficeInsightsAiController::class, 'quick']);
+    Route::get('alerts', [OfficeInsightsAiController::class, 'alerts']);
+    Route::post('alerts/refresh', [OfficeInsightsAiController::class, 'alertsRefresh']);
+    Route::post('alerts/{id}', [OfficeInsightsAiController::class, 'alertHandle'])->whereUuid('id');
+    Route::get('ai-usage', [OfficeInsightsAiController::class, 'usage']);
+    Route::get('ai-usage/{id}', [OfficeInsightsAiController::class, 'usageShow'])->whereUuid('id');
     Route::get('returns', [OfficeReturnsController::class, 'index']);
     Route::get('returns/options', [OfficeReturnsController::class, 'options']);
     Route::get('returns/{sale}/slip', [OfficeReturnsController::class, 'slip'])->whereUuid('sale');

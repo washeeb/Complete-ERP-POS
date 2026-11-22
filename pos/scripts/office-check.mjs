@@ -8,8 +8,8 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium } from '@playwright/test'
 
-/** A menu link by its name, with or without the count badge some items carry ("Invoices from suppliers 1"). */
-const menuName = (name) => new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\d*$`)
+/** A menu link by its name, with or without the count badge some items carry ("Invoices from suppliers 1", "Alerts 99+"). */
+const menuName = (name) => new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*(\\d+\\+?)?$`)
 
 const here = dirname(fileURLToPath(import.meta.url))
 const base = process.env.LAYOUT_BASE ?? 'http://127.0.0.1:8010'
@@ -812,6 +812,28 @@ try {
           await page.screenshot({ path: out(`desk-new-${look}-${w}`) })
           await page.getByRole('button', { name: 'Cancel', exact: true }).click()
         } else problems.push(`${look} ${w}: Tickets has no New ticket`)
+      }
+      // Ask your business, Alerts and the AI usage log, rebuilt (part 29): each opens from Insights and loads; a quick question
+      // (they work without AI) answers with its table. Nothing is changed.
+      for (const [link, url, ready] of [
+        ['Ask your business', /\/office\/ask$/, () => page.getByRole('group', { name: 'Quick questions' })],
+        ['Alerts', /\/office\/alerts/, () => page.getByText('No alerts match.').or(page.getByRole('table', { name: 'Alerts' }).getByRole('row').nth(1))],
+        ['AI usage log', /\/office\/ai-usage/, () => page.getByText('No AI requests yet.').or(page.getByRole('table', { name: 'AI usage log' }).getByRole('row').nth(1))]]) {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Insights/ }).first().click()
+        const l = page.getByRole('navigation', { name: 'Insights' }).getByRole('link', { name: menuName(link) }).first()
+        if (!await l.count()) { await page.keyboard.press('Escape'); continue }
+        await l.click()
+        await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await ready().first().waitFor({ timeout: 30000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        if (link === 'Ask your business') {
+          const first = page.getByRole('group', { name: 'Quick questions' }).getByRole('button').first()
+          if (await first.count()) {
+            const label = (await first.innerText()).trim()
+            await first.click()
+            await page.locator('[aria-live="polite"] table').first().waitFor({ timeout: 30000 }).catch(() => problems.push(`${look} ${w}: the quick question “${label}” did not answer with a table`))
+          } else problems.push(`${look} ${w}: Ask your business has no quick questions`)
+        }
+        await page.screenshot({ path: out(`insights-${link.toLowerCase().replace(/ /g, '-')}-${look}-${w}`) })
       }
       // Go-live and Import data, rebuilt (part 24): each opens from Setup and loads. Nothing is planned, uploaded or imported.
       for (const [link, url, ready] of [

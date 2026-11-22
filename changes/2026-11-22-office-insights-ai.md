@@ -1,0 +1,2 @@
+### Added
+- **Ask your business, Alerts and the AI usage log rebuilt in the new back office (part 29).** Ask your business: the quick questions (they work without AI) and the chat, answering with the figures it used; New chat. Alerts: what the nightly insights found, open by default, with Dealt with, Not a problem and Refresh now. AI usage log: every AI call with its cost and this month's spend against the budget; a row opens what was sent, the answer and the reports used.
