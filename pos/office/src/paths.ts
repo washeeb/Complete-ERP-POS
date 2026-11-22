@@ -76,6 +76,15 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/branding\/?$/, app: () => `${APP}/branding` },
   { admin: /^\/admin\/health-checks\/?$/, app: () => `${APP}/health-checks` },
   { admin: /^\/admin\/grocery\/scale-items\/?$/, app: () => `${APP}/scale-items` },
+  { admin: /^\/admin\/employees\/?$/, app: (_, q) => `${APP}/employees${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/employees\/create\/?$/, app: () => `${APP}/employees/new` },
+  { admin: new RegExp(`^/admin/employees/(${UUID})(/edit)?$`), app: (m) => `${APP}/employees/${m[1]}` },
+  { admin: /^\/admin\/timesheets\/?$/, app: (_, q) => `${APP}/timesheets${q.toString() ? `?${q.toString()}` : ''}` },
+  { admin: /^\/admin\/leave-requests\/?$/, app: () => `${APP}/leave` },
+  { admin: /^\/admin\/payroll-runs\/?$/, app: () => `${APP}/payroll` },
+  { admin: new RegExp(`^/admin/payroll-runs/(${UUID})$`), app: (m) => `${APP}/payroll/${m[1]}` },
+  { admin: /^\/admin\/employee-loans\/?$/, app: () => `${APP}/loans` },
+  { admin: /^\/admin\/my-hr\/?$/, app: () => `${APP}/my-hr` },
   { admin: /^\/admin\/purchase-orders\/?$/, app: (_, q) => `${APP}/purchase-orders${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/purchase-orders\/create\/?$/, app: () => `${APP}/purchase-orders/new` },
   { admin: new RegExp(`^/admin/purchase-orders/(${UUID})$`), app: (m) => `${APP}/purchase-orders/${m[1]}` },
@@ -220,6 +229,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'agreements' } | { page: 'agreement'; id: string } | { page: 'agreement-form'; id: string | null }
   | { page: 'landed-costs' } | { page: 'cost-runs' } | { page: 'cost-run'; id: string } | { page: 'cost-run-form' } | { page: 'estimated-costs' } | { page: 'spend-analytics' }
   | { page: 'branches' } | { page: 'branch'; id: string | null } | { page: 'industries' } | { page: 'legal-entities' } | { page: 'branding' } | { page: 'health-checks' } | { page: 'scale-items' }
+  | { page: 'employees' } | { page: 'employee'; id: string | null } | { page: 'timesheets' } | { page: 'leave' } | { page: 'payroll' } | { page: 'payroll-run'; id: string } | { page: 'loans' } | { page: 'my-hr' }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
@@ -306,6 +316,17 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/branding\/?$/.test(path)) return { page: 'branding' }
   if (/^\/office\/health-checks\/?$/.test(path)) return { page: 'health-checks' }
   if (/^\/office\/scale-items\/?$/.test(path)) return { page: 'scale-items' }
+  if (/^\/office\/employees\/?$/.test(path)) return { page: 'employees' }
+  if (/^\/office\/employees\/new\/?$/.test(path)) return { page: 'employee', id: null }
+  const emp = path.match(new RegExp(`^/office/employees/(${UUID})/?$`))
+  if (emp) return { page: 'employee', id: emp[1] }
+  if (/^\/office\/timesheets\/?$/.test(path)) return { page: 'timesheets' }
+  if (/^\/office\/leave\/?$/.test(path)) return { page: 'leave' }
+  if (/^\/office\/payroll\/?$/.test(path)) return { page: 'payroll' }
+  const prun = path.match(new RegExp(`^/office/payroll/(${UUID})/?$`))
+  if (prun) return { page: 'payroll-run', id: prun[1] }
+  if (/^\/office\/loans\/?$/.test(path)) return { page: 'loans' }
+  if (/^\/office\/my-hr\/?$/.test(path)) return { page: 'my-hr' }
   if (/^\/office\/purchase-orders\/?$/.test(path)) return { page: 'purchase-orders' }
   if (/^\/office\/purchase-orders\/new\/?$/.test(path)) return { page: 'purchase-order-form', id: null }
   const po = path.match(new RegExp(`^/office/purchase-orders/(${UUID})(/edit)?/?$`))
@@ -477,6 +498,14 @@ export function adminEquivalent(route: Route): string | null {
     case 'branding': return '/admin/branding'
     case 'health-checks': return '/admin/health-checks'
     case 'scale-items': return '/admin/grocery/scale-items'
+    case 'employees': return '/admin/employees'
+    case 'employee': return route.id ? `/admin/employees/${route.id}/edit` : '/admin/employees/create'
+    case 'timesheets': return '/admin/timesheets'
+    case 'leave': return '/admin/leave-requests'
+    case 'payroll': return '/admin/payroll-runs'
+    case 'payroll-run': return `/admin/payroll-runs/${route.id}`
+    case 'loans': return '/admin/employee-loans'
+    case 'my-hr': return '/admin/my-hr'
     case 'goods-received': case 'goods-receipt': return '/admin/goods-receipts'
     case 'direct-purchases': case 'direct-purchase': case 'direct-purchase-form': return '/admin/direct-purchases'
     case 'supplier-invoices': return '/admin/supplier-invoices'

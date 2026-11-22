@@ -741,6 +741,31 @@ export type ReadingRow = { id: string; taken_at: string | null; person: string; 
 export type ReadingList = { total: number; page: number; per: number; patient_name: string | null; kinds: Option[]; flags: Option[]; can_service: boolean; rows: ReadingRow[] }
 export type ReadingForm = { branches: Option[]; branch: string; kinds: Option[]; results: Record<string, Option[]>; currency: string; exponent: number; tax_groups: Option[] }
 export type ScaleData = { prefixes: string; currency: string; exponent: number; rows: { id: string; plu: string; sku: string | null; name: string; unit: string | null; price: number | null }[] }
+export type EmployeeRow = Archivable & { id: string; number: string; name: string; job_title: string | null; branch: string | null; department: string | null; type: string
+  hire_date: string | null; status: string }
+export type EmployeeList = { total: number; page: number; per: number; status: string; branches: Option[]; can_create: boolean; can_manage: boolean; rows: EmployeeRow[] }
+export type EmployeeValues = Record<string, string | boolean>
+export type EmployeeForm = Archivable & { id: string | null; number: string | null; status: string; can_terminate: boolean; currency: string; exponent: number; values: EmployeeValues
+  genders: Option[]; users: Option[]; branches: Option[]; departments: Option[]; types: Option[]; pay_methods: Option[] }
+export type TimesheetData = { branch: string; month: string; branches: Option[]; rows: { id: string; name: string; days: number; hours: string; overtime: string; open: string[] }[]
+  person: { id: string; name: string } | null
+  events: { id: string; kind: string; at: string; source: string; reason: string | null; by: string | null; voided: boolean; is_void: boolean }[] }
+export type LeaveRow = { id: string; employee: string | null; type: string | null; starts_on: string | null; ends_on: string | null; days: number; reason: string | null; note: string | null
+  status: string; status_label: string; tone: string; document: boolean; can_decide: boolean; can_cancel: boolean }
+export type LeaveList = { total: number; waiting: number; page: number; per: number; statuses: Option[]; can_record: boolean; rows: LeaveRow[] }
+export type PayrollRow = { id: string; number: string; month: string | null; people: number; gross: number; paye: number; net: number; status: string; status_label: string; tone: string }
+export type PayrollList = { currency: string; exponent: number; total: number; page: number; per: number; statuses: Option[]; can_prepare: boolean; months: Option[]
+  now: { month: string; year: string; pay_date: string }; rows: PayrollRow[] }
+export type PayrollDetail = { currency: string; exponent: number; id: string; number: string; month: string | null; status: string; status_label: string; tone: string; pay_date: string | null
+  gross: number; paye: number; ssnit: number; net: number; prepared_by: string | null; approved_by: string | null; paid: string | null; profile: string | null; checked: string | null
+  print: { payslips: string; sheet: string; list: string }
+  payslips: { id: string; employee: string; gross: number; ssnit: number; paye: number; net: number; paid_by: string; open: string }[]
+  actions: { recalculate: boolean; approve: boolean; pay: { accounts: Option[]; bank: string; cash: string; today: string } | null } }
+export type LoanRow = { id: string; number: string; employee: string | null; kind: string; issued_on: string | null; amount: number; monthly: number; owed: number }
+export type LoanList = { currency: string; exponent: number; total: number; page: number; per: number; can_issue: boolean; rows: LoanRow[]
+  form: { employees: Option[]; kinds: Option[]; accounts: Option[]; account: string; first_month: string; today: string } | null }
+export type MyHrData = { currency: string; exponent: number; name: string; types: Option[]; balances: { name: string; left: number | null; allowance: number | null }[]
+  requests: LeaveRow[]; payslips: { id: string; month: string | null; net: number; open: string }[] }
 export type AgreementForm = { id: string | null; number: string | null; values: AgreementValues; currency: string; suppliers: Option[]; kinds: Option[]; accounts: Option[] }
 export type ExpiryList = { total: number; page: number; per: number; currency: string; exponent: number; value: number; rows: ExpiryRow[] }
 export type ExpiryOptions = { statuses: Option[]; warehouses: Option[]; suppliers: Option[]; settlements: Option[]; reasons: Option[]; methods: Option[]
@@ -1415,6 +1440,33 @@ export const api = {
   recordReading: (body: Record<string, unknown>) => call<{ id: string; message: string }>('/office-api/health-checks', { method: 'POST', body: JSON.stringify(body) }),
   addFeeService: (body: Record<string, unknown>) => call<{ id: string; message: string }>('/office-api/health-checks/service', { method: 'POST', body: JSON.stringify(body) }),
   scaleItems: () => call<ScaleData>('/office-api/scale-items'),
+  employees: (query: string, signal?: AbortSignal) => call<EmployeeList>(`/office-api/employees?${query}`, { signal }),
+  employeeForm: (id: string | null) => call<EmployeeForm>(id ? `/office-api/employees/${id}/form` : '/office-api/employees/form'),
+  saveEmployee: (id: string | null, body: Record<string, unknown>) => call<{ id: string; message: string }>(id ? `/office-api/employees/${id}` : '/office-api/employees', { method: 'POST', body: JSON.stringify(body) }),
+  employeeAction: (id: string, action: 'terminate' | 'archive' | 'restore', body: Record<string, unknown> = {}) =>
+    call<{ message: string }>(`/office-api/employees/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  timesheets: (query: string, signal?: AbortSignal) => call<TimesheetData>(`/office-api/timesheets?${query}`, { signal }),
+  clock: (body: Record<string, unknown>) => call<{ message: string }>('/office-api/timesheets/clock', { method: 'POST', body: JSON.stringify(body) }),
+  leave: (query: string, signal?: AbortSignal) => call<LeaveList>(`/office-api/leave?${query}`, { signal }),
+  leaveForm: (mine: boolean) => call<{ types: Option[]; employees: Option[] }>(`/office-api/leave/form${mine ? '?mine=1' : ''}`),
+  leaveAction: (id: string, action: 'approve' | 'refuse' | 'cancel', body: Record<string, unknown> = {}) =>
+    call<{ message: string }>(`/office-api/leave/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  /** Request leave (a form, for the document): for someone (HR), or for yourself with mine. */
+  requestLeave: async (body: FormData) => {
+    const res = await fetch('/office-api/leave', { method: 'POST', body, credentials: 'same-origin',
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
+    const j = await res.json().catch(() => ({}))
+    if (!res.ok) throw new ApiError(j.detail ?? j.message ?? `Error ${res.status}`, res.status, j.error ?? 'error')
+    return j as { id: string; message: string }
+  },
+  payrollRuns: (query: string, signal?: AbortSignal) => call<PayrollList>(`/office-api/payroll?${query}`, { signal }),
+  preparePayroll: (body: Record<string, unknown>) => call<{ id: string; message: string }>('/office-api/payroll', { method: 'POST', body: JSON.stringify(body) }),
+  payrollRun: (id: string) => call<PayrollDetail>(`/office-api/payroll/${id}`),
+  payrollAction: (id: string, action: 'recalculate' | 'approve' | 'pay', body: Record<string, unknown> = {}) =>
+    call<{ message: string; run: PayrollDetail }>(`/office-api/payroll/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  loans: (query: string, signal?: AbortSignal) => call<LoanList>(`/office-api/loans?${query}`, { signal }),
+  issueLoan: (body: Record<string, unknown>) => call<{ id: string; message: string }>('/office-api/loans', { method: 'POST', body: JSON.stringify(body) }),
+  myHr: () => call<MyHrData>('/office-api/my-hr'),
   markDownBatches: (keys: string[], percent: string) => call<UserDone>('/office-api/expiry/markdown', { method: 'POST', body: JSON.stringify({ keys, percent }) }),
   nhisClaims: (query: string, signal?: AbortSignal) => call<NhisClaimList>(`/office-api/nhis-claims?${query}`, { signal }),
   nhisUnclaimed: (branch: string, upTo: string) => call<{ sales: number; amount: number; currency: string; exponent: number }>(`/office-api/nhis-claims/unclaimed?branch=${branch}&up_to=${upTo}`),
