@@ -91,6 +91,10 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/audit-events\/?$/, app: (_, q) => `${APP}/audit-log${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/problem-reports\/?$/, app: () => `${APP}/problem-reports` },
   { admin: /^\/admin\/integrations\/?$/, app: () => `${APP}/integrations` },
+  { admin: /^\/admin\/api-clients\/?$/, app: () => `${APP}/api-clients` },
+  { admin: /^\/admin\/momo-charges\/?$/, app: () => `${APP}/mobile-money` },
+  { admin: /^\/admin\/support-access-grants\/?$/, app: () => `${APP}/support-access` },
+  { admin: /^\/admin\/sync-peers\/?$/, app: () => `${APP}/sync-center` },
   { admin: /^\/admin\/purchase-orders\/?$/, app: (_, q) => `${APP}/purchase-orders${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/purchase-orders\/create\/?$/, app: () => `${APP}/purchase-orders/new` },
   { admin: new RegExp(`^/admin/purchase-orders/(${UUID})$`), app: (m) => `${APP}/purchase-orders/${m[1]}` },
@@ -237,6 +241,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'branches' } | { page: 'branch'; id: string | null } | { page: 'industries' } | { page: 'legal-entities' } | { page: 'branding' } | { page: 'health-checks' } | { page: 'scale-items' }
   | { page: 'employees' } | { page: 'employee'; id: string | null } | { page: 'timesheets' } | { page: 'leave' } | { page: 'payroll' } | { page: 'payroll-run'; id: string } | { page: 'loans' } | { page: 'my-hr' }
   | { page: 'system-health' } | { page: 'backups' } | { page: 'licence' } | { page: 'audit-log' } | { page: 'problem-reports' } | { page: 'integrations' }
+  | { page: 'api-clients' } | { page: 'mobile-money' } | { page: 'support-access' } | { page: 'sync-center' }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
@@ -340,6 +345,10 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/audit-log\/?$/.test(path)) return { page: 'audit-log' }
   if (/^\/office\/problem-reports\/?$/.test(path)) return { page: 'problem-reports' }
   if (/^\/office\/integrations\/?$/.test(path)) return { page: 'integrations' }
+  if (/^\/office\/api-clients\/?$/.test(path)) return { page: 'api-clients' }
+  if (/^\/office\/mobile-money\/?$/.test(path)) return { page: 'mobile-money' }
+  if (/^\/office\/support-access\/?$/.test(path)) return { page: 'support-access' }
+  if (/^\/office\/sync-center\/?$/.test(path)) return { page: 'sync-center' }
   if (/^\/office\/purchase-orders\/?$/.test(path)) return { page: 'purchase-orders' }
   if (/^\/office\/purchase-orders\/new\/?$/.test(path)) return { page: 'purchase-order-form', id: null }
   const po = path.match(new RegExp(`^/office/purchase-orders/(${UUID})(/edit)?/?$`))
@@ -525,6 +534,10 @@ export function adminEquivalent(route: Route): string | null {
     case 'audit-log': return '/admin/audit-events'
     case 'problem-reports': return '/admin/problem-reports'
     case 'integrations': return '/admin/integrations'
+    case 'api-clients': return '/admin/api-clients'
+    case 'mobile-money': return '/admin/momo-charges'
+    case 'support-access': return '/admin/support-access-grants'
+    case 'sync-center': return '/admin/sync-peers'
     case 'goods-received': case 'goods-receipt': return '/admin/goods-receipts'
     case 'direct-purchases': case 'direct-purchase': case 'direct-purchase-form': return '/admin/direct-purchases'
     case 'supplier-invoices': return '/admin/supplier-invoices'

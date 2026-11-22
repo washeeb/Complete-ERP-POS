@@ -708,6 +708,21 @@ try {
           await page.goBack()
         }
       }
+      // System, second half, rebuilt (part 23): API clients, Mobile money, Support access and Sync Center open from Setup and load
+      // (each only where this person may see it). Nothing is made, given or synced.
+      for (const [link, url, ready] of [
+        ['API clients', /\/office\/api-clients$/, () => page.getByRole('region', { name: 'Clients' })],
+        ['Mobile money', /\/office\/mobile-money/, () => page.getByText('No mobile money requests match.').or(page.getByRole('table', { name: 'Mobile money requests' }).getByRole('row').nth(1))],
+        ['Support access', /\/office\/support-access$/, () => page.getByRole('region', { name: 'Access given' })],
+        ['Sync Center', /\/office\/sync-center$/, () => page.getByRole('region', { name: 'Servers' })]]) {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Setup/ }).first().click()
+        const l = page.getByRole('navigation', { name: 'Setup' }).getByRole('link', { name: menuName(link) }).first()
+        if (!await l.count()) { await page.keyboard.press('Escape'); continue }
+        await l.click()
+        await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await ready().first().waitFor({ timeout: 30000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        await page.screenshot({ path: out(`system-${link.split(' ')[0].toLowerCase()}-${look}-${w}`) })
+      }
       // System, first half, rebuilt (part 22): each opens from Setup and loads (Integrations only where its add-on is on). Nothing
       // is run or changed: no backup, no key, no check-in.
       for (const [link, url, ready] of [
