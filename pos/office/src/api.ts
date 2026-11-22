@@ -785,6 +785,20 @@ export type ProblemReport = { id: string; number: string; when: string | null; a
 export type ProblemReportList = { total: number; page: number; per: number; status: string; statuses: Option[]; sources: Option[]; sent_to: string; rows: ProblemReport[] }
 export type IntegrationsData = { counts: Record<string, number>
   cards: { id: string; title: string; state: string; state_label: string; always: boolean; what: string; detail: string; last_ok: string | null; failed: number; url: string | null; link: string | null }[] }
+export type ShownOnce = { title: string; value: string; second?: string }
+export type ApiClientsData = { openapi: string; scopes: Option[]; events: Option[]; users: Option[]; branches: Option[]
+  rows: { id: string; name: string; scopes: string[]; acts_as: string | null; branch: string | null; last_used: string | null; webhooks: number; active: boolean }[] }
+export type MomoField = { key: string; label: string; secret: boolean; saved: boolean; value: string }
+export type MomoData = { total: number; page: number; per: number; statuses: Option[]; about: string
+  gateway: { provider: string; active: boolean; providers: Option[]; fields: Record<string, MomoField[]>; callback: string | null } | null
+  rows: { id: string; when: string | null; status: string; status_label: string; tone: string; message: string | null; amount: string; network: string | null; phone: string | null
+    sale: string | null; transaction: string | null; branch: string | null; till: string | null; cashier: string | null }[] }
+export type SupportAccessData = { can_grant: boolean; levels: Option[]; branches: Option[]; durations: Option[]; reports: Option[]
+  rows: { id: string; state: string; tone: string; level: string; branch: string | null; reason: string; from: string | null; until: string | null; by: string | null; withdrawn_by: string | null; can_revoke: boolean }[] }
+export type SyncPeerRow = { id: string; name: string; about: string; last_sync: string | null; status: string; tone: string; waiting: string; error: string | null; active: boolean
+  can_sync: boolean; can_resync: boolean; review: { items: { group: string; event: string; n: number }[]; groups: Option[] } | null
+  groups: { key: string; label: string; mode: string }[] }
+export type SyncData = { node: string; is_branch: boolean; modes: Option[]; empty: string; rows: SyncPeerRow[] }
 export type AgreementForm = { id: string | null; number: string | null; values: AgreementValues; currency: string; suppliers: Option[]; kinds: Option[]; accounts: Option[] }
 export type ExpiryList = { total: number; page: number; per: number; currency: string; exponent: number; value: number; rows: ExpiryRow[] }
 export type ExpiryOptions = { statuses: Option[]; warehouses: Option[]; suppliers: Option[]; settlements: Option[]; reasons: Option[]; methods: Option[]
@@ -1500,6 +1514,30 @@ export const api = {
   problemReportAction: (id: string, action: 'close' | 'resend', resolution = '') =>
     call<{ message: string; good: boolean; report: ProblemReport }>(`/office-api/system/problem-reports/${id}/action`, { method: 'POST', body: JSON.stringify({ action, resolution }) }),
   integrations: () => call<IntegrationsData>('/office-api/system/integrations'),
+  apiClients: () => call<ApiClientsData>('/office-api/system/api-clients'),
+  createApiClient: (body: Record<string, unknown>) => call<{ message: string; secret: ShownOnce; clients: ApiClientsData }>('/office-api/system/api-clients', { method: 'POST', body: JSON.stringify(body) }),
+  apiClientAction: (id: string, action: 'key' | 'webhook' | 'revoke', body: Record<string, unknown> = {}) =>
+    call<{ message: string; secret?: ShownOnce; clients: ApiClientsData }>(`/office-api/system/api-clients/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  momoCharges: (query: string, signal?: AbortSignal) => call<MomoData>(`/office-api/system/momo?${query}`, { signal }),
+  saveMomoGateway: (body: Record<string, unknown>) => call<{ message: string }>('/office-api/system/momo/gateway', { method: 'POST', body: JSON.stringify(body) }),
+  supportAccess: () => call<SupportAccessData>('/office-api/system/support-access'),
+  grantSupport: (body: Record<string, unknown>) => call<{ message: string; support: SupportAccessData }>('/office-api/system/support-access', { method: 'POST', body: JSON.stringify(body) }),
+  revokeSupport: (id: string) => call<{ message: string; support: SupportAccessData }>(`/office-api/system/support-access/${id}/revoke`, { method: 'POST' }),
+  syncCenter: () => call<SyncData>('/office-api/system/sync'),
+  syncAction: (id: string, action: 'sync' | 'decide' | 'modes' | 'toggle' | 'resync', body: Record<string, unknown> = {}) =>
+    call<{ message: string; good: boolean; sync: SyncData }>(`/office-api/system/sync/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  addBranchServer: (body: Record<string, unknown>) => call<{ message: string; secret: ShownOnce; sync: SyncData }>('/office-api/system/sync/branch', { method: 'POST', body: JSON.stringify(body) }),
+  /** Import a sync file from another server, or a till's unsent sales. */
+  syncImport: async (kind: 'sync' | 'till', file: File) => {
+    const body = new FormData()
+    body.append('kind', kind)
+    body.append('file', file)
+    const res = await fetch('/office-api/system/sync/import', { method: 'POST', body, credentials: 'same-origin',
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
+    const j = await res.json().catch(() => ({}))
+    if (!res.ok) throw new ApiError(j.detail ?? j.message ?? `Error ${res.status}`, res.status, j.error ?? 'error')
+    return j as { message: string; good: boolean; sync: SyncData }
+  },
   markDownBatches: (keys: string[], percent: string) => call<UserDone>('/office-api/expiry/markdown', { method: 'POST', body: JSON.stringify({ keys, percent }) }),
   nhisClaims: (query: string, signal?: AbortSignal) => call<NhisClaimList>(`/office-api/nhis-claims?${query}`, { signal }),
   nhisUnclaimed: (branch: string, upTo: string) => call<{ sales: number; amount: number; currency: string; exponent: number }>(`/office-api/nhis-claims/unclaimed?branch=${branch}&up_to=${upTo}`),
