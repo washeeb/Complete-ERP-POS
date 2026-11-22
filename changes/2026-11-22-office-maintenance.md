@@ -1,0 +1,2 @@
+### Added
+- **Maintenance rebuilt in the new back office (part 31).** Equipment: your own and customers' equipment with status, warranty, meter and next service; one piece of equipment with its details, servicing plans (with a checklist) and work orders, Report a breakdown, New meter reading, New work order, archive and restore. Work orders: open only by default (mine, kind); New work order; one work order with its cost, checklist and parts, and Start, Log time, Use parts, Parts back, Waiting for parts, Done, Invoice the customer and Cancel.

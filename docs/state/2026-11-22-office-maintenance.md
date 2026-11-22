@@ -1,0 +1,6 @@
+## New back office, part 31: Maintenance (branch `office-maintenance`, base `office-restaurant`)
+- **Server:** `App\Domain\Office\MaintenanceScreen` (equipment list, one piece of equipment with plans, work orders and archive state; work orders list, the new-order form, one work order with cost, checklist and parts) and `Office\MaintenanceController` (equipment save, breakdown, meter, plan save, archive / restore; work order open and start, labour, parts, parts back, wait, complete, invoice, cancel; customer, unit and service searches). Routes `office-api/maintenance/…`.
+- **Client:** `EquipmentPage`, `AssetPage`, `WorkOrdersPage`, `WorkOrderNewPage`, `WorkOrderPage`. Paths `/admin/equipment…`, `/admin/maintenance-orders…` → `/office/maintenance/equipment…`, `/office/maintenance/orders…` (a ticket's Work order now lands on the new page).
+- **office-check:** opens Equipment and Work orders from Stock, the first of each, and New work order (nothing saved). Its "old page inside" step now uses Stock → Sensors; the path test's "not rebuilt" example moved there too.
+- **Tests:** `OfficeMaintenanceTest` (3).
+- **Next:** Sensors (Sensors, Alarms, Temperature log, Sensor clouds), then Online (Sales), Distribution, Manufacturing, Fashion and Electronics.
