@@ -1,0 +1,6 @@
+## New back office, part 25: CRM (branch `office-crm`, base `office-golive`)
+- **Server:** `App\Domain\Office\CrmScreen` (leads / lead, deals / deal (customer from `?customer=`), contacts search, pipeline (columns, month figures), followUps (and the query used to find one), campaigns / campaign / reach, stages with archive state) and `Office\CrmController` (saveLead, convertLead, loseLead; saveDeal, quoteForDeal, winDeal, loseDeal, reopenDeal, moveDeal; logActivity, completeActivity, rescheduleActivity; saveCampaign, preview, send, cancel, copy; saveStage and archive through ArchiveService). Routes `office-api/crm/…`.
+- **Client:** `CrmParts` (FollowUpAsk, Activities), `CrmPipelinePage` (drag and drop, Move to…), `CrmLeadsPage` / `CrmLeadPage`, `CrmDealsPage` / `CrmDealPage`, `CrmFollowUpsPage`, `CrmCampaignsPage` / `CrmCampaignPage`, `CrmStagesPage`. Paths `/admin/crm-…` → `/office/crm/…`.
+- **office-check:** its "old page inside" step now uses Industries → Restaurant → Kitchen stations; the path test's "not rebuilt" example moved there too.
+- **Tests:** `OfficeCrmTest` (3).
+- **Next:** Services (Appointments, Memberships and plans, Prepaid passes, Licence keys, Commissions, Staff calendar), then Projects and Service desk.

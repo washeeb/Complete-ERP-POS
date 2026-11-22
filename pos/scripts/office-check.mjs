@@ -708,6 +708,34 @@ try {
           await page.goBack()
         }
       }
+      // CRM, rebuilt (part 25): each opens from Sales and loads; New lead and New deal open their forms (nothing is saved).
+      for (const [link, url, ready] of [
+        ['Pipeline', /\/office\/crm\/pipeline/, () => page.getByRole('region', { name: 'Pipeline' })],
+        ['Leads', /\/office\/crm\/leads/, () => page.getByText('No leads match.').or(page.getByRole('table', { name: 'Leads' }).getByRole('row').nth(1))],
+        ['Deals', /\/office\/crm\/deals/, () => page.getByText('No deals match.').or(page.getByRole('table', { name: 'Deals' }).getByRole('row').nth(1))],
+        ['Follow-ups', /\/office\/crm\/follow-ups/, () => page.getByText('Nothing to follow up.').or(page.getByRole('table', { name: 'Follow-ups' }).getByRole('row').nth(1))],
+        ['Campaigns', /\/office\/crm\/campaigns$/, () => page.getByRole('region', { name: 'Campaigns' })],
+        ['Pipeline stages', /\/office\/crm\/stages/, () => page.getByRole('table', { name: 'Pipeline stages' }).getByRole('row').nth(1)]]) {
+        await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Sales/ }).first().click()
+        const l = page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: menuName(link) }).first()
+        if (!await l.count()) { problems.push(`${look} ${w}: Sales has no ${link} link`); await page.keyboard.press('Escape'); continue }
+        await l.click()
+        await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await ready().first().waitFor({ timeout: 30000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        await page.screenshot({ path: out(`crm-${link.split(' ')[0].toLowerCase()}${link.includes(' ') ? '-' + link.split(' ')[1] : ''}-${look}-${w}`) })
+        for (const [button, form] of [['New lead', 'Lead'], ['New deal', 'Deal']]) {
+          const b = page.getByRole('button', { name: button })
+          if ((link === 'Leads' && button === 'New lead') || (link === 'Deals' && button === 'New deal')) {
+            await b.waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} has no ${button}`))
+            if (await b.count()) {
+              await b.click()
+              await page.getByRole('region', { name: form, exact: true }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${button} did not open the form`))
+              await page.screenshot({ path: out(`crm-${form.toLowerCase()}-form-${look}-${w}`) })
+              await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+            }
+          }
+        }
+      }
       // Go-live and Import data, rebuilt (part 24): each opens from Setup and loads. Nothing is planned, uploaded or imported.
       for (const [link, url, ready] of [
         ['Go-live', /\/office\/go-live$/, () => page.getByRole('table', { name: 'Checklist' }).getByRole('row').first()],
@@ -1277,17 +1305,18 @@ try {
         await page.unroute(`**/office-api/requests/${fakeRq}`)
       }
 
-      // Sales → CRM → Leads is still the current page (not rebuilt yet; Cost runs was rebuilt in part 19): it opens inside, and the address follows.
-      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Sales/ }).first().click()
-      await page.getByRole('navigation', { name: 'Sales' }).getByRole('link', { name: menuName('Leads') }).first().click()
-      await page.waitForURL(/\/office\/a\/crm-leads/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Leads did not open at /office/a/crm-leads (${page.url()})`))
+      // Industries → Restaurant → Kitchen stations is still the current page (not rebuilt yet; CRM was rebuilt in part 25): it opens
+      // inside, and the address follows.
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Industries/ }).first().click()
+      await page.getByRole('navigation', { name: 'Industries' }).getByRole('link', { name: menuName('Kitchen stations') }).first().click()
+      await page.waitForURL(/\/office\/a\/kitchen-stations/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Kitchen stations did not open at /office/a/kitchen-stations (${page.url()})`))
       await page.waitForFunction(() => {
         const f = document.querySelector('iframe[title="Page"]')
-        return f?.contentWindow?.location.pathname === '/admin/crm-leads' && !!f.contentDocument?.querySelector('h1')
-      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Leads page did not open inside`))
+        return f?.contentWindow?.location.pathname === '/admin/kitchen-stations' && !!f.contentDocument?.querySelector('h1')
+      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Kitchen stations page did not open inside`))
       const f = await frameReady()
       await f.locator('.fi-ta-table, .fi-ta-empty-state').first().waitFor({ timeout: 20000 })
-        .catch(() => problems.push(`${look} ${w}: the Leads list did not show inside`))
+        .catch(() => problems.push(`${look} ${w}: the Kitchen stations list did not show inside`))
       const chrome = await f.locator('.fi-sidebar, .fi-topbar').evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== 'none').length)
       if (chrome) problems.push(`${look} ${w}: the embedded page still shows its own menu`)
       await page.waitForTimeout(600) // the page's own loader fades out
@@ -1296,17 +1325,17 @@ try {
       // Recent lists the page just opened; the star adds it to favourites and takes it off again.
       const nav = page.getByRole('navigation', { name: 'Menu' })
       await (look === 'top' ? nav.getByRole('button', { name: 'Recent pages' }) : nav.getByRole('button', { name: 'Recent' })).click()
-      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /Leads/i }).first().waitFor({ timeout: 5000 })
-        .catch(() => problems.push(`${look} ${w}: Recent does not list Leads`))
+      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /Kitchen stations/i }).first().waitFor({ timeout: 5000 })
+        .catch(() => problems.push(`${look} ${w}: Recent does not list Kitchen stations`))
       await page.keyboard.press('Escape')
       const star = look === 'top' ? nav.getByRole('button', { name: 'Favourites' }) : nav.getByRole('button', { name: 'Favourites' })
       await star.click()
       const fav = page.getByRole('dialog', { name: 'Favourite pages' })
       await fav.getByRole('button', { name: /^Add “/ }).click().catch(() => problems.push(`${look} ${w}: Favourites has no "Add this page"`))
-      await fav.getByRole('link', { name: /Leads/i }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Leads did not become a favourite`))
+      await fav.getByRole('link', { name: /Kitchen stations/i }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Kitchen stations did not become a favourite`))
       await page.screenshot({ path: out(`favourites-${look}-${w}`) })
       await fav.getByRole('button', { name: /^Take “/ }).last().click().catch(() => undefined) // leave the dev account as it was
-      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Leads could not be taken off favourites`))
+      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Kitchen stations could not be taken off favourites`))
       await page.keyboard.press('Escape')
 
       // Search: Ctrl+K, type, a page of the menu is offered.

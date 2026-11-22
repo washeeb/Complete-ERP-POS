@@ -18,7 +18,7 @@ const menu: Menu = {
 
 describe('addresses', () => {
   it('opens a current back-office page inside the new one, and back', () => {
-    expect(appPathFor('/admin/crm-leads?tableSearch=rice')).toBe('/office/a/crm-leads?tableSearch=rice')
+    expect(appPathFor('/admin/kitchen-stations?tableSearch=rice')).toBe('/office/a/kitchen-stations?tableSearch=rice')
     expect(appPathFor('/admin/products/abc/edit')).toBe('/office/a/products/abc/edit')
     expect(appPathFor('/admin')).toBe('/office/')
     expect(appPathFor('https://evil.example/admin')).toBe('/office/') // never another site
@@ -187,6 +187,14 @@ describe('addresses', () => {
     expect(appPathFor('/admin/support-access-grants')).toBe('/office/support-access')
     expect(appPathFor('/admin/sync-peers')).toBe('/office/sync-center')
     expect(appPathFor('/admin/go-live')).toBe('/office/go-live')
+    expect(appPathFor('/admin/crm-leads?tableSearch=Kofi')).toBe('/office/crm/leads?q=Kofi')
+    expect(appPathFor('/admin/crm-leads/0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b/edit')).toBe('/office/crm/leads/0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b')
+    expect(appPathFor('/admin/crm-deals/create?customer=abc')).toBe('/office/crm/deals/new?customer=abc')
+    expect(routeOf('/office/crm/deals/0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b')).toEqual({ page: 'crm-deal', id: '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b' })
+    expect(appPathFor('/admin/crm-pipeline')).toBe('/office/crm/pipeline')
+    expect(appPathFor('/admin/crm-follow-ups')).toBe('/office/crm/follow-ups')
+    expect(appPathFor('/admin/crm-campaigns/create')).toBe('/office/crm/campaigns/new')
+    expect(appPathFor('/admin/crm-stages')).toBe('/office/crm/stages')
     expect(appPathFor('/admin/import-data?type=products')).toBe('/office/import?type=products')
     expect(appPathFor('/admin/import-data?type=stock_count&context=abc&show=xyz')).toBe('/office/import?type=stock_count&context=abc&show=xyz')
     expect(appPathFor('/admin/cash/close-day')).toBe('/office/close-day')

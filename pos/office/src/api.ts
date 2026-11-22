@@ -821,6 +821,41 @@ export type ImportUpload = { token: string; file: string; headings: string[]; ro
 export type ImportResult = { id: string; status: string; status_label: string; file: string; running: boolean
   progress: { label: string; done: number; total: number; left: string | null } | null; total: number; ok: number; errors: number; counts: string[]; ignored: string[]
   link: { label: string; open: string } | null; results: { row: number; ref: string; outcome: string; message: string }[] }
+export type CrmActivityRow = { id: string; type: string; subject: string; details: string | null; due_at: string | null; late: boolean; who: string | null; done: string | null
+  outcome: string | null; by: string | null; can_do: boolean }
+export type FollowUpChoices = { types: Option[]; people: Option[]; me: string; due: string }
+export type CrmLeadRow = { id: string; number: string; name: string; company: string | null; phone: string | null; email: string | null; interest: string | null; source: string
+  status: string; status_label: string; tone: string; worth: number | null; owner: string | null; open: boolean }
+export type CrmLeadList = { currency: string; exponent: number; total: number; page: number; per: number; open: string; statuses: Option[]; sources: Option[]; people: Option[]
+  can_create: boolean; can_convert: boolean; rows: CrmLeadRow[] }
+export type CrmLeadDetail = FollowUpChoices & { currency: string; exponent: number; id: string | null; number: string | null; open: boolean; status_label: string | null
+  customer: { name: string | null; open: string } | null
+  values: { name: string; company_name: string; source: string; phone: string; email: string; status: string; interest: string; value: string; branch_id: string; owner_id: string
+    notes: string; consents: Record<string, boolean> }
+  sources: Option[]; statuses: Option[]; branches: Option[]; people: Option[]; can_edit: boolean; can_convert: boolean; activities: CrmActivityRow[] }
+export type CrmDealRow = { id: string; number: string; title: string; contact: string; stage: string | null; status: string; tone: string; value: number; weighted: number | null
+  closes: string | null; late: boolean; quote: string | null; owner: string | null; lost_reason: string | null }
+export type CrmDealList = { currency: string; exponent: number; total: number; page: number; per: number; status: string; statuses: Option[]; stages: Option[]; people: Option[]
+  can_create: boolean; rows: CrmDealRow[] }
+export type CrmDealDetail = FollowUpChoices & { currency: string; exponent: number; id: string | null; number: string | null; status: string; status_label: string; tone: string
+  stage: string | null; lost_reason: string | null
+  values: { title: string; stage_id: string; customer_id: string; customer_name: string | null; lead_id: string; lead_name: string | null; value: string; expected_close_on: string
+    branch_id: string; owner_id: string; notes: string }
+  stages: Option[]; branches: Option[]; people: Option[]; quote: { number: string | null; open: string } | null
+  actions: { edit: boolean; quote: boolean; win: boolean; lose: boolean; reopen: boolean }; activities: CrmActivityRow[] }
+export type CrmPipelineData = { currency: string; exponent: number; mine: boolean; can_move: boolean; can_create: boolean; open: number; weighted: number; won: number; won_value: number; lost: number
+  columns: { id: string; name: string; probability: number; total: number; weighted: number
+    deals: { id: string; number: string; title: string; who: string; value: number; closes: string | null; late: boolean; quote: string | null; owner: string | null }[] }[] }
+export type CrmFollowUpList = { total: number; page: number; per: number; mine: boolean; open: string; types: Option[]; people: Option[]
+  rows: { id: string; due_at: string | null; late: boolean; type: string; subject: string; details: string | null; with: string; open: string | null; who: string | null; done: string | null
+    outcome: string | null; can_do: boolean }[] }
+export type CrmCampaignList = { can_create: boolean
+  rows: { id: string; number: string; name: string; body: string; channel: string; status: string; status_label: string; tone: string; send_at: string | null; sent: number; skipped: number
+    delivered: number | null; failed: number | null; sent_at: string | null; can_edit: boolean; can_send: boolean; later: boolean; reach: number | null; can_cancel: boolean }[] }
+export type CrmCampaignForm = { currency: string; exponent: number; id: string | null; number: string | null; channels: Option[]; branches: Option[]; tags: string[]; industries: Option[] | null
+  values: { name: string; industry_id: string; channel: string; subject: string; whatsapp_template: string; body: string; send_at: string
+    audience: { tags: string[]; branch_id: string; min_spent: string; bought_within_days: string; not_bought_days: string; include_leads: boolean } } }
+export type CrmStageList = { kinds: Option[]; rows: (Archivable & { id: string; sort: number; name: string; kind: string; kind_label: string; probability: number; deals: number })[] }
 export type AgreementForm = { id: string | null; number: string | null; values: AgreementValues; currency: string; suppliers: Option[]; kinds: Option[]; accounts: Option[] }
 export type ExpiryList = { total: number; page: number; per: number; currency: string; exponent: number; value: number; rows: ExpiryRow[] }
 export type ExpiryOptions = { statuses: Option[]; warehouses: Option[]; suppliers: Option[]; settlements: Option[]; reasons: Option[]; methods: Option[]
@@ -1546,6 +1581,34 @@ export const api = {
   grantSupport: (body: Record<string, unknown>) => call<{ message: string; support: SupportAccessData }>('/office-api/system/support-access', { method: 'POST', body: JSON.stringify(body) }),
   revokeSupport: (id: string) => call<{ message: string; support: SupportAccessData }>(`/office-api/system/support-access/${id}/revoke`, { method: 'POST' }),
   syncCenter: () => call<SyncData>('/office-api/system/sync'),
+
+  crmLeads: (query: string, signal?: AbortSignal) => call<CrmLeadList>(`/office-api/crm/leads?${query}`, { signal }),
+  crmLead: (id: string | null) => call<CrmLeadDetail>(id ? `/office-api/crm/leads/${id}` : '/office-api/crm/leads/form'),
+  saveCrmLead: (id: string | null, body: Record<string, unknown>) => call<{ id: string; message: string }>(id ? `/office-api/crm/leads/${id}` : '/office-api/crm/leads', { method: 'POST', body: JSON.stringify(body) }),
+  crmLeadAction: (id: string, action: 'convert' | 'lose', body: Record<string, unknown> = {}) =>
+    call<{ message: string; open?: string }>(`/office-api/crm/leads/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  crmDeals: (query: string, signal?: AbortSignal) => call<CrmDealList>(`/office-api/crm/deals?${query}`, { signal }),
+  crmDeal: (id: string | null, query = '') => call<CrmDealDetail>(id ? `/office-api/crm/deals/${id}` : `/office-api/crm/deals/form${query ? `?${query}` : ''}`),
+  crmContacts: (kind: 'customer' | 'lead') => (q: string, signal?: AbortSignal) =>
+    call<{ results: { id: string; label: string; detail?: string }[] }>(`/office-api/crm/contacts?kind=${kind}&q=${encodeURIComponent(q)}`, { signal }),
+  saveCrmDeal: (id: string | null, body: Record<string, unknown>) => call<{ id: string; message: string }>(id ? `/office-api/crm/deals/${id}` : '/office-api/crm/deals', { method: 'POST', body: JSON.stringify(body) }),
+  crmDealAction: (id: string, action: 'quote' | 'win' | 'lose' | 'reopen' | 'move', body: Record<string, unknown> = {}) =>
+    call<{ message: string; open?: string; deal?: CrmDealDetail }>(`/office-api/crm/deals/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  crmPipeline: (mine: boolean) => call<CrmPipelineData>(`/office-api/crm/pipeline${mine ? '?mine=1' : ''}`),
+  crmFollowUps: (query: string, signal?: AbortSignal) => call<CrmFollowUpList>(`/office-api/crm/follow-ups?${query}`, { signal }),
+  crmActivity: (body: Record<string, unknown>) => call<{ id: string; message: string }>('/office-api/crm/activities', { method: 'POST', body: JSON.stringify(body) }),
+  crmActivityAction: (id: string, action: 'done' | 'move', body: Record<string, unknown> = {}) =>
+    call<{ message: string }>(`/office-api/crm/activities/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  crmCampaigns: () => call<CrmCampaignList>('/office-api/crm/campaigns'),
+  crmCampaign: (id: string | null) => call<CrmCampaignForm>(id ? `/office-api/crm/campaigns/${id}` : '/office-api/crm/campaigns/form'),
+  crmReach: (body: Record<string, unknown>) => call<{ reach: string }>('/office-api/crm/campaigns/reach', { method: 'POST', body: JSON.stringify(body) }),
+  saveCrmCampaign: (id: string | null, body: Record<string, unknown>) => call<{ id: string; message: string }>(id ? `/office-api/crm/campaigns/${id}` : '/office-api/crm/campaigns', { method: 'POST', body: JSON.stringify(body) }),
+  crmCampaignAction: (id: string, action: 'send' | 'cancel' | 'copy') =>
+    call<{ message: string; open?: string; campaigns?: CrmCampaignList }>(`/office-api/crm/campaigns/${id}/action`, { method: 'POST', body: JSON.stringify({ action }) }),
+  crmStages: (query: string, signal?: AbortSignal) => call<CrmStageList>(`/office-api/crm/stages?${query}`, { signal }),
+  saveCrmStage: (id: string | null, body: Record<string, unknown>) => call<{ id: string; message: string }>(id ? `/office-api/crm/stages/${id}` : '/office-api/crm/stages', { method: 'POST', body: JSON.stringify(body) }),
+  archiveCrmStage: (id: string, restore: boolean, reason: string) =>
+    call<{ message: string }>(`/office-api/crm/stages/${id}/archive`, { method: 'POST', body: JSON.stringify({ restore, reason: restore ? null : reason }) }),
   goLive: () => call<GoLiveData>('/office-api/system/go-live'),
   goLiveAction: (action: string, body: Record<string, unknown> = {}) => call<{ message: string; golive: GoLiveData }>('/office-api/system/go-live', { method: 'POST', body: JSON.stringify({ action, ...body }) }),
   importPage: (type: string) => call<ImportPageData>(`/office-api/system/import?type=${encodeURIComponent(type)}`),
