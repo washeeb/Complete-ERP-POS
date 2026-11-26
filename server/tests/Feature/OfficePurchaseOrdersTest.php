@@ -90,7 +90,7 @@ it('receives goods, confirms a service delivered, closes short, orders again and
     $r = $this->postJson("/office-api/purchase-orders/{$id}/action", ['action' => 'receive', 'supplier_ref' => 'DN-77',
         'lines' => [['purchase_order_line_id' => $line['id'], 'qty' => '2']]])->assertOk()->json();
     expect($r['receipt']['number'])->not->toBeEmpty()->and($r['receipt']['held'])->toBeFalse()->and($r['order']['status'])->toBe('partially_received')
-        ->and($r['order']['actions']['receipts'])->toContain('/admin/goods-receipts')
+        ->and($r['order']['actions']['receipts'])->toContain('/office/goods-received?q=')
         ->and((string) DB::table('stock_levels')->where('warehouse_id', $this->hq->id)->where('product_id', $this->milo->id)->value('on_hand'))->toBe('48.000');
 
     $service = $r['order']['actions']['confirm_delivered']['lines'][0];

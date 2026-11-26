@@ -428,9 +428,9 @@ final class Sensors
             ->filter(fn (User $u) => $this->authz->allows($u, 'iot.respond', $branch) || ($escalate && $this->authz->allowsAnywhere($u, 'iot.manage')));
         // Escalated: managers get "Nobody has acknowledged it", the others on duty the usual reminder (each person once).
         $managers = $escalate ? $people->filter(fn (User $u) => $this->authz->allowsAnywhere($u, 'iot.manage'))->pluck('id')->all() : [];
-        $this->notifier->toPermission($s->tenant_id, 'iot.respond', $s->branch_id, $title, $body, url('/admin/iot-alarms'), $managers, 'iot');
+        $this->notifier->toPermission($s->tenant_id, 'iot.respond', $s->branch_id, $title, $body, url('/office/sensors/alarms'), $managers, 'iot');
         if ($escalate) {
-            $this->notifier->toPermission($s->tenant_id, 'iot.manage', null, 'Nobody has acknowledged it: '.$title, $body, url('/admin/iot-alarms'), topic: 'iot');
+            $this->notifier->toPermission($s->tenant_id, 'iot.manage', null, 'Nobody has acknowledged it: '.$title, $body, url('/office/sensors/alarms'), topic: 'iot');
         }
         $messenger = app(Messenger::class);
         foreach ($people as $u) {

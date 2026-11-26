@@ -46,7 +46,7 @@ class MfaResetCommand extends Command
             return self::FAILURE;
         }
 
-        $this->info("Done. {$user->name} signs in at ".url('/admin').' with their username and password, then scans a new code with the authenticator app.');
+        $this->info("Done. {$user->name} signs in at ".url('/office/').' with their username and password, then scans a new code with the authenticator app.');
 
         return self::SUCCESS;
     }

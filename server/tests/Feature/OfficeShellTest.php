@@ -48,9 +48,9 @@ it('gives each person the menu of the current back office, and only what they ma
     $tabs = collect($menu['tabs'])->pluck('label');
     $urls = collect($menu['tabs'])->flatMap(fn ($t) => collect($t['sections'])->flatMap(fn ($s) => collect($s['groups'])->flatMap(fn ($g) => collect($g['items'])->pluck('url'))));
     expect($tabs)->toContain('Sales')->toContain('Stock')
-        ->and($urls)->toContain('/admin/products')
-        ->and($urls->every(fn ($u) => str_starts_with($u, '/admin')))->toBeTrue()
-        ->and(collect($menu['create'])->flatMap(fn ($g) => collect($g['items'])->pluck('url')))->toContain('/admin/products/create');
+        ->and($urls)->toContain('/office/products') // the new back office's addresses (part 42)
+        ->and($urls->every(fn ($u) => str_starts_with($u, '/office')))->toBeTrue()
+        ->and(collect($menu['create'])->flatMap(fn ($g) => collect($g['items'])->pluck('url')))->toContain('/office/products/new');
 });
 
 it('leaves out of a teller\'s menu what a teller may not open', function () {
@@ -58,7 +58,7 @@ it('leaves out of a teller\'s menu what a teller may not open', function () {
     $this->actingAs($teller, 'web');
     $theirs = collect($this->getJson('/office-api/menu')->assertOk()->json('tabs'))
         ->flatMap(fn ($t) => collect($t['sections'])->flatMap(fn ($s) => collect($s['groups'])->flatMap(fn ($g) => collect($g['items'])->pluck('url'))));
-    expect($theirs)->not->toContain('/admin/users')->not->toContain('/admin/staff-cards');
+    expect($theirs)->not->toContain('/office/users')->not->toContain('/office/staff-cards');
 });
 
 it('searches records the way the current back office does', function () {
@@ -66,7 +66,7 @@ it('searches records the way the current back office does', function () {
     $this->actingAs($this->owner, 'web');
     $hits = collect($this->getJson('/office-api/search?q=Boateng')->assertOk()->json('results'));
     expect(mb_strtolower($hits->pluck('title')->implode(' ')))->toContain('kwabena boateng stores')
-        ->and($hits->every(fn ($h) => str_starts_with($h['url'], '/admin')))->toBeTrue();
+        ->and($hits->every(fn ($h) => str_starts_with($h['url'], '/office')))->toBeTrue();
     $this->getJson('/office-api/search?q=K')->assertOk()->assertJsonPath('results', []);
 });
 
@@ -78,7 +78,7 @@ it('builds Home from what the person may see: reminders, KPIs against the period
         ->and(collect($home['kpis'])->firstWhere('key', 'sales'))->toHaveKeys(['current', 'previous', 'change', 'spark'])
         ->and($home['trend']['months'])->toHaveCount(12)
         ->and(collect($home['trend']['series'])->pluck('key'))->toContain('sales')
-        ->and(collect($home['reminders'])->every(fn ($r) => str_starts_with($r['url'], '/admin')))->toBeTrue()
+        ->and(collect($home['reminders'])->every(fn ($r) => str_starts_with($r['url'], '/office')))->toBeTrue()
         ->and($home['layout'])->toBeNull();
     $this->getJson('/office-api/home?period=forever')->assertOk()->assertJsonPath('period.key', 'month');
 });
@@ -91,7 +91,7 @@ it('keeps each person\'s arrangement of Home, and only what makes sense', functi
         ->assertOk()
         ->assertJsonPath('layout.cols', 2)
         ->assertJsonPath('layout.panels', [['id' => 'kpis', 'col' => 1, 'hidden' => false], ['id' => 'trend', 'col' => 1, 'hidden' => true]])
-        ->assertJsonPath('layout.tiles', [['url' => '/admin/products', 'label' => 'Products']])
+        ->assertJsonPath('layout.tiles', [['url' => '/office/products', 'label' => 'Products']]) // kept at its new-look address
         ->assertJsonPath('layout.meter', 'stock');
     $this->getJson('/office-api/home')->assertJsonPath('layout.cols', 2);
     $this->postJson('/office-api/prefs', ['office_look' => 'side'])->assertOk();

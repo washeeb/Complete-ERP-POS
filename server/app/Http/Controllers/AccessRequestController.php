@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Domain\Messaging\Notifier;
 use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
-use App\Filament\Resources\Users\UserResource;
 use App\Models\Permission;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -32,7 +31,7 @@ class AccessRequestController extends Controller
         $label = filled($data['permission'] ?? null) ? (Permission::whereKey($data['permission'])->value('label') ?? null) : null;
         $body = "Page: {$path}".($label ? "\nNeeds: {$label}" : '').(filled($data['note'] ?? null) ? "\nMessage: ".trim($data['note']) : '');
         $told = $notifier->toPermission($user->tenant_id, 'admin.roles.manage', null, "{$user->name} asks for access", $body,
-            UserResource::getUrl('edit', ['record' => $user], panel: 'admin'), [$user->id], topic: 'approvals');
+            url('/office/users/'.$user->id), [$user->id], topic: 'approvals');
         DB::transaction(fn () => app(AuditLog::class)->record(Actor::user($user, 'web'), 'access.requested', $user,
             ['page' => [null, mb_substr($path, 0, 200)], 'permission' => [null, $data['permission'] ?? null]]));
 

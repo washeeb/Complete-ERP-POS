@@ -29,7 +29,7 @@ it('lists invoices to enter, turns one back and marks one entered', function () 
     $list = $this->getJson('/office-api/supplier-invoices')->assertOk()->json();
     expect($list['total'])->toBe(2)->and($list['waiting'])->toBe(2)->and($list['amount'])->toBe(200000)
         ->and(collect($list['rows'])->firstWhere('invoice_no', 'EC-100'))->toMatchArray(['supplier' => 'ERNEST CHEMISTS', 'amount' => 120000, 'sent_by' => 'Mr Mensah', 'status' => 'received'])
-        ->and($list['rows'][0]['actions']['enter'])->toContain('/admin/supplier-bills/create?invoice=');
+        ->and($list['rows'][0]['actions']['enter'])->toContain('/office/supplier-bills/new?invoice=');
     expect($this->getJson('/office-api/supplier-invoices?q=EC-101')->json('total'))->toBe(1);
 
     $this->postJson("/office-api/supplier-invoices/{$a->id}/action", ['action' => 'reject'])->assertStatus(422)->assertJsonValidationErrors('reason');

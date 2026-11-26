@@ -241,7 +241,7 @@ it('builds reports with drill-down, keeps them within the person’s access, and
     $r = $engine->run($this->owner, 'sales_lines', ['dimensions' => ['branch'], 'measures' => ['qty', 'net', 'receipts'], 'period' => 'today']);
     expect($r['rows'][0][0])->toBe('HQ')->and($r['rows'][0][1])->toBe('5')->and($r['rows'][0][3])->toBe('2')->and(end($r['rows'])[0])->toBe('Total');
     $detail = $engine->run($this->owner, 'sales_lines', ['dimensions' => ['branch'], 'measures' => ['qty'], 'period' => 'today'], $r['raw'][0]);
-    expect($detail['rows'])->toHaveCount(2)->and($detail['links'][0])->toStartWith('/admin/sales/')->and($detail['headings'])->toContain('Receipt');
+    expect($detail['rows'])->toHaveCount(2)->and($detail['links'][0])->toStartWith('/office/sales/')->and($detail['headings'])->toContain('Receipt');
 
     $bm = staff($this->owner, 'adwoa', 4, 'branch_manager', ScopeType::Branch, $this->branches['BA']->id);
     expect($engine->run($bm, 'sales_lines', ['dimensions' => ['branch'], 'measures' => ['net']])['rows'])->toBe([])

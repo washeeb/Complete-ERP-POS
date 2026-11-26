@@ -42,7 +42,7 @@ it('approves a till request from To-do, after the person confirms it is them', f
     $this->actingAs($this->manager, 'web');
     Reconfirm::$assumeConfirmed = false;
     $this->postJson("/office-api/till-requests/{$this->request->id}/decide", ['yes' => true])->assertStatus(428)
-        ->assertJsonPath('error', 'reconfirm')->assertJsonPath('url', url('/admin/confirm-its-you'));
+        ->assertJsonPath('error', 'reconfirm')->assertJsonPath('url', '/office/confirm-its-you');
     expect($this->request->fresh()->status)->toBe('pending');
 
     Reconfirm::$assumeConfirmed = true;
@@ -71,5 +71,5 @@ it('lists the documents waiting for approval, with their number, who asked and t
     $claims = collect($this->getJson('/office-api/todo')->assertOk()->json('groups'))->firstWhere('key', 'claim');
     expect($claims)->not->toBeNull()
         ->and($claims['items'][0])->toMatchArray(['id' => $claim->id, 'title' => $claim->number, 'amount' => 4500])
-        ->and($claims['items'][0]['url'])->toStartWith('/admin/expense-claims/');
+        ->and($claims['items'][0]['url'])->toStartWith('/office/expense-claims/');
 });

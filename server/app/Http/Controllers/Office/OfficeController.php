@@ -10,7 +10,6 @@ use App\Domain\Pos\TillApprovals;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
-use App\Filament\Pages\ConfirmItsYou;
 use App\Filament\Pages\SetupWizard;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
@@ -18,6 +17,7 @@ use App\Models\TillApproval;
 use App\Models\User;
 use App\Security\ReconfirmNeeded;
 use App\Support\Look;
+use App\Support\OfficeUrl;
 use App\Support\UserPrefs;
 use BackedEnum;
 use Filament\Facades\Filament;
@@ -25,7 +25,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
@@ -191,7 +190,7 @@ class OfficeController extends Controller
         try {
             $r = $approvals->decide(Actor::user($user, 'web'), $r, (bool) $data['yes'], $data['note'] ?? null);
         } catch (ReconfirmNeeded $e) {
-            return response()->json(['error' => 'reconfirm', 'detail' => $e->getMessage(), 'url' => ConfirmItsYou::getUrl()], 428);
+            return response()->json(['error' => 'reconfirm', 'detail' => $e->getMessage(), 'url' => '/office/confirm-its-you'], 428);
         } catch (AccessDenied $e) {
             return response()->json(['error' => $e->errorCode, 'detail' => $e->getMessage()], 403);
         } catch (DomainException $e) {
@@ -226,9 +225,10 @@ class OfficeController extends Controller
     /** A page of the current back office, as a path on this site (never another site). */
     private function path(string $url): string
     {
-        $parts = parse_url($url);
+        $office = (string) OfficeUrl::from($url);
+        $parts = parse_url($office);
         $path = '/'.ltrim((string) ($parts['path'] ?? ''), '/');
 
-        return Str::startsWith($path, '/admin') ? $path.(isset($parts['query']) ? '?'.$parts['query'] : '') : '/admin';
+        return str_starts_with($path, '/office') ? $path.(isset($parts['query']) ? '?'.$parts['query'] : '') : '/office/'; // the new back office's address
     }
 }

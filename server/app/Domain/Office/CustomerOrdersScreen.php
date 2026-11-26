@@ -3,8 +3,6 @@
 namespace App\Domain\Office;
 
 use App\Filament\Resources\CustomerOrders\CustomerOrderResource;
-use App\Filament\Resources\Invoices\InvoiceResource;
-use App\Filament\Resources\Waybills\WaybillResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Models\Customer;
@@ -17,6 +15,7 @@ use App\Support\IndustryContext;
 use App\Support\Money;
 use App\Support\Qty;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Quotes & orders in the new back office (part 15 of the rewrite), as the current pages: the list (search by quote or
@@ -150,9 +149,9 @@ final class CustomerOrdersScreen
                 'deliver' => $o->isDeliverable() && Erp::can('sales.deliver', $wh)
                     ? ['lines' => $o->lines->map(fn ($l) => ['id' => $l->id, 'item' => "{$l->sku} · {$l->name} ({$l->uom_code})", 'ordered' => Fields::qty($l->qty),
                         'delivered' => Fields::qty($l->delivered_qty), 'qty' => Fields::qty($left($l))])->values()->all()] : null,
-                'waybill' => $delivery ? ProductsScreen::path($waybill ? WaybillResource::getUrl('view', ['record' => $waybill])
-                    : WaybillResource::getUrl('create', ['kind' => 'delivery', 'source' => $delivery->id])) : null,
-                'invoices' => in_array($o->status, ['partially_delivered', 'delivered'], true) ? ProductsScreen::path(InvoiceResource::getUrl('index', ['tableSearch' => $o->number])) : null,
+                'waybill' => $delivery ? ($waybill ? '/office/waybills/'.($waybill instanceof Model ? $waybill->getKey() : $waybill)
+                    : '/office/waybills/new?'.http_build_query(['kind' => 'delivery', 'source' => $delivery->id])) : null,
+                'invoices' => in_array($o->status, ['partially_delivered', 'delivered'], true) ? '/office/invoices?'.http_build_query(['q' => $o->number]) : null,
                 'cancel' => in_array($o->status, ['quotation', 'on_hold', 'confirmed', 'partially_delivered'], true) && $manage
                     ? ($o->status === 'quotation' ? 'Mark lost' : 'Cancel order') : null,
             ],

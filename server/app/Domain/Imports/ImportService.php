@@ -22,7 +22,6 @@ use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
 use App\Domain\Support\DomainException;
-use App\Filament\Pages\ImportData;
 use App\Models\DataImport;
 use App\Models\StockAdjustment;
 use App\Models\StockCount;
@@ -228,7 +227,7 @@ final class ImportService
                 default => "Not imported: {$done->file_name}",
             })->body($done->status === 'checked' && ! $done->rows_error ? 'Open it to import the file: it is already on the server.' : 'Open it for the details.')
                 ->actions([Action::make('open')->label('Open')->markAsRead()
-                    ->url(ImportData::getUrl(['type' => $done->type, 'show' => $done->id], panel: 'admin'))])
+                    ->url(url('/office/import?'.http_build_query(['type' => $done->type, 'show' => $done->id])))])
                 ->{$ok ? 'success' : 'danger'}()->sendToDatabase($user);
         }
 

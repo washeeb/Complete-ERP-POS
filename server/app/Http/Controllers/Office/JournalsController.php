@@ -8,7 +8,6 @@ use App\Domain\Office\JournalsScreen;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
-use App\Filament\Pages\ConfirmItsYou;
 use App\Filament\Resources\JournalEntries\JournalEntryResource;
 use App\Http\Controllers\Controller;
 use App\Security\ReconfirmNeeded;
@@ -100,7 +99,7 @@ class JournalsController extends Controller
         try {
             return response()->json(DB::transaction($fn));
         } catch (ReconfirmNeeded $e) {
-            return response()->json(['error' => 'reconfirm', 'detail' => $e->getMessage(), 'url' => ConfirmItsYou::getUrl()], 428);
+            return response()->json(['error' => 'reconfirm', 'detail' => $e->getMessage(), 'url' => '/office/confirm-its-you'], 428);
         } catch (AccessDenied $e) {
             return response()->json(['error' => $e->errorCode, 'detail' => $e->getMessage() ?: 'You may not do this here.'], 403);
         } catch (DomainException $e) {

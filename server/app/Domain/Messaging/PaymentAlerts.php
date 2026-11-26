@@ -2,7 +2,6 @@
 
 namespace App\Domain\Messaging;
 
-use App\Filament\Resources\Sales\SaleResource;
 use App\Models\Branch;
 use App\Models\Sale;
 use App\Models\SalePayment;
@@ -64,7 +63,7 @@ final class PaymentAlerts
                     'receipt_no' => $sale->receipt_no, 'branch' => $branch?->name ?? '', 'till' => $till?->name ?? '', 'cashier' => $sale->cashier_name ?? '',
                     'reference' => $p->reference ?: '—', 'time' => Carbon::parse($sale->occurred_at)->setTimezone($tz)->format('j M H:i')];
                 $this->toPeople($sale->tenant_id, $people, 'payment_alert', $vars, "{$vars['method']} {$vars['amount']} received",
-                    "Receipt {$vars['receipt_no']}, {$vars['branch']} ({$vars['till']}), {$vars['time']}. Ref {$vars['reference']}.", SaleResource::getUrl('view', ['record' => $sale->id]), $sale->receipt_no);
+                    "Receipt {$vars['receipt_no']}, {$vars['branch']} ({$vars['till']}), {$vars['time']}. Ref {$vars['reference']}.", url('/office/sales/'.$sale->id), $sale->receipt_no);
             }
 
             return $payments->count();

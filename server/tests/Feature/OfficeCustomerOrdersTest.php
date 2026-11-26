@@ -58,7 +58,7 @@ it('quotes, holds for credit, releases, delivers part and cancels the rest, thro
     $line = $deliver['lines'][0]['id'];
     $done = $this->postJson("/office-api/customer-orders/{$id}/action", ['action' => 'deliver', 'qtys' => [$line => '2'], 'delivered_to' => 'Kofi'])->assertOk()->json();
     expect($done['message'])->toContain('Invoice')->and($done['order']['status'])->toBe('partially_delivered')->and(Invoice::count())->toBe(1)
-        ->and($done['order']['actions']['invoices'])->toStartWith('/admin/invoices?tableSearch=SO-'); // the client opens the rebuilt Invoices
+        ->and($done['order']['actions']['invoices'])->toStartWith('/office/invoices?q=SO-'); // the rebuilt Invoices, searched
     $this->postJson("/office-api/customer-orders/{$id}/action", ['action' => 'cancel', 'reason' => 'Customer changed their mind'])->assertOk();
     expect(CustomerOrder::find($id)->status)->not->toBe('partially_delivered');
 

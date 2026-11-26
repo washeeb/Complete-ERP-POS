@@ -106,7 +106,7 @@ class ServiceDeskController extends Controller
                 $asset = $request->validate(['asset_id' => ['required', 'uuid']], ['asset_id.*' => 'Choose the equipment.'])['asset_id'];
 
                 return $this->act(fn (Actor $actor) => ['message' => 'Work order opened.',
-                    'open' => '/admin/maintenance-orders/'.app(Maintenance::class)->fromTicket($actor, $t, $asset)->id]);
+                    'open' => '/office/maintenance/orders/'.app(Maintenance::class)->fromTicket($actor, $t, $asset)->id]);
             case 'resolve':
                 $this->allowed(ServiceDeskScreen::canWork());
                 $d = $request->validate(['resolution' => ['required', 'string', 'max:5000'], 'tell' => ['nullable', Rule::in(array_keys(ServiceDeskScreen::replyChannels($t)))]],

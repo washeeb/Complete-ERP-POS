@@ -5,8 +5,6 @@ namespace App\Domain\Office;
 use App\Domain\Pos\TillApprovals;
 use App\Filament\Pages\TillRequests;
 use App\Filament\Pages\TimeApprovals;
-use App\Filament\Resources\AccessRequests\AccessRequestResource;
-use App\Filament\Resources\ReviewItems\ReviewItemResource;
 use App\Filament\Support\Erp;
 use App\Filament\Widgets\Panels\MyApprovals;
 use App\Models\AccessRequest;
@@ -15,6 +13,7 @@ use App\Models\Tenant;
 use App\Models\TillApproval;
 use App\Models\User;
 use App\Support\Money;
+use App\Support\OfficeUrl;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
@@ -65,14 +64,14 @@ final class TodoData
             ->filter(fn (TillApproval $r) => $svc->mayDecide($this->user, $r))->values();
 
         return ['key' => 'till', 'label' => 'Till requests', 'hint' => 'A cashier is waiting at the till.', 'count' => $rows->count(),
-            'url' => '/admin/till-requests', 'inline' => true,
+            'url' => '/office/till-requests', 'inline' => true,
             'items' => $rows->map(fn (TillApproval $r) => [
                 'id' => $r->id, 'title' => $r->label(), 'detail' => $r->summary.($r->reason ? ' · '.$r->reason : ''),
                 'who' => $r->cashier_name, 'where' => trim(($r->till?->name ?? '').' · '.($r->branch?->name ?? ''), ' ·'),
                 'amount' => $r->kind === 'discount' ? null : ($r->amount_minor ?: null), 'percent' => $r->kind === 'discount' ? $r->limit_amount / 100 : null,
                 'at' => $r->created_at->toIso8601String(), 'expires_at' => $r->expires_at->toIso8601String(),
                 'lines' => collect($r->details ?? [])->map(fn ($d) => trim(($d['qty'] ?? '').' × '.($d['name'] ?? ''), ' ×'))->take(6)->all(),
-                'url' => '/admin/till-requests?id='.$r->id,
+                'url' => '/office/till-requests?id='.$r->id,
             ])->all()];
     }
 
@@ -144,10 +143,10 @@ final class TodoData
         $count = AccessRequest::query()->waiting()->where('requested_by', '<>', $this->user->id)->count();
 
         return $count === 0 ? null : ['key' => 'access', 'label' => 'Access requests', 'hint' => 'IT asks; you decide.', 'count' => $count,
-            'url' => $this->path(AccessRequestResource::getUrl('index')), 'inline' => false,
+            'url' => '/office/access-requests', 'inline' => false,
             'items' => $rows->map(fn (AccessRequest $r) => ['id' => $r->id, 'title' => AccessRequest::KINDS[$r->kind] ?? $r->kind, 'detail' => mb_substr($r->summary, 0, 200),
                 'who' => $r->requested_by_name, 'where' => null, 'amount' => null, 'percent' => null, 'at' => $r->created_at->toIso8601String(),
-                'expires_at' => $r->expires_at?->toIso8601String(), 'lines' => [], 'url' => $this->path(AccessRequestResource::getUrl('index'))])->all()];
+                'expires_at' => $r->expires_at?->toIso8601String(), 'lines' => [], 'url' => '/office/access-requests'])->all()];
     }
 
     private function reviewQueue(): ?array
@@ -159,7 +158,7 @@ final class TodoData
         $count = ReviewItem::where('status', 'open')->when($ids !== null, fn ($q) => $q->whereIn('branch_id', $ids))->count();
 
         return $count === 0 ? null : ['key' => 'review', 'label' => 'Review queue', 'hint' => 'Till work the server could not take as it was: decide what happens.',
-            'count' => $count, 'url' => $this->path(ReviewItemResource::getUrl('index')), 'inline' => false, 'items' => []];
+            'count' => $count, 'url' => '/office/review-queue', 'inline' => false, 'items' => []];
     }
 
     private function timesheets(): ?array
@@ -170,13 +169,11 @@ final class TodoData
         $count = TimeApprovals::waiting()->count();
 
         return $count === 0 ? null : ['key' => 'time', 'label' => 'Timesheets', 'hint' => 'Hours to approve.', 'count' => $count,
-            'url' => $this->path(TimeApprovals::getUrl()), 'inline' => false, 'items' => []];
+            'url' => '/office/time-approvals', 'inline' => false, 'items' => []];
     }
 
     private function path(string $url): string
     {
-        $p = parse_url($url);
-
-        return '/'.ltrim((string) ($p['path'] ?? ''), '/').(isset($p['query']) ? '?'.$p['query'] : '');
+        return (string) OfficeUrl::from($url); // the new back office's address
     }
 }

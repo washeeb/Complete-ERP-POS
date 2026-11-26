@@ -18,7 +18,9 @@ const menu: Menu = {
 
 describe('addresses', () => {
   it('opens a current back-office page inside the new one, and back', () => {
-    expect(appPathFor('/admin/multi-factor-authentication/set-up')).toBe('/office/a/multi-factor-authentication/set-up')
+    expect(appPathFor('/admin/multi-factor-authentication/set-up')).toBe('/office/two-factor-setup')
+    expect(appPathFor('/admin/login')).toBe('/office/sign-in')
+    expect(appPathFor('/office/sales?x=1')).toBe('/office/sales?x=1') // already a new-look address
     expect(appPathFor('/admin/today?yesterday=1')).toBe('/office/today?yesterday=1')
     expect(appPathFor('/admin/departments')).toBe('/office/departments')
     expect(appPathFor('/admin/payroll-rules')).toBe('/office/payroll-rules')

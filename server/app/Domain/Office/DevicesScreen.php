@@ -129,7 +129,7 @@ final class DevicesScreen
                 'id' => $c->id, 'label' => $c->label(), 'name' => $c->name, 'machine' => trim(($c->last_client['computer'] ?? '').' '.($c->last_client['mac'] ?? '')) ?: null,
                 'last_user' => $c->last_user_name, 'last_seen' => $c->last_seen_at?->toIso8601String(), 'ip' => $c->last_ip, 'lookup' => ClientInfo::lookupUrl($c->last_ip),
                 'browser' => $c->last_client['browser'] ?? null, 'first_seen' => $c->first_seen_at?->toDateString(),
-                'activity' => '/admin/audit-events?'.http_build_query(['filters' => ['computer' => ['value' => $c->computer_key]]]),
+                'activity' => '/office/audit-log?'.http_build_query(['computer' => $c->computer_key]),
             ])->all()];
     }
 }

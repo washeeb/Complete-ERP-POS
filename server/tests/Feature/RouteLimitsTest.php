@@ -28,5 +28,5 @@ it('keeps the favourite star working while the new back office is in use', funct
     foreach (range(1, 35) as $_) { // more than the star's 30 a minute, on the new back office's own counter
         $this->getJson('/office-api/todo-count')->assertOk();
     }
-    $this->postJson('/admin-ui/favourite', ['url' => '/admin/products', 'label' => 'Products'])->assertOk()->assertJsonPath('favourites.0.url', '/admin/products');
+    $this->postJson('/admin-ui/favourite', ['url' => '/admin/products', 'label' => 'Products'])->assertOk()->assertJsonPath('favourites.0.url', '/office/products');
 });

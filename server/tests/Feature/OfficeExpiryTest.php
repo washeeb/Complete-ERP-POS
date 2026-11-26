@@ -70,7 +70,7 @@ it('lists expiring batches and disposes, returns and marks them down from the ti
 
     // Return to the supplier; ticks from two stores are refused by the service.
     $this->postJson('/office-api/expiry/return', ['keys' => [officeExpKey($this, 'P-1')], 'supplier' => $this->supplier->id, 'settlement' => 'none', 'reason' => 'expired'])
-        ->assertOk()->assertJsonPath('open', fn ($u) => str_contains($u, '/admin/supplier-returns/'));
+        ->assertOk()->assertJsonPath('open', fn ($u) => str_contains($u, '/office/supplier-returns/'));
     expect(SupplierReturn::sole()->settlement)->toBe('none');
 
     // Mark down: what has already expired is skipped.

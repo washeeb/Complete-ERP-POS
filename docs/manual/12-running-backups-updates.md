@@ -261,6 +261,8 @@ What's there:
 
 **Confirm it's you (rebuilt).** Paying out a larger amount, writing off what a customer owes, or changing bank or MoMo details asks you to prove it is really you. A box opens where you are: type the code from your authenticator app, press **Confirm with a passkey** (your fingerprint, face or phone), or press **Send me a code by WhatsApp or e-mail instead**; someone with none of these types their password. Then press the button again (for example **Pay**). **Why:** a computer left signed in, or a stolen sign-in, must not be able to send money away. It lasts five minutes.
 
+**Links open the new back office.** Notifications, e-mails, the Home and To-do lists, the menu, search and your favourites now open the new back office's pages, including favourites and Home tiles you set up before the update (they were moved for you). **Why:** every page is now in the new look, so nobody lands on an old page by following a link.
+
 **Export on the rebuilt lists.** Till sales, Till shifts, Till drawer, Products, Stock on hand, the Stock ledger, Stock adjustments, Stock counts, Transfers, Stock requests, Customers, Invoices, Suppliers, Purchase orders, Goods received, Direct purchases, Invoices from suppliers, Reorder levels, Expense claims, Supplier bills and Supplier payments each have **Export**, as every list of the classic back office does.
 - **Excel**, **CSV** or **PDF** of what the list shows: its search, filters and order, all pages, not only the one on screen.
 - A PDF holds about 800 rows; for a longer list **Export to PDF** is greyed out and says so. Narrow the list (for example to a date range), or use Excel or CSV, which take everything. **Why:** a PDF is laid out in the server's memory, and a very long one would stop it.

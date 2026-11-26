@@ -46,7 +46,7 @@ class SupportAccountCommand extends Command
         }
 
         $this->info(($isNew ? 'Added' : 'Updated')." the support account {$user->email} (username ".SupportAccount::USERNAME.") for {$tenant->name}.");
-        $this->line('Sign in at '.url('/admin').': the authenticator app is set up at the first sign-in. The owner has been told.');
+        $this->line('Sign in at '.url('/office/').': the authenticator app is set up at the first sign-in. The owner has been told.');
 
         return self::SUCCESS;
     }

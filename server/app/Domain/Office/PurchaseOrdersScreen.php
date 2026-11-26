@@ -5,8 +5,6 @@ namespace App\Domain\Office;
 use App\Domain\Ai\AiGateway;
 use App\Domain\Projects\Projects;
 use App\Domain\Purchasing\OrderSender;
-use App\Filament\Resources\GoodsReceipts\GoodsReceiptResource;
-use App\Filament\Resources\PurchaseAgreements\PurchaseAgreementResource;
 use App\Filament\Resources\PurchaseOrders\PurchaseOrderResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
@@ -155,7 +153,7 @@ final class PurchaseOrdersScreen
                 'reply' => $po->supplier_reply] : false) : null,
             'dispatched' => $po->dispatched_at ? ['at' => $po->dispatched_at->toIso8601String(), 'ref' => $po->dispatch_ref] : null,
             'department' => $po->department?->name,
-            'agreement' => $po->agreement_id ? ['number' => $po->agreement?->number, 'open' => ProductsScreen::path(PurchaseAgreementResource::getUrl('view', ['record' => $po->agreement_id]))] : null,
+            'agreement' => $po->agreement_id ? ['number' => $po->agreement?->number, 'open' => '/office/agreements/'.$po->agreement_id] : null,
             'budget_note' => $po->over_budget ? $po->budget_note : null, 'note' => $po->note,
             'lines' => $po->lines->map(fn ($l) => [
                 'sku' => $l->sku, 'name' => $l->name, 'service' => $l->isNonStock(), 'department' => $l->department?->name,
@@ -184,7 +182,7 @@ final class PurchaseOrdersScreen
                     })->values()->all()] : null,
                 'close_short' => in_array($po->status, ['approved', 'partially_received'], true) && $manage,
                 'cancel' => in_array($po->status, ['draft', 'pending_approval', 'approved'], true) && $manage,
-                'receipts' => $po->receipts()->exists() ? ProductsScreen::path(GoodsReceiptResource::getUrl('index', ['tableSearch' => $po->number])) : null,
+                'receipts' => $po->receipts()->exists() ? '/office/goods-received?'.http_build_query(['q' => $po->number]) : null,
             ],
         ];
     }

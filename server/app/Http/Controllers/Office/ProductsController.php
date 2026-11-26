@@ -10,7 +10,6 @@ use App\Domain\Office\ProductsScreen;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
-use App\Filament\Pages\PriceListExport;
 use App\Filament\Resources\Products\ProductResource;
 use App\Filament\Resources\StockCostRuns\StockCostRunResource;
 use App\Filament\Support\Erp;
@@ -155,11 +154,11 @@ class ProductsController extends Controller
         if ($data['to'] === 'prices') {
             session()->put('price_list.products', $ids);
 
-            return response()->json(['url' => ProductsScreen::path(PriceListExport::getUrl()).'?only=1']); // the new price list shows only these
+            return response()->json(['url' => '/office/price-list?only=1']); // the new price list shows only these
         }
         session()->put('stock_cost_run.products', $ids); // hundreds may be ticked: too long for an address
 
-        return response()->json(['url' => ProductsScreen::path(StockCostRunResource::getUrl('create'))]);
+        return response()->json(['url' => '/office/cost-runs/new']);
     }
 
     /** "Switch on batches for all": every stocked product not yet switched on. */

@@ -17,5 +17,6 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["office/src"]
+  "include": ["office/src"],
+  "exclude": ["office/src/office-routes.test.ts"]
 }
