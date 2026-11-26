@@ -108,6 +108,14 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/crm-campaigns\/create\/?$/, app: () => `${APP}/crm/campaigns/new` },
   { admin: new RegExp(`^/admin/crm-campaigns/(${UUID})(/edit)?$`), app: (m) => `${APP}/crm/campaigns/${m[1]}` },
   { admin: /^\/admin\/crm-stages\/?$/, app: () => `${APP}/crm/stages` },
+  { admin: /^\/admin\/vans\/?$/, app: (_, q) => `${APP}/distribution/vans${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: new RegExp(`^/admin/vans/(${UUID})/edit$`), app: () => `${APP}/distribution/vans` },
+  { admin: /^\/admin\/van-settlements\/?$/, app: () => `${APP}/distribution/settlements` },
+  { admin: new RegExp(`^/admin/van-settlements/(${UUID})$`), app: (m) => `${APP}/distribution/settlements/${m[1]}` },
+  { admin: /^\/admin\/routes\/?$/, app: (_, q) => `${APP}/distribution/routes${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/visits\/?$/, app: () => `${APP}/distribution/visits` },
+  { admin: /^\/admin\/rep-targets\/?$/, app: () => `${APP}/distribution/targets` },
+  { admin: /^\/admin\/rep-performance\/?$/, app: (_, q) => `${APP}/distribution/performance${q.toString() ? `?${q.toString()}` : ''}` },
   { admin: /^\/admin\/sales-orders\/?$/, app: (_, q) => `${APP}/online/orders${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: new RegExp(`^/admin/sales-orders/(${UUID})$`), app: (m) => `${APP}/online/orders/${m[1]}` },
   { admin: /^\/admin\/sales-channels\/?$/, app: () => `${APP}/online/channels` },
@@ -312,6 +320,8 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'mnt-equipment' } | { page: 'mnt-asset'; id: string | null } | { page: 'mnt-orders' } | { page: 'mnt-order-new' } | { page: 'mnt-order'; id: string }
   | { page: 'iot-sensors' } | { page: 'iot-sensor'; id: string | null } | { page: 'iot-alarms' } | { page: 'iot-log' } | { page: 'iot-clouds' }
   | { page: 'onl-orders' } | { page: 'onl-order'; id: string } | { page: 'onl-channels' } | { page: 'onl-channel'; id: string | null } | { page: 'onl-whatsapp' } | { page: 'onl-message'; id: string }
+  | { page: 'dist-vans' } | { page: 'dist-settlements' } | { page: 'dist-settlement'; id: string } | { page: 'dist-routes' } | { page: 'dist-visits' } | { page: 'dist-targets' }
+  | { page: 'dist-performance' }
   | { page: 'crm-pipeline' } | { page: 'crm-leads' } | { page: 'crm-lead'; id: string | null } | { page: 'crm-deals' } | { page: 'crm-deal'; id: string | null }
   | { page: 'crm-follow-ups' } | { page: 'crm-campaigns' } | { page: 'crm-campaign'; id: string | null } | { page: 'crm-stages' }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
@@ -437,6 +447,14 @@ export function routeOf(path: string, search = ''): Route {
   const crc = path.match(new RegExp(`^/office/crm/campaigns/(${UUID})/?$`))
   if (crc) return { page: 'crm-campaign', id: crc[1] }
   if (/^\/office\/crm\/stages\/?$/.test(path)) return { page: 'crm-stages' }
+  if (/^\/office\/distribution\/vans\/?$/.test(path)) return { page: 'dist-vans' }
+  if (/^\/office\/distribution\/settlements\/?$/.test(path)) return { page: 'dist-settlements' }
+  const dset = path.match(new RegExp(`^/office/distribution/settlements/(${UUID})/?$`))
+  if (dset) return { page: 'dist-settlement', id: dset[1] }
+  if (/^\/office\/distribution\/routes\/?$/.test(path)) return { page: 'dist-routes' }
+  if (/^\/office\/distribution\/visits\/?$/.test(path)) return { page: 'dist-visits' }
+  if (/^\/office\/distribution\/targets\/?$/.test(path)) return { page: 'dist-targets' }
+  if (/^\/office\/distribution\/performance\/?$/.test(path)) return { page: 'dist-performance' }
   if (/^\/office\/online\/orders\/?$/.test(path)) return { page: 'onl-orders' }
   const onlo = path.match(new RegExp(`^/office/online/orders/(${UUID})/?$`))
   if (onlo) return { page: 'onl-order', id: onlo[1] }
@@ -691,6 +709,13 @@ export function adminEquivalent(route: Route): string | null {
     case 'crm-campaigns': return '/admin/crm-campaigns'
     case 'crm-campaign': return route.id ? `/admin/crm-campaigns/${route.id}/edit` : '/admin/crm-campaigns/create'
     case 'crm-stages': return '/admin/crm-stages'
+    case 'dist-vans': return '/admin/vans'
+    case 'dist-settlements': return '/admin/van-settlements'
+    case 'dist-settlement': return `/admin/van-settlements/${route.id}`
+    case 'dist-routes': return '/admin/routes'
+    case 'dist-visits': return '/admin/visits'
+    case 'dist-targets': return '/admin/rep-targets'
+    case 'dist-performance': return '/admin/rep-performance'
     case 'onl-orders': return '/admin/sales-orders'
     case 'onl-order': return `/admin/sales-orders/${route.id}`
     case 'onl-channels': return '/admin/sales-channels'

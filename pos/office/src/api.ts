@@ -856,6 +856,31 @@ export type CrmCampaignForm = { currency: string; exponent: number; id: string |
   values: { name: string; industry_id: string; channel: string; subject: string; whatsapp_template: string; body: string; send_at: string
     audience: { tags: string[]; branch_id: string; min_spent: string; bought_within_days: string; not_bought_days: string; include_leads: boolean } } }
 export type CrmStageList = { kinds: Option[]; rows: (Archivable & { id: string; sort: number; name: string; kind: string; kind_label: string; probability: number; deals: number })[] }
+export type VanValues = { branch_id: string; name: string; vehicle_reg: string; rep_user_id: string; home_warehouse_id: string }
+export type VanList = { can_create: boolean; can_move: boolean; form: { branches: Option[]; reps: Option[]; warehouses: (Option & { branch_id: string })[] } | null
+  rows: (Archivable & { id: string; code: string; name: string; reg: string | null; rep: string | null; home: string | null; stock: string; can_edit: boolean; values: VanValues })[] }
+export type SettlementList = { currency: string; exponent: number; total: number; page: number; per: number; statuses: Option[]
+  rows: { id: string; number: string; day: string | null; van: string | null; sales: number; cash: number | null; stock: number | null; status: string; status_label: string; tone: string }[] }
+export type SettlementDetail = { currency: string; exponent: number; id: string; number: string; status: string; status_label: string; tone: string; van: string | null; reg: string | null
+  day: string | null; rep: string | null; sales: number; cash_expected: number | null; cash_counted: number | null; stock_variance: number | null; started_by: string | null
+  submitted_by: string | null; posted_by: string | null; note: string | null
+  lines: { product_id: string; sku: string; name: string; expected: string; counted: string; difference: string | null; unload: string; stays: string | null
+    values: { counted: string; unload: string } }[]
+  actions: { count: boolean; submit: boolean; post: boolean; cancel: boolean } }
+export type RouteValues = { name: string; branch_id: string; van_warehouse_id: string; rep_user_id: string; days: string[]; stops: Option[] }
+export type RouteList = { can_create: boolean; days: Option[]; branches: Option[]; reps: Option[]; vans: (Option & { branch_id: string })[]
+  rows: (Archivable & { id: string; code: string; name: string; days: string; van: string | null; rep: string | null; customers: number; can_edit: boolean; values: RouteValues })[] }
+export type VisitList = { total: number; page: number; per: number; outcomes: Option[]
+  rows: { id: string; when: string | null; rep: string | null; customer: string | null; route: string | null; outcome: string; tone: string; note: string | null; location: string | null
+    map: string | null }[] }
+export type TargetValues = { user_id: string; year: string; month: string; target: string; visit_target: string }
+export type TargetList = { currency: string; exponent: number; reps: Option[]; months: Option[]; year: number; month: number
+  rows: { id: string; rep: string; period: string; target: number; visits: number | null; values: TargetValues }[] }
+export type RepPerformance = { currency: string; exponent: number; from: string; to: string; date: string
+  reps: { name: string; sales_minor: number; target_minor: number | null; achieved_bp: number | null; receipts: number; visits: number; visit_target: number | null
+    strike_bp: number | null; orders: number; collections_minor: number }[]
+  missed: { route: string; sequence: number; name: string; code: string | null; phone: string | null }[]
+  empties: { customer: string; code: string | null; container: string; held: string; deposit: number }[] }
 export type OnlineOrderList = { total: number; page: number; per: number; status: string; statuses: Option[]; channels: Option[]
   rows: { id: string; number: string; channel: string | null; placed: string | null; customer: string | null; phone: string | null; branch: string | null; total: string
     payment: string; paid: boolean; status: string; status_label: string; tone: string; short: boolean }[] }
@@ -1768,6 +1793,26 @@ export const api = {
   saveCrmStage: (id: string | null, body: Record<string, unknown>) => call<{ id: string; message: string }>(id ? `/office-api/crm/stages/${id}` : '/office-api/crm/stages', { method: 'POST', body: JSON.stringify(body) }),
   archiveCrmStage: (id: string, restore: boolean, reason: string) =>
     call<{ message: string }>(`/office-api/crm/stages/${id}/archive`, { method: 'POST', body: JSON.stringify({ restore, reason: restore ? null : reason }) }),
+  vans: (query: string, signal?: AbortSignal) => call<VanList>(`/office-api/distribution/vans?${query}`, { signal }),
+  saveVan: (id: string | null, body: Record<string, unknown>) =>
+    call<{ id: string; message: string }>(`/office-api/distribution/vans${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(body) }),
+  vanAction: (id: string, action: 'load' | 'unload' | 'settle', body: Record<string, unknown> = {}) =>
+    call<{ message: string; open?: string }>(`/office-api/distribution/vans/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  distUnits: (q: string, signal?: AbortSignal) => call<{ results: UnitOption[] }>(`/office-api/distribution/units?q=${encodeURIComponent(q)}`, { signal }),
+  settlements: (query: string, signal?: AbortSignal) => call<SettlementList>(`/office-api/distribution/settlements?${query}`, { signal }),
+  settlement: (id: string) => call<SettlementDetail>(`/office-api/distribution/settlements/${id}`),
+  settlementAction: (id: string, action: 'count' | 'submit' | 'post' | 'cancel', body: Record<string, unknown> = {}) =>
+    call<{ message: string }>(`/office-api/distribution/settlements/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  salesRoutes: (query: string, signal?: AbortSignal) => call<RouteList>(`/office-api/distribution/routes?${query}`, { signal }),
+  routeCustomers: (q: string, signal?: AbortSignal) => call<{ results: { id: string; label: string; detail?: string }[] }>(`/office-api/distribution/customers?q=${encodeURIComponent(q)}`, { signal }),
+  saveRoute: (id: string | null, body: Record<string, unknown>) =>
+    call<{ id: string; message: string }>(`/office-api/distribution/routes${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(body) }),
+  distArchive: (kind: 'van' | 'route', id: string, restore: boolean, reason: string) =>
+    call<{ message: string }>('/office-api/distribution/archive', { method: 'POST', body: JSON.stringify({ kind, id, restore, reason: restore ? null : reason }) }),
+  visits: (query: string, signal?: AbortSignal) => call<VisitList>(`/office-api/distribution/visits?${query}`, { signal }),
+  repTargets: (_query = '', signal?: AbortSignal) => call<TargetList>('/office-api/distribution/targets', { signal }),
+  saveRepTarget: (body: TargetValues) => call<{ message: string }>('/office-api/distribution/targets', { method: 'POST', body: JSON.stringify(body) }),
+  repPerformance: (query: string, signal?: AbortSignal) => call<RepPerformance>(`/office-api/distribution/performance?${query}`, { signal }),
   onlineOrders: (query: string, signal?: AbortSignal) => call<OnlineOrderList>(`/office-api/online/orders?${query}`, { signal }),
   onlineOrder: (id: string) => call<OnlineOrderDetail>(`/office-api/online/orders/${id}`),
   onlineOrderAction: (id: string, action: 'ready' | 'fulfil' | 'cancel', body: Record<string, unknown> = {}) =>
