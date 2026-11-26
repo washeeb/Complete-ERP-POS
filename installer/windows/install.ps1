@@ -337,6 +337,7 @@ Say '8/10 Database structure and standard data'
 Run $php @('artisan', 'migrate', '--force', '--no-interaction')
 Run $php @('artisan', 'db:seed', '--force', '--no-interaction')
 if (-not (Test-Path 'public\pos\index.html')) { Write-Warning 'The release has no till app (public\pos). Build it as in Chapter 4.7, or ask for a release built with the till.' }
+if (-not (Test-Path 'public\office\index.html')) { Write-Warning 'The release has no back office (public\office). Ask for a release built with it: the back office is only there.' }
 Run $php @('artisan', 'optimize', '--no-interaction')
 Run $php @('artisan', 'filament:optimize', '--no-interaction') # caches the screens' building blocks and icons
 
