@@ -990,6 +990,41 @@ try {
         await dlg.getByRole('button', { name: 'Back' }).click().catch(() => page.keyboard.press('Escape'))
         await dlg.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => problems.push(`${look} ${w}: ${button}'s dialog did not close`))
       }
+      // Manufacturing, rebuilt (part 35), where the module is on: each page opens from More (or its own tab) and loads; New
+      // work order and New work centre open their dialogs, New bill of materials its form (nothing is saved).
+      for (const [link, url, ready, button] of [
+        ['Work orders', /\/office\/manufacturing\/orders/, () => page.getByText(/^No work orders\. Raise one/).or(page.getByRole('table', { name: 'Work orders' }).getByRole('row').nth(1)), 'New work order'],
+        ['Bills of materials', /\/office\/manufacturing\/boms/, () => page.getByText('No bills of materials yet.').or(page.getByRole('table', { name: 'Bills of materials' }).getByRole('row').nth(1)), 'New bill of materials'],
+        ['Production planning (MRP)', /\/office\/manufacturing\/planning/, () => page.getByRole('region', { name: 'To make' }), null],
+        ['Work centres', /\/office\/manufacturing\/centres/, () => page.getByText('No work centres yet.').or(page.getByRole('table', { name: 'Work centres' }).getByRole('row').nth(1)), 'New work centre']]) {
+        // Manufacturing is not one of the named tabs, so it sits under More (a More holding only Manufacturing takes its name).
+        const menu = page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /^(More|Manufacturing)\b/ }).first()
+        if (!await menu.waitFor({ timeout: 10000 }).then(() => true, () => false)) break
+        const tab = /^Manufacturing/.test((await menu.innerText()).trim()) ? 'Manufacturing' : 'More'
+        await menu.click()
+        const l = page.getByRole('navigation', { name: tab }).getByRole('link', { name: menuName(link) }).first()
+        if (!await l.count()) { await page.keyboard.press('Escape'); continue }
+        await l.click()
+        await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await ready().first().waitFor({ timeout: 30000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        await page.screenshot({ path: out(`manufacturing-${link.toLowerCase().replace(/[ ()]+/g, '-')}-${look}-${w}`) })
+        if (!button) continue
+        const b = page.getByRole('button', { name: button })
+        if (!await b.waitFor({ timeout: 10000 }).then(() => true, () => false)) { problems.push(`${look} ${w}: ${link} has no ${button}`); continue }
+        await b.click()
+        if (button === 'New bill of materials') {
+          await page.getByRole('region', { name: 'Lines' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: New bill of materials did not open the form`))
+          await page.screenshot({ path: out(`manufacturing-new-bom-${look}-${w}`) })
+          await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+          await page.waitForURL(/\/office\/manufacturing\/boms\/?$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Cancel did not leave the BOM form`))
+          continue
+        }
+        const dlg = page.getByRole('dialog')
+        await dlg.waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${button} did not open its dialog`))
+        await page.screenshot({ path: out(`manufacturing-${button.toLowerCase().replace(/ /g, '-')}-${look}-${w}`) })
+        await dlg.getByRole('button', { name: 'Back' }).click().catch(() => page.keyboard.press('Escape'))
+        await dlg.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => problems.push(`${look} ${w}: ${button}'s dialog did not close`))
+      }
       // Go-live and Import data, rebuilt (part 24): each opens from Setup and loads. Nothing is planned, uploaded or imported.
       for (const [link, url, ready] of [
         ['Go-live', /\/office\/go-live$/, () => page.getByRole('table', { name: 'Checklist' }).getByRole('row').first()],

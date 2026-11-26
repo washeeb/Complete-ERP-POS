@@ -116,6 +116,14 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/visits\/?$/, app: () => `${APP}/distribution/visits` },
   { admin: /^\/admin\/rep-targets\/?$/, app: () => `${APP}/distribution/targets` },
   { admin: /^\/admin\/rep-performance\/?$/, app: (_, q) => `${APP}/distribution/performance${q.toString() ? `?${q.toString()}` : ''}` },
+  { admin: /^\/admin\/work-orders\/?$/, app: (_, q) => `${APP}/manufacturing/orders${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: new RegExp(`^/admin/work-orders/(${UUID})$`), app: (m) => `${APP}/manufacturing/orders/${m[1]}` },
+  { admin: /^\/admin\/boms\/?$/, app: (_, q) => `${APP}/manufacturing/boms${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/boms\/create\/?$/, app: () => `${APP}/manufacturing/boms/new` },
+  { admin: new RegExp(`^/admin/boms/(${UUID})$`), app: (m) => `${APP}/manufacturing/boms/${m[1]}` },
+  { admin: new RegExp(`^/admin/boms/(${UUID})/edit$`), app: (m) => `${APP}/manufacturing/boms/${m[1]}/edit` },
+  { admin: /^\/admin\/production-planning\/?$/, app: () => `${APP}/manufacturing/planning` },
+  { admin: /^\/admin\/work-centres\/?$/, app: () => `${APP}/manufacturing/centres` },
   { admin: /^\/admin\/sales-orders\/?$/, app: (_, q) => `${APP}/online/orders${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: new RegExp(`^/admin/sales-orders/(${UUID})$`), app: (m) => `${APP}/online/orders/${m[1]}` },
   { admin: /^\/admin\/sales-channels\/?$/, app: () => `${APP}/online/channels` },
@@ -322,6 +330,8 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'onl-orders' } | { page: 'onl-order'; id: string } | { page: 'onl-channels' } | { page: 'onl-channel'; id: string | null } | { page: 'onl-whatsapp' } | { page: 'onl-message'; id: string }
   | { page: 'dist-vans' } | { page: 'dist-settlements' } | { page: 'dist-settlement'; id: string } | { page: 'dist-routes' } | { page: 'dist-visits' } | { page: 'dist-targets' }
   | { page: 'dist-performance' }
+  | { page: 'mfg-orders' } | { page: 'mfg-order'; id: string } | { page: 'mfg-boms' } | { page: 'mfg-bom'; id: string } | { page: 'mfg-bom-form'; id: string | null }
+  | { page: 'mfg-planning' } | { page: 'mfg-centres' }
   | { page: 'crm-pipeline' } | { page: 'crm-leads' } | { page: 'crm-lead'; id: string | null } | { page: 'crm-deals' } | { page: 'crm-deal'; id: string | null }
   | { page: 'crm-follow-ups' } | { page: 'crm-campaigns' } | { page: 'crm-campaign'; id: string | null } | { page: 'crm-stages' }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
@@ -455,6 +465,15 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/distribution\/visits\/?$/.test(path)) return { page: 'dist-visits' }
   if (/^\/office\/distribution\/targets\/?$/.test(path)) return { page: 'dist-targets' }
   if (/^\/office\/distribution\/performance\/?$/.test(path)) return { page: 'dist-performance' }
+  if (/^\/office\/manufacturing\/orders\/?$/.test(path)) return { page: 'mfg-orders' }
+  const mfo = path.match(new RegExp(`^/office/manufacturing/orders/(${UUID})/?$`))
+  if (mfo) return { page: 'mfg-order', id: mfo[1] }
+  if (/^\/office\/manufacturing\/boms\/?$/.test(path)) return { page: 'mfg-boms' }
+  if (/^\/office\/manufacturing\/boms\/new\/?$/.test(path)) return { page: 'mfg-bom-form', id: null }
+  const mfb = path.match(new RegExp(`^/office/manufacturing/boms/(${UUID})(/edit)?/?$`))
+  if (mfb) return mfb[2] ? { page: 'mfg-bom-form', id: mfb[1] } : { page: 'mfg-bom', id: mfb[1] }
+  if (/^\/office\/manufacturing\/planning\/?$/.test(path)) return { page: 'mfg-planning' }
+  if (/^\/office\/manufacturing\/centres\/?$/.test(path)) return { page: 'mfg-centres' }
   if (/^\/office\/online\/orders\/?$/.test(path)) return { page: 'onl-orders' }
   const onlo = path.match(new RegExp(`^/office/online/orders/(${UUID})/?$`))
   if (onlo) return { page: 'onl-order', id: onlo[1] }
@@ -716,6 +735,13 @@ export function adminEquivalent(route: Route): string | null {
     case 'dist-visits': return '/admin/visits'
     case 'dist-targets': return '/admin/rep-targets'
     case 'dist-performance': return '/admin/rep-performance'
+    case 'mfg-orders': return '/admin/work-orders'
+    case 'mfg-order': return `/admin/work-orders/${route.id}`
+    case 'mfg-boms': return '/admin/boms'
+    case 'mfg-bom': return `/admin/boms/${route.id}`
+    case 'mfg-bom-form': return route.id ? `/admin/boms/${route.id}/edit` : '/admin/boms/create'
+    case 'mfg-planning': return '/admin/production-planning'
+    case 'mfg-centres': return '/admin/work-centres'
     case 'onl-orders': return '/admin/sales-orders'
     case 'onl-order': return `/admin/sales-orders/${route.id}`
     case 'onl-channels': return '/admin/sales-channels'

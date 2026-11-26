@@ -40,6 +40,7 @@ use App\Http\Controllers\Office\InsightsAiController as OfficeInsightsAiControll
 use App\Http\Controllers\Office\InvoicesController as OfficeInvoicesController;
 use App\Http\Controllers\Office\JournalsController as OfficeJournalsController;
 use App\Http\Controllers\Office\MaintenanceController as OfficeMaintenanceController;
+use App\Http\Controllers\Office\ManufacturingController as OfficeManufacturingController;
 use App\Http\Controllers\Office\MessagingController as OfficeMessagingController;
 use App\Http\Controllers\Office\OfficeController;
 use App\Http\Controllers\Office\OnlineController as OfficeOnlineController;
@@ -793,6 +794,28 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::get('distribution/targets', [OfficeDistributionController::class, 'targets']);
     Route::post('distribution/targets', [OfficeDistributionController::class, 'targetSave']);
     Route::get('distribution/performance', [OfficeDistributionController::class, 'performance']);
+    // Manufacturing (new look, part 35): work orders, bills of materials, production planning, work centres.
+    Route::get('manufacturing/orders', [OfficeManufacturingController::class, 'orders']);
+    Route::get('manufacturing/orders/form', [OfficeManufacturingController::class, 'orderForm']);
+    Route::get('manufacturing/customer-orders', [OfficeManufacturingController::class, 'customerOrders']);
+    Route::post('manufacturing/orders', [OfficeManufacturingController::class, 'orderStore']);
+    Route::get('manufacturing/orders/{id}', [OfficeManufacturingController::class, 'order'])->whereUuid('id');
+    Route::post('manufacturing/orders/{id}/action', [OfficeManufacturingController::class, 'orderAction'])->whereUuid('id');
+    Route::get('manufacturing/orders/{id}/card', [OfficeManufacturingController::class, 'card'])->whereUuid('id');
+    Route::get('manufacturing/boms', [OfficeManufacturingController::class, 'boms']);
+    Route::get('manufacturing/boms/form', [OfficeManufacturingController::class, 'bomForm']);
+    Route::get('manufacturing/products', [OfficeManufacturingController::class, 'products']);
+    Route::get('manufacturing/units', [OfficeManufacturingController::class, 'units']);
+    Route::post('manufacturing/boms', [OfficeManufacturingController::class, 'bomSave']);
+    Route::get('manufacturing/boms/{id}', [OfficeManufacturingController::class, 'bom'])->whereUuid('id');
+    Route::get('manufacturing/boms/{id}/form', [OfficeManufacturingController::class, 'bomForm'])->whereUuid('id');
+    Route::post('manufacturing/boms/{id}', [OfficeManufacturingController::class, 'bomSave'])->whereUuid('id');
+    Route::post('manufacturing/boms/{id}/action', [OfficeManufacturingController::class, 'bomAction'])->whereUuid('id');
+    Route::get('manufacturing/planning', [OfficeManufacturingController::class, 'planning']);
+    Route::post('manufacturing/planning', [OfficeManufacturingController::class, 'plan']);
+    Route::get('manufacturing/centres', [OfficeManufacturingController::class, 'centres']);
+    Route::post('manufacturing/centres/{id?}', [OfficeManufacturingController::class, 'centreSave'])->whereUuid('id');
+    Route::post('manufacturing/centres/{id}/archive', [OfficeManufacturingController::class, 'centreArchive'])->whereUuid('id');
     Route::get('returns', [OfficeReturnsController::class, 'index']);
     Route::get('returns/options', [OfficeReturnsController::class, 'options']);
     Route::get('returns/{sale}/slip', [OfficeReturnsController::class, 'slip'])->whereUuid('sale');
