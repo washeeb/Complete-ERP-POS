@@ -8,6 +8,7 @@ import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
 import { ArchiveAsk, type ArchiveKind, Status } from './CompanyParts'
 import { Panel, useProcStyles } from './ProcurementParts'
+import { SaveBar } from '../form/SaveBar'
 
 type Archiving = { kind: ArchiveKind; id: string; name: string; restore: boolean } | null
 type Editing = { what: 'store' | 'till'; id: string | null; name: string; warehouse_id: string } | null
@@ -100,10 +101,10 @@ export function BranchPage({ id, onTitle }: { id: string | null; onTitle: (t: st
         </Panel>
       ))}
       {edit && (
-        <div className={s.foot}>
+        <SaveBar value={[v, own]}>
           <Button onClick={back}>Cancel</Button>
           <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !(v.name ?? '').trim()} onClick={save}>{busy ? 'Saving…' : b.id ? 'Save' : 'Create branch'}</Button>
-        </div>
+        </SaveBar>
       )}
 
       {b.id && (<>

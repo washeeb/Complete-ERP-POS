@@ -8,6 +8,7 @@ import { SearchPicker } from '../form/SearchPicker'
 import { UnitPicker } from '../form/UnitPicker'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
+import { SaveBar } from '../form/SaveBar'
 
 const useStyles = makeStyles({
   head: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' },
@@ -23,8 +24,6 @@ const useStyles = makeStyles({
   avail: { paddingBottom: '8px', color: tokens.colorNeutralForeground3 },
   note: { display: 'block', marginTop: '6px' },
   one: { display: 'grid', gap: '10px' },
-  foot: { position: 'sticky', bottom: 0, zIndex: 2, display: 'flex', justifyContent: 'flex-end', gap: '8px', padding: '10px 0',
-    backgroundColor: tokens.colorNeutralBackground2, borderTop: `1px solid ${tokens.colorNeutralStroke2}` },
 })
 
 type Line = CoLine & { pid?: string }
@@ -122,10 +121,10 @@ export function CustomerOrderFormPage({ id, onTitle }: { id: string | null; onTi
         <Button icon={<AddRegular />} style={{ marginTop: 10 }} onClick={() => setV({ ...v, lines: [...v.lines, blank()] })}>Add line</Button>
       </Panel>
 
-      <div className={s.foot}>
+      <SaveBar value={v}>
         <Button onClick={back}>Cancel</Button>
         <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !ready} onClick={save}>{busy ? 'Saving…' : 'Save quotation'}</Button>
-      </div>
+      </SaveBar>
 
       {adding && <AddCustomer onClose={() => setAdding(false)} onAdded={(c) => { setV({ ...v, customer_id: c.id, customer_label: c.label }); setAdding(false) }} />}
     </div>

@@ -5,6 +5,7 @@ import { api, type SetupBranch, type SetupValues, type SetupWizardData } from '.
 import { Choose, TextField, Toggle, useFieldStyles } from '../form/Fields'
 import { PageHead, usePageStyles } from '../list/ListParts'
 import { Panel, useProcStyles } from './ProcurementParts'
+import { SaveBar } from '../form/SaveBar'
 
 const STEPS = ['Deployment', 'Company', 'Your brand', 'Branches & modules'] as const
 
@@ -151,12 +152,12 @@ export function SetupWizardPage() {
         </Panel>
       )}
 
-      <div className={s.foot}>
+      <SaveBar value={[v, logo?.name, icon?.name]} saveKey={false}>
         {step > 0 && <Button icon={<ArrowLeftRegular />} onClick={() => setStep(step - 1)}>Back</Button>}
         {step < STEPS.length - 1
           ? <Button appearance="primary" icon={<ArrowRightRegular />} iconPosition="after" disabled={!stepOk[step]} onClick={() => setStep(step + 1)}>Next</Button>
           : <Button appearance="primary" icon={<CheckmarkRegular />} disabled={busy || !stepOk.every(Boolean)} onClick={finish}>{busy ? 'Setting up…' : 'Finish setup'}</Button>}
-      </div>
+      </SaveBar>
     </div>
   )
 }

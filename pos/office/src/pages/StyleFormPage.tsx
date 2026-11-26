@@ -6,6 +6,7 @@ import { Choose, LongText, Tags, TextField, Toggle, useFieldStyles } from '../fo
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
 import { Panel, useProcStyles } from './ProcurementParts'
+import { SaveBar } from '../form/SaveBar'
 
 /**
  * New style or change one (part 36), as the current form: name (the code is made from it once and never changes; SKUs
@@ -63,10 +64,10 @@ export function StyleFormPage({ id, onTitle }: { id: string | null; onTitle: (t:
           <LongText label="Description" className={f.spanAll} maxLength={5000} value={v.description} onChange={put('description')} />
         </div>
       </Panel>
-      <div className={s.foot}>
+      <SaveBar value={v}>
         <Button onClick={back}>Cancel</Button>
         <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !ready} onClick={save}>{busy ? 'Saving…' : 'Save'}</Button>
-      </div>
+      </SaveBar>
     </div>
   )
 }

@@ -7,6 +7,7 @@ import { UnitPicker } from '../form/UnitPicker'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
 import { Panel, useProcStyles } from './ProcurementParts'
+import { SaveBar } from '../form/SaveBar'
 
 type Line = { product_uom_id: string; label: string | null; qty: string; note: string }
 const blank = (): Line => ({ product_uom_id: '', label: null, qty: '', note: '' })
@@ -85,10 +86,10 @@ export function RfqFormPage() {
         ))}
         <Button icon={<AddRegular />} style={{ marginTop: 10 }} onClick={() => setLines([...lines, blank()])}>Add item</Button>
       </Panel>
-      <div className={s.foot}>
+      <SaveBar value={[v, lines]}>
         <Button onClick={back}>Cancel</Button>
         <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !ready} onClick={save}>{busy ? 'Saving…' : 'Make the request'}</Button>
-      </div>
+      </SaveBar>
     </div>
   )
 }

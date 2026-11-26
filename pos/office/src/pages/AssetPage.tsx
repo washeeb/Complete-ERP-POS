@@ -9,6 +9,7 @@ import { money } from '../home/format'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
 import { day, END, Panel, ToneBadge, useProcStyles } from './ProcurementParts'
+import { SaveBar } from '../form/SaveBar'
 
 const OWNERS = [{ id: 'own', label: 'Ours' }, { id: 'customer', label: 'A customer’s (sold or serviced by us)' }]
 const METERS = [{ id: 'hours', label: 'Running hours' }, { id: 'km', label: 'Kilometres' }]
@@ -101,10 +102,10 @@ export function AssetPage({ id, onTitle }: { id: string | null; onTitle: (t: str
         </div>
       </Panel>
       {edit && (
-        <div className={s.foot}>
+        <SaveBar value={v}>
           <Button onClick={back}>Cancel</Button>
           <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !ready} onClick={save}>{busy ? 'Saving…' : d.id ? 'Save' : 'Add equipment'}</Button>
-        </div>
+        </SaveBar>
       )}
 
       {d.id && (

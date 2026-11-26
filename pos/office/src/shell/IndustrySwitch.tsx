@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { api, type Me } from '../api'
 
 const useStyles = makeStyles({
-  select: { width: '190px', '@media (max-width: 760px)': { width: '130px' } },
+  select: { width: '190px', '@media (max-width: 760px)': { width: '96px' } },
 })
 
 /**

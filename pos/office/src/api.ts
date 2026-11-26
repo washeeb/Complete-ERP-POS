@@ -2,6 +2,7 @@
  * The new back office talks to the server it is served from, with the person's back-office sign-in (the session cookie).
  * Signed out: back to the sign-in page, which returns here afterwards.
  */
+import { requestDone } from './unsaved'
 
 export type MenuItem = { label: string; url: string; icon: string | null; badge: string | null }
 export type MenuGroup = { label: string | null; items: MenuItem[] }
@@ -1261,8 +1262,15 @@ export function xsrf(): string {
   return m ? decodeURIComponent(m[1]) : ''
 }
 
+/** Every request: a change the server accepted (or refused) tells the save bar's unsaved-work guard (unsaved.ts). */
+async function send(path: string, init: RequestInit = {}): Promise<Response> {
+  const res = await fetch(path, init)
+  requestDone(init.method ?? 'GET', res.ok)
+  return res
+}
+
 async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(path, {
+  const res = await send(path, {
     ...init,
     credentials: 'same-origin',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf(), ...(init.headers ?? {}) },
@@ -1349,7 +1357,7 @@ export const api = {
   stockPhoto: async (file: File) => {
     const body = new FormData()
     body.append('photo', file)
-    const res = await fetch('/office-api/stock/photos', { method: 'POST', body, credentials: 'same-origin', headers: { Accept: 'application/json', 'X-XSRF-TOKEN': xsrf() } })
+    const res = await send('/office-api/stock/photos', { method: 'POST', body, credentials: 'same-origin', headers: { Accept: 'application/json', 'X-XSRF-TOKEN': xsrf() } })
     const json = await res.json().catch(() => ({}))
     if (!res.ok) throw new ApiError(json.message ?? json.detail ?? 'The photo could not be added.', res.status)
     return json as { path: string }
@@ -1404,7 +1412,7 @@ export const api = {
     call<SupplierActionResult>(`/office-api/suppliers/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
   /** Add a document (with its scan or photo): sent as a form, not JSON. */
   addSupplierDocument: async (id: string, body: FormData) => {
-    const res = await fetch(`/office-api/suppliers/${id}/documents`, { method: 'POST', body, credentials: 'same-origin',
+    const res = await send(`/office-api/suppliers/${id}/documents`, { method: 'POST', body, credentials: 'same-origin',
       headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
     const json = await res.json().catch(() => ({}))
     if (!res.ok) throw new ApiError(json.detail ?? json.message ?? 'The document could not be added.', res.status, json.error ?? 'error')
@@ -1429,7 +1437,7 @@ export const api = {
     call<PoActionResult>(`/office-api/purchase-orders/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
   /** "Order from a file": sent as a form (the file), not JSON. */
   importPurchaseOrder: async (body: FormData) => {
-    const res = await fetch('/office-api/purchase-orders/import', { method: 'POST', body, credentials: 'same-origin',
+    const res = await send('/office-api/purchase-orders/import', { method: 'POST', body, credentials: 'same-origin',
       headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
     const json = await res.json().catch(() => ({}))
     if (!res.ok) throw new ApiError(json.detail ?? json.message ?? 'The file could not be read.', res.status, json.error ?? 'error')
@@ -1456,7 +1464,7 @@ export const api = {
   dpFiles: async <T,>(what: 'upload' | 'scan', files: File[]) => {
     const body = new FormData()
     files.forEach((f) => body.append('files[]', f))
-    const res = await fetch(`/office-api/direct-purchases/${what}`, { method: 'POST', body, credentials: 'same-origin',
+    const res = await send(`/office-api/direct-purchases/${what}`, { method: 'POST', body, credentials: 'same-origin',
       headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
     const json = await res.json().catch(() => ({}))
     if (!res.ok) throw new ApiError(json.detail ?? json.message ?? 'The pages could not be added.', res.status, json.error ?? 'error')
@@ -1498,7 +1506,7 @@ export const api = {
   expenseClaimForm: () => call<EcForm>('/office-api/expense-claims/form'),
   /** New claim, sent as a form (the receipt photo goes with it). */
   saveExpenseClaim: async (body: FormData) => {
-    const res = await fetch('/office-api/expense-claims', { method: 'POST', body, credentials: 'same-origin',
+    const res = await send('/office-api/expense-claims', { method: 'POST', body, credentials: 'same-origin',
       headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
     const json = await res.json().catch(() => ({}))
     if (!res.ok) throw new ApiError(json.detail ?? json.message ?? 'The claim could not be saved.', res.status, json.error ?? 'error')
@@ -1524,7 +1532,7 @@ export const api = {
     const body = new FormData()
     body.append('branch_id', branch)
     body.append('file', file)
-    const res = await fetch('/office-api/supplier-bills/scan', { method: 'POST', body, credentials: 'same-origin',
+    const res = await send('/office-api/supplier-bills/scan', { method: 'POST', body, credentials: 'same-origin',
       headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
     const json = await res.json().catch(() => ({}))
     if (!res.ok) throw new ApiError(json.detail ?? json.message ?? 'The invoice could not be read.', res.status, json.error ?? 'error')
@@ -1584,7 +1592,7 @@ export const api = {
   saveBank: (id: string | null, body: Record<string, unknown>) => call<{ bank: { id: string } }>(id ? `/office-api/bank-accounts/${id}` : '/office-api/bank-accounts', { method: 'POST', body: JSON.stringify(body) }),
   archiveBank: (id: string, reason: string | null) => call<{ done: boolean }>(`/office-api/bank-accounts/${id}/archive`, { method: 'POST', body: JSON.stringify(reason === null ? { restore: true } : { reason }) }),
   importStatement: async (id: string, body: FormData) => {
-    const res = await fetch(`/office-api/bank-accounts/${id}/import`, { method: 'POST', body, credentials: 'same-origin',
+    const res = await send(`/office-api/bank-accounts/${id}/import`, { method: 'POST', body, credentials: 'same-origin',
       headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
     const json = await res.json().catch(() => ({}))
     if (!res.ok) throw new ApiError(json.detail ?? json.message ?? 'The statement could not be read.', res.status, json.error ?? 'error')
@@ -1668,7 +1676,7 @@ export const api = {
   disposalRegister: (warehouse: string, from: string, to: string) => call<{ url: string }>(`/office-api/expiry/register?${new URLSearchParams({ warehouse, from, to })}`),
   /** Dispose: sent as a form, because the certificate may be a file. */
   disposeBatches: async (body: FormData) => {
-    const res = await fetch('/office-api/expiry/dispose', { method: 'POST', body, credentials: 'same-origin',
+    const res = await send('/office-api/expiry/dispose', { method: 'POST', body, credentials: 'same-origin',
       headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
     const json = await res.json().catch(() => ({}))
     if (!res.ok) throw new ApiError(json.detail ?? json.message ?? 'The disposal could not be prepared.', res.status, json.error ?? 'error')
@@ -1735,7 +1743,7 @@ export const api = {
     call<{ message: string; waybill: WaybillDoc }>(`/office-api/waybills/${id}/${step}`, { method: 'POST', body: JSON.stringify(body) }),
   /** Mark delivered, with the signed copy or a photo (a form, for the file). */
   deliverWaybill: async (id: string, body: FormData) => {
-    const res = await fetch(`/office-api/waybills/${id}/deliver`, { method: 'POST', body, credentials: 'same-origin',
+    const res = await send(`/office-api/waybills/${id}/deliver`, { method: 'POST', body, credentials: 'same-origin',
       headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
     const j = await res.json().catch(() => ({}))
     if (!res.ok) throw new ApiError(j.detail ?? j.message ?? `Error ${res.status}`, res.status, j.error ?? 'error')
@@ -1769,7 +1777,7 @@ export const api = {
   agreementForm: (id?: string) => call<AgreementForm>(id ? `/office-api/agreements/${id}/form` : '/office-api/agreements/form'),
   /** Save a draft agreement: a form, for the signed copy; the lines go as JSON. */
   saveAgreement: async (id: string | null, body: FormData) => {
-    const res = await fetch(id ? `/office-api/agreements/${id}` : '/office-api/agreements', { method: 'POST', body, credentials: 'same-origin',
+    const res = await send(id ? `/office-api/agreements/${id}` : '/office-api/agreements', { method: 'POST', body, credentials: 'same-origin',
       headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
     const j = await res.json().catch(() => ({}))
     if (!res.ok) throw new ApiError(j.detail ?? j.message ?? `Error ${res.status}`, res.status, j.error ?? 'error')
@@ -1809,7 +1817,7 @@ export const api = {
   brandUpload: async (kind: string, file: File) => {
     const body = new FormData()
     body.append('file', file)
-    const res = await fetch(`/office-api/branding/${kind}`, { method: 'POST', body, credentials: 'same-origin',
+    const res = await send(`/office-api/branding/${kind}`, { method: 'POST', body, credentials: 'same-origin',
       headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
     const j = await res.json().catch(() => ({}))
     if (!res.ok) throw new ApiError(j.detail ?? j.message ?? `Error ${res.status}`, res.status, j.error ?? 'error')
@@ -1834,7 +1842,7 @@ export const api = {
     call<{ message: string }>(`/office-api/leave/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
   /** Request leave (a form, for the document): for someone (HR), or for yourself with mine. */
   requestLeave: async (body: FormData) => {
-    const res = await fetch('/office-api/leave', { method: 'POST', body, credentials: 'same-origin',
+    const res = await send('/office-api/leave', { method: 'POST', body, credentials: 'same-origin',
       headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
     const j = await res.json().catch(() => ({}))
     if (!res.ok) throw new ApiError(j.detail ?? j.message ?? `Error ${res.status}`, res.status, j.error ?? 'error')
@@ -2062,7 +2070,7 @@ export const api = {
     const body = new FormData()
     if (photo) body.append('photo', photo)
     else body.append('remove', '1')
-    const res = await fetch('/office-api/profile/photo', { method: 'POST', body, credentials: 'same-origin',
+    const res = await send('/office-api/profile/photo', { method: 'POST', body, credentials: 'same-origin',
       headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
     const json = await res.json().catch(() => ({}))
     if (!res.ok) throw new ApiError(json.errors?.photo?.[0] ?? json.detail ?? json.message ?? 'The photo could not be saved.', res.status, json.error ?? 'error')
@@ -2089,7 +2097,7 @@ export const api = {
     body.append('data', JSON.stringify(values))
     if (logo) body.append('logo', logo)
     if (icon) body.append('icon', icon)
-    const res = await fetch('/office-api/setup-wizard', { method: 'POST', body, credentials: 'same-origin',
+    const res = await send('/office-api/setup-wizard', { method: 'POST', body, credentials: 'same-origin',
       headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
     const json = await res.json().catch(() => ({}))
     if (!res.ok) throw new ApiError(json.detail ?? json.message ?? 'The company could not be set up. Try again.', res.status, json.error ?? 'error')
@@ -2174,7 +2182,7 @@ export const api = {
     body.append('type', type)
     body.append('source', source)
     body.append('file', file)
-    const res = await fetch('/office-api/system/import/upload', { method: 'POST', body, credentials: 'same-origin',
+    const res = await send('/office-api/system/import/upload', { method: 'POST', body, credentials: 'same-origin',
       headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
     const j = await res.json().catch(() => ({}))
     if (!res.ok) throw new ApiError(j.detail ?? j.message ?? `Error ${res.status}`, res.status, j.error ?? 'error')
@@ -2188,7 +2196,7 @@ export const api = {
     const body = new FormData()
     body.append('kind', kind)
     body.append('file', file)
-    const res = await fetch('/office-api/system/sync/import', { method: 'POST', body, credentials: 'same-origin',
+    const res = await send('/office-api/system/sync/import', { method: 'POST', body, credentials: 'same-origin',
       headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
     const j = await res.json().catch(() => ({}))
     if (!res.ok) throw new ApiError(j.detail ?? j.message ?? `Error ${res.status}`, res.status, j.error ?? 'error')
@@ -2257,7 +2265,7 @@ export const api = {
   setLook: (look: Prefs['office_look']) => call<{ prefs: Prefs }>('/office-api/prefs', { method: 'POST', body: JSON.stringify({ office_look: look }) }),
   /** Sign out of the back office (the same sign-in as the current one), then the sign-in page. */
   signOut: async () => {
-    await fetch('/office-api/sign-out', { method: 'POST', credentials: 'same-origin', headers: { 'X-XSRF-TOKEN': xsrf(), Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' } }).catch(() => undefined)
+    await send('/office-api/sign-out', { method: 'POST', credentials: 'same-origin', headers: { 'X-XSRF-TOKEN': xsrf(), Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' } }).catch(() => undefined)
     location.assign('/office/sign-in')
   },
   // Signing in (part 41): open signed out.

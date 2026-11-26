@@ -5,6 +5,7 @@ import { api, type CustomerForm, type CustomerValues } from '../api'
 import { Choose, LongText, Tags, TextField, Toggle, useFieldStyles } from '../form/Fields'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
+import { SaveBar } from '../form/SaveBar'
 
 const useStyles = makeStyles({
   head: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' },
@@ -14,8 +15,6 @@ const useStyles = makeStyles({
     boxShadow: tokens.shadow4, padding: '14px 16px 16px', marginBottom: '14px' },
   h2: { fontSize: tokens.fontSizeBase400, fontWeight: tokens.fontWeightSemibold, margin: '0 0 4px' },
   about: { display: 'block', marginBottom: '12px', color: tokens.colorNeutralForeground3 },
-  foot: { position: 'sticky', bottom: 0, zIndex: 2, display: 'flex', justifyContent: 'flex-end', gap: '8px', padding: '10px 0',
-    backgroundColor: tokens.colorNeutralBackground2, borderTop: `1px solid ${tokens.colorNeutralStroke2}` },
 })
 
 /**
@@ -99,10 +98,10 @@ export function CustomerFormPage({ id, onTitle }: { id: string | null; onTitle: 
         </Panel>
       )}
 
-      <div className={s.foot}>
+      <SaveBar value={v}>
         <Button onClick={back}>Cancel</Button>
         <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !v.name.trim() || !v.type || (form.sections.industry && !v.industry_id) || !v.consent_source} onClick={save}>{busy ? 'Saving…' : 'Save'}</Button>
-      </div>
+      </SaveBar>
     </div>
   )
 }

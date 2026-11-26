@@ -108,7 +108,7 @@ final class UserPrefs
     /** @return array<string, string> the pages a person may choose as home: value => label */
     public static function homes(?User $user): array
     {
-        $homes = ['dashboard' => 'Dashboard'];
+        $homes = ['dashboard' => 'Business Portal'];
         try {
             if ($user && OwnerTodayPage::canAccess()) {
                 $homes['today'] = 'Today (the day at a glance)';

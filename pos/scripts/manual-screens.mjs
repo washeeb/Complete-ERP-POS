@@ -53,7 +53,14 @@ const shot = (page, name) => page.screenshot({ path: resolve(out, `${name}.png`)
 
 // --- Back office -----------------------------------------------------------------------------------------------------
 {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 760 } })
+  const page = await browser.newPage({ viewport: { width: 1280, height: 760 }, colorScheme: 'light' })
+  // The guide's pictures are in the light look, whatever this account chose (only this browser's copy; nothing is saved).
+  await page.route('**/office-api/me', async (route) => {
+    const res = await route.fetch()
+    const me = await res.json()
+    if (me?.prefs) me.prefs.theme = 'light'
+    await route.fulfill({ response: res, json: me })
+  })
   await page.goto(`${base}/office/sign-in`)
   await page.locator('input[autocomplete=username]').waitFor()
   await page.waitForTimeout(400)

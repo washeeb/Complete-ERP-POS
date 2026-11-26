@@ -9,7 +9,7 @@ export type Tile = { url: string; label: string }
 export type HomeLayout = { cols: 2 | 3; panels: Placed[]; tiles: Tile[]; meter: string | null }
 
 export const PANEL_NAMES: Record<PanelId, string> = {
-  reminders: 'Reminders', shortcuts: 'Shortcuts', tiles: 'Tiles', kpis: 'Key performance indicators', trend: 'Monthly trend',
+  reminders: 'Reminders', shortcuts: 'Shortcuts', tiles: 'Action Centre', kpis: 'Key performance indicators', trend: 'Monthly trend',
   meter: 'KPI meter', top_items: 'Top items sold',
 }
 

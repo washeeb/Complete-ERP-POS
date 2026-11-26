@@ -7,6 +7,7 @@ import { Choose, LongText, TextField, Toggle, useFieldStyles } from '../form/Fie
 import { UnitPicker } from '../form/UnitPicker'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
+import { SaveBar } from '../form/SaveBar'
 
 const useStyles = makeStyles({
   head: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' },
@@ -19,8 +20,6 @@ const useStyles = makeStyles({
   line: { display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) repeat(4, minmax(0, 1fr)) auto auto', gap: '8px 10px', alignItems: 'end',
     padding: '10px 0', borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
     '@media (max-width: 900px)': { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', '& > :first-child': { gridColumn: '1 / -1' } } },
-  foot: { position: 'sticky', bottom: 0, zIndex: 2, display: 'flex', justifyContent: 'flex-end', gap: '8px', padding: '10px 0',
-    backgroundColor: tokens.colorNeutralBackground2, borderTop: `1px solid ${tokens.colorNeutralStroke2}` },
 })
 
 const blank = (): SupplierProductLine => ({ product_uom_id: '', label: null, supplier_sku: '', last_cost: '', min_order_qty: '0', order_multiple: '0', is_preferred: false })
@@ -124,10 +123,10 @@ export function SupplierFormPage({ id, onTitle }: { id: string | null; onTitle: 
         <Button icon={<AddRegular />} style={{ marginTop: 10 }} onClick={() => set('products')([...v.products, blank()])}>Add product</Button>
       </Panel>
 
-      <div className={s.foot}>
+      <SaveBar value={v}>
         <Button onClick={back}>Cancel</Button>
         <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !ready} onClick={save}>{busy ? 'Saving…' : 'Save'}</Button>
-      </div>
+      </SaveBar>
 
       {confirmUrl && (
         <ConfirmItsYou url={confirmUrl} why="New or changed bank or MoMo details are protected." go="Save now"

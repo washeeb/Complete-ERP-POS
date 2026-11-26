@@ -6,6 +6,7 @@ import { Choose, LongText, TextField, useFieldStyles } from '../form/Fields'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
 import { Panel, useProcStyles } from './ProcurementParts'
+import { SaveBar } from '../form/SaveBar'
 
 /**
  * Maintenance → New work order (part 31), as the current form: the equipment (chosen already when it comes from the
@@ -52,10 +53,10 @@ export function WorkOrderNewPage() {
           <LongText label="Details" className={f.spanAll} maxLength={5000} value={v.details} onChange={put('details')} />
         </div>
       </Panel>
-      <div className={s.foot}>
+      <SaveBar value={v}>
         <Button onClick={back}>Cancel</Button>
         <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !v.asset_id || v.title.trim() === ''} onClick={save}>{busy ? 'Opening…' : 'Open work order'}</Button>
-      </div>
+      </SaveBar>
     </div>
   )
 }

@@ -13,6 +13,7 @@ import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
 import { Pick } from './CrmLeadsPage'
 import { day, END, Fact, Panel, ToneBadge, useProcStyles } from './ProcurementParts'
+import { SaveBar } from '../form/SaveBar'
 
 type Stock = { return: boolean; warehouse_id: string; note: string; lines: { unit: UnitOption | null; qty: string }[] }
 const blankTask: TaskValues = { name: '', assigned_to: '', status: 'todo', due_on: '', estimate_hours: '', billable: true, sort: '0' }
@@ -124,10 +125,10 @@ export function ProjectPage({ id, onTitle }: { id: string | null; onTitle: (t: s
         {billed && <Text size={200} block className={s.muted}>The service is a product without stock, e.g. “Professional services”: time, milestones and bought-in costs show as it on invoices, with its tax.</Text>}
       </Panel>
       {edit && (
-        <div className={s.foot}>
+        <SaveBar value={v}>
           <Button onClick={back}>Cancel</Button>
           <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !ready} onClick={save}>{busy ? 'Saving…' : d.id ? 'Save' : 'Add project'}</Button>
-        </div>
+        </SaveBar>
       )}
 
       {d.id && (

@@ -7,6 +7,7 @@ import { blankSpend, SpendItem, SpendKind, spendReady } from '../form/SpendLineF
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
 import { Panel, useProcStyles } from './ProcurementParts'
+import { SaveBar } from '../form/SaveBar'
 
 const blank = (kind: 'stock' | 'service' = 'stock'): AgreementLine => ({ ...blankSpend(kind), unit_cost: '', max_qty: '', note: '' })
 
@@ -91,10 +92,10 @@ export function AgreementFormPage({ id, onTitle }: { id: string | null; onTitle:
         ))}
         <Button icon={<AddRegular />} style={{ marginTop: 10 }} onClick={() => set('lines')([...v.lines, blank()])}>Add item</Button>
       </Panel>
-      <div className={s.foot}>
+      <SaveBar value={[v, file?.name]}>
         <Button onClick={back}>Cancel</Button>
         <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !ready} onClick={save}>{busy ? 'Saving…' : 'Save draft'}</Button>
-      </div>
+      </SaveBar>
     </div>
   )
 }

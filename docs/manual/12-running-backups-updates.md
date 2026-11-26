@@ -50,20 +50,20 @@ What's there:
 - **One search box** (Ctrl+K) finds pages of the menu and records: customers, products, invoices and more.
 - **Create** starts a new sale, invoice, product and so on.
 - Three icons start the menu:
-  - the **house** for Home;
+  - the **house** for the Business Portal;
   - the **clock** for the pages you opened lately;
   - the **star** for your favourite pages. Press it on any page to add that page, or take it off. The star is filled when the page is already a favourite, and your favourites follow you to every computer.
 - The **bell** shows your notifications; a red number counts the unread ones. Press one to open its page.
 
-**Home** shows the business at a glance:
+**The Business Portal** (your start page) shows the business at a glance:
 - **Reminders:** what waits for you; anything needing a decision shows big.
-- **Tiles:** big shortcuts to the pages you use most.
+- **Action Centre:** big shortcuts to the pages you use most.
 - **Key performance indicators:** this period against the one before, with the change.
 - **KPI meter:** a dial for the figure you choose.
 - **Top 15 items sold**, and the **monthly trend** of sales and buying.
 - **Shortcuts:** your favourites, quick ways to add things, and the pages you opened lately.
 
-**Viewing** (top right) chooses the period: today, this week, month, quarter or year. **Personalize** chooses which panels show and which tiles. **Layout** chooses two or three columns. To move a panel, drag the small bar at its top, or use its **⋯** menu. Your arrangement is kept for you on every computer. Each chart can switch to a table (the small icons at its top right).
+**Viewing** (top right) chooses the period: today, this week, month, quarter or year. **Personalize** chooses which panels show and which shortcuts the Action Centre has. **Layout** chooses two or three columns. To move a panel, drag the small bar at its top, or use its **⋯** menu. Your arrangement is kept for you on every computer. Each chart can switch to a table (the small icons at its top right).
 
 **Why:** everyone sees first what needs them, and the figures that matter, without opening a report.
 
@@ -259,9 +259,11 @@ What's there:
 
 **Confirm it's you (rebuilt).** Paying out a larger amount, writing off what a customer owes, or changing bank or MoMo details asks you to prove it is really you. A box opens where you are: type the code from your authenticator app, press **Confirm with a passkey** (your fingerprint, face or phone), or press **Send me a code by WhatsApp or e-mail instead**; someone with none of these types their password. Then press the button again (for example **Pay**). **Why:** a computer left signed in, or a stolen sign-in, must not be able to send money away. It lasts five minutes.
 
-**Links open the new back office.** Notifications, e-mails, the Home and To-do lists, the menu, search and your favourites now open the new back office's pages, including favourites and Home tiles you set up before the update (they were moved for you). **Why:** every page is now in the new look, so nobody lands on an old page by following a link.
+**Links open the new back office.** Notifications, e-mails, the Business Portal and To-do lists, the menu, search and your favourites now open the new back office's pages, including favourites and Action Centre shortcuts you set up before the update (they were moved for you). **Why:** every page is now in the new look, so nobody lands on an old page by following a link.
 
 **The old back office is switched off.** There is one back office now. An old address, bookmark or desktop shortcut opens the same page in the new one, so nothing needs changing on the computers. The **bell** at the top shows your notifications. If you cover several industries, the **industry box** beside it shows one industry or all of them. **Why:** two back offices meant two places to learn and to keep up to date; everything is now in the new one.
+
+**Business Portal, and no lost work.** The start page is now called the **Business Portal**, and its big shortcuts the **Action Centre**. On every form the bar with **Save** stays at the bottom of the window while you scroll, says *Unsaved changes* when you have changed something, and **Ctrl+S** saves. If you try to leave a form with unsaved changes, the back office asks: **Save and leave**, **Leave without saving** or **Stay**; closing the browser tab warns too. The menu always shows which area you are in. On a phone the side menu is used. **Why:** a long form is easy to leave by mistake, and work lost that way has to be typed again.
 
 **Export on the rebuilt lists.** Till sales, Till shifts, Till drawer, Products, Stock on hand, the Stock ledger, Stock adjustments, Stock counts, Transfers, Stock requests, Customers, Invoices, Suppliers, Purchase orders, Goods received, Direct purchases, Invoices from suppliers, Reorder levels, Expense claims, Supplier bills and Supplier payments each have **Export**, as every list does.
 - **Excel**, **CSV** or **PDF** of what the list shows: its search, filters and order, all pages, not only the one on screen.

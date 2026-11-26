@@ -7,6 +7,7 @@ import { Choose, LongText, TextField, Toggle, useFieldStyles } from '../form/Fie
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
 import { Panel, ToneBadge, useProcStyles } from './ProcurementParts'
+import { SaveBar } from '../form/SaveBar'
 
 type Dialog = 'terminate' | 'archive' | 'restore' | null
 
@@ -111,10 +112,10 @@ export function EmployeeFormPage({ id, onTitle }: { id: string | null; onTitle: 
           <LongText label="Notes" className={f.spanAll} maxLength={5000} value={t('notes')} onChange={put('notes')} />
         </div>
       </Panel>
-      <div className={s.foot}>
+      <SaveBar value={v}>
         <Button onClick={back}>Cancel</Button>
         <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !ready} onClick={save}>{busy ? 'Saving…' : form.id ? 'Save' : 'Add employee'}</Button>
-      </div>
+      </SaveBar>
 
       {dialog === 'terminate' && form.id && (
         <Ask title="End employment?" go="End employment" ready={!!end.date && end.reason.trim() !== ''} onClose={() => setDialog(null)}

@@ -17,9 +17,9 @@ const here = dirname(fileURLToPath(import.meta.url))
 const base = process.env.LAYOUT_BASE ?? 'http://127.0.0.1:8010'
 const secrets = Object.fromEntries(readFileSync(resolve(here, '../../.local-secrets/dev-owner.txt'), 'utf8').split(/\r?\n/)
   .map((l) => l.match(/^([a-z_]+):\s*(.+)$/)).filter(Boolean).map((m) => [m[1], m[2].trim()]))
-const PAGES = ['/office/products', '/office/audit-log', '/office/profile', '/office/movements', '/office/sales']
+const PAGES = ['/office/products', '/office/audit-log', '/office/profile', '/office/movements', '/office/sales', '/office/customers/new']
 const LOOKS = ['top', 'side']
-const SIZES = [[1920, 1000], [1366, 720]]
+const SIZES = [[1920, 1000], [1366, 720], [1280, 720], [390, 800]] // desktop, laptop, phone (a phone always gets the side menu)
 
 function totp(secret) {
   const a = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'; let bits = ''
@@ -67,11 +67,20 @@ try {
           const rows = table ? table.querySelectorAll('tbody tr').length : 0
           const nav = document.querySelector('nav[aria-label="Menu"]')
           const n = nav ? nav.getBoundingClientRect() : null
-          return { sideways: document.documentElement.scrollWidth - innerWidth, innerHeight, innerWidth, rows,
+          // The save bar of a form: flush with the bottom of the window while the form scrolls (owner report 2026-11-26).
+          const save = document.querySelector('[role=region][aria-label=Save]')
+          let sc = save; while (sc && !/(auto|scroll)/.test(getComputedStyle(sc).overflowY)) sc = sc.parentElement
+          const saveGap = save && sc && sc.scrollHeight - sc.clientHeight - sc.scrollTop > 40 ? Math.round(sc.getBoundingClientRect().bottom - save.getBoundingClientRect().bottom) : null
+          // The top row's controls (search, Create, industry, bell, your name) never cover one another.
+          const ctl = [...(document.querySelector('header')?.querySelectorAll('button, input, select') ?? [])].map((e) => e.getBoundingClientRect()).filter((r) => r.width && r.height)
+          const overlap = ctl.some((a, i) => ctl.some((b, j) => j > i && a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1 && !(a.left >= b.left && a.right <= b.right) && !(b.left >= a.left && b.right <= a.right)))
+          return { sideways: document.documentElement.scrollWidth - innerWidth, innerHeight, innerWidth, rows, saveGap, overlap,
             table: table ? table.getBoundingClientRect().height : null, nav: n ? { top: n.top, bottom: n.bottom, left: n.left, right: n.right } : null }
         })
         const where = `${look} ${w}×${h} ${path}`
         if (r.sideways > 1) problems.push(`${where}: the page scrolls sideways by ${r.sideways}px`)
+        if (r.overlap) problems.push(`${where}: controls in the top row cover one another`)
+        if (r.saveGap !== null && Math.abs(r.saveGap) > 1) problems.push(`${where}: the save bar hangs ${r.saveGap}px above the bottom of the window`)
         if (r.table !== null && r.rows > 5 && r.table < r.innerHeight / 3) problems.push(`${where}: list squashed to ${Math.round(r.table)}px with ${r.rows} rows`)
         if (look === 'side' && r.nav && (r.nav.bottom < 100 || r.nav.left < 0)) problems.push(`${where}: the side menu is out of reach after scrolling`)
         if (look === 'top' && r.nav && (r.nav.bottom < 0 || r.nav.top > r.innerHeight)) problems.push(`${where}: the menu bar is off the screen`)

@@ -32,11 +32,11 @@ const useStyles = makeStyles({
   col: { flex: '1 1 auto', display: 'flex', flexDirection: 'column', minWidth: 0 },
   top: {
     display: 'flex', alignItems: 'center', gap: '12px', flex: '0 0 52px', height: '52px', padding: '0 16px', backgroundColor: tokens.colorNeutralBackground1,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`, '@media (max-width: 760px)': { gap: '6px', padding: '0 8px' },
   },
   name: { flex: '0 1 auto', minWidth: 0, '@media (max-width: 760px)': { display: 'none' } },
-  grow: { flex: '1 1 auto', display: 'flex', justifyContent: 'center' },
-  panel: { width: '300px', maxHeight: '80vh', overflowY: 'auto', padding: '10px' },
+  grow: { flex: '1 1 auto', minWidth: 0, display: 'flex', justifyContent: 'center' }, // the search gives way on a phone
+  panel: { boxSizing: 'border-box', width: 'min(300px, calc(100vw - 96px))', maxHeight: '80vh', overflowY: 'auto', padding: '10px' },
   panelTitle: { display: 'block', padding: '4px 8px 6px', fontSize: tokens.fontSizeBase400, fontWeight: tokens.fontWeightSemibold },
   main: { flex: '1 1 auto', display: 'flex', flexDirection: 'column', minHeight: 0 },
 })
@@ -45,12 +45,11 @@ const useStyles = makeStyles({
  * Look 2 (the owner's side-menu template): a slim coloured rail of areas, each an icon with its name below, Create at the
  * top. An area opens its pages in a fly-out beside the rail; the page keeps the whole width.
  */
-export function SideLook({ me, menu, current, page, todo, atTodo, onLook, onFavourites, children }: {
-  me: Me; menu: Menu; current: string | null; page: Page | null; todo: number; atTodo: boolean
+export function SideLook({ me, menu, current, page, todo, atHome, atTodo, onLook, onFavourites, children }: {
+  me: Me; menu: Menu; current: string | null; page: Page | null; todo: number; atHome: boolean; atTodo: boolean
   onLook: (l: Prefs['office_look']) => void; onFavourites: (list: Page[]) => void; children: ReactNode
 }) {
   const s = useStyles()
-  const atHome = current === null && !page && !atTodo
   const [open, setOpen] = useState<string | null>(null)
   const band = me.company.menu_color ?? menuShade(me.company.color)
   const ink = onColor(band)
@@ -66,8 +65,9 @@ export function SideLook({ me, menu, current, page, todo, atTodo, onLook, onFavo
           aria-label={todo ? `To-do, ${todo} waiting for you` : 'To-do'}>
           <span className={s.badged}><AreaIcon label="To-do" className={s.icon} />{todo > 0 && <CounterBadge className={s.counter} count={todo} overflowCount={99} size="small" color="danger" />}</span>To-do
         </button>
-        <button type="button" className={mergeClasses(s.item, atHome && s.current)} onClick={() => navigate('/office/')} aria-current={atHome ? 'page' : undefined}>
-          <AreaIcon label="Home" className={s.icon} />Home
+        <button type="button" className={mergeClasses(s.item, atHome && s.current)} onClick={() => navigate('/office/')} aria-current={atHome ? 'page' : undefined}
+          aria-label="Business Portal" title="Business Portal">
+          <AreaIcon label="Home" className={s.icon} />Portal
         </button>
         <RecentMenu beside trigger={<button type="button" className={s.item}><HistoryRegular className={s.icon} aria-hidden />Recent</button>} />
         <FavouritesMenu beside favourites={me.favourites} current={page} onChange={onFavourites} trigger={

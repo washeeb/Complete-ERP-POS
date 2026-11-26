@@ -7,6 +7,7 @@ import { UnitPicker } from '../form/UnitPicker'
 import { money } from '../home/format'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
+import { SaveBar } from '../form/SaveBar'
 
 const useStyles = makeStyles({
   head: { display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' },
@@ -26,8 +27,6 @@ const useStyles = makeStyles({
     '@media (max-width: 900px)': { gridTemplateColumns: '1fr', paddingLeft: 0 } },
   span2: { gridColumn: 'span 2', '@media (max-width: 900px)': { gridColumn: 'auto' } },
   total: { marginTop: '12px', fontWeight: tokens.fontWeightSemibold },
-  foot: { position: 'sticky', bottom: 0, zIndex: 2, display: 'flex', justifyContent: 'flex-end', gap: '8px', padding: '10px 0',
-    backgroundColor: tokens.colorNeutralBackground2, borderTop: `1px solid ${tokens.colorNeutralStroke2}` },
 })
 
 type Line = AdjLine & { k: number }
@@ -132,10 +131,10 @@ export function AdjustmentFormPage({ id, onTitle }: { id: string | null; onTitle
         </Text>
       </Panel>
 
-      <div className={s.foot}>
+      <SaveBar value={[head, lines, values]}>
         <Button onClick={back}>Cancel</Button>
         <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !ready} onClick={save}>{busy ? 'Saving…' : id ? 'Save the draft' : 'Create the draft'}</Button>
-      </div>
+      </SaveBar>
     </div>
   )
 }

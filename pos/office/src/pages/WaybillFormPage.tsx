@@ -5,6 +5,7 @@ import { api, type Option } from '../api'
 import { Choose, LongText, TextField, useFieldStyles } from '../form/Fields'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
+import { SaveBar } from '../form/SaveBar'
 
 const useStyles = makeStyles({
   title: { fontSize: '22px', fontWeight: tokens.fontWeightSemibold, margin: '0 0 4px' },
@@ -12,7 +13,6 @@ const useStyles = makeStyles({
   panel: { backgroundColor: tokens.colorNeutralBackground1, borderRadius: tokens.borderRadiusXLarge, border: `1px solid ${tokens.colorNeutralStroke2}`,
     boxShadow: tokens.shadow4, padding: '14px 16px 16px', margin: '12px 0' },
   h2: { fontSize: tokens.fontSizeBase400, fontWeight: tokens.fontWeightSemibold, margin: '0 0 10px' },
-  foot: { display: 'flex', justifyContent: 'flex-end', gap: '8px', padding: '10px 0' },
 })
 
 const BLANK = { kind: '', source_id: '', reference: '', transporter: '', driver_name: '', driver_phone: '', vehicle_no: '', packages: '', weight_kg: '', to_address: '', to_phone: '', notes: '' }
@@ -76,10 +76,10 @@ export function WaybillFormPage() {
           </div>
         </Panel>
       )}
-      <div className={s.foot}>
+      <SaveBar value={v}>
         <Button onClick={() => (history.length > 1 ? history.back() : navigate('/office/waybills'))}>Cancel</Button>
         <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !ready} onClick={save}>{busy ? 'Preparing…' : 'Prepare waybill'}</Button>
-      </div>
+      </SaveBar>
     </div>
   )
 }

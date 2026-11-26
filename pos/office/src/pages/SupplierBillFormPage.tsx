@@ -6,6 +6,7 @@ import { Ask } from '../form/Ask'
 import { Choose, LongText, TextField, useFieldStyles } from '../form/Fields'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
+import { SaveBar } from '../form/SaveBar'
 
 const useStyles = makeStyles({
   head: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' },
@@ -20,8 +21,6 @@ const useStyles = makeStyles({
   charge: { display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr)) auto', gap: '8px 10px', alignItems: 'end', padding: '8px 0',
     borderBottom: `1px solid ${tokens.colorNeutralStroke2}`, '@media (max-width: 900px)': { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' } },
   one: { display: 'grid', gap: '10px' },
-  foot: { position: 'sticky', bottom: 0, zIndex: 2, display: 'flex', justifyContent: 'flex-end', gap: '8px', padding: '10px 0',
-    backgroundColor: tokens.colorNeutralBackground2, borderTop: `1px solid ${tokens.colorNeutralStroke2}` },
 })
 
 const blankCharge = (): SbExpenseLine => ({ account_id: '', description: '', amount: '', tax_group_id: '', department_id: '', project_id: '', maintenance_order_id: '' })
@@ -176,10 +175,10 @@ export function SupplierBillFormPage({ onTitle }: { onTitle: (t: string) => void
         <Button icon={<AddRegular />} style={{ marginTop: 8 }} onClick={() => set('expense_lines')([...v.expense_lines, blankCharge()])}>Add a charge</Button>
       </Panel>
 
-      <div className={s.foot}>
+      <SaveBar value={v}>
         <Button onClick={back}>Cancel</Button>
         <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !ready} onClick={save}>{busy ? 'Saving…' : 'Create the bill'}</Button>
-      </div>
+      </SaveBar>
 
       {adding && <AddSupplier onClose={() => setAdding(false)} onAdded={(sup) => {
         setForm({ ...form, choices: { ...c, suppliers: c.suppliers.some((x) => x.id === sup.id) ? c.suppliers : [...c.suppliers, { id: sup.id, label: sup.label }] } })

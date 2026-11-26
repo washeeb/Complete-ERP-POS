@@ -269,7 +269,7 @@ export function TrendPanel({ data }: { data: HomeData }) {
 export function ShortcutsPanel({ me, menu, recent }: { me: Me; menu: Menu; recent: { url: string; label: string }[] }) {
   const s = useStyles()
   const groups = [
-    { label: 'Favourites', icon: 'More', items: me.favourites, empty: 'Star a page (☆ at its top in the classic back office) to keep it here.' },
+    { label: 'Favourites', icon: 'More', items: me.favourites, empty: 'On a page you use often, press the star (☆) in the menu bar, then Add this page.' },
     { label: 'Add', icon: 'Create', items: menu.create.flatMap((g) => g.items).slice(0, 6), empty: '' },
     { label: 'Opened lately', icon: 'Home', items: recent.slice(0, 6), empty: 'Pages you open appear here.' },
   ]

@@ -8,8 +8,10 @@ import { PageHead, usePageStyles } from '../list/ListParts'
 import { useReconfirm } from './UserForm'
 
 const useStyles = makeStyles({
-  bar: { position: 'sticky', top: 0, zIndex: 2, display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', padding: '8px 0', marginBottom: '8px',
-    backgroundColor: tokens.colorNeutralBackground2 },
+  // Fixed to the top while the settings scroll, edge to edge: the page's own padding is taken back (as the save bar).
+  bar: { position: 'sticky', top: 'calc(-1 * var(--zx-pad-t, 0px))', zIndex: 2, display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap',
+    padding: '8px var(--zx-pad-x, 0px)', marginInline: 'calc(-1 * var(--zx-pad-x, 0px))', marginBottom: '8px',
+    backgroundColor: tokens.colorNeutralBackground2, borderBottom: `1px solid ${tokens.colorNeutralStroke2}` },
   search: { flex: '1 1 260px', maxWidth: '420px' },
   reason: { flex: '1 1 220px', maxWidth: '320px' },
   grow: { flex: '1 1 auto' },
