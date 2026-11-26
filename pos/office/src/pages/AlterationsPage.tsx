@@ -41,7 +41,7 @@ export function AlterationsPage() {
   const finish = (x: { message: string }) => { setAdd(null); setUpd(null); setGive(null); setDone(x.message); setRefresh((n) => n + 1) }
   return (
     <div className={page.page}>
-      <PageHead title="Alterations" hint="Garments in for tailoring. One with a charge is collected by paying for it at the till." classic="/admin/alterations" />
+      <PageHead title="Alterations" hint="Garments in for tailoring. One with a charge is collected by paying for it at the till." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number, customer, phone or garment" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search alterations" />
         <Pick label="Status" any="Any status" options={data?.statuses ?? []} value={str(params, 'status')} onChange={(v) => set({ status: v })} />

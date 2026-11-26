@@ -42,7 +42,7 @@ export function RolesPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Roles" hint="What each role may do and its level. People get a role for the whole company or one place, on their user page." classic="/admin/roles" />
+      <PageHead title="Roles" hint="What each role may do and its level. People get a role for the whole company or one place, on their user page." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Role name" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search roles" />
         <Dropdown aria-label="Show" style={{ minWidth: 140 }} value={SHOW.find((x) => x[0] === show)?.[1] ?? ''} selectedOptions={[show]} onOptionSelect={(_, d) => set({ show: d.optionValue ?? '' })}>

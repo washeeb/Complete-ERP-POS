@@ -35,7 +35,7 @@ export function SerialsPage() {
   }, [q]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className={page.page}>
-      <PageHead title="Serial numbers" hint="Every serial or IMEI number: where it is, who bought it and its warranty." classic="/admin/serial-numbers" />
+      <PageHead title="Serial numbers" hint="Every serial or IMEI number: where it is, who bought it and its warranty." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Serial / IMEI or product" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search serial numbers" />
         <Pick label="Status" any="Any status" options={data?.statuses ?? []} value={str(params, 'status')} onChange={(v) => set({ status: v })} />

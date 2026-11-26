@@ -12,6 +12,7 @@ use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Filament\Pages\SetupWizard;
 use App\Http\Controllers\Controller;
+use App\Domain\Licensing\LicenseManager;
 use App\Models\Tenant;
 use App\Models\TillApproval;
 use App\Models\User;
@@ -44,6 +45,10 @@ class OfficeController extends Controller
     {
         if (! $request->user()) {
             return $this->signIn($request->merge(['to' => $request->getRequestUri()]));
+        }
+        // Not licensed yet: the licence page first (part 43, as the current back office's EnforceLicense).
+        if (! $request->is('office/licence', 'office/two-factor-setup') && app(LicenseManager::class)->status()['state'] === 'unlicensed') {
+            return redirect('/office/licence');
         }
         $index = public_path('office/index.html');
 
@@ -90,9 +95,10 @@ class OfficeController extends Controller
                 'logo' => $brand['logo_url'], 'logo_dark' => $brand['logo_dark_url'], 'icon' => $brand['icon_url']],
             'prefs' => UserPrefs::for($user),
             'favourites' => Look::favourites(),
-            'classic' => '/admin', // the current back office, for a few releases
             // Not set up yet, and this person may set it up: the setup wizard first, as the current back office does.
             'setup' => $tenant && ! $tenant->isSetUp() && SetupWizard::canAccess() ? '/office/setup-wizard' : null,
+            // Not licensed yet: the licence page first, as the current back office does (part 43).
+            'licence' => app(LicenseManager::class)->status()['state'] === 'unlicensed' ? '/office/licence' : null,
         ]);
     }
 

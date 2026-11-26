@@ -55,7 +55,7 @@ export function SupplierReturnsPage() {
   ]
   return (
     <div className={page.page}>
-      <PageHead title="Returns to suppliers" hint="Stock going back to a supplier: approved and sent by someone else, then settled with a credit note, replacement or refund." classic="/admin/supplier-returns" />
+      <PageHead title="Returns to suppliers" hint="Stock going back to a supplier: approved and sent by someone else, then settled with a credit note, replacement or refund." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number or supplier" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search returns to suppliers" />
         {pick('status', 'Status', data?.statuses)}

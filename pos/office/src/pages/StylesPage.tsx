@@ -32,7 +32,7 @@ export function StylesPage() {
   const m = (x: number | null) => (x === null || !data ? '—' : money(x, data.currency, data.exponent))
   return (
     <div className={page.page}>
-      <PageHead title="Styles" hint="One design in sizes and colours. Each size and colour is its own product, with its own SKU and barcode." classic="/admin/styles" />
+      <PageHead title="Styles" hint="One design in sizes and colours. Each size and colour is its own product, with its own SKU and barcode." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Code or name" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search styles" />
         <Pick label="Season" any="Any season" options={data?.seasons ?? []} value={str(params, 'season')} onChange={(v) => set({ season: v })} />

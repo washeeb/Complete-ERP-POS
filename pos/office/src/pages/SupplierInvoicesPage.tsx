@@ -67,7 +67,7 @@ export function SupplierInvoicesPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Invoices from suppliers" hint="Invoices suppliers sent from their portal. Enter each as a supplier bill, or turn it back with the reason they see." classic="/admin/supplier-invoices" />
+      <PageHead title="Invoices from suppliers" hint="Invoices suppliers sent from their portal. Enter each as a supplier bill, or turn it back with the reason they see." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Their invoice number or supplier" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search invoices from suppliers" />
         <Dropdown aria-label="Show" value={SHOW.find(([k]) => k === str(params, 'status'))?.[1] ?? 'To enter'} selectedOptions={[str(params, 'status')]}

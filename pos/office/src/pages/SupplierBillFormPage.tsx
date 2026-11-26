@@ -1,12 +1,11 @@
-import { Button, Dropdown, Field, Link, makeStyles, MessageBar, MessageBarBody, Option, Spinner, Text, tokens } from '@fluentui/react-components'
-import { AddRegular, ArrowLeftRegular, DeleteRegular, SaveRegular, WindowArrowUpRegular } from '@fluentui/react-icons'
+import { Button, Dropdown, Field, makeStyles, MessageBar, MessageBarBody, Option, Spinner, Text, tokens } from '@fluentui/react-components'
+import { AddRegular, ArrowLeftRegular, DeleteRegular, SaveRegular } from '@fluentui/react-icons'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { api, type SbBillable, type SbExpenseLine, type SbForm, type SbValues } from '../api'
 import { Ask } from '../form/Ask'
 import { Choose, LongText, TextField, useFieldStyles } from '../form/Fields'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
-import { classicPathFor } from '../paths'
 
 const useStyles = makeStyles({
   head: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' },
@@ -72,7 +71,6 @@ export function SupplierBillFormPage({ onTitle }: { onTitle: (t: string) => void
     && v.order_lines.every((l) => l.purchase_order_line_id && Number(l.qty) > 0 && l.unit_cost !== '')
     && v.expense_lines.every((l) => l.account_id && Number(l.amount) > 0)
   const back = () => (history.length > 1 ? history.back() : navigate('/office/supplier-bills'))
-  const classic = classicPathFor(`/admin/supplier-bills/create${location.search}`)
   const save = () => {
     setBusy(true)
     setError('')
@@ -90,7 +88,6 @@ export function SupplierBillFormPage({ onTitle }: { onTitle: (t: string) => void
           <h1 className={s.title}>Enter a supplier bill</h1>
           <Text className={s.muted}>Prices are before tax. A bill whose prices differ from the order waits for someone else to approve it.</Text>
         </div>
-        <Link href={classic} onClick={(e) => { e.preventDefault(); navigate(classic) }}><WindowArrowUpRegular /> Classic form</Link>
       </div>
       {error && <MessageBar intent="error" style={{ marginBottom: 12 }}><MessageBarBody>{error}</MessageBarBody></MessageBar>}
       {form.notice && (

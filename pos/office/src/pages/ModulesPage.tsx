@@ -63,7 +63,7 @@ export function ModulesPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Modules per branch" hint="Switch industry and department modules on or off for one branch at a time. Core (company, users, roles, devices, audit, settings) is always installed." classic="/admin/manage-modules" />
+      <PageHead title="Modules per branch" hint="Switch industry and department modules on or off for one branch at a time. Core (company, users, roles, devices, audit, settings) is always installed." />
       <div className={s.bar}>
         <div className={s.branch}><Choose label="Branch" required options={data.branches} value={data.branch_id ?? ''} onChange={(v) => { setDone(null); setBranch(v) }} /></div>
         <Input className={s.reason} placeholder="Reason for change (optional)" value={reason} maxLength={255} onChange={(_, d) => setReason(d.value)} aria-label="Reason for change" />

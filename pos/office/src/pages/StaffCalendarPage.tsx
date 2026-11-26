@@ -44,7 +44,7 @@ export function StaffCalendarPage() {
   const changed = (m: string) => { setBooking(false); setDone(m); setRefresh((n) => n + 1) }
   return (
     <div className={page.page}>
-      <PageHead title="Staff calendar" hint="The day's appointments, one column per staff member." classic={`/admin/staff-calendar${query ? `?${query}` : ''}`} />
+      <PageHead title="Staff calendar" hint="The day's appointments, one column per staff member." />
       <div className={p.bar} style={{ alignItems: 'flex-end' }}>
         <Field label="Branch">
           <Dropdown aria-label="Branch" value={d.branches.find((b) => b.id === d.branch)?.label ?? ''} selectedOptions={[d.branch]} style={{ minWidth: 200 }} onOptionSelect={(_, e) => set({ branch: e.optionValue ?? '' })}>

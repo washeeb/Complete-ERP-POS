@@ -49,7 +49,7 @@ export function LandedCostsPage() {
   const ready = v.receipts.length > 0 && v.charges.length > 0 && v.charges.every((c) => c.description.trim() !== '' && c.amount.trim() !== '' && Number(c.amount) !== 0)
   return (
     <div className={page.page}>
-      <PageHead title="Landed costs" hint="Freight, duty and clearing spread over deliveries, so stock costs what it really cost to bring in." classic="/admin/landed-costs" />
+      <PageHead title="Landed costs" hint="Freight, duty and clearing spread over deliveries, so stock costs what it really cost to bring in." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number or charge" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search landed costs" />
         <span className={s.grow} />

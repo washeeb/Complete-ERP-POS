@@ -45,7 +45,7 @@ export function SavedReportsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Saved reports" hint="Reports saved from the report builder: yours and those shared with you. Open one to run it again; scheduled ones are sent by themselves." classic="/admin/saved-reports" />
+      <PageHead title="Saved reports" hint="Reports saved from the report builder: yours and those shared with you. Open one to run it again; scheduled ones are sent by themselves." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Name" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search saved reports" />
         <span className={s.grow} />

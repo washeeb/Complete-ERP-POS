@@ -50,7 +50,7 @@ export function DrugInteractionsPage() {
   ]
   return (
     <div className={page.page}>
-      <PageHead title="Drug interactions" hint="Ingredient pairs that interact. The till warns the pharmacist when both are dispensed together." classic="/admin/drug-interactions" />
+      <PageHead title="Drug interactions" hint="Ingredient pairs that interact. The till warns the pharmacist when both are dispensed together." />
       {!!data?.unchecked && <MessageBar intent="warning" style={{ marginBottom: 10 }}><MessageBarBody>
         {data.unchecked} medicine(s) have neither a generic name nor active ingredients, so allergies and interactions cannot be checked for them. <Link onClick={() => navigate('/office/products')}>Add them on the products</Link>.
       </MessageBarBody></MessageBar>}

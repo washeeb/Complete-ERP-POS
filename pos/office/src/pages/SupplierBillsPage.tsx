@@ -57,7 +57,7 @@ export function SupplierBillsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Supplier bills" hint="Supplier invoices, matched to what was received (or confirmed on an order), or charged straight to an expense account." classic="/admin/supplier-bills" />
+      <PageHead title="Supplier bills" hint="Supplier invoices, matched to what was received (or confirmed on an order), or charged straight to an expense account." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number, their invoice or supplier" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search supplier bills" />
         <Dropdown aria-label="Status" value={str(params, 'status') ? label(options?.statuses, str(params, 'status')) : 'Any status'} selectedOptions={[str(params, 'status')]}

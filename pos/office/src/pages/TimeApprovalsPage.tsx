@@ -35,7 +35,7 @@ export function TimeApprovalsPage() {
   const tick = (ids: string[], on: boolean) => setTicked((o) => { const n = new Set(o); ids.forEach((i) => (on ? n.add(i) : n.delete(i))); return n })
   return (
     <div className={page.page}>
-      <PageHead title="Time to approve" hint="Approved hours become project costs (at each person's cost rate) and billable time. Your own time is approved by someone else." classic="/admin/time-approvals" />
+      <PageHead title="Time to approve" hint="Approved hours become project costs (at each person's cost rate) and billable time. Your own time is approved by someone else." />
       <div className={s.bar}>
         <span className={s.grow} />
         <Button icon={<ArrowUndoRegular />} disabled={ticked.size === 0} onClick={() => open([...ticked], 'reject')}>Send back ticked</Button>

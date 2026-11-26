@@ -30,7 +30,7 @@ export function WhatsappOrdersPage() {
   const status = data?.status ?? (str(params, 'status') || 'new')
   return (
     <div className={page.page}>
-      <PageHead title="WhatsApp orders" hint="Customers' WhatsApp messages to your business number. Make the order, reply, decline, or make a ticket for a problem." classic="/admin/whatsapp-orders" />
+      <PageHead title="WhatsApp orders" hint="Customers' WhatsApp messages to your business number. Make the order, reply, decline, or make a ticket for a problem." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Reference, name or number" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search WhatsApp orders" />
         <Dropdown aria-label="Status" value={status === 'all' ? 'Any status' : data?.statuses.find((x) => x.id === status)?.label ?? 'New'} selectedOptions={[status]} style={{ minWidth: 130 }}

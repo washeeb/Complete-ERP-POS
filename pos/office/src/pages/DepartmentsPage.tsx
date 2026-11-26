@@ -32,7 +32,7 @@ export function DepartmentsPage() {
   return (
     <div className={page.page}>
       <Button appearance="transparent" icon={<ArrowLeftRegular />} onClick={() => navigate('/office/employees')}>Employees</Button>
-      <PageHead title="Departments" hint="Employees, costs and purchases are put under a department, so each one's spending can be followed." classic="/admin/departments" />
+      <PageHead title="Departments" hint="Employees, costs and purchases are put under a department, so each one's spending can be followed." />
       <div className={s.bar}>
         <ShowFilter value={str(params, 'show')} onChange={(v) => set({ show: v })} />
         <span className={s.grow} />

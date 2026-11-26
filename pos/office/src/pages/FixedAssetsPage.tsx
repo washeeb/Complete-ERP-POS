@@ -58,7 +58,7 @@ export function FixedAssetsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Fixed assets" hint="What the business owns and uses for years: cost, book value after depreciation, where it is. Depreciation is charged every month by itself." classic="/admin/fixed-assets" />
+      <PageHead title="Fixed assets" hint="What the business owns and uses for years: cost, book value after depreciation, where it is. Depreciation is charged every month by itself." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number, name or serial" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search fixed assets" />
         <Dropdown aria-label="Status" style={{ minWidth: 130 }} value={STATUS.find((x) => x[0] === status)?.[1] ?? ''} selectedOptions={[status]} onOptionSelect={(_, d) => set({ status: d.optionValue ?? '' })}>

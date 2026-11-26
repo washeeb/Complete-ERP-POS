@@ -1,12 +1,11 @@
 import { Button, makeStyles, MessageBar, MessageBarBody, Spinner, Text, tokens } from '@fluentui/react-components'
-import { AddRegular, ArrowLeftRegular, DeleteRegular, SendRegular, WindowArrowUpRegular } from '@fluentui/react-icons'
+import { AddRegular, ArrowLeftRegular, DeleteRegular, SendRegular } from '@fluentui/react-icons'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { api, type Held, type RequestForm, type RequestLine } from '../api'
 import { Choose, LongText, TextField, useFieldStyles } from '../form/Fields'
 import { UnitPicker } from '../form/UnitPicker'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
-import { classicPathFor } from '../paths'
 import { repeated } from './CountPage'
 
 const useStyles = makeStyles({
@@ -79,7 +78,6 @@ export function RequestFormPage({ onTitle }: { onTitle: (t: string) => void }) {
           <h1 className={s.title}>Ask for stock</h1>
           <Text className={s.muted}>Choose items as your branch sells them. A request is not edited later: cancel it and ask again.</Text>
         </div>
-        <Button appearance="subtle" icon={<WindowArrowUpRegular />} onClick={() => navigate(classicPathFor('/admin/stock-requests/create'))}>Classic form</Button>
       </div>
       {error && <MessageBar intent="error" style={{ marginBottom: 12 }}><MessageBarBody>{error}</MessageBarBody></MessageBar>}
 

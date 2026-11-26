@@ -174,11 +174,6 @@ export function ProfilePage() {
                 {d.office_looks.map((o) => <Radio key={o.id} value={o.id} label={o.label} />)}
               </RadioGroup>
             </Field>
-            <Field label="The classic back office" style={{ marginTop: 10 }}>
-              <RadioGroup value={v.look} onChange={(_, x) => setV({ ...v, look: x.value })} className={st.looks}>
-                {d.looks.map((o) => <Radio key={o.id || 'company'} value={o.id} label={<><Text weight="semibold">{o.label}</Text>{o.detail && <Text size={200} block className={s.muted}>{o.detail}</Text>}</>} />)}
-              </RadioGroup>
-            </Field>
           </Panel></div>
           <div id="profile-prefs"><Panel title="Preferences" about="Your own defaults. They follow you to any computer you sign in to.">
             <div className={f.grid}>

@@ -57,8 +57,8 @@ type ListData<R> = { total: number; page: number; per: number; rows: R[]; can_cr
  * A Purchasing list (part 18): search, status (and more filters given), the table, the pager, and New. Each list keeps
  * the current page's search and filters in the address.
  */
-export function ProcList<R extends { id: string }>({ title, hint, classic, load, label, placeholder, columns, empty, open, create, createLabel, filters, cards }: {
-  title: string; hint: string; classic: string; load: (q: string, signal: AbortSignal) => Promise<ListData<R>>; label: string; placeholder: string
+export function ProcList<R extends { id: string }>({ title, hint, load, label, placeholder, columns, empty, open, create, createLabel, filters, cards }: {
+  title: string; hint: string; load: (q: string, signal: AbortSignal) => Promise<ListData<R>>; label: string; placeholder: string
   columns: Column<R>[]; empty: string; open: (r: R) => string; create: string; createLabel: string
   filters?: (data: ListData<R> | null, value: (k: string) => string, set: (k: string, v: string) => void) => ReactNode
   cards?: (data: ListData<R>) => ReactNode
@@ -75,7 +75,7 @@ export function ProcList<R extends { id: string }>({ title, hint, classic, load,
   const status = str(params, 'status')
   return (
     <div className={page.page}>
-      <PageHead title={title} hint={hint} classic={classic} />
+      <PageHead title={title} hint={hint} />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder={placeholder} value={q} onChange={(_, d) => setQ(d.value)} aria-label={`Search ${label.toLowerCase()}`} />
         <Dropdown aria-label="Status" value={status ? data?.statuses.find((x) => x.id === status)?.label ?? '' : 'Any status'} selectedOptions={[status]}

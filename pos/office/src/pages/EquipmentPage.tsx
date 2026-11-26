@@ -31,7 +31,7 @@ export function EquipmentPage() {
   }, [q]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className={page.page}>
-      <PageHead title="Equipment" hint="What you look after, with its servicing plans and work orders: what it costs to keep running and how long it was down." classic="/admin/equipment" />
+      <PageHead title="Equipment" hint="What you look after, with its servicing plans and work orders: what it costs to keep running and how long it was down." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number, name, serial, make or model" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search equipment" />
         <Pick label="Whose" any="Ours and customers’" options={WHOSE} value={str(params, 'owner')} onChange={(v) => set({ owner: v })} />

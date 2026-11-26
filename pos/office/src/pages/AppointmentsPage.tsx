@@ -31,7 +31,7 @@ export function AppointmentsPage() {
   const finish = (m: string) => { setBooking(false); setDone(m); setRefresh((n) => n + 1) }
   return (
     <div className={page.page}>
-      <PageHead title="Appointments" hint="Services booked with a staff member; arrivals, no-shows and cancellations. Paid at the till." classic="/admin/appointments" />
+      <PageHead title="Appointments" hint="Services booked with a staff member; arrivals, no-shows and cancellations. Paid at the till." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Customer, phone or number" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search appointments" />
         <Switch label="From today" checked={str(params, 'upcoming') !== '0'} onChange={(_, d) => set({ upcoming: d.checked ? '' : '0' })} />

@@ -66,7 +66,7 @@ export function FinancialReportsPage() {
   }
   return (
     <div className={page.page}>
-      <PageHead title="Financial reports" hint="The books: trial balance, profit and loss, balance sheet, account ledgers, budget, VAT and the ledger check. Choose the report, the dates and the filters." classic={`/admin/financial-reports${query ? `?${query}` : ''}`} />
+      <PageHead title="Financial reports" hint="The books: trial balance, profit and loss, balance sheet, account ledgers, budget, VAT and the ledger check. Choose the report, the dates and the filters." />
       <div className={s.bar}>
         {pick('Report', r, options?.reports ?? [], 'Trial balance', 'report', 190)}
         {r === 'ledger' && pick('Account', data.account, options?.accounts ?? [], 'Choose…', 'account', 240)}

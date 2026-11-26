@@ -44,7 +44,7 @@ export function DrawerPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Till drawer" hint="Money in and out of the drawers besides sales, who did it and who approved it." classic="/admin/till-drawer-events" />
+      <PageHead title="Till drawer" hint="Money in and out of the drawers besides sales, who did it and who approved it." />
       <div className={s.bar}>
         <PeriodButtons value={str(params, 'period')} onChange={(v) => set({ period: v })} />
         <Field label="What" size="small">

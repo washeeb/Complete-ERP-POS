@@ -28,7 +28,7 @@ export function RepTargetsPage() {
   const put = <K extends keyof TargetValues>(k: K) => (x: TargetValues[K]) => setEdit((o) => (o ? { ...o, [k]: x } : o))
   return (
     <div className={page.page}>
-      <PageHead title="Rep targets" hint="Each rep's sales and visits target per month. Rep performance measures against these." classic="/admin/rep-targets" />
+      <PageHead title="Rep targets" hint="Each rep's sales and visits target per month. Rep performance measures against these." />
       <div className={s.bar}>
         <span className={s.grow} />
         {data && <Button appearance="primary" icon={<AddRegular />}

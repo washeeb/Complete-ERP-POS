@@ -76,7 +76,7 @@ export function WhatToOrderPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="What to order" hint="Products at or below their minimum in the store, counting what is already on order or in transit. Press a line to change it; tick lines to order them." classic="/admin/reorder-suggestions" />
+      <PageHead title="What to order" hint="Products at or below their minimum in the store, counting what is already on order or in transit. Press a line to change it; tick lines to order them." />
       <div className={s.bar}>
         <Dropdown aria-label="Warehouse" value={options?.warehouses.find((w) => w.id === warehouse)?.label ?? 'Warehouse'} selectedOptions={[warehouse]}
           onOptionSelect={(_, d) => { setWarehouse(d.optionValue ?? ''); setChanges({}); setTicked(new Set()); setPageNo(1) }} style={{ minWidth: 200 }}>

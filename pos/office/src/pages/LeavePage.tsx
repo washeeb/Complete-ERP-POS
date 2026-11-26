@@ -72,7 +72,7 @@ export function LeavePage() {
   const status = str(params, 'status')
   return (
     <div className={page.page}>
-      <PageHead title="Leave" hint="Requests for leave, approved by the line manager (never their own)." classic="/admin/leave-requests" />
+      <PageHead title="Leave" hint="Requests for leave, approved by the line manager (never their own)." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Employee" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search leave" />
         <Dropdown aria-label="Status" value={status ? data?.statuses.find((x) => x.id === status)?.label ?? '' : 'Any status'} selectedOptions={[status]} style={{ minWidth: 190 }}

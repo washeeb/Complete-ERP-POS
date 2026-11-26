@@ -37,7 +37,7 @@ export function CompanyWidePage() {
   ]
   return (
     <div className={page.page}>
-      <PageHead title="Company-wide access" hint="Company-wide access shows every industry and branch. The system cannot know where someone works, so give each flagged person their branch here." classic="/admin/company-wide-access" />
+      <PageHead title="Company-wide access" hint="Company-wide access shows every industry and branch. The system cannot know where someone works, so give each flagged person their branch here." />
       <div className={s.bar}>
         <Dropdown aria-label="Show" style={{ minWidth: 170 }} value={SHOW.find((x) => x[0] === show)?.[1] ?? ''} selectedOptions={[show]} onOptionSelect={(_, d) => set({ show: d.optionValue ?? '' })}>
           {SHOW.map(([k, l]) => <Option key={k} value={k}>{l}</Option>)}

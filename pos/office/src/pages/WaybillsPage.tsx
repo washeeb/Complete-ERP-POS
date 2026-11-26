@@ -52,7 +52,7 @@ export function WaybillsPage() {
   ]
   return (
     <div className={page.page}>
-      <PageHead title="Waybills" hint="The papers that travel with goods: to customers, between branches, back to suppliers, and the supplier's waybill on what was received." classic="/admin/waybills" />
+      <PageHead title="Waybills" hint="The papers that travel with goods: to customers, between branches, back to suppliers, and the supplier's waybill on what was received." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number, document, receiver or vehicle" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search waybills" />
         {pick('status', 'Status', data?.statuses)}

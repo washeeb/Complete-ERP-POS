@@ -28,7 +28,7 @@ export function MyHrPage() {
   const finish = (m: string) => { setAsking(false); setCancel(null); setDone(m); load() }
   return (
     <div className={page.page}>
-      <PageHead title="My leave & payslips" hint={`${d.name}: your leave and your payslips.`} classic="/admin/my-hr" />
+      <PageHead title="My leave & payslips" hint={`${d.name}: your leave and your payslips.`} />
       <div className={s.bar}><span className={s.grow} /><Button appearance="primary" icon={<AddRegular />} onClick={() => { setDone(''); setAsking(true) }}>Request leave</Button></div>
       {done && <MessageBar intent="success" style={{ marginBottom: 12 }}><MessageBarBody>{done}</MessageBarBody></MessageBar>}
       <Panel title="Leave left this year">

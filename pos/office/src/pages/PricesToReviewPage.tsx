@@ -54,7 +54,7 @@ export function PricesToReviewPage() {
   ]
   return (
     <div className={page.page}>
-      <PageHead title="Prices to review" hint="New prices from the pricing rules, waiting for your approval. Approve them (several at once with the boxes) or keep the current price." classic="/admin/prices-to-review" />
+      <PageHead title="Prices to review" hint="New prices from the pricing rules, waiting for your approval. Approve them (several at once with the boxes) or keep the current price." />
       <div className={s.bar}>
         <Button icon={<ArrowLeftRegular />} onClick={() => navigate('/office/pricing-rules')}>Pricing rules</Button>
         <SearchBox className={s.search} placeholder="Product name or code" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search prices to review" />

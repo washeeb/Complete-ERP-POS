@@ -42,7 +42,7 @@ export function InsightsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Insights" hint="Built-in analytics from your own sales and stock: what to order, stock at risk, customers, prices, cash for the coming weeks and unusual till patterns." classic={`/admin/insights${query ? `?${query}` : ''}`} />
+      <PageHead title="Insights" hint="Built-in analytics from your own sales and stock: what to order, stock at risk, customers, prices, cash for the coming weeks and unusual till patterns." />
       <TabList className={s.tabs} selectedValue={data.tab} onTabSelect={(_, d) => set({ tab: String(d.value) })} aria-label="Insights">
         {data.tabs.map((t) => <Tab key={t.id} value={t.id}>{t.label}</Tab>)}
       </TabList>

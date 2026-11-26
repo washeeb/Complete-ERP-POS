@@ -32,7 +32,7 @@ export function SensorsPage() {
   useEffect(() => { const t = setInterval(() => setTick((n) => n + 1), 60000); return () => clearInterval(t) }, [])
   return (
     <div className={page.page}>
-      <PageHead title="Sensors" hint="What each sensor reads now, refreshed every minute. Alarms go to the people on duty until someone says what was done." classic="/admin/sensors" />
+      <PageHead title="Sensors" hint="What each sensor reads now, refreshed every minute. Alarms go to the people on duty until someone says what was done." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Name or number" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search sensors" />
         <Pick label="Status" any="Any state" options={data?.statuses ?? []} value={str(params, 'status')} onChange={(v) => set({ status: v })} />

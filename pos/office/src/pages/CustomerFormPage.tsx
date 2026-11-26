@@ -1,11 +1,10 @@
-import { Button, Link, makeStyles, MessageBar, MessageBarBody, Spinner, Text, tokens } from '@fluentui/react-components'
-import { ArrowLeftRegular, SaveRegular, WindowArrowUpRegular } from '@fluentui/react-icons'
+import { Button, makeStyles, MessageBar, MessageBarBody, Spinner, Text, tokens } from '@fluentui/react-components'
+import { ArrowLeftRegular, SaveRegular } from '@fluentui/react-icons'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { api, type CustomerForm, type CustomerValues } from '../api'
 import { Choose, LongText, Tags, TextField, Toggle, useFieldStyles } from '../form/Fields'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
-import { classicPathFor } from '../paths'
 
 const useStyles = makeStyles({
   head: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' },
@@ -44,7 +43,6 @@ export function CustomerFormPage({ id, onTitle }: { id: string | null; onTitle: 
   const c = form.choices
   const set = <K extends keyof CustomerValues>(k: K) => (x: CustomerValues[K]) => setV((o) => (o ? { ...o, [k]: x } : o))
   const str = (k: keyof CustomerValues) => ({ value: v[k] as string, onChange: set(k) as (x: string) => void })
-  const classic = classicPathFor(id ? `/admin/customers/${id}/edit` : '/admin/customers/create')
   const back = () => (history.length > 1 ? history.back() : navigate(id ? `/office/customers/${id}` : '/office/customers'))
   const save = () => {
     setBusy(true)
@@ -63,7 +61,6 @@ export function CustomerFormPage({ id, onTitle }: { id: string | null; onTitle: 
           <h1 className={s.title}>{id ? `Edit ${form.name}` : 'New customer'}</h1>
           <Text className={s.muted}>{form.code ? `Code ${form.code} · given by the system.` : 'The code is given when you save.'}</Text>
         </div>
-        <Link href={classic} onClick={(e) => { e.preventDefault(); navigate(classic) }}><WindowArrowUpRegular /> Classic form</Link>
       </div>
       {error && <MessageBar intent="error" style={{ marginBottom: 12 }}><MessageBarBody>{error}</MessageBarBody></MessageBar>}
 

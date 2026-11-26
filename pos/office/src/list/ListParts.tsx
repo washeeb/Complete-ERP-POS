@@ -1,8 +1,5 @@
-import { Link, makeStyles, Text, ToggleButton, tokens } from '@fluentui/react-components'
-import { WindowArrowUpRegular } from '@fluentui/react-icons'
+import { makeStyles, Text, ToggleButton, tokens } from '@fluentui/react-components'
 import type { ReactNode } from 'react'
-import { navigate } from '../nav'
-import { classicPathFor } from '../paths'
 
 const useStyles = makeStyles({
   page: { flex: '1 1 auto', overflowY: 'auto', padding: '16px 20px 32px', '@media (max-width: 760px)': { padding: '12px 10px 24px' } },
@@ -19,8 +16,8 @@ export function usePageStyles() {
   return useStyles()
 }
 
-/** A rebuilt page's heading, its one-line explanation, and the way to its classic version. */
-export function PageHead({ title, hint, classic }: { title: string; hint: string; classic: string }) {
+/** A page's heading and its one-line explanation. */
+export function PageHead({ title, hint }: { title: string; hint: string }) {
   const s = useStyles()
   return (
     <div className={s.head}>
@@ -28,7 +25,6 @@ export function PageHead({ title, hint, classic }: { title: string; hint: string
         <h1 className={s.title}>{title}</h1>
         <Text className={s.muted}>{hint}</Text>
       </div>
-      <Link href={classicPathFor(classic)} onClick={(e) => { e.preventDefault(); navigate(classicPathFor(classic)) }}><WindowArrowUpRegular /> Classic version</Link>
     </div>
   )
 }

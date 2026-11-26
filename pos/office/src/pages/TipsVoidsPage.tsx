@@ -30,7 +30,7 @@ export function TipsVoidsPage() {
   const m = (x: number) => money(x, d.currency, d.exponent)
   return (
     <div className={page.page}>
-      <PageHead title="Tips & voids" hint="Tips owed per person (paid with payroll) and voided items, for a period." classic={`/admin/restaurant-report${query ? `?${query}` : ''}`} />
+      <PageHead title="Tips & voids" hint="Tips owed per person (paid with payroll) and voided items, for a period." />
       <div className={s.bar} style={{ alignItems: 'flex-end' }}>
         <Field label="From"><Input type="date" value={d.from} onChange={(_, e) => e.value && set({ from: e.value })} /></Field>
         <Field label="To"><Input type="date" value={d.to} onChange={(_, e) => e.value && set({ to: e.value })} /></Field>

@@ -42,7 +42,7 @@ export function MonthEndPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Month-end" hint="Close each month once everything in it is posted and the books tie. A closed month takes no more postings; reopening needs a reason." classic="/admin/fiscal-periods" />
+      <PageHead title="Month-end" hint="Close each month once everything in it is posted and the books tie. A closed month takes no more postings; reopening needs a reason." />
       <div className={s.bar}>
         <Field label="Financial year">
           <Dropdown aria-label="Financial year" style={{ minWidth: 130 }} value={`FY${data.year}`} selectedOptions={[String(data.year)]} onOptionSelect={(_, d) => d.optionValue && set({ year: d.optionValue })}>

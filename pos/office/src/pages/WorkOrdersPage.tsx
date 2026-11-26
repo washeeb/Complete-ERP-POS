@@ -35,7 +35,7 @@ export function WorkOrdersPage() {
   const m = (x: number) => (cur.current ? money(x, cur.current.currency, cur.current.exponent) : '')
   return (
     <div className={page.page}>
-      <PageHead title="Work orders" hint="Servicing that is due, breakdowns and customer visits. Log time and parts on each; “Done” puts the equipment back to work." classic="/admin/maintenance-orders" />
+      <PageHead title="Work orders" hint="Servicing that is due, breakdowns and customer visits. Log time and parts on each; “Done” puts the equipment back to work." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number or what is to be done" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search work orders" />
         <Dropdown aria-label="Open or closed" value={OPEN.find((x) => x.id === open)?.label ?? 'Open only'} selectedOptions={[open]} style={{ minWidth: 150 }}

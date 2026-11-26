@@ -43,7 +43,7 @@ export function ItActivityPage() {
   ]
   return (
     <div className={page.page}>
-      <PageHead title="IT and support activity" hint="Everything IT Admin and SyncLytics support did, and every change to users, access, devices, settings and the other technical parts, by anyone. You see the technical side without being able to change it." classic="/admin/it-activity" />
+      <PageHead title="IT and support activity" hint="Everything IT Admin and SyncLytics support did, and every change to users, access, devices, settings and the other technical parts, by anyone. You see the technical side without being able to change it." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Who" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search by who" />
         <Dropdown aria-label="Who" style={{ minWidth: 220 }} value={WHO.find((x) => x[0] === who)?.[1] ?? ''} selectedOptions={[who]} onOptionSelect={(_, d) => set({ who: d.optionValue ?? '' })}>

@@ -9,7 +9,7 @@ export function ConfirmItsYouPage() {
   return (
     <div className={page.page}>
       <div style={{ maxWidth: 560 }}>
-        <PageHead title="Confirm it's you" hint="Before money leaves, prove it is really you." classic="/admin/confirm-its-you" />
+        <PageHead title="Confirm it's you" hint="Before money leaves, prove it is really you." />
         <Panel title="Confirm it's you">
           <ConfirmForm />
         </Panel>

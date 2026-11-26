@@ -59,7 +59,7 @@ export function CustomerPaymentsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Payments received" hint="What customers paid on account. Open a row for the customer; Receipt prints it. Take a payment on the customer's page." classic="/admin/customer-payments" />
+      <PageHead title="Payments received" hint="What customers paid on account. Open a row for the customer; Receipt prints it. Take a payment on the customer's page." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Receipt, customer or reference" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search payments" />
         <Dropdown aria-label="Method" multiselect placeholder="Any method" value={methods.map((x) => label(options?.methods, x)).join(', ')} selectedOptions={methods}

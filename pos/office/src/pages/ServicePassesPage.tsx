@@ -38,7 +38,7 @@ export function ServicePassesPage() {
   const status = data?.status ?? (str(params, 'status') || 'active')
   return (
     <div className={page.page}>
-      <PageHead title="Prepaid passes" hint="Packs and membership periods: sessions left, history, void. Sessions are used at the till." classic="/admin/service-passes" />
+      <PageHead title="Prepaid passes" hint="Packs and membership periods: sessions left, history, void. Sessions are used at the till." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number, customer or phone" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search passes" />
         <Dropdown aria-label="Status" value={status === 'all' ? 'Any status' : data?.statuses.find((x) => x.id === status)?.label ?? 'Active'} selectedOptions={[status]} style={{ minWidth: 130 }}

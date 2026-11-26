@@ -64,7 +64,7 @@ export function JournalsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Journals" hint="The ledger's journals: automatic ones from sales, bills and payments, journals typed by hand, opening balances and reversals. A posted journal is reversed, never edited." classic="/admin/journal-entries" />
+      <PageHead title="Journals" hint="The ledger's journals: automatic ones from sales, bills and payments, journals typed by hand, opening balances and reversals. A posted journal is reversed, never edited." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number or description" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search journals" />
         <Dropdown aria-label="Kind" style={{ minWidth: 170 }} value={kind ? options?.kinds.find((k) => k.id === kind)?.label ?? kind : 'Any kind'} selectedOptions={[kind]}

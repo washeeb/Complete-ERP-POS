@@ -63,7 +63,7 @@ export function CloseDayPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Close the day" hint="Before leaving: is the day wrapped up? Then say where the cash went and close it." classic="/admin/cash/close-day" />
+      <PageHead title="Close the day" hint="Before leaving: is the day wrapped up? Then say where the cash went and close it." />
       <div className={c.bar}>
         <BranchPick branches={data.branches} value={data.branch} onChange={(branch) => go({ branch })} />
         <Field label="Day" size="small"><Input size="small" type="date" max={data.today} value={str(params, 'date') || data.date} onChange={(_, d) => go({ date: d.value })} /></Field>

@@ -28,7 +28,7 @@ export function CommissionsPage() {
   const m = (x: number) => money(x, d.currency, d.exponent)
   return (
     <div className={page.page}>
-      <PageHead title="Commissions" hint="Commission earned by each staff member in a period, net of returns. Paid with payroll." classic={`/admin/commissions${query ? `?${query}` : ''}`} />
+      <PageHead title="Commissions" hint="Commission earned by each staff member in a period, net of returns. Paid with payroll." />
       <div className={s.bar} style={{ alignItems: 'flex-end' }}>
         <Field label="From"><Input type="date" value={d.from} onChange={(_, e) => e.value && set({ from: e.value })} /></Field>
         <Field label="To"><Input type="date" value={d.to} onChange={(_, e) => e.value && set({ to: e.value })} /></Field>

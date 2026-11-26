@@ -62,7 +62,7 @@ export function GiftCardsPage() {
   ]
   return (
     <div className={page.page}>
-      <PageHead title="Gift cards & credit" hint="Every gift card and store credit with its balance. Sell a gift card here; store credit comes from returns." classic="/admin/stored-values" />
+      <PageHead title="Gift cards & credit" hint="Every gift card and store credit with its balance. Sell a gift card here; store credit comes from returns." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Card number or customer" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search gift cards" />
         <Dropdown aria-label="Kind" value={kind ? data?.kinds.find((x) => x.id === kind)?.label ?? '' : 'Any kind'} selectedOptions={[kind]}

@@ -65,7 +65,7 @@ export function ReturnsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Returns" hint="Goods brought back at the till or in the back office: who took them, who approved them, why, and how the money went back." classic="/admin/returns" />
+      <PageHead title="Returns" hint="Goods brought back at the till or in the back office: who took them, who approved them, why, and how the money went back." />
       {options?.summary && <MessageBar intent={options.summary.includes('Worth a look') ? 'warning' : 'info'} style={{ marginBottom: 10 }}><MessageBarBody>{options.summary}</MessageBarBody></MessageBar>}
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Return number or person" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search returns" />

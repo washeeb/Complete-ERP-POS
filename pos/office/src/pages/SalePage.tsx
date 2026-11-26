@@ -1,13 +1,12 @@
 import {
-  Badge, Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Input, Link, makeStyles, MessageBar, MessageBarBody,
+  Badge, Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Input, makeStyles, MessageBar, MessageBarBody,
   Spinner, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, tokens,
 } from '@fluentui/react-components'
-import { ArrowLeftRegular, ArrowUndoRegular, EyeRegular, PersonAddRegular, PrintRegular, WindowArrowUpRegular } from '@fluentui/react-icons'
+import { ArrowLeftRegular, ArrowUndoRegular, EyeRegular, PersonAddRegular, PrintRegular } from '@fluentui/react-icons'
 import { useEffect, useState } from 'react'
 import { api, type SaleDetail } from '../api'
 import { money } from '../home/format'
 import { navigate } from '../nav'
-import { classicPathFor } from '../paths'
 import { ReturnGoods } from './ReturnGoods'
 
 const useStyles = makeStyles({
@@ -57,7 +56,6 @@ export function SalePage({ id, onTitle }: { id: string; onTitle: (t: string) => 
           <Button appearance="primary" icon={<PrintRegular />} onClick={() => window.open(sale.actions.print, '_blank', 'noopener')}>Print copy</Button>
           {sale.actions.save_customer && <Button icon={<PersonAddRegular />} onClick={() => setSaving(true)}>Save as customer</Button>}
           {sale.actions.return && <Button icon={<ArrowUndoRegular />} onClick={() => { setDone(''); setReturning(true) }}>Return goods</Button>}
-          <Link href={classicPathFor(`/admin/sales/${sale.id}`)} onClick={(e) => { e.preventDefault(); navigate(classicPathFor(`/admin/sales/${sale.id}`)) }}><WindowArrowUpRegular /> Classic version</Link>
         </div>
       </div>
       {done && <MessageBar intent="success" style={{ marginBottom: 12 }}><MessageBarBody>{done}</MessageBarBody></MessageBar>}

@@ -38,7 +38,7 @@ export function LegalEntitiesPage() {
   const put = <K extends keyof Values>(k: K) => (x: Values[K]) => setEditing((o) => (o ? { ...o, v: { ...o.v, [k]: x } } : o))
   return (
     <div className={page.page}>
-      <PageHead title="Legal entities" hint="The registered companies of the group. Their TIN and VAT number print on their branches' receipts and invoices." classic="/admin/legal-entities" />
+      <PageHead title="Legal entities" hint="The registered companies of the group. Their TIN and VAT number print on their branches' receipts and invoices." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Registered name" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search legal entities" />
         <ShowFilter value={str(params, 'show')} onChange={(v) => set({ show: v })} />

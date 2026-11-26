@@ -57,7 +57,7 @@ export function CustomerOrdersPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Quotes & orders" hint="Quotations and customer orders: turn a quote into an order, release a credit hold, deliver (each delivery raises its invoice)." classic="/admin/customer-orders" />
+      <PageHead title="Quotes & orders" hint="Quotations and customer orders: turn a quote into an order, release a credit hold, deliver (each delivery raises its invoice)." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Quote, order or customer" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search quotes and orders" />
         <Dropdown aria-label="Status" multiselect placeholder="Any status" value={statuses.map((x) => label(options?.statuses, x)).join(', ')} selectedOptions={statuses}

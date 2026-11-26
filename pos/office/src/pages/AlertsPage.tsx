@@ -42,7 +42,7 @@ export function AlertsPage() {
   }
   return (
     <div className={page.page}>
-      <PageHead title="Alerts" hint="What the nightly insights found that needs looking at today." classic="/admin/alerts" />
+      <PageHead title="Alerts" hint="What the nightly insights found that needs looking at today." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Search alerts" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search alerts" />
         <Dropdown aria-label="Status" value={status === 'all' ? 'Any status' : data?.statuses.find((x) => x.id === status)?.label ?? 'Open'} selectedOptions={[status]} style={{ minWidth: 130 }}

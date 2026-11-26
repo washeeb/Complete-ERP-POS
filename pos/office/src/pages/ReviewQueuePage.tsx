@@ -48,7 +48,7 @@ export function ReviewQueuePage() {
   ]
   return (
     <div className={page.page}>
-      <PageHead title="Review queue" hint="Offline and sync situations a person must decide. Check each one, then say what you checked or did." classic="/admin/review-items" />
+      <PageHead title="Review queue" hint="Offline and sync situations a person must decide. Check each one, then say what you checked or did." />
       <div className={s.bar}>
         <Field label="Show" size="small">
           <Dropdown size="small" style={{ minWidth: 130 }} value={SHOW.find((x) => x[0] === (data?.status ?? 'open'))?.[1] ?? ''} selectedOptions={[data?.status ?? 'open']}

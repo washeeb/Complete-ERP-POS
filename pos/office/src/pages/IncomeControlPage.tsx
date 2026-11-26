@@ -43,7 +43,7 @@ export function IncomeControlPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Income control" hint="Count each handover blind, decide the differences, and record what went to the bank." classic="/admin/income-control" />
+      <PageHead title="Income control" hint="Count each handover blind, decide the differences, and record what went to the bank." />
       {loading && <Spinner size="tiny" style={{ marginBottom: 8 }} />}
       {error && <MessageBar intent="error" style={{ marginBottom: 12 }}><MessageBarBody>{error}</MessageBarBody></MessageBar>}
       {done && <MessageBar intent="success" style={{ marginBottom: 12 }}><MessageBarBody>{done}</MessageBarBody></MessageBar>}

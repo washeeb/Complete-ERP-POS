@@ -24,7 +24,7 @@ export function ChannelsPage() {
   const { data, loading, error } = useList(api.channels, serialize(params), 0)
   return (
     <div className={page.page}>
-      <PageHead title="Channels" hint="Your shop page and connected stores: what they sell, from which branch, and whether they are up to date." classic="/admin/sales-channels" />
+      <PageHead title="Channels" hint="Your shop page and connected stores: what they sell, from which branch, and whether they are up to date." />
       <div className={s.bar}>
         <ShowFilter value={str(params, 'show')} onChange={(v) => set({ show: v })} />
         <span className={s.grow} />

@@ -60,7 +60,7 @@ export function CashSetupPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Shifts and vaults" hint="The shifts, each till's vault per shift, or each teller's own vault." classic="/admin/cash-setup" />
+      <PageHead title="Shifts and vaults" hint="The shifts, each till's vault per shift, or each teller's own vault." />
       <div className={c.bar}>
         {loading && <Spinner size="tiny" />}
         <span className={c.grow} />

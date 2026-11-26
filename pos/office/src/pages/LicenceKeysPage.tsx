@@ -40,7 +40,7 @@ export function LicenceKeysPage() {
   const finish = (m: string) => { setLoad(null); setOwed(false); setVoiding(null); setDone(m); setRefresh((n) => n + 1) }
   return (
     <div className={page.page}>
-      <PageHead title="Licence keys" hint="Loaded per product and branch, handed out one per unit sold (printed on the receipt)." classic="/admin/licence-keys" />
+      <PageHead title="Licence keys" hint="Loaded per product and branch, handed out one per unit sold (printed on the receipt)." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Last characters of the key" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search keys" />
         <Pick label="Status" any="Any status" options={data?.statuses ?? []} value={str(params, 'status')} onChange={(v) => set({ status: v })} />

@@ -68,7 +68,7 @@ export function StockPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Stock on hand" hint="What is in each warehouse now. Every change is a row in the stock ledger, with who made it and why." classic="/admin/stock-levels" />
+      <PageHead title="Stock on hand" hint="What is in each warehouse now. Every change is a row in the stock ledger, with who made it and why." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="SKU, name or barcode" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search stock" />
         <Filters options={options} params={params} onApply={set} />

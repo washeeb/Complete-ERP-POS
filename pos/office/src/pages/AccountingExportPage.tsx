@@ -42,7 +42,7 @@ export function AccountingExportPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Export to another accounting program" hint="The books for a period as journals for QuickBooks, Xero or Sage, for an accountant who keeps the books there." classic="/admin/accounting-export" />
+      <PageHead title="Export to another accounting program" hint="The books for a period as journals for QuickBooks, Xero or Sage, for an accountant who keeps the books there." />
       <section className={s.panel} aria-label="Export the books">
         <div className={s.row}>
           <Field className={s.program} label="Program" required>

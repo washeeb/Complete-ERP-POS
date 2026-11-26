@@ -24,7 +24,7 @@ export function ServiceLevelsPage() {
   const [done, setDone] = useState('')
   return (
     <div className={page.page}>
-      <PageHead title="Deadlines" classic="/admin/service-levels"
+      <PageHead title="Deadlines"
         hint="Time to answer and to fix a ticket, by its priority, counted around the clock; the clock stops while you wait for the customer. The person handling it is warned when 75 % of the time is gone, managers when it is missed." />
       {error && <MessageBar intent="error" style={{ marginBottom: 12 }}><MessageBarBody>{error}</MessageBarBody></MessageBar>}
       {done && <MessageBar intent="success" style={{ marginBottom: 12 }}><MessageBarBody>{done}</MessageBarBody></MessageBar>}

@@ -62,7 +62,7 @@ export function ReorderLevelsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Reorder levels" hint="When to reorder each product and how much to hold, per store. What to order uses these." classic="/admin/reorder-rules" />
+      <PageHead title="Reorder levels" hint="When to reorder each product and how much to hold, per store. What to order uses these." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Product name or SKU" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search reorder levels" />
         <Dropdown aria-label="Store" value={str(params, 'warehouse') ? label(options?.warehouses, str(params, 'warehouse')) : 'Any store'} selectedOptions={[str(params, 'warehouse')]}

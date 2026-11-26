@@ -48,7 +48,7 @@ export function SharedProductsPage() {
   ]
   return (
     <div className={page.page}>
-      <PageHead title="Shared products" hint="These products show on every industry's tills. Move each to its own industry, and leave only what every shop really sells." classic="/admin/shared-products" />
+      <PageHead title="Shared products" hint="These products show on every industry's tills. Move each to its own industry, and leave only what every shop really sells." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Name or code" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search shared products" />
         <span className={s.grow} />

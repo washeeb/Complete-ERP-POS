@@ -35,7 +35,7 @@ export function ApiClientsPage() {
   const toggle = (list: string[], id: string, on: boolean) => (on ? [...list, id] : list.filter((x) => x !== id))
   return (
     <div className={page.page}>
-      <PageHead title="API clients" hint={`Other systems that use the public API. API description for developers: ${d.openapi}`} classic="/admin/api-clients" />
+      <PageHead title="API clients" hint={`Other systems that use the public API. API description for developers: ${d.openapi}`} />
       <div className={s.bar}><span className={s.grow} /><Button appearance="primary" icon={<AddRegular />} onClick={() => start({ kind: 'new' })}>New API client</Button></div>
       {done && <MessageBar intent="success" style={{ marginBottom: 12 }}><MessageBarBody>{done}</MessageBarBody></MessageBar>}
       <Panel title="Clients">

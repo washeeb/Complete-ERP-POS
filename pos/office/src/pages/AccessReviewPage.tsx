@@ -35,7 +35,7 @@ export function AccessReviewPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Who can do what" hint="Risky combinations of rights, and everyone's access. To change someone's access, open them under Users." classic="/admin/access-review" />
+      <PageHead title="Who can do what" hint="Risky combinations of rights, and everyone's access. To change someone's access, open them under Users." />
       <div className={s.bar}><Button icon={<ArrowDownloadRegular />} onClick={() => void csv()}>Download (CSV)</Button></div>
       {error && <MessageBar intent="error" style={{ marginBottom: 12 }}><MessageBarBody>{error}</MessageBarBody></MessageBar>}
       <Cards items={[{ label: 'People with access', value: String(r.counts.people) }, { label: 'High-risk combinations', value: String(r.counts.high), tone: r.counts.high ? 'var(--zx-bad)' : undefined },

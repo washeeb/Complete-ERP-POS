@@ -35,7 +35,7 @@ export function TicketsPage() {
   const title = data?.title ?? 'Tickets'
   return (
     <div className={page.page}>
-      <PageHead title={title} classic="/admin/tickets"
+      <PageHead title={title}
         hint={data && !data.all ? 'Ask for help (a broken printer, a stock problem…) and follow what happens to it.'
           : 'Requests and complaints, with the time left to answer and to fix them. Open one for a customer at the counter or on the phone.'} />
       <div className={s.bar}>

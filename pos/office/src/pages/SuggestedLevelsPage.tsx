@@ -52,7 +52,7 @@ export function SuggestedLevelsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Suggested reorder levels" hint="Worked out every Monday from the last 12 weeks of sales, the supplier's delivery time and a safety margin. Only changes of a fifth or more are listed." classic="/admin/suggested-levels" />
+      <PageHead title="Suggested reorder levels" hint="Worked out every Monday from the last 12 weeks of sales, the supplier's delivery time and a safety margin. Only changes of a fifth or more are listed." />
       <div className={s.bar}>
         <Dropdown aria-label="Store" value={warehouse ? (data?.warehouses.find((w) => w.id === warehouse)?.label ?? warehouse) : 'Every store'} selectedOptions={[warehouse]}
           onOptionSelect={(_, d) => { setWarehouse(d.optionValue ?? ''); setTicked(new Set()); setPageNo(1) }} style={{ minWidth: 180 }}>

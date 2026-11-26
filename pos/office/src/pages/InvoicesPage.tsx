@@ -61,7 +61,7 @@ export function InvoicesPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Invoices" hint="Invoices to customers, raised by deliveries. Open one to print it or to cancel it with a credit note." classic="/admin/invoices" />
+      <PageHead title="Invoices" hint="Invoices to customers, raised by deliveries. Open one to print it or to cancel it with a credit note." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Invoice, customer or their ref." value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search invoices" />
         <Dropdown aria-label="Status" value={str(params, 'status') ? statusLabel(str(params, 'status')) : 'Any status'} selectedOptions={[str(params, 'status')]}

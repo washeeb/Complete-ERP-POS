@@ -21,5 +21,9 @@ return [
 
     // Where "Report a problem" and the daily pilot report go when the go-live plan names no support address.
     // Where problem reports and the pilot report go when the go-live plan names no address: the publisher's support by default.
+    // The current back office (/admin): off since the new one holds every page (owner 2026-11-26); its pages open the
+    // new ones. On only for the tests of its (still reused) code.
+    'classic_back_office' => (bool) env('ERP_CLASSIC_BACK_OFFICE', false),
+
     'support_email' => env('ERP_SUPPORT_EMAIL') ?: (env('BRAND_VENDOR') ? null : 'info@synclyticsenterprisesystems.com'),
 ];

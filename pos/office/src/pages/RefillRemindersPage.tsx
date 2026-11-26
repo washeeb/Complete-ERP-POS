@@ -54,7 +54,7 @@ export function RefillRemindersPage() {
   ]
   return (
     <div className={page.page}>
-      <PageHead title="Refill reminders" hint="Made from sales of medicines with “Used a day” to named customers; sent before the medicine runs out to those who agreed to WhatsApp or SMS. Switch on under Settings → Refill reminders." classic="/admin/refill-reminders" />
+      <PageHead title="Refill reminders" hint="Made from sales of medicines with “Used a day” to named customers; sent before the medicine runs out to those who agreed to WhatsApp or SMS. Switch on under Settings → Refill reminders." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Customer or medicine" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search refill reminders" />
         <Dropdown aria-label="Status" style={{ minWidth: 170 }} value={statuses.find((x) => x.id === status)?.label ?? ''} selectedOptions={[status]} onOptionSelect={(_, d) => set({ status: d.optionValue ?? '' })}>

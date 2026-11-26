@@ -51,7 +51,7 @@ export function GoodsReceiptsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Goods received" hint="Every delivery received into stock. Open one to print it, accept or refuse a delivery above the order, or reverse a mistake." classic="/admin/goods-receipts" />
+      <PageHead title="Goods received" hint="Every delivery received into stock. Open one to print it, accept or refuse a delivery above the order, or reverse a mistake." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="GRN, order, supplier or delivery note" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search goods received" />
         <Dropdown aria-label="Status" value={str(params, 'status') ? label(options?.statuses, str(params, 'status')) : 'Any status'} selectedOptions={[str(params, 'status')]}

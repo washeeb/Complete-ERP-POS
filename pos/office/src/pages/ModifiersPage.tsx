@@ -47,7 +47,7 @@ export function ModifiersPage() {
   const named = (edit?.v.options ?? []).filter((o) => o.name.trim() !== '').length
   return (
     <div className={page.page}>
-      <PageHead title="Modifiers" hint="Choices offered with dishes: cooking, sides, extras. A priced extra is charged as its own product." classic="/admin/modifier-groups" />
+      <PageHead title="Modifiers" hint="Choices offered with dishes: cooking, sides, extras. A priced extra is charged as its own product." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Name" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search modifiers" />
         <ShowFilter value={str(params, 'show')} onChange={(v) => set({ show: v })} />

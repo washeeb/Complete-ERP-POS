@@ -40,7 +40,7 @@ export function ConsignmentPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Consignment to pay" hint="Goods on consignment stay the supplier's until sold. Each sale adds what is owed here." classic="/admin/consignment-to-pay" />
+      <PageHead title="Consignment to pay" hint="Goods on consignment stay the supplier's until sold. Each sale adds what is owed here." />
       <div className={s.bar}>{data.rows.length > 0 && <Button appearance="primary" icon={<MoneyRegular />} onClick={() => setSettling(true)}>Settle</Button>}</div>
       {done && <MessageBar intent="success" style={{ marginBottom: 12 }}><MessageBarBody>{done}</MessageBarBody></MessageBar>}
       <Cards items={[{ label: 'Suppliers and branches', value: data.rows.length.toLocaleString('en-GB') }, { label: 'Owed', value: m(owed), tone: owed ? 'var(--zx-warn)' : undefined }]} />

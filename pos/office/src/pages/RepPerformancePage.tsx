@@ -31,7 +31,7 @@ export function RepPerformancePage() {
   const m = (x: number) => money(x, d.currency, d.exponent)
   return (
     <div className={page.page}>
-      <PageHead title="Rep performance" hint="Reps against target, customers not visited, and empties held by customers." classic={`/admin/rep-performance${query ? `?${query}` : ''}`} />
+      <PageHead title="Rep performance" hint="Reps against target, customers not visited, and empties held by customers." />
       <div className={s.bar} style={{ alignItems: 'flex-end' }}>
         <Field label="From"><Input type="date" value={d.from} onChange={(_, e) => e.value && set({ from: e.value })} /></Field>
         <Field label="To"><Input type="date" value={d.to} onChange={(_, e) => e.value && set({ to: e.value })} /></Field>

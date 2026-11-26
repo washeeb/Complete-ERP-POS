@@ -48,7 +48,7 @@ export function PrescriptionsPage() {
   ]
   return (
     <div className={page.page}>
-      <PageHead title="Prescriptions" hint="Every prescription dispensed at the tills, made with the sale and never changed. Open one to see the medicines and the warnings the pharmacist saw." classic="/admin/prescriptions" />
+      <PageHead title="Prescriptions" hint="Every prescription dispensed at the tills, made with the sale and never changed. Open one to see the medicines and the warnings the pharmacist saw." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number, patient, prescriber or reference" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search prescriptions" />
         <Dropdown aria-label="Approved" style={{ minWidth: 170 }} value={OFFLINE.find((x) => x[0] === offline)?.[1] ?? ''} selectedOptions={[offline]} onOptionSelect={(_, d) => set({ offline: d.optionValue ?? '' })}>

@@ -93,7 +93,7 @@ export function ReconcilePage({ id }: { id: string }) {
   return (
     <div className={page.page}>
       <PageHead title={`Reconcile ${data.bank.name}`} hint={`The books (${data.bank.ledger ?? ''}) against the bank's statement. Tick matching lines on both sides, or let the suggestions match themselves.`}
-        classic={`/admin/bank-reconciliation?bank=${id}`} />
+        />
       <div className={s.bar}><Button icon={<ArrowLeftRegular />} onClick={() => navigate('/office/bank-accounts')}>Bank & cash</Button></div>
       <div className={s.sum} role="group" aria-label="Reconciliation">
         <Field label="As at"><Input type="date" value={data.as_at} onChange={(_, d) => d.value && set({ as_at: d.value })} /></Field>

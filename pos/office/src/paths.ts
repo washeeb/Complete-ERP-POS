@@ -306,11 +306,6 @@ export function appPathFor(adminPath: string): string {
   return rest === '' ? `${APP}/${m[2] ?? ''}` : `${APP}/a${rest}${m[2] ?? ''}`
 }
 
-/** The old version of any page, framed (for "Open the classic version"), rebuilt or not. */
-export function classicPathFor(adminPath: string): string {
-  return `${APP}/a${adminPath.replace(/^\/admin/, '') || '/'}`
-}
-
 /** The inverse: which current back-office page an /office address shows (null = a page of the new back office itself). */
 export function adminPathFor(appPath: string): string | null {
   const m = appPath.match(/^\/office\/a(\/[^?#]*)(\?[^#]*)?/)

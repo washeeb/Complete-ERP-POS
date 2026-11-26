@@ -34,7 +34,7 @@ export function ProblemReportsPage() {
   const done = (x: { message: string; good: boolean; report: ProblemReport }) => { setOpen(x.report); setClosing(false); setNote({ good: x.good, text: x.message }); setRefresh((n) => n + 1) }
   return (
     <div className={page.page}>
-      <PageHead title="Problem reports" hint={data?.sent_to ?? 'Problems staff reported, for support to follow up and close.'} classic="/admin/problem-reports" />
+      <PageHead title="Problem reports" hint={data?.sent_to ?? 'Problems staff reported, for support to follow up and close.'} />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number, person or words" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search problem reports" />
         <Dropdown aria-label="Status" value={status === 'all' ? 'Any status' : data?.statuses.find((x) => x.id === status)?.label ?? 'Open'} selectedOptions={[status]} style={{ minWidth: 140 }}

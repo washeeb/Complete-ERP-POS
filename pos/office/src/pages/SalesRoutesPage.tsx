@@ -47,7 +47,7 @@ export function SalesRoutesPage() {
   })
   return (
     <div className={page.page}>
-      <PageHead title="Routes" hint="The customers a rep visits, in order, on the days the route runs. The rep's phone shows today's route." classic="/admin/routes" />
+      <PageHead title="Routes" hint="The customers a rep visits, in order, on the days the route runs. The rep's phone shows today's route." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Code or name" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search routes" />
         <ShowFilter value={str(params, 'show')} onChange={(v) => set({ show: v })} />

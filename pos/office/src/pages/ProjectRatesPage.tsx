@@ -25,7 +25,7 @@ export function ProjectRatesPage() {
   const m = (x: number) => (data ? money(x, data.currency, data.exponent) : '')
   return (
     <div className={page.page}>
-      <PageHead title="Hourly rates" hint="Cost per hour: pay plus overheads, divided by the hours a person works. It values approved time on projects." classic="/admin/project-rates" />
+      <PageHead title="Hourly rates" hint="Cost per hour: pay plus overheads, divided by the hours a person works. It values approved time on projects." />
       {error && <MessageBar intent="error" style={{ marginBottom: 12 }}><MessageBarBody>{error}</MessageBarBody></MessageBar>}
       {done && <MessageBar intent="success" style={{ marginBottom: 12 }}><MessageBarBody>{done}</MessageBarBody></MessageBar>}
       <DataTable<Row> label="Hourly rates" rows={data?.rows ?? []} sort="name" dir="asc" loading={loading}

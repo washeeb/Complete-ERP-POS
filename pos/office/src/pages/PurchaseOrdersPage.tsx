@@ -59,7 +59,7 @@ export function PurchaseOrdersPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Purchase orders" hint="What you order from suppliers: drafts, those waiting for approval, and those on their way. Open one to approve it, send it or receive the goods." classic="/admin/purchase-orders" />
+      <PageHead title="Purchase orders" hint="What you order from suppliers: drafts, those waiting for approval, and those on their way. Open one to approve it, send it or receive the goods." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Order number or supplier" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search purchase orders" />
         <Dropdown aria-label="Status" multiselect placeholder="Any status" value={statuses.map((x) => label(options?.statuses, x)).join(', ')} selectedOptions={statuses}

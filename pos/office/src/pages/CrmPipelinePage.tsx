@@ -61,7 +61,7 @@ export function CrmPipelinePage() {
   const targets = [...d.columns.map((c) => ({ id: c.id, label: c.name })), { id: 'won', label: 'Won' }, { id: 'lost', label: 'Lost' }]
   return (
     <div className={page.page}>
-      <PageHead title="Pipeline" hint="Drag a deal to its new stage, or onto Won or Lost. A deal is also won by itself when its quotation is confirmed." classic="/admin/crm-pipeline" />
+      <PageHead title="Pipeline" hint="Drag a deal to its new stage, or onto Won or Lost. A deal is also won by itself when its quotation is confirmed." />
       <div className={p.bar}>
         <span className={p.grow} />
         <Button icon={<PersonRegular />} onClick={() => setMine(!mine)}>{mine ? 'Everyone’s deals' : 'My deals only'}</Button>

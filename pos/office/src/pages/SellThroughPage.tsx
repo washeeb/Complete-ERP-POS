@@ -30,7 +30,7 @@ export function SellThroughPage() {
   const m =(x: number) => (data ? money(x, data.currency, data.exponent) : '')
   return (
     <div className={page.page}>
-      <PageHead title="Sell-through & consignment" hint="How each style sells against what is left, and what consignors are owed for their items sold." classic="/admin/fashion-report" />
+      <PageHead title="Sell-through & consignment" hint="How each style sells against what is left, and what consignors are owed for their items sold." />
       <div className={s.bar}>
         <TextField label="From" type="date" value={data?.from ?? str(params, 'from')} onChange={(v) => set({ from: v })} />
         <TextField label="To" type="date" value={data?.to ?? str(params, 'to')} onChange={(v) => set({ to: v })} />

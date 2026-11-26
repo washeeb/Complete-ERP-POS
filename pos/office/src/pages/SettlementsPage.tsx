@@ -27,7 +27,7 @@ export function SettlementsPage() {
   const signed = (x: number | null) => (x === null ? '—' : <span style={x < 0 ? { color: tokens.colorPaletteRedForeground1 } : undefined}>{m(x)}</span>)
   return (
     <div className={page.page}>
-      <PageHead title="Van settlements" hint="Each van's end of day: sales, cash handed in and the stock left on the van. Started from the van." classic="/admin/van-settlements" />
+      <PageHead title="Van settlements" hint="Each van's end of day: sales, cash handed in and the stock left on the van. Started from the van." />
       <div className={s.bar}>
         <Pick label="Status" any="Any status" options={data?.statuses ?? []} value={str(params, 'status')} onChange={(v) => set({ status: v })} />
       </div>

@@ -84,7 +84,7 @@ export function DevicesPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Devices" hint="Tills, handhelds, kiosks and kitchen displays: whether each is working, and where it was last used. A device joins with a one-time code." classic="/admin/devices" />
+      <PageHead title="Devices" hint="Tills, handhelds, kiosks and kitchen displays: whether each is working, and where it was last used. A device joins with a one-time code." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Device name" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search devices" />
         <Dropdown aria-label="Show" style={{ minWidth: 140 }} value={SHOW.find((x) => x[0] === show)?.[1] ?? ''} selectedOptions={[show]} onOptionSelect={(_, d) => set({ show: d.optionValue ?? '' })}>

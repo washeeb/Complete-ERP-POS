@@ -46,7 +46,7 @@ export function ComputersPage() {
   ]
   return (
     <div className={page.page}>
-      <PageHead title="Computers" hint="Every computer that used the back office, who used it last and from which address. Name each one (Front desk PC) so the audit log says which computer did what." classic="/admin/computers" />
+      <PageHead title="Computers" hint="Every computer that used the back office, who used it last and from which address. Name each one (Front desk PC) so the audit log says which computer did what." />
       <div className={s.bar}><SearchBox className={s.search} placeholder="Computer name" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search computers" /></div>
       {error && <MessageBar intent="error" style={{ marginBottom: 12 }}><MessageBarBody>{error}</MessageBarBody></MessageBar>}
       {done && <MessageBar intent="success" style={{ marginBottom: 12 }}><MessageBarBody>{done}</MessageBarBody></MessageBar>}

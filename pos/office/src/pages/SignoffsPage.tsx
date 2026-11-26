@@ -45,7 +45,7 @@ export function SignoffsPage() {
   const csv = `/office-api/medicine-signoffs/csv${query ? `?${query}` : ''}`
   return (
     <div className={page.page}>
-      <PageHead title="Medicines sold without a pharmacist" hint="Prescription-only and controlled medicines sold where tellers may sell them. A pharmacist checks each sale and signs it off; the list is the record for an inspection." classic="/admin/medicine-signoffs" />
+      <PageHead title="Medicines sold without a pharmacist" hint="Prescription-only and controlled medicines sold where tellers may sell them. A pharmacist checks each sale and signs it off; the list is the record for an inspection." />
       <div className={s.bar}>
         <Field label="Show" size="small">
           <Dropdown size="small" style={{ minWidth: 200 }} value={SHOW.find((x) => x[0] === show)?.[1] ?? ''} selectedOptions={[show]} onOptionSelect={(_, d) => { setTicked(new Set()); set({ status: d.optionValue ?? '' }) }}>

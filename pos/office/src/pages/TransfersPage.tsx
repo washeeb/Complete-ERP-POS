@@ -61,7 +61,7 @@ export function TransfersPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Transfers" hint="Stock moved between warehouses: dispatched by the sender, received by the other side with what actually arrived." classic="/admin/stock-transfers" />
+      <PageHead title="Transfers" hint="Stock moved between warehouses: dispatched by the sender, received by the other side with what actually arrived." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Transfer number" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search transfers" />
         <PeriodButtons value={str(params, 'period')} onChange={(v) => set({ period: v })} />

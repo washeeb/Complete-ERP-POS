@@ -68,7 +68,7 @@ export function MyTimePage() {
   const timer = (action: 'stop') => api.timeTimer(action).then(after).catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)))
   return (
     <div className={page.page}>
-      <PageHead title="My time" hint={`Week of ${day(d.from)} – ${day(d.to)} · ${d.total} hour(s). Log your hours, then “Send this week” for approval.`} classic={`/admin/my-time?week=${d.week}`} />
+      <PageHead title="My time" hint={`Week of ${day(d.from)} – ${day(d.to)} · ${d.total} hour(s). Log your hours, then “Send this week” for approval.`} />
       <div className={s.bar}>
         <Button icon={<ChevronLeftRegular />} onClick={() => set({ week: d.previous })}>Previous week</Button>
         {d.next && <Button icon={<ChevronRightRegular />} iconPosition="after" onClick={() => set({ week: d.next! })}>Next week</Button>}

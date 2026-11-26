@@ -23,7 +23,7 @@ export function EstimatedCostsPage() {
   const m = (x: number | null) => (x === null || !data ? '—' : money(x, data.currency, data.exponent))
   return (
     <div className={page.page}>
-      <PageHead title="Estimated against real costs" hint="Products costed by a cost run, against what their first delivery since really cost." classic="/admin/estimated-costs" />
+      <PageHead title="Estimated against real costs" hint="Products costed by a cost run, against what their first delivery since really cost." />
       {data && <Text block style={{ marginBottom: 10 }}>{data.summary}</Text>}
       <div className={s.bar}>
         <Dropdown aria-label="Real cost known" value={DELIVERED.find(([k]) => k === delivered)?.[1] ?? 'Any'} selectedOptions={[delivered]}

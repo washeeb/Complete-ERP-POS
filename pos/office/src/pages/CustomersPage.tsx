@@ -62,7 +62,7 @@ export function CustomersPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Customers" hint="Who buys on account, their balance and credit. Open one to record a payment, print a statement or change their credit." classic="/admin/customers" />
+      <PageHead title="Customers" hint="Who buys on account, their balance and credit. Open one to record a payment, print a statement or change their credit." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Code, name, contact or phone" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search customers" />
         <Dropdown aria-label="Type" value={str(params, 'type') ? typeLabel(str(params, 'type')) : 'Any type'} selectedOptions={[str(params, 'type')]}

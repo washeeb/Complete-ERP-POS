@@ -42,7 +42,7 @@ export function TimesheetsPage() {
   }
   return (
     <div className={page.page}>
-      <PageHead title="Timesheets" hint="Hours from clock-ins on the tills. Add a missing clock-out or cancel a mistake, with the reason." classic={`/admin/timesheets${query ? `?${query}` : ''}`} />
+      <PageHead title="Timesheets" hint="Hours from clock-ins on the tills. Add a missing clock-out or cancel a mistake, with the reason." />
       <div className={s.bar} style={{ alignItems: 'flex-end' }}>
         <Field label="Branch">
           <Dropdown aria-label="Branch" value={data.branches.find((b) => b.id === data.branch)?.label ?? ''} selectedOptions={[data.branch]} style={{ minWidth: 220 }}

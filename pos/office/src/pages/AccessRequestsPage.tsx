@@ -52,7 +52,7 @@ export function AccessRequestsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Access requests" hint="Changes IT Admin asked for. They happen only when the owner or SyncLytics support approves, and lapse after 72 hours. Taking access away is done at once." classic="/admin/access-requests" />
+      <PageHead title="Access requests" hint="Changes IT Admin asked for. They happen only when the owner or SyncLytics support approves, and lapse after 72 hours. Taking access away is done at once." />
       <div className={s.bar}>
         <Button icon={<ArrowLeftRegular />} onClick={() => navigate('/office/roles')}>Roles</Button>
         <Dropdown aria-label="Status" style={{ minWidth: 220 }} value={statuses.find((x) => x[0] === status)?.[1] ?? ''} selectedOptions={[status]} onOptionSelect={(_, d) => set({ status: d.optionValue ?? '' })}>

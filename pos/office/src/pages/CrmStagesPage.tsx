@@ -33,7 +33,7 @@ export function CrmStagesPage() {
   const open = (r: Row | null) => { setDone(''); setEdit({ row: r, name: r?.name ?? '', kind: r?.kind ?? 'open', probability: String(r?.probability ?? 10), sort: r ? String(r.sort) : '' }) }
   return (
     <div className={page.page}>
-      <PageHead title="Pipeline stages" hint="The steps a deal goes through, each with its chance of winning; one Won and one Lost." classic="/admin/crm-stages" />
+      <PageHead title="Pipeline stages" hint="The steps a deal goes through, each with its chance of winning; one Won and one Lost." />
       <div className={s.bar}>
         <ShowFilter value={str(params, 'show')} onChange={(v) => set({ show: v })} />
         <span className={s.grow} />

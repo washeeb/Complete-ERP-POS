@@ -94,7 +94,7 @@ export function SettingsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Settings" hint="Open a group, or type to find a setting. Settings someone else looks after show greyed, with who changes them." classic="/admin/manage-settings" />
+      <PageHead title="Settings" hint="Open a group, or type to find a setting. Settings someone else looks after show greyed, with who changes them." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Find a setting — e.g. receipt, momo, expiry, backup" value={find} onChange={(_, d) => setFind(d.value)} aria-label="Find a setting" />
         <Input className={s.reason} placeholder="Reason for change (optional)" value={reason} maxLength={255} onChange={(_, d) => setReason(d.value)} aria-label="Reason for change" />

@@ -44,7 +44,7 @@ export function TemperatureLogPage() {
   return (
     <div className={page.page}>
       <style>{PRINT}</style>
-      <PageHead title="Temperature log" hint="A month for one sensor, printable for inspections." classic={`/admin/temperature-log${query ? `?${query}` : ''}`} />
+      <PageHead title="Temperature log" hint="A month for one sensor, printable for inspections." />
       <div className={s.bar} style={{ alignItems: 'flex-end' }}>
         <Field label="Sensor">
           <Dropdown aria-label="Sensor" value={d.sensors.find((x) => x.id === d.sensor)?.label ?? ''} selectedOptions={d.sensor ? [d.sensor] : []} style={{ minWidth: 220 }}

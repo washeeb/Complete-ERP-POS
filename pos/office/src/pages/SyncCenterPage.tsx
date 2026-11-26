@@ -46,7 +46,7 @@ export function SyncCenterPage() {
   }
   return (
     <div className={page.page}>
-      <PageHead title="Sync Center" hint={`This server is node ${d.node}. Each server it syncs with, what is waiting, and the controls.`} classic="/admin/sync-peers" />
+      <PageHead title="Sync Center" hint={`This server is node ${d.node}. Each server it syncs with, what is waiting, and the controls.`} />
       <div className={s.bar}>
         <span className={s.grow} />
         <Button icon={<ArrowUploadRegular />} onClick={() => start({ kind: 'import', what: 'till' })}>Import till file</Button>

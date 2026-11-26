@@ -59,7 +59,7 @@ export function CountsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Stock counts" hint="Count a warehouse or a bin; once someone else approves the count, the differences go into stock." classic="/admin/stock-counts" />
+      <PageHead title="Stock counts" hint="Count a warehouse or a bin; once someone else approves the count, the differences go into stock." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Count number" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search counts" />
         <PeriodButtons value={str(params, 'period')} onChange={(v) => set({ period: v })} />

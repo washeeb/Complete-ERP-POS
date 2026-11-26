@@ -49,7 +49,7 @@ export function MoneyMovedPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Money moved" hint="Moves between your own accounts: banking the till cash, topping up petty cash, sweeping mobile money to the bank." classic="/admin/money-transfers" />
+      <PageHead title="Money moved" hint="Moves between your own accounts: banking the till cash, topping up petty cash, sweeping mobile money to the bank." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number or reference" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search money moved" />
         <Button onClick={() => navigate('/office/bank-accounts')}>Bank & cash</Button>

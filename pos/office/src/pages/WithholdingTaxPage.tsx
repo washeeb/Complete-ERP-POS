@@ -41,7 +41,7 @@ export function WithholdingTaxPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Withholding tax" hint="Tax kept back from supplier payments in a month, to pay GRA by the 15th of the next month (from Bank, against the Withholding tax payable account)." classic="/admin/withholding-tax-return" />
+      <PageHead title="Withholding tax" hint="Tax kept back from supplier payments in a month, to pay GRA by the 15th of the next month (from Bank, against the Withholding tax payable account)." />
       <div className={s.bar}>
         <Dropdown aria-label="Month" value={data.months.find((x) => x.id === data.month)?.label ?? data.month} selectedOptions={[data.month]}
           onOptionSelect={(_, d) => d.optionValue && setMonth(d.optionValue)} style={{ minWidth: 170 }}>

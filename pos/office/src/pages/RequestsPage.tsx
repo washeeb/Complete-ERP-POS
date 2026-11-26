@@ -61,7 +61,7 @@ export function RequestsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Stock requests" hint="Ask another branch for stock. Between industries both sides approve first; sending makes a transfer." classic="/admin/stock-requests" />
+      <PageHead title="Stock requests" hint="Ask another branch for stock. Between industries both sides approve first; sending makes a transfer." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Request number" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search stock requests" />
         <PeriodButtons value={str(params, 'period')} onChange={(v) => set({ period: v })} />

@@ -88,7 +88,7 @@ export function AskPage() {
   }
   return (
     <div className={page.page}>
-      <PageHead title="Ask your business" hint="Answers use only what you are allowed to see, and show the figures they came from." classic="/admin/copilot" />
+      <PageHead title="Ask your business" hint="Answers use only what you are allowed to see, and show the figures they came from." />
       {d.status && <MessageBar intent="warning" style={{ marginBottom: 12 }}><MessageBarBody>{d.status} The quick questions below always work.</MessageBarBody></MessageBar>}
       <div className={c.quick} role="group" aria-label="Quick questions">
         {d.quick.map((q) => <Button key={q.id} size="small" disabled={busy} onClick={() => run(q.label, api.askQuick(q.id))}>{q.label}</Button>)}

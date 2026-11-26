@@ -41,7 +41,7 @@ export function MembershipsPage() {
   const m = (x: number) => (cur.current ? money(x, cur.current.currency, cur.current.exponent) : '')
   return (
     <div className={page.page}>
-      <PageHead title="Memberships" hint="Invoiced every period (Receivables), paused or cancelled here." classic="/admin/memberships" />
+      <PageHead title="Memberships" hint="Invoiced every period (Receivables), paused or cancelled here." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number, customer or phone" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search memberships" />
         <Dropdown aria-label="Status" value={status === 'all' ? 'Any status' : data?.statuses.find((x) => x.id === status)?.label ?? 'Active'} selectedOptions={[status]} style={{ minWidth: 130 }}

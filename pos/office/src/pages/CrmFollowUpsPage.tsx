@@ -32,7 +32,7 @@ export function CrmFollowUpsPage() {
   const open = str(params, 'open') || '1'
   return (
     <div className={page.page}>
-      <PageHead title="Follow-ups" hint="What to do and when. Plan new ones from a lead, a deal or a customer with “Follow-up”; you are reminded when one is due." classic="/admin/crm-follow-ups" />
+      <PageHead title="Follow-ups" hint="What to do and when. Plan new ones from a lead, a deal or a customer with “Follow-up”; you are reminded when one is due." />
       <div className={s.bar}>
         <Switch label="Mine only" checked={mine} onChange={(_, d) => set({ mine: d.checked ? '' : '0' })} />
         <Dropdown aria-label="To do or done" value={OPEN.find(([k]) => k === open)?.[1] ?? 'To do only'} selectedOptions={[open]} style={{ minWidth: 130 }} onOptionSelect={(_, d) => set({ open: d.optionValue ?? '1' })}>

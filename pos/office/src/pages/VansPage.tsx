@@ -46,7 +46,7 @@ export function VansPage() {
   const put = <K extends keyof VanValues>(k: K) => (x: VanValues[K]) => setEdit((o) => (o ? { ...o, v: { ...o.v, [k]: x } } : o))
   return (
     <div className={page.page}>
-      <PageHead title="Vans" hint="Each van is a warehouse with its own till, loaded from a depot. Settle each van at the end of the day." classic="/admin/vans" />
+      <PageHead title="Vans" hint="Each van is a warehouse with its own till, loaded from a depot. Settle each van at the end of the day." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Code or name" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search vans" />
         <ShowFilter value={str(params, 'show')} onChange={(v) => set({ show: v })} />
