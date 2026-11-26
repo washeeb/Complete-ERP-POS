@@ -18,7 +18,7 @@ const menu: Menu = {
 
 describe('addresses', () => {
   it('opens a current back-office page inside the new one, and back', () => {
-    expect(appPathFor('/admin/sensors?tableSearch=fridge')).toBe('/office/a/sensors?tableSearch=fridge')
+    expect(appPathFor('/admin/sales-orders?tableSearch=web')).toBe('/office/a/sales-orders?tableSearch=web')
     expect(appPathFor('/admin/products/abc/edit')).toBe('/office/a/products/abc/edit')
     expect(appPathFor('/admin')).toBe('/office/')
     expect(appPathFor('https://evil.example/admin')).toBe('/office/') // never another site
@@ -228,6 +228,12 @@ describe('addresses', () => {
     expect(appPathFor('/admin/maintenance-orders')).toBe('/office/maintenance/orders')
     expect(appPathFor('/admin/maintenance-orders/create?asset=0190c3a4-5b6d-7e8f-9a0b-1c2d3e4f5a6b')).toBe('/office/maintenance/orders/new?asset=0190c3a4-5b6d-7e8f-9a0b-1c2d3e4f5a6b')
     expect(appPathFor('/admin/maintenance-orders/0190c3a4-5b6d-7e8f-9a0b-1c2d3e4f5a6b')).toBe('/office/maintenance/orders/0190c3a4-5b6d-7e8f-9a0b-1c2d3e4f5a6b')
+    expect(appPathFor('/admin/sensors?tableSearch=fridge')).toBe('/office/sensors?q=fridge')
+    expect(appPathFor('/admin/sensors/create')).toBe('/office/sensors/new')
+    expect(appPathFor('/admin/sensors/0190c3a4-5b6d-7e8f-9a0b-1c2d3e4f5a6b/edit')).toBe('/office/sensors/0190c3a4-5b6d-7e8f-9a0b-1c2d3e4f5a6b')
+    expect(appPathFor('/admin/iot-alarms')).toBe('/office/sensors/alarms')
+    expect(appPathFor('/admin/temperature-log?month=2026-11')).toBe('/office/sensors/log?month=2026-11')
+    expect(appPathFor('/admin/iot-clouds')).toBe('/office/sensors/clouds')
     expect(appPathFor('/admin/import-data?type=products')).toBe('/office/import?type=products')
     expect(appPathFor('/admin/import-data?type=stock_count&context=abc&show=xyz')).toBe('/office/import?type=stock_count&context=abc&show=xyz')
     expect(appPathFor('/admin/cash/close-day')).toBe('/office/close-day')

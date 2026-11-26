@@ -108,6 +108,12 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/crm-campaigns\/create\/?$/, app: () => `${APP}/crm/campaigns/new` },
   { admin: new RegExp(`^/admin/crm-campaigns/(${UUID})(/edit)?$`), app: (m) => `${APP}/crm/campaigns/${m[1]}` },
   { admin: /^\/admin\/crm-stages\/?$/, app: () => `${APP}/crm/stages` },
+  { admin: /^\/admin\/sensors\/?$/, app: (_, q) => `${APP}/sensors${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/sensors\/create\/?$/, app: () => `${APP}/sensors/new` },
+  { admin: new RegExp(`^/admin/sensors/(${UUID})(/edit)?$`), app: (m) => `${APP}/sensors/${m[1]}` },
+  { admin: /^\/admin\/iot-alarms\/?$/, app: () => `${APP}/sensors/alarms` },
+  { admin: /^\/admin\/temperature-log\/?$/, app: (_, q) => `${APP}/sensors/log${q.toString() ? `?${q.toString()}` : ''}` },
+  { admin: /^\/admin\/iot-clouds\/?$/, app: () => `${APP}/sensors/clouds` },
   { admin: /^\/admin\/equipment\/?$/, app: (_, q) => `${APP}/maintenance/equipment${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/equipment\/create\/?$/, app: () => `${APP}/maintenance/equipment/new` },
   { admin: new RegExp(`^/admin/equipment/(${UUID})(/edit)?$`), app: (m) => `${APP}/maintenance/equipment/${m[1]}` },
@@ -297,6 +303,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'ask' } | { page: 'alerts' } | { page: 'ai-usage' }
   | { page: 'rest-bookings' } | { page: 'rest-bills' } | { page: 'rest-tables' } | { page: 'rest-stations' } | { page: 'rest-modifiers' } | { page: 'rest-report' }
   | { page: 'mnt-equipment' } | { page: 'mnt-asset'; id: string | null } | { page: 'mnt-orders' } | { page: 'mnt-order-new' } | { page: 'mnt-order'; id: string }
+  | { page: 'iot-sensors' } | { page: 'iot-sensor'; id: string | null } | { page: 'iot-alarms' } | { page: 'iot-log' } | { page: 'iot-clouds' }
   | { page: 'crm-pipeline' } | { page: 'crm-leads' } | { page: 'crm-lead'; id: string | null } | { page: 'crm-deals' } | { page: 'crm-deal'; id: string | null }
   | { page: 'crm-follow-ups' } | { page: 'crm-campaigns' } | { page: 'crm-campaign'; id: string | null } | { page: 'crm-stages' }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
@@ -422,6 +429,13 @@ export function routeOf(path: string, search = ''): Route {
   const crc = path.match(new RegExp(`^/office/crm/campaigns/(${UUID})/?$`))
   if (crc) return { page: 'crm-campaign', id: crc[1] }
   if (/^\/office\/crm\/stages\/?$/.test(path)) return { page: 'crm-stages' }
+  if (/^\/office\/sensors\/?$/.test(path)) return { page: 'iot-sensors' }
+  if (/^\/office\/sensors\/new\/?$/.test(path)) return { page: 'iot-sensor', id: null }
+  if (/^\/office\/sensors\/alarms\/?$/.test(path)) return { page: 'iot-alarms' }
+  if (/^\/office\/sensors\/log\/?$/.test(path)) return { page: 'iot-log' }
+  if (/^\/office\/sensors\/clouds\/?$/.test(path)) return { page: 'iot-clouds' }
+  const iot = path.match(new RegExp(`^/office/sensors/(${UUID})/?$`))
+  if (iot) return { page: 'iot-sensor', id: iot[1] }
   if (/^\/office\/maintenance\/equipment\/?$/.test(path)) return { page: 'mnt-equipment' }
   if (/^\/office\/maintenance\/equipment\/new\/?$/.test(path)) return { page: 'mnt-asset', id: null }
   const mas = path.match(new RegExp(`^/office/maintenance/equipment/(${UUID})/?$`))
@@ -659,6 +673,11 @@ export function adminEquivalent(route: Route): string | null {
     case 'crm-campaigns': return '/admin/crm-campaigns'
     case 'crm-campaign': return route.id ? `/admin/crm-campaigns/${route.id}/edit` : '/admin/crm-campaigns/create'
     case 'crm-stages': return '/admin/crm-stages'
+    case 'iot-sensors': return '/admin/sensors'
+    case 'iot-sensor': return route.id ? `/admin/sensors/${route.id}/edit` : '/admin/sensors/create'
+    case 'iot-alarms': return '/admin/iot-alarms'
+    case 'iot-log': return '/admin/temperature-log'
+    case 'iot-clouds': return '/admin/iot-clouds'
     case 'mnt-equipment': return '/admin/equipment'
     case 'mnt-asset': return route.id ? `/admin/equipment/${route.id}/edit` : '/admin/equipment/create'
     case 'mnt-orders': return '/admin/maintenance-orders'
