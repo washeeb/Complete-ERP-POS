@@ -108,6 +108,13 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/crm-campaigns\/create\/?$/, app: () => `${APP}/crm/campaigns/new` },
   { admin: new RegExp(`^/admin/crm-campaigns/(${UUID})(/edit)?$`), app: (m) => `${APP}/crm/campaigns/${m[1]}` },
   { admin: /^\/admin\/crm-stages\/?$/, app: () => `${APP}/crm/stages` },
+  { admin: /^\/admin\/sales-orders\/?$/, app: (_, q) => `${APP}/online/orders${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: new RegExp(`^/admin/sales-orders/(${UUID})$`), app: (m) => `${APP}/online/orders/${m[1]}` },
+  { admin: /^\/admin\/sales-channels\/?$/, app: () => `${APP}/online/channels` },
+  { admin: /^\/admin\/sales-channels\/create\/?$/, app: () => `${APP}/online/channels/new` },
+  { admin: new RegExp(`^/admin/sales-channels/(${UUID})(/edit)?$`), app: (m) => `${APP}/online/channels/${m[1]}` },
+  { admin: /^\/admin\/whatsapp-orders\/?$/, app: (_, q) => `${APP}/online/whatsapp${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: new RegExp(`^/admin/whatsapp-orders/(${UUID})$`), app: (m) => `${APP}/online/whatsapp/${m[1]}` },
   { admin: /^\/admin\/sensors\/?$/, app: (_, q) => `${APP}/sensors${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: /^\/admin\/sensors\/create\/?$/, app: () => `${APP}/sensors/new` },
   { admin: new RegExp(`^/admin/sensors/(${UUID})(/edit)?$`), app: (m) => `${APP}/sensors/${m[1]}` },
@@ -304,6 +311,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'rest-bookings' } | { page: 'rest-bills' } | { page: 'rest-tables' } | { page: 'rest-stations' } | { page: 'rest-modifiers' } | { page: 'rest-report' }
   | { page: 'mnt-equipment' } | { page: 'mnt-asset'; id: string | null } | { page: 'mnt-orders' } | { page: 'mnt-order-new' } | { page: 'mnt-order'; id: string }
   | { page: 'iot-sensors' } | { page: 'iot-sensor'; id: string | null } | { page: 'iot-alarms' } | { page: 'iot-log' } | { page: 'iot-clouds' }
+  | { page: 'onl-orders' } | { page: 'onl-order'; id: string } | { page: 'onl-channels' } | { page: 'onl-channel'; id: string | null } | { page: 'onl-whatsapp' } | { page: 'onl-message'; id: string }
   | { page: 'crm-pipeline' } | { page: 'crm-leads' } | { page: 'crm-lead'; id: string | null } | { page: 'crm-deals' } | { page: 'crm-deal'; id: string | null }
   | { page: 'crm-follow-ups' } | { page: 'crm-campaigns' } | { page: 'crm-campaign'; id: string | null } | { page: 'crm-stages' }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
@@ -429,6 +437,16 @@ export function routeOf(path: string, search = ''): Route {
   const crc = path.match(new RegExp(`^/office/crm/campaigns/(${UUID})/?$`))
   if (crc) return { page: 'crm-campaign', id: crc[1] }
   if (/^\/office\/crm\/stages\/?$/.test(path)) return { page: 'crm-stages' }
+  if (/^\/office\/online\/orders\/?$/.test(path)) return { page: 'onl-orders' }
+  const onlo = path.match(new RegExp(`^/office/online/orders/(${UUID})/?$`))
+  if (onlo) return { page: 'onl-order', id: onlo[1] }
+  if (/^\/office\/online\/channels\/?$/.test(path)) return { page: 'onl-channels' }
+  if (/^\/office\/online\/channels\/new\/?$/.test(path)) return { page: 'onl-channel', id: null }
+  const onlc = path.match(new RegExp(`^/office/online/channels/(${UUID})/?$`))
+  if (onlc) return { page: 'onl-channel', id: onlc[1] }
+  if (/^\/office\/online\/whatsapp\/?$/.test(path)) return { page: 'onl-whatsapp' }
+  const onlw = path.match(new RegExp(`^/office/online/whatsapp/(${UUID})/?$`))
+  if (onlw) return { page: 'onl-message', id: onlw[1] }
   if (/^\/office\/sensors\/?$/.test(path)) return { page: 'iot-sensors' }
   if (/^\/office\/sensors\/new\/?$/.test(path)) return { page: 'iot-sensor', id: null }
   if (/^\/office\/sensors\/alarms\/?$/.test(path)) return { page: 'iot-alarms' }
@@ -673,6 +691,12 @@ export function adminEquivalent(route: Route): string | null {
     case 'crm-campaigns': return '/admin/crm-campaigns'
     case 'crm-campaign': return route.id ? `/admin/crm-campaigns/${route.id}/edit` : '/admin/crm-campaigns/create'
     case 'crm-stages': return '/admin/crm-stages'
+    case 'onl-orders': return '/admin/sales-orders'
+    case 'onl-order': return `/admin/sales-orders/${route.id}`
+    case 'onl-channels': return '/admin/sales-channels'
+    case 'onl-channel': return route.id ? `/admin/sales-channels/${route.id}/edit` : '/admin/sales-channels/create'
+    case 'onl-whatsapp': return '/admin/whatsapp-orders'
+    case 'onl-message': return `/admin/whatsapp-orders/${route.id}`
     case 'iot-sensors': return '/admin/sensors'
     case 'iot-sensor': return route.id ? `/admin/sensors/${route.id}/edit` : '/admin/sensors/create'
     case 'iot-alarms': return '/admin/iot-alarms'
