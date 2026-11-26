@@ -22,7 +22,7 @@ SyncLytics gives you **`SESLabs-server-setup-<version>.exe`** with your release.
 
 **Advanced:** the same steps without the setup file: `powershell -ExecutionPolicy Bypass -File install.ps1 -Release <release.zip> -Setup B` (as administrator).
 
-The server is then reached over **https** only: `https://localhost/admin` (setup A), or `https://<server-address>/admin` (setup B, for example `https://192.168.1.10/admin`). For setup B, every till, tablet and other PC must trust the server once: see **4.9**.
+The server is then reached over **https** only: `https://localhost/office` (setup A), or `https://<server-address>/office` (setup B, for example `https://192.168.1.10/office`). For setup B, every till, tablet and other PC must trust the server once: see **4.9**.
 
 If you used the installer, do 4.9 (setup B), then continue with Chapter 6 (licence). The rest of this chapter is the manual way.
 
@@ -388,11 +388,11 @@ New-NetFirewallRule -DisplayName "SES Labs server" -Direction Inbound -Protocol 
 
 **Check:**
 1. In a browser on the server, open `https://localhost/up` (setup A) or `https://<server-address>/up` (setup B). It shows a page saying *Application up*, with no certificate warning.
-2. Open `…/admin`: the sign-in page appears:
+2. Open `…/office`: the sign-in page appears:
 
-   ![The back-office sign-in page](img/admin-login.png)
+   ![The back-office sign-in page](img/sign-in.png)
 
-3. Setup B: on another PC that trusts the server (4.9), open `https://<server-address>/admin`. The same page appears.
+3. Setup B: on another PC that trusts the server (4.9), open `https://<server-address>/office`. The same page appears.
 
 **Tip:** to restart the server, open **Task Scheduler**, click *Task Scheduler Library*, right-click *SES Labs Web* (or a *PHP*, *Scheduler* or *Live* task), and choose **End**, then **Run**.
 

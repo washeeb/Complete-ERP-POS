@@ -2,7 +2,10 @@
 
 use App\Domain\Licensing\LicenseManager;
 use App\Domain\Messaging\Notifier;
+use App\Models\Industry;
 use App\Models\License;
+use App\Security\ScopeType;
+use App\Support\IndustryContext;
 use Illuminate\Support\Str;
 
 // Part 43: the current back office is switched off (its pages open the new ones), the new back office has its own bell,
@@ -56,4 +59,21 @@ it('opens the licence page first on a server that is not licensed yet, but lets 
     $this->get('/office/sales')->assertRedirect('/office/licence');
     $this->get('/office/licence')->assertStatus(is_file(public_path('office/index.html')) ? 200 : 404); // the page itself, not sent away
     $this->get('/office/two-factor-setup')->assertStatus(is_file(public_path('office/index.html')) ? 200 : 404);
+});
+
+it('has the industry switch at the top for people covering several industries, and keeps the others in their own', function () {
+    $grocery = Industry::where('module_key', 'grocery')->firstOrFail(); // the default branches: retail & wholesale (head office) and grocery
+    $this->actingAs($this->owner, 'web');
+    $switch = $this->getJson('/office-api/me')->assertOk()->json('industry');
+    expect($switch['selected'])->toBe('')->and(collect($switch['options'])->pluck('id'))->toContain($grocery->id);
+    $this->postJson('/office-api/industry', ['industry' => $grocery->id])->assertOk()->assertJson(['selected' => $grocery->id]);
+    expect($this->getJson('/office-api/me')->json('industry.selected'))->toBe($grocery->id)
+        ->and(IndustryContext::selected())->toBe($grocery->id);
+    $this->postJson('/office-api/industry', ['industry' => (string) Str::uuid7()])->assertStatus(422); // not one of theirs
+    $this->postJson('/office-api/industry', ['industry' => ''])->assertOk()->assertJson(['selected' => '']);
+
+    $clerk = withMfa(staff($this->owner, 'stock', 3, 'stock_controller', ScopeType::Branch, $this->b['BA']->id));
+    $this->actingAs($clerk, 'web');
+    expect($this->getJson('/office-api/me')->assertOk()->json('industry'))->toBeNull();
+    $this->postJson('/office-api/industry', ['industry' => $grocery->id])->assertStatus(422);
 });

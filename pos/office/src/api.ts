@@ -18,6 +18,8 @@ export type Me = {
   setup: string | null
   /** Not licensed yet: the licence page first. */
   licence: string | null
+  /** The industry switch at the top; null when the person has no choice to make. '' selected = all industries. */
+  industry: { selected: string; options: { id: string; label: string }[] } | null
 }
 export type SearchResult = { group: string; title: string; url: string; details: string }
 export type TodoItem = {
@@ -1284,6 +1286,7 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export const api = {
   me: () => call<Me>('/office-api/me'),
+  industry: (industry: string) => call<{ selected: string }>('/office-api/industry', { method: 'POST', body: JSON.stringify({ industry }) }),
   notifications: () => call<{ unread: number; items: NotificationItem[] }>('/office-api/notifications'),
   notificationCount: () => call<{ unread: number }>('/office-api/notifications/count'),
   notificationRead: (id: string) => call<{ unread: number }>(`/office-api/notifications/${id}/read`, { method: 'POST', body: '{}' }),

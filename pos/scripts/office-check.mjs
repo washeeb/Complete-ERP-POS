@@ -45,12 +45,6 @@ try {
   await page.waitForURL(/\/office\/(?!sign-in)/, { timeout: 20000 }).catch(() => problems.push(`after sign-in the browser is at ${page.url()}, not /office`))
   if (!/\/office\/(?!sign-in)/.test(page.url())) await page.goto(`${base}/office/`)
 
-  const frameReady = async () => {
-    const f = page.frameLocator('iframe[title="Page"]')
-    await f.locator('html.zx-embedded').waitFor({ timeout: 20000 })
-    return f
-  }
-
   for (const look of ['top', 'side']) {
     // Switch the look from the person's menu.
     await page.getByRole('button', { name: /your menu/ }).click()
@@ -1388,8 +1382,8 @@ try {
         await Promise.race([confirm.waitFor({ timeout: 10000 }), page.getByText(/^Approved:/).waitFor({ timeout: 10000 })])
           .catch(() => problems.push('To-do: Approve neither asked to confirm nor approved'))
         if (await confirm.isVisible().catch(() => false)) {
-          await page.frameLocator('iframe[title="Confirm it\'s you"]').locator('html.zx-embedded').waitFor({ timeout: 15000 })
-            .catch(() => problems.push('To-do: the confirm page did not open inside the dialog'))
+          await confirm.getByLabel(/6-digit code from your authenticator app/).waitFor({ timeout: 15000 })
+            .catch(() => problems.push('To-do: the confirm dialog did not ask for the code'))
           await page.screenshot({ path: out('todo-confirm') })
           await confirm.getByRole('button', { name: 'Cancel' }).click()
         }
@@ -1711,18 +1705,13 @@ try {
         .catch(() => problems.push(`${look} ${w}: "Confirm it's you" did not ask for the code`))
       await page.screenshot({ path: out(`confirm-its-you-${look}-${w}`) })
 
-      // A current-look page still opens inside the new one, without its own menus (/office/a/… always frames the current
-      // page; "Confirm it's you" was rebuilt in part 40, its current page stays for the classic look).
-      await page.goto(`${base}/office/a/confirm-its-you`)
-      await page.waitForFunction(() => {
-        const f = document.querySelector('iframe[title="Page"]')
-        return f?.contentWindow?.location.pathname === '/admin/confirm-its-you' && !!f.contentDocument?.querySelector('h1')
-      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: "Confirm it's you" did not open inside`))
-      const f = await frameReady()
-      await f.locator('h1').first().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: "Confirm it's you" did not show inside`))
-      const chrome = await f.locator('.fi-sidebar, .fi-topbar').evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== 'none').length)
-      if (chrome) problems.push(`${look} ${w}: the embedded page still shows its own menu`)
-      await page.waitForTimeout(600) // the page's own loader fades out
+      // The classic back office is switched off (part 43): an old address, inside the new look (/office/a/…) or the old one
+      // (/admin/…), opens the same page in the new look.
+      for (const old of ['/office/a/confirm-its-you', '/admin/confirm-its-you']) {
+        await page.goto(base + old)
+        await page.waitForURL(/\/office\/confirm-its-you$/, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: ${old} did not open the new page (${page.url()})`))
+      }
+      if (await page.locator('iframe').count()) problems.push(`${look} ${w}: a page still opens inside a frame`)
       await page.screenshot({ path: out(`${look}-${w}`) })
 
       // My profile, rebuilt (part 39): it opens from your menu and shows its parts; Set up (two-factor) and the passkey

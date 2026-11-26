@@ -103,7 +103,7 @@ Every till, handheld and kitchen screen has a **Theme** switch at the bottom lef
 For a Windows till PC with a receipt printer, a cash drawer or a weighing scale, install **ZionEX Till** (`ZionEX Till_<version>_x64-setup.exe`, from SyncLytics) instead of using the browser:
 
 1. Install the receipt printer's Windows driver (or note the IP address of a network receipt printer).
-2. Trust the server on this PC (4.9). Then run the ZionEX Till setup. On first start it asks for the **server address**: exactly what you type in a browser to open the back office, without `/admin`. For a cloud server that is its name, e.g. `https://erp.clientdomain.com`, **never its IP address** (the security certificate is for the name, so the IP is refused). For a server in the shop it is the address used in 4.9, e.g. `https://192.168.1.10`.
+2. Trust the server on this PC (4.9). Then run the ZionEX Till setup. On first start it asks for the **server address**: exactly what you type in a browser to open the back office, without `/office`. For a cloud server that is its name, e.g. `https://erp.clientdomain.com`, **never its IP address** (the security certificate is for the name, so the IP is refused). For a server in the shop it is the address used in 4.9, e.g. `https://192.168.1.10`.
 3. **Receipt printer:** choose it from the list (or type `tcp://<printer-ip>:9100` for a network printer); **Open the cash drawer** (after a sale paid at least partly in cash) is ticked on a new install from version 0.30.6: untick it only if there is no drawer. Then **Print a test receipt** and press **Open the drawer (test)**. **Why:** the desktop till sends receipts straight to the printer, past the printer driver, so the driver's own *open drawer* option does not apply; the till opens the drawer itself. Before 0.30.6 the box started unticked, and the drawer stayed shut until someone ticked it.
 4. **Scale:** choose its COM port and speed (usually 9600), then **Read the scale** with something on it.
 5. **Save and open the till.** The app first checks that the server answers. If it does not, it says so and stays on this page: correct the address and save again. (**Use this address anyway** keeps an address that cannot be reached yet, for example when the server is not switched on.) Then enrol and sign in as with any till (9.1).
@@ -163,7 +163,7 @@ records which computer each change was made from.
    nothing.
 2. Run `ZionEX Suite_<version>_x64-setup.exe` (from SyncLytics). It installs for every user of the computer.
 3. On first start it asks for the **server address**: what you type in a browser to open the back office, without
-   `/admin` — for a cloud server its name, e.g. `https://erp.clientdomain.com`, **never its IP address**. Click **Save
+   `/office` — for a cloud server its name, e.g. `https://erp.clientdomain.com`, **never its IP address**. Click **Save
    and open**, then sign in with your usual username and password (and your second step, as in the browser).
 
 **Using it:**

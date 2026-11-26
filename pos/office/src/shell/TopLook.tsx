@@ -10,6 +10,7 @@ import { AreaPanel } from './AreaPanel'
 import { CreateMenu } from './CreateMenu'
 import { Search } from './Search'
 import { Bell } from './Bell'
+import { IndustrySwitch } from './IndustrySwitch'
 import { UserMenu } from './UserMenu'
 
 const useStyles = makeStyles({
@@ -60,6 +61,7 @@ export function TopLook({ me, menu, current, page, todo, atTodo, onLook, onFavou
         <Search menu={menu} />
         <div className={s.right}>
           <span className={s.hideSmall}><CreateMenu menu={menu} /></span>
+          <IndustrySwitch me={me} />
           <Bell />
           <UserMenu me={me} onLook={onLook} />
         </div>

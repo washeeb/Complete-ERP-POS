@@ -1,14 +1,14 @@
 import type { Menu, MenuItem, MenuTab } from './api'
 
 /**
- * Addresses. The new back office lives at /office; a page not yet rebuilt is the current back office's page (/admin/…)
- * opened inside it, at /office/a/… so the address bar, Back and bookmarks work as for any page.
+ * Addresses. The back office lives at /office. The classic one (/admin/…) is switched off since part 43: an old address,
+ * or an /office/a/… one from before, opens the same page here.
  */
 export const APP = '/office'
 
 /**
- * Pages already rebuilt in the new back office (screen by screen, owner decision 2026-11-16): a link to the current
- * back office's page opens the new one instead. Each still opens the old way at /office/a/… ("classic version").
+ * Pages rebuilt in the new back office (screen by screen, owner decision 2026-11-16): an address of the classic back
+ * office's page opens the new one.
  */
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
 const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParams) => string }[] = [

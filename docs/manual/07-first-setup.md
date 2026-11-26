@@ -6,7 +6,7 @@ Do these steps once, at head office, in this order. Allow a day for a single sho
 
 ## Step 1 — Sign in for the first time
 
-1. Open the back office: `https://<server-address>/admin` (Windows server) or `https://<your-domain>/admin` (Ubuntu).
+1. Open the back office: `https://<server-address>/office` (Windows server) or `https://<your-domain>/office` (Ubuntu).
 2. Sign in with the owner's **email (or username) and password** (from `erp:install`). Everyone can type either their e-mail address or the username they use on the till.
 
 ## Step 2 — Set up two-factor sign-in
@@ -140,61 +140,52 @@ Module settings (Grocery, Pharmacy, Restaurant, Fashion, Services) are explained
 
 ## Step 6b — How the back office looks, favourites and profile photos
 
-The back office has three looks. **Tabs across the top** is the standard one:
-- **Tabs across the top** (standard): like a desktop accounting program. The top row has your logo, a wide **Search**
-  (for records: products, customers, orders…), **+ New** (create any record you are allowed to create, e.g. an order
-  or a product, without looking for its page first) and your name with your role. Under it, a band in your menu colour
-  starts with three icons, then the tabs (Insights, Sales, Purchasing, Stock, Finance, People, your industry, Setup).
-  Point at a tab and its pages open in a panel. The panel always fits inside the window, however narrow.
-  - **Long lists:** the column headings stay at the top while you scroll, the first column stays put when a wide list
-    scrolls sideways, and the page title shrinks to one line with its buttons. The rows per page you choose are
-    remembered on that computer for each list. **Why:** you always know which column and which row you are reading.
-  - **Clock — recent pages and Find a page:** the pages you opened last; type part of a page's name to find any page.
-    The **/** key opens it from anywhere.
-  - **Star — favourites:** open a page you use often, click the star, then *Add this page to favourites*. Your
-    favourites follow you to any computer (up to 20).
-  - **House — home:** your home page.
-- **New look: side menu:** a menu in your menu colour down the whole left side, with your logo at the top and one row
-  per area (Dashboard, Insights, Sales, Purchasing…); click an area to open its pages. The **‹** button folds it to
-  icons for more room.
-- **Classic:** the original layout.
+The back office has two looks; each person chooses under their name at the top right, and can switch at any time:
+- **Menu across the top** (standard): like a desktop accounting program. The top row has your logo, a wide **Search**
+  (Ctrl+K: pages of the menu and records — products, customers, orders…), **Create** (start any record you are
+  allowed to create, e.g. an order or a product, without looking for its page first), the **bell** (your
+  notifications, with a red number for the unread ones) and your name with your role. Under it, a band in your menu
+  colour starts with four icons, then the areas (Insights, Sales, Purchasing, Stock, Finance, People, your industry,
+  Setup). Press an area and its pages open in columns. The panel always fits inside the window, however narrow.
+  - **House — Home:** your home page.
+  - **List — To-do:** everything waiting for your decision, with a red number.
+  - **Clock — recent pages:** the pages you opened last.
+  - **Star — favourites:** on a page you use often, press the star, then *Add this page*. Your favourites follow you
+    to any computer (up to 20).
+- **Side menu:** a slim strip in your menu colour down the left side, with **Create** at the top, then To-do, Home,
+  Recent, Favourites and one row per area; press an area to open its pages beside it.
 
-![Tabs across the top: the Purchasing tab open](img/look-tabs.png)
+![Menu across the top: the Purchasing area open](img/look-tabs.png)
 
-![Find a page: press / and type part of a page's name](img/look-finder.png)
+![Search: press Ctrl+K and type part of a page's or a record's name](img/look-finder.png)
 
 ![The side menu look](img/look-side.png)
 
-In both new looks each page opens with a banner in your menu colour (the page's icon, its name and its buttons), and
-sections are white cards, so every page looks the same way. All colours follow your brand (Step 4, *Your brand*).
+Every page has its name and a one-line explanation at the top, its buttons on the right, and sections as white cards,
+so every page looks the same way. All colours follow your brand (Step 4, *Your brand*).
 
-**Where the menu sections are in the tabs:** this guide names pages by their menu section, e.g. *System → Settings*.
-With the tabs, the sections are grouped like this: **Insights** (Insights, Reports) · **Sales** (Sales, Cash, Online)
-· **Purchasing** · **Stock** (Stock, Catalog, Pricing & tax) · **Finance** · **People** (HR & payroll, People &
-access) · your **industry** (e.g. Pharmacy) · **Setup** (Company, Messages, System). So *System → Settings* is
-**Setup → Settings**. Or press **/** and type *settings*.
+**Where the menu sections are:** this guide names pages by their menu section, e.g. *System → Settings*. The sections
+are grouped like this: **Insights** (Insights, Reports) · **Sales** (Sales, CRM, Projects, Service desk, Cash, Online)
+· **Purchasing** · **Stock** (Stock, Catalog, Pricing & tax, Maintenance, Sensors) · **Finance** · **People** (HR &
+payroll, People & access) · **Industries** (e.g. Pharmacy) · **Setup** (Company, Messages, System); anything else is
+under **More**. So *System → Settings* is **Setup → Settings**. Or press **Ctrl+K** and type *settings*.
 
-**Why a choice:** most people find the tabs faster, and they fit more on the screen. Anyone who prefers another look
-can keep it.
+**Why a choice:** most people find the menu across the top faster, and it fits more on the screen; some prefer the
+side menu. Choose under your name → **Menu**: *Across the top* or *At the side*. **On a phone** the side menu is always
+used, because the areas do not fit across the top.
 
-1. **Each person, for themselves:** top right, click your photo or initials → **Profile** → **Look** → choose →
-   **Save changes**. *As the company chose* follows the company's choice.
-2. **For everyone:** **System → Settings → Appearance → How the back office looks**. This applies to everyone who has
-   not chosen for themselves.
-3. **On a phone** the side menu is always used, because the tabs do not fit.
+![My profile: its parts on the left, a card for each on the right](img/profile-look.png)
 
-![Profile: its parts on the left, a card for each on the right](img/profile-look.png)
+**My profile** (your name → *My profile and settings*) lists its parts on the left (Your profile, Look, Preferences,
+Notifications, Security) with SyncLytics' support contacts, and shows a card for each on the right: your photo and
+details, the look, your preferences, which notifications reach you, your password (with how strong it is), two-factor
+sign-in and passkeys.
 
-The **Profile** page lists its parts on the left (Your profile, Look, Security) with SyncLytics' support contacts, and
-shows a card for each on the right: your photo and details, the look (pictures of each, in your colours), your
-password (with how strong it is), two-factor sign-in and passkeys.
-
-**Profile photo:** on the same **Profile** page, drop a photo on the circle (or click *Browse*), adjust it with the
-pencil if you like, and **Save changes**. It shows beside your name in the top bar and in the list of users.
-**Why:** colleagues see at a glance who did what. The server keeps only a small square copy, with the hidden details
-of the original removed (where and when it was taken, the camera). It stays on your company's server and is shown only
-to people signed in to your company. People without a photo show their initials, drawn on your own server (no name is
-sent to an outside website).
+**Profile photo:** on **My profile**, choose a photo (JPEG, PNG or WebP) and it is saved at once; **Remove photo**
+takes it off. It shows beside your name in the top bar and in the list of users. **Why:** colleagues see at a glance
+who did what. The server keeps only a small square copy, with the hidden details of the original removed (where and
+when it was taken, the camera). It stays on your company's server and is shown only to people signed in to your
+company. People without a photo show their initials, drawn on your own server (no name is sent to an outside website).
 
 ## Step 6c — Your dashboard, preferences and notifications
 

@@ -450,7 +450,7 @@ for _ in $(seq 1 30); do
   sleep 2
 done
 [ "$OK" = 1 ] || die "the server does not answer on https://${FIRST}/up: see ${DIR}/server/storage/logs/laravel.log and journalctl -u caddy"
-say "Done: the server answers at https://${FIRST}/admin"
+say "Done: the server answers at https://${FIRST}/office/"
 [ -z "$DOMAIN" ] && [ "$CI_MODE" = 0 ] && echo "   Tills, tablets and other PCs: open http://${FIRST}/ca.crt once and trust it (installation guide, Chapter 4.9)."
 echo "$PASSPHRASE_OUT" | grep -q 'already set' || { echo; echo "$PASSPHRASE_OUT"; }
 if [ "$NEW_INSTALL" = 1 ] && [ "$ROLE" = "hq" ] && [ "$CI_MODE" = 0 ]; then

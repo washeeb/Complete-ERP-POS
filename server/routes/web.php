@@ -136,6 +136,7 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
 Route::get('/office/{path?}', [OfficeController::class, 'index'])->where('path', '.*')->middleware(OfficeMfa::class)->name('office');
 Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office', OfficeMfa::class])->group(function () {
     Route::get('me', [OfficeController::class, 'me']);
+    Route::post('industry', [OfficeController::class, 'industry']); // the industry switch at the top (part 43)
     // The bell (part 43): the person's notifications.
     Route::get('notifications', [OfficeNotificationsController::class, 'index']);
     Route::get('notifications/count', [OfficeNotificationsController::class, 'count']);
