@@ -152,6 +152,15 @@ class ProfileController extends Controller
 
     // -------------------------------------------------------------------------------------------- Two-factor sign-in
 
+    /** "Set up two-factor sign-in first" (part 41): who is asked, and whether it is done (open while the rule asks for it). */
+    public function setupState(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $app = $this->app();
+
+        return response()->json(['name' => $user->name, 'enabled' => $app->isEnabled($user), 'required' => $user->requiresMfa(), 'home' => UserPrefs::officeHomeUrl($user)]);
+    }
+
     /** Set up, step 1: a new secret (and recovery codes), sealed for this person for 15 minutes; the QR code to scan. */
     public function twoFactorStart(Request $request): JsonResponse
     {
@@ -226,7 +235,7 @@ class ProfileController extends Controller
         self::limit('filament-disable-app-authentication', $user, filled($d['recovery_code'] ?? null) ? 'recovery_code' : 'code');
         self::checkPassword($user, $d['password']);
         if (filled($d['recovery_code'] ?? null) && $app->isRecoverable()) {
-            if (! $app->verifyRecoveryCode(trim($d['recovery_code']), $user)) {
+            if (blank($user->getAppAuthenticationRecoveryCodes()) || ! $app->verifyRecoveryCode(trim($d['recovery_code']), $user)) { // all used: simply not right
                 throw ValidationException::withMessages(['recovery_code' => 'That recovery code is not right, or was already used.']);
             }
         } elseif (! filled($d['code'] ?? null) || ! $app->verifyCode(trim($d['code']), shouldPreventCodeReuse: true)) {

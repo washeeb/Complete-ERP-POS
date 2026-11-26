@@ -17,15 +17,15 @@ beforeEach(function () {
 
 it('sends someone signed out to sign in, and back to the same page of the new back office afterwards', function () {
     $this->getJson('/office-api/me')->assertUnauthorized();
-    $this->get('/office-signin?to='.urlencode('/office/a/products?tableSearch=rice'))->assertRedirect('/admin/login');
+    $this->get('/office-signin?to='.urlencode('/office/a/products?tableSearch=rice'))->assertRedirect('/office/sign-in');
     expect(session('url.intended'))->toBe(url('/office/a/products?tableSearch=rice'));
 
-    $this->get('/office-signin?to='.urlencode('https://evil.example/app/'))->assertRedirect('/admin/login');
+    $this->get('/office-signin?to='.urlencode('https://evil.example/app/'))->assertRedirect('/office/sign-in');
     expect(session('url.intended'))->toBe(url('/').'/office/'); // never another site
-    $this->get('/office-signin?to='.urlencode('//evil.example/app'))->assertRedirect('/admin/login');
+    $this->get('/office-signin?to='.urlencode('//evil.example/app'))->assertRedirect('/office/sign-in');
     expect(session('url.intended'))->toBe(url('/').'/office/');
 
-    $this->get('/office/a/products')->assertRedirect('/admin/login'); // an address inside the app, opened directly
+    $this->get('/office/a/products')->assertRedirect('/office/sign-in'); // an address inside the app, opened directly
     expect(session('url.intended'))->toBe(url('/office/a/products'));
 });
 

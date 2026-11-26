@@ -62,7 +62,19 @@ class OfficeController extends Controller
         }
         $request->session()->put('url.intended', rtrim(url('/'), '/').$to); // exactly this address (url() would drop the final /)
 
-        return redirect('/admin/login');
+        return redirect('/office/sign-in');
+    }
+
+    /** The sign-in page of the new back office (part 41): open signed out; someone signed in goes on to the back office. */
+    public function signInPage(Request $request): Response|RedirectResponse
+    {
+        if ($request->user()) {
+            return redirect()->away(rtrim(url('/'), '/').'/office/');
+        }
+        $index = public_path('office/index.html');
+
+        return is_file($index) ? response()->file($index, ['Cache-Control' => 'no-cache'])
+            : response('The new back office is not installed on this server yet. In the pos folder run: npm run build:office', 404);
     }
 
     /** Who is signed in, their company's colours and logo, and their choices. */

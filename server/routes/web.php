@@ -73,6 +73,7 @@ use App\Http\Controllers\Office\ServicesController as OfficeServicesController;
 use App\Http\Controllers\Office\SettingsController as OfficeSettingsController;
 use App\Http\Controllers\Office\SetupWizardController as OfficeSetupWizardController;
 use App\Http\Controllers\Office\ShiftsController as OfficeShiftsController;
+use App\Http\Controllers\Office\SignInController as OfficeSignInController;
 use App\Http\Controllers\Office\StockController as OfficeStockController;
 use App\Http\Controllers\Office\StockFloorController as OfficeStockFloorController;
 use App\Http\Controllers\Office\StockReportsController as OfficeStockReportsController;
@@ -115,6 +116,22 @@ Route::get('/', fn () => redirect('/admin'));
 Route::get('/office', fn () => redirect()->away(rtrim(url('/'), '/').'/office/'));
 // Signed out in the new back office: sign in, then back to the same page of it (only ever a page of /office).
 Route::get('/office-signin', [OfficeController::class, 'signIn'])->name('office.sign-in');
+// Signing in to the new back office (part 41): the page opens signed out; its steps (office-auth) are those of the current
+// sign-in. Sign-out and setting up two-factor sign-in stay open to someone the two-factor rule is sending there.
+Route::get('/office/sign-in', [OfficeController::class, 'signInPage'])->name('office.sign-in-page');
+Route::prefix('office-auth')->middleware('throttle:30,1,office-auth')->group(function () {
+    Route::get('state', [OfficeSignInController::class, 'state']);
+    Route::post('sign-in', [OfficeSignInController::class, 'signIn']);
+    Route::post('verify', [OfficeSignInController::class, 'verify']);
+    Route::post('choose', [OfficeSignInController::class, 'choose']);
+    Route::post('cancel', [OfficeSignInController::class, 'cancel']);
+});
+Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->group(function () {
+    Route::post('sign-out', [OfficeSignInController::class, 'signOut']);
+    Route::get('two-factor-setup', [OfficeProfileController::class, 'setupState']);
+    Route::post('profile/two-factor/start', [OfficeProfileController::class, 'twoFactorStart']);
+    Route::post('profile/two-factor/confirm', [OfficeProfileController::class, 'twoFactorConfirm']);
+});
 Route::get('/office/{path?}', [OfficeController::class, 'index'])->where('path', '.*')->middleware(OfficeMfa::class)->name('office');
 Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office', OfficeMfa::class])->group(function () {
     Route::get('me', [OfficeController::class, 'me']);
@@ -732,8 +749,6 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office', Office
     Route::get('profile', [OfficeProfileController::class, 'show']);
     Route::post('profile', [OfficeProfileController::class, 'save']);
     Route::post('profile/photo', [OfficeProfileController::class, 'photo']);
-    Route::post('profile/two-factor/start', [OfficeProfileController::class, 'twoFactorStart']);
-    Route::post('profile/two-factor/confirm', [OfficeProfileController::class, 'twoFactorConfirm']);
     Route::post('profile/two-factor/recovery-codes', [OfficeProfileController::class, 'twoFactorRegenerate']);
     Route::post('profile/two-factor/disable', [OfficeProfileController::class, 'twoFactorDisable']);
     Route::post('profile/passkeys/options', [OfficeProfileController::class, 'passkeyOptions']);

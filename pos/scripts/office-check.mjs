@@ -31,16 +31,19 @@ const problems = []
 let optionsAnswer = 'no answer yet' // the products screen's options, for a clearer problem report
 page.on('response', async (r) => { if (r.url().includes('/office-api/products/options')) optionsAnswer = `options answered ${r.status()} ${(await r.text().catch(() => '')).slice(0, 200)}` })
 try {
-  // Opening /office signed out goes to the sign-in page, and back to /office afterwards.
+  // Opening /office signed out goes to the new sign-in page (part 41), and back to /office afterwards: the password, then
+  // the code from the app.
   await page.goto(`${base}/office/`)
-  await page.waitForURL(/\/admin\/login/)
+  await page.waitForURL(/\/office\/sign-in/).catch(() => problems.push(`signed out, /office went to ${page.url()}, not /office/sign-in`))
+  await page.getByRole('button', { name: 'Sign in with a passkey' }).waitFor({ timeout: 15000 }).catch(() => problems.push('the sign-in page offers no passkey'))
+  await page.screenshot({ path: out('sign-in') })
   await page.locator('input[autocomplete=username]').fill(secrets.email)
   await page.locator('input[type=password]').fill(secrets.password)
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
   const code = page.locator('input[autocomplete="one-time-code"], input[inputmode="numeric"]').first()
   await code.waitFor({ timeout: 15000 }); await code.fill(totp(secrets.totp_secret)); await code.press('Enter')
-  await page.waitForURL(/\/office\//, { timeout: 20000 }).catch(() => problems.push(`after sign-in the browser is at ${page.url()}, not /office`))
-  if (!/\/office\//.test(page.url())) await page.goto(`${base}/office/`)
+  await page.waitForURL(/\/office\/(?!sign-in)/, { timeout: 20000 }).catch(() => problems.push(`after sign-in the browser is at ${page.url()}, not /office`))
+  if (!/\/office\/(?!sign-in)/.test(page.url())) await page.goto(`${base}/office/`)
 
   const frameReady = async () => {
     const f = page.frameLocator('iframe[title="Page"]')

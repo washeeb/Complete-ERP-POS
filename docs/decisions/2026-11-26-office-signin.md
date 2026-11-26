@@ -1,0 +1,6 @@
+## Signing in to the new back office
+- **The same steps and guards as the current sign-in,** written out on the server rather than calling Filament's page: Timebox on every failure (no telling a wrong password from an account that may not sign in), five tries a minute, the challenge with its own limit, the password and access checked again after the challenge, and the session regenerated. Signing in through `Auth::login` keeps the audit trail, the new-computer warning and the support-account notice, which listen to the sign-in events.
+- **The challenge is kept on the server** (the session, 10 minutes, with a fingerprint of the password) rather than in the page, so the password is not carried to the second step.
+- **Passkeys sign in through the package's own routes,** unchanged, so the checks there (inactive accounts refused, passkey-verified flag, audit) stay exactly as they are.
+- **Found and fixed: recovery codes all used gave a server error** in Filament's provider; the new sign-in and My profile check first and answer "not right".
+- **Staged switch-off (owner 2026-11-26):** sign-in first (this part); every address the server sends (part 42); then the classic back office off (part 43). `/admin/login` keeps working until part 43, for the layout check of the classic looks.
