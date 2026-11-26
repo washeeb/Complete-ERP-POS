@@ -10,6 +10,12 @@ use PragmaRX\Google2FA\Google2FA;
 // the two-factor challenge (app code, recovery code, a code sent), the password checked again, signing out; the sign-in
 // page open signed out, and the two-factor rule sending people to the new set-up page.
 
+// The page is the built app (npm run build:office); a server without it says so (404) — either way it is not a redirect.
+function officePageStatus(): int
+{
+    return is_file(public_path('office/index.html')) ? 200 : 404;
+}
+
 beforeEach(function () {
     [$this->tenant, $this->owner] = installCompany();
     $this->b = setUpBranches($this->owner);
@@ -20,7 +26,7 @@ beforeEach(function () {
 });
 
 it('opens the sign-in page signed out, and the back office sends a signed-out person there', function () {
-    $this->get('/office/sign-in')->assertOk();
+    $this->get('/office/sign-in')->assertStatus(officePageStatus()); // served, not sent away
     $this->get('/office/sales')->assertRedirect('/office/sign-in');
     expect(session('url.intended'))->toEndWith('/office/sales');
     $state = $this->getJson('/office-auth/state')->assertOk()->json();
@@ -91,7 +97,7 @@ it('sends someone who needs two-factor sign-in to the new set-up page, which sta
     $this->owner->forceFill(['app_authentication_secret' => null])->saveQuietly();
     $this->actingAs($this->owner->fresh(), 'web');
     $this->get('/office/sales')->assertRedirect('/office/two-factor-setup');
-    $this->get('/office/two-factor-setup')->assertOk();
+    $this->get('/office/two-factor-setup')->assertStatus(officePageStatus()); // open to them
     $this->getJson('/office-api/me')->assertForbidden()->assertJsonPath('url', '/office/two-factor-setup');
     expect($this->getJson('/office-api/two-factor-setup')->assertOk()->json())->toMatchArray(['enabled' => false, 'required' => true]);
     $start = $this->postJson('/office-api/profile/two-factor/start')->assertOk()->json();
