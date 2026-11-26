@@ -1673,18 +1673,45 @@ try {
       await page.waitForURL(/\/office\/today\?yesterday=1$/, { timeout: 10000 }).catch(() => problems.push(`${look} ${w}: Yesterday did not follow in the address`))
       await page.getByRole('region', { name: 'Branches' }).waitFor({ timeout: 30000 }).catch(() => problems.push(`${look} ${w}: Yesterday did not load`))
 
-      // Departments is still the current page (opened from Employees; Today was rebuilt in part 37): it opens inside, and
-      // the address follows. Its list heading shows it loaded.
+      // Departments, rebuilt (part 38): it opens from Employees and loads; New department opens its dialog (nothing saved).
+      // Tax and SSNIT rules opens from Payroll.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /People/ }).first().click()
       await page.getByRole('navigation', { name: 'People' }).getByRole('link', { name: menuName('Employees') }).first().click()
       await page.getByRole('button', { name: 'Departments' }).click()
-      await page.waitForURL(/\/office\/a\/departments/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Departments did not open at /office/a/departments (${page.url()})`))
+      await page.waitForURL(/\/office\/departments$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Departments did not open the new screen (${page.url()})`))
+      await page.getByText('No departments yet.').or(page.getByRole('table', { name: 'Departments' }).getByRole('row').nth(1)).first().waitFor({ timeout: 20000 })
+        .catch(() => problems.push(`${look} ${w}: Departments did not load`))
+      if (await page.getByRole('button', { name: 'New department' }).count()) {
+        await page.getByRole('button', { name: 'New department' }).click()
+        const dd = page.getByRole('dialog')
+        await dd.waitFor({ timeout: 10000 }).catch(() => problems.push(`${look} ${w}: New department did not open its dialog`))
+        await page.screenshot({ path: out(`departments-new-${look}-${w}`) })
+        await dd.getByRole('button', { name: 'Back' }).click().catch(() => page.keyboard.press('Escape'))
+        await dd.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => problems.push(`${look} ${w}: New department's dialog did not close`))
+      }
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /People/ }).first().click()
+      await page.getByRole('navigation', { name: 'People' }).getByRole('link', { name: menuName('Payroll') }).first().click()
+      await page.getByRole('button', { name: 'Tax and SSNIT rules' }).click()
+      await page.waitForURL(/\/office\/payroll-rules$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Tax and SSNIT rules did not open the new screen (${page.url()})`))
+      await page.getByRole('table', { name: 'PAYE bands' }).or(page.getByText('No payroll profile is set up.')).first().waitFor({ timeout: 20000 })
+        .catch(() => problems.push(`${look} ${w}: Tax and SSNIT rules did not load`))
+      await page.screenshot({ path: out(`payroll-rules-${look}-${w}`) })
+      // The setup wizard (part 38): the dev company is set up, so it says so (the steps are covered by OfficeLastPagesTest).
+      await page.goto(`${base}/office/setup-wizard`)
+      await page.getByText('Your company is already set up.', { exact: false }).waitFor({ timeout: 20000 })
+        .catch(() => problems.push(`${look} ${w}: the setup wizard did not say the company is set up`))
+
+      // My profile is still the current page (two-factor sign-in and passkeys; Departments was rebuilt in part 38): it opens
+      // inside from your menu, and the address follows. Its heading shows it loaded.
+      await page.getByRole('button', { name: /your menu/ }).click()
+      await page.getByRole('menuitem', { name: 'My profile and settings' }).click()
+      await page.waitForURL(/\/office\/a\/profile/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: My profile did not open at /office/a/profile (${page.url()})`))
       await page.waitForFunction(() => {
         const f = document.querySelector('iframe[title="Page"]')
-        return f?.contentWindow?.location.pathname === '/admin/departments' && !!f.contentDocument?.querySelector('h1')
-      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Departments page did not open inside`))
+        return f?.contentWindow?.location.pathname === '/admin/profile' && !!f.contentDocument?.querySelector('h1')
+      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: My profile did not open inside`))
       const f = await frameReady()
-      await f.locator('h1').first().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Departments page did not show inside`))
+      await f.locator('h1').first().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: My profile did not show inside`))
       const chrome = await f.locator('.fi-sidebar, .fi-topbar').evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== 'none').length)
       if (chrome) problems.push(`${look} ${w}: the embedded page still shows its own menu`)
       await page.waitForTimeout(600) // the page's own loader fades out
@@ -1693,17 +1720,17 @@ try {
       // Recent lists the page just opened; the star adds it to favourites and takes it off again.
       const nav = page.getByRole('navigation', { name: 'Menu' })
       await (look === 'top' ? nav.getByRole('button', { name: 'Recent pages' }) : nav.getByRole('button', { name: 'Recent' })).click()
-      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /^Departments/i }).first().waitFor({ timeout: 5000 })
-        .catch(() => problems.push(`${look} ${w}: Recent does not list Departments`))
+      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /profile/i }).first().waitFor({ timeout: 5000 })
+        .catch(() => problems.push(`${look} ${w}: Recent does not list My profile`))
       await page.keyboard.press('Escape')
       const star = look === 'top' ? nav.getByRole('button', { name: 'Favourites' }) : nav.getByRole('button', { name: 'Favourites' })
       await star.click()
       const fav = page.getByRole('dialog', { name: 'Favourite pages' })
       await fav.getByRole('button', { name: /^Add “/ }).click().catch(() => problems.push(`${look} ${w}: Favourites has no "Add this page"`))
-      await fav.getByRole('link', { name: /^Departments/i }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Departments did not become a favourite`))
+      await fav.getByRole('link', { name: /profile/i }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: My profile did not become a favourite`))
       await page.screenshot({ path: out(`favourites-${look}-${w}`) })
       await fav.getByRole('button', { name: /^Take “/ }).last().click().catch(() => undefined) // leave the dev account as it was
-      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Departments could not be taken off favourites`))
+      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: My profile could not be taken off favourites`))
       await page.keyboard.press('Escape')
 
       // Search: Ctrl+K, type, a page of the menu is offered.

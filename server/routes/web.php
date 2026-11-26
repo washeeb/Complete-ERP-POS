@@ -38,6 +38,7 @@ use App\Http\Controllers\Office\FashionController as OfficeFashionController;
 use App\Http\Controllers\Office\GoLiveController as OfficeGoLiveController;
 use App\Http\Controllers\Office\GoodsReceiptsController as OfficeGoodsReceiptsController;
 use App\Http\Controllers\Office\HrController as OfficeHrController;
+use App\Http\Controllers\Office\HrSetupController as OfficeHrSetupController;
 use App\Http\Controllers\Office\InsightsAiController as OfficeInsightsAiController;
 use App\Http\Controllers\Office\InvoicesController as OfficeInvoicesController;
 use App\Http\Controllers\Office\JournalsController as OfficeJournalsController;
@@ -68,6 +69,7 @@ use App\Http\Controllers\Office\SensorsController as OfficeSensorsController;
 use App\Http\Controllers\Office\ServiceDeskController as OfficeServiceDeskController;
 use App\Http\Controllers\Office\ServicesController as OfficeServicesController;
 use App\Http\Controllers\Office\SettingsController as OfficeSettingsController;
+use App\Http\Controllers\Office\SetupWizardController as OfficeSetupWizardController;
 use App\Http\Controllers\Office\ShiftsController as OfficeShiftsController;
 use App\Http\Controllers\Office\StockController as OfficeStockController;
 use App\Http\Controllers\Office\StockFloorController as OfficeStockFloorController;
@@ -714,6 +716,15 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::post('ask/quick', [OfficeInsightsAiController::class, 'quick']);
     // Today (new look, part 37): the owner's phone view of the business today or yesterday.
     Route::get('today', [OfficeTodayController::class, 'show']);
+    // The last pages (new look, part 38): departments, tax and SSNIT rules, and the first-run setup wizard.
+    Route::get('departments', [OfficeHrSetupController::class, 'departments']);
+    Route::post('departments/{id?}', [OfficeHrSetupController::class, 'departmentSave'])->whereUuid('id');
+    Route::post('departments/{id}/archive', [OfficeHrSetupController::class, 'departmentArchive'])->whereUuid('id');
+    Route::get('payroll-rules', [OfficeHrSetupController::class, 'rules']);
+    Route::post('payroll-rules/verify', [OfficeHrSetupController::class, 'verify']);
+    Route::get('payroll-rules/export', [OfficeHrSetupController::class, 'rulesExport']);
+    Route::get('setup-wizard', [OfficeSetupWizardController::class, 'show']);
+    Route::post('setup-wizard', [OfficeSetupWizardController::class, 'save']);
     Route::get('alerts', [OfficeInsightsAiController::class, 'alerts']);
     Route::post('alerts/refresh', [OfficeInsightsAiController::class, 'alertsRefresh']);
     Route::post('alerts/{id}', [OfficeInsightsAiController::class, 'alertHandle'])->whereUuid('id');

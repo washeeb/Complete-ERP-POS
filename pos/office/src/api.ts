@@ -15,6 +15,8 @@ export type Me = {
   prefs: Prefs
   favourites: { url: string; label: string }[]
   classic: string
+  /** Not set up yet, and this person may set it up: the setup wizard first. */
+  setup: string | null
 }
 export type SearchResult = { group: string; title: string; url: string; details: string }
 export type TodoItem = {
@@ -938,6 +940,16 @@ export type MfgPlan = { warehouses: Option[]; warehouse: string; can_make: boole
 export type WorkCentreValues = { name: string; branch_id: string; hourly_rate: string; hours_per_day: string }
 export type WorkCentreRow = Archivable & { id: string; code: string; name: string; branch: string | null; rate: number; hours: string; can_edit: boolean; values: WorkCentreValues }
 export type WorkCentreList = { currency: string; exponent: number; can_create: boolean; branches: Option[]; rows: WorkCentreRow[] }
+export type DepartmentRow = Archivable & { id: string; code: string; name: string; can_edit: boolean }
+export type DepartmentList = { can_create: boolean; rows: DepartmentRow[] }
+export type PayrollRuleValues = { bands: { width: string; rate: string }[]; employee: string; employer: string; tier1: string; tier3_relief: string; ot_threshold: string
+  ot_low: string; ot_high: string; hours: string }
+export type PayrollRules = { can_verify: boolean; profile: { name: string; verified: string | null; bands: { band: string; rate: string }[]; note: string; values: PayrollRuleValues } | null }
+export type SetupBranch = { name: string; is_hq: boolean; tills: string; modules: string[] }
+export type SetupValues = { deployment_mode: string; company: { name: string; country_code: string; currency_code: string; timezone: string }
+  legal_entity: { name: string; tin: string; vat_no: string }; brand: { color: string; receipt_logo: boolean }; branches: SetupBranch[] }
+export type SetupWizardData = { done: boolean; modes?: Option[]; countries?: Option[]; currencies?: Option[]; timezones?: string[]
+  modules?: (Option & { detail: string })[]; values?: SetupValues }
 export type TodayData = { yesterday: boolean; date: string; sales: string; sales_minor: number; count: number; vs_last_week: number | null; last_week: string
   payments: { label: string; value: string }[]; closes: number; over_short: number; over_short_text: string
   attention: { tone: 'danger' | 'warning'; text: string; link: string | null; open: string | null }[]
@@ -2006,6 +2018,26 @@ export const api = {
   tipsVoids: (query: string, signal?: AbortSignal) => call<TipsVoids>(`/office-api/restaurant/tips-voids?${query}`, { signal }),
   askBusiness: () => call<AskData>('/office-api/ask'),
   today: (yesterday: boolean) => call<TodayData>(`/office-api/today${yesterday ? '?yesterday=1' : ''}`),
+  departments: (query: string, signal?: AbortSignal) => call<DepartmentList>(`/office-api/departments?${query}`, { signal }),
+  saveDepartment: (id: string | null, name: string) =>
+    call<{ id: string; message: string }>(`/office-api/departments${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify({ name }) }),
+  departmentArchive: (id: string, restore: boolean, reason: string) =>
+    call<{ message: string }>(`/office-api/departments/${id}/archive`, { method: 'POST', body: JSON.stringify({ restore, reason: restore ? null : reason }) }),
+  payrollRules: () => call<PayrollRules>('/office-api/payroll-rules'),
+  verifyPayrollRules: (body: PayrollRuleValues) => call<{ message: string }>('/office-api/payroll-rules/verify', { method: 'POST', body: JSON.stringify(body) }),
+  setupWizard: () => call<SetupWizardData>('/office-api/setup-wizard'),
+  /** Finish setup: sent as a form (the values as JSON, the logo and icon as files). */
+  finishSetup: async (values: SetupValues, logo: File | null, icon: File | null) => {
+    const body = new FormData()
+    body.append('data', JSON.stringify(values))
+    if (logo) body.append('logo', logo)
+    if (icon) body.append('icon', icon)
+    const res = await fetch('/office-api/setup-wizard', { method: 'POST', body, credentials: 'same-origin',
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) throw new ApiError(json.detail ?? json.message ?? 'The company could not be set up. Try again.', res.status, json.error ?? 'error')
+    return json as { message: string; open: string; brand_problem?: string }
+  },
   askQuestion: (question: string, history: { role: 'user' | 'assistant'; content: string }[]) =>
     call<AskAnswer>('/office-api/ask', { method: 'POST', body: JSON.stringify({ question, history }) }),
   askQuick: (key: string) => call<AskAnswer>('/office-api/ask/quick', { method: 'POST', body: JSON.stringify({ key }) }),

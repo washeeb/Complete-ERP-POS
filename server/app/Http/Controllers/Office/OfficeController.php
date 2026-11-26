@@ -11,6 +11,7 @@ use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Filament\Pages\ConfirmItsYou;
+use App\Filament\Pages\SetupWizard;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Models\TillApproval;
@@ -79,6 +80,8 @@ class OfficeController extends Controller
             'prefs' => UserPrefs::for($user),
             'favourites' => Look::favourites(),
             'classic' => '/admin', // the current back office, for a few releases
+            // Not set up yet, and this person may set it up: the setup wizard first, as the current back office does.
+            'setup' => $tenant && ! $tenant->isSetUp() && SetupWizard::canAccess() ? '/office/setup-wizard' : null,
         ]);
     }
 

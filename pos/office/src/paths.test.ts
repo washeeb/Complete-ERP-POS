@@ -18,8 +18,11 @@ const menu: Menu = {
 
 describe('addresses', () => {
   it('opens a current back-office page inside the new one, and back', () => {
-    expect(appPathFor('/admin/departments')).toBe('/office/a/departments')
+    expect(appPathFor('/admin/profile')).toBe('/office/a/profile')
     expect(appPathFor('/admin/today?yesterday=1')).toBe('/office/today?yesterday=1')
+    expect(appPathFor('/admin/departments')).toBe('/office/departments')
+    expect(appPathFor('/admin/payroll-rules')).toBe('/office/payroll-rules')
+    expect(appPathFor('/admin/setup-wizard')).toBe('/office/setup-wizard')
     expect(appPathFor('/admin/products/abc/edit')).toBe('/office/a/products/abc/edit')
     expect(appPathFor('/admin')).toBe('/office/')
     expect(appPathFor('https://evil.example/admin')).toBe('/office/') // never another site
