@@ -57,6 +57,7 @@ use App\Http\Controllers\Office\ProjectsController as OfficeProjectsController;
 use App\Http\Controllers\Office\PromotionsController as OfficePromotionsController;
 use App\Http\Controllers\Office\PurchaseOrdersController as OfficePurchaseOrdersController;
 use App\Http\Controllers\Office\ReceivablesController as OfficeReceivablesController;
+use App\Http\Controllers\Office\ReconfirmController as OfficeReconfirmController;
 use App\Http\Controllers\Office\ReferenceListsController as OfficeReferenceListsController;
 use App\Http\Controllers\Office\ReorderController as OfficeReorderController;
 use App\Http\Controllers\Office\ReportsController as OfficeReportsController;
@@ -738,6 +739,12 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office', Office
     Route::post('profile/passkeys/options', [OfficeProfileController::class, 'passkeyOptions']);
     Route::post('profile/passkeys', [OfficeProfileController::class, 'passkeyStore']);
     Route::post('profile/passkeys/{id}/remove', [OfficeProfileController::class, 'passkeyRemove']);
+    // "Confirm it's you" (new look, part 40): the app code, a code sent, the password, or a passkey, before money leaves.
+    Route::get('confirm-its-you', [OfficeReconfirmController::class, 'show']);
+    Route::post('confirm-its-you', [OfficeReconfirmController::class, 'confirm'])->middleware('throttle:20,1,confirm-its-you');
+    Route::post('confirm-its-you/send', [OfficeReconfirmController::class, 'send'])->middleware('throttle:6,1,confirm-its-you-send');
+    Route::post('confirm-its-you/passkey/options', [OfficeReconfirmController::class, 'passkeyOptions'])->middleware('throttle:20,1,confirm-its-you-passkey');
+    Route::post('confirm-its-you/passkey', [OfficeReconfirmController::class, 'passkey'])->middleware('throttle:20,1,confirm-its-you-passkey');
     Route::get('alerts', [OfficeInsightsAiController::class, 'alerts']);
     Route::post('alerts/refresh', [OfficeInsightsAiController::class, 'alertsRefresh']);
     Route::post('alerts/{id}', [OfficeInsightsAiController::class, 'alertHandle'])->whereUuid('id');

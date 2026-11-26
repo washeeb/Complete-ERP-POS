@@ -1,0 +1,2 @@
+### Added
+- **"Confirm it's you" rebuilt in the new back office (part 40).** Before money leaves, the new back office asks right where you are: the code from your authenticator app, a passkey (fingerprint, face or your phone, confirmed without signing in again), a code sent by WhatsApp or e-mail, or your password if you have none of these. Five tries a minute; it lasts five minutes, as before. Only signing in and the two-factor set-up and challenge pages still use the current look.
