@@ -10,7 +10,6 @@ import { PageHead, usePageStyles } from '../list/ListParts'
 import { serialize, str, useQueryParams } from '../list/query'
 import { useList } from '../list/useList'
 import { navigate } from '../nav'
-import { classicPathFor } from '../paths'
 import { ToneBadge, useProcStyles } from './ProcurementParts'
 
 /**
@@ -36,7 +35,7 @@ export function PayrollPage() {
           <Option value="">Any status</Option>{(data?.statuses ?? []).map((o) => <Option key={o.id} value={o.id}>{o.label}</Option>)}
         </Dropdown>
         <span className={s.grow} />
-        <Button icon={<ScalesRegular />} onClick={() => navigate(classicPathFor('/admin/payroll-rules'))}>Tax and SSNIT rules</Button>
+        <Button icon={<ScalesRegular />} onClick={() => navigate('/office/payroll-rules')}>Tax and SSNIT rules</Button>
         {data?.can_prepare && <Button appearance="primary" icon={<CalculatorRegular />} onClick={() => setPrep({ ...data.now })}>Prepare payroll</Button>}
       </div>
       {error && <MessageBar intent="error" style={{ marginBottom: 12 }}><MessageBarBody>{error}</MessageBarBody></MessageBar>}

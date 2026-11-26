@@ -7,7 +7,6 @@ import { PageHead, usePageStyles } from '../list/ListParts'
 import { serialize, str, useQueryParams } from '../list/query'
 import { useList } from '../list/useList'
 import { navigate } from '../nav'
-import { classicPathFor } from '../paths'
 import { ShowFilter, Status } from './CompanyParts'
 import { day, ToneBadge, useProcStyles } from './ProcurementParts'
 
@@ -44,7 +43,7 @@ export function EmployeesPage() {
         </Dropdown>
         <ShowFilter value={str(params, 'show')} onChange={(v) => set({ show: v })} />
         <span className={s.grow} />
-        {data?.can_manage && <Button icon={<PeopleTeamRegular />} onClick={() => navigate(classicPathFor('/admin/departments'))}>Departments</Button>}
+        {data?.can_manage && <Button icon={<PeopleTeamRegular />} onClick={() => navigate('/office/departments')}>Departments</Button>}
         {data?.can_create && <Button appearance="primary" icon={<AddRegular />} onClick={() => navigate('/office/employees/new')}>Add employee</Button>}
       </div>
       {error && <MessageBar intent="error" style={{ marginBottom: 12 }}><MessageBarBody>{error}</MessageBarBody></MessageBar>}
