@@ -17,17 +17,17 @@ use Throwable;
  */
 final class NotificationRelay
 {
-    /** event => [permission, what, resource slug] */
+    /** event => [permission, what, its page in the new back office] */
     public const APPROVALS = [
-        'purchase_order.submitted' => ['purchasing.approve', 'Purchase order', 'purchase-orders'],
-        'supplier_bill.held' => ['payables.approve', 'Supplier bill (price difference)', 'supplier-bills'],
-        'stock_adjustment.submitted' => ['stock.adjust.approve', 'Stock adjustment', 'stock-adjustments'],
-        'stock_disposal.prepared' => ['stock.adjust.approve', 'Disposal of expired or damaged stock', 'stock-adjustments'],
-        'supplier_return.prepared' => ['stock.adjust.approve', 'Return to supplier', 'supplier-returns'],
-        'goods_receipt.held' => ['stock.receive.approve', 'Delivery over the tolerance', 'goods-receipts'],
-        'stock_count.submitted' => ['stock.count.approve', 'Stock count', 'stock-counts'],
-        'van_settlement.submitted' => ['distribution.settle', 'Van settlement', 'van-settlements'],
-        'expense_claim.submitted' => ['expenses.approve', 'Expense claim', 'expense-claims'],
+        'purchase_order.submitted' => ['purchasing.approve', 'Purchase order', '/office/purchase-orders'],
+        'supplier_bill.held' => ['payables.approve', 'Supplier bill (price difference)', '/office/supplier-bills'],
+        'stock_adjustment.submitted' => ['stock.adjust.approve', 'Stock adjustment', '/office/adjustments'],
+        'stock_disposal.prepared' => ['stock.adjust.approve', 'Disposal of expired or damaged stock', '/office/adjustments'],
+        'supplier_return.prepared' => ['stock.adjust.approve', 'Return to supplier', '/office/supplier-returns'],
+        'goods_receipt.held' => ['stock.receive.approve', 'Delivery over the tolerance', '/office/goods-received'],
+        'stock_count.submitted' => ['stock.count.approve', 'Stock count', '/office/counts'],
+        'van_settlement.submitted' => ['distribution.settle', 'Van settlement', '/office/distribution/settlements'],
+        'expense_claim.submitted' => ['expenses.approve', 'Expense claim', '/office/expense-claims'],
     ];
 
     public function __construct(private readonly OutboxConsumers $consumers, private readonly Notifier $notifier, private readonly Messenger $messenger) {}
@@ -50,13 +50,13 @@ final class NotificationRelay
 
     private function approval(OutboxEvent $e): void
     {
-        [$permission, $what, $slug] = self::APPROVALS[$e->event_type];
+        [$permission, $what, $page] = self::APPROVALS[$e->event_type];
         $row = $e->payload['snapshot']['row'] ?? [];
         $branchId = $row['branch_id'] ?? (isset($row['warehouse_id']) ? DB::table('warehouses')->where('id', $row['warehouse_id'])->value('branch_id') : null);
         $number = $row['number'] ?? '';
         $this->notifier->toPermission($e->tenant_id, $permission, $branchId, "{$what} {$number} is waiting for approval",
             trim(($row['submitted_by_name'] ?? $row['prepared_by_name'] ?? $row['created_by_name'] ?? $row['claimant_name'] ?? '').' sent it.'),
-            url("/admin/{$slug}/{$e->aggregate_id}"), [$row['submitted_by'] ?? null, $row['prepared_by'] ?? null, $row['created_by'] ?? null, $row['claimant_id'] ?? null], topic: 'approvals');
+            url("{$page}/{$e->aggregate_id}"), [$row['submitted_by'] ?? null, $row['prepared_by'] ?? null, $row['created_by'] ?? null, $row['claimant_id'] ?? null], topic: 'approvals');
     }
 
     private function invoice(OutboxEvent $e): void

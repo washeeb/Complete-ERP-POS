@@ -115,10 +115,10 @@ final class GoLiveService
         $fresh = $plan->sources === ['fresh'];
         $imported = DataImport::where('status', 'imported')->pluck('type')->unique()->flip();
         $hasImport = fn (string $type) => isset($imported[$type]);
-        $import = fn (string $type) => '/admin/import-data?type='.$type.'&source='.($this->firstSource($plan));
+        $import = fn (string $type) => '/office/import?type='.$type.'&source='.($this->firstSource($plan));
         $defs = [
             ['backup', 'Back up before loading anything', 'So you can go back to this point if a file goes wrong.', false,
-                fn () => BackupRun::where('status', 'ok')->exists(), '/admin/backups'],
+                fn () => BackupRun::where('status', 'ok')->exists(), '/office/backups'],
             ['practice', 'Staff practise in the practice company', 'People learn on made-up sales, not real money. Needed first for an internal dry run.', $plan->pilot_mode !== 'dry_run',
                 fn () => Tenant::where('practice_of', $plan->tenant_id)->exists(), null],
             ['accounts', 'Chart of accounts', 'The accounts the opening balances go into. Your accountant checks it.', $fresh,
@@ -130,7 +130,7 @@ final class GoLiveService
             ['opening_stock', 'Opening stock', 'What is on the shelves on the go-live date, counted, at cost.', false,
                 fn () => DB::table('stock_movements')->where('type', 'opening')->exists(), $import('opening_stock')],
             ['stock_costs', 'Every product in stock has a cost', 'Stock with no cost is worth nothing in the books, and its sales cost nothing. No costs to hand? Use Stock → Cost runs.', true,
-                fn () => ! DB::table('stock_levels')->where('tenant_id', $plan->tenant_id)->where('on_hand', '>', 0)->where(fn ($q) => $q->whereNull('avg_cost_minor')->orWhere('avg_cost_minor', '<=', 0))->exists(), '/admin/stock-cost-runs'],
+                fn () => ! DB::table('stock_levels')->where('tenant_id', $plan->tenant_id)->where('on_hand', '>', 0)->where(fn ($q) => $q->whereNull('avg_cost_minor')->orWhere('avg_cost_minor', '<=', 0))->exists(), '/office/cost-runs'],
             ['opening_balances', 'Opening trial balance', 'Bank, cash, assets, loans and capital from the old books.', $fresh,
                 fn () => DB::table('journal_entries')->where('tenant_id', $plan->tenant_id)->where('kind', 'opening')->exists(), $import('opening_balances')],
             ['customer_balances', 'What customers owe', 'Open customer balances, collected later like invoices.', $fresh,
@@ -142,7 +142,7 @@ final class GoLiveService
             ['reconcile', 'Figures match the old system', 'Counts and balances agree with the old system on the go-live date.', false,
                 fn () => ($figures ?? $this->reconciliation($plan))['ok'], null],
             ['devices', 'Every till ready', 'Enrolled, a test sale printed, the drawer opens, an offline sale syncs.', false,
-                fn () => false, '/admin/devices'],
+                fn () => false, '/office/devices'],
             ['training', 'Staff trained', 'Cashiers have the quick card; supervisors and managers have their guide.', false, fn () => false, null],
         ];
         if ($plan->cutover_mode === 'parallel') {

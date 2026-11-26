@@ -31,7 +31,7 @@ it('shows the batches, marks one down and withdraws it, and corrects an expiry d
     $this->actingAs($this->owner, 'web');
     $d = $this->getJson("/office-api/batches?warehouse={$this->hq->id}")->assertOk()->json();
     expect($d)->toMatchArray(['warehouse' => $this->hq->id, 'can_correct' => true, 'can_add' => true])
-        ->and(array_column($d['batches'], 'batch_no'))->toContain('B1', 'SOON')->and($d['sheet'])->toStartWith('/admin/import-data');
+        ->and(array_column($d['batches'], 'batch_no'))->toContain('B1', 'SOON')->and($d['sheet'])->toBe('/office/import?type=opening_batches');
     expect($d['can_mark_down'])->toBeTrue();
     $s = collect($d['suggestions'])->firstWhere('batch_no', 'SOON');
     expect($s)->not->toBeNull();

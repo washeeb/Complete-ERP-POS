@@ -7,7 +7,6 @@ use App\Domain\Purchasing\SupplierMessages;
 use App\Domain\Purchasing\SupplierOnboarding;
 use App\Domain\Purchasing\SupplierPortal;
 use App\Domain\Purchasing\SupplierScorecard;
-use App\Filament\Pages\ImportData;
 use App\Filament\Resources\Suppliers\SupplierResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
@@ -151,7 +150,7 @@ final class SuppliersScreen
 
         return [
             'statuses' => self::choices(Supplier::STATUSES), 'per' => self::PER_PAGE, 'can_create' => $manage, 'sees_owed' => self::seesOwed(),
-            'import' => $manage ? ProductsScreen::path(ImportData::getUrl(['type' => 'suppliers'])) : null,
+            'import' => $manage ? '/office/import?type=suppliers' : null,
         ];
     }
 

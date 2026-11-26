@@ -4,7 +4,6 @@ namespace App\Domain\Office;
 
 use App\Domain\Inventory\ExpiryService;
 use App\Filament\Pages\ExpiryReturns;
-use App\Filament\Resources\SupplierReturns\SupplierReturnResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Filament\Support\FinanceUi;
@@ -97,9 +96,9 @@ final class ExpiryScreen
                 'returnable' => $r['returnable']], array_slice($rows, ($page - 1) * $per, $per))];
     }
 
-    /** Where a prepared return opens (supplier returns are still on the current screens). */
+    /** Where a prepared return opens. */
     public static function returnUrl(SupplierReturn $r): string
     {
-        return SupplierReturnResource::getUrl('view', ['record' => $r], isAbsolute: false);
+        return '/office/supplier-returns/'.$r->id;
     }
 }

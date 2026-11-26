@@ -7,7 +7,6 @@ use App\Domain\Sales\ReceivablesService;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
-use App\Filament\Pages\ConfirmItsYou;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Http\Controllers\Controller;
@@ -63,7 +62,7 @@ class InvoicesController extends Controller
         try {
             DB::transaction(fn () => $receivables->creditNote($actor, $invoice, $d['reason'], $warehouse));
         } catch (ReconfirmNeeded $e) {
-            return response()->json(['error' => 'reconfirm', 'detail' => $e->getMessage(), 'url' => ConfirmItsYou::getUrl()], 428);
+            return response()->json(['error' => 'reconfirm', 'detail' => $e->getMessage(), 'url' => '/office/confirm-its-you'], 428);
         } catch (AccessDenied $e) {
             return response()->json(['error' => $e->errorCode, 'detail' => $e->getMessage() ?: 'You may not do this here.'], 403);
         } catch (DomainException $e) {

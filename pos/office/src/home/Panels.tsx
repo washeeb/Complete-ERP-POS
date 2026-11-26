@@ -91,7 +91,7 @@ export function RemindersPanel({ data }: { data: HomeData }) {
 }
 
 const TILE_COLOURS = ['#2e7d5b', '#c66a2b', '#b5475f', '#5a6b86', '#2a6fb0', '#7a55c4', '#8a6d1f', '#38797a']
-const DEFAULT_TILES = ['/admin/till-requests', '/admin/stock-transfers', '/admin/stock-adjustments', '/admin/purchase-orders', '/admin/sales', '/admin/products', '/admin/customers', '/admin/invoices']
+const DEFAULT_TILES = ['/office/till-requests', '/office/transfers', '/office/adjustments', '/office/purchase-orders', '/office/sales', '/office/products', '/office/customers', '/office/invoices']
 
 /** The tiles the person chose (Personalize), or the first four everyday pages they may open. */
 export function tilesFor(menu: Menu, chosen: Tile[]): Tile[] {

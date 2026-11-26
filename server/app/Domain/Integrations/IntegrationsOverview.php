@@ -11,6 +11,7 @@ use App\Filament\Resources\FiscalSubmissions\FiscalSubmissionResource;
 use App\Filament\Resources\MomoCharges\MomoChargeResource;
 use App\Filament\Resources\SalesChannels\SalesChannelResource;
 use App\Filament\Resources\SyncPeers\SyncPeerResource;
+use App\Support\OfficeUrl;
 use App\Support\Settings;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -119,7 +120,7 @@ final class IntegrationsOverview
         try {
             $ok = method_exists($class, 'canViewAny') ? $class::canViewAny() : $class::canAccess();
 
-            return $ok ? $class::getUrl(method_exists($class, 'canViewAny') ? 'index' : []) : null;
+            return $ok ? OfficeUrl::from($class::getUrl(method_exists($class, 'canViewAny') ? 'index' : [], isAbsolute: false)) : null; // its page in the new look
         } catch (Throwable) {
             return null;
         }

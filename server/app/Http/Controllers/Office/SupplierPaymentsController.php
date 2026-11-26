@@ -7,7 +7,6 @@ use App\Domain\Payables\SupplierPaymentService;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
-use App\Filament\Pages\ConfirmItsYou;
 use App\Filament\Support\FinanceUi;
 use App\Http\Controllers\Controller;
 use App\Models\Account;
@@ -78,7 +77,7 @@ class SupplierPaymentsController extends Controller
                 $d['method'], FinanceUi::toMinor((string) $d['amount']), $d['reference'] ?? null, $d['paid_on'], null, $d['note'] ?? null, (bool) ($d['withhold'] ?? true),
                 filled($d['wht'] ?? null) ? FinanceUi::toMinor((string) $d['wht']) : null));
         } catch (ReconfirmNeeded $e) {
-            return response()->json(['error' => 'reconfirm', 'detail' => $e->getMessage(), 'url' => ConfirmItsYou::getUrl()], 428);
+            return response()->json(['error' => 'reconfirm', 'detail' => $e->getMessage(), 'url' => '/office/confirm-its-you'], 428);
         } catch (AccessDenied $e) {
             return response()->json(['error' => $e->errorCode, 'detail' => $e->getMessage() ?: 'You may not do this here.'], 403);
         } catch (DomainException $e) {

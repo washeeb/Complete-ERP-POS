@@ -3,7 +3,6 @@
 namespace App\Domain\Office;
 
 use App\Domain\Inventory\InventoryService;
-use App\Filament\Pages\ImportData;
 use App\Filament\Resources\StockLevels\StockLevelResource;
 use App\Filament\Resources\StockMovements\StockMovementResource;
 use App\Filament\Support\Erp;
@@ -131,7 +130,7 @@ final class StockScreen
             'can_adjust' => $adjust,
             'adjust_warehouses' => $adjust ? self::opt(Fields::warehouses('stock.adjust')) : [],
             'reasons' => self::opt(InventoryService::ADJUSTMENT_REASONS),
-            'links' => array_filter(['import' => $adjust ? ProductsScreen::path(ImportData::getUrl(['type' => 'stock_adjustment'])) : null]),
+            'links' => array_filter(['import' => $adjust ? '/office/import?type=stock_adjustment' : null]),
         ];
     }
 

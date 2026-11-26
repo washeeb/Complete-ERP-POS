@@ -63,9 +63,9 @@ it('gives a cashier only the tabs for the pages a cashier may open', function ()
 it('keeps favourite pages for the person, only pages of the back office', function () {
     $this->actingAs(withMfa($this->owner));
     $add = $this->postJson(route('ui.favourite'), ['url' => '/admin/purchase-orders?tableSearch=x', 'label' => 'Purchase Orders'])->assertOk();
-    expect($add->json('favourites'))->toBe([['url' => '/admin/purchase-orders?tableSearch=x', 'label' => 'Purchase Orders']]);
+    expect($add->json('favourites'))->toBe([['url' => '/office/purchase-orders?q=x', 'label' => 'Purchase Orders']]); // kept at its new-look address (part 42)
     $this->postJson(route('ui.favourite'), ['url' => url('/admin/products'), 'label' => '<b>Products</b>'])->assertOk();
-    expect($this->owner->fresh()->ui_favourites[1])->toBe(['url' => '/admin/products', 'label' => 'Products']);
+    expect($this->owner->fresh()->ui_favourites[1])->toBe(['url' => '/office/products', 'label' => 'Products']);
     expect(DB::table('audit_events')->where('action', 'user.favourites_changed')->count())->toBe(2);
 
     // Pressing the star again takes the page off.

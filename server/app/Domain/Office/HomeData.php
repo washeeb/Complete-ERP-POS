@@ -5,7 +5,6 @@ namespace App\Domain\Office;
 use App\Domain\Purchasing\ReorderLevels;
 use App\Filament\Pages\ExpiryReturns;
 use App\Filament\Pages\ReorderSuggestions;
-use App\Filament\Resources\PurchaseOrders\PurchaseOrderResource;
 use App\Filament\Support\Erp;
 use App\Filament\Widgets\Panels\MyApprovals;
 use App\Models\Tenant;
@@ -13,6 +12,7 @@ use App\Models\User;
 use App\Models\Warehouse;
 use App\Support\Look;
 use App\Support\Money;
+use App\Support\OfficeUrl;
 use App\Support\Settings;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -28,7 +28,7 @@ final class HomeData
     public const PERIODS = ['today' => 'Today', 'week' => 'This week', 'month' => 'This month', 'quarter' => 'This quarter', 'year' => 'This year'];
 
     /** Menu counts that are someone waiting for a decision (shown big); other counts (tickets, alerts, activity) are listed small. */
-    public const WAITING_ON_SOMEONE = ['/admin/till-requests', '/admin/review-items', '/admin/access-requests'];
+    public const WAITING_ON_SOMEONE = ['/office/till-requests', '/office/review-queue', '/office/access-requests'];
 
     private string $tenantId;
 
@@ -107,12 +107,12 @@ final class HomeData
                 ->whereIn('l.warehouse_id', $warehouses)->where('l.on_hand', '>', 0)->whereNotNull('b.expires_on')
                 ->where('b.expires_on', '<=', $today->addDays($days)->toDateString())->distinct()->count('l.batch_id');
             $days = (int) app(Settings::class)->get('stock.expiry_alert_days', $this->tenantId);
-            $expiry = ExpiryReturns::canAccess() ? $this->path(ExpiryReturns::getUrl()) : null;
+            $expiry = ExpiryReturns::canAccess() ? '/office/expiry' : null;
             $low = 0;
             foreach (Warehouse::whereIn('id', $warehouses)->where('is_active', true)->get() as $w) {
                 $low += count(app(ReorderLevels::class)->low($w));
             }
-            $add('Products below their minimum', $low, ReorderSuggestions::canAccess() ? $this->path(ReorderSuggestions::getUrl()) : null, $low > 0);
+            $add('Products below their minimum', $low, ReorderSuggestions::canAccess() ? '/office/what-to-order' : null, $low > 0);
             $add('Expired batches still in stock', $expired = $batches(-1), $expiry, $expired > 0);
             if ($expiry) {
                 $out[] = ['label' => "Batches expiring in {$days} days", 'count' => $batches($days), 'url' => $expiry, 'urgent' => false];
@@ -123,7 +123,7 @@ final class HomeData
             $open = DB::table('purchase_orders')->where('tenant_id', $this->tenantId)->when($branches !== null, fn ($q) => $q->whereIn('branch_id', $branches))
                 ->whereIn('status', ['approved', 'partially_received']);
             $due = (clone $open)->whereNotNull('expected_on')->where('expected_on', '<=', CarbonImmutable::now($this->tz)->addDays(7)->toDateString())->count();
-            $url = $this->path(PurchaseOrderResource::getUrl('index'));
+            $url = '/office/purchase-orders';
             $out[] = ['label' => 'Deliveries due this week or late', 'count' => $due, 'url' => $url, 'urgent' => $due > 0];
             $out[] = ['label' => 'Purchase orders to receive', 'count' => (clone $open)->count(), 'url' => $url, 'urgent' => false];
         }
@@ -149,14 +149,14 @@ final class HomeData
             $n = (clone $now)->count();
             $ps = (int) (clone $before)->sum('total_minor');
             $pn = (clone $before)->count();
-            $out[] = $this->kpi('sales', 'Sales', 'money', $s, $ps, array_map(fn ($b) => (int) $sales($b[0], $b[1])->sum('total_minor'), $buckets), '/admin/sales');
-            $out[] = $this->kpi('receipts', 'Receipts (sales made)', 'count', $n, $pn, array_map(fn ($b) => $sales($b[0], $b[1])->count(), $buckets), '/admin/sales');
-            $out[] = $this->kpi('basket', 'Average sale', 'money', $n ? intdiv($s, $n) : 0, $pn ? intdiv($ps, $pn) : 0, [], '/admin/sales');
+            $out[] = $this->kpi('sales', 'Sales', 'money', $s, $ps, array_map(fn ($b) => (int) $sales($b[0], $b[1])->sum('total_minor'), $buckets), '/office/sales');
+            $out[] = $this->kpi('receipts', 'Receipts (sales made)', 'count', $n, $pn, array_map(fn ($b) => $sales($b[0], $b[1])->count(), $buckets), '/office/sales');
+            $out[] = $this->kpi('basket', 'Average sale', 'money', $n ? intdiv($s, $n) : 0, $pn ? intdiv($ps, $pn) : 0, [], '/office/sales');
         }
         if (Erp::canAnywhere('stock.view')) {
             $v = (int) DB::table('stock_levels')->whereIn('warehouse_id', $this->warehouses('stock.view'))
                 ->selectRaw('COALESCE(SUM(ROUND(on_hand * COALESCE(avg_cost_minor, 0))), 0) AS v')->value('v');
-            $out[] = $this->kpi('stock', 'Stock value (at cost)', 'money', $v, null, [], '/admin/stock-levels');
+            $out[] = $this->kpi('stock', 'Stock value (at cost)', 'money', $v, null, [], '/office/stock');
         }
         if (Erp::canAnywhere('purchasing.view')) {
             $b = Erp::branchIds('purchasing.view');
@@ -164,17 +164,17 @@ final class HomeData
             $ordered = fn (CarbonImmutable $x, CarbonImmutable $y) => (int) $po()->whereNotIn('status', ['draft', 'pending_approval', 'cancelled'])
                 ->where('approved_at', '>=', $x->utc())->where('approved_at', '<', $y->utc())->sum('total_minor');
             $open = $po()->whereIn('status', ['approved', 'partially_received']);
-            $out[] = $this->kpi('open_po', 'Open purchase orders', 'count', (clone $open)->count(), null, [], '/admin/purchase-orders');
-            $out[] = $this->kpi('open_po_value', 'Value of open purchase orders', 'money', (int) (clone $open)->sum('total_minor'), null, [], '/admin/purchase-orders');
+            $out[] = $this->kpi('open_po', 'Open purchase orders', 'count', (clone $open)->count(), null, [], '/office/purchase-orders');
+            $out[] = $this->kpi('open_po_value', 'Value of open purchase orders', 'money', (int) (clone $open)->sum('total_minor'), null, [], '/office/purchase-orders');
             $out[] = $this->kpi('purchases', 'Bought (orders approved)', 'money', $ordered($from, $to), $ordered($pFrom, $pTo),
-                array_map(fn ($x) => $ordered($x[0], $x[1]), $buckets), '/admin/purchase-orders');
+                array_map(fn ($x) => $ordered($x[0], $x[1]), $buckets), '/office/purchase-orders');
         }
         if (Erp::canAnywhere('receivables.view') && Erp::branchIds('receivables.view') === null) {
             $out[] = $this->kpi('owed_to_us', 'Customers owe', 'money', (int) DB::table('customer_balances')->where('tenant_id', $this->tenantId)
-                ->where('balance_minor', '>', 0)->sum('balance_minor'), null, [], '/admin/customers');
+                ->where('balance_minor', '>', 0)->sum('balance_minor'), null, [], '/office/customers');
         }
         if (Erp::canAnywhere('payables.view') && Erp::branchIds('payables.view') === null) {
-            $out[] = $this->kpi('we_owe', 'We owe suppliers', 'money', (int) DB::table('supplier_ledger')->where('tenant_id', $this->tenantId)->sum('amount_minor'), null, [], '/admin/suppliers');
+            $out[] = $this->kpi('we_owe', 'We owe suppliers', 'money', (int) DB::table('supplier_ledger')->where('tenant_id', $this->tenantId)->sum('amount_minor'), null, [], '/office/suppliers');
         }
 
         return $out;
@@ -247,8 +247,6 @@ final class HomeData
 
     private function path(string $url): string
     {
-        $p = parse_url($url);
-
-        return '/'.ltrim((string) ($p['path'] ?? ''), '/').(isset($p['query']) ? '?'.$p['query'] : '');
+        return (string) OfficeUrl::from($url); // the new back office's address
     }
 }

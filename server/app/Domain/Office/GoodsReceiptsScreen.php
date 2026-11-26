@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\Waybill;
 use App\Support\Money;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Goods received notes in the new back office (release 5 of the rewrite): the list with the current screen's search
@@ -126,8 +127,8 @@ final class GoodsReceiptsScreen
                 'reverse' => $g->status === 'posted' && $manager,
                 'labels' => ProductsScreen::canView(),
                 'waybill' => $waybill && WaybillResource::canViewAny()
-                    ? ['label' => 'Supplier waybill', 'open' => ProductsScreen::path(WaybillResource::getUrl('view', ['record' => $waybill]))]
-                    : (WaybillResource::canCreate() ? ['label' => 'Supplier waybill', 'open' => ProductsScreen::path(WaybillResource::getUrl('create', ['kind' => 'inbound', 'source' => $g->id]))] : null),
+                    ? ['label' => 'Supplier waybill', 'open' => '/office/waybills/'.($waybill instanceof Model ? $waybill->getKey() : $waybill)]
+                    : (WaybillResource::canCreate() ? ['label' => 'Supplier waybill', 'open' => '/office/waybills/new?'.http_build_query(['kind' => 'inbound', 'source' => $g->id])] : null),
             ],
         ];
     }

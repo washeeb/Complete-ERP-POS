@@ -2,7 +2,6 @@
 
 namespace App\Domain\Office;
 
-use App\Filament\Pages\ImportData;
 use App\Filament\Resources\StockCounts\StockCountResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
@@ -147,7 +146,7 @@ final class CountsScreen
                 'count' => $count, 'submit' => $count,
                 'post' => $c->status === 'submitted' && Erp::can('stock.count.approve', $c->warehouse),
                 'cancel' => in_array($c->status, ['counting', 'submitted'], true) && Erp::can('stock.count', $c->warehouse),
-                'import' => $c->status === 'counting' && Erp::canAnywhere('stock.count') ? ProductsScreen::path(ImportData::getUrl(['type' => 'stock_count', 'context' => $c->id])) : null,
+                'import' => $c->status === 'counting' && Erp::canAnywhere('stock.count') ? '/office/import?'.http_build_query(['type' => 'stock_count', 'context' => $c->id]) : null,
             ],
         ];
     }

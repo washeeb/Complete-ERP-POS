@@ -7,7 +7,6 @@ use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
-use App\Filament\Pages\TillRequests;
 use App\Models\Branch;
 use App\Models\Device;
 use App\Models\Till;
@@ -45,7 +44,7 @@ final class TillApprovals
         $where = ($device->till_id ? Till::withoutGlobalScopes()->find($device->till_id)?->name : null) ?? $device->name;
         $this->notifier->toPermission($device->tenant_id, $permission, $device->branch_id, "{$where}: {$label}",
             "{$cashier->name} asks: {$r->summary}".($r->reason ? " ({$r->reason})" : '').'. Answer within '.TillApproval::MINUTES.' minutes.',
-            TillRequests::getUrl(['id' => $r->id]), [$cashier->id], topic: 'approvals');
+            url('/office/till-requests?id='.$r->id), [$cashier->id], topic: 'approvals');
 
         return $r;
     }

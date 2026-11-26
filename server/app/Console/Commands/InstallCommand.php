@@ -42,7 +42,7 @@ class InstallCommand extends Command
         }
 
         $this->info("Created {$tenant->name} and owner {$user->email}.");
-        $this->line('Next: sign in at '.url('/admin').' — you will be asked to set up two-factor sign-in, then the setup wizard opens.');
+        $this->line('Next: sign in at '.url('/office/').' — you will be asked to set up two-factor sign-in, then the setup wizard opens.');
 
         return self::SUCCESS;
     }

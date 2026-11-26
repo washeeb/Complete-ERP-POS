@@ -6,7 +6,6 @@ use App\Domain\Access\SentForApproval;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
-use App\Filament\Pages\ConfirmItsYou;
 use App\Models\AccessRequest;
 use App\Security\ReconfirmNeeded;
 use Filament\Facades\Filament;
@@ -32,7 +31,7 @@ trait ActsOnAccess
                 }
             }));
         } catch (ReconfirmNeeded $e) {
-            return response()->json(['error' => 'reconfirm', 'detail' => $e->getMessage(), 'url' => ConfirmItsYou::getUrl()], 428);
+            return response()->json(['error' => 'reconfirm', 'detail' => $e->getMessage(), 'url' => '/office/confirm-its-you'], 428);
         } catch (AccessDenied $e) {
             return response()->json(['error' => $e->errorCode, 'detail' => $e->getMessage() ?: 'You may not do this here.'], 403);
         } catch (DomainException $e) {

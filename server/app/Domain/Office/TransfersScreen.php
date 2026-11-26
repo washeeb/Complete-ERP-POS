@@ -5,7 +5,6 @@ namespace App\Domain\Office;
 use App\Domain\Inventory\TransferService;
 use App\Domain\Support\Actor;
 use App\Filament\Resources\StockTransfers\StockTransferResource;
-use App\Filament\Resources\Waybills\WaybillResource;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
 use App\Models\StockTransfer;
@@ -14,6 +13,7 @@ use App\Models\Warehouse;
 use App\Models\Waybill;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Transfers in the new back office (release 3, part 4): the list, one transfer with its lines (sent and received), the
@@ -138,7 +138,7 @@ final class TransfersScreen
             'actions' => [
                 'edit' => StockTransferResource::canEdit($t), 'dispatch' => $t->status === 'draft' && $sending, 'receive' => $receiving,
                 'cancel' => $t->status === 'draft' && $sending, 'print' => route('print.transfer', $t),
-                'waybill' => ProductsScreen::path($waybill ? WaybillResource::getUrl('view', ['record' => $waybill]) : WaybillResource::getUrl('create', ['kind' => 'transfer', 'source' => $t->id])),
+                'waybill' => ($waybill ? '/office/waybills/'.($waybill instanceof Model ? $waybill->getKey() : $waybill) : '/office/waybills/new?'.http_build_query(['kind' => 'transfer', 'source' => $t->id])),
                 'waybill_label' => $waybill ? 'Waybill' : 'Make a waybill',
             ],
         ];

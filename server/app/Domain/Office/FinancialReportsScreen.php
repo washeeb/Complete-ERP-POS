@@ -173,7 +173,7 @@ final class FinancialReportsScreen
         $d = $r->ledger($this->user->tenant_id, $a, $p['from'], $p['to'], $p['branch'], $p['industry'], $p['books']);
         $rows = [['kind' => 'sub', 'cells' => ['Opening balance', '', '', '', '', '', $this->mm($d['opening'])]]];
         foreach ($d['lines'] as $l) {
-            $rows[] = ['cells' => [Carbon::parse($l->entry_date)->format('j M Y'), self::link((string) $l->number, "/admin/journal-entries/{$l->entry_id}"),
+            $rows[] = ['cells' => [Carbon::parse($l->entry_date)->format('j M Y'), self::link((string) $l->number, "/office/journals/{$l->entry_id}"),
                 $l->line_memo ?: $l->memo, $l->branch, $l->amount_minor > 0 ? $this->m((int) $l->amount_minor) : '', $l->amount_minor < 0 ? $this->m(-(int) $l->amount_minor) : '',
                 $this->mm((int) $l->running_minor)]];
         }

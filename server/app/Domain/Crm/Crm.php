@@ -156,7 +156,7 @@ final class Crm
             $owner = $lead->getOriginal('owner_id');
             $saved = $this->recorder->save($actor, $lead, $isNew ? 'crm_lead.created' : 'crm_lead.updated', branchId: $branch->id);
             if ($lead->owner_id && $lead->owner_id !== $actor->id && ($isNew || $owner !== $lead->owner_id)) {
-                $this->tell($lead->owner_id, "Lead {$lead->number} given to you: {$lead->name}", $lead->interest, url('/admin/crm-leads/'.$lead->id.'/edit'));
+                $this->tell($lead->owner_id, "Lead {$lead->number} given to you: {$lead->name}", $lead->interest, url('/office/crm/leads/'.$lead->id));
             }
 
             return $saved;
@@ -260,7 +260,7 @@ final class Crm
             $saved = $this->recorder->save($actor, $deal, $isNew ? 'crm_deal.created' : 'crm_deal.updated', branchId: $branch->id);
             $deal->unsetRelation('stage');
             if ($deal->owner_id && $deal->owner_id !== $actor->id && ($isNew || $owner !== $deal->owner_id)) {
-                $this->tell($deal->owner_id, "Deal {$deal->number} given to you: {$deal->title}", $deal->contactName(), url('/admin/crm-deals/'.$deal->id.'/edit'));
+                $this->tell($deal->owner_id, "Deal {$deal->number} given to you: {$deal->title}", $deal->contactName(), url('/office/crm/deals/'.$deal->id));
             }
 
             return $saved;
@@ -401,7 +401,7 @@ final class Crm
                 $this->recorder->save($actor, $lead, 'crm_lead.updated', 'contacted', $lead->branch_id);
             }
             if ($assignee && $assignee !== $actor->id) {
-                $this->tell($assignee, 'Follow-up for you: '.$a->subject, $a->about().' · due '.$a->due_at?->timezone($this->tz($actor))->format('j M H:i'), url('/admin/crm-follow-ups'));
+                $this->tell($assignee, 'Follow-up for you: '.$a->subject, $a->about().' · due '.$a->due_at?->timezone($this->tz($actor))->format('j M H:i'), url('/office/crm/follow-ups'));
             }
 
             return $a;
@@ -436,7 +436,7 @@ final class Crm
         $n = 0;
         foreach (CrmActivity::withoutGlobalScopes()->where('tenant_id', $tenantId)->whereNull('done_at')->whereNull('reminded_at')
             ->whereNotNull('assigned_to')->where('due_at', '<=', now()->addMinutes(15))->with(['lead', 'deal', 'customer'])->limit(500)->get() as $a) {
-            $this->tell($a->assigned_to, ($a->due_at->isPast() ? 'Follow-up due: ' : 'Follow-up soon: ').$a->subject, $a->about(), url('/admin/crm-follow-ups'));
+            $this->tell($a->assigned_to, ($a->due_at->isPast() ? 'Follow-up due: ' : 'Follow-up soon: ').$a->subject, $a->about(), url('/office/crm/follow-ups'));
             $a->forceFill(['reminded_at' => now()])->save();
             $n++;
         }

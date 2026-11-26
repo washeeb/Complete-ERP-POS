@@ -126,7 +126,7 @@ final class Timesheets
                 'week of '.$from);
             foreach ($entries->pluck('project')->unique('branch_id') as $project) {
                 $this->notifier->toPermission($actor->tenantId, 'projects.approve', $project->branch_id, "{$actor->name}'s time for the week of ".CarbonImmutable::parse($from)->format('j M'),
-                    TimeEntry::hours((int) $entries->sum('minutes')).' hour(s) to approve.', url('/admin/time-approvals'), [$actor->id], 'approvals');
+                    TimeEntry::hours((int) $entries->sum('minutes')).' hour(s) to approve.', url('/office/time-approvals'), [$actor->id], 'approvals');
             }
 
             return $entries->count();

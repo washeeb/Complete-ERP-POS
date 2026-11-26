@@ -4,7 +4,6 @@ namespace App\Domain\Office;
 
 use App\Domain\Catalog\Labels;
 use App\Domain\Modules\ModuleService;
-use App\Filament\Pages\ImportData;
 use App\Filament\Resources\Products\ProductResource;
 use App\Filament\Resources\StockCostRuns\StockCostRunResource;
 use App\Filament\Resources\StockLevels\StockLevelResource;
@@ -187,10 +186,10 @@ final class ProductsScreen
             ],
             // The current back office's pages these lead to (opened inside the new one).
             'links' => array_filter([
-                'create' => $manage ? self::path(ProductResource::getUrl('create')) : null,
-                'import' => $manage ? self::path(ImportData::getUrl(['type' => 'products'])) : null,
-                'update' => $manage ? self::path(ImportData::getUrl(['type' => 'products_update'])) : null,
-                'import_prices' => Erp::canAnywhere('pricing.manage') ? self::path(ImportData::getUrl(['type' => 'prices'])) : null,
+                'create' => $manage ? '/office/products/new' : null,
+                'import' => $manage ? '/office/import?type=products' : null,
+                'update' => $manage ? '/office/import?type=products_update' : null,
+                'import_prices' => Erp::canAnywhere('pricing.manage') ? '/office/import?type=prices' : null,
             ]),
             'batches_off' => $manage ? Product::where('track_stock', true)->where('track_batches', false)->count() : 0,
             'batches_note' => ProductResource::BATCHES_NOTE,
@@ -277,7 +276,7 @@ final class ProductsScreen
             'pricing_note' => $canPrices ? ProductResource::pricingNote($p) : null,
             'below_cost' => $canPrices && ProductResource::belowCost($p),
             'stock_shown' => $stockShown, 'stock' => $stock, 'stock_total' => $total, 'batches' => $batches, 'movements' => $movements,
-            'actions' => ['edit' => $manage ? self::path(ProductResource::getUrl('edit', ['record' => $p])) : null, 'labels' => true, 'change_unit' => $manage],
+            'actions' => ['edit' => $manage ? '/office/products/'.$p->id.'/edit' : null, 'labels' => true, 'change_unit' => $manage],
             'change_unit_note' => $manage ? 'Counted in '.$p->baseUom?->code.' now, '.($total ?? self::qty((string) DB::table('stock_levels')->where('product_id', $p->id)->sum('on_hand')))
                 .' in stock. Past receipts and documents keep what they showed.' : null,
         ];

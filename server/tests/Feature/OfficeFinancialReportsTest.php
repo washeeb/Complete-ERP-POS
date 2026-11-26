@@ -33,7 +33,7 @@ it('shows every report, with the trial balance opening the account ledger', func
 
     parse_str(ltrim($stock['cells'][0]['to'], '?'), $q);
     $ledger = $this->getJson('/office-api/financial-reports?'.http_build_query($q))->assertOk()->json();
-    expect($ledger['tables'][0]['rows'][1]['cells'][1]['to'])->toStartWith('/admin/journal-entries/')
+    expect($ledger['tables'][0]['rows'][1]['cells'][1]['to'])->toStartWith('/office/journals/')
         ->and(end($ledger['tables'][0]['rows'])['cells'][6])->toContain('800.00');
     expect($this->getJson('/office-api/financial-reports?report=ledger')->json('prompt'))->toBe('Choose an account.');
 

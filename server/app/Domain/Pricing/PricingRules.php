@@ -214,7 +214,7 @@ final class PricingRules
         }
         if ($fresh > 0) {
             $this->notifier->toPermission($actor->tenantId, 'pricing.manage', null, "{$fresh} price(s) to review",
-                'The pricing rules worked out new prices that wait for your approval.', url('/admin/prices-to-review'), topic: 'pricing');
+                'The pricing rules worked out new prices that wait for your approval.', url('/office/prices-to-review'), topic: 'pricing');
         }
 
         return $done;

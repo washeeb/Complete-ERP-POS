@@ -8,8 +8,6 @@ use App\Domain\Customers\Loyalty;
 use App\Domain\Modules\ModuleService;
 use App\Domain\Org\ArchiveService;
 use App\Domain\Sales\ReceivablesService;
-use App\Filament\Pages\ImportData;
-use App\Filament\Resources\CrmDeals\CrmDealResource;
 use App\Filament\Resources\Customers\CustomerResource;
 use App\Filament\Support\CrmUi;
 use App\Filament\Support\Erp;
@@ -144,7 +142,7 @@ final class CustomersScreen
             'types' => self::choices(Customer::TYPES),
             'per' => self::PER_PAGE,
             'can_create' => $manage,
-            'import' => $manage ? ProductsScreen::path(ImportData::getUrl(['type' => 'customers'])) : null,
+            'import' => $manage ? '/office/import?type=customers' : null,
         ];
     }
 
@@ -176,7 +174,7 @@ final class CustomersScreen
             'number' => $r->doc_number, 'due' => $r->due_on, 'overdue' => $r->due_on !== null && $r->due_on < now()->toDateString(),
             'amount' => (int) $r->amount_minor, 'open' => (int) $r->open_minor,
             'url' => match ($r->doc_type) {
-                'invoice' => "/admin/invoices/{$r->doc_id}", 'sale' => "/admin/sales/{$r->doc_id}", default => null
+                'invoice' => "/office/invoices/{$r->doc_id}", 'sale' => "/office/sales/{$r->doc_id}", default => null
             },
         ], $ledger->openItems($c->id));
 
@@ -211,7 +209,7 @@ final class CustomersScreen
                     'conditions' => $patient?->conditions ?? '', 'nhis_no' => $patient?->nhis_no ?? '', 'nhis_expires_on' => $patient?->nhis_expires_on?->toDateString() ?? '',
                 ] : null,
                 'follow_up' => $crm ? ['types' => self::choices(CrmActivity::TYPES), 'people' => self::choices(CrmUi::people())] : null,
-                'new_deal' => $crm ? ProductsScreen::path(CrmDealResource::getUrl('create', ['customer' => $c->id])) : null,
+                'new_deal' => $crm ? '/office/crm/deals/new?'.http_build_query(['customer' => $c->id]) : null,
                 'archive' => $mayArchive && ! $c->archived_at ? ['blockers' => array_values($archive->blockers($c))] : null,
                 'restore' => $mayArchive && (bool) $c->archived_at,
             ],

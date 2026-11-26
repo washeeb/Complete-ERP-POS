@@ -1,0 +1,1117 @@
+{
+ "note": "Written by npm run office:routes (pos); do not edit by hand.",
+ "routes": [
+  {
+   "admin": "/admin",
+   "office": "/office/"
+  },
+  {
+   "admin": "/admin/access-requests",
+   "office": "/office/access-requests"
+  },
+  {
+   "admin": "/admin/access-review",
+   "office": "/office/who-can-do-what"
+  },
+  {
+   "admin": "/admin/accounting-export",
+   "office": "/office/accounting-export"
+  },
+  {
+   "admin": "/admin/accounts",
+   "office": "/office/accounts"
+  },
+  {
+   "admin": "/admin/aged-payables",
+   "office": "/office/aged-payables"
+  },
+  {
+   "admin": "/admin/aged-receivables",
+   "office": "/office/aged-receivables"
+  },
+  {
+   "admin": "/admin/ai-usage",
+   "office": "/office/ai-usage"
+  },
+  {
+   "admin": "/admin/alerts",
+   "office": "/office/alerts"
+  },
+  {
+   "admin": "/admin/alterations",
+   "office": "/office/fashion/alterations"
+  },
+  {
+   "admin": "/admin/api-clients",
+   "office": "/office/api-clients"
+  },
+  {
+   "admin": "/admin/appointments",
+   "office": "/office/services/appointments"
+  },
+  {
+   "admin": "/admin/asset-classes",
+   "office": "/office/asset-kinds"
+  },
+  {
+   "admin": "/admin/audit-events",
+   "office": "/office/audit-log"
+  },
+  {
+   "admin": "/admin/backups",
+   "office": "/office/backups"
+  },
+  {
+   "admin": "/admin/bank-accounts",
+   "office": "/office/bank-accounts"
+  },
+  {
+   "admin": "/admin/bank-reconciliation",
+   "office": "/office/bank-accounts"
+  },
+  {
+   "admin": "/admin/batches-expiry",
+   "office": "/office/batches"
+  },
+  {
+   "admin": "/admin/bins",
+   "office": "/office/bins"
+  },
+  {
+   "admin": "/admin/boms",
+   "office": "/office/manufacturing/boms"
+  },
+  {
+   "admin": "/admin/boms/create",
+   "office": "/office/manufacturing/boms/new"
+  },
+  {
+   "admin": "/admin/boms/{record}",
+   "office": "/office/manufacturing/boms/{record}"
+  },
+  {
+   "admin": "/admin/boms/{record}/edit",
+   "office": "/office/manufacturing/boms/{record}/edit"
+  },
+  {
+   "admin": "/admin/branches",
+   "office": "/office/branches"
+  },
+  {
+   "admin": "/admin/branches/create",
+   "office": "/office/branches/new"
+  },
+  {
+   "admin": "/admin/branches/{record}/edit",
+   "office": "/office/branches/{record}"
+  },
+  {
+   "admin": "/admin/branding",
+   "office": "/office/branding"
+  },
+  {
+   "admin": "/admin/brands",
+   "office": "/office/brands"
+  },
+  {
+   "admin": "/admin/budgets",
+   "office": "/office/budgets"
+  },
+  {
+   "admin": "/admin/cash-desk",
+   "office": "/office/cash-desk"
+  },
+  {
+   "admin": "/admin/cash-setup",
+   "office": "/office/cash-setup"
+  },
+  {
+   "admin": "/admin/cash/close-day",
+   "office": "/office/close-day"
+  },
+  {
+   "admin": "/admin/categories",
+   "office": "/office/categories"
+  },
+  {
+   "admin": "/admin/commissions",
+   "office": "/office/services/commissions"
+  },
+  {
+   "admin": "/admin/company-wide-access",
+   "office": "/office/company-wide-access"
+  },
+  {
+   "admin": "/admin/computers",
+   "office": "/office/computers"
+  },
+  {
+   "admin": "/admin/confirm-its-you",
+   "office": "/office/confirm-its-you"
+  },
+  {
+   "admin": "/admin/consignment-to-pay",
+   "office": "/office/consignment-to-pay"
+  },
+  {
+   "admin": "/admin/controlled-drug-register",
+   "office": "/office/controlled-drug-register"
+  },
+  {
+   "admin": "/admin/copilot",
+   "office": "/office/ask"
+  },
+  {
+   "admin": "/admin/crm-campaigns",
+   "office": "/office/crm/campaigns"
+  },
+  {
+   "admin": "/admin/crm-campaigns/create",
+   "office": "/office/crm/campaigns/new"
+  },
+  {
+   "admin": "/admin/crm-campaigns/{record}/edit",
+   "office": "/office/crm/campaigns/{record}"
+  },
+  {
+   "admin": "/admin/crm-deals",
+   "office": "/office/crm/deals"
+  },
+  {
+   "admin": "/admin/crm-deals/create",
+   "office": "/office/crm/deals/new"
+  },
+  {
+   "admin": "/admin/crm-deals/{record}/edit",
+   "office": "/office/crm/deals/{record}"
+  },
+  {
+   "admin": "/admin/crm-follow-ups",
+   "office": "/office/crm/follow-ups"
+  },
+  {
+   "admin": "/admin/crm-leads",
+   "office": "/office/crm/leads"
+  },
+  {
+   "admin": "/admin/crm-leads/create",
+   "office": "/office/crm/leads/new"
+  },
+  {
+   "admin": "/admin/crm-leads/{record}/edit",
+   "office": "/office/crm/leads/{record}"
+  },
+  {
+   "admin": "/admin/crm-pipeline",
+   "office": "/office/crm/pipeline"
+  },
+  {
+   "admin": "/admin/crm-stages",
+   "office": "/office/crm/stages"
+  },
+  {
+   "admin": "/admin/customer-orders",
+   "office": "/office/customer-orders"
+  },
+  {
+   "admin": "/admin/customer-orders/create",
+   "office": "/office/customer-orders/new"
+  },
+  {
+   "admin": "/admin/customer-orders/{record}",
+   "office": "/office/customer-orders/{record}"
+  },
+  {
+   "admin": "/admin/customer-orders/{record}/edit",
+   "office": "/office/customer-orders/{record}/edit"
+  },
+  {
+   "admin": "/admin/customer-payments",
+   "office": "/office/customer-payments"
+  },
+  {
+   "admin": "/admin/customers",
+   "office": "/office/customers"
+  },
+  {
+   "admin": "/admin/customers/create",
+   "office": "/office/customers/new"
+  },
+  {
+   "admin": "/admin/customers/{record}",
+   "office": "/office/customers/{record}"
+  },
+  {
+   "admin": "/admin/customers/{record}/edit",
+   "office": "/office/customers/{record}/edit"
+  },
+  {
+   "admin": "/admin/departments",
+   "office": "/office/departments"
+  },
+  {
+   "admin": "/admin/devices",
+   "office": "/office/devices"
+  },
+  {
+   "admin": "/admin/devices/create",
+   "office": "/office/devices?register=1"
+  },
+  {
+   "admin": "/admin/dining-orders",
+   "office": "/office/restaurant/bills"
+  },
+  {
+   "admin": "/admin/dining-orders/{record}",
+   "office": "/office/restaurant/bills?bill={record}"
+  },
+  {
+   "admin": "/admin/dining-tables",
+   "office": "/office/restaurant/tables"
+  },
+  {
+   "admin": "/admin/direct-purchases",
+   "office": "/office/direct-purchases"
+  },
+  {
+   "admin": "/admin/direct-purchases/create",
+   "office": "/office/direct-purchases/new"
+  },
+  {
+   "admin": "/admin/direct-purchases/{record}",
+   "office": "/office/direct-purchases/{record}"
+  },
+  {
+   "admin": "/admin/direct-purchases/{record}/edit",
+   "office": "/office/direct-purchases/{record}/edit"
+  },
+  {
+   "admin": "/admin/drug-interactions",
+   "office": "/office/drug-interactions"
+  },
+  {
+   "admin": "/admin/employee-loans",
+   "office": "/office/loans"
+  },
+  {
+   "admin": "/admin/employees",
+   "office": "/office/employees"
+  },
+  {
+   "admin": "/admin/employees/create",
+   "office": "/office/employees/new"
+  },
+  {
+   "admin": "/admin/employees/{record}/edit",
+   "office": "/office/employees/{record}"
+  },
+  {
+   "admin": "/admin/equipment",
+   "office": "/office/maintenance/equipment"
+  },
+  {
+   "admin": "/admin/equipment/create",
+   "office": "/office/maintenance/equipment/new"
+  },
+  {
+   "admin": "/admin/equipment/{record}/edit",
+   "office": "/office/maintenance/equipment/{record}"
+  },
+  {
+   "admin": "/admin/estimated-costs",
+   "office": "/office/estimated-costs"
+  },
+  {
+   "admin": "/admin/expense-claims",
+   "office": "/office/expense-claims"
+  },
+  {
+   "admin": "/admin/expense-claims/create",
+   "office": "/office/expense-claims/new"
+  },
+  {
+   "admin": "/admin/expense-claims/{record}",
+   "office": "/office/expense-claims/{record}"
+  },
+  {
+   "admin": "/admin/expiry-returns",
+   "office": "/office/expiry"
+  },
+  {
+   "admin": "/admin/fashion-report",
+   "office": "/office/fashion/sell-through"
+  },
+  {
+   "admin": "/admin/financial-reports",
+   "office": "/office/financial-reports"
+  },
+  {
+   "admin": "/admin/fiscal-periods",
+   "office": "/office/month-end"
+  },
+  {
+   "admin": "/admin/fixed-assets",
+   "office": "/office/fixed-assets"
+  },
+  {
+   "admin": "/admin/fixed-assets/create",
+   "office": "/office/fixed-assets?register=1"
+  },
+  {
+   "admin": "/admin/fixed-assets/{record}",
+   "office": "/office/fixed-assets/{record}"
+  },
+  {
+   "admin": "/admin/go-live",
+   "office": "/office/go-live"
+  },
+  {
+   "admin": "/admin/goods-receipts",
+   "office": "/office/goods-received"
+  },
+  {
+   "admin": "/admin/goods-receipts/{record}",
+   "office": "/office/goods-received/{record}"
+  },
+  {
+   "admin": "/admin/gra-evat",
+   "office": "/office/gra-evat"
+  },
+  {
+   "admin": "/admin/grocery/markdowns",
+   "office": "/office/grocery/markdowns"
+  },
+  {
+   "admin": "/admin/grocery/scale-items",
+   "office": "/office/scale-items"
+  },
+  {
+   "admin": "/admin/health",
+   "office": "/office/system-health"
+  },
+  {
+   "admin": "/admin/health-checks",
+   "office": "/office/health-checks"
+  },
+  {
+   "admin": "/admin/import-data",
+   "office": "/office/import"
+  },
+  {
+   "admin": "/admin/income-control",
+   "office": "/office/income-control"
+  },
+  {
+   "admin": "/admin/industries",
+   "office": "/office/industries"
+  },
+  {
+   "admin": "/admin/insights",
+   "office": "/office/insights"
+  },
+  {
+   "admin": "/admin/integrations",
+   "office": "/office/integrations"
+  },
+  {
+   "admin": "/admin/invoices",
+   "office": "/office/invoices"
+  },
+  {
+   "admin": "/admin/invoices/{record}",
+   "office": "/office/invoices/{record}"
+  },
+  {
+   "admin": "/admin/iot-alarms",
+   "office": "/office/sensors/alarms"
+  },
+  {
+   "admin": "/admin/iot-clouds",
+   "office": "/office/sensors/clouds"
+  },
+  {
+   "admin": "/admin/it-activity",
+   "office": "/office/it-activity"
+  },
+  {
+   "admin": "/admin/journal-entries",
+   "office": "/office/journals"
+  },
+  {
+   "admin": "/admin/journal-entries/{record}",
+   "office": "/office/journals/{record}"
+  },
+  {
+   "admin": "/admin/kitchen-stations",
+   "office": "/office/restaurant/stations"
+  },
+  {
+   "admin": "/admin/landed-costs",
+   "office": "/office/landed-costs"
+  },
+  {
+   "admin": "/admin/leave-requests",
+   "office": "/office/leave"
+  },
+  {
+   "admin": "/admin/legal-entities",
+   "office": "/office/legal-entities"
+  },
+  {
+   "admin": "/admin/licence",
+   "office": "/office/licence"
+  },
+  {
+   "admin": "/admin/licence-keys",
+   "office": "/office/services/keys"
+  },
+  {
+   "admin": "/admin/login",
+   "office": "/office/sign-in"
+  },
+  {
+   "admin": "/admin/maintenance-orders",
+   "office": "/office/maintenance/orders"
+  },
+  {
+   "admin": "/admin/maintenance-orders/create",
+   "office": "/office/maintenance/orders/new"
+  },
+  {
+   "admin": "/admin/maintenance-orders/{record}",
+   "office": "/office/maintenance/orders/{record}"
+  },
+  {
+   "admin": "/admin/manage-modules",
+   "office": "/office/modules"
+  },
+  {
+   "admin": "/admin/manage-settings",
+   "office": "/office/settings"
+  },
+  {
+   "admin": "/admin/medicine-signoffs",
+   "office": "/office/medicine-signoffs"
+  },
+  {
+   "admin": "/admin/membership-plans",
+   "office": "/office/services/plans"
+  },
+  {
+   "admin": "/admin/memberships",
+   "office": "/office/services/memberships"
+  },
+  {
+   "admin": "/admin/message-log",
+   "office": "/office/message-log"
+  },
+  {
+   "admin": "/admin/message-templates",
+   "office": "/office/message-templates"
+  },
+  {
+   "admin": "/admin/messaging",
+   "office": "/office/messaging"
+  },
+  {
+   "admin": "/admin/modifier-groups",
+   "office": "/office/restaurant/modifiers"
+  },
+  {
+   "admin": "/admin/momo-charges",
+   "office": "/office/mobile-money"
+  },
+  {
+   "admin": "/admin/money-transfers",
+   "office": "/office/money-moved"
+  },
+  {
+   "admin": "/admin/multi-factor-authentication/set-up",
+   "office": "/office/two-factor-setup"
+  },
+  {
+   "admin": "/admin/my-hr",
+   "office": "/office/my-hr"
+  },
+  {
+   "admin": "/admin/my-time",
+   "office": "/office/my-time"
+  },
+  {
+   "admin": "/admin/nhis-claims",
+   "office": "/office/nhis-claims"
+  },
+  {
+   "admin": "/admin/nhis-claims/{record}",
+   "office": "/office/nhis-claims/{record}"
+  },
+  {
+   "admin": "/admin/office-returns",
+   "office": "/office/office-returns"
+  },
+  {
+   "admin": "/admin/office-returns/{record}",
+   "office": "/office/office-returns/{record}"
+  },
+  {
+   "admin": "/admin/payroll-rules",
+   "office": "/office/payroll-rules"
+  },
+  {
+   "admin": "/admin/payroll-runs",
+   "office": "/office/payroll"
+  },
+  {
+   "admin": "/admin/payroll-runs/{record}",
+   "office": "/office/payroll/{record}"
+  },
+  {
+   "admin": "/admin/pharmacy/markdowns",
+   "office": "/office/pharmacy/markdowns"
+  },
+  {
+   "admin": "/admin/prescriptions",
+   "office": "/office/prescriptions"
+  },
+  {
+   "admin": "/admin/prescriptions/{record}",
+   "office": "/office/prescriptions?open={record}"
+  },
+  {
+   "admin": "/admin/price-list",
+   "office": "/office/price-list"
+  },
+  {
+   "admin": "/admin/price-lists",
+   "office": "/office/price-lists"
+  },
+  {
+   "admin": "/admin/prices-to-review",
+   "office": "/office/prices-to-review"
+  },
+  {
+   "admin": "/admin/pricing-rules",
+   "office": "/office/pricing-rules"
+  },
+  {
+   "admin": "/admin/problem-reports",
+   "office": "/office/problem-reports"
+  },
+  {
+   "admin": "/admin/production-planning",
+   "office": "/office/manufacturing/planning"
+  },
+  {
+   "admin": "/admin/products",
+   "office": "/office/products"
+  },
+  {
+   "admin": "/admin/products/create",
+   "office": "/office/products/new"
+  },
+  {
+   "admin": "/admin/products/{record}/edit",
+   "office": "/office/products/{record}/edit"
+  },
+  {
+   "admin": "/admin/profile",
+   "office": "/office/profile"
+  },
+  {
+   "admin": "/admin/project-rates",
+   "office": "/office/project-rates"
+  },
+  {
+   "admin": "/admin/projects",
+   "office": "/office/projects"
+  },
+  {
+   "admin": "/admin/projects/create",
+   "office": "/office/projects/new"
+  },
+  {
+   "admin": "/admin/projects/{record}/edit",
+   "office": "/office/projects/{record}"
+  },
+  {
+   "admin": "/admin/promotions",
+   "office": "/office/promotions"
+  },
+  {
+   "admin": "/admin/promotions/create",
+   "office": "/office/promotions?new=1"
+  },
+  {
+   "admin": "/admin/promotions/{record}/edit",
+   "office": "/office/promotions?edit={record}"
+  },
+  {
+   "admin": "/admin/purchase-agreements",
+   "office": "/office/agreements"
+  },
+  {
+   "admin": "/admin/purchase-agreements/create",
+   "office": "/office/agreements/new"
+  },
+  {
+   "admin": "/admin/purchase-agreements/{record}",
+   "office": "/office/agreements/{record}"
+  },
+  {
+   "admin": "/admin/purchase-agreements/{record}/edit",
+   "office": "/office/agreements/{record}/edit"
+  },
+  {
+   "admin": "/admin/purchase-orders",
+   "office": "/office/purchase-orders"
+  },
+  {
+   "admin": "/admin/purchase-orders/create",
+   "office": "/office/purchase-orders/new"
+  },
+  {
+   "admin": "/admin/purchase-orders/{record}",
+   "office": "/office/purchase-orders/{record}"
+  },
+  {
+   "admin": "/admin/purchase-orders/{record}/edit",
+   "office": "/office/purchase-orders/{record}/edit"
+  },
+  {
+   "admin": "/admin/purchase-requests",
+   "office": "/office/purchase-requests"
+  },
+  {
+   "admin": "/admin/purchase-requests/create",
+   "office": "/office/purchase-requests/new"
+  },
+  {
+   "admin": "/admin/purchase-requests/{record}",
+   "office": "/office/purchase-requests/{record}"
+  },
+  {
+   "admin": "/admin/refill-reminders",
+   "office": "/office/refill-reminders"
+  },
+  {
+   "admin": "/admin/reorder-rules",
+   "office": "/office/reorder-levels"
+  },
+  {
+   "admin": "/admin/reorder-suggestions",
+   "office": "/office/what-to-order"
+  },
+  {
+   "admin": "/admin/rep-performance",
+   "office": "/office/distribution/performance"
+  },
+  {
+   "admin": "/admin/rep-targets",
+   "office": "/office/distribution/targets"
+  },
+  {
+   "admin": "/admin/repair-jobs",
+   "office": "/office/electronics/repairs"
+  },
+  {
+   "admin": "/admin/repair-jobs/{record}",
+   "office": "/office/electronics/repairs/{record}"
+  },
+  {
+   "admin": "/admin/report-builder",
+   "office": "/office/report-builder"
+  },
+  {
+   "admin": "/admin/reservations",
+   "office": "/office/restaurant/bookings"
+  },
+  {
+   "admin": "/admin/restaurant-report",
+   "office": "/office/restaurant/tips-voids"
+  },
+  {
+   "admin": "/admin/returns",
+   "office": "/office/returns"
+  },
+  {
+   "admin": "/admin/review-items",
+   "office": "/office/review-queue"
+  },
+  {
+   "admin": "/admin/rfqs",
+   "office": "/office/rfqs"
+  },
+  {
+   "admin": "/admin/rfqs/create",
+   "office": "/office/rfqs/new"
+  },
+  {
+   "admin": "/admin/rfqs/{record}",
+   "office": "/office/rfqs/{record}"
+  },
+  {
+   "admin": "/admin/roles",
+   "office": "/office/roles"
+  },
+  {
+   "admin": "/admin/roles/create",
+   "office": "/office/roles/new"
+  },
+  {
+   "admin": "/admin/roles/{record}/edit",
+   "office": "/office/roles/{record}"
+  },
+  {
+   "admin": "/admin/routes",
+   "office": "/office/distribution/routes"
+  },
+  {
+   "admin": "/admin/sales",
+   "office": "/office/sales"
+  },
+  {
+   "admin": "/admin/sales-channels",
+   "office": "/office/online/channels"
+  },
+  {
+   "admin": "/admin/sales-channels/create",
+   "office": "/office/online/channels/new"
+  },
+  {
+   "admin": "/admin/sales-channels/{record}/edit",
+   "office": "/office/online/channels/{record}"
+  },
+  {
+   "admin": "/admin/sales-orders",
+   "office": "/office/online/orders"
+  },
+  {
+   "admin": "/admin/sales-orders/{record}",
+   "office": "/office/online/orders/{record}"
+  },
+  {
+   "admin": "/admin/sales/{record}",
+   "office": "/office/sales/{record}"
+  },
+  {
+   "admin": "/admin/saved-reports",
+   "office": "/office/saved-reports"
+  },
+  {
+   "admin": "/admin/sensors",
+   "office": "/office/sensors"
+  },
+  {
+   "admin": "/admin/sensors/create",
+   "office": "/office/sensors/new"
+  },
+  {
+   "admin": "/admin/sensors/{record}/edit",
+   "office": "/office/sensors/{record}"
+  },
+  {
+   "admin": "/admin/serial-numbers",
+   "office": "/office/electronics/serials"
+  },
+  {
+   "admin": "/admin/serial-numbers/{record}",
+   "office": "/office/electronics/serials/{record}"
+  },
+  {
+   "admin": "/admin/service-levels",
+   "office": "/office/service-levels"
+  },
+  {
+   "admin": "/admin/service-passes",
+   "office": "/office/services/passes"
+  },
+  {
+   "admin": "/admin/setup-wizard",
+   "office": "/office/setup-wizard"
+  },
+  {
+   "admin": "/admin/shared-products",
+   "office": "/office/shared-products"
+  },
+  {
+   "admin": "/admin/shifts",
+   "office": "/office/shifts"
+  },
+  {
+   "admin": "/admin/shrink-report",
+   "office": "/office/shrink"
+  },
+  {
+   "admin": "/admin/spend-analytics",
+   "office": "/office/spend-analytics"
+  },
+  {
+   "admin": "/admin/staff-calendar",
+   "office": "/office/services/calendar"
+  },
+  {
+   "admin": "/admin/staff-cards",
+   "office": "/office/staff-cards"
+  },
+  {
+   "admin": "/admin/stock-adjustments",
+   "office": "/office/adjustments"
+  },
+  {
+   "admin": "/admin/stock-adjustments/create",
+   "office": "/office/adjustments/new"
+  },
+  {
+   "admin": "/admin/stock-adjustments/{record}",
+   "office": "/office/adjustments/{record}"
+  },
+  {
+   "admin": "/admin/stock-adjustments/{record}/edit",
+   "office": "/office/adjustments/{record}/edit"
+  },
+  {
+   "admin": "/admin/stock-cost-runs",
+   "office": "/office/cost-runs"
+  },
+  {
+   "admin": "/admin/stock-cost-runs/create",
+   "office": "/office/cost-runs/new"
+  },
+  {
+   "admin": "/admin/stock-cost-runs/{record}",
+   "office": "/office/cost-runs/{record}"
+  },
+  {
+   "admin": "/admin/stock-counts",
+   "office": "/office/counts"
+  },
+  {
+   "admin": "/admin/stock-counts/{record}",
+   "office": "/office/counts/{record}"
+  },
+  {
+   "admin": "/admin/stock-levels",
+   "office": "/office/stock"
+  },
+  {
+   "admin": "/admin/stock-movements",
+   "office": "/office/stock/movements"
+  },
+  {
+   "admin": "/admin/stock-requests",
+   "office": "/office/requests"
+  },
+  {
+   "admin": "/admin/stock-requests/create",
+   "office": "/office/requests/new"
+  },
+  {
+   "admin": "/admin/stock-requests/{record}",
+   "office": "/office/requests/{record}"
+  },
+  {
+   "admin": "/admin/stock-transfers",
+   "office": "/office/transfers"
+  },
+  {
+   "admin": "/admin/stock-transfers/create",
+   "office": "/office/transfers/new"
+  },
+  {
+   "admin": "/admin/stock-transfers/{record}",
+   "office": "/office/transfers/{record}"
+  },
+  {
+   "admin": "/admin/stock-transfers/{record}/edit",
+   "office": "/office/transfers/{record}/edit"
+  },
+  {
+   "admin": "/admin/stock/my-day",
+   "office": "/office/my-day"
+  },
+  {
+   "admin": "/admin/stock/slow-stock",
+   "office": "/office/slow-stock"
+  },
+  {
+   "admin": "/admin/stored-values",
+   "office": "/office/gift-cards"
+  },
+  {
+   "admin": "/admin/styles",
+   "office": "/office/fashion/styles"
+  },
+  {
+   "admin": "/admin/styles/{record}",
+   "office": "/office/fashion/styles/{record}"
+  },
+  {
+   "admin": "/admin/suggested-levels",
+   "office": "/office/suggested-levels"
+  },
+  {
+   "admin": "/admin/supplier-bills",
+   "office": "/office/supplier-bills"
+  },
+  {
+   "admin": "/admin/supplier-bills/create",
+   "office": "/office/supplier-bills/new"
+  },
+  {
+   "admin": "/admin/supplier-bills/{record}",
+   "office": "/office/supplier-bills/{record}"
+  },
+  {
+   "admin": "/admin/supplier-invoices",
+   "office": "/office/supplier-invoices"
+  },
+  {
+   "admin": "/admin/supplier-payments",
+   "office": "/office/supplier-payments"
+  },
+  {
+   "admin": "/admin/supplier-returns",
+   "office": "/office/supplier-returns"
+  },
+  {
+   "admin": "/admin/supplier-returns/{record}",
+   "office": "/office/supplier-returns/{record}"
+  },
+  {
+   "admin": "/admin/suppliers",
+   "office": "/office/suppliers"
+  },
+  {
+   "admin": "/admin/suppliers/create",
+   "office": "/office/suppliers/new"
+  },
+  {
+   "admin": "/admin/suppliers/{record}/edit",
+   "office": "/office/suppliers/{record}"
+  },
+  {
+   "admin": "/admin/support-access-grants",
+   "office": "/office/support-access"
+  },
+  {
+   "admin": "/admin/sync-peers",
+   "office": "/office/sync-center"
+  },
+  {
+   "admin": "/admin/tax-groups",
+   "office": "/office/tax-groups"
+  },
+  {
+   "admin": "/admin/tax-rates",
+   "office": "/office/tax-rates"
+  },
+  {
+   "admin": "/admin/temperature-log",
+   "office": "/office/sensors/log"
+  },
+  {
+   "admin": "/admin/tickets",
+   "office": "/office/tickets"
+  },
+  {
+   "admin": "/admin/tickets/create",
+   "office": "/office/tickets/new"
+  },
+  {
+   "admin": "/admin/tickets/{record}",
+   "office": "/office/tickets/{record}"
+  },
+  {
+   "admin": "/admin/till-drawer-events",
+   "office": "/office/drawer"
+  },
+  {
+   "admin": "/admin/till-requests",
+   "office": "/office/till-requests"
+  },
+  {
+   "admin": "/admin/time-approvals",
+   "office": "/office/time-approvals"
+  },
+  {
+   "admin": "/admin/timesheets",
+   "office": "/office/timesheets"
+  },
+  {
+   "admin": "/admin/today",
+   "office": "/office/today"
+  },
+  {
+   "admin": "/admin/uoms",
+   "office": "/office/units"
+  },
+  {
+   "admin": "/admin/users",
+   "office": "/office/users"
+  },
+  {
+   "admin": "/admin/users/create",
+   "office": "/office/users?add=1"
+  },
+  {
+   "admin": "/admin/users/{record}/edit",
+   "office": "/office/users/{record}"
+  },
+  {
+   "admin": "/admin/van-settlements",
+   "office": "/office/distribution/settlements"
+  },
+  {
+   "admin": "/admin/van-settlements/{record}",
+   "office": "/office/distribution/settlements/{record}"
+  },
+  {
+   "admin": "/admin/vans",
+   "office": "/office/distribution/vans"
+  },
+  {
+   "admin": "/admin/vans/{record}/edit",
+   "office": "/office/distribution/vans"
+  },
+  {
+   "admin": "/admin/visits",
+   "office": "/office/distribution/visits"
+  },
+  {
+   "admin": "/admin/waybills",
+   "office": "/office/waybills"
+  },
+  {
+   "admin": "/admin/waybills/create",
+   "office": "/office/waybills/new"
+  },
+  {
+   "admin": "/admin/waybills/{record}",
+   "office": "/office/waybills/{record}"
+  },
+  {
+   "admin": "/admin/whatsapp-orders",
+   "office": "/office/online/whatsapp"
+  },
+  {
+   "admin": "/admin/whatsapp-orders/{record}",
+   "office": "/office/online/whatsapp/{record}"
+  },
+  {
+   "admin": "/admin/withholding-tax-return",
+   "office": "/office/withholding-tax"
+  },
+  {
+   "admin": "/admin/work-centres",
+   "office": "/office/manufacturing/centres"
+  },
+  {
+   "admin": "/admin/work-orders",
+   "office": "/office/manufacturing/orders"
+  },
+  {
+   "admin": "/admin/work-orders/{record}",
+   "office": "/office/manufacturing/orders/{record}"
+  }
+ ]
+}

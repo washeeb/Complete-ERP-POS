@@ -38,8 +38,8 @@ it('lists products with the default price and the stock on hand; finds one by na
 it('offers the filters, the forms of the actions, and the pages they lead to', function () {
     $this->actingAs($this->owner, 'web');
     $r = $this->getJson('/office-api/products/options')->assertOk()->json();
-    expect($r['can']['manage'])->toBeTrue()->and($r['links']['create'])->toBe('/admin/products/create')
-        ->and($r['links']['import'])->toStartWith('/admin/')->and($r['labels']['kinds'])->not->toBeEmpty()
+    expect($r['can']['manage'])->toBeTrue()->and($r['links']['create'])->toBe('/office/products/new')
+        ->and($r['links']['import'])->toStartWith('/office/import')->and($r['labels']['kinds'])->not->toBeEmpty()
         ->and($r['batches_off'])->toBe(2);
 });
 
@@ -94,7 +94,7 @@ it('switches on batches, prepares labels, and hands the ticked products to Expor
     expect($r['url'])->toContain('/labels/')->and($r['count'])->toBe(1);
 
     $r = $this->postJson('/office-api/products/hand-off', ['to' => 'prices', 'ids' => [$this->milo->id]])->assertOk()->json();
-    expect($r['url'])->toStartWith('/admin/')->and(session('price_list.products'))->toBe([$this->milo->id]);
+    expect($r['url'])->toBe('/office/price-list?only=1')->and(session('price_list.products'))->toBe([$this->milo->id]);
 });
 
 it('changes the unit of a product, and lists the ones that cannot change', function () {

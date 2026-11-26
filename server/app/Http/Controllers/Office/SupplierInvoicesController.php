@@ -4,13 +4,11 @@ namespace App\Http\Controllers\Office;
 
 use App\Domain\Ai\InvoiceScanner;
 use App\Domain\Fashion\ConsignmentService;
-use App\Domain\Office\ProductsScreen;
 use App\Domain\Office\SupplierInvoicesScreen;
 use App\Domain\Purchasing\SupplierPortal;
 use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
-use App\Filament\Resources\SupplierBills\SupplierBillResource;
 use App\Filament\Resources\SupplierInvoices\SupplierInvoiceResource;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
@@ -71,7 +69,7 @@ class SupplierInvoicesController extends Controller
                 $branch = Branch::find($r->purchaseOrder?->branch_id) ?? Branch::where('is_hq', true)->firstOrFail();
                 $doc = app(InvoiceScanner::class)->scan($actor, $branch, $r->file_path, (string) ($r->file_name ?? 'invoice'), $r->supplier, $r->id);
 
-                return ['open' => ProductsScreen::path(SupplierBillResource::getUrl('create', ['scan' => $doc->id]))];
+                return ['open' => '/office/supplier-bills/new?'.http_build_query(['scan' => $doc->id])];
             }
             $a === 'mark' ? app(SupplierPortal::class)->markEntered($actor, $r, $d['bill'] ?? null) : app(SupplierPortal::class)->reject($actor, $r, $d['reason']);
 

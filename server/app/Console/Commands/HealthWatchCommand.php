@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Domain\Messaging\Notifier;
 use App\Domain\Support\SystemHealth;
-use App\Filament\Pages\SystemHealthPage;
 use App\Mail\PlainMessage;
 use App\Models\Tenant;
 use App\Models\User;
@@ -40,7 +39,7 @@ class HealthWatchCommand extends Command
         }
         $body = $problems->map(fn ($c) => "{$c['check']}: {$c['detail']}")->implode("\n");
         foreach (Tenant::query()->get() as $tenant) {
-            $notifier->toPermission($tenant->id, 'admin.settings.manage', null, 'The server needs attention', $body, SystemHealthPage::getUrl(panel: 'admin'), topic: 'system');
+            $notifier->toPermission($tenant->id, 'admin.settings.manage', null, 'The server needs attention', $body, url('/office/system-health'), topic: 'system');
             $people = User::where('tenant_id', $tenant->id)->where('is_active', true)->get()->filter(fn (User $u) => $authz->allowsAnywhere($u, 'admin.settings.manage'));
             foreach ($people as $u) {
                 try {

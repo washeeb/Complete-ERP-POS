@@ -5,7 +5,6 @@ namespace App\Domain\Office;
 use App\Domain\Ai\AiGateway;
 use App\Domain\Fashion\ConsignmentService;
 use App\Filament\Pages\ConsignmentToPay;
-use App\Filament\Resources\SupplierBills\SupplierBillResource;
 use App\Filament\Resources\SupplierInvoices\SupplierInvoiceResource;
 use App\Filament\Support\Erp;
 use App\Models\Branch;
@@ -82,7 +81,7 @@ final class SupplierInvoicesScreen
             'actions' => [
                 'file' => $r->file_path ? route('supplier-invoice.file', $r->id, false) : null,
                 'read' => $waiting && $aiOk,
-                'enter' => $waiting ? ProductsScreen::path(SupplierBillResource::getUrl('create', ['invoice' => $r->id])) : null,
+                'enter' => $waiting ? '/office/supplier-bills/new?'.http_build_query(['invoice' => $r->id]) : null,
                 'mark' => $waiting, 'reject' => $waiting,
             ],
         ];

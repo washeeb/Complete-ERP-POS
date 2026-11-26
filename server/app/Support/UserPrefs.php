@@ -47,8 +47,10 @@ final class UserPrefs
         }
         $tiles = [];
         foreach (array_slice((array) ($in['tiles'] ?? []), 0, 8) as $t) {
-            $url = is_array($t) ? (string) ($t['url'] ?? '') : '';
-            if (preg_match('#^/admin(/[A-Za-z0-9/_\-]*)?(\?[^\s<>"]*)?$#', $url)) {
+            $raw = is_array($t) ? (string) ($t['url'] ?? '') : '';
+            // Checked as given (a page of the back office, nothing odd in it), then kept at its new-look address (part 42).
+            $url = preg_match('#^/(admin|office)(/[A-Za-z0-9/_\-]*)?(\?[^\s<>"]*)?$#', $raw) ? (string) OfficeUrl::from($raw) : '';
+            if (preg_match('#^/office(/[A-Za-z0-9/_\-]*)?(\?[^\s<>"]*)?$#', $url)) {
                 $tiles[] = ['url' => $url, 'label' => mb_substr(trim(strip_tags((string) ($t['label'] ?? ''))), 0, 60) ?: $url];
             }
         }
@@ -84,6 +86,7 @@ final class UserPrefs
     {
         $p = self::DEFAULTS;
         $home = (string) ($in['home'] ?? '');
+        $home = str_starts_with($home, '/') ? (string) OfficeUrl::from($home) : $home; // a page: the new back office's address
         if (isset(self::homes($user)[$home])) {
             $p['home'] = $home;
         }
@@ -140,10 +143,14 @@ final class UserPrefs
      */
     public static function officeHomeUrl(?User $user): string
     {
-        $home = (string) parse_url(self::homeUrl($user), PHP_URL_PATH);
-        $rest = preg_replace('#^/admin/?#', '', $home);
+        $home = self::for($user)['home'];
 
-        return url('/').($rest === '' ? '/office/' : '/office/a/'.$rest);
+        // Exactly this address: url() would drop the final slash of /office/ (one more redirect).
+        return rtrim(url('/'), '/').match (true) {
+            $home === 'today' => '/office/today',
+            str_starts_with($home, '/') => (string) OfficeUrl::from($home), // a favourite: its page in the new look
+            default => '/office/',
+        };
     }
 
     public static function dateFormat(): string

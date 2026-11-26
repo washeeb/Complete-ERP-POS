@@ -222,7 +222,7 @@ final class Maintenance
         if ($assignee) {
             Notification::make()->title($title)->body(MaintenanceOrder::KINDS[$kind])->sendToDatabase($assignee);
         } else {
-            $this->notifier->toPermission($a->tenant_id, 'maintenance.work', $a->branch_id, $title, MaintenanceOrder::KINDS[$kind], url('/admin/maintenance-orders/'.$o->id), topic: 'service');
+            $this->notifier->toPermission($a->tenant_id, 'maintenance.work', $a->branch_id, $title, MaintenanceOrder::KINDS[$kind], url('/office/maintenance/orders/'.$o->id), topic: 'service');
         }
 
         return $o;

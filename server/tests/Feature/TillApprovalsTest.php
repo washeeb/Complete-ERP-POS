@@ -104,7 +104,7 @@ it('sends the request to the phones the manager turned notifications on for', fu
     ($this->ask)()->assertCreated();
     expect(PhonePush::$sent)->toHaveCount(1)
         ->and(PhonePush::$sent[0]['users'])->toBe([$this->manager->id])
-        ->and(PhonePush::$sent[0]['url'])->toContain('/admin/till-requests?id=');
+        ->and(PhonePush::$sent[0]['url'])->toContain('/office/till-requests?id=');
 
     // Turned off for approvals in the profile: the bell only.
     $this->manager->forceFill(['notify_prefs' => ['approvals' => ['in_app' => true, 'push' => false]]])->save();

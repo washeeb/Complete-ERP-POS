@@ -7,7 +7,6 @@ use App\Domain\Support\AccessDenied;
 use App\Domain\Support\Actor;
 use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
-use App\Filament\Resources\AccessRequests\AccessRequestResource;
 use App\Models\AccessRequest;
 use App\Models\Role;
 use App\Models\RoleAssignment;
@@ -53,7 +52,7 @@ final class AccessRequests
         $r->tenant_id = $actor->tenantId;
         $this->recorder->save($actor, $r, 'access_request.submitted', $summary);
         $this->notifier->toPermission($actor->tenantId, 'settings.business', null, 'Access change waiting for your approval',
-            "{$actor->name} asks: {$summary} It lapses in ".AccessRequest::HOURS.' hours if not answered.', AccessRequestResource::getUrl('index'), [$actor->id], topic: 'security');
+            "{$actor->name} asks: {$summary} It lapses in ".AccessRequest::HOURS.' hours if not answered.', url('/office/access-requests'), [$actor->id], topic: 'security');
 
         return $r;
     }

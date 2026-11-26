@@ -6,7 +6,6 @@ use App\Domain\Inventory\ExpiryService;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Inventory\StockAdjustmentService;
 use App\Domain\Support\Actor;
-use App\Filament\Pages\ImportData;
 use App\Filament\Resources\DirectPurchases\DirectPurchaseResource;
 use App\Filament\Resources\StockAdjustments\StockAdjustmentResource;
 use App\Filament\Support\Fields;
@@ -113,9 +112,9 @@ final class AdjustmentsScreen
             'reasons' => self::opt(InventoryService::ADJUSTMENT_REASONS), 'warehouses' => self::opt(Fields::warehouses('stock.view')),
             'per' => self::PER_PAGE, 'can_create' => StockAdjustmentResource::canCreate(),
             'links' => array_filter([
-                'import' => StockAdjustmentResource::canCreate() ? ProductsScreen::path(ImportData::getUrl(['type' => 'stock_adjustment'])) : null,
+                'import' => StockAdjustmentResource::canCreate() ? '/office/import?type=stock_adjustment' : null,
                 // Goods with a supplier invoice and no purchase order (paid, on credit or on consignment) are not an adjustment.
-                'invoice' => DirectPurchaseResource::canCreate() ? ProductsScreen::path(DirectPurchaseResource::getUrl('create')) : null,
+                'invoice' => DirectPurchaseResource::canCreate() ? '/office/direct-purchases/new' : null,
             ]),
         ];
     }
@@ -153,7 +152,7 @@ final class AdjustmentsScreen
             'actions' => [
                 'edit' => StockAdjustmentResource::canEdit($a), 'submit' => $draft, 'post' => $open ? ($a->status === 'submitted' ? 'Approve and post' : 'Post') : null,
                 'reopen' => $a->status === 'submitted' && $a->kind !== 'disposal', 'cancel' => $open,
-                'import' => $draft ? ProductsScreen::path(ImportData::getUrl(['type' => 'stock_adjustment', 'context' => $a->id])) : null,
+                'import' => $draft ? '/office/import?'.http_build_query(['type' => 'stock_adjustment', 'context' => $a->id]) : null,
                 'disposal_record' => $a->kind === 'disposal' ? route('print.disposal', $a) : null,
             ],
         ];

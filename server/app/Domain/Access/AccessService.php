@@ -26,6 +26,7 @@ use App\Security\SecurityLevel;
 use App\Support\Dashboard\Panels;
 use App\Support\Look;
 use App\Support\NotifyPrefs;
+use App\Support\OfficeUrl;
 use App\Support\Settings;
 use App\Support\UserPrefs;
 use Carbon\CarbonInterface;
@@ -222,8 +223,11 @@ final class AccessService
             throw new AccessDenied('You can only change your own favourites.');
         }
         $parts = parse_url($url);
+        if ($parts !== false && ! (isset($parts['scheme']) && ($parts['host'] ?? null) !== request()->getHost())) {
+            $parts = parse_url((string) OfficeUrl::from($url)); // kept as the new back office's address (part 42)
+        }
         $path = '/'.ltrim((string) ($parts['path'] ?? ''), '/');
-        if ($parts === false || isset($parts['scheme']) && ($parts['host'] ?? null) !== request()->getHost() || ! preg_match('#^/admin(/|$)#', $path)) {
+        if ($parts === false || isset($parts['scheme']) && ($parts['host'] ?? null) !== request()->getHost() || ! preg_match('#^/office(/|$)#', $path)) {
             throw new DomainException('Only pages of the back office can be favourites.');
         }
         $url = $path.(isset($parts['query']) ? '?'.$parts['query'] : '');

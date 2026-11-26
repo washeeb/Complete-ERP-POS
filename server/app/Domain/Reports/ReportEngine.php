@@ -35,14 +35,14 @@ final class ReportEngine
     public static function datasets(): array
     {
         return [
-            'sales_lines' => ['Till sales — items', 'sales.view', false, 's.occurred_at', '/admin/sales/{id}'],
-            'receipts' => ['Till sales — receipts', 'sales.view', false, 's.occurred_at', '/admin/sales/{id}'],
-            'payments' => ['Till payments', 'sales.view', false, 's.occurred_at', '/admin/sales/{id}'],
+            'sales_lines' => ['Till sales — items', 'sales.view', false, 's.occurred_at', '/office/sales/{id}'],
+            'receipts' => ['Till sales — receipts', 'sales.view', false, 's.occurred_at', '/office/sales/{id}'],
+            'payments' => ['Till payments', 'sales.view', false, 's.occurred_at', '/office/sales/{id}'],
             'stock_levels' => ['Stock on hand', 'stock.view', false, null, null],
             'stock_movements' => ['Stock movements', 'stock.view', false, 'm.occurred_at', null],
-            'invoices' => ['Customer invoices', 'receivables.view', false, 'i.issued_on', '/admin/invoices/{id}'],
-            'supplier_bills' => ['Supplier bills', 'payables.view', false, 'b.bill_date', '/admin/supplier-bills/{id}'],
-            'journal_lines' => ['General ledger lines', 'finance.view', true, 'e.entry_date', '/admin/journal-entries/{id}'],
+            'invoices' => ['Customer invoices', 'receivables.view', false, 'i.issued_on', '/office/invoices/{id}'],
+            'supplier_bills' => ['Supplier bills', 'payables.view', false, 'b.bill_date', '/office/supplier-bills/{id}'],
+            'journal_lines' => ['General ledger lines', 'finance.view', true, 'e.entry_date', '/office/journals/{id}'],
         ];
     }
 

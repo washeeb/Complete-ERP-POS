@@ -12,6 +12,9 @@ export const APP = '/office'
  */
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
 const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParams) => string }[] = [
+  // Signing in and two-factor set-up (part 41) have their own pages.
+  { admin: /^\/admin\/login\/?$/, app: () => `${APP}/sign-in` },
+  { admin: /^\/admin\/multi-factor-authentication\/set-up\/?$/, app: () => `${APP}/two-factor-setup` },
   { admin: /^\/admin\/today\/?$/, app: (_, q) => `${APP}/today${q.get('yesterday') === '1' ? '?yesterday=1' : ''}` },
   { admin: /^\/admin\/departments\/?$/, app: () => `${APP}/departments` },
   { admin: /^\/admin\/payroll-rules\/?$/, app: () => `${APP}/payroll-rules` },
@@ -291,6 +294,7 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
 
 /** /admin/products?x=1 → /office/a/products?x=1; /admin → /office/ (home); a rebuilt page → its new address. Anything else is not ours: home. */
 export function appPathFor(adminPath: string): string {
+  if (/^\/office(\/|$)/.test(adminPath)) return adminPath // already a new-look address (the server sends these now, part 42)
   const m = adminPath.match(/^\/admin(\/[^?#]*)?(\?[^#]*)?/)
   if (!m) return `${APP}/`
   const path = `/admin${m[1] ?? ''}`

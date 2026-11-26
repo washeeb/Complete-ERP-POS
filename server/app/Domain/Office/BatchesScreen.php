@@ -9,7 +9,6 @@ use App\Domain\Support\Actor;
 use App\Filament\Pages\BatchesExpiry;
 use App\Filament\Pages\ExpiryReturns;
 use App\Filament\Pages\GroceryMarkdowns;
-use App\Filament\Pages\ImportData;
 use App\Filament\Pages\PharmacyMarkdowns;
 use App\Filament\Support\Erp;
 use App\Filament\Support\Fields;
@@ -81,8 +80,8 @@ final class BatchesScreen
             'labels' => $markdowns->isNotEmpty() ? route('print.markdown-labels', ['ids' => $markdowns->pluck('id')->implode(',')], false) : null,
             'expired' => $page->expired()->map(fn ($b) => self::batch($b))->all(),
             'batches' => $page->markdownsOnly ? [] : $page->batches()->map(fn ($b) => self::batch($b))->all(),
-            'expiry_returns' => ExpiryReturns::canAccess() ? ExpiryReturns::getUrl(isAbsolute: false) : null,
-            'sheet' => ImportData::getUrl(['type' => 'opening_batches'], isAbsolute: false),
+            'expiry_returns' => ExpiryReturns::canAccess() ? '/office/expiry' : null,
+            'sheet' => '/office/import?type=opening_batches',
         ];
     }
 

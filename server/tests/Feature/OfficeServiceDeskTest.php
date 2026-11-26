@@ -60,7 +60,7 @@ it('opens a ticket, lists it, replies, notes, passes it on, resolves and reopens
     // A work order for the equipment it is about.
     $fridge = app(Maintenance::class)->saveAsset(actorFor($this->owner), new MaintenanceAsset, ['name' => 'Vaccine fridge', 'category' => 'fridge', 'branch_id' => $this->hq->id]);
     $open = $this->postJson("/office-api/tickets/{$id}/action", ['action' => 'work_order', 'asset_id' => $fridge->id])->assertOk()->json('open');
-    expect($open)->toBe('/admin/maintenance-orders/'.MaintenanceOrder::where('asset_id', $fridge->id)->sole()->id);
+    expect($open)->toBe('/office/maintenance/orders/'.MaintenanceOrder::where('asset_id', $fridge->id)->sole()->id);
 });
 
 it('lets staff who only ask for help raise their own requests, and see only those', function () {

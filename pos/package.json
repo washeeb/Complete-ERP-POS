@@ -23,6 +23,7 @@
     "build:office": "tsc -b && vite build -c vite.office.config.ts",
     "dev:office": "vite -c vite.office.config.ts",
     "check:office": "node scripts/office-check.mjs",
+    "office:routes": "node scripts/office-routes.mjs",
     "audit": "node scripts/audit.mjs"
   },
   "dependencies": {

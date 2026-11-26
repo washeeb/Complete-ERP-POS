@@ -429,7 +429,7 @@ final class ServiceDesk
 
     private function url(Ticket $t): string
     {
-        return url('/admin/tickets/'.$t->id);
+        return url('/office/tickets/'.$t->id);
     }
 
     private function requireWork(Actor $actor, Ticket $t, bool $raiser = false): void

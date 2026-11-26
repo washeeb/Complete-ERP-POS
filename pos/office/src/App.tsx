@@ -254,7 +254,7 @@ import { StaffCardsPage } from './pages/StaffCardsPage'
 import { StockPage } from './pages/StockPage'
 import { SalesPage } from './pages/SalesPage'
 import { TodoPage } from './pages/TodoPage'
-import { adminEquivalent, adminPathFor, tabOf } from './paths'
+import { adminEquivalent, adminPathFor, appPathFor, tabOf } from './paths'
 import { SideLook } from './shell/SideLook'
 import { TopLook } from './shell/TopLook'
 import { themes } from './theme'
@@ -341,11 +341,13 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
   }, [])
 
   const admin = route.page === 'classic' ? route.admin : menu.home
-  const same = adminEquivalent(route) // the current back office's page this one stands for: its menu area, its star
+  // The page this one stands for in the menu (its area, its star), at its new-look address (part 42).
+  const before = adminEquivalent(route)
+  const same = before ? appPathFor(before) : null
   const current = same ? tabOf(menu, same) : null
   const Look = me.prefs.office_look === 'side' ? SideLook : TopLook
   // The page on screen, for the star (add it to favourites): where the frame is now, which may be past the menu click.
-  const page = route.page === 'classic' ? { url: adminPathFor(location.pathname + location.search) ?? route.admin, label: title || 'This page' }
+  const page = route.page === 'classic' ? { url: appPathFor(adminPathFor(location.pathname + location.search) ?? route.admin), label: title || 'This page' }
     : same && LIST_TITLES[route.page] ? { url: same, label: LIST_TITLES[route.page]! } : null
   // Recent pages (and Home's "Opened lately") hold the rebuilt pages too, under their usual address, as the framed ones are.
   const seen = route.page === 'classic' || route.page === 'home' ? null : LIST_TITLES[route.page] ?? title
