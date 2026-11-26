@@ -58,7 +58,9 @@ final class RestaurantScreen
 
     private static function qty(mixed $v): string
     {
-        return rtrim(rtrim((string) $v, '0'), '.');
+        $v = (string) $v;
+
+        return str_contains($v, '.') ? rtrim(rtrim($v, '0'), '.') : $v;
     }
 
     private static function shown(Builder $q, array $p): void

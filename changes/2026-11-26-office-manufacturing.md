@@ -1,0 +1,5 @@
+### Added
+- **Manufacturing rebuilt in the new back office (part 35).** Work orders: the list (open only, or by status), New work order (warehouse, product with a bill of materials in use, how many, needed by, customer order), and one work order with its cost, materials, operations, time and quality checks; Release (with sub-assemblies), Report output, Quality check, Issue and Return materials, Record time, Finish, Cancel and the job card (PDF). Bills of materials: the list, one BOM with today's estimated cost per unit, the form (lines with expected loss and backflush, by-products, operations on work centres), Put in use, New revision, Make… and Stop using. Production planning: what to make and buy for one warehouse, the work centre load, and Raise work order (one or all, as drafts). Work centres: new, change, archive and restore.
+
+### Fixed
+- **Whole numbers kept their zeros on the rebuilt Maintenance, Projects, Restaurant and Sensors pages:** a value such as 30 minutes showed as 3 wherever it was stored without decimals.

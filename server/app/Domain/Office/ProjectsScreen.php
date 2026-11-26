@@ -65,7 +65,9 @@ final class ProjectsScreen
 
     private static function num(mixed $v): string
     {
-        return $v === null ? '' : rtrim(rtrim((string) $v, '0'), '.');
+        $v = (string) ($v ?? '');
+
+        return str_contains($v, '.') ? rtrim(rtrim($v, '0'), '.') : $v;
     }
 
     public static function canView(): bool

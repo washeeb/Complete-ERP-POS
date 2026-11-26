@@ -876,6 +876,39 @@ export type VisitList = { total: number; page: number; per: number; outcomes: Op
 export type TargetValues = { user_id: string; year: string; month: string; target: string; visit_target: string }
 export type TargetList = { currency: string; exponent: number; reps: Option[]; months: Option[]; year: number; month: number
   rows: { id: string; rep: string; period: string; target: number; visits: number | null; values: TargetValues }[] }
+export type MfgTable = { headings: string[]; rows: (string | number)[][]; numeric: number[] }
+export type MfgOrderRow = { id: string; number: string; product: string | null; warehouse: string | null; planned: string; done: string; due: string | null
+  status: string; status_label: string; tone: string }
+export type MfgOrderList = { total: number; page: number; per: number; open: boolean; statuses: Option[]; can_create: boolean; rows: MfgOrderRow[] }
+export type MfgOrderValues = { warehouse_id: string; product_id: string; qty: string; due_on: string; customer_order_id: string; customer_order: string | null; note: string }
+export type MfgOrderForm = { warehouses: Option[]; products: Option[]; values: MfgOrderValues }
+export type MfgOrderDetail = { currency: string; exponent: number; id: string; number: string; status: string; status_label: string; tone: string; product: string | null
+  sku: string | null; warehouse: string | null; planned: string; done: string; scrapped: string; qc_required: boolean; awaiting_qc: string; due: string | null
+  bom: { label: string; open: string } | null; customer_order: string | null; parent: { number: string; open: string } | null; raised_by: string | null
+  released_by: string | null; released_at: string | null; closed_by: string | null; close_reason: string | null; note: string | null
+  cost: { material: number; labour: number; by_product: number; output: number; wip: number; variance: number; per_unit: number | null }
+  materials: MfgTable; operations: MfgTable
+  costs: { id: string; when: string; what: string | null; minutes: string; amount: number; by: string | null }[]
+  checks: { id: string; number: string; when: string; passed: string; failed: string; checks: string; note: string | null; by: string | null }[]
+  batches: boolean; issue_lines: { id: string; item: string; planned: string; issued: string; issued_milli: number }[]; steps: Option[]
+  actions: { release: boolean; output: boolean; inspect: boolean; issue: boolean; time: boolean; return: boolean; finish: boolean; cancel: boolean } }
+export type BomRow = { id: string; code: string; product: string | null; batch: string; lines: number; qc: boolean; status: string; status_label: string; tone: string }
+export type BomList = { total: number; page: number; per: number; statuses: Option[]; can_create: boolean; rows: BomRow[] }
+export type BomDetail = { currency: string; exponent: number; id: string; code: string; status: string; status_label: string; tone: string; product: string | null
+  sku: string | null; batch: string; qc_required: boolean; note: string | null; estimate: { per_unit: number; material: number; labour: number; by_product: number }
+  lines: MfgTable; operations: MfgTable; warehouses: Option[]
+  actions: { edit: boolean; activate: boolean; revise: boolean; make: boolean; archive: boolean } }
+export type BomLineValues = { kind: string; product_uom_id: string; unit: string | null; qty: string; scrap_pct: string; backflush: boolean }
+export type BomOperationValues = { name: string; work_centre_id: string; setup_minutes: string; run_minutes: string; backflush: boolean }
+export type BomValues = { product_id: string; product: string | null; output_qty: string; qc_required: boolean; note: string; lines: BomLineValues[]; operations: BomOperationValues[] }
+export type BomForm = { id: string | null; code: string | null; kinds: Option[]; work_centres: Option[]; values: BomValues }
+export type MfgPlan = { warehouses: Option[]; warehouse: string; can_make: boolean
+  make: { product_id: string; sku: string; name: string; level: number; needed: string; on_hand: string; coming: string; suggested: string; bom: string }[]
+  buy: { sku: string; name: string; needed: string; on_hand: string; on_order: string; suggested: string }[]
+  load: { work_centre: string; hours: number; per_day: number; days: number | null }[] }
+export type WorkCentreValues = { name: string; branch_id: string; hourly_rate: string; hours_per_day: string }
+export type WorkCentreRow = Archivable & { id: string; code: string; name: string; branch: string | null; rate: number; hours: string; can_edit: boolean; values: WorkCentreValues }
+export type WorkCentreList = { currency: string; exponent: number; can_create: boolean; branches: Option[]; rows: WorkCentreRow[] }
 export type RepPerformance = { currency: string; exponent: number; from: string; to: string; date: string
   reps: { name: string; sales_minor: number; target_minor: number | null; achieved_bp: number | null; receipts: number; visits: number; visit_target: number | null
     strike_bp: number | null; orders: number; collections_minor: number }[]
@@ -1813,6 +1846,30 @@ export const api = {
   repTargets: (_query = '', signal?: AbortSignal) => call<TargetList>('/office-api/distribution/targets', { signal }),
   saveRepTarget: (body: TargetValues) => call<{ message: string }>('/office-api/distribution/targets', { method: 'POST', body: JSON.stringify(body) }),
   repPerformance: (query: string, signal?: AbortSignal) => call<RepPerformance>(`/office-api/distribution/performance?${query}`, { signal }),
+  mfgOrders: (query: string, signal?: AbortSignal) => call<MfgOrderList>(`/office-api/manufacturing/orders?${query}`, { signal }),
+  mfgOrderForm: (product = '') => call<MfgOrderForm>(`/office-api/manufacturing/orders/form${product ? `?product=${encodeURIComponent(product)}` : ''}`),
+  mfgCustomerOrders: (q: string, signal?: AbortSignal) => call<{ results: { id: string; label: string }[] }>(`/office-api/manufacturing/customer-orders?q=${encodeURIComponent(q)}`, { signal }),
+  newMfgOrder: (body: Record<string, unknown>) => call<{ id: string; message: string }>('/office-api/manufacturing/orders', { method: 'POST', body: JSON.stringify(body) }),
+  mfgOrder: (id: string) => call<MfgOrderDetail>(`/office-api/manufacturing/orders/${id}`),
+  mfgOrderAction: (id: string, action: 'release' | 'output' | 'inspect' | 'issue' | 'return' | 'time' | 'finish' | 'cancel', body: Record<string, unknown> = {}) =>
+    call<{ message: string }>(`/office-api/manufacturing/orders/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  boms: (query: string, signal?: AbortSignal) => call<BomList>(`/office-api/manufacturing/boms?${query}`, { signal }),
+  bom: (id: string) => call<BomDetail>(`/office-api/manufacturing/boms/${id}`),
+  bomForm: (id: string | null) => call<BomForm>(id ? `/office-api/manufacturing/boms/${id}/form` : '/office-api/manufacturing/boms/form'),
+  mfgProducts: (q: string, signal?: AbortSignal) => call<{ results: { id: string; label: string }[] }>(`/office-api/manufacturing/products?q=${encodeURIComponent(q)}`, { signal }),
+  mfgUnits: (q: string, signal?: AbortSignal) => call<{ results: UnitOption[] }>(`/office-api/manufacturing/units?q=${encodeURIComponent(q)}`, { signal }),
+  saveBom: (id: string | null, body: Record<string, unknown>) =>
+    call<{ id: string; message: string }>(`/office-api/manufacturing/boms${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(body) }),
+  bomAction: (id: string, action: 'activate' | 'revise' | 'make' | 'archive', body: Record<string, unknown> = {}) =>
+    call<{ message: string; open?: string }>(`/office-api/manufacturing/boms/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  mfgPlan: (query: string, signal?: AbortSignal) => call<MfgPlan>(`/office-api/manufacturing/planning?${query}`, { signal }),
+  raiseMfgOrders: (warehouse: string, product: string | null) =>
+    call<{ message: string }>('/office-api/manufacturing/planning', { method: 'POST', body: JSON.stringify({ warehouse, product_id: product }) }),
+  workCentres: (query: string, signal?: AbortSignal) => call<WorkCentreList>(`/office-api/manufacturing/centres?${query}`, { signal }),
+  saveWorkCentre: (id: string | null, body: WorkCentreValues) =>
+    call<{ id: string; message: string }>(`/office-api/manufacturing/centres${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(body) }),
+  workCentreArchive: (id: string, restore: boolean, reason: string) =>
+    call<{ message: string }>(`/office-api/manufacturing/centres/${id}/archive`, { method: 'POST', body: JSON.stringify({ restore, reason: restore ? null : reason }) }),
   onlineOrders: (query: string, signal?: AbortSignal) => call<OnlineOrderList>(`/office-api/online/orders?${query}`, { signal }),
   onlineOrder: (id: string) => call<OnlineOrderDetail>(`/office-api/online/orders/${id}`),
   onlineOrderAction: (id: string, action: 'ready' | 'fulfil' | 'cancel', body: Record<string, unknown> = {}) =>
