@@ -25,7 +25,7 @@ function officeReading($t, IotSensor $s, array $payload)
 }
 
 it('adds a sensor, shows its reading and address, signs a check, and archives it', function () {
-    $this->actingAs($this->owner, 'web');
+    $this->actingAs(withMfa($this->owner), 'web');
     $form = $this->getJson('/office-api/sensors/form')->assertOk()->json();
     expect(collect($form['kinds'])->firstWhere('id', 'freezer'))->toMatchArray(['min_temp' => '-25', 'max_temp' => '-15'])->and($form['values']['branch_id'])->not->toBe('');
     $this->postJson('/office-api/sensors', ['name' => 'Cold room', 'kind' => 'fridge', 'branch_id' => $this->hq->id, 'min_temp' => '8', 'max_temp' => '2', 'connection' => 'direct'])
@@ -58,14 +58,14 @@ it('adds a sensor, shows its reading and address, signs a check, and archives it
 
     // The pharmacist sees and signs, but does not see the address or change sensors.
     $this->postJson("/office-api/sensors/{$id}/archive", ['restore' => true])->assertOk();
-    $this->actingAs($this->pharmacist, 'web');
+    $this->actingAs(withMfa($this->pharmacist), 'web');
     $this->getJson("/office-api/sensors/{$id}")->assertOk();
     $this->getJson("/office-api/sensors/{$id}/address")->assertForbidden();
     $this->postJson("/office-api/sensors/{$id}", ['name' => 'X', 'kind' => 'fridge', 'branch_id' => $this->hq->id, 'connection' => 'direct'])->assertForbidden();
 });
 
 it('lists alarms and acknowledges one with what was done', function () {
-    $this->actingAs($this->owner, 'web');
+    $this->actingAs(withMfa($this->owner), 'web');
     $id = $this->postJson('/office-api/sensors', ['name' => 'Vaccine fridge', 'kind' => 'fridge', 'branch_id' => $this->hq->id, 'min_temp' => '2', 'max_temp' => '8',
         'delay_minutes' => 10, 'connection' => 'direct'])->assertOk()->json('id');
     $s = IotSensor::find($id);
@@ -87,7 +87,7 @@ it('lists alarms and acknowledges one with what was done', function () {
 });
 
 it('shows the month\'s temperature log, and keeps sensor clouds without sending their secrets back', function () {
-    $this->actingAs($this->owner, 'web');
+    $this->actingAs(withMfa($this->owner), 'web');
     $id = $this->postJson('/office-api/sensors', ['name' => 'Vaccine fridge', 'kind' => 'fridge', 'branch_id' => $this->hq->id, 'min_temp' => '2', 'max_temp' => '8',
         'connection' => 'direct'])->assertOk()->json('id');
     officeReading($this, IotSensor::find($id), ['temperature' => 4.0])->assertOk();
@@ -109,6 +109,6 @@ it('shows the month\'s temperature log, and keeps sensor clouds without sending 
         'connection_id' => $cid, 'external_id' => 'sp-1'])->assertOk();
     $this->postJson("/office-api/sensors/clouds/{$cid}/read")->assertStatus(422)->assertJsonPath('error', 'cloud');
 
-    $this->actingAs($this->pharmacist, 'web');
+    $this->actingAs(withMfa($this->pharmacist), 'web');
     $this->getJson('/office-api/sensors/clouds')->assertForbidden();
 });

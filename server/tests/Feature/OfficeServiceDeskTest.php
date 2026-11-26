@@ -23,7 +23,7 @@ beforeEach(function () {
 });
 
 it('opens a ticket, lists it, replies, notes, passes it on, resolves and reopens it', function () {
-    $this->actingAs($this->owner, 'web');
+    $this->actingAs(withMfa($this->owner), 'web');
     $form = $this->getJson('/office-api/tickets/form')->assertOk()->json();
     expect($form['staff_only'])->toBeFalse()->and(collect($form['kinds'])->pluck('id'))->toContain('complaint')
         ->and(collect($form['people'])->pluck('id'))->toContain($this->agent->id);
@@ -65,10 +65,10 @@ it('opens a ticket, lists it, replies, notes, passes it on, resolves and reopens
 
 it('lets staff who only ask for help raise their own requests, and see only those', function () {
     $cashier = staff($this->owner, 'yaa', 3, 'cashier', ScopeType::Branch, $this->hq->id);
-    $this->actingAs($this->owner, 'web');
+    $this->actingAs(withMfa($this->owner), 'web');
     $this->postJson('/office-api/tickets', ['kind' => 'support', 'priority' => 'normal', 'subject' => 'Someone else', 'customer_id' => $this->customer->id])->assertOk();
 
-    $this->actingAs($cashier, 'web');
+    $this->actingAs(withMfa($cashier), 'web');
     $form = $this->getJson('/office-api/tickets/form')->assertOk()->json();
     expect($form['staff_only'])->toBeTrue()->and(collect($form['kinds'])->pluck('id')->all())->toBe(['internal'])->and($form['people'])->toBe([]);
     // Asking for a customer complaint and giving it to someone is not theirs to do: it is opened as their own request.
@@ -84,7 +84,7 @@ it('lets staff who only ask for help raise their own requests, and see only thos
 });
 
 it('changes the deadlines for each priority', function () {
-    $this->actingAs($this->owner, 'web');
+    $this->actingAs(withMfa($this->owner), 'web');
     $rows = $this->getJson('/office-api/service-levels')->assertOk()->json('rows');
     expect(collect($rows)->pluck('priority')->all())->toBe(['Urgent', 'High', 'Normal', 'Low']);
     $urgent = ServiceLevel::where('priority', 'urgent')->sole();

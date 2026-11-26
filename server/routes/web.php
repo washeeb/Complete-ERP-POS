@@ -52,6 +52,7 @@ use App\Http\Controllers\Office\PharmacyController as OfficePharmacyController;
 use App\Http\Controllers\Office\PricingController as OfficePricingController;
 use App\Http\Controllers\Office\ProcurementController as OfficeProcurementController;
 use App\Http\Controllers\Office\ProductsController as OfficeProductsController;
+use App\Http\Controllers\Office\ProfileController as OfficeProfileController;
 use App\Http\Controllers\Office\ProjectsController as OfficeProjectsController;
 use App\Http\Controllers\Office\PromotionsController as OfficePromotionsController;
 use App\Http\Controllers\Office\PurchaseOrdersController as OfficePurchaseOrdersController;
@@ -92,6 +93,7 @@ use App\Http\Controllers\SupplierPortalController;
 use App\Http\Controllers\SupportScreenshotController;
 use App\Http\Controllers\WaybillConfirmController;
 use App\Http\Controllers\WhatsappMediaController;
+use App\Http\Middleware\OfficeMfa;
 use App\Models\PurchaseAgreement;
 use App\Models\PurchaseOrder;
 use App\Models\User;
@@ -112,8 +114,8 @@ Route::get('/', fn () => redirect('/admin'));
 Route::get('/office', fn () => redirect()->away(rtrim(url('/'), '/').'/office/'));
 // Signed out in the new back office: sign in, then back to the same page of it (only ever a page of /office).
 Route::get('/office-signin', [OfficeController::class, 'signIn'])->name('office.sign-in');
-Route::get('/office/{path?}', [OfficeController::class, 'index'])->where('path', '.*')->name('office');
-Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->group(function () {
+Route::get('/office/{path?}', [OfficeController::class, 'index'])->where('path', '.*')->middleware(OfficeMfa::class)->name('office');
+Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office', OfficeMfa::class])->group(function () {
     Route::get('me', [OfficeController::class, 'me']);
     Route::get('menu', [OfficeController::class, 'menu']);
     Route::get('search', [OfficeController::class, 'search']);
@@ -725,6 +727,17 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::get('payroll-rules/export', [OfficeHrSetupController::class, 'rulesExport']);
     Route::get('setup-wizard', [OfficeSetupWizardController::class, 'show']);
     Route::post('setup-wizard', [OfficeSetupWizardController::class, 'save']);
+    // My profile (new look, part 39): details, look, preferences, notifications, password, two-factor sign-in, passkeys.
+    Route::get('profile', [OfficeProfileController::class, 'show']);
+    Route::post('profile', [OfficeProfileController::class, 'save']);
+    Route::post('profile/photo', [OfficeProfileController::class, 'photo']);
+    Route::post('profile/two-factor/start', [OfficeProfileController::class, 'twoFactorStart']);
+    Route::post('profile/two-factor/confirm', [OfficeProfileController::class, 'twoFactorConfirm']);
+    Route::post('profile/two-factor/recovery-codes', [OfficeProfileController::class, 'twoFactorRegenerate']);
+    Route::post('profile/two-factor/disable', [OfficeProfileController::class, 'twoFactorDisable']);
+    Route::post('profile/passkeys/options', [OfficeProfileController::class, 'passkeyOptions']);
+    Route::post('profile/passkeys', [OfficeProfileController::class, 'passkeyStore']);
+    Route::post('profile/passkeys/{id}/remove', [OfficeProfileController::class, 'passkeyRemove']);
     Route::get('alerts', [OfficeInsightsAiController::class, 'alerts']);
     Route::post('alerts/refresh', [OfficeInsightsAiController::class, 'alertsRefresh']);
     Route::post('alerts/{id}', [OfficeInsightsAiController::class, 'alertHandle'])->whereUuid('id');
