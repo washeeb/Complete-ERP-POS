@@ -1701,21 +1701,30 @@ try {
       await page.getByText('Your company is already set up.', { exact: false }).waitFor({ timeout: 20000 })
         .catch(() => problems.push(`${look} ${w}: the setup wizard did not say the company is set up`))
 
-      // My profile is still the current page (two-factor sign-in and passkeys; Departments was rebuilt in part 38): it opens
-      // inside from your menu, and the address follows. Its heading shows it loaded.
-      await page.getByRole('button', { name: /your menu/ }).click()
-      await page.getByRole('menuitem', { name: 'My profile and settings' }).click()
-      await page.waitForURL(/\/office\/a\/profile/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: My profile did not open at /office/a/profile (${page.url()})`))
+      // A page still on the current look opens inside the new one, without its own menus: "Confirm it's you" (a sign-in
+      // page, kept as it is; My profile was rebuilt in part 39).
+      await page.goto(`${base}/office/a/confirm-its-you`)
       await page.waitForFunction(() => {
         const f = document.querySelector('iframe[title="Page"]')
-        return f?.contentWindow?.location.pathname === '/admin/profile' && !!f.contentDocument?.querySelector('h1')
-      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: My profile did not open inside`))
+        return f?.contentWindow?.location.pathname === '/admin/confirm-its-you' && !!f.contentDocument?.querySelector('h1')
+      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: "Confirm it's you" did not open inside`))
       const f = await frameReady()
-      await f.locator('h1').first().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: My profile did not show inside`))
+      await f.locator('h1').first().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: "Confirm it's you" did not show inside`))
       const chrome = await f.locator('.fi-sidebar, .fi-topbar').evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== 'none').length)
       if (chrome) problems.push(`${look} ${w}: the embedded page still shows its own menu`)
       await page.waitForTimeout(600) // the page's own loader fades out
       await page.screenshot({ path: out(`${look}-${w}`) })
+
+      // My profile, rebuilt (part 39): it opens from your menu and shows its parts; Set up (two-factor) and the passkey
+      // name are there. Nothing is changed.
+      await page.getByRole('button', { name: /your menu/ }).click()
+      await page.getByRole('menuitem', { name: 'My profile and settings' }).click()
+      await page.waitForURL(/\/office\/profile$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: My profile did not open the new screen (${page.url()})`))
+      await page.getByRole('region', { name: 'Personal information' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: My profile did not load`))
+      for (const part of ['Look', 'Preferences', 'Notifications', 'Password', 'Two-factor sign-in', 'Passkeys']) {
+        if (!await page.getByRole('region', { name: part, exact: true }).count()) problems.push(`${look} ${w}: My profile has no ${part}`)
+      }
+      await page.screenshot({ path: out(`profile-${look}-${w}`), fullPage: true })
 
       // Recent lists the page just opened; the star adds it to favourites and takes it off again.
       const nav = page.getByRole('navigation', { name: 'Menu' })

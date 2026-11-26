@@ -29,7 +29,7 @@ beforeEach(function () {
 
 it('takes a claim with its receipt from New claim to paid back, approved by someone else', function () {
     Storage::fake('local');
-    $this->actingAs($this->sup, 'web');
+    $this->actingAs(withMfa($this->sup), 'web');
     $form = $this->getJson('/office-api/expense-claims/form')->assertOk()->json();
     expect(collect($form['branches'])->pluck('id'))->toContain($this->hq->id)->and(collect($form['accounts'])->pluck('id'))->toContain($this->fuel);
     $id = $this->post('/office-api/expense-claims', ($this->claim)(['receipt' => UploadedFile::fake()->image('receipt.jpg')]), ['Accept' => 'application/json'])
@@ -40,7 +40,7 @@ it('takes a claim with its receipt from New claim to paid back, approved by some
         ->and($show['actions']['approve'])->toBeFalse(); // not one's own
     expect($this->getJson('/office-api/expense-claims?mine=1')->json('total'))->toBe(1);
 
-    $this->actingAs($this->bm, 'web');
+    $this->actingAs(withMfa($this->bm), 'web');
     expect($this->getJson('/office-api/expense-claims')->json('waiting'))->toBe(1);
     expect($this->postJson("/office-api/expense-claims/{$id}/action", ['action' => 'approve'])->assertOk()->json('status'))->toBe('approved');
     $paid = $this->postJson("/office-api/expense-claims/{$id}/action", ['action' => 'pay', 'account_id' => ($this->acc)('petty_cash')->id, 'paid_on' => now()->toDateString()])
@@ -53,10 +53,10 @@ it('takes a claim with its receipt from New claim to paid back, approved by some
 });
 
 it('rejects with a reason, and asks to confirm it is you before paying above the limit', function () {
-    $this->actingAs($this->sup, 'web');
+    $this->actingAs(withMfa($this->sup), 'web');
     $a = $this->post('/office-api/expense-claims', ($this->claim)(['description' => 'Generator part']), ['Accept' => 'application/json'])->json('id');
     $b = $this->post('/office-api/expense-claims', ($this->claim)(['description' => 'Taxi']), ['Accept' => 'application/json'])->json('id');
-    $this->actingAs($this->bm, 'web');
+    $this->actingAs(withMfa($this->bm), 'web');
     $this->postJson("/office-api/expense-claims/{$a}/action", ['action' => 'reject'])->assertStatus(422)->assertJsonValidationErrors('reason');
     expect($this->postJson("/office-api/expense-claims/{$a}/action", ['action' => 'reject', 'reason' => 'No receipt'])->json('rejection_reason'))->toBe('No receipt');
     $this->postJson("/office-api/expense-claims/{$b}/action", ['action' => 'approve'])->assertOk();
@@ -71,5 +71,5 @@ it('rejects with a reason, and asks to confirm it is you before paying above the
 
 it('lets a teller see nothing', function () {
     $teller = staff($this->owner, 'efua', 2, 'teller', ScopeType::Branch, $this->hq->id);
-    $this->actingAs($teller, 'web')->getJson('/office-api/expense-claims')->assertForbidden();
+    $this->actingAs(withMfa($teller), 'web')->getJson('/office-api/expense-claims')->assertForbidden();
 });

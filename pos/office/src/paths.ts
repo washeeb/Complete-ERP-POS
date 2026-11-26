@@ -16,6 +16,7 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/departments\/?$/, app: () => `${APP}/departments` },
   { admin: /^\/admin\/payroll-rules\/?$/, app: () => `${APP}/payroll-rules` },
   { admin: /^\/admin\/setup-wizard\/?$/, app: () => `${APP}/setup-wizard` },
+  { admin: /^\/admin\/profile\/?$/, app: () => `${APP}/profile` },
   { admin: /^\/admin\/sales\/?$/, app: () => `${APP}/sales` },
   { admin: new RegExp(`^/admin/sales/(${UUID})$`), app: (m) => `${APP}/sales/${m[1]}` },
   { admin: /^\/admin\/shifts\/?$/, app: () => `${APP}/shifts` },
@@ -335,7 +336,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'svc-calendar' } | { page: 'svc-appointments' } | { page: 'svc-passes' } | { page: 'svc-memberships' } | { page: 'svc-plans' } | { page: 'svc-commissions' } | { page: 'svc-keys' }
   | { page: 'projects' } | { page: 'project'; id: string | null } | { page: 'my-time' } | { page: 'time-approvals' } | { page: 'project-rates' }
   | { page: 'tickets' } | { page: 'ticket-new' } | { page: 'ticket'; id: string } | { page: 'service-levels' }
-  | { page: 'ask' } | { page: 'alerts' } | { page: 'ai-usage' } | { page: 'today' } | { page: 'departments' } | { page: 'payroll-rules' } | { page: 'setup-wizard' }
+  | { page: 'ask' } | { page: 'alerts' } | { page: 'ai-usage' } | { page: 'today' } | { page: 'departments' } | { page: 'payroll-rules' } | { page: 'setup-wizard' } | { page: 'profile' }
   | { page: 'rest-bookings' } | { page: 'rest-bills' } | { page: 'rest-tables' } | { page: 'rest-stations' } | { page: 'rest-modifiers' } | { page: 'rest-report' }
   | { page: 'mnt-equipment' } | { page: 'mnt-asset'; id: string | null } | { page: 'mnt-orders' } | { page: 'mnt-order-new' } | { page: 'mnt-order'; id: string }
   | { page: 'iot-sensors' } | { page: 'iot-sensor'; id: string | null } | { page: 'iot-alarms' } | { page: 'iot-log' } | { page: 'iot-clouds' }
@@ -536,6 +537,7 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/departments\/?$/.test(path)) return { page: 'departments' }
   if (/^\/office\/payroll-rules\/?$/.test(path)) return { page: 'payroll-rules' }
   if (/^\/office\/setup-wizard\/?$/.test(path)) return { page: 'setup-wizard' }
+  if (/^\/office\/profile\/?$/.test(path)) return { page: 'profile' }
   if (/^\/office\/alerts\/?$/.test(path)) return { page: 'alerts' }
   if (/^\/office\/ai-usage\/?$/.test(path)) return { page: 'ai-usage' }
   if (/^\/office\/tickets\/?$/.test(path)) return { page: 'tickets' }
@@ -808,6 +810,7 @@ export function adminEquivalent(route: Route): string | null {
     case 'departments': return '/admin/departments'
     case 'payroll-rules': return '/admin/payroll-rules'
     case 'setup-wizard': return '/admin/setup-wizard'
+    case 'profile': return '/admin/profile'
     case 'alerts': return '/admin/alerts'
     case 'ai-usage': return '/admin/ai-usage'
     case 'tickets': return '/admin/tickets'

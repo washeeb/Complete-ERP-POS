@@ -34,7 +34,7 @@ beforeEach(function () {
 });
 
 it('makes a draft with product and service lines, lists it, and takes it through approval to the supplier', function () {
-    $this->actingAs($this->buyer, 'web');
+    $this->actingAs(withMfa($this->buyer), 'web');
     $form = $this->getJson('/office-api/purchase-orders/form')->assertOk()->json();
     expect(collect($form['choices']['suppliers'])->pluck('id'))->toContain($this->supplier->id)->and($form['choices']['accounts'])->not->toBeEmpty();
     expect($this->getJson("/office-api/purchase-orders/line-info?supplier={$this->supplier->id}&unit={$this->ctn->id}&warehouse={$this->hq->id}")->json('rule'))
@@ -58,17 +58,17 @@ it('makes a draft with product and service lines, lists it, and takes it through
     expect($this->getJson("/office-api/purchase-orders/{$id}")->json('actions.approve'))->toBeFalse(); // not one's own order
     $this->postJson("/office-api/purchase-orders/{$id}/action", ['action' => 'approve'])->assertStatus(422)->assertJsonPath('error', 'own_document');
 
-    $this->actingAs($this->gm, 'web');
+    $this->actingAs(withMfa($this->gm), 'web');
     expect($this->getJson('/office-api/purchase-orders')->json('waiting'))->toBe(1);
     $this->postJson("/office-api/purchase-orders/{$id}/action", ['action' => 'reject'])->assertStatus(422)->assertJsonValidationErrors('reason');
     expect($this->postJson("/office-api/purchase-orders/{$id}/action", ['action' => 'reject', 'reason' => 'Too many'])->json('order.rejected_reason'))->toBe('Too many');
-    $this->actingAs($this->buyer, 'web');
+    $this->actingAs(withMfa($this->buyer), 'web');
     $this->postJson("/office-api/purchase-orders/{$id}/action", ['action' => 'submit'])->assertOk();
-    $this->actingAs($this->gm, 'web');
+    $this->actingAs(withMfa($this->gm), 'web');
     $approved = $this->postJson("/office-api/purchase-orders/{$id}/action", ['action' => 'approve'])->assertOk()->json('order');
     expect($approved['status'])->toBe('approved')->and($approved['approved_by'])->toBe('Kojo');
 
-    $this->actingAs($this->buyer, 'web');
+    $this->actingAs(withMfa($this->buyer), 'web');
     $r = $this->postJson("/office-api/purchase-orders/{$id}/action", ['action' => 'send', 'channel' => 'whatsapp_link', 'to' => '0244000111'])->assertOk()->json();
     expect($r['open'])->toContain('wa.me')->and($r['order']['sent']['to'])->not->toBeEmpty()->and($r['order']['actions']['send']['again'])->toBeTrue();
 
@@ -78,12 +78,12 @@ it('makes a draft with product and service lines, lists it, and takes it through
 });
 
 it('receives goods, confirms a service delivered, closes short, orders again and cancels', function () {
-    $this->actingAs($this->buyer, 'web');
+    $this->actingAs(withMfa($this->buyer), 'web');
     $id = $this->postJson('/office-api/purchase-orders', ($this->values)())->json('id');
     $this->postJson("/office-api/purchase-orders/{$id}/action", ['action' => 'submit'])->assertOk();
-    $this->actingAs($this->gm, 'web')->postJson("/office-api/purchase-orders/{$id}/action", ['action' => 'approve'])->assertOk();
+    $this->actingAs(withMfa($this->gm), 'web')->postJson("/office-api/purchase-orders/{$id}/action", ['action' => 'approve'])->assertOk();
 
-    $this->actingAs($this->keeper, 'web');
+    $this->actingAs(withMfa($this->keeper), 'web');
     $show = $this->getJson("/office-api/purchase-orders/{$id}")->assertOk()->json();
     $line = $show['actions']['receive']['lines'][0];
     expect($line['qty'])->toBe('4')->and($show['actions']['confirm_delivered']['lines'])->toHaveCount(1);
@@ -97,7 +97,7 @@ it('receives goods, confirms a service delivered, closes short, orders again and
     $after = $this->postJson("/office-api/purchase-orders/{$id}/action", ['action' => 'confirm_delivered', 'qtys' => [$service['id'] => '1'], 'note' => 'Job card 12'])->assertOk()->json('order');
     expect($after['actions']['confirm_delivered'])->toBeNull();
 
-    $this->actingAs($this->buyer, 'web');
+    $this->actingAs(withMfa($this->buyer), 'web');
     expect($this->postJson("/office-api/purchase-orders/{$id}/action", ['action' => 'close_short', 'reason' => 'Out of stock at the supplier'])->json('order.status'))->toBe('closed');
     $copy = $this->postJson("/office-api/purchase-orders/{$id}/action", ['action' => 'copy'])->assertOk()->json('copy');
     expect(PurchaseOrder::find($copy['id'])->status)->toBe('draft');
@@ -105,7 +105,7 @@ it('receives goods, confirms a service delivered, closes short, orders again and
 });
 
 it('makes a draft from a CSV list, adds a supplier from the form and reads a pack code', function () {
-    $this->actingAs($this->buyer, 'web');
+    $this->actingAs(withMfa($this->buyer), 'web');
     $csv = UploadedFile::fake()->createWithContent('order.csv', "SKU,Qty\nMILO,4\nNOPE,1\n");
     $r = $this->post('/office-api/purchase-orders/import', ['source' => 'sheet', 'supplier_id' => $this->supplier->id, 'warehouse_id' => $this->hq->id, 'file' => $csv],
         ['Accept' => 'application/json'])->assertOk()->json();
@@ -122,5 +122,5 @@ it('makes a draft from a CSV list, adds a supplier from the form and reads a pac
 
 it('lets a teller see nothing', function () {
     $teller = staff($this->owner, 'efua', 3, 'cashier', ScopeType::Branch, $this->b['HQ']->id);
-    $this->actingAs($teller, 'web')->getJson('/office-api/purchase-orders')->assertForbidden();
+    $this->actingAs(withMfa($teller), 'web')->getJson('/office-api/purchase-orders')->assertForbidden();
 });

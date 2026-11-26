@@ -940,6 +940,14 @@ export type MfgPlan = { warehouses: Option[]; warehouse: string; can_make: boole
 export type WorkCentreValues = { name: string; branch_id: string; hourly_rate: string; hours_per_day: string }
 export type WorkCentreRow = Archivable & { id: string; code: string; name: string; branch: string | null; rate: number; hours: string; can_edit: boolean; values: WorkCentreValues }
 export type WorkCentreList = { currency: string; exponent: number; can_create: boolean; branches: Option[]; rows: WorkCentreRow[] }
+export type ProfilePrefs = { home: string; rows: number; theme: string; date: string; density: string; office_look: string }
+export type ProfileData = { name: string; email: string; photo: string | null; has_photo: boolean; look: string; looks: (Option & { detail: string })[]
+  prefs: ProfilePrefs; homes: Option[]; rows: Option[]; dates: Option[]; themes: Option[]; densities: Option[]; office_looks: Option[]; channels: Option[]
+  topics: { id: string; label: string; detail: string; channels: string[]; on: string[] }[]
+  two_factor: { enabled: boolean; recoverable: boolean; can_regenerate: boolean; codes_left: number; required: boolean; by_code: boolean }
+  passkeys: { id: string; name: string; last_used: string }[]; help: { vendor: string | null; phone: string | null; email: string | null } }
+export type ProfileSave = { name: string; email: string; look: string; prefs: ProfilePrefs; notify: Record<string, string[]>; password?: string; password_confirmation?: string
+  current_password?: string }
 export type DepartmentRow = Archivable & { id: string; code: string; name: string; can_edit: boolean }
 export type DepartmentList = { can_create: boolean; rows: DepartmentRow[] }
 export type PayrollRuleValues = { bands: { width: string; rate: string }[]; employee: string; employer: string; tier1: string; tier3_relief: string; ot_threshold: string
@@ -1256,6 +1264,13 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
     throw new ApiError('Signed out', res.status, 'signed_out')
   }
   const body = await res.json().catch(() => ({}))
+  if (res.status === 403 && body.error === 'mfa_setup' && typeof body.url === 'string') {
+    // This account needs two-factor sign-in: set it up first (the sign-in pages stay the current ones). Only the path
+    // is used, and only one of the back office's own, so it never leads to another site.
+    const to = new URL(body.url, location.origin)
+    if (to.pathname.startsWith('/admin/')) location.assign(to.pathname + to.search)
+    throw new ApiError(body.detail, 403, 'mfa_setup')
+  }
   if (res.status === 429) throw new ApiError('Too many changes in a minute. Wait a moment, then try again.', 429, 'too_many')
   if (!res.ok) throw new ApiError(body.detail ?? body.message ?? 'Something went wrong. Try again.', res.status, body.error ?? 'error', typeof body.url === 'string' ? body.url : null)
   return body as T
@@ -2026,6 +2041,29 @@ export const api = {
   payrollRules: () => call<PayrollRules>('/office-api/payroll-rules'),
   verifyPayrollRules: (body: PayrollRuleValues) => call<{ message: string }>('/office-api/payroll-rules/verify', { method: 'POST', body: JSON.stringify(body) }),
   setupWizard: () => call<SetupWizardData>('/office-api/setup-wizard'),
+  profile: () => call<ProfileData>('/office-api/profile'),
+  saveProfile: (body: ProfileSave) => call<{ message: string }>('/office-api/profile', { method: 'POST', body: JSON.stringify(body) }),
+  /** A new photo (sent as a form), or remove it. */
+  profilePhoto: async (photo: File | null) => {
+    const body = new FormData()
+    if (photo) body.append('photo', photo)
+    else body.append('remove', '1')
+    const res = await fetch('/office-api/profile/photo', { method: 'POST', body, credentials: 'same-origin',
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-XSRF-TOKEN': xsrf() } })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) throw new ApiError(json.errors?.photo?.[0] ?? json.detail ?? json.message ?? 'The photo could not be saved.', res.status, json.error ?? 'error')
+    return json as { message: string; photo: string | null }
+  },
+  twoFactorStart: () => call<{ token: string; qr: string; secret: string }>('/office-api/profile/two-factor/start', { method: 'POST', body: '{}' }),
+  twoFactorConfirm: (body: { token: string; code: string; password: string }) =>
+    call<{ message: string; recovery_codes: string[] }>('/office-api/profile/two-factor/confirm', { method: 'POST', body: JSON.stringify(body) }),
+  twoFactorCodes: (body: { code: string; password: string }) =>
+    call<{ message: string; recovery_codes: string[] }>('/office-api/profile/two-factor/recovery-codes', { method: 'POST', body: JSON.stringify(body) }),
+  twoFactorOff: (body: { code?: string; recovery_code?: string; password: string }) =>
+    call<{ message: string }>('/office-api/profile/two-factor/disable', { method: 'POST', body: JSON.stringify(body) }),
+  passkeyOptions: (name: string) => call<{ options: unknown }>('/office-api/profile/passkeys/options', { method: 'POST', body: JSON.stringify({ name }) }),
+  passkeyStore: (passkey: string) => call<{ message: string }>('/office-api/profile/passkeys', { method: 'POST', body: JSON.stringify({ passkey }) }),
+  passkeyRemove: (id: string) => call<{ message: string }>(`/office-api/profile/passkeys/${id}/remove`, { method: 'POST', body: '{}' }),
   /** Finish setup: sent as a form (the values as JSON, the logo and icon as files). */
   finishSetup: async (values: SetupValues, logo: File | null, icon: File | null) => {
     const body = new FormData()

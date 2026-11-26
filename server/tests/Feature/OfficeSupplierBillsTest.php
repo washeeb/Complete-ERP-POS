@@ -47,7 +47,7 @@ beforeEach(function () {
 });
 
 it('enters a bill for goods received above the order price; someone else approves it', function () {
-    $this->actingAs($this->accountant, 'web');
+    $this->actingAs(withMfa($this->accountant), 'web');
     $billable = $this->getJson("/office-api/supplier-bills/billable?supplier={$this->supplier->id}")->assertOk()->json();
     expect($billable['grns'][0]['id'])->toBe($this->grn->id)->and($billable['stock'][0])->toMatchArray(['qty' => '10', 'cost' => '40.00', 'grn' => $this->grn->id]);
     $line = $billable['stock'][0]['id'];
@@ -66,17 +66,17 @@ it('enters a bill for goods received above the order price; someone else approve
     $csv->assertOk();
     expect($csv->streamedContent())->toContain('NG-5501');
 
-    $this->actingAs($this->fm, 'web');
+    $this->actingAs(withMfa($this->fm), 'web');
     $after = $this->postJson("/office-api/supplier-bills/{$id}/action", ['action' => 'approve', 'reason' => 'Price rise notified by phone'])->assertOk()->json();
     expect($after)->toMatchArray(['status' => 'posted', 'variance_reason' => 'Price rise notified by phone']);
 });
 
 it('charges rent straight to an account, and rejects a bill with a reason', function () {
-    $this->actingAs($this->accountant, 'web');
+    $this->actingAs(withMfa($this->accountant), 'web');
     expect($this->getJson('/office-api/supplier-bills/form')->json('can_add_supplier'))->toBeFalse();
     $this->postJson('/office-api/supplier-bills/add-supplier', ['name' => 'Osu Properties'])->assertForbidden(); // suppliers are added by those who manage them
-    $landlord = $this->actingAs($this->owner, 'web')->postJson('/office-api/supplier-bills/add-supplier', ['name' => 'Osu Properties'])->assertOk()->json('id');
-    $this->actingAs($this->accountant, 'web');
+    $landlord = $this->actingAs(withMfa($this->owner), 'web')->postJson('/office-api/supplier-bills/add-supplier', ['name' => 'Osu Properties'])->assertOk()->json('id');
+    $this->actingAs(withMfa($this->accountant), 'web');
     $rent = $this->postJson('/office-api/supplier-bills', ['values' => ($this->values)(['supplier_id' => $landlord, 'supplier_invoice_no' => 'R-OCT',
         'expense_lines' => [['account_id' => $this->rent, 'description' => 'October rent', 'amount' => '3000', 'tax_group_id' => '', 'department_id' => '', 'project_id' => '', 'maintenance_order_id' => '']]])])
         ->assertOk()->json('id');
@@ -84,7 +84,7 @@ it('charges rent straight to an account, and rejects a bill with a reason', func
 
     $held = $this->postJson('/office-api/supplier-bills', ['values' => ($this->values)(['supplier_invoice_no' => 'NG-9',
         'stock_lines' => [['goods_receipt_line_id' => $this->grn->lines[0]->id, 'qty' => '5', 'unit_cost' => '50']]])])->json('id');
-    $this->actingAs($this->fm, 'web');
+    $this->actingAs(withMfa($this->fm), 'web');
     $this->postJson("/office-api/supplier-bills/{$held}/action", ['action' => 'reject'])->assertStatus(422)->assertJsonValidationErrors('reason');
     expect($this->postJson("/office-api/supplier-bills/{$held}/action", ['action' => 'reject', 'reason' => 'Wrong price'])->json('status'))->toBe('rejected');
 });
@@ -93,7 +93,7 @@ it('fills the form from a scanned invoice and from one the supplier sent, and ma
     Storage::fake('local');
     AiGateway::fake(new FakeAiProvider([new AiReply(json_encode(['supplier_name' => 'Nestle Ghana', 'invoice_number' => 'NG-77', 'invoice_date' => now()->toDateString(),
         'lines' => [['description' => 'Milo 400g carton', 'qty' => 10, 'unit_price' => 40, 'line_total' => 400]], 'subtotal' => 400, 'total' => 480]))]));
-    $this->actingAs($this->accountant, 'web');
+    $this->actingAs(withMfa($this->accountant), 'web');
     $scan = $this->post('/office-api/supplier-bills/scan', ['branch_id' => $this->b['HQ']->id, 'file' => UploadedFile::fake()->image('inv.png')], ['Accept' => 'application/json'])
         ->assertOk()->json('scan');
     AiGateway::fake(null);
@@ -112,5 +112,5 @@ it('fills the form from a scanned invoice and from one the supplier sent, and ma
 
 it('lets a teller see nothing', function () {
     $teller = staff($this->owner, 'efua', 2, 'teller', ScopeType::Branch, $this->b['HQ']->id);
-    $this->actingAs($teller, 'web')->getJson('/office-api/supplier-bills')->assertForbidden();
+    $this->actingAs(withMfa($teller), 'web')->getJson('/office-api/supplier-bills')->assertForbidden();
 });

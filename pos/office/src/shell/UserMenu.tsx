@@ -18,7 +18,7 @@ export function UserMenu({ me, onLook, dark = false }: { me: Me; onLook: (look: 
       </MenuTrigger>
       <MenuPopover>
         <MenuList>
-          <MenuItem icon={<PersonRegular />} onClick={() => navigate('/admin/profile')}>My profile and settings</MenuItem>
+          <MenuItem icon={<PersonRegular />} onClick={() => navigate('/office/profile')}>My profile and settings</MenuItem>
           <MenuDivider />
           <MenuGroup>
             <MenuGroupHeader>Menu</MenuGroupHeader>

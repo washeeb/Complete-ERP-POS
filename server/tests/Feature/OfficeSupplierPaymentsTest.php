@@ -27,7 +27,7 @@ beforeEach(function () {
 });
 
 it('shows what is owed by how late, pays part of it and lists the payment', function () {
-    $this->actingAs($this->fm, 'web');
+    $this->actingAs(withMfa($this->fm), 'web');
     $aging = $this->getJson('/office-api/aged-payables')->assertOk()->json();
     expect($aging['rows'][0])->toMatchArray(['name' => 'OSU PROPERTIES', 'd1_30' => 300000, 'total' => 300000])->and($aging['pay'])->not->toBeNull();
 
@@ -44,7 +44,7 @@ it('shows what is owed by how late, pays part of it and lists the payment', func
 
 it('works out and keeps back withholding tax, with its certificate', function () {
     app(Settings::class)->set(actorFor($this->owner), 'payables.wht', true);
-    $this->actingAs($this->fm, 'web');
+    $this->actingAs(withMfa($this->fm), 'web');
     expect($this->getJson('/office-api/supplier-payments/options')->json('pay.wht'))->toBeTrue();
     expect($this->getJson("/office-api/supplier-payments/preview?supplier={$this->landlord->id}&amount=10&withhold=1&wht=")->json('text'))->toContain('Below the withholding tax threshold');
     $preview = $this->getJson("/office-api/supplier-payments/preview?supplier={$this->landlord->id}&amount=3000&withhold=1&wht=")->assertOk()->json('text');
@@ -63,18 +63,18 @@ it('works out and keeps back withholding tax, with its certificate', function ()
 });
 
 it('asks to confirm it is you above the limit; a teller sees nothing and an accountant cannot pay', function () {
-    $this->actingAs($this->fm, 'web');
+    $this->actingAs(withMfa($this->fm), 'web');
     app(Settings::class)->set(actorFor($this->owner), Reconfirm::SETTING, 10000);
     Reconfirm::$assumeConfirmed = false;
     $this->postJson('/office-api/supplier-payments', ($this->pay)())->assertStatus(428)->assertJsonPath('error', 'reconfirm');
     Reconfirm::$assumeConfirmed = true;
     expect(SupplierPayment::count())->toBe(0);
 
-    $this->actingAs($this->accountant, 'web');
+    $this->actingAs(withMfa($this->accountant), 'web');
     expect($this->getJson('/office-api/supplier-payments/options')->json('pay'))->toBeNull();
     $this->postJson('/office-api/supplier-payments', ($this->pay)())->assertForbidden();
     $teller = staff($this->owner, 'efua', 2, 'teller', ScopeType::Branch, $this->b['HQ']->id);
-    $this->actingAs($teller, 'web')->getJson('/office-api/supplier-payments')->assertForbidden();
+    $this->actingAs(withMfa($teller), 'web')->getJson('/office-api/supplier-payments')->assertForbidden();
     $this->getJson('/office-api/aged-payables')->assertForbidden();
     $this->getJson('/office-api/withholding-tax')->assertForbidden();
 });

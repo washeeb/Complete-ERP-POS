@@ -37,7 +37,7 @@ beforeEach(function () {
 
 it('lists the notes, opens one, exports and reverses a mistake', function () {
     $grn = ($this->receive)('2', 'DN-77');
-    $this->actingAs($this->keeper, 'web');
+    $this->actingAs(withMfa($this->keeper), 'web');
     $list = $this->getJson('/office-api/goods-receipts?q=DN-77')->assertOk()->json();
     expect($list['total'])->toBe(1)->and($list['rows'][0])->toMatchArray(['number' => $grn->number, 'order' => $this->po->number, 'status' => 'posted', 'value' => 48000]);
     expect($this->getJson("/office-api/goods-receipts?q={$this->po->number}")->json('total'))->toBe(1);
@@ -52,7 +52,7 @@ it('lists the notes, opens one, exports and reverses a mistake', function () {
     $csv->assertOk();
     expect($csv->streamedContent())->toContain($grn->number);
 
-    $this->actingAs($this->gm, 'web');
+    $this->actingAs(withMfa($this->gm), 'web');
     $this->postJson("/office-api/goods-receipts/{$grn->id}/action", ['action' => 'reverse'])->assertStatus(422)->assertJsonValidationErrors('reason');
     $after = $this->postJson("/office-api/goods-receipts/{$grn->id}/action", ['action' => 'reverse', 'reason' => 'Wrong order'])->assertOk()->json();
     expect($after['status'])->toBe('reversed')->and($after['reversal']['reason'])->toBe('Wrong order')->and(($this->onHand)())->toBe('0.000');
@@ -62,7 +62,7 @@ it('holds a delivery above the order for a manager, who accepts or refuses it', 
     app(Settings::class)->set(actorFor($this->owner), 'purchasing.over_receipt_pct', 0);
     $held = ($this->receive)('6');
     expect($held->status)->toBe('held');
-    $this->actingAs($this->gm, 'web');
+    $this->actingAs(withMfa($this->gm), 'web');
     expect($this->getJson('/office-api/goods-receipts')->json('held'))->toBe(1)
         ->and($this->getJson('/office-api/goods-receipts?status=held')->json('rows.0.number'))->toBe($held->number);
     $refused = $this->postJson("/office-api/goods-receipts/{$held->id}/action", ['action' => 'refuse', 'reason' => 'Too many'])->assertOk()->json();
@@ -75,6 +75,6 @@ it('holds a delivery above the order for a manager, who accepts or refuses it', 
 
 it('lets a teller see nothing', function () {
     $teller = staff($this->owner, 'efua', 3, 'cashier', ScopeType::Branch, $this->b['HQ']->id);
-    $this->actingAs($teller, 'web')->getJson('/office-api/goods-receipts')->assertForbidden();
+    $this->actingAs(withMfa($teller), 'web')->getJson('/office-api/goods-receipts')->assertForbidden();
     expect(GoodsReceipt::count())->toBe(0);
 });

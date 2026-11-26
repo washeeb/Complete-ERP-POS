@@ -26,7 +26,7 @@ beforeEach(function () {
 });
 
 it('adds a supplier with the products they supply, finds them, edits them and exports the list', function () {
-    $this->actingAs($this->buyer, 'web');
+    $this->actingAs(withMfa($this->buyer), 'web');
     expect($this->getJson('/office-api/suppliers/units?q=milo')->assertOk()->json('results.0.id'))->not->toBeNull();
     $id = $this->postJson('/office-api/suppliers', ($this->values)())->assertOk()->json('id');
     $s = Supplier::with('products')->find($id);
@@ -49,7 +49,7 @@ it('adds a supplier with the products they supply, finds them, edits them and ex
 });
 
 it('asks to confirm it is you before new bank details, and a second person verifies them', function () {
-    $this->actingAs($this->buyer, 'web');
+    $this->actingAs(withMfa($this->buyer), 'web');
     Reconfirm::$assumeConfirmed = false;
     $this->postJson('/office-api/suppliers', ($this->values)())->assertStatus(428)->assertJsonPath('error', 'reconfirm')->assertJsonStructure(['url']);
     expect(Supplier::count())->toBe(0);
@@ -57,7 +57,7 @@ it('asks to confirm it is you before new bank details, and a second person verif
     $id = $this->postJson('/office-api/suppliers', ($this->values)())->assertOk()->json('id');
 
     $this->postJson("/office-api/suppliers/{$id}/action", ['action' => 'verify_bank', 'how' => 'Called Mr Mensah on our old number'])->assertForbidden(); // a buyer does not approve
-    $this->actingAs($this->gm, 'web');
+    $this->actingAs(withMfa($this->gm), 'web');
     expect($this->getJson("/office-api/suppliers/{$id}")->json('actions.verify_bank.confirm'))->toContain('1234567890');
     $after = $this->postJson("/office-api/suppliers/{$id}/action", ['action' => 'verify_bank', 'how' => 'Called Mr Mensah on our old number'])->assertOk()->json('supplier');
     expect($after['bank']['checked'])->toStartWith('By Kojo')->and($after['actions']['verify_bank'])->toBeNull();
@@ -66,7 +66,7 @@ it('asks to confirm it is you before new bank details, and a second person verif
 it('with supplier controls on: documents, approval by someone else, block and unblock', function () {
     Storage::fake('local');
     app(Settings::class)->set(actorFor($this->owner), 'purchasing.supplier_approval', true);
-    $this->actingAs($this->buyer, 'web');
+    $this->actingAs(withMfa($this->buyer), 'web');
     $id = $this->postJson('/office-api/suppliers', ($this->values)(['tax_no' => 'C0012345678']))->assertOk()->json('id');
     $show = $this->getJson("/office-api/suppliers/{$id}")->json();
     expect($show['status'])->toBe('pending')->and($show['gaps'])->not->toBeEmpty()->and($show['actions']['approve'])->toBeFalse();
@@ -80,7 +80,7 @@ it('with supplier controls on: documents, approval by someone else, block and un
     $this->get("/office-api/suppliers/{$id}/documents/{$tin->id}/file")->assertOk();
     $this->postJson("/office-api/suppliers/{$id}/documents", ['kind' => 'other_kind'])->assertStatus(422);
 
-    $this->actingAs($this->gm, 'web');
+    $this->actingAs(withMfa($this->gm), 'web');
     $this->postJson("/office-api/suppliers/{$id}/documents/{$tin->id}", ['action' => 'verify'])->assertOk();
     expect($tin->fresh()->verified_by_name)->toBe('Kojo');
     expect($this->postJson("/office-api/suppliers/{$id}/action", ['action' => 'approve'])->assertOk()->json('supplier.status'))->toBe('approved');
@@ -89,7 +89,7 @@ it('with supplier controls on: documents, approval by someone else, block and un
         ->and($this->getJson('/office-api/suppliers?status=blocked')->json('blocked'))->toBe(1);
     expect($this->postJson("/office-api/suppliers/{$id}/action", ['action' => 'unblock', 'reason' => 'Licence back'])->json('supplier.status'))->toBe('approved');
 
-    $this->actingAs($this->buyer, 'web');
+    $this->actingAs(withMfa($this->buyer), 'web');
     $this->postJson("/office-api/suppliers/{$id}/documents/{$tin->id}", ['action' => 'remove'])->assertStatus(422);
     $this->postJson("/office-api/suppliers/{$id}/documents/{$tin->id}", ['action' => 'remove', 'reason' => 'Wrong file'])->assertOk();
     expect(SupplierDocument::find($tin->id))->toBeNull();
@@ -97,7 +97,7 @@ it('with supplier controls on: documents, approval by someone else, block and un
 
 it('sends the portal link, records the opening balance, archives and restores', function () {
     app(Settings::class)->set(actorFor($this->owner), 'purchasing.supplier_portal', true);
-    $this->actingAs($this->owner, 'web');
+    $this->actingAs(withMfa($this->owner), 'web');
     $id = $this->postJson('/office-api/suppliers', ($this->values)(['bank_name' => '', 'bank_branch' => '', 'bank_account_name' => '', 'bank_account_no' => '']))->assertOk()->json('id');
 
     $r = $this->postJson("/office-api/suppliers/{$id}/action", ['action' => 'portal', 'channel' => 'none'])->assertOk()->json();
@@ -116,5 +116,5 @@ it('sends the portal link, records the opening balance, archives and restores', 
 
 it('lets a teller see nothing', function () {
     $teller = staff($this->owner, 'efua', 3, 'cashier', ScopeType::Branch, $this->b['HQ']->id);
-    $this->actingAs($teller, 'web')->getJson('/office-api/suppliers')->assertForbidden();
+    $this->actingAs(withMfa($teller), 'web')->getJson('/office-api/suppliers')->assertForbidden();
 });
