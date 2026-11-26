@@ -1,0 +1,6 @@
+## New back office, part 40: "Confirm it's you" (branch `office-confirm`, base `office-profile`)
+- **Server:** `Office\ReconfirmController` (`office-api/confirm-its-you`): state; send a code (`SignInCode::send`, three in 10 minutes); confirm with the app code, the sent code (only after one was sent) or the password (only with neither an app nor a passkey); passkey options (the app's `AuthenticationOptions`, user verification required, kept apart from the sign-in challenge, used once) and answer (spatie's `FindPasskeyToAuthenticateAction`, the passkey must be the signed-in person's). Five tries a minute (`reconfirm:{id}`, as the current page); success = `ConfirmItsYou::confirmed` (mark + audit).
+- **Client:** `form/ConfirmItsYou.tsx` is now a native form (`ConfirmForm`) inside the same dialog, so the seven pages that open it are unchanged; the dialog's button turns on once confirmed. `ConfirmItsYouPage` at `/office/confirm-its-you` (from `/admin/confirm-its-you`).
+- **office-check:** the new page asks for the app code; the "page inside" step keeps `/office/a/confirm-its-you` (the classic page, still used by the classic look).
+- **Tests:** `OfficeReconfirmTest` (4).
+- **Done:** every back-office page is in the new look; signing in and the two-factor set-up and challenge pages stay as they are.

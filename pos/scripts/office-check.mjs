@@ -1701,8 +1701,15 @@ try {
       await page.getByText('Your company is already set up.', { exact: false }).waitFor({ timeout: 20000 })
         .catch(() => problems.push(`${look} ${w}: the setup wizard did not say the company is set up`))
 
-      // A page still on the current look opens inside the new one, without its own menus: "Confirm it's you" (a sign-in
-      // page, kept as it is; My profile was rebuilt in part 39).
+      // "Confirm it's you", rebuilt (part 40): the new page asks for the code from the app (the dev owner has one). Nothing
+      // is confirmed.
+      await page.goto(`${base}/office/confirm-its-you`)
+      await page.getByLabel(/6-digit code from your authenticator app/).waitFor({ timeout: 20000 })
+        .catch(() => problems.push(`${look} ${w}: "Confirm it's you" did not ask for the code`))
+      await page.screenshot({ path: out(`confirm-its-you-${look}-${w}`) })
+
+      // A current-look page still opens inside the new one, without its own menus (/office/a/… always frames the current
+      // page; "Confirm it's you" was rebuilt in part 40, its current page stays for the classic look).
       await page.goto(`${base}/office/a/confirm-its-you`)
       await page.waitForFunction(() => {
         const f = document.querySelector('iframe[title="Page"]')

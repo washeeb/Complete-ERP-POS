@@ -940,6 +940,7 @@ export type MfgPlan = { warehouses: Option[]; warehouse: string; can_make: boole
 export type WorkCentreValues = { name: string; branch_id: string; hourly_rate: string; hours_per_day: string }
 export type WorkCentreRow = Archivable & { id: string; code: string; name: string; branch: string | null; rate: number; hours: string; can_edit: boolean; values: WorkCentreValues }
 export type WorkCentreList = { currency: string; exponent: number; can_create: boolean; branches: Option[]; rows: WorkCentreRow[] }
+export type ReconfirmState = { confirmed: boolean; minutes: number; app: boolean; passkey: boolean; password: boolean; sent_to: string | null }
 export type ProfilePrefs = { home: string; rows: number; theme: string; date: string; density: string; office_look: string }
 export type ProfileData = { name: string; email: string; photo: string | null; has_photo: boolean; look: string; looks: (Option & { detail: string })[]
   prefs: ProfilePrefs; homes: Option[]; rows: Option[]; dates: Option[]; themes: Option[]; densities: Option[]; office_looks: Option[]; channels: Option[]
@@ -2064,6 +2065,11 @@ export const api = {
   passkeyOptions: (name: string) => call<{ options: unknown }>('/office-api/profile/passkeys/options', { method: 'POST', body: JSON.stringify({ name }) }),
   passkeyStore: (passkey: string) => call<{ message: string }>('/office-api/profile/passkeys', { method: 'POST', body: JSON.stringify({ passkey }) }),
   passkeyRemove: (id: string) => call<{ message: string }>(`/office-api/profile/passkeys/${id}/remove`, { method: 'POST', body: '{}' }),
+  reconfirm: () => call<ReconfirmState>('/office-api/confirm-its-you'),
+  reconfirmCode: (body: { code?: string; password?: string }) => call<{ confirmed: boolean; minutes: number }>('/office-api/confirm-its-you', { method: 'POST', body: JSON.stringify(body) }),
+  reconfirmSend: () => call<{ sent_to: string }>('/office-api/confirm-its-you/send', { method: 'POST', body: '{}' }),
+  reconfirmPasskeyOptions: () => call<{ options: unknown }>('/office-api/confirm-its-you/passkey/options', { method: 'POST', body: '{}' }),
+  reconfirmPasskey: (answer: string) => call<{ confirmed: boolean; minutes: number }>('/office-api/confirm-its-you/passkey', { method: 'POST', body: JSON.stringify({ answer }) }),
   /** Finish setup: sent as a form (the values as JSON, the logo and icon as files). */
   finishSetup: async (values: SetupValues, logo: File | null, icon: File | null) => {
     const body = new FormData()
