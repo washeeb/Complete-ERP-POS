@@ -9,7 +9,7 @@ import { ProcList, ToneBadge } from './ProcurementParts'
  */
 export function RfqsPage() {
   return (
-    <ProcList<RfqRow> title="Requests for quotation" hint="Ask several suppliers for prices on the same list, compare them side by side and award the best." classic="/admin/rfqs"
+    <ProcList<RfqRow> title="Requests for quotation" hint="Ask several suppliers for prices on the same list, compare them side by side and award the best."
       load={api.rfqs as never} label="Requests for quotation" placeholder="Number or title" create="/office/rfqs/new" createLabel="New request for quotation"
       empty="No requests for quotation match." open={(r) => `/office/rfqs/${r.id}`}
       columns={[

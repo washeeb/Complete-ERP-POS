@@ -63,7 +63,7 @@ export function SpendAnalyticsPage() {
   const sub = (x: string) => <span className={s.sub}>{x}</span>
   return (
     <div className={page.page}>
-      <PageHead title="Spend analytics" hint="Where the money goes on buying, and how well it is controlled." classic={`/admin/spend-analytics${query ? `?${query}` : ''}`} />
+      <PageHead title="Spend analytics" hint="Where the money goes on buying, and how well it is controlled." />
       <div className={s.bar}>
         <Field label="From"><Input type="date" value={data.from} onChange={(_, d) => d.value && set({ from: d.value })} /></Field>
         <Field label="To"><Input type="date" value={data.to} onChange={(_, d) => d.value && set({ to: d.value })} /></Field>

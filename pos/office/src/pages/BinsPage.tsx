@@ -75,7 +75,7 @@ export function BinsPage() {
   const wh = str(params, 'warehouse')
   return (
     <div className={page.page}>
-      <PageHead title="Bins" hint="Shelf locations in warehouses with bins switched on, what each holds, and moving stock between them." classic="/admin/bins" />
+      <PageHead title="Bins" hint="Shelf locations in warehouses with bins switched on, what each holds, and moving stock between them." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Code or name" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search bins" />
         <Dropdown aria-label="Warehouse" value={wh ? data?.warehouses.find((x) => x.id === wh)?.label ?? '' : 'Any warehouse'} selectedOptions={[wh]}

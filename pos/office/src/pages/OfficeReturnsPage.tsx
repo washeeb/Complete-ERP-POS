@@ -44,7 +44,7 @@ export function OfficeReturnsPage() {
   ]
   return (
     <div className={page.page}>
-      <PageHead title="Back-office returns" hint="Goods coming back from a receipt, entered from the sale's page and approved by someone else. Open one to approve, cancel or print its slip." classic="/admin/office-returns" />
+      <PageHead title="Back-office returns" hint="Goods coming back from a receipt, entered from the sale's page and approved by someone else. Open one to approve, cancel or print its slip." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number or receipt" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search returns" />
         <Dropdown aria-label="Status" value={status ? data?.statuses.find((x) => x.id === status)?.label ?? '' : 'Any status'} selectedOptions={[status]}

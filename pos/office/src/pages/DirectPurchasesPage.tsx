@@ -53,7 +53,7 @@ export function DirectPurchasesPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Direct purchases" hint="Goods that arrive with a supplier's invoice and no purchase order, paid on delivery, on credit or on consignment." classic="/admin/direct-purchases" />
+      <PageHead title="Direct purchases" hint="Goods that arrive with a supplier's invoice and no purchase order, paid on delivery, on credit or on consignment." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number, invoice or supplier" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search direct purchases" />
         <Dropdown aria-label="Status" value={str(params, 'status') ? label(options?.statuses, str(params, 'status')) : 'Any status'} selectedOptions={[str(params, 'status')]}

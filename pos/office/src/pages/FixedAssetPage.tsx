@@ -46,7 +46,7 @@ export function FixedAssetPage({ id }: { id: string }) {
 
   return (
     <div className={page.page}>
-      <PageHead title={`${a.number} ${a.name}`} hint="A fixed asset: what it cost, its value now, and the depreciation charged so far." classic={`/admin/fixed-assets/${a.id}`} />
+      <PageHead title={`${a.number} ${a.name}`} hint="A fixed asset: what it cost, its value now, and the depreciation charged so far." />
       <div className={s.bar}>
         <Button icon={<ArrowLeftRegular />} onClick={() => navigate('/office/fixed-assets')}>Fixed assets</Button>
         <span className={s.grow} />

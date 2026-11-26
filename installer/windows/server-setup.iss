@@ -62,7 +62,7 @@ Filename: "powershell.exe"; Parameters: "-NoProfile -Command ""Get-ScheduledTask
   Flags: runhidden; RunOnceId: "StopServices"
 
 [Messages]
-FinishedLabel=The {#Brand} server is installed.%n%nOpen the back office at the address shown in the installation window (for example https://localhost/admin). The database files and backups in C:\{#Slug} are kept if you uninstall.
+FinishedLabel=The {#Brand} server is installed.%n%nOpen the back office at the address shown in the installation window (for example https://localhost/office/). The database files and backups in C:\{#Slug} are kept if you uninstall.
 
 [Code]
 var

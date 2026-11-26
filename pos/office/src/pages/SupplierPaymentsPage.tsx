@@ -61,7 +61,7 @@ export function SupplierPaymentsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Supplier payments" hint="Money paid to suppliers. A payment settles the oldest bills first; withholding tax kept back has its certificate here." classic="/admin/supplier-payments" />
+      <PageHead title="Supplier payments" hint="Money paid to suppliers. A payment settles the oldest bills first; withholding tax kept back has its certificate here." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number, reference or supplier" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search supplier payments" />
         <Dropdown aria-label="Method" value={str(params, 'method') ? label(options?.methods, str(params, 'method')) : 'Any method'} selectedOptions={[str(params, 'method')]}

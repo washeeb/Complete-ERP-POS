@@ -52,7 +52,7 @@ export function SlowStockPage() {
   return (
     <div className={page.page}>
       <PageHead title="Slow and dead stock" hint="Not sold here in the period (or, if never sold, since it came in). Move it where it sells, ask the supplier to take it back, or mark it down."
-        classic={`/admin/stock/slow-stock${query ? `?${query}` : ''}`} />
+        />
       <div className={s.bar}>
         <Field label="Store">
           <Dropdown aria-label="Store" value={where} selectedOptions={[data.warehouse]} style={{ minWidth: 220 }} onOptionSelect={(_, d) => d.optionValue && set({ warehouse: d.optionValue })}>

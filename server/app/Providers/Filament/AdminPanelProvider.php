@@ -10,6 +10,7 @@ use App\Filament\Pages\Dashboard;
 use App\Filament\Support\LocalAvatars;
 use App\Filament\Support\PanelBrand;
 use App\Http\Middleware\BlockSiteCopiers;
+use App\Http\Middleware\ClassicOff;
 use App\Http\Middleware\EnforceLicense;
 use App\Http\Middleware\RedirectToSetupWizard;
 use App\Http\Middleware\SignOutWhenIdle;
@@ -78,6 +79,7 @@ class AdminPanelProvider extends PanelProvider
             ->widgets(Panels::classes()) // the dashboard's panels (App\Support\Dashboard\Panels); each person arranges their own
             ->unsavedChangesAlerts() // leaving a form with changes not saved asks first (owner request 2026-10-24)
             ->middleware([
+                ClassicOff::class, // switched off: its pages open the new back office's (part 43)
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,

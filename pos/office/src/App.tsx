@@ -7,7 +7,6 @@ import { api, type Me, type Menu, type Prefs } from './api'
 import { navigate, useRoute } from './nav'
 import { rememberPage } from './recent'
 import { AgedPayablesPage } from './pages/AgedPayablesPage'
-import { ClassicPage } from './pages/ClassicPage'
 import { HomePage } from './pages/HomePage'
 import { ConsignmentPage } from './pages/ConsignmentPage'
 import { CustomerFormPage } from './pages/CustomerFormPage'
@@ -310,6 +309,15 @@ export function App() {
   )
 }
 
+/**
+ * The current back office is switched off (part 43): an address of it opened here (/office/a/…, an old bookmark) goes
+ * to its page in the new back office.
+ */
+function GoToNew({ admin }: { admin: string }) {
+  useEffect(() => { navigate(appPathFor(admin), true) }, [admin])
+  return <Spinner label="Opening…" />
+}
+
 function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void }) {
   const route = useRoute()
   const toaster = useId('toaster')
@@ -319,7 +327,11 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
   const LIST_TITLES: Partial<Record<typeof route.page, string>> = { home: 'Home', todo: 'To-do', sales: 'Till sales', shifts: 'Till shifts', drawer: 'Till drawer', products: 'Products', stock: 'Stock on hand', movements: 'Stock ledger', adjustments: 'Stock adjustments', counts: 'Stock counts', transfers: 'Transfers', requests: 'Stock requests', customers: 'Customers', invoices: 'Invoices', suppliers: 'Suppliers', 'purchase-orders': 'Purchase orders', 'goods-received': 'Goods received', 'direct-purchases': 'Direct purchases', 'supplier-invoices': 'Invoices from suppliers', 'consignment-to-pay': 'Consignment to pay', 'reorder-levels': 'Reorder levels', 'what-to-order': 'What to order', 'suggested-levels': 'Suggested levels', 'expense-claims': 'Expense claims', 'supplier-bills': 'Supplier bills', 'supplier-payments': 'Supplier payments', 'aged-payables': 'Aged payables', 'withholding-tax': 'Withholding tax', 'financial-reports': 'Financial reports', insights: 'Insights', 'report-builder': 'Report builder', 'saved-reports': 'Saved reports', shrink: 'Shrink', 'slow-stock': 'Slow & dead stock', batches: 'Batches & expiry', markdowns: 'Near-expiry markdowns', expiry: 'Expiry & returns', 'customer-orders': 'Quotes & orders', 'customer-payments': 'Payments received', 'aged-receivables': 'Aged receivables', 'till-requests': 'Till requests', 'office-returns': 'Back-office returns', 'review-queue': 'Review queue', 'gift-cards': 'Gift cards & credit', 'supplier-returns': 'Returns to suppliers', waybills: 'Waybills', 'waybill-form': 'New waybill', bins: 'Bins', 'my-day': 'My day', 'purchase-requests': 'Purchase requests', 'purchase-request-form': 'New purchase request', rfqs: 'Requests for quotation', 'rfq-form': 'New request for quotation', agreements: 'Contracts and blanket orders', 'landed-costs': 'Landed costs', 'cost-runs': 'Cost runs', 'cost-run-form': 'New cost run', 'estimated-costs': 'Estimated against real costs', 'spend-analytics': 'Spend analytics', branches: 'Branches', industries: 'Industries', 'legal-entities': 'Legal entities', branding: 'Your brand', 'health-checks': 'Health checks', 'scale-items': 'Scale items', employees: 'Employees', timesheets: 'Timesheets', leave: 'Leave', payroll: 'Payroll', loans: 'Loans & advances', 'my-hr': 'My leave & payslips', 'system-health': 'System health', backups: 'Backups', licence: 'Licence', 'audit-log': 'Audit log', 'problem-reports': 'Problem reports', integrations: 'Integrations', 'api-clients': 'API clients', 'mobile-money': 'Mobile money', 'support-access': 'Support access', 'sync-center': 'Sync Center', 'go-live': 'Going live', 'svc-calendar': 'Staff calendar', 'svc-appointments': 'Appointments', 'svc-passes': 'Prepaid passes', 'svc-memberships': 'Memberships', 'svc-plans': 'Membership plans', 'svc-commissions': 'Commissions', 'svc-keys': 'Licence keys', projects: 'Projects', 'my-time': 'My time', 'time-approvals': 'Time to approve', 'project-rates': 'Hourly rates', tickets: 'Tickets', 'ticket-new': 'New ticket', 'service-levels': 'Deadlines', ask: 'Ask your business', today: 'Today', departments: 'Departments', 'payroll-rules': 'Tax and SSNIT rules', 'setup-wizard': 'Set up your company', profile: 'My profile', 'confirm-its-you': "Confirm it's you", alerts: 'Alerts', 'ai-usage': 'AI usage log', 'rest-bookings': 'Bookings', 'rest-bills': 'Bills', 'rest-tables': 'Floor plan', 'rest-stations': 'Kitchen stations', 'rest-modifiers': 'Modifiers', 'rest-report': 'Tips & voids', 'mnt-equipment': 'Equipment', 'mnt-orders': 'Work orders', 'mnt-order-new': 'New work order', 'iot-sensors': 'Sensors', 'iot-alarms': 'Sensor alarms', 'iot-log': 'Temperature log', 'iot-clouds': 'Sensor clouds', 'onl-orders': 'Online orders', 'onl-channels': 'Channels', 'onl-whatsapp': 'WhatsApp orders', 'dist-vans': 'Vans', 'dist-settlements': 'Van settlements', 'dist-routes': 'Routes', 'dist-visits': 'Visits', 'dist-targets': 'Rep targets', 'dist-performance': 'Rep performance', 'mfg-orders': 'Work orders', 'mfg-boms': 'Bills of materials', 'mfg-planning': 'Production planning', 'mfg-centres': 'Work centres', 'fsh-styles': 'Styles', 'fsh-alterations': 'Alterations', 'fsh-sell-through': 'Sell-through & consignment', 'ele-repairs': 'Repairs', 'ele-serials': 'Serial numbers', 'crm-pipeline': 'Pipeline', 'crm-leads': 'Leads', 'crm-deals': 'Deals', 'crm-follow-ups': 'Follow-ups', 'crm-campaigns': 'Campaigns', 'crm-stages': 'Pipeline stages', import: 'Import data', 'close-day': 'Close the day', 'cash-desk': 'Cash desk', 'income-control': 'Income control', 'cash-setup': 'Shifts and vaults', returns: 'Returns', journals: 'Journals', accounts: 'Chart of accounts', 'month-end': 'Month-end', budgets: 'Budgets', 'bank-accounts': 'Bank & cash', 'money-moved': 'Money moved', 'fixed-assets': 'Fixed assets', 'asset-kinds': 'Kinds of asset', 'accounting-export': 'Export to another accounting program', 'gra-evat': 'GRA E-VAT', users: 'Users', roles: 'Roles', 'access-requests': 'Access requests', settings: 'Settings', modules: 'Modules', messaging: 'Messaging', 'message-templates': 'Message templates', 'message-log': 'Message log', devices: 'Devices', computers: 'Computers', 'reference-list': 'Lists', 'pricing-rules': 'Pricing rules', 'prices-to-review': 'Prices to review', promotions: 'Promotions', 'price-list': 'Price list', prescriptions: 'Prescriptions', 'nhis-claims': 'NHIS claims', 'medicine-signoffs': 'Sales to sign off', 'refill-reminders': 'Refill reminders', 'drug-interactions': 'Drug interactions', 'controlled-drug-register': 'Controlled-drug register', 'shared-products': 'Shared products', 'company-wide-access': 'Company-wide access', 'who-can-do-what': 'Who can do what', 'it-activity': 'IT and support activity', 'staff-cards': 'Staff cards' }
   const shown = LIST_TITLES[route.page] ?? title
   // Not set up yet: the setup wizard first, as the current back office (the licence page stays open, to activate it).
-  useEffect(() => { if (me.setup && route.page !== 'setup-wizard' && route.page !== 'licence') navigate(me.setup, true) }, [me.setup, route.page])
+  // Not licensed yet: the licence page first (part 43, as the current back office); then a company not set up: the wizard.
+  useEffect(() => {
+    if (me.licence && route.page !== 'licence') navigate(me.licence, true)
+    else if (me.setup && route.page !== 'setup-wizard' && route.page !== 'licence') navigate(me.setup, true)
+  }, [me.licence, me.setup, route.page])
   useEffect(() => { document.title = shown ? `${shown} · ${me.company.name}` : me.company.name }, [shown, me.company.name])
 
   const onLook = useCallback((look: Prefs['office_look']) => {
@@ -606,7 +618,7 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
                                                                                                                 : route.page === 'who-can-do-what' ? <AccessReviewPage />
                                                                                                                 : route.page === 'it-activity' ? <ItActivityPage />
                                                                                                                 : route.page === 'staff-cards' ? <StaffCardsPage />
-                      : <ClassicPage admin={admin} onTitle={setTitle} />}
+                      : <GoToNew admin={admin} />}
       </Look>
       <Toaster toasterId={toaster} position="top-end" />
     </>

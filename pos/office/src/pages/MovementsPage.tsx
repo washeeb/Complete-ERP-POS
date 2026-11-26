@@ -60,7 +60,7 @@ export function MovementsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Stock ledger" hint="Every movement of stock, newest first, with who and why. Nothing here changes: a mistake is put right by a new movement." classic="/admin/stock-movements" />
+      <PageHead title="Stock ledger" hint="Every movement of stock, newest first, with who and why. Nothing here changes: a mistake is put right by a new movement." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Product: SKU, name or barcode" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search the stock ledger" />
         <PeriodButtons value={str(params, 'period')} onChange={(v) => set({ period: v, from: '', to: '' })} />

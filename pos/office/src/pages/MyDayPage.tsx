@@ -51,7 +51,7 @@ export function MyDayPage() {
   const ch = data.checks
   return (
     <div className={page.page}>
-      <PageHead title="My day" hint="What needs doing in a store today. Each figure opens the page where it is dealt with." classic="/admin/stock/my-day" />
+      <PageHead title="My day" hint="What needs doing in a store today. Each figure opens the page where it is dealt with." />
       <div className={s.bar}>
         <Field label="Store" size="small">
           <Dropdown size="small" style={{ minWidth: 220 }} value={data.warehouses.find((x) => x.id === data.warehouse)?.label ?? ''} selectedOptions={data.warehouse ? [data.warehouse] : []}

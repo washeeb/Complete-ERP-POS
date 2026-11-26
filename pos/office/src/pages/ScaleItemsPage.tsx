@@ -21,7 +21,7 @@ export function ScaleItemsPage() {
   useEffect(() => { api.scaleItems().then(setData).catch((e: unknown) => setError(e instanceof Error ? e.message : String(e))) }, [])
   return (
     <div className={page.page}>
-      <PageHead title="Scale items" hint="The weighed products the scales are loaded with." classic="/admin/grocery/scale-items" />
+      <PageHead title="Scale items" hint="The weighed products the scales are loaded with." />
       <div className={s.bar}>
         {data && <Text className={s.muted} style={{ flex: '1 1 300px' }}>Load these into the scales. Their labels start with {data.prefixes}, then the scale code (PLU), then the weight in grams; the till
           reads them and charges by weight. Give a product its scale code under Catalog → Products.</Text>}

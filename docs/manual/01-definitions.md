@@ -7,7 +7,7 @@ You do not need to remember these. Come back to this page whenever a word is unc
 | Word | What it means |
 |---|---|
 | **Server** | The computer that keeps all the data (products, prices, stock, sales, customers, accounts) and runs the software. Every other device talks to it. It can be a PC in your shop, a computer in your office, or a rented computer on the internet (*cloud*). |
-| **Back office** | The management screens, opened in a web browser at `http://<server>/admin`. Managers use it to set up products and prices, receive stock, see reports, run payroll and so on. |
+| **Back office** | The management screens, opened in a web browser at `http://<server>/office`. Managers use it to set up products and prices, receive stock, see reports, run payroll and so on. |
 | **Till** (POS, point of sale) | The selling screen used by cashiers. It runs in the Chrome or Edge browser at `http://<server>/pos/` on a PC, laptop or tablet, and keeps working when the server or the internet is down. |
 | **Device** | Any till, handheld scanner, kitchen screen or self-service screen. Each one is *registered* in the back office and *enrolled* once with a one-time code, so only your own devices can sell. |
 | **Enrolment code** | A one-time code (like `ABCD-EFGH-JKMN`) that the back office shows when you register a device. You type it on the device once. |

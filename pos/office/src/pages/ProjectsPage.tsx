@@ -33,7 +33,7 @@ export function ProjectsPage() {
   const m = (x: number) => (cur.current ? money(x, cur.current.currency, cur.current.exponent) : '')
   return (
     <div className={page.page}>
-      <PageHead title="Projects" hint="A project collects its costs (stock, bills, expenses, time) by itself and shows its profit." classic="/admin/projects" />
+      <PageHead title="Projects" hint="A project collects its costs (stock, bills, expenses, time) by itself and shows its profit." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number or name" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search projects" />
         <Dropdown aria-label="Status" value={status === 'all' ? 'Any status' : data?.statuses.find((x) => x.id === status)?.label ?? 'In progress'} selectedOptions={[status]} style={{ minWidth: 140 }}

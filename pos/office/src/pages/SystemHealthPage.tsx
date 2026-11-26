@@ -24,7 +24,7 @@ export function SystemHealthPage() {
   useEffect(load, [load])
   return (
     <div className={page.page}>
-      <PageHead title="System health" hint="The same checks run on the server with: php artisan erp:health" classic="/admin/health" />
+      <PageHead title="System health" hint="The same checks run on the server with: php artisan erp:health" />
       <div className={s.bar}><span className={s.grow} /><Button icon={<ArrowSyncRegular />} disabled={busy} onClick={load}>{busy ? 'Checking…' : 'Check again'}</Button></div>
       {error && <MessageBar intent="error" style={{ marginBottom: 12 }}><MessageBarBody>{error}</MessageBarBody></MessageBar>}
       {!d ? <Spinner label="Checking…" /> : <>

@@ -10,7 +10,7 @@ import { day, ProcList, ToneBadge } from './ProcurementParts'
 export function AgreementsPage() {
   return (
     <ProcList<AgreementRow> title="Contracts and blanket orders" hint="Prices agreed with a supplier for a period. Orders take those prices and count against any limits."
-      classic="/admin/purchase-agreements" load={api.agreements as never} label="Contracts and blanket orders" placeholder="Number, title or supplier"
+      load={api.agreements as never} label="Contracts and blanket orders" placeholder="Number, title or supplier"
       create="/office/agreements/new" createLabel="New agreement" empty="No contracts or blanket orders match." open={(r) => `/office/agreements/${r.id}`}
       filters={(data, value, set) => {
         const v = value('supplier')

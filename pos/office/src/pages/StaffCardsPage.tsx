@@ -51,7 +51,7 @@ export function StaffCardsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Staff cards" hint="Tick the people, then Print new cards. The till scans the card instead of the username, so signing in is quicker and nobody sees a username typed." classic="/admin/staff-cards" />
+      <PageHead title="Staff cards" hint="Tick the people, then Print new cards. The till scans the card instead of the username, so signing in is quicker and nobody sees a username typed." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Name or username" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search people" />
         <Dropdown aria-label="Card" style={{ minWidth: 150 }} value={CARD.find((x) => x[0] === card)?.[1] ?? ''} selectedOptions={[card]} onOptionSelect={(_, d) => set({ card: d.optionValue ?? '' })}>

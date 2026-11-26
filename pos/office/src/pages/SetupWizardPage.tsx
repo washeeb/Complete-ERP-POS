@@ -44,7 +44,7 @@ export function SetupWizardPage() {
   if (d.done || result) {
     return (
       <div className={page.page}>
-        <PageHead title="Set up your company" hint="First-run setup." classic="/admin/setup-wizard" />
+        <PageHead title="Set up your company" hint="First-run setup." />
         <MessageBar intent="success" style={{ marginBottom: 12 }}><MessageBarBody>{result ? 'Company set up.' : 'Your company is already set up. Change branches and modules from their own pages.'}</MessageBarBody></MessageBar>
         {result?.brand_problem && <MessageBar intent="warning" style={{ marginBottom: 12 }}><MessageBarBody>{result.brand_problem}</MessageBarBody></MessageBar>}
         <Button appearance="primary" onClick={() => location.assign(result?.open ?? '/office/')}>Open the back office</Button>
@@ -77,7 +77,7 @@ export function SetupWizardPage() {
   )
   return (
     <div className={page.page}>
-      <PageHead title="Set up your company" hint="A few questions before the first sale. Everything here can be changed later." classic="/admin/setup-wizard" />
+      <PageHead title="Set up your company" hint="A few questions before the first sale. Everything here can be changed later." />
       <TabList selectedValue={String(step)} onTabSelect={(_, x) => { const n = Number(x.value); if (stepOk.slice(0, n).every(Boolean)) setStep(n) }} aria-label="Steps" style={{ marginBottom: 12, flexWrap: 'wrap' }}>
         {STEPS.map((t, i) => <Tab key={t} value={String(i)}>{`${i + 1}. ${t}`}</Tab>)}
       </TabList>

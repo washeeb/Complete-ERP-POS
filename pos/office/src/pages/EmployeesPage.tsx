@@ -31,7 +31,7 @@ export function EmployeesPage() {
   const branch = str(params, 'branch')
   return (
     <div className={page.page}>
-      <PageHead title="Employees" hint="Everyone on the payroll. Pay and bank details are only shown to HR." classic="/admin/employees" />
+      <PageHead title="Employees" hint="Everyone on the payroll. Pay and bank details are only shown to HR." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number, name or phone" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search employees" />
         <Dropdown aria-label="Status" value={STATUS.find(([k]) => k === status)?.[1] ?? 'Active'} selectedOptions={[status]} onOptionSelect={(_, d) => set({ status: d.optionValue ?? 'active' })} style={{ minWidth: 130 }}>

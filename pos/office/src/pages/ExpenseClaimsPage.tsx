@@ -52,7 +52,7 @@ export function ExpenseClaimsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Expense claims" hint="Money people spent for the business (petty cash and claims). It is approved by someone else, then paid back." classic="/admin/expense-claims" />
+      <PageHead title="Expense claims" hint="Money people spent for the business (petty cash and claims). It is approved by someone else, then paid back." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number, description, who claimed or who was paid" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search expense claims" />
         <Dropdown aria-label="Status" value={str(params, 'status') ? label(str(params, 'status')) : 'Any status'} selectedOptions={[str(params, 'status')]}

@@ -54,7 +54,7 @@ export function MessageLogPage() {
   ]
   return (
     <div className={page.page}>
-      <PageHead title="Message log" hint="Every SMS, WhatsApp message and e-mail sent (or not): to whom, what, and how delivery went." classic="/admin/message-log" />
+      <PageHead title="Message log" hint="Every SMS, WhatsApp message and e-mail sent (or not): to whom, what, and how delivery went." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="To or reference" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search messages" />
         <Dropdown aria-label="Status" style={{ minWidth: 190 }} value={statuses.find((x) => x[0] === status)?.[1] ?? ''} selectedOptions={[status]} onOptionSelect={(_, d) => set({ status: d.optionValue ?? '' })}>

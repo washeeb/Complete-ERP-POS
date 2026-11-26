@@ -27,7 +27,7 @@ export function VisitsPage() {
   }, [q]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className={page.page}>
-      <PageHead title="Visits" hint="Every visit a rep recorded on the phone, with what came of it and where they were." classic="/admin/visits" />
+      <PageHead title="Visits" hint="Every visit a rep recorded on the phone, with what came of it and where they were." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Rep" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search visits" />
         <Pick label="Outcome" any="Any outcome" options={data?.outcomes ?? []} value={str(params, 'outcome')} onChange={(v) => set({ outcome: v })} />

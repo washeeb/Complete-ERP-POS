@@ -1,12 +1,11 @@
 import { Button, makeStyles, MessageBar, MessageBarBody, Spinner, Text, tokens } from '@fluentui/react-components'
-import { AddRegular, ArrowLeftRegular, DeleteRegular, SaveRegular, WindowArrowUpRegular } from '@fluentui/react-icons'
+import { AddRegular, ArrowLeftRegular, DeleteRegular, SaveRegular } from '@fluentui/react-icons'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { api, type TransferForm, type TransferLine, type UnitStock } from '../api'
 import { Choose, LongText, Tags, TextField, useFieldStyles } from '../form/Fields'
 import { UnitPicker } from '../form/UnitPicker'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
-import { classicPathFor } from '../paths'
 import { repeated } from './CountPage'
 
 const useStyles = makeStyles({
@@ -61,7 +60,6 @@ export function TransferFormPage({ id, onTitle }: { id: string | null; onTitle: 
   const same = !!head.from_warehouse_id && head.from_warehouse_id === head.to_warehouse_id
   const ready = !!head.from_warehouse_id && !!head.to_warehouse_id && !same && lines.every((l) => l.product_uom_id && l.qty.trim() !== '')
   const back = () => (history.length > 1 ? history.back() : navigate(id ? `/office/transfers/${id}` : '/office/transfers'))
-  const classic = classicPathFor(id ? `/admin/stock-transfers/${id}/edit` : '/admin/stock-transfers/create')
   const save = () => {
     setBusy(true)
     setError('')
@@ -79,7 +77,6 @@ export function TransferFormPage({ id, onTitle }: { id: string | null; onTitle: 
           <h1 className={s.title}>{form.number ? `Edit transfer ${form.number}` : 'New transfer'}</h1>
           <Text className={s.muted}>Nothing moves until the transfer is dispatched.</Text>
         </div>
-        <Button appearance="subtle" icon={<WindowArrowUpRegular />} onClick={() => navigate(classic)}>Classic form</Button>
       </div>
       {error && <MessageBar intent="error" style={{ marginBottom: 12 }}><MessageBarBody>{error}</MessageBarBody></MessageBar>}
 

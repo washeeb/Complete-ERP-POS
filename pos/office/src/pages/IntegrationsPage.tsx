@@ -32,7 +32,7 @@ export function IntegrationsPage() {
   if (!d) return <div className={page.page}><Spinner label="Opening integrations…" /></div>
   return (
     <div className={page.page}>
-      <PageHead title="Integrations" hint="Every connection to the outside world: whether it is set up, when it last worked, and what failed this week." classic="/admin/integrations" />
+      <PageHead title="Integrations" hint="Every connection to the outside world: whether it is set up, when it last worked, and what failed this week." />
       <div className={s.pills}>
         <ToneBadge tone="success" label={`${d.counts.ok ?? 0} working`} />
         <ToneBadge tone="warning" label={`${d.counts.attention ?? 0} need attention`} />

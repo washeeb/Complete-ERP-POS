@@ -40,7 +40,7 @@ export function CrmLeadsPage() {
   const open = str(params, 'open') || '1'
   return (
     <div className={page.page}>
-      <PageHead title="Leads" hint="Everyone who may buy: plan the next step with “Follow-up”, then “Make customer” or close them as lost." classic="/admin/crm-leads" />
+      <PageHead title="Leads" hint="Everyone who may buy: plan the next step with “Follow-up”, then “Make customer” or close them as lost." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Name, business, phone or e-mail" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search leads" />
         <Dropdown aria-label="Open or closed" value={OPEN.find(([k]) => k === open)?.[1] ?? 'Open only'} selectedOptions={[open]} style={{ minWidth: 130 }} onOptionSelect={(_, d) => set({ open: d.optionValue ?? '1' })}>

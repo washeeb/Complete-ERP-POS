@@ -1,5 +1,5 @@
-import { Button, Field, Link, makeStyles, MessageBar, MessageBarBody, Radio, RadioGroup, Spinner, Text, tokens } from '@fluentui/react-components'
-import { AddRegular, ArrowLeftRegular, AttachRegular, CameraRegular, DeleteRegular, DismissRegular, SaveRegular, WindowArrowUpRegular } from '@fluentui/react-icons'
+import { Button, Field, makeStyles, MessageBar, MessageBarBody, Radio, RadioGroup, Spinner, Text, tokens } from '@fluentui/react-components'
+import { AddRegular, ArrowLeftRegular, AttachRegular, CameraRegular, DeleteRegular, DismissRegular, SaveRegular } from '@fluentui/react-icons'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { api, type DpForm, type DpLine, type DpValues } from '../api'
 import { Ask } from '../form/Ask'
@@ -7,7 +7,6 @@ import { Choose, LongText, TextField, Toggle, useFieldStyles } from '../form/Fie
 import { UnitPicker } from '../form/UnitPicker'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
-import { classicPathFor } from '../paths'
 
 const useStyles = makeStyles({
   head: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' },
@@ -103,7 +102,6 @@ export function DirectPurchaseFormPage({ id, onTitle }: { id: string | null; onT
   const ready = !!v.supplier_id && !!v.invoice_no.trim() && !!v.invoice_date && !!v.warehouse_id && !!v.settlement
     && (v.settlement !== 'paid' || (!!v.method && !!v.account_id && (!needsRef || !!v.reference.trim())))
     && v.lines.length > 0 && v.lines.every((l) => !!l.product_uom_id && Number(l.qty) > 0 && l.unit_price !== '' && (!l.batched || (!!l.batch_no.trim() && !!l.expires_on)))
-  const classic = classicPathFor(id ? `/admin/direct-purchases/${id}/edit` : '/admin/direct-purchases/create')
   const back = () => (history.length > 1 ? history.back() : navigate(id ? `/office/direct-purchases/${id}` : '/office/direct-purchases'))
   const save = () => {
     setBusy(true)
@@ -124,7 +122,6 @@ export function DirectPurchaseFormPage({ id, onTitle }: { id: string | null; onT
         </div>
         <div className={s.headActions}>
           {!id && <Button icon={<CameraRegular />} onClick={() => setScanning(true)}>Scan the invoice</Button>}
-          <Link href={classic} onClick={(e) => { e.preventDefault(); navigate(classic) }}><WindowArrowUpRegular /> Classic form</Link>
         </div>
       </div>
       {error && <MessageBar intent="error" style={{ marginBottom: 12 }}><MessageBarBody>{error}</MessageBarBody></MessageBar>}

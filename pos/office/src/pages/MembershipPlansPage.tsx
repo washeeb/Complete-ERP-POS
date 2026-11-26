@@ -36,7 +36,7 @@ export function MembershipPlansPage() {
   const item = (i: number, patch: Partial<PlanValues['items'][number]>) => setEdit((o) => (o ? { ...o, v: { ...o.v, items: o.v.items.map((x, j) => (j === i ? { ...x, ...patch } : x)) } } : o))
   return (
     <div className={page.page}>
-      <PageHead title="Membership plans" hint="Price per period, how often, and the sessions included each period." classic="/admin/membership-plans" />
+      <PageHead title="Membership plans" hint="Price per period, how often, and the sessions included each period." />
       <div className={s.bar}>
         <ShowFilter value={str(params, 'show')} onChange={(v) => set({ show: v })} />
         <span className={s.grow} />

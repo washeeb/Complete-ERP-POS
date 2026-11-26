@@ -73,7 +73,7 @@ export function BookingsPage() {
   const blank: BookingValues = { branch_id: '', guest_name: '', phone: '', party_size: '2', starts_at: '', duration_minutes: '90', dining_table_id: '', note: '' }
   return (
     <div className={page.page}>
-      <PageHead title="Bookings" hint="Table bookings: who, when, which table, and the deposit (taken at the till)." classic="/admin/reservations" />
+      <PageHead title="Bookings" hint="Table bookings: who, when, which table, and the deposit (taken at the till)." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Name, phone or number" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search bookings" />
         <Switch label="From today" checked={str(params, 'upcoming') !== '0'} onChange={(_, d) => set({ upcoming: d.checked ? '' : '0' })} />

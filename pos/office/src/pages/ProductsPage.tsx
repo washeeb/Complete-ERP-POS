@@ -96,7 +96,7 @@ export function ProductsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Products" hint="What you sell and keep in stock. Scan a barcode into the search box to find its product." classic="/admin/products" />
+      <PageHead title="Products" hint="What you sell and keep in stock. Scan a barcode into the search box to find its product." />
 
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="SKU, name, shelf or barcode" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search products" />

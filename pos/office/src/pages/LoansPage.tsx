@@ -34,7 +34,7 @@ export function LoansPage() {
   const put = (k: string) => (x: string) => setV((o) => (o ? { ...o, [k]: x } : o))
   return (
     <div className={page.page}>
-      <PageHead title="Loans & advances" hint="Staff loans and salary advances, repaid through payroll." classic="/admin/employee-loans" />
+      <PageHead title="Loans & advances" hint="Staff loans and salary advances, repaid through payroll." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number or employee" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search loans" />
         <span className={s.grow} />

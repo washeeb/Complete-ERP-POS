@@ -27,7 +27,7 @@ export function BranchesPage() {
   }, [q]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className={page.page}>
-      <PageHead title="Branches" hint="Each shop or office, with its stores and tills. The code starts receipt numbers, so it never changes." classic="/admin/branches" />
+      <PageHead title="Branches" hint="Each shop or office, with its stores and tills. The code starts receipt numbers, so it never changes." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Code or name" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search branches" />
         <ShowFilter value={str(params, 'show')} onChange={(v) => set({ show: v })} />

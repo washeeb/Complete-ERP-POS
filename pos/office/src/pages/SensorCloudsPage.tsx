@@ -36,7 +36,7 @@ export function SensorCloudsPage() {
   const ready = !!edit && (sp ? edit.v.email.trim() !== '' && (!!edit.id || edit.v.password !== '') : edit.v.client_id.trim() !== '' && (!!edit.id || edit.v.secret !== '') && !!edit.v.region)
   return (
     <div className={page.page}>
-      <PageHead title="Sensor clouds" classic="/admin/iot-clouds"
+      <PageHead title="Sensor clouds"
         hint="For sensors that report to their maker’s cloud instead of to ZionEX: their readings are fetched every 5 minutes. Most sensors can send to ZionEX directly (see a sensor’s “Sensor address”)." />
       <div className={s.bar}>
         <span className={s.grow} />

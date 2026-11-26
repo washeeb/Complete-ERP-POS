@@ -56,7 +56,7 @@ export function UsersPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Users" hint="Everyone who signs in: their level, how they sign in, and their till PIN. Open someone to change them and grant their access." classic="/admin/users" />
+      <PageHead title="Users" hint="Everyone who signs in: their level, how they sign in, and their till PIN. Open someone to change them and grant their access." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Name, username or e-mail" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search users" />
         <Dropdown aria-label="Show" style={{ minWidth: 140 }} value={SHOW.find((x) => x[0] === show)?.[1] ?? ''} selectedOptions={[show]} onOptionSelect={(_, d) => set({ show: d.optionValue ?? '' })}>

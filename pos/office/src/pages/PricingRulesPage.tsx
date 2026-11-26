@@ -57,7 +57,7 @@ export function PricingRulesPage() {
   const finish = (r: UserDone) => { setDoing(null); setDone(r.message); setNonce((n) => n + 1) }
   return (
     <div className={page.page}>
-      <PageHead title="Pricing rules" hint="Selling prices worked out from the latest cost. Add a rule for the whole company (e.g. cost × 1.40), then exceptions for categories or products." classic="/admin/pricing-rules" />
+      <PageHead title="Pricing rules" hint="Selling prices worked out from the latest cost. Add a rule for the whole company (e.g. cost × 1.40), then exceptions for categories or products." />
       <div className={s.bar}>
         <Dropdown aria-label="Show" style={{ minWidth: 140 }} value={SHOW.find((x) => x[0] === show)?.[1] ?? ''} selectedOptions={[show]} onOptionSelect={(_, d) => set({ show: d.optionValue ?? '' })}>
           {SHOW.map(([k, l]) => <Option key={k} value={k}>{l}</Option>)}

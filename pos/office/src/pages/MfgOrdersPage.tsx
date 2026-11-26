@@ -33,7 +33,7 @@ export function MfgOrdersPage() {
   const open = str(params, 'open') === '0' ? '0' : '1'
   return (
     <div className={page.page}>
-      <PageHead title="Work orders" hint="What is being made. Release a draft to start; issue materials, report output, then finish to settle the cost." classic="/admin/work-orders" />
+      <PageHead title="Work orders" hint="What is being made. Release a draft to start; issue materials, report output, then finish to settle the cost." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number or product" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search work orders" />
         <Dropdown aria-label="Open or all" value={OPEN.find((x) => x.id === open)?.label ?? 'Open only'} selectedOptions={[open]} style={{ minWidth: 130 }}

@@ -40,7 +40,7 @@ export function MobileMoneyPage() {
   }
   return (
     <div className={page.page}>
-      <PageHead title="Mobile money" hint={data?.about ?? 'Payment requests sent from the tills.'} classic="/admin/momo-charges" />
+      <PageHead title="Mobile money" hint={data?.about ?? 'Payment requests sent from the tills.'} />
       <div className={s.bar} style={{ alignItems: 'flex-end' }}>
         <SearchBox className={s.search} placeholder="Cashier, number or transaction" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search mobile money" />
         <Dropdown aria-label="Status" value={status ? data?.statuses.find((x) => x.id === status)?.label ?? '' : 'Any status'} selectedOptions={[status]} style={{ minWidth: 180 }}

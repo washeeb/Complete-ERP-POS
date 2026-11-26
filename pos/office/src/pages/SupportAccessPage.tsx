@@ -27,7 +27,7 @@ export function SupportAccessPage() {
   const finish = (x: { message: string; support: SupportAccessData }) => { setD(x.support); setV(null); setRevoke(null); setDone(x.message) }
   return (
     <div className={page.page}>
-      <PageHead title="Support access" classic="/admin/support-access-grants"
+      <PageHead title="Support access"
         hint="Let SyncLytics support reach your tills and computers to help: for a few hours, or until a problem report is closed. Free of charge. Everyone signed in sees a banner while it is open, and you can withdraw it at any time." />
       <div className={s.bar}>
         <span className={s.grow} />

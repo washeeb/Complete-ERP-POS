@@ -306,7 +306,7 @@ sudo cp /var/lib/caddy/.local/share/caddy/pki/authorities/local/root.crt /usr/lo
 sudo update-ca-certificates
 ```
 
-**Check:** `validate` ends with *Valid configuration*. `curl https://192.168.1.20/up` (or your domain) answers without a certificate error. On another device that trusts the server (4.9), `https://192.168.1.20/admin` shows the sign-in page.
+**Check:** `validate` ends with *Valid configuration*. `curl https://192.168.1.20/up` (or your domain) answers without a certificate error. On another device that trusts the server (4.9), `https://192.168.1.20/office` shows the sign-in page.
 
 ## 5.8 Firewall
 

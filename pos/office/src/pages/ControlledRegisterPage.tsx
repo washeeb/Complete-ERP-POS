@@ -32,7 +32,7 @@ export function ControlledRegisterPage() {
   const open = (url: string | null, blank: boolean) => { if (url) window.open(url, blank ? '_blank' : '_self', 'noopener') }
   return (
     <div className={page.page}>
-      <PageHead title="Controlled-drug register" hint="Every movement of each controlled medicine, read from the stock ledger, with the balance after each one." classic="/admin/controlled-drug-register" />
+      <PageHead title="Controlled-drug register" hint="Every movement of each controlled medicine, read from the stock ledger, with the balance after each one." />
       <div className={s.bar}>
         <Field label="Warehouse" size="small">
           <Dropdown size="small" style={{ minWidth: 200 }} value={data?.warehouses.find((w) => w.id === data.warehouse)?.label ?? ''} selectedOptions={[data?.warehouse ?? '']}

@@ -62,7 +62,7 @@ export function AccountsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Chart of accounts" hint="Your accounts by code: headings group them; automatic posting uses the ones with a purpose; customer, supplier and stock accounts are kept by their sub-ledgers." classic="/admin/accounts" />
+      <PageHead title="Chart of accounts" hint="Your accounts by code: headings group them; automatic posting uses the ones with a purpose; customer, supplier and stock accounts are kept by their sub-ledgers." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Code or name" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search accounts" />
         <Dropdown aria-label="Type" style={{ minWidth: 150 }} value={type ? form?.types.find((t) => t.id === type)?.label ?? type : 'Any type'} selectedOptions={[type]}

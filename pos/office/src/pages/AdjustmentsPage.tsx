@@ -62,7 +62,7 @@ export function AdjustmentsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Stock adjustments" hint="Stock added, taken away or set to what was counted: prepared, approved and posted to the stock ledger." classic="/admin/stock-adjustments" />
+      <PageHead title="Stock adjustments" hint="Stock added, taken away or set to what was counted: prepared, approved and posted to the stock ledger." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number or reference" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search adjustments" />
         <PeriodButtons value={str(params, 'period')} onChange={(v) => set({ period: v })} />

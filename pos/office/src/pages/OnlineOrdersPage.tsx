@@ -33,7 +33,7 @@ export function OnlineOrdersPage() {
   const statusLabel = status === 'open' ? 'Open' : status === 'all' ? 'Any status' : data?.statuses.find((x) => x.id === status)?.label ?? 'Open'
   return (
     <div className={page.page}>
-      <PageHead title="Online orders" hint="Orders from your shop page and connected stores. Mark ready, hand over (taking payment if not paid) or cancel." classic="/admin/sales-orders" />
+      <PageHead title="Online orders" hint="Orders from your shop page and connected stores. Mark ready, hand over (taking payment if not paid) or cancel." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Order, customer or phone" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search online orders" />
         <Dropdown aria-label="Status" value={statusLabel} selectedOptions={[status]} style={{ minWidth: 150 }} onOptionSelect={(_, d) => set({ status: d.optionValue ?? 'open' })}>

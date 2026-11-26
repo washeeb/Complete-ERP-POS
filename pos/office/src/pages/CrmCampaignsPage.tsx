@@ -34,7 +34,7 @@ export function CrmCampaignsPage() {
   })
   return (
     <div className={page.page}>
-      <PageHead title="Campaigns" hint="One message to many customers by SMS, WhatsApp or e-mail — only to those who agreed. Every message is in Messages, with whether it arrived." classic="/admin/crm-campaigns" />
+      <PageHead title="Campaigns" hint="One message to many customers by SMS, WhatsApp or e-mail — only to those who agreed. Every message is in Messages, with whether it arrived." />
       <div className={s.bar}><span className={s.grow} />{d.can_create && <Button appearance="primary" icon={<AddRegular />} onClick={() => navigate('/office/crm/campaigns/new')}>New campaign</Button>}</div>
       {done && <MessageBar intent="success" style={{ marginBottom: 12 }}><MessageBarBody>{done}</MessageBarBody></MessageBar>}
       <Panel title="Campaigns">

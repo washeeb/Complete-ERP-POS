@@ -31,7 +31,7 @@ export function IndustriesPage() {
   const open = (r: IndustryRow | null) => setEditing({ row: r, name: r?.name ?? '', module_key: r?.module_key ?? data?.modules[0]?.id ?? '', legal_entity_id: r?.legal_entity_id ?? '', sort: String(r?.sort ?? 0) })
   return (
     <div className={page.page}>
-      <PageHead title="Industries" hint="Each line of business, the module its branches run, and whose books it keeps." classic="/admin/industries" />
+      <PageHead title="Industries" hint="Each line of business, the module its branches run, and whose books it keeps." />
       <div className={s.bar}>
         <ShowFilter value={str(params, 'show')} onChange={(v) => set({ show: v })} />
         <span className={s.grow} />

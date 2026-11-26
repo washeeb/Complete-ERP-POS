@@ -1,5 +1,5 @@
-import { Button, Link, makeStyles, MessageBar, MessageBarBody, Spinner, Text, ToggleButton, tokens } from '@fluentui/react-components'
-import { AddRegular, ArrowLeftRegular, DeleteRegular, SaveRegular, WindowArrowUpRegular } from '@fluentui/react-icons'
+import { Button, makeStyles, MessageBar, MessageBarBody, Spinner, Text, ToggleButton, tokens } from '@fluentui/react-components'
+import { AddRegular, ArrowLeftRegular, DeleteRegular, SaveRegular } from '@fluentui/react-icons'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { api, type PoForm, type PoLine, type PoValues } from '../api'
 import { Ask } from '../form/Ask'
@@ -7,7 +7,6 @@ import { Choose, LongText, TextField, useFieldStyles } from '../form/Fields'
 import { UnitPicker } from '../form/UnitPicker'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
-import { classicPathFor } from '../paths'
 
 const useStyles = makeStyles({
   head: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' },
@@ -77,7 +76,6 @@ export function PurchaseOrderFormPage({ id, onTitle }: { id: string | null; onTi
     const me = v.lines[i]
     return me.kind === 'stock' && me.pid ? v.lines.some((l, j) => j !== i && l.kind === 'stock' && l.pid === me.pid) : false
   }
-  const classic = classicPathFor(id ? `/admin/purchase-orders/${id}/edit` : '/admin/purchase-orders/create')
   const back = () => (history.length > 1 ? history.back() : navigate(id ? `/office/purchase-orders/${id}` : '/office/purchase-orders'))
   const ok = (l: Line) => Number(l.qty) > 0 && (l.kind === 'stock' ? !!l.product_uom_id : !!l.description.trim() && !!l.account_id)
   const ready = !!v.supplier_id && !!v.warehouse_id && v.lines.length > 0 && v.lines.every(ok)
@@ -98,7 +96,6 @@ export function PurchaseOrderFormPage({ id, onTitle }: { id: string | null; onTi
           <h1 className={s.title}>{id ? `Edit ${form.number}` : 'New purchase order'}</h1>
           <Text className={s.muted}>{form.number ? 'A draft: it can change until it is submitted for approval.' : 'Saved as a draft; submit it for approval from its page.'}</Text>
         </div>
-        <Link href={classic} onClick={(e) => { e.preventDefault(); navigate(classic) }}><WindowArrowUpRegular /> Classic form</Link>
       </div>
       {error && <MessageBar intent="error" style={{ marginBottom: 12 }}><MessageBarBody>{error}</MessageBarBody></MessageBar>}
 

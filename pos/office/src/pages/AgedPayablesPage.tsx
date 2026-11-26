@@ -39,7 +39,7 @@ export function AgedPayablesPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Aged payables" hint="What is owed to each supplier, by how late. Press a supplier to open it, or Pay to record a payment." classic="/admin/aged-payables" />
+      <PageHead title="Aged payables" hint="What is owed to each supplier, by how late. Press a supplier to open it, or Pay to record a payment." />
       <div className={s.bar}>{data.pay && <Button appearance="primary" icon={<MoneyRegular />} onClick={() => { setDone(''); setPaying(null) }}>Pay a supplier</Button>}</div>
       {done && <MessageBar intent="success" style={{ marginBottom: 12 }}><MessageBarBody>{done}</MessageBarBody></MessageBar>}
       <Cards items={[

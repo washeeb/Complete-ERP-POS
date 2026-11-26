@@ -43,7 +43,7 @@ export function MessageTemplatesPage() {
   ]
   return (
     <div className={page.page}>
-      <PageHead title="Message templates" hint="The wording of every SMS, WhatsApp message and e-mail, and whether it is sent at all." classic="/admin/message-templates" />
+      <PageHead title="Message templates" hint="The wording of every SMS, WhatsApp message and e-mail, and whether it is sent at all." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Message or text" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search templates" />
         <Dropdown aria-label="Channel" style={{ minWidth: 140 }} value={channels.find((x) => x[0] === channel)?.[1] ?? ''} selectedOptions={[channel]} onOptionSelect={(_, d) => set({ channel: d.optionValue ?? '' })}>

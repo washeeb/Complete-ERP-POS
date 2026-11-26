@@ -32,7 +32,7 @@ export function AssetKindsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Kinds of asset" hint="Each kind's useful life (the default for new assets) and the accounts its cost and depreciation go to." classic="/admin/asset-classes" />
+      <PageHead title="Kinds of asset" hint="Each kind's useful life (the default for new assets) and the accounts its cost and depreciation go to." />
       <div className={s.bar}>
         <Button icon={<ArrowLeftRegular />} onClick={() => navigate('/office/fixed-assets')}>Fixed assets</Button>
         <span className={s.grow} />

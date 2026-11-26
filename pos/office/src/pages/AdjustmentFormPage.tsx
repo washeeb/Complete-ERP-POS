@@ -1,5 +1,5 @@
 import { Button, Field, Input, makeStyles, MessageBar, MessageBarBody, Spinner, Text, tokens } from '@fluentui/react-components'
-import { AddRegular, ArrowLeftRegular, CameraRegular, ChevronDownRegular, ChevronUpRegular, DeleteRegular, SaveRegular, WindowArrowUpRegular } from '@fluentui/react-icons'
+import { AddRegular, ArrowLeftRegular, CameraRegular, ChevronDownRegular, ChevronUpRegular, DeleteRegular, SaveRegular } from '@fluentui/react-icons'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { api, type AdjForm, type AdjLine, type UnitStock } from '../api'
 import { Choose, LongText, Tags, TextField, useFieldStyles } from '../form/Fields'
@@ -7,7 +7,6 @@ import { UnitPicker } from '../form/UnitPicker'
 import { money } from '../home/format'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
-import { classicPathFor } from '../paths'
 
 const useStyles = makeStyles({
   head: { display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' },
@@ -85,7 +84,6 @@ export function AdjustmentFormPage({ id, onTitle }: { id: string | null; onTitle
   const exponent = form.exponent
   const m = (v: number) => money(v, form.currency, exponent)
   const total = lines.reduce((sum, l) => sum + (values[l.k] ?? 0), 0)
-  const classic = classicPathFor(id ? `/admin/stock-adjustments/${id}/edit` : '/admin/stock-adjustments/create')
   const back = () => (history.length > 1 ? history.back() : navigate(id ? `/office/adjustments/${id}` : '/office/adjustments'))
   const ready = !!head.warehouse_id && !!head.reason_code && lines.length > 0 && lines.every((l) => l.product_uom_id && l.qty.trim() !== '')
 
@@ -107,7 +105,6 @@ export function AdjustmentFormPage({ id, onTitle }: { id: string | null; onTitle
           <h1 className={s.title}>{form.number ? `Edit adjustment ${form.number}` : 'New stock adjustment'}</h1>
           <Text className={s.muted}>Nothing changes in stock until the adjustment is posted.</Text>
         </div>
-        <Button appearance="subtle" icon={<WindowArrowUpRegular />} onClick={() => navigate(classic)}>Classic form</Button>
       </div>
       {error && <MessageBar intent="error" style={{ marginBottom: 12 }}><MessageBarBody>{error}</MessageBarBody></MessageBar>}
 

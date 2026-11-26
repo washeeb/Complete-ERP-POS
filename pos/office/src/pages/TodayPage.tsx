@@ -52,7 +52,7 @@ export function TodayPage() {
   return (
     <div className={page.page}>
       <div className={s.wrap}>
-        <PageHead title="Today" hint="The business today on one screen. It refreshes itself every minute." classic={yesterday ? '/admin/today?yesterday=1' : '/admin/today'} />
+        <PageHead title="Today" hint="The business today on one screen. It refreshes itself every minute." />
         <div className={s.tabs}>
           <TabList selectedValue={yesterday ? 'yesterday' : 'today'} onTabSelect={(_, x) => set({ yesterday: x.value === 'yesterday' ? '1' : '' })} aria-label="Which day">
             <Tab value="today">Today</Tab>

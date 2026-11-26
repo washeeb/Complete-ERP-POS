@@ -14,9 +14,12 @@ export type Me = {
   company: { name: string; color: string; on_color: string; menu_color: string | null; logo: string | null; logo_dark: string | null; icon: string | null }
   prefs: Prefs
   favourites: { url: string; label: string }[]
-  classic: string
   /** Not set up yet, and this person may set it up: the setup wizard first. */
   setup: string | null
+  /** Not licensed yet: the licence page first. */
+  licence: string | null
+  /** The industry switch at the top; null when the person has no choice to make. '' selected = all industries. */
+  industry: { selected: string; options: { id: string; label: string }[] } | null
 }
 export type SearchResult = { group: string; title: string; url: string; details: string }
 export type TodoItem = {
@@ -940,6 +943,7 @@ export type MfgPlan = { warehouses: Option[]; warehouse: string; can_make: boole
 export type WorkCentreValues = { name: string; branch_id: string; hourly_rate: string; hours_per_day: string }
 export type WorkCentreRow = Archivable & { id: string; code: string; name: string; branch: string | null; rate: number; hours: string; can_edit: boolean; values: WorkCentreValues }
 export type WorkCentreList = { currency: string; exponent: number; can_create: boolean; branches: Option[]; rows: WorkCentreRow[] }
+export type NotificationItem = { id: string; title: string; body: string | null; status: string; at: string | null; read: boolean; url: string | null }
 export type AuthChallenge = { provider: string; providers: { id: string; label: string }[]; recoverable: boolean; name: string }
 export type AuthState = { company: string; color: string; logo: string | null; logo_dark: string | null; tagline: string | null; signed_in: boolean
   challenge: AuthChallenge | null; passkey_message: string | null }
@@ -1282,6 +1286,12 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export const api = {
   me: () => call<Me>('/office-api/me'),
+  industry: (industry: string) => call<{ selected: string }>('/office-api/industry', { method: 'POST', body: JSON.stringify({ industry }) }),
+  notifications: () => call<{ unread: number; items: NotificationItem[] }>('/office-api/notifications'),
+  notificationCount: () => call<{ unread: number }>('/office-api/notifications/count'),
+  notificationRead: (id: string) => call<{ unread: number }>(`/office-api/notifications/${id}/read`, { method: 'POST', body: '{}' }),
+  notificationsReadAll: () => call<{ unread: number }>('/office-api/notifications/read-all', { method: 'POST', body: '{}' }),
+  notificationsClear: () => call<{ unread: number }>('/office-api/notifications/clear', { method: 'POST', body: '{}' }),
   menu: () => call<Menu>('/office-api/menu'),
   search: (q: string, signal?: AbortSignal) => call<{ results: SearchResult[] }>(`/office-api/search?q=${encodeURIComponent(q)}`, { signal }),
   home: (period: Period, top: Period) => call<HomeData>(`/office-api/home?period=${period}&top=${top}`),

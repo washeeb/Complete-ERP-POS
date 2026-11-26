@@ -44,7 +44,7 @@ export function JournalPage({ id }: { id: string }) {
 
   return (
     <div className={page.page}>
-      <PageHead title={`Journal ${j.number}`} hint={j.memo ?? 'A journal in the ledger.'} classic={`/admin/journal-entries/${j.id}`} />
+      <PageHead title={`Journal ${j.number}`} hint={j.memo ?? 'A journal in the ledger.'} />
       <div className={s.bar}>
         <Button icon={<ArrowLeftRegular />} onClick={() => navigate('/office/journals')}>Journals</Button>
         <span className={s.grow} />

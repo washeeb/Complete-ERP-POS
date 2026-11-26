@@ -68,7 +68,7 @@ export function PriceListPage() {
   ]
   return (
     <div className={page.page}>
-      <PageHead title="Price list" hint="Every product in every unit with its price on the list you choose. Narrow it with the filters, then Export to Excel, CSV or PDF." classic="/admin/price-list" />
+      <PageHead title="Price list" hint="Every product in every unit with its price on the list you choose. Narrow it with the filters, then Export to Excel, CSV or PDF." />
       {data?.ticked !== null && data?.ticked !== undefined && <MessageBar intent="info" style={{ marginBottom: 10 }}>
         <MessageBarBody>{data.ticked} product(s) ticked on the Products list.</MessageBarBody>
         <MessageBarActions><Button size="small" onClick={() => set({ only: '' })}>Show all products</Button></MessageBarActions>

@@ -43,7 +43,7 @@ export function ShrinkPage() {
   return (
     <div className={page.page}>
       <PageHead title="Shrink and write-offs" hint="Stock lost at cost: damage, expiry, theft and other write-offs, and stock-count shortages. Watch the trend and the products lost again and again."
-        classic={`/admin/shrink-report${query ? `?${query}` : ''}`} />
+        />
       <div className={s.bar}>
         <Field label="From"><Input type="date" value={data.from} onChange={(_, d) => d.value && set({ from: d.value })} /></Field>
         <Field label="To"><Input type="date" value={data.to} onChange={(_, d) => d.value && set({ to: d.value })} /></Field>

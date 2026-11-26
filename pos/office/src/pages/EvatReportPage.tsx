@@ -41,7 +41,7 @@ export function EvatReportPage({ id }: { id: string }) {
 
   return (
     <div className={page.page}>
-      <PageHead title={`${r.type_label} ${r.number}`} hint="What was reported to GRA for this document, and GRA's answer." classic="/admin/gra-evat" />
+      <PageHead title={`${r.type_label} ${r.number}`} hint="What was reported to GRA for this document, and GRA's answer." />
       <div className={s.bar}>
         <Button icon={<ArrowLeftRegular />} onClick={() => navigate('/office/gra-evat')}>GRA E-VAT</Button>
         <span className={s.grow} />

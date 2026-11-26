@@ -49,7 +49,7 @@ export function NhisClaimsPage() {
   ]
   return (
     <div className={page.page}>
-      <PageHead title="NHIS claims" hint="The NHIS parts of sales claimed from the NHIA: prepare a claim, send it, and record what the NHIA paid." classic="/admin/nhis-claims" />
+      <PageHead title="NHIS claims" hint="The NHIS parts of sales claimed from the NHIA: prepare a claim, send it, and record what the NHIA paid." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Claim number or NHIA reference" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search NHIS claims" />
         <Dropdown aria-label="Status" style={{ minWidth: 170 }} value={status === '' ? 'Every status' : data?.statuses.find((x) => x.id === status)?.label ?? ''} selectedOptions={[status]}

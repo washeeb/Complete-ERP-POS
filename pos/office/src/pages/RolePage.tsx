@@ -76,7 +76,7 @@ export function RolePage({ id }: { id: string | null }) {
 
   return (
     <div className={page.page}>
-      <PageHead title={role ? role.name : 'Add a role'} hint="What the role may do and its level. Only people cleared to this level or higher can hold it." classic={role ? `/admin/roles/${role.id}/edit` : '/admin/roles/create'} />
+      <PageHead title={role ? role.name : 'Add a role'} hint="What the role may do and its level. Only people cleared to this level or higher can hold it." />
       <div className={s.bar}>
         <Button icon={<ArrowLeftRegular />} onClick={() => navigate('/office/roles')}>Roles</Button>
         <span className={s.grow} />

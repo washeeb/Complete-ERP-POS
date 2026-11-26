@@ -31,7 +31,7 @@ export function AiUsagePage() {
   }, [q]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className={page.page}>
-      <PageHead title="AI usage log" classic="/admin/ai-usage"
+      <PageHead title="AI usage log"
         hint={data ? `Cloud AI spent this month: ${data.spent} of ${data.cap} budget. Local models cost nothing.` : 'Every call to an AI model, with its cost.'} />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Who or question" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search the AI usage log" />

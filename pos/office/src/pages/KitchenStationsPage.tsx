@@ -30,7 +30,7 @@ export function KitchenStationsPage() {
   const finish = (m: string) => { setEdit(null); setDone(m); setRefresh((n) => n + 1) }
   return (
     <div className={page.page}>
-      <PageHead title="Kitchen stations" hint="Where dishes and drinks are prepared; each has a kitchen screen, or prints its tickets." classic="/admin/kitchen-stations" />
+      <PageHead title="Kitchen stations" hint="Where dishes and drinks are prepared; each has a kitchen screen, or prints its tickets." />
       <div className={s.bar}>
         <ShowFilter value={str(params, 'show')} onChange={(v) => set({ show: v })} />
         <span className={s.grow} />

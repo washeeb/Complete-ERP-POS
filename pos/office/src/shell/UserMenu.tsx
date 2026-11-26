@@ -1,11 +1,11 @@
 import {
   Avatar, Button, Menu, MenuDivider, MenuGroup, MenuGroupHeader, MenuItem, MenuItemRadio, MenuList, MenuPopover, MenuTrigger, Text,
 } from '@fluentui/react-components'
-import { ArrowExitRegular, PersonRegular, WindowArrowUpRegular } from '@fluentui/react-icons'
+import { ArrowExitRegular, PersonRegular } from '@fluentui/react-icons'
 import { api, type Me, type Prefs } from '../api'
 import { navigate } from '../nav'
 
-/** The person, top right: their profile, the look (menu across the top or at the side), the classic back office, sign out. */
+/** The person, top right: their profile, the look (menu across the top or at the side), sign out. */
 export function UserMenu({ me, onLook, dark = false }: { me: Me; onLook: (look: Prefs['office_look']) => void; dark?: boolean }) {
   return (
     <Menu checkedValues={{ look: [me.prefs.office_look] }} onCheckedValueChange={(_, d) => d.name === 'look' && onLook(d.checkedItems[0] as Prefs['office_look'])}>
@@ -26,7 +26,6 @@ export function UserMenu({ me, onLook, dark = false }: { me: Me; onLook: (look: 
             <MenuItemRadio name="look" value="side">At the side</MenuItemRadio>
           </MenuGroup>
           <MenuDivider />
-          <MenuItem icon={<WindowArrowUpRegular />} onClick={() => location.assign(me.classic)}>Classic back office</MenuItem>
           <MenuItem icon={<ArrowExitRegular />} onClick={() => void api.signOut()}>Sign out</MenuItem>
         </MenuList>
       </MenuPopover>

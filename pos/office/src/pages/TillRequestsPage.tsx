@@ -73,7 +73,7 @@ export function TillRequestsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Till requests" hint="A till asks for your yes: check what is asked, then Approve or Decline. You need not be at the till, and your PIN is never typed where others can see it." classic="/admin/till-requests" />
+      <PageHead title="Till requests" hint="A till asks for your yes: check what is asked, then Approve or Decline. You need not be at the till, and your PIN is never typed where others can see it." />
       {data && push !== 'unsupported' && !(data.push.has_device && push === 'granted') && (
         <MessageBar intent="info" style={{ marginBottom: 12 }}><MessageBarBody>
           <div className={s.push}>

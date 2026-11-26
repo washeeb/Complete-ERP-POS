@@ -50,7 +50,7 @@ export function HealthChecksPage() {
   const readingReady = !!r && !!r.branch_id && (r.kind === 'bp' ? !!r.systolic && !!r.diastolic : results ? !!r.result : r.kind === 'wound' ? r.note.trim().length >= 3 : !!r.value)
   return (
     <div className={page.page}>
-      <PageHead title="Health checks" hint="Flags follow common screening limits, to prompt a referral. They are not a diagnosis." classic="/admin/health-checks" />
+      <PageHead title="Health checks" hint="Flags follow common screening limits, to prompt a referral. They are not a diagnosis." />
       <div className={s.bar} style={{ alignItems: 'flex-end' }}>
         <Field label="From"><Input type="date" value={str(params, 'from')} onChange={(_, d) => set({ from: d.value })} /></Field>
         <Field label="To"><Input type="date" value={str(params, 'to')} onChange={(_, d) => set({ to: d.value })} /></Field>

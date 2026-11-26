@@ -39,7 +39,7 @@ export function BackupsPage() {
   const fields = dest ? d.fields[dest.type] ?? [] : []
   return (
     <div className={page.page}>
-      <PageHead title="Backups" hint="Automatic encrypted backups: where they go, how the last ones went, and checks that they restore." classic="/admin/backups" />
+      <PageHead title="Backups" hint="Automatic encrypted backups: where they go, how the last ones went, and checks that they restore." />
       {!d.passphrase_set && <MessageBar intent="error" style={{ marginBottom: 12 }}><MessageBarBody>
         There is no backup passphrase yet, so backups cannot run. On the server, in the <code>server</code> folder, run <code>php artisan erp:backup:key</code>, write the passphrase down and keep it away from the server.
       </MessageBarBody></MessageBar>}

@@ -9,7 +9,7 @@ import { day, ProcList, ToneBadge } from './ProcurementParts'
  */
 export function PurchaseRequestsPage() {
   return (
-    <ProcList<PrRow> title="Purchase requests" hint="What a store needs. A buyer orders it, asks suppliers for prices, or rejects it." classic="/admin/purchase-requests"
+    <ProcList<PrRow> title="Purchase requests" hint="What a store needs. A buyer orders it, asks suppliers for prices, or rejects it."
       load={api.purchaseRequests as never} label="Purchase requests" placeholder="Request number" create="/office/purchase-requests/new" createLabel="New purchase request"
       empty="No purchase requests match." open={(r) => `/office/purchase-requests/${r.id}`}
       cards={(d) => <Cards items={[{ label: 'Shown', value: d.total.toLocaleString('en-GB') },

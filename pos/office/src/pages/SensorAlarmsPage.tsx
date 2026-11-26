@@ -26,7 +26,7 @@ export function SensorAlarmsPage() {
   const open = data?.open ?? (str(params, 'open') || '1')
   return (
     <div className={page.page}>
-      <PageHead title="Sensor alarms" classic="/admin/iot-alarms"
+      <PageHead title="Sensor alarms"
         hint="People on duty are told at once and every 15 minutes until someone acknowledges with what was done; managers after 30 minutes. An alarm closes when it is acknowledged and the reading is back in range." />
       <div className={s.bar}>
         <Dropdown aria-label="Closed or not" value={OPEN.find((x) => x.id === open)?.label ?? 'Not closed'} selectedOptions={[open]} style={{ minWidth: 140 }}

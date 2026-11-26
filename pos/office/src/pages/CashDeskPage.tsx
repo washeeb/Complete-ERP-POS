@@ -62,7 +62,7 @@ export function CashDeskPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Cash desk" hint="Issue each vault's float to its teller, receive the trays the tellers have counted, and hand them over to the income controller." classic="/admin/cash-desk" />
+      <PageHead title="Cash desk" hint="Issue each vault's float to its teller, receive the trays the tellers have counted, and hand them over to the income controller." />
       <div className={c.bar}>
         <BranchPick branches={data.branches} value={data.branch} onChange={(branch) => { setDone(''); set({ branch }) }} />
         {loading && <Spinner size="tiny" />}

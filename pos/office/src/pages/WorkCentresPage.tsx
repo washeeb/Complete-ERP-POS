@@ -34,7 +34,7 @@ export function WorkCentresPage() {
   const put = <K extends keyof WorkCentreValues>(k: K) => (x: string) => setEdit((o) => (o ? { ...o, v: { ...o.v, [k]: x } } : o))
   return (
     <div className={page.page}>
-      <PageHead title="Work centres" hint="Machines and teams that operations run on. Their cost per hour turns minutes into labour and overhead cost." classic="/admin/work-centres" />
+      <PageHead title="Work centres" hint="Machines and teams that operations run on. Their cost per hour turns minutes into labour and overhead cost." />
       <div className={s.bar}>
         <ShowFilter value={str(params, 'show')} onChange={(v) => set({ show: v })} />
         <span className={s.grow} />

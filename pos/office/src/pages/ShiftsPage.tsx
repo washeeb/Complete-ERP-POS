@@ -59,7 +59,7 @@ export function ShiftsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Till shifts" hint="Each shift from opening to the cash count. A corrected count shows the corrected figure; the original stays on the shift." classic="/admin/shifts" />
+      <PageHead title="Till shifts" hint="Each shift from opening to the cash count. A corrected count shows the corrected figure; the original stays on the shift." />
       <div className={s.bar}>
         <PeriodButtons value={str(params, 'period')} onChange={(v) => set({ period: v })} />
         <Button size="small" appearance={str(params, 'status') === 'open' ? 'primary' : 'secondary'} onClick={() => set({ status: str(params, 'status') === 'open' ? '' : 'open' })}>Open now</Button>

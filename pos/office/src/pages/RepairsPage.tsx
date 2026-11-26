@@ -35,7 +35,7 @@ export function RepairsPage() {
   const put = (k: keyof typeof BLANK) => (x: string) => setAdd((o) => (o ? { ...o, [k]: x } : o))
   return (
     <div className={page.page}>
-      <PageHead title="Repairs" hint="Devices in for repair. Jobs with charges are collected by paying at the till." classic="/admin/repair-jobs" />
+      <PageHead title="Repairs" hint="Devices in for repair. Jobs with charges are collected by paying at the till." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number, customer, phone, device or serial" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search repairs" />
         <Pick label="Status" any="Any status" options={data?.statuses ?? []} value={str(params, 'status')} onChange={(v) => set({ status: v })} />

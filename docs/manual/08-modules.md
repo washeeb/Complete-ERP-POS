@@ -16,7 +16,7 @@ When a company runs more than one kind of business, each kind is an **industry**
 
 - **An industry appears by itself** when its module is switched on for a branch (8.1). The branch then belongs to it. *Company → Industries* lists the industries. You rarely need to add one by hand: switching on a module for a branch creates it. Its **code** is given automatically from the name and starts its product codes (e.g. GROCER-000001).
 - **Head office or a central warehouse** can belong to no industry (*company-level*). Only people with company-wide access see it.
-- **The industry switcher** at the top of the back office (*All industries*, *Pharmacy*, *Grocery*, …) is shown to people who can see more than one industry.
+- **The industry switcher** at the top of the back office, beside the bell (*All industries*, *Pharmacy*, *Grocery*, …), is shown to people who can see more than one industry.
   - With an industry chosen, every screen shows only that industry: branches, stock, prices, purchasing, sales, reports, and its own dashboard. The pharmacy dashboard shows prescriptions and expiring batches.
   - With *All industries*, the dashboard shows each industry's sales side by side.
 - **Each industry has its own catalogue.**

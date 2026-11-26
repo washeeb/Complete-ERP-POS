@@ -10,6 +10,8 @@ import { menuShade, onColor } from '../theme'
 import { AreaPanel } from './AreaPanel'
 import { CreateMenu } from './CreateMenu'
 import { Search } from './Search'
+import { Bell } from './Bell'
+import { IndustrySwitch } from './IndustrySwitch'
 import { UserMenu } from './UserMenu'
 
 const useStyles = makeStyles({
@@ -93,6 +95,8 @@ export function SideLook({ me, menu, current, page, todo, atTodo, onLook, onFavo
         <header className={s.top}>
           <Text weight="semibold" size={400} truncate wrap={false} className={s.name}>{me.company.name}</Text>
           <div className={s.grow}><Search menu={menu} /></div>
+          <IndustrySwitch me={me} />
+          <Bell />
           <UserMenu me={me} onLook={onLook} />
         </header>
         <main className={s.main}>{children}</main>

@@ -25,20 +25,20 @@ const SHOW = [['', 'In use'], ['archived', 'Archived only'], ['both', 'Both']]
 const yes = (v: unknown) => (v ? 'Yes' : '—')
 
 /** What each list shows: title, hint, the current page, and its columns beyond the name. */
-const KIND: Record<RefKind, { title: string; one: string; hint: string; classic: string; columns: [string, (r: RefRow) => ReactNode][] }> = {
-  categories: { title: 'Categories', one: 'category', hint: 'Groups of products, one inside another if you like. Move its products to another before deleting one.', classic: '/admin/categories',
+const KIND: Record<RefKind, { title: string; one: string; hint: string; columns: [string, (r: RefRow) => ReactNode][] }> = {
+  categories: { title: 'Categories', one: 'category', hint: 'Groups of products, one inside another if you like. Move its products to another before deleting one.',
     columns: [['Inside', (r) => (r.parent as string) ?? '—'], ['Industry', (r) => r.industry as string], ['Products', (r) => r.products]] },
-  brands: { title: 'Brands', one: 'brand', hint: 'Who makes each product. Move its products to another before deleting one.', classic: '/admin/brands',
+  brands: { title: 'Brands', one: 'brand', hint: 'Who makes each product. Move its products to another before deleting one.',
     columns: [['Industry', (r) => r.industry as string], ['Products', (r) => r.products]] },
-  units: { title: 'Units of measure', one: 'unit', hint: 'The units products are sold and counted in (PC, CTN, KG, TAB). Two codes for the same thing? Merge one into the other.', classic: '/admin/uoms',
+  units: { title: 'Units of measure', one: 'unit', hint: 'The units products are sold and counted in (PC, CTN, KG, TAB). Two codes for the same thing? Merge one into the other.',
     columns: [['Code', (r) => <Text font="monospace" weight="semibold">{r.code as string}</Text>], ['Decimals', (r) => r.decimals as number], ['Products', (r) => r.products],
       ['Merged into', (r) => (r.merged_into ? <Badge appearance="tint" color="subtle">{r.merged_into as string}</Badge> : '—')]] },
-  'tax-rates': { title: 'Tax rates', one: 'tax rate', hint: 'Each tax and its rate. A change affects new sales only; posted sales keep the tax they were charged.', classic: '/admin/tax-rates',
+  'tax-rates': { title: 'Tax rates', one: 'tax rate', hint: 'Each tax and its rate. A change affects new sales only; posted sales keep the tax they were charged.',
     columns: [['Code', (r) => <Text font="monospace">{r.code as string}</Text>], ['Rate', (r) => r.rate as string]] },
-  'tax-groups': { title: 'Tax groups', one: 'tax group', hint: 'Which taxes a product is charged. Each is calculated on the price before tax (no tax on tax). An accountant should check each group.', classic: '/admin/tax-groups',
+  'tax-groups': { title: 'Tax groups', one: 'tax group', hint: 'Which taxes a product is charged. Each is calculated on the price before tax (no tax on tax). An accountant should check each group.',
     columns: [['Code', (r) => <Text font="monospace">{r.code as string}</Text>], ['Taxes', (r) => r.taxes as string],
       ['Accountant check', (r) => <Badge appearance="tint" color={r.verified ? 'success' : 'warning'}>{(r.verified as string) ?? 'Not verified'}</Badge>], ['Products', (r) => r.products]] },
-  'price-lists': { title: 'Price lists', one: 'price list', hint: 'Retail, wholesale, staff…: each product can have a price on each list. The default list is used when the till starts a sale.', classic: '/admin/price-lists',
+  'price-lists': { title: 'Price lists', one: 'price list', hint: 'Retail, wholesale, staff…: each product can have a price on each list. The default list is used when the till starts a sale.',
     columns: [['Code', (r) => <Text font="monospace">{r.code as string}</Text>], ['Incl. tax', (r) => yes(r.incl_tax)], ['Default', (r) => yes(r.default)], ['At till', (r) => yes(r.at_till)],
       ['Industry', (r) => r.industry as string], ['Branch', (r) => r.branch as string], ['Prices', (r) => r.prices as number]] },
 }
@@ -88,7 +88,7 @@ export function ReferenceListPage({ kind }: { kind: RefKind }) {
 
   return (
     <div className={page.page}>
-      <PageHead title={k.title} hint={k.hint} classic={k.classic} />
+      <PageHead title={k.title} hint={k.hint} />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Name or code" value={q} onChange={(_, d) => setQ(d.value)} aria-label={`Search ${k.title.toLowerCase()}`} />
         {data?.archivable && <Dropdown aria-label="Show" style={{ minWidth: 140 }} value={SHOW.find((x) => x[0] === show)?.[1] ?? ''} selectedOptions={[show]} onOptionSelect={(_, d) => set({ show: d.optionValue ?? '' })}>

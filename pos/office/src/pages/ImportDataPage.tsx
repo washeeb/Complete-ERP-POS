@@ -93,7 +93,7 @@ export function ImportDataPage() {
   return (
     <div className={page.page}>
       <PageHead title="Import data (CSV / Excel)" hint="Pick what to import, download the template, upload, Check file (nothing is saved), then Import. Every row goes through the same checks as the screens."
-        classic={`/admin/import-data?type=${d.type}`} />
+        />
       {note && <MessageBar intent={note.good ? 'success' : 'warning'} style={{ marginBottom: 12 }}><MessageBarBody>{note.text}</MessageBarBody></MessageBar>}
       <Panel title="1. What are you importing?">
         <div className={s.grid} style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))' }}>

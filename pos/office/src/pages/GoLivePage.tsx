@@ -61,7 +61,7 @@ export function GoLivePage() {
   }
   return (
     <div className={page.page}>
-      <PageHead title="Going live" hint="The plan, the checklist, the figures against the old system, and the decision to go live — or go back." classic="/admin/go-live" />
+      <PageHead title="Going live" hint="The plan, the checklist, the figures against the old system, and the decision to go live — or go back." />
       <div className={s.bar}><span className={s.grow} /><Button appearance="primary" icon={<EditRegular />} onClick={() => open('plan')}>Plan</Button></div>
       {note && <MessageBar intent={note.good ? 'success' : 'warning'} style={{ marginBottom: 12 }}><MessageBarBody>{note.text}</MessageBarBody></MessageBar>}
       <Panel title="Status">

@@ -35,7 +35,7 @@ A **branch server** is a second copy of the server at a branch. The branch's til
    Paste the secret when asked. The exact command, with the head office id and company id filled in, is the one shown in step 2.
    **Why:** this downloads everything the branch needs: company, people, products, prices and stock.
 5. Make sure the scheduler runs on the branch server (Chapter 4.8 or 5.9). It runs the sync every minute.
-6. Register and enrol **that branch's devices on the branch server's own back office** (`http://<branch-server>/admin` → System → Devices), and point the tills at the branch server's address (Chapter 9).
+6. Register and enrol **that branch's devices on the branch server's own back office** (`http://<branch-server>/office` → System → Devices), and point the tills at the branch server's address (Chapter 9).
 
 **Check:**
 - Branch server back office → **System → Sync Center**: head office shows **OK** and a recent *Last sync*.

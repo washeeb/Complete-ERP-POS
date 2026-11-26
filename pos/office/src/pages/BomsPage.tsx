@@ -29,7 +29,7 @@ export function BomsPage() {
   }, [q]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className={page.page}>
-      <PageHead title="Bills of materials" hint="What each product is made from, and the steps. Only a draft can change; a BOM in use changes through a new revision." classic="/admin/boms" />
+      <PageHead title="Bills of materials" hint="What each product is made from, and the steps. Only a draft can change; a BOM in use changes through a new revision." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Code or product" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search bills of materials" />
         <Pick label="Status" any="Any status" options={data?.statuses ?? []} value={str(params, 'status')} onChange={(v) => set({ status: v })} />

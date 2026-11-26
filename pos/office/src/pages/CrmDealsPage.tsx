@@ -31,7 +31,7 @@ export function CrmDealsPage() {
   const status = data?.status ?? (str(params, 'status') || 'open')
   return (
     <div className={page.page}>
-      <PageHead title="Deals" hint="Sales you are working on. A deal is won by itself when its quotation is confirmed as an order." classic="/admin/crm-deals" />
+      <PageHead title="Deals" hint="Sales you are working on. A deal is won by itself when its quotation is confirmed as an order." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number or what they want" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search deals" />
         <Dropdown aria-label="Status" value={status === 'all' ? 'Any status' : data?.statuses.find((x) => x.id === status)?.label ?? 'In progress'} selectedOptions={[status]} style={{ minWidth: 150 }}

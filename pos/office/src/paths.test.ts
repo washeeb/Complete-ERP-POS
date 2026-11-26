@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Menu } from './api'
-import { adminEquivalent, adminPathFor, appPathFor, classicPathFor, findPages, routeOf, tabOf } from './paths'
+import { adminEquivalent, adminPathFor, appPathFor, findPages, routeOf, tabOf } from './paths'
 
 const menu: Menu = {
   home: '/admin',
@@ -39,7 +39,6 @@ describe('addresses', () => {
     expect(appPathFor('/admin/sales?tableFilters=x')).toBe('/office/sales')
     expect(appPathFor('/admin/sales/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')).toBe('/office/sales/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')
     expect(appPathFor('/admin/sales-orders')).toBe('/office/online/orders') // its own page, not till sales
-    expect(classicPathFor('/admin/sales')).toBe('/office/a/sales')
     expect(routeOf('/office/sales')).toEqual({ page: 'sales' })
     expect(routeOf('/office/sales/0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f')).toEqual({ page: 'sale', id: '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f' })
     expect(adminEquivalent({ page: 'sales' })).toBe('/admin/sales')

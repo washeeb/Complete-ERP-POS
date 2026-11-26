@@ -15,7 +15,7 @@ export function CostRunsPage() {
   const m = (x: number) => (cur.current ? money(x, cur.current.currency, cur.current.exponent) : String(x))
   return (
     <ProcList<CostRunRow> title="Cost runs" hint="A cost worked out from the selling price, for products loaded without one. Preview first; nothing moves until it is posted."
-      classic="/admin/stock-cost-runs" label="Cost runs" placeholder="Number" create="/office/cost-runs/new" createLabel="New cost run"
+      label="Cost runs" placeholder="Number" create="/office/cost-runs/new" createLabel="New cost run"
       load={((q: string, signal: AbortSignal) => api.costRuns(q, signal).then((d) => { cur.current = d; return d })) as never}
       empty="No cost runs match." open={(r) => `/office/cost-runs/${r.id}`}
       cards={(d) => <Cards items={[{ label: 'Shown', value: d.total.toLocaleString('en-GB') },

@@ -43,7 +43,7 @@ export function FloorPlanPage() {
   }
   return (
     <div className={page.page}>
-      <PageHead title="Floor plan" hint="Tables per branch, with their area, seats and place on the till's floor view." classic="/admin/dining-tables" />
+      <PageHead title="Floor plan" hint="Tables per branch, with their area, seats and place on the till's floor view." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Table" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search tables" />
         <Pick label="Branch" any="Every branch" options={data?.branches ?? []} value={str(params, 'branch')} onChange={(v) => set({ branch: v })} />

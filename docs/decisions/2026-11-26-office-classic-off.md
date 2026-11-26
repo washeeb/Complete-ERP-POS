@@ -1,0 +1,7 @@
+## Switching the classic back office off
+- **Owner decision 2026-11-26: "Switch it off".** Every classic address redirects to its new page; the classic look choice and links are removed. Done by a config switch (`ERP_CLASSIC_BACK_OFFICE`, off) rather than deleting the panel: the new screens reuse the classic resources' queries, permissions and forms, and their tests keep running with the switch on. Support can switch it back on one server if a page turns out to be missing, without a release.
+- **Only safe requests are redirected.** A POST from a classic page left open in a browser is not turned into a GET elsewhere; it fails, and the next page opened is the new one.
+- **Found while switching off: three things lived only in the classic shell** — the notifications bell, the licence gate and the industry switch (people covering several industries would have lost "All industries / Pharmacy / …"). All three are rebuilt in the new look before the switch, so nothing is lost.
+- **Production serves `/office` as static files,** so the licence and setup gates are enforced by the client from `me` (and by the server for the API); the server-side redirect in `OfficeController::index` covers development and the PHP-served case.
+- **The layout check moved to the new look,** since the classic pages it opened now redirect; the rule (never ship a layout change it fails) is unchanged.
+- **`erp:page-timings` times the data calls,** not HTML pages: the new back office's pages are static and wait for their data, so the data calls are what people wait for.

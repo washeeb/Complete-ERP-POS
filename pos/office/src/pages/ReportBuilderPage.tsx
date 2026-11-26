@@ -99,7 +99,7 @@ export function ReportBuilderPage() {
   return (
     <div className={page.page}>
       <PageHead title={saved?.name ?? 'Report builder'} hint="Choose the data, what to group it by and the figures. Click a line of a grouped report to see the rows behind it; save it to run again or send it on a schedule."
-        classic={`/admin/report-builder${reportId ? `?report=${reportId}` : ''}`} />
+        />
       <div className={s.bar}>
         <Button icon={<ArrowLeftRegular />} onClick={() => navigate('/office/saved-reports')}>Saved reports</Button>
         {saved && <Button icon={<AddRegular />} onClick={() => { set({ report: '' }); setResult(null) }}>New report</Button>}

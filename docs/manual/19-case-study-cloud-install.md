@@ -79,7 +79,7 @@ Done when both files show **100%**.
    ```
    sudo bash /root/install.sh --zip /root/ses-labs-<client>-<build>.zip --domain erp.clientdomain.com --email info@synclyticsenterprisesystems.com
    ```
-   It shows steps **1/10 to 10/10** and ends with *Done: the server answers at https://erp.clientdomain.com/admin*. Here the packages, libraries and database took about 5 minutes on a new Cloud VPS 6.
+   It shows steps **1/10 to 10/10** and ends with *Done: the server answers at https://erp.clientdomain.com/office*. Here the packages, libraries and database took about 5 minutes on a new Cloud VPS 6.
 5. **Write down the backup passphrase** it shows, and keep it with the SyncLytics key backup. Backups cannot be restored without it.
 6. Answer its questions to create the **company and the owner account** (Chapter 7).
 
@@ -96,7 +96,7 @@ The site answered over HTTPS straight away, with a Let's Encrypt certificate val
 
 ## 19.7 Licence and first sign-in
 
-1. Open `https://erp.clientdomain.com/admin` and sign in as the owner. The padlock shows a valid certificate.
+1. Open `https://erp.clientdomain.com/office` and sign in as the owner. The padlock shows a valid certificate.
 2. **Licence** page: copy the **installation code** (`SYNREQ-…`) and send it to SyncLytics. The code names the release build, which confirms the signed release is installed.
 3. SyncLytics issues the key for exactly what the client bought. Here that was:
    - 2 shops, 4 tills and devices, 10 users;

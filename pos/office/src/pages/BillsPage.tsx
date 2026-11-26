@@ -35,7 +35,7 @@ export function BillsPage() {
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div className={page.page}>
-      <PageHead title="Bills" hint="Open tables and tabs now, and every order, with voids and who did them." classic="/admin/dining-orders" />
+      <PageHead title="Bills" hint="Open tables and tabs now, and every order, with voids and who did them." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Number or waiter" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search bills" />
         <Pick label="Status" any="Any status" options={data?.statuses ?? []} value={str(params, 'status')} onChange={(v) => set({ status: v })} />

@@ -1,5 +1,5 @@
-import { Button, Link, makeStyles, MessageBar, MessageBarBody, Spinner, Text, tokens } from '@fluentui/react-components'
-import { AddRegular, ArrowLeftRegular, DeleteRegular, SaveRegular, WindowArrowUpRegular } from '@fluentui/react-icons'
+import { Button, makeStyles, MessageBar, MessageBarBody, Spinner, Text, tokens } from '@fluentui/react-components'
+import { AddRegular, ArrowLeftRegular, DeleteRegular, SaveRegular } from '@fluentui/react-icons'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { api, type CoForm, type CoLine, type CoValues } from '../api'
 import { Ask } from '../form/Ask'
@@ -8,7 +8,6 @@ import { SearchPicker } from '../form/SearchPicker'
 import { UnitPicker } from '../form/UnitPicker'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
-import { classicPathFor } from '../paths'
 
 const useStyles = makeStyles({
   head: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' },
@@ -71,7 +70,6 @@ export function CustomerOrderFormPage({ id, onTitle }: { id: string | null; onTi
   const set = <K extends keyof CoValues>(k: K) => (x: CoValues[K]) => setV((o) => (o ? { ...o, [k]: x } : o))
   const line = (i: number, patch: Partial<Line>) => setV((o) => (o ? { ...o, lines: o.lines.map((l, j) => (j === i ? { ...l, ...patch } : l)) } : o))
   const dupe = (i: number) => !!v.lines[i].pid && v.lines.some((l, j) => j !== i && l.pid === v.lines[i].pid)
-  const classic = classicPathFor(id ? `/admin/customer-orders/${id}/edit` : '/admin/customer-orders/create')
   const back = () => (history.length > 1 ? history.back() : navigate(id ? `/office/customer-orders/${id}` : '/office/customer-orders'))
   const ready = !!v.customer_id && !!v.warehouse_id && v.lines.length > 0 && v.lines.every((l) => !!l.product_uom_id && Number(l.qty) > 0)
   const save = () => {
@@ -93,7 +91,6 @@ export function CustomerOrderFormPage({ id, onTitle }: { id: string | null; onTi
           <h1 className={s.title}>{id ? `Edit ${form.number}` : 'New quotation'}</h1>
           <Text className={s.muted}>A quotation can change until the customer accepts it and it is turned into an order.</Text>
         </div>
-        <Link href={classic} onClick={(e) => { e.preventDefault(); navigate(classic) }}><WindowArrowUpRegular /> Classic form</Link>
       </div>
       {error && <MessageBar intent="error" style={{ marginBottom: 12 }}><MessageBarBody>{error}</MessageBarBody></MessageBar>}
 

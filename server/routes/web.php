@@ -45,6 +45,7 @@ use App\Http\Controllers\Office\JournalsController as OfficeJournalsController;
 use App\Http\Controllers\Office\MaintenanceController as OfficeMaintenanceController;
 use App\Http\Controllers\Office\ManufacturingController as OfficeManufacturingController;
 use App\Http\Controllers\Office\MessagingController as OfficeMessagingController;
+use App\Http\Controllers\Office\NotificationsController as OfficeNotificationsController;
 use App\Http\Controllers\Office\OfficeController;
 use App\Http\Controllers\Office\OnlineController as OfficeOnlineController;
 use App\Http\Controllers\Office\PharmacyClaimsController as OfficePharmacyClaimsController;
@@ -108,7 +109,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Spatie\LaravelPasskeys\Http\Controllers\GeneratePasskeyAuthenticationOptionsController;
 
-Route::get('/', fn () => redirect('/admin'));
+Route::get('/', fn () => redirect()->away(rtrim(url('/'), '/').'/office/')); // the back office
 
 // The new back office (React + Fluent UI, built into public/office by `npm run build:office` in pos/). The page, and what it
 // shows (OfficeController), for people signed in to the back office; pages not yet rebuilt open inside it.
@@ -135,6 +136,13 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
 Route::get('/office/{path?}', [OfficeController::class, 'index'])->where('path', '.*')->middleware(OfficeMfa::class)->name('office');
 Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office', OfficeMfa::class])->group(function () {
     Route::get('me', [OfficeController::class, 'me']);
+    Route::post('industry', [OfficeController::class, 'industry']); // the industry switch at the top (part 43)
+    // The bell (part 43): the person's notifications.
+    Route::get('notifications', [OfficeNotificationsController::class, 'index']);
+    Route::get('notifications/count', [OfficeNotificationsController::class, 'count']);
+    Route::post('notifications/{id}/read', [OfficeNotificationsController::class, 'read'])->whereUuid('id');
+    Route::post('notifications/read-all', [OfficeNotificationsController::class, 'readAll']);
+    Route::post('notifications/clear', [OfficeNotificationsController::class, 'clear']);
     Route::get('menu', [OfficeController::class, 'menu']);
     Route::get('search', [OfficeController::class, 'search']);
     Route::post('prefs', [OfficeController::class, 'prefs']);

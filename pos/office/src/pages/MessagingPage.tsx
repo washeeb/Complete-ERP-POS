@@ -58,7 +58,7 @@ export function MessagingPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Messaging: SMS, WhatsApp and e-mail" hint="Messages go through your own provider accounts. Saved passwords and keys are never shown again: leave a box empty to keep what is saved." classic="/admin/messaging" />
+      <PageHead title="Messaging: SMS, WhatsApp and e-mail" hint="Messages go through your own provider accounts. Saved passwords and keys are never shown again: leave a box empty to keep what is saved." />
       {error && <MessageBar intent="error" style={{ marginBottom: 12 }}><MessageBarBody>{error}</MessageBarBody></MessageBar>}
       {done && <MessageBar intent={done.ok ? 'success' : 'warning'} style={{ marginBottom: 12 }}><MessageBarBody>{done.text}</MessageBarBody></MessageBar>}
 

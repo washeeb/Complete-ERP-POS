@@ -70,7 +70,7 @@ export function BrandingPage() {
   const note = lightNote(color || b.default_color)
   return (
     <div className={page.page}>
-      <PageHead title="Your brand" hint="Your logo and colour on the back office, tills, receipts, invoices, PDFs and the online shop." classic="/admin/branding" />
+      <PageHead title="Your brand" hint="Your logo and colour on the back office, tills, receipts, invoices, PDFs and the online shop." />
       {error && <MessageBar intent="error" style={{ marginBottom: 12 }}><MessageBarBody>{error}</MessageBarBody></MessageBar>}
       {done && <MessageBar intent="success" style={{ marginBottom: 12 }}><MessageBarBody>{done}</MessageBarBody></MessageBar>}
       <Panel title="Logo and icon" about="PNG with a transparent background, or SVG, work best. Images are resized and cleaned when you upload them; up to 2 MB.">

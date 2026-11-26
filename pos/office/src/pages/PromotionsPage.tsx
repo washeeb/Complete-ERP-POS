@@ -75,7 +75,7 @@ export function PromotionsPage() {
   const finish = (r: UserDone) => { close(); setDone(r.message); setNonce((n) => n + 1) }
   return (
     <div className={page.page}>
-      <PageHead title="Promotions" hint="Discounts, multi-buys, bundles, spend-and-save and coupons. Set up here, they reach every branch and till at the next sync." classic="/admin/promotions" />
+      <PageHead title="Promotions" hint="Discounts, multi-buys, bundles, spend-and-save and coupons. Set up here, they reach every branch and till at the next sync." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Name or coupon code" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search promotions" />
         {pick('type', types, 'Kind')}

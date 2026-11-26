@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Office;
 
 use App\Domain\Access\AccessService;
 use App\Domain\Branding\Branding;
+use App\Domain\Licensing\LicenseManager;
 use App\Domain\Office\HomeData;
 use App\Domain\Office\TodoData;
 use App\Domain\Pos\TillApprovals;
@@ -16,6 +17,7 @@ use App\Models\Tenant;
 use App\Models\TillApproval;
 use App\Models\User;
 use App\Security\ReconfirmNeeded;
+use App\Support\IndustryContext;
 use App\Support\Look;
 use App\Support\OfficeUrl;
 use App\Support\UserPrefs;
@@ -44,6 +46,10 @@ class OfficeController extends Controller
     {
         if (! $request->user()) {
             return $this->signIn($request->merge(['to' => $request->getRequestUri()]));
+        }
+        // Not licensed yet: the licence page first (part 43, as the current back office's EnforceLicense).
+        if (! $request->is('office/licence', 'office/two-factor-setup') && app(LicenseManager::class)->status()['state'] === 'unlicensed') {
+            return redirect('/office/licence');
         }
         $index = public_path('office/index.html');
 
@@ -90,10 +96,39 @@ class OfficeController extends Controller
                 'logo' => $brand['logo_url'], 'logo_dark' => $brand['logo_dark_url'], 'icon' => $brand['icon_url']],
             'prefs' => UserPrefs::for($user),
             'favourites' => Look::favourites(),
-            'classic' => '/admin', // the current back office, for a few releases
             // Not set up yet, and this person may set it up: the setup wizard first, as the current back office does.
             'setup' => $tenant && ! $tenant->isSetUp() && SetupWizard::canAccess() ? '/office/setup-wizard' : null,
+            // Not licensed yet: the licence page first, as the current back office does (part 43).
+            'licence' => app(LicenseManager::class)->status()['state'] === 'unlicensed' ? '/office/licence' : null,
+            'industry' => $this->industrySwitch($user),
         ]);
+    }
+
+    /**
+     * The industry switch at the top ("All industries / Pharmacy / Grocery …", as the current back office's): every
+     * screen then shows only that industry's branches, stock, prices, purchasing, sales and reports. Only for people who
+     * cover several industries, or the whole company; null for everyone else (they stay in their own).
+     */
+    private function industrySwitch(User $user): ?array
+    {
+        $options = IndustryContext::options($user);
+        if (! ($options->count() > 1 || ($options->isNotEmpty() && IndustryContext::companyWide($user)))) {
+            return null;
+        }
+
+        return ['selected' => (string) IndustryContext::selected(), 'options' => $options->map(fn ($name, $id) => ['id' => (string) $id, 'label' => $name])->values()->all()];
+    }
+
+    /** Choose the industry shown (empty: all of them). One the person cannot switch to is refused. */
+    public function industry(Request $request): JsonResponse
+    {
+        $user = $this->panel($request);
+        $id = (string) $request->input('industry', '');
+        $switch = $this->industrySwitch($user);
+        abort_if($switch === null || ($id !== '' && ! in_array($id, array_column($switch['options'], 'id'), true)), 422, 'Choose one of your industries.');
+        IndustryContext::set($id ?: null);
+
+        return response()->json(['selected' => (string) IndustryContext::selected()]);
     }
 
     /** The menu: areas → sections → (headed) groups → pages, as the current back office has it for this person. */

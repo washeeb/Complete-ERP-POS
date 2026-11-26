@@ -337,6 +337,7 @@ Say '8/10 Database structure and standard data'
 Run $php @('artisan', 'migrate', '--force', '--no-interaction')
 Run $php @('artisan', 'db:seed', '--force', '--no-interaction')
 if (-not (Test-Path 'public\pos\index.html')) { Write-Warning 'The release has no till app (public\pos). Build it as in Chapter 4.7, or ask for a release built with the till.' }
+if (-not (Test-Path 'public\office\index.html')) { Write-Warning 'The release has no back office (public\office). Ask for a release built with it: the back office is only there.' }
 Run $php @('artisan', 'optimize', '--no-interaction')
 Run $php @('artisan', 'filament:optimize', '--no-interaction') # caches the screens' building blocks and icons
 
@@ -397,7 +398,7 @@ if (-not $ok) {
   foreach ($log in "$Dir\caddy\caddy.log", "$Dir\server\storage\logs\laravel.log") { if (Test-Path $log) { Write-Host "Last lines of ${log}:"; Get-Content $log -Tail 15 | ForEach-Object { Write-Host "  $_" } } }
   Die "The server does not answer on $check (details above). Logs: $Dir\caddy\caddy.log and $Dir\server\storage\logs\laravel.log."
 }
-Write-Host "`nDone. Back office: $((Select-String -Path .env -Pattern '^APP_URL=(.*)$').Matches[0].Groups[1].Value)/admin" -ForegroundColor Green
+Write-Host "`nDone. Back office: $((Select-String -Path .env -Pattern '^APP_URL=(.*)$').Matches[0].Groups[1].Value)/office/" -ForegroundColor Green
 Write-Host "Passwords made for this installation are in $secrets (administrators only)."
 if (-not $Domain -and $Setup -eq 'B') {
   $how = if ($use80) { "open http://$($sites[0])/ca.crt once and trust it" } else { "copy $Dir\$Slug-certificate.crt to each device once and trust it" }

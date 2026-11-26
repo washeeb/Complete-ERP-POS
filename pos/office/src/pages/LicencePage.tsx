@@ -33,7 +33,7 @@ export function LicencePage() {
   }
   return (
     <div className={page.page}>
-      <PageHead title="Licence" hint="What this installation is licensed for, and how to renew it." classic="/admin/licence" />
+      <PageHead title="Licence" hint="What this installation is licensed for, and how to renew it." />
       <div className={s.bar}>
         <span className={s.grow} />
         {d.can_checkin && <Button icon={<ArrowSyncRegular />} disabled={busy} onClick={checkin}>{busy ? 'Checking in…' : 'Check in now'}</Button>}

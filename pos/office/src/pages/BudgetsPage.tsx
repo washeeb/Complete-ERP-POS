@@ -56,7 +56,7 @@ export function BudgetsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Budgets" hint="Income and costs you plan for each month of the year, per branch, as positive amounts. Compare them under Reports → Budget vs actual." classic={`/admin/budgets${year ? `?year=${year}` : ''}`} />
+      <PageHead title="Budgets" hint="Income and costs you plan for each month of the year, per branch, as positive amounts. Compare them under Reports → Budget vs actual." />
       <div className={s.bar}>
         <Field label="Financial year"><Input type="number" min={2000} max={2100} value={String(data.year)} onChange={(_, d) => d.value.length === 4 && change({ year: d.value })} style={{ width: 110 }} /></Field>
         <Field label="Branch">

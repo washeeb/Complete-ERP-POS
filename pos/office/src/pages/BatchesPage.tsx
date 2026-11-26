@@ -86,9 +86,9 @@ export function BatchesPage({ industry = '' }: { industry?: '' | 'grocery' | 'ph
   return (
     <div className={page.page}>
       {industry ? <PageHead title={TITLES[industry]} hint={`Near-expiry markdowns and their stickers, and expired stock to take off the shelf, for the ${industry === 'grocery' ? 'grocery stores' : 'pharmacies'}.`}
-        classic={`/admin/${industry}/markdowns${warehouse ? `?warehouse=${warehouse}` : ''}`} />
+        />
         : <PageHead title="Batches & expiry" hint="Batches by expiry date for one store: mark down what expires soon, take expired stock off the shelf, and correct a batch typed wrongly."
-          classic={`/admin/batches-expiry${warehouse ? `?warehouse=${warehouse}` : ''}`} />}
+          />}
       <div className={s.bar}>
         <Field label="Warehouse">
           <Dropdown aria-label="Warehouse" value={where} selectedOptions={[data.warehouse]} style={{ minWidth: 240 }} onOptionSelect={(_, d) => d.optionValue && set({ warehouse: d.optionValue })}>

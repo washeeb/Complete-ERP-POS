@@ -28,7 +28,7 @@ export function PayrollPage() {
   const m = (x: number) => (data ? money(x, data.currency, data.exponent) : '')
   return (
     <div className={page.page}>
-      <PageHead title="Payroll" hint="Each month: prepare, then someone else approves (it posts to the books), then record the payment." classic="/admin/payroll-runs" />
+      <PageHead title="Payroll" hint="Each month: prepare, then someone else approves (it posts to the books), then record the payment." />
       <div className={s.bar}>
         <Dropdown aria-label="Status" value={status ? data?.statuses.find((x) => x.id === status)?.label ?? '' : 'Any status'} selectedOptions={[status]} style={{ minWidth: 160 }}
           onOptionSelect={(_, d) => set({ status: d.optionValue ?? '' })}>

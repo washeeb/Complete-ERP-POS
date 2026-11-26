@@ -32,7 +32,7 @@ export function PayrollRulesPage() {
   return (
     <div className={page.page}>
       <Button appearance="transparent" icon={<ArrowLeftRegular />} onClick={() => navigate('/office/payroll')}>Payroll</Button>
-      <PageHead title="Tax and SSNIT rules" hint="The PAYE bands and SSNIT rates payroll uses. An accountant checks and confirms them." classic="/admin/payroll-rules" />
+      <PageHead title="Tax and SSNIT rules" hint="The PAYE bands and SSNIT rates payroll uses. An accountant checks and confirms them." />
       <div className={s.bar}>
         <span className={s.grow} />
         {p && <ExportMenu url="/office-api/payroll-rules/export" query="" total={p.bands.length} />}

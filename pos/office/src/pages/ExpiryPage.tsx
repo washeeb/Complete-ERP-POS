@@ -72,7 +72,7 @@ export function ExpiryPage() {
   ]
   return (
     <div className={page.page}>
-      <PageHead title="Expiry & returns" hint="Tick the batches of one store, then Dispose, Return to supplier or Mark down. A disposal or return waits for someone else to approve it; the stock leaves only then." classic="/admin/expiry-returns" />
+      <PageHead title="Expiry & returns" hint="Tick the batches of one store, then Dispose, Return to supplier or Mark down. A disposal or return waits for someone else to approve it; the stock leaves only then." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Product, code or batch" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search batches" />
         <Dropdown aria-label="Show" style={{ minWidth: 240 }} value={options?.statuses.find((x) => x.id === status)?.label ?? ''} selectedOptions={[status]}

@@ -46,7 +46,7 @@ export function NhisClaimPage({ id, onTitle }: { id: string; onTitle: (t: string
   const finish = (msg: string) => { setStep(null); setDone(msg); setNonce((n) => n + 1) }
   return (
     <div className={page.page}>
-      <PageHead title={`NHIS claim ${c.number}`} hint="What was claimed from the NHIA, what it paid, and the sales on the claim." classic={`/admin/nhis-claims/${c.id}`} />
+      <PageHead title={`NHIS claim ${c.number}`} hint="What was claimed from the NHIA, what it paid, and the sales on the claim." />
       <div className={s.bar}>
         <Button icon={<ArrowLeftRegular />} onClick={() => navigate('/office/nhis-claims')}>NHIS claims</Button>
         <span className={s.grow} />

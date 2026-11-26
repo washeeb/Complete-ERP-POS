@@ -33,7 +33,7 @@ questions like "what did Ama take by mobile money last week?" in a few clicks, a
 
 **Today — the owner's phone view** (top of the menu; anyone with *receive the daily summary*): the day on one screen that reads well on a phone and updates every minute — sales against the same day last week, cash / mobile money / card, till closes and cash over or short, what needs attention (server health, refused till work, approvals, expiring stock; tap to open), and per branch the sales, tills still open, who closed the day and whether the deposit is on the bank statement. **Yesterday** is one tap away. On the phone, open the back office, go to **Today**, then the browser menu → **Add to Home screen**: it opens like an app. **Why:** the owner sees the business from anywhere in ten seconds, without the full back office.
 
-**The new back office.** Signing in now opens it, at `https://<your server>/office/`. It is the same back office in a Windows-style frame, built with Microsoft's Fluent design. **Classic back office** (under your name) goes back to the old screens, and **New back office** in the classic one's menu (under your photo) comes back.
+**The new back office.** Signing in now opens it, at `https://<your server>/office/`. It is the same back office in a Windows-style frame, built with Microsoft's Fluent design. Since this update it is the only back office: the old screens are switched off, and any old address, bookmark or shortcut opens the same page in the new one.
 
 **To-do** (the list icon at the start of the menu, with a red number) shows everything waiting for your decision.
 - **Till requests** come first: Approve (after confirming it is you) or Decline (say why; the cashier sees it) right there.
@@ -53,7 +53,7 @@ What's there:
   - the **house** for Home;
   - the **clock** for the pages you opened lately;
   - the **star** for your favourite pages. Press it on any page to add that page, or take it off. The star is filled when the page is already a favourite, and your favourites follow you to every computer.
-- **Classic back office** (under your name) goes back to the old screens.
+- The **bell** shows your notifications; a red number counts the unread ones. Press one to open its page.
 
 **Home** shows the business at a glance:
 - **Reminders:** what waits for you; anything needing a decision shows big.
@@ -74,7 +74,6 @@ What's there:
 - The cards above the list show how many sales, their total and how they were paid.
 - Press a heading to sort by it.
 - Press a sale to see it in full, with **Print copy** and, for a walk-in who left a phone number, **Save as customer**.
-- **Classic version** (top right) opens the old screen.
 
 **Till shifts (rebuilt).** **Sales → Till shifts** shows each shift: the till, who opened it, the sales, the float, the cash expected, counted and over or short, and the mobile money and card checks.
 - A shift **left open** overnight shows in red: close it on the till.
@@ -95,8 +94,7 @@ What's there:
   - Barcodes: scan them into the box (or type and press Enter); each shows as a tag with **×** to take it off.
   - **Write description (AI)** drafts an online-shop description; you edit it, and it is saved with the product.
   - If something cannot be saved (for example a scale code used by another product), the reason shows at the top and nothing is saved.
-  - **Classic form** (top right) opens the old form.
-- The file imports under **More** still open the current pages inside the new back office.
+- The file imports under **More** open **Import data** with the right kind of file chosen.
 
 **Stock on hand (rebuilt).** **Stock → Stock on hand** shows every product in every warehouse you may see, with the quantity and when it last moved.
 - **Find stock** by SKU, name or a scanned barcode. **Filters** narrows by warehouse, category, and in stock, out of stock (0) or negative. A negative quantity means more was sold than was recorded coming in: count it.
@@ -263,7 +261,9 @@ What's there:
 
 **Links open the new back office.** Notifications, e-mails, the Home and To-do lists, the menu, search and your favourites now open the new back office's pages, including favourites and Home tiles you set up before the update (they were moved for you). **Why:** every page is now in the new look, so nobody lands on an old page by following a link.
 
-**Export on the rebuilt lists.** Till sales, Till shifts, Till drawer, Products, Stock on hand, the Stock ledger, Stock adjustments, Stock counts, Transfers, Stock requests, Customers, Invoices, Suppliers, Purchase orders, Goods received, Direct purchases, Invoices from suppliers, Reorder levels, Expense claims, Supplier bills and Supplier payments each have **Export**, as every list of the classic back office does.
+**The old back office is switched off.** There is one back office now. An old address, bookmark or desktop shortcut opens the same page in the new one, so nothing needs changing on the computers. The **bell** at the top shows your notifications. If you cover several industries, the **industry box** beside it shows one industry or all of them. **Why:** two back offices meant two places to learn and to keep up to date; everything is now in the new one.
+
+**Export on the rebuilt lists.** Till sales, Till shifts, Till drawer, Products, Stock on hand, the Stock ledger, Stock adjustments, Stock counts, Transfers, Stock requests, Customers, Invoices, Suppliers, Purchase orders, Goods received, Direct purchases, Invoices from suppliers, Reorder levels, Expense claims, Supplier bills and Supplier payments each have **Export**, as every list does.
 - **Excel**, **CSV** or **PDF** of what the list shows: its search, filters and order, all pages, not only the one on screen.
 - A PDF holds about 800 rows; for a longer list **Export to PDF** is greyed out and says so. Narrow the list (for example to a date range), or use Excel or CSV, which take everything. **Why:** a PDF is laid out in the server's memory, and a very long one would stop it.
 - Every export is recorded in the audit log with your name and what was exported.
@@ -401,5 +401,5 @@ To look at a new version before it goes to a client, on the PC with the source c
 node pos/scripts/preview.mjs
 ```
 
-It builds the till into the server, brings the local database up to date, and starts the server: the back office at **http://127.0.0.1:8010/admin** and the till at **http://127.0.0.1:8010/pos/** — one address, nothing else to set up. In the Claude app, the same is the **ERP preview** entry in the browser pane. Stop it with **Ctrl+C**. **Why:** one command shows exactly what the client will get, without the separate development server on port 5173.
+It builds the till into the server, brings the local database up to date, and starts the server: the back office at **http://127.0.0.1:8010/office** and the till at **http://127.0.0.1:8010/pos/** — one address, nothing else to set up. In the Claude app, the same is the **ERP preview** entry in the browser pane. Stop it with **Ctrl+C**. **Why:** one command shows exactly what the client will get, without the separate development server on port 5173.
 

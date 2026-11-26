@@ -1,8 +1,9 @@
-// Layout check (owner 2026-11-08, after the side-menu look broke unnoticed): opens real back-office pages in every look
-// (tabs across the top, side menu, classic) at desktop and laptop sizes, scrolls, and fails if a layout rule is broken:
-//   - a list's scrolling box is squashed (shorter than a third of the window while it has rows to show),
-//   - the slim title bar pins anywhere but just under the bars at the top,
-//   - --zx-stick is out of range, or the page scrolls sideways,
+// Layout check (owner 2026-11-08, after the side-menu look broke unnoticed; moved to the new back office in part 43, when
+// the classic one was switched off): opens real back-office pages in every look (menu across the top, side menu) at
+// desktop and laptop sizes, scrolls, and fails if a layout rule is broken:
+//   - the page scrolls sideways,
+//   - a list is squashed (its table shorter than a third of the window while it has rows to show),
+//   - the menu is out of reach after scrolling (the bar across the top, or the side menu),
 //   - a menu panel opens outside the window.
 // Run from the pos folder with the dev server on 8010: npm run check:layout. Signs in with the development owner from
 // the git-ignored .local-secrets/dev-owner.txt (nothing printed). Run it after any change to the look, menus or lists.
@@ -16,8 +17,8 @@ const here = dirname(fileURLToPath(import.meta.url))
 const base = process.env.LAYOUT_BASE ?? 'http://127.0.0.1:8010'
 const secrets = Object.fromEntries(readFileSync(resolve(here, '../../.local-secrets/dev-owner.txt'), 'utf8').split(/\r?\n/)
   .map((l) => l.match(/^([a-z_]+):\s*(.+)$/)).filter(Boolean).map((m) => [m[1], m[2].trim()]))
-const PAGES = ['/admin/products', '/admin/audit-events', '/admin/profile', '/admin/stock-movements', '/admin/sales']
-const LOOKS = ['top', 'side', 'classic']
+const PAGES = ['/office/products', '/office/audit-log', '/office/profile', '/office/movements', '/office/sales']
+const LOOKS = ['top', 'side']
 const SIZES = [[1920, 1000], [1366, 720]]
 
 function totp(secret) {
@@ -30,26 +31,24 @@ function totp(secret) {
 
 const browser = await chromium.launch()
 const page = await browser.newPage({ viewport: { width: 1920, height: 1000 } })
-await page.goto(`${base}/admin/login`)
+await page.goto(`${base}/office/sign-in`)
 await page.locator('input[autocomplete=username]').fill(secrets.email)
 await page.locator('input[type=password]').fill(secrets.password)
 await page.getByRole('button', { name: 'Sign in', exact: true }).click()
 const code = page.locator('input[autocomplete="one-time-code"], input[inputmode="numeric"]').first()
 await code.waitFor({ timeout: 15000 }); await code.fill(totp(secrets.totp_secret)); await code.press('Enter')
-// Signing in lands in the new back office now (or the classic one): either means signed in.
-await page.waitForURL(/\/(admin(?!\/login)|office)/, { timeout: 20000 }).catch(async (e) => {
+await page.waitForURL(/\/office\/(?!sign-in)/, { timeout: 20000 }).catch(async (e) => {
   await page.screenshot({ path: resolve(here, '../../.local-secrets/layout-check-signin.png') }) // git-ignored folder: never committed
   throw new Error('Sign-in did not finish; see .local-secrets/layout-check-signin.png. ' + e.message)
 })
-// This check is about the classic back office's screens: start there, as before signing in landed in the new one.
-await page.goto(`${base}/admin`); await page.waitForLoadState('networkidle')
 
-const chooseLook = async (value) => {
-  await page.goto(`${base}/admin/profile`); await page.waitForLoadState('networkidle')
-  await page.locator(`input[type=radio][value="${value}"]`).check()
-  // Saving reloads the profile (so the new look shows): wait for that reload, not a fixed time, or it cuts off the next page.
-  const reloaded = page.waitForEvent('framenavigated', { predicate: (f) => f === page.mainFrame(), timeout: 15000 }).catch(() => undefined)
-  await page.getByRole('button', { name: 'Save changes' }).click(); await reloaded; await page.waitForLoadState('networkidle'); await page.waitForTimeout(300)
+/** The look, as the person's menu sets it (saved for the account): menu across the top or at the side. */
+const chooseLook = async (look) => {
+  await page.evaluate(async (l) => {
+    const xsrf = decodeURIComponent(document.cookie.split('; ').find((c) => c.startsWith('XSRF-TOKEN='))?.slice(11) ?? '')
+    await fetch('/office-api/prefs', { method: 'POST', credentials: 'same-origin', body: JSON.stringify({ office_look: l }),
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-XSRF-TOKEN': xsrf } })
+  }, look)
 }
 
 const problems = []
@@ -60,40 +59,40 @@ try {
       await page.setViewportSize({ width: w, height: h })
       for (const path of PAGES) {
         await page.goto(base + path); await page.waitForLoadState('networkidle')
-        await page.mouse.wheel(0, 900); await page.waitForTimeout(400)
+        await page.getByRole('navigation', { name: 'Menu' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}×${h} ${path}: no menu`))
+        await page.waitForTimeout(400)
+        await page.mouse.move(w / 2, h / 2); await page.mouse.wheel(0, 900); await page.waitForTimeout(400)
         const r = await page.evaluate(() => {
-          const px = (v) => parseFloat(v) * (v.trim().endsWith('rem') ? parseFloat(getComputedStyle(document.documentElement).fontSize) : 1)
-          const box = document.querySelector('.fi-ta-content-ctn')
-          const rows = document.querySelectorAll('.fi-ta-table tbody tr').length
-          const header = document.querySelector('.fi-header')
-          return {
-            classes: document.documentElement.className,
-            stick: px(getComputedStyle(document.documentElement).getPropertyValue('--zx-stick') || '0'),
-            box: box ? box.getBoundingClientRect().height : null, rows,
-            slim: document.documentElement.classList.contains('zx-slim'),
-            headerTop: header ? header.getBoundingClientRect().top : null,
-            sideways: document.documentElement.scrollWidth - innerWidth, innerHeight,
-          }
+          const table = document.querySelector('main table, [role=main] table, table')
+          const rows = table ? table.querySelectorAll('tbody tr').length : 0
+          const nav = document.querySelector('nav[aria-label="Menu"]')
+          const n = nav ? nav.getBoundingClientRect() : null
+          return { sideways: document.documentElement.scrollWidth - innerWidth, innerHeight, innerWidth, rows,
+            table: table ? table.getBoundingClientRect().height : null, nav: n ? { top: n.top, bottom: n.bottom, left: n.left, right: n.right } : null }
         })
         const where = `${look} ${w}×${h} ${path}`
-        if (r.classes.includes('zx-new') && (r.stick < 30 || r.stick > 160)) problems.push(`${where}: --zx-stick is ${r.stick}px`)
-        if (r.box !== null && r.rows > 5 && r.box < r.innerHeight / 3) problems.push(`${where}: list squashed to ${Math.round(r.box)}px with ${r.rows} rows`)
-        if (r.slim && (r.headerTop < 0 || r.headerTop > r.stick + 8)) problems.push(`${where}: slim title bar at ${Math.round(r.headerTop)}px, menu bars end at ${Math.round(r.stick)}px`)
         if (r.sideways > 1) problems.push(`${where}: the page scrolls sideways by ${r.sideways}px`)
-        if (look === 'top' && path === PAGES[0]) {
-          for (const tab of await page.locator('.zx-tab').all()) {
-            if (!(await tab.isVisible())) continue
-            await tab.click(); await page.waitForTimeout(250)
-            const panel = await page.locator('.zx-mega:visible').first().boundingBox().catch(() => null)
-            if (panel && (panel.x < 0 || panel.x + panel.width > w)) problems.push(`${where}: menu "${(await tab.textContent()).trim()}" opens outside the window`)
-            await page.keyboard.press('Escape')
+        if (r.table !== null && r.rows > 5 && r.table < r.innerHeight / 3) problems.push(`${where}: list squashed to ${Math.round(r.table)}px with ${r.rows} rows`)
+        if (look === 'side' && r.nav && (r.nav.bottom < 100 || r.nav.left < 0)) problems.push(`${where}: the side menu is out of reach after scrolling`)
+        if (look === 'top' && r.nav && (r.nav.bottom < 0 || r.nav.top > r.innerHeight)) problems.push(`${where}: the menu bar is off the screen`)
+        if (path === PAGES[0]) {
+          // Each area of the menu opens its panel inside the window.
+          const tabs = page.getByRole('navigation', { name: 'Menu' }).getByRole('button')
+          for (let i = 0; i < await tabs.count(); i++) {
+            const tab = tabs.nth(i)
+            const name = ((await tab.getAttribute('aria-label')) ?? (await tab.textContent()) ?? '').trim()
+            if (!(await tab.isVisible()) || /^(Home|To-do|Recent|Favourites|Create)\b/.test(name)) continue
+            await tab.click(); await page.waitForTimeout(300)
+            const panel = await page.locator('[role=dialog]:visible, [role=navigation][aria-label]:not([aria-label="Menu"]):visible').last().boundingBox().catch(() => null)
+            if (panel && (panel.x < 0 || panel.x + panel.width > w + 1 || panel.y < 0)) problems.push(`${where}: menu "${name}" opens outside the window`)
+            await page.keyboard.press('Escape'); await page.waitForTimeout(150)
           }
         }
       }
     }
   }
 } finally {
-  await chooseLook('') // back to the company's choice
+  await chooseLook('top').catch(() => undefined) // back to the default look for the next person using this dev account
   await browser.close()
 }
 if (problems.length) {

@@ -33,7 +33,7 @@ export function AgedReceivablesPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Aged receivables" hint="What each customer owes, by how late. Press a customer to open them and take a payment." classic="/admin/aged-receivables" />
+      <PageHead title="Aged receivables" hint="What each customer owes, by how late. Press a customer to open them and take a payment." />
       <Cards items={[
         { label: 'Owed in all', value: m(data.totals.total) },
         { label: 'Not yet due', value: m(data.totals.current) },

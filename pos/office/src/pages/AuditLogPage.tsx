@@ -45,7 +45,7 @@ export function AuditLogPage() {
   }
   return (
     <div className={page.page}>
-      <PageHead title="Audit log" hint="Every change, who made it, and from where. Rows are chained: none can be altered unseen." classic="/admin/audit-events" />
+      <PageHead title="Audit log" hint="Every change, who made it, and from where. Rows are chained: none can be altered unseen." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Person, action or IP" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search the audit log" />
         <Pick label="From" any="From anywhere" options={data?.sources ?? []} value={str(params, 'source')} onChange={(v) => set({ source: v })} />

@@ -1,8 +1,8 @@
 import {
-  Badge, Button, Checkbox, Dropdown, Field, Input, Link, makeStyles, Option, Popover, PopoverSurface, PopoverTrigger, SearchBox, Tag, TagGroup,
+  Badge, Button, Checkbox, Dropdown, Field, Input, makeStyles, Option, Popover, PopoverSurface, PopoverTrigger, SearchBox, Tag, TagGroup,
   Text, ToggleButton, tokens,
 } from '@fluentui/react-components'
-import { FilterRegular, WindowArrowUpRegular } from '@fluentui/react-icons'
+import { FilterRegular } from '@fluentui/react-icons'
 import { useEffect, useMemo, useState } from 'react'
 import { api, type SaleRow, type SalesList, type SalesOptions } from '../api'
 import { money } from '../home/format'
@@ -10,7 +10,6 @@ import { DataTable, Pager, type Column } from '../list/DataTable'
 import { ExportMenu } from '../list/ExportMenu'
 import { list, serialize, str, useQueryParams } from '../list/query'
 import { navigate } from '../nav'
-import { classicPathFor } from '../paths'
 
 const useStyles = makeStyles({
   page: { flex: '1 1 auto', overflowY: 'auto', padding: '16px 20px 32px', '@media (max-width: 760px)': { padding: '12px 10px 24px' } },
@@ -90,9 +89,6 @@ export function SalesPage() {
           <h1 className={s.title}>Till sales</h1>
           <Text className={s.muted}>Every sale and return from the tills, newest first. Sales never change; returns come from the tills.</Text>
         </div>
-        <Link href={classicPathFor('/admin/sales')} onClick={(e) => { e.preventDefault(); navigate(classicPathFor('/admin/sales')) }}>
-          <WindowArrowUpRegular /> Classic version
-        </Link>
       </div>
 
       <div className={s.bar}>

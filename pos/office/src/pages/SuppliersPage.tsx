@@ -67,7 +67,7 @@ export function SuppliersPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Suppliers" hint="Who you buy from, the products they supply, their documents and how they are paid. Open one to approve it, check its bank details or send its portal link." classic="/admin/suppliers" />
+      <PageHead title="Suppliers" hint="Who you buy from, the products they supply, their documents and how they are paid. Open one to approve it, check its bank details or send its portal link." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Code, name, contact, phone or email" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search suppliers" />
         <Dropdown aria-label="Status" value={str(params, 'status') ? statusLabel(str(params, 'status')) : 'Any status'} selectedOptions={[str(params, 'status')]}

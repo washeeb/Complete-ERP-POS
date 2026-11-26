@@ -1,14 +1,13 @@
 import {
   Button, Combobox, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Dropdown, Field, Input, makeStyles, MessageBar, MessageBarBody,
-  Link, Option, Spinner, Text, Textarea, tokens,
+  Option, Spinner, Text, Textarea, tokens,
 } from '@fluentui/react-components'
-import { AddRegular, ArrowLeftRegular, DeleteRegular, SaveRegular, SparkleRegular, WindowArrowUpRegular } from '@fluentui/react-icons'
+import { AddRegular, ArrowLeftRegular, DeleteRegular, SaveRegular, SparkleRegular } from '@fluentui/react-icons'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { api, type Option as Choice, type PriceRow, type ProductFormData, type ProductValues, type UnitRow } from '../api'
 import { Choose, ChooseMany, LongText, Tags, TextField, Toggle, useFieldStyles } from '../form/Fields'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
-import { classicPathFor } from '../paths'
 
 const useStyles = makeStyles({
   head: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' },
@@ -64,7 +63,6 @@ export function ProductFormPage({ id, onTitle }: { id: string | null; onTitle: (
   const units = v.units
   const setUnit = (i: number, u: Partial<UnitRow>) => set('units')(units.map((x, j) => (j === i ? { ...x, ...u } : x)))
   const setPrice = (i: number, p: Partial<PriceRow>) => set('prices')(v.prices.map((x, j) => (j === i ? { ...x, ...p } : x)))
-  const classic = classicPathFor(id ? `/admin/products/${id}/edit` : '/admin/products/create')
   const back = () => (history.length > 1 ? history.back() : navigate(id ? `/office/products/${id}` : '/office/products'))
 
   const save = () => {
@@ -86,7 +84,6 @@ export function ProductFormPage({ id, onTitle }: { id: string | null; onTitle: (
         </div>
         <div className={s.actions}>
           {form.can.describe && <Button icon={<SparkleRegular />} onClick={() => setDescribing(true)}>Write description (AI)</Button>}
-          <Link href={classic} onClick={(e) => { e.preventDefault(); navigate(classic) }}><WindowArrowUpRegular /> Classic form</Link>
         </div>
       </div>
       {error && <MessageBar intent="error" style={{ marginBottom: 12 }}><MessageBarBody>{error}</MessageBarBody></MessageBar>}

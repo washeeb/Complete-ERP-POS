@@ -56,7 +56,7 @@ export function EvatPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="GRA E-VAT" hint={`What was reported to GRA, GRA's answer, and what is still waiting or was refused. Mode: ${options?.mode_label ?? '…'} (System → Settings → GRA E-VAT).`} classic="/admin/gra-evat" />
+      <PageHead title="GRA E-VAT" hint={`What was reported to GRA, GRA's answer, and what is still waiting or was refused. Mode: ${options?.mode_label ?? '…'} (System → Settings → GRA E-VAT).`} />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Document or GRA reference" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search GRA reports" />
         <Dropdown aria-label="Status" style={{ minWidth: 160 }} value={statuses.find((x) => x[0] === status)?.[1] ?? ''} selectedOptions={[status]} onOptionSelect={(_, d) => set({ status: d.optionValue ?? '' })}>

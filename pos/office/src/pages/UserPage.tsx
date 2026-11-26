@@ -54,7 +54,7 @@ export function UserPage({ id }: { id: string }) {
 
   return (
     <div className={page.page}>
-      <PageHead title={u.name} hint="Their details, how they sign in, and their access: which roles they have and where those apply." classic={`/admin/users/${u.id}/edit`} />
+      <PageHead title={u.name} hint="Their details, how they sign in, and their access: which roles they have and where those apply." />
       <div className={s.bar}>
         <Button icon={<ArrowLeftRegular />} onClick={() => navigate('/office/users')}>Users</Button>
         <span className={s.grow} />

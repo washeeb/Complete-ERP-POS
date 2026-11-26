@@ -1,5 +1,5 @@
-import { Button, Link, makeStyles, MessageBar, MessageBarBody, Spinner, Text, tokens } from '@fluentui/react-components'
-import { AddRegular, ArrowLeftRegular, DeleteRegular, SaveRegular, WindowArrowUpRegular } from '@fluentui/react-icons'
+import { Button, makeStyles, MessageBar, MessageBarBody, Spinner, Text, tokens } from '@fluentui/react-components'
+import { AddRegular, ArrowLeftRegular, DeleteRegular, SaveRegular } from '@fluentui/react-icons'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { api, ApiError, type SupplierForm, type SupplierProductLine, type SupplierValues } from '../api'
 import { ConfirmItsYou } from '../form/ConfirmItsYou'
@@ -7,7 +7,6 @@ import { Choose, LongText, TextField, Toggle, useFieldStyles } from '../form/Fie
 import { UnitPicker } from '../form/UnitPicker'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
-import { classicPathFor } from '../paths'
 
 const useStyles = makeStyles({
   head: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' },
@@ -53,7 +52,6 @@ export function SupplierFormPage({ id, onTitle }: { id: string | null; onTitle: 
   const set = <K extends keyof SupplierValues>(k: K) => (x: SupplierValues[K]) => setV((o) => (o ? { ...o, [k]: x } : o))
   const str = (k: keyof SupplierValues) => ({ value: v[k] as string, onChange: set(k) as (x: string) => void })
   const line = (i: number, patch: Partial<SupplierProductLine>) => set('products')(v.products.map((l, j) => (j === i ? { ...l, ...patch } : l)))
-  const classic = classicPathFor(id ? `/admin/suppliers/${id}/edit` : '/admin/suppliers/create')
   const back = () => (history.length > 1 ? history.back() : navigate(id ? `/office/suppliers/${id}` : '/office/suppliers'))
   const save = () => {
     setBusy(true)
@@ -77,7 +75,6 @@ export function SupplierFormPage({ id, onTitle }: { id: string | null; onTitle: 
           <h1 className={s.title}>{id ? `Edit ${form.name}` : 'New supplier'}</h1>
           <Text className={s.muted}>{form.code ? `Code ${form.code} · given by the system.` : 'The code is given when you save.'}</Text>
         </div>
-        <Link href={classic} onClick={(e) => { e.preventDefault(); navigate(classic) }}><WindowArrowUpRegular /> Classic form</Link>
       </div>
       {error && <MessageBar intent="error" style={{ marginBottom: 12 }}><MessageBarBody>{error}</MessageBarBody></MessageBar>}
 

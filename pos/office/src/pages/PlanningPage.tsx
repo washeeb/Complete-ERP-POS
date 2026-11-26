@@ -25,7 +25,7 @@ export function PlanningPage() {
   const wh = data?.warehouse ?? str(params, 'warehouse')
   return (
     <div className={page.page}>
-      <PageHead title="Production planning" hint="What to make and buy for customer orders, reorder levels and open work orders. Suggestions become draft work orders." classic="/admin/production-planning" />
+      <PageHead title="Production planning" hint="What to make and buy for customer orders, reorder levels and open work orders. Suggestions become draft work orders." />
       <div className={s.bar}>
         <Pick label="Warehouse" any="Choose a warehouse" options={data?.warehouses ?? []} value={wh} width={220} onChange={(v) => { setDone(''); set({ warehouse: v }) }} />
         <span className={s.grow} />

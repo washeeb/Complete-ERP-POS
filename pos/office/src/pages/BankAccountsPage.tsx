@@ -66,7 +66,7 @@ export function BankAccountsPage() {
 
   return (
     <div className={page.page}>
-      <PageHead title="Bank & cash" hint="Bank, mobile money and cash accounts: their balance in the books and the statement lines still to match. Import a statement, then reconcile." classic="/admin/bank-accounts" />
+      <PageHead title="Bank & cash" hint="Bank, mobile money and cash accounts: their balance in the books and the statement lines still to match. Import a statement, then reconcile." />
       <div className={s.bar}>
         <SearchBox className={s.search} placeholder="Name, bank or number" value={q} onChange={(_, d) => setQ(d.value)} aria-label="Search bank and cash accounts" />
         <Dropdown aria-label="Show" style={{ minWidth: 130 }} value={SHOW.find((x) => x[0] === show)?.[1] ?? ''} selectedOptions={[show]} onOptionSelect={(_, d) => set({ show: d.optionValue === 'in_use' ? '' : d.optionValue ?? '' })}>
