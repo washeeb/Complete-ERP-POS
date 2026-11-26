@@ -1,0 +1,2 @@
+### Added
+- **Branch switch at the top of the back office** (beside the industry box; free): people who work in more than one branch choose *All my branches* or one branch, among the branches of the chosen industry. Every list, report, the Business Portal and To-do then show only that branch, and new documents start with its store filled in. On a phone both choices are behind one button. Switching asks first when a form has unsaved changes.

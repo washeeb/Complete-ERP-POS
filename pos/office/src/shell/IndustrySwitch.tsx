@@ -1,9 +1,10 @@
 import { makeStyles, Select, Tooltip } from '@fluentui/react-components'
 import { useState } from 'react'
 import { api, type Me } from '../api'
+import { confirmLeave } from '../unsaved'
 
 const useStyles = makeStyles({
-  select: { width: '190px', '@media (max-width: 760px)': { width: '96px' } },
+  select: { width: '190px', '@media (max-width: 760px)': { width: '100%' } }, // on a phone: inside the Show panel
 })
 
 /**
@@ -15,10 +16,10 @@ export function IndustrySwitch({ me }: { me: Me }) {
   const s = useStyles()
   const [busy, setBusy] = useState(false)
   if (!me.industry) return null
-  const choose = (id: string) => {
+  const choose = (id: string) => confirmLeave(() => {
     setBusy(true)
     api.industry(id).then(() => window.location.reload()).catch(() => setBusy(false))
-  }
+  })
   return (
     <Tooltip content="Show one industry, or all" relationship="description">
       <Select size="small" className={s.select} aria-label="Industry shown" value={me.industry.selected} disabled={busy}

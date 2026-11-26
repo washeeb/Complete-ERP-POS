@@ -11,7 +11,7 @@ import { AreaPanel } from './AreaPanel'
 import { CreateMenu } from './CreateMenu'
 import { Search } from './Search'
 import { Bell } from './Bell'
-import { IndustrySwitch } from './IndustrySwitch'
+import { WhereSwitch } from './WhereSwitch'
 import { UserMenu } from './UserMenu'
 
 const useStyles = makeStyles({
@@ -95,7 +95,7 @@ export function SideLook({ me, menu, current, page, todo, atHome, atTodo, onLook
         <header className={s.top}>
           <Text weight="semibold" size={400} truncate wrap={false} className={s.name}>{me.company.name}</Text>
           <div className={s.grow}><Search menu={menu} /></div>
-          <IndustrySwitch me={me} />
+          <WhereSwitch me={me} />
           <Bell />
           <UserMenu me={me} onLook={onLook} />
         </header>

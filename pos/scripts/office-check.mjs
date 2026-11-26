@@ -1347,7 +1347,7 @@ try {
       await page.getByRole('navigation', { name: 'Insights' }).getByRole('link', { name: menuName('Report builder') }).first().click()
       await page.waitForURL(/\/office\/report-builder$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Report builder did not open the new screen (${page.url()})`))
       await page.getByRole('region', { name: 'Report choices' }).waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Report builder did not load`))
-      await page.getByText(/ · /).first().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Report builder did not run its report`))
+      await page.getByRole('main').getByText(/ · /).first().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: Report builder did not run its report`))
       const line = page.locator('tr[tabindex="0"]').first()
       if (await line.count()) {
         await line.click()

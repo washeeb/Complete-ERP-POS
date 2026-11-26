@@ -19,6 +19,9 @@ When a company runs more than one kind of business, each kind is an **industry**
 - **The industry switcher** at the top of the back office, beside the bell (*All industries*, *Pharmacy*, *Grocery*, …), is shown to people who can see more than one industry.
   - With an industry chosen, every screen shows only that industry: branches, stock, prices, purchasing, sales, reports, and its own dashboard. The pharmacy dashboard shows prescriptions and expiring batches.
   - With *All industries*, the dashboard shows each industry's sales side by side.
+- **The branch switcher** beside it (*All my branches*, or one branch) is shown to people who work in more than one branch. It lists only the branches of the industry chosen beside it.
+  - With a branch chosen, every list, report, the Business Portal and To-do show only that branch, and a new document (an order, a transfer, a stock adjustment…) starts with that branch's store filled in. **Why:** a manager covering several shops can look at one shop at a time without filtering every list.
+  - On a phone both choices are behind the **building** button at the top.
 - **Each industry has its own catalogue.**
   - When you create a product or price list, choose its industry; the industry chosen at the top is filled in for you.
   - That industry's tills sell only its products.

@@ -21,6 +21,8 @@ export type Me = {
   licence: string | null
   /** The industry switch at the top; null when the person has no choice to make. '' selected = all industries. */
   industry: { selected: string; options: { id: string; label: string }[] } | null
+  /** The branch switch beside it (within the chosen industry); null when there is no choice. '' = all my branches. */
+  branch: { selected: string; options: { id: string; label: string }[] } | null
 }
 export type SearchResult = { group: string; title: string; url: string; details: string }
 export type TodoItem = {
@@ -1294,6 +1296,7 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export const api = {
   me: () => call<Me>('/office-api/me'),
+  chooseBranch: (branch: string) => call<{ selected: string }>('/office-api/branch', { method: 'POST', body: JSON.stringify({ branch }) }),
   industry: (industry: string) => call<{ selected: string }>('/office-api/industry', { method: 'POST', body: JSON.stringify({ industry }) }),
   notifications: () => call<{ unread: number; items: NotificationItem[] }>('/office-api/notifications'),
   notificationCount: () => call<{ unread: number }>('/office-api/notifications/count'),
