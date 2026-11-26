@@ -1,0 +1,6 @@
+## New back office, part 33: Online (branch `office-online`, base `office-sensors`)
+- **Server:** `App\Domain\Office\OnlineScreen` (online orders and one order; channels and the channel form with, per kind, the secrets it needs and whether each is saved; WhatsApp orders and one message with its media links) and `Office\OnlineController` (order ready, hand over, cancel; channel save, activate, pause, compare with store, retry, archive / restore; WhatsApp make the order, reply, decline, make a ticket; item search). Routes `office-api/online/…`.
+- **Client:** `OnlineOrdersPage`, `OnlineOrderPage`, `ChannelsPage`, `ChannelPage`, `WhatsappOrdersPage`, `WhatsappOrderPage`. Paths `/admin/{sales-orders, sales-channels, whatsapp-orders}…` → `/office/online/{orders, channels, whatsapp}…`.
+- **office-check:** opens the three from Sales (WhatsApp orders where switched on), the first order or message, and New channel (nothing saved). Its "old page inside" step now uses Insights → Today (a dashboard: it checks the heading, not a list); the path test's "not rebuilt" example moved there too, and its "/admin/sales-orders is not till sales" line now expects the new online orders page.
+- **Tests:** `OfficeOnlineTest` (3).
+- **Next:** Distribution, Manufacturing, Fashion and Electronics (industry pages), and Today.

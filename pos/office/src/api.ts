@@ -856,6 +856,26 @@ export type CrmCampaignForm = { currency: string; exponent: number; id: string |
   values: { name: string; industry_id: string; channel: string; subject: string; whatsapp_template: string; body: string; send_at: string
     audience: { tags: string[]; branch_id: string; min_spent: string; bought_within_days: string; not_bought_days: string; include_leads: boolean } } }
 export type CrmStageList = { kinds: Option[]; rows: (Archivable & { id: string; sort: number; name: string; kind: string; kind_label: string; probability: number; deals: number })[] }
+export type OnlineOrderList = { total: number; page: number; per: number; status: string; statuses: Option[]; channels: Option[]
+  rows: { id: string; number: string; channel: string | null; placed: string | null; customer: string | null; phone: string | null; branch: string | null; total: string
+    payment: string; paid: boolean; status: string; status_label: string; tone: string; short: boolean }[] }
+export type OnlineOrderDetail = { id: string; number: string; status: string; status_label: string; tone: string; channel: string | null; placed: string | null; customer: string | null
+  phone: string | null; email: string | null; fulfilment: string; payment: string; paid: boolean; payment_reference: string | null; total: string; short: boolean; note: string | null
+  cancel_reason: string | null; methods: Option[]; lines: { id: string; item: string; qty: string; price: string; total: string }[]
+  actions: { ready: boolean; fulfil: boolean; cancel: boolean } }
+export type ChannelList = { can_create: boolean
+  rows: (Archivable & { id: string; name: string; type: string; branch: string | null; status: string; tone: string; updates: string; failed: boolean; address: string | null })[] }
+export type ChannelValues = { type: string; name: string; branch_id: string; warehouse_id: string; price_list_id: string; safety_stock: string; base_url: string; slug: string
+  headline: string; intro: string; pickup_note: string }
+export type ChannelDetail = { id: string | null; types: Option[]; type_label: string | null; status: string | null
+  secrets: Record<string, { id: string; label: string; saved: boolean; hint?: string }[]>; shop_base: string; defaults: Record<string, string>
+  branches: Option[]; price_lists: Option[]; warehouses: (Option & { branch_id: string })[]; address: string | null; values: ChannelValues
+  actions: { activate: boolean; pause: boolean; reconcile: boolean; retry: boolean; last_error: string | null } | null; archive: (Archivable & { archived_note: string | null }) | null }
+export type WhatsappList = { total: number; page: number; per: number; status: string; statuses: Option[]
+  rows: { id: string; number: string; received: string | null; from: string; body: string | null; photos: number | null; status: string; status_label: string; tone: string }[] }
+export type WhatsappDetail = { id: string; number: string; status: string; status_label: string; tone: string; from: string; received: string | null; customer: string | null
+  order: DocLink | null; handled: string | null; decline_reason: string | null; body: string | null; media: { url: string | null; image: boolean; name: string }[]
+  branches: Option[]; kinds: Option[]; priorities: Option[]; actions: { make_order: boolean; reply: boolean; decline: boolean; ticket: boolean } }
 export type SensorList = { total: number; page: number; per: number; statuses: Option[]; kinds: Option[]; branches: Option[]; can_create: boolean
   rows: (Archivable & { id: string; name: string; where: string; reading: string; range: string; status: string; status_label: string; tone: string; last: string | null
     battery: number | null; via: string })[] }
@@ -1748,6 +1768,23 @@ export const api = {
   saveCrmStage: (id: string | null, body: Record<string, unknown>) => call<{ id: string; message: string }>(id ? `/office-api/crm/stages/${id}` : '/office-api/crm/stages', { method: 'POST', body: JSON.stringify(body) }),
   archiveCrmStage: (id: string, restore: boolean, reason: string) =>
     call<{ message: string }>(`/office-api/crm/stages/${id}/archive`, { method: 'POST', body: JSON.stringify({ restore, reason: restore ? null : reason }) }),
+  onlineOrders: (query: string, signal?: AbortSignal) => call<OnlineOrderList>(`/office-api/online/orders?${query}`, { signal }),
+  onlineOrder: (id: string) => call<OnlineOrderDetail>(`/office-api/online/orders/${id}`),
+  onlineOrderAction: (id: string, action: 'ready' | 'fulfil' | 'cancel', body: Record<string, unknown> = {}) =>
+    call<{ message: string }>(`/office-api/online/orders/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  channels: (query: string, signal?: AbortSignal) => call<ChannelList>(`/office-api/online/channels?${query}`, { signal }),
+  channel: (id: string | null) => call<ChannelDetail>(id ? `/office-api/online/channels/${id}` : '/office-api/online/channels/form'),
+  saveChannel: (id: string | null, body: Record<string, unknown>) =>
+    call<{ id: string; message: string }>(`/office-api/online/channels${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(body) }),
+  channelAction: (id: string, action: 'activate' | 'pause' | 'reconcile' | 'retry', body: Record<string, unknown> = {}) =>
+    call<{ message: string; details?: string[] }>(`/office-api/online/channels/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  archiveChannel: (id: string, restore: boolean, reason: string) =>
+    call<{ message: string }>(`/office-api/online/channels/${id}/archive`, { method: 'POST', body: JSON.stringify({ restore, reason: restore ? null : reason }) }),
+  whatsappOrders: (query: string, signal?: AbortSignal) => call<WhatsappList>(`/office-api/online/whatsapp?${query}`, { signal }),
+  whatsappOrder: (id: string) => call<WhatsappDetail>(`/office-api/online/whatsapp/${id}`),
+  whatsappAction: (id: string, action: 'make_order' | 'reply' | 'decline' | 'ticket', body: Record<string, unknown> = {}) =>
+    call<{ message: string; open?: string }>(`/office-api/online/whatsapp/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  whatsappUnits: (q: string, signal?: AbortSignal) => call<{ results: UnitOption[] }>(`/office-api/online/whatsapp/units?q=${encodeURIComponent(q)}`, { signal }),
   sensors: (query: string, signal?: AbortSignal) => call<SensorList>(`/office-api/sensors?${query}`, { signal }),
   sensor: (id: string | null) => call<SensorDetail>(id ? `/office-api/sensors/${id}` : '/office-api/sensors/form'),
   saveSensor: (id: string | null, body: Record<string, unknown>) =>
