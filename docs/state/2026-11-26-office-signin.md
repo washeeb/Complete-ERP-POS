@@ -5,3 +5,4 @@
 - **office-check:** signs in through the new page (password, then the app code).
 - **Tests:** `OfficeSignInTest` (6); `OfficeShellTest` and `OfficeProfileTest` updated for the new addresses.
 - **Next:** part 42, every address the server sends to the new look; part 43, the classic back office switched off (`/admin/login` and the classic panel stay until then).
+- **For part 43:** the installation guide (chapters 1, 4, 5, 6, 7, 9, 10, 12, 19, and the sign-in screenshot `img/admin-login.png`) and the installers' last line still give `…/admin`; change them to `…/office` with the switch-off, and rebuild the screenshots.
