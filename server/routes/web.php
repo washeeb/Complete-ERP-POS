@@ -77,6 +77,7 @@ use App\Http\Controllers\Office\SupplierInvoicesController as OfficeSupplierInvo
 use App\Http\Controllers\Office\SupplierPaymentsController as OfficeSupplierPaymentsController;
 use App\Http\Controllers\Office\SuppliersController as OfficeSuppliersController;
 use App\Http\Controllers\Office\SystemController as OfficeSystemController;
+use App\Http\Controllers\Office\TodayController as OfficeTodayController;
 use App\Http\Controllers\Office\TransfersController as OfficeTransfersController;
 use App\Http\Controllers\Office\UsersController as OfficeUsersController;
 use App\Http\Controllers\PrintController;
@@ -711,6 +712,8 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::get('ask', [OfficeInsightsAiController::class, 'ask']);
     Route::post('ask', [OfficeInsightsAiController::class, 'question']);
     Route::post('ask/quick', [OfficeInsightsAiController::class, 'quick']);
+    // Today (new look, part 37): the owner's phone view of the business today or yesterday.
+    Route::get('today', [OfficeTodayController::class, 'show']);
     Route::get('alerts', [OfficeInsightsAiController::class, 'alerts']);
     Route::post('alerts/refresh', [OfficeInsightsAiController::class, 'alertsRefresh']);
     Route::post('alerts/{id}', [OfficeInsightsAiController::class, 'alertHandle'])->whereUuid('id');

@@ -1663,17 +1663,28 @@ try {
         await page.unroute(`**/office-api/requests/${fakeRq}`)
       }
 
-      // Insights → Today is still the current page (not rebuilt yet; Online was rebuilt in part 33): it opens inside, and
-      // the address follows. Today is a dashboard, so its heading shows it loaded (there is no list).
+      // Insights → Today, rebuilt (part 37): it opens from Insights and shows the day; Yesterday is one tap away.
       await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Insights/ }).first().click()
       await page.getByRole('navigation', { name: 'Insights' }).getByRole('link', { name: menuName('Today') }).first().click()
-      await page.waitForURL(/\/office\/a\/today/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Today did not open at /office/a/today (${page.url()})`))
+      await page.waitForURL(/\/office\/today$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Today did not open the new screen (${page.url()})`))
+      await page.getByRole('region', { name: 'Branches' }).waitFor({ timeout: 30000 }).catch(() => problems.push(`${look} ${w}: Today did not load`))
+      await page.screenshot({ path: out(`today-${look}-${w}`) })
+      await page.getByRole('tab', { name: 'Yesterday' }).click()
+      await page.waitForURL(/\/office\/today\?yesterday=1$/, { timeout: 10000 }).catch(() => problems.push(`${look} ${w}: Yesterday did not follow in the address`))
+      await page.getByRole('region', { name: 'Branches' }).waitFor({ timeout: 30000 }).catch(() => problems.push(`${look} ${w}: Yesterday did not load`))
+
+      // Departments is still the current page (opened from Employees; Today was rebuilt in part 37): it opens inside, and
+      // the address follows. Its list heading shows it loaded.
+      await page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /People/ }).first().click()
+      await page.getByRole('navigation', { name: 'People' }).getByRole('link', { name: menuName('Employees') }).first().click()
+      await page.getByRole('button', { name: 'Departments' }).click()
+      await page.waitForURL(/\/office\/a\/departments/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Departments did not open at /office/a/departments (${page.url()})`))
       await page.waitForFunction(() => {
         const f = document.querySelector('iframe[title="Page"]')
-        return f?.contentWindow?.location.pathname === '/admin/today' && !!f.contentDocument?.querySelector('h1')
-      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Today page did not open inside`))
+        return f?.contentWindow?.location.pathname === '/admin/departments' && !!f.contentDocument?.querySelector('h1')
+      }, null, { timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Departments page did not open inside`))
       const f = await frameReady()
-      await f.locator('h1').first().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Today page did not show inside`))
+      await f.locator('h1').first().waitFor({ timeout: 20000 }).catch(() => problems.push(`${look} ${w}: the Departments page did not show inside`))
       const chrome = await f.locator('.fi-sidebar, .fi-topbar').evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== 'none').length)
       if (chrome) problems.push(`${look} ${w}: the embedded page still shows its own menu`)
       await page.waitForTimeout(600) // the page's own loader fades out
@@ -1682,17 +1693,17 @@ try {
       // Recent lists the page just opened; the star adds it to favourites and takes it off again.
       const nav = page.getByRole('navigation', { name: 'Menu' })
       await (look === 'top' ? nav.getByRole('button', { name: 'Recent pages' }) : nav.getByRole('button', { name: 'Recent' })).click()
-      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /^Today/i }).first().waitFor({ timeout: 5000 })
-        .catch(() => problems.push(`${look} ${w}: Recent does not list Today`))
+      await page.getByRole('dialog', { name: 'Recent pages' }).getByRole('link', { name: /^Departments/i }).first().waitFor({ timeout: 5000 })
+        .catch(() => problems.push(`${look} ${w}: Recent does not list Departments`))
       await page.keyboard.press('Escape')
       const star = look === 'top' ? nav.getByRole('button', { name: 'Favourites' }) : nav.getByRole('button', { name: 'Favourites' })
       await star.click()
       const fav = page.getByRole('dialog', { name: 'Favourite pages' })
       await fav.getByRole('button', { name: /^Add “/ }).click().catch(() => problems.push(`${look} ${w}: Favourites has no "Add this page"`))
-      await fav.getByRole('link', { name: /^Today/i }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Today did not become a favourite`))
+      await fav.getByRole('link', { name: /^Departments/i }).first().waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Departments did not become a favourite`))
       await page.screenshot({ path: out(`favourites-${look}-${w}`) })
       await fav.getByRole('button', { name: /^Take “/ }).last().click().catch(() => undefined) // leave the dev account as it was
-      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Today could not be taken off favourites`))
+      await fav.getByRole('button', { name: /^Add “/ }).waitFor({ timeout: 5000 }).catch(() => problems.push(`${look} ${w}: Departments could not be taken off favourites`))
       await page.keyboard.press('Escape')
 
       // Search: Ctrl+K, type, a page of the menu is offered.
