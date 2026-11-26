@@ -18,16 +18,23 @@ class OfficeMfa
     public function handle(Request $request, Closure $next): Response
     {
         Filament::setCurrentPanel(Filament::getPanel('admin'));
+        if ($request->is('office/two-factor-setup')) {
+            return $next($request); // the page that sets it up
+        }
         $passed = false;
         $out = app(EnsureMfaForLevel::class)->handle($request, function ($r) use ($next, &$passed) {
             $passed = true;
 
             return $next($r);
         });
-        if ($passed || ! $out instanceof RedirectResponse || ! $request->expectsJson()) {
+        if ($passed || ! $out instanceof RedirectResponse) {
             return $out;
         }
+        // Set it up on the new back office's own page (part 41).
+        if (! $request->expectsJson()) {
+            return redirect('/office/two-factor-setup');
+        }
 
-        return response()->json(['error' => 'mfa_setup', 'detail' => 'Your account needs two-factor sign-in. Set it up first.', 'url' => $out->getTargetUrl()], 403);
+        return response()->json(['error' => 'mfa_setup', 'detail' => 'Your account needs two-factor sign-in. Set it up first.', 'url' => '/office/two-factor-setup'], 403);
     }
 }

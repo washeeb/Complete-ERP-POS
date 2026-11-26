@@ -107,7 +107,7 @@ it('sends someone who needs two-factor sign-in, and has none, to set it up befor
     $this->owner->forceFill(['app_authentication_secret' => null])->saveQuietly();
     $this->actingAs($this->owner->fresh(), 'web');
     $r = $this->getJson('/office-api/me')->assertForbidden()->json();
-    expect($r['error'])->toBe('mfa_setup')->and($r['url'])->toContain('/admin/');
+    expect($r['error'])->toBe('mfa_setup')->and($r['url'])->toBe('/office/two-factor-setup');
     $this->get('/office/sales')->assertRedirect();
     // A passkey sign-in counts as two-factor, as in the current back office.
     $this->withSession([PasskeyLoginController::SESSION_KEY => $this->owner->id])->getJson('/office-api/me')->assertOk();

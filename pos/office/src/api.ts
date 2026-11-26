@@ -940,6 +940,9 @@ export type MfgPlan = { warehouses: Option[]; warehouse: string; can_make: boole
 export type WorkCentreValues = { name: string; branch_id: string; hourly_rate: string; hours_per_day: string }
 export type WorkCentreRow = Archivable & { id: string; code: string; name: string; branch: string | null; rate: number; hours: string; can_edit: boolean; values: WorkCentreValues }
 export type WorkCentreList = { currency: string; exponent: number; can_create: boolean; branches: Option[]; rows: WorkCentreRow[] }
+export type AuthChallenge = { provider: string; providers: { id: string; label: string }[]; recoverable: boolean; name: string }
+export type AuthState = { company: string; color: string; logo: string | null; logo_dark: string | null; tagline: string | null; signed_in: boolean
+  challenge: AuthChallenge | null; passkey_message: string | null }
 export type ReconfirmState = { confirmed: boolean; minutes: number; app: boolean; passkey: boolean; password: boolean; sent_to: string | null }
 export type ProfilePrefs = { home: string; rows: number; theme: string; date: string; density: string; office_look: string }
 export type ProfileData = { name: string; email: string; photo: string | null; has_photo: boolean; look: string; looks: (Option & { detail: string })[]
@@ -1249,7 +1252,7 @@ export class ApiError extends Error {
   }
 }
 
-function xsrf(): string {
+export function xsrf(): string {
   const m = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]+)/)
   return m ? decodeURIComponent(m[1]) : ''
 }
@@ -1269,7 +1272,7 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
     // This account needs two-factor sign-in: set it up first (the sign-in pages stay the current ones). Only the path
     // is used, and only one of the back office's own, so it never leads to another site.
     const to = new URL(body.url, location.origin)
-    if (to.pathname.startsWith('/admin/')) location.assign(to.pathname + to.search)
+    if (to.pathname === '/office/two-factor-setup' && location.pathname !== to.pathname) location.assign(to.pathname)
     throw new ApiError(body.detail, 403, 'mfa_setup')
   }
   if (res.status === 429) throw new ApiError('Too many changes in a minute. Wait a moment, then try again.', 429, 'too_many')
@@ -2244,7 +2247,16 @@ export const api = {
   setLook: (look: Prefs['office_look']) => call<{ prefs: Prefs }>('/office-api/prefs', { method: 'POST', body: JSON.stringify({ office_look: look }) }),
   /** Sign out of the back office (the same sign-in as the current one), then the sign-in page. */
   signOut: async () => {
-    await fetch('/admin/logout', { method: 'POST', credentials: 'same-origin', headers: { 'X-XSRF-TOKEN': xsrf(), Accept: 'text/html' } }).catch(() => undefined)
-    location.assign('/admin/login')
+    await fetch('/office-api/sign-out', { method: 'POST', credentials: 'same-origin', headers: { 'X-XSRF-TOKEN': xsrf(), Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' } }).catch(() => undefined)
+    location.assign('/office/sign-in')
   },
+  // Signing in (part 41): open signed out.
+  authState: () => call<AuthState>('/office-auth/state'),
+  authSignIn: (body: { login: string; password: string; remember: boolean }) =>
+    call<{ signed_in?: boolean; open?: string; challenge?: AuthChallenge }>('/office-auth/sign-in', { method: 'POST', body: JSON.stringify(body) }),
+  authVerify: (body: { code?: string; recovery_code?: string }) => call<{ signed_in: boolean; open: string }>('/office-auth/verify', { method: 'POST', body: JSON.stringify(body) }),
+  authChoose: (provider: string, email = false) =>
+    call<{ challenge: AuthChallenge; sent_to: string | null }>('/office-auth/choose', { method: 'POST', body: JSON.stringify({ provider, email }) }),
+  authCancel: () => call<{ ok: boolean }>('/office-auth/cancel', { method: 'POST', body: '{}' }),
+  twoFactorSetupState: () => call<{ name: string; enabled: boolean; required: boolean; home: string }>('/office-api/two-factor-setup'),
 }
