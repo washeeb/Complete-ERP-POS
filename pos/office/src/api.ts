@@ -938,6 +938,10 @@ export type MfgPlan = { warehouses: Option[]; warehouse: string; can_make: boole
 export type WorkCentreValues = { name: string; branch_id: string; hourly_rate: string; hours_per_day: string }
 export type WorkCentreRow = Archivable & { id: string; code: string; name: string; branch: string | null; rate: number; hours: string; can_edit: boolean; values: WorkCentreValues }
 export type WorkCentreList = { currency: string; exponent: number; can_create: boolean; branches: Option[]; rows: WorkCentreRow[] }
+export type TodayData = { yesterday: boolean; date: string; sales: string; sales_minor: number; count: number; vs_last_week: number | null; last_week: string
+  payments: { label: string; value: string }[]; closes: number; over_short: number; over_short_text: string
+  attention: { tone: 'danger' | 'warning'; text: string; link: string | null; open: string | null }[]
+  branches: { name: string; sales: string; count: number; open: string[]; closed: string | null; deposit: string | null }[] }
 export type RepPerformance = { currency: string; exponent: number; from: string; to: string; date: string
   reps: { name: string; sales_minor: number; target_minor: number | null; achieved_bp: number | null; receipts: number; visits: number; visit_target: number | null
     strike_bp: number | null; orders: number; collections_minor: number }[]
@@ -2001,6 +2005,7 @@ export const api = {
     call<{ message: string }>('/office-api/restaurant/archive', { method: 'POST', body: JSON.stringify({ kind, id, restore, reason: restore ? null : reason }) }),
   tipsVoids: (query: string, signal?: AbortSignal) => call<TipsVoids>(`/office-api/restaurant/tips-voids?${query}`, { signal }),
   askBusiness: () => call<AskData>('/office-api/ask'),
+  today: (yesterday: boolean) => call<TodayData>(`/office-api/today${yesterday ? '?yesterday=1' : ''}`),
   askQuestion: (question: string, history: { role: 'user' | 'assistant'; content: string }[]) =>
     call<AskAnswer>('/office-api/ask', { method: 'POST', body: JSON.stringify({ question, history }) }),
   askQuick: (key: string) => call<AskAnswer>('/office-api/ask/quick', { method: 'POST', body: JSON.stringify({ key }) }),
