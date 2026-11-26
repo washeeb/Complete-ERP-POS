@@ -960,6 +960,36 @@ try {
           } else problems.push(`${look} ${w}: Channels has no New channel`)
         }
       }
+      // Sales & distribution, rebuilt (part 34), where the module is on: each page opens from More (or its own tab) and
+      // loads; New van and New route open their dialogs (nothing is saved). Pages not in the menu are skipped.
+      for (const [link, url, ready, button] of [
+        ['Vans', /\/office\/distribution\/vans/, () => page.getByText('No vans yet.').or(page.getByRole('table', { name: 'Vans' }).getByRole('row').nth(1)), 'New van'],
+        ['Van settlements', /\/office\/distribution\/settlements/, () => page.getByText(/^No settlements yet/).or(page.getByRole('table', { name: 'Van settlements' }).getByRole('row').nth(1)), null],
+        ['Routes', /\/office\/distribution\/routes/, () => page.getByText('No routes yet.').or(page.getByRole('table', { name: 'Routes' }).getByRole('row').nth(1)), 'New route'],
+        ['Visits', /\/office\/distribution\/visits/, () => page.getByText('No visits match.').or(page.getByRole('table', { name: 'Visits' }).getByRole('row').nth(1)), null],
+        ['Rep targets', /\/office\/distribution\/targets/, () => page.getByText('No targets yet.').or(page.getByRole('table', { name: 'Rep targets' }).getByRole('row').nth(1)), 'Set a target'],
+        ['Rep performance', /\/office\/distribution\/performance/, () => page.getByRole('region', { name: 'Reps against target' }), null]]) {
+        // Distribution is not one of the named tabs, so it sits under More (a More holding only Distribution takes its name).
+        const menu = page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /^(More|Distribution)\b/ }).first()
+        if (!await menu.waitFor({ timeout: 10000 }).then(() => true, () => false)) break
+        const tab = /^Distribution/.test((await menu.innerText()).trim()) ? 'Distribution' : 'More'
+        await menu.click()
+        const l = page.getByRole('navigation', { name: tab }).getByRole('link', { name: menuName(link) }).first()
+        if (!await l.count()) { await page.keyboard.press('Escape'); continue }
+        await l.click()
+        await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await ready().first().waitFor({ timeout: 30000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        await page.screenshot({ path: out(`distribution-${link.toLowerCase().replace(/ /g, '-')}-${look}-${w}`) })
+        if (!button) continue
+        const b = page.getByRole('button', { name: button })
+        if (!await b.waitFor({ timeout: 10000 }).then(() => true, () => false)) { problems.push(`${look} ${w}: ${link} has no ${button}`); continue }
+        await b.click()
+        const dlg = page.getByRole('dialog')
+        await dlg.waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${button} did not open its dialog`))
+        await page.screenshot({ path: out(`distribution-${button.toLowerCase().replace(/ /g, '-')}-${look}-${w}`) })
+        await dlg.getByRole('button', { name: 'Back' }).click().catch(() => page.keyboard.press('Escape'))
+        await dlg.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => problems.push(`${look} ${w}: ${button}'s dialog did not close`))
+      }
       // Go-live and Import data, rebuilt (part 24): each opens from Setup and loads. Nothing is planned, uploaded or imported.
       for (const [link, url, ready] of [
         ['Go-live', /\/office\/go-live$/, () => page.getByRole('table', { name: 'Checklist' }).getByRole('row').first()],

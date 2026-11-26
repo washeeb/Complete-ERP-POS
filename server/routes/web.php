@@ -28,6 +28,7 @@ use App\Http\Controllers\Office\CustomerOrdersController as OfficeCustomerOrders
 use App\Http\Controllers\Office\CustomersController as OfficeCustomersController;
 use App\Http\Controllers\Office\DevicesController as OfficeDevicesController;
 use App\Http\Controllers\Office\DirectPurchasesController as OfficeDirectPurchasesController;
+use App\Http\Controllers\Office\DistributionController as OfficeDistributionController;
 use App\Http\Controllers\Office\EvatController as OfficeEvatController;
 use App\Http\Controllers\Office\ExpenseClaimsController as OfficeExpenseClaimsController;
 use App\Http\Controllers\Office\ExpiryController as OfficeExpiryController;
@@ -775,6 +776,23 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office'])->grou
     Route::get('online/whatsapp/units', [OfficeOnlineController::class, 'units']);
     Route::get('online/whatsapp/{id}', [OfficeOnlineController::class, 'message'])->whereUuid('id');
     Route::post('online/whatsapp/{id}/action', [OfficeOnlineController::class, 'messageAction'])->whereUuid('id');
+    // Sales & distribution (new look, part 34): vans, van settlements, routes, visits, rep targets, rep performance.
+    Route::get('distribution/vans', [OfficeDistributionController::class, 'vans']);
+    Route::get('distribution/units', [OfficeDistributionController::class, 'units']);
+    Route::post('distribution/vans/{id?}', [OfficeDistributionController::class, 'vanSave'])->whereUuid('id');
+    Route::post('distribution/vans/{id}/action', [OfficeDistributionController::class, 'vanAction'])->whereUuid('id');
+    Route::get('distribution/settlements', [OfficeDistributionController::class, 'settlements']);
+    Route::get('distribution/settlements/{id}', [OfficeDistributionController::class, 'settlement'])->whereUuid('id');
+    Route::post('distribution/settlements/{id}/action', [OfficeDistributionController::class, 'settlementAction'])->whereUuid('id');
+    Route::get('distribution/settlements/{id}/sheet', [OfficeDistributionController::class, 'sheet'])->whereUuid('id');
+    Route::get('distribution/routes', [OfficeDistributionController::class, 'routes']);
+    Route::get('distribution/customers', [OfficeDistributionController::class, 'customers']);
+    Route::post('distribution/routes/{id?}', [OfficeDistributionController::class, 'routeSave'])->whereUuid('id');
+    Route::post('distribution/archive', [OfficeDistributionController::class, 'archive']);
+    Route::get('distribution/visits', [OfficeDistributionController::class, 'visits']);
+    Route::get('distribution/targets', [OfficeDistributionController::class, 'targets']);
+    Route::post('distribution/targets', [OfficeDistributionController::class, 'targetSave']);
+    Route::get('distribution/performance', [OfficeDistributionController::class, 'performance']);
     Route::get('returns', [OfficeReturnsController::class, 'index']);
     Route::get('returns/options', [OfficeReturnsController::class, 'options']);
     Route::get('returns/{sale}/slip', [OfficeReturnsController::class, 'slip'])->whereUuid('sale');

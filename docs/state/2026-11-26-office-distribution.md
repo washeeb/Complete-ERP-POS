@@ -1,0 +1,6 @@
+## New back office, part 34: Sales & distribution (branch `office-industries`, base `office-online`)
+- **Server:** `App\Domain\Office\DistributionScreen` (vans with the van form; settlements and one settlement with its lines; routes with stops in order; visits; rep targets; rep performance through DistributionReports) and `Office\DistributionController` (van create / update, load, unload, settle; settlement count, submit, post, cancel and the PDF sheet; route save; archive / restore for vans and routes; target save; item and customer search). Routes `office-api/distribution/…`.
+- **Client:** `VansPage`, `SettlementsPage`, `SettlementPage`, `SalesRoutesPage`, `VisitsPage`, `RepTargetsPage`, `RepPerformancePage`. Paths `/admin/{vans, van-settlements(/id), routes, visits, rep-targets, rep-performance}` → `/office/distribution/{vans, settlements(/id), routes, visits, targets, performance}`.
+- **office-check:** opens the six from More (or a Distribution tab) where the module is on, and New van, New route and Set a target (nothing saved). Verified once with the module switched on for the dev HQ, then off again.
+- **Tests:** `OfficeDistributionTest` (3).
+- **Next:** Manufacturing (part 35), then Fashion and Electronics (part 36), and Today.
