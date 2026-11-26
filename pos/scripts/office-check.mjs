@@ -864,6 +864,41 @@ try {
         await dlg.getByRole('button', { name: 'Back' }).click().catch(() => page.keyboard.press('Escape'))
         await dlg.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => problems.push(`${look} ${w}: ${button}'s dialog did not close`))
       }
+      // Fashion and Electronics, rebuilt (part 36), where the module is on: each page opens from Industries (or its own tab) and
+      // loads; New alteration, New repair job and Register numbers open their dialogs, New style its form (nothing is saved).
+      for (const [link, url, ready, button] of [
+        ['Styles', /\/office\/fashion\/styles/, () => page.getByText('No styles yet.').or(page.getByRole('table', { name: 'Styles' }).getByRole('row').nth(1)), 'New style'],
+        ['Alterations', /\/office\/fashion\/alterations/, () => page.getByText('No alterations yet.').or(page.getByRole('table', { name: 'Alterations' }).getByRole('row').nth(1)), 'New alteration'],
+        ['Sell-through & consignment', /\/office\/fashion\/sell-through/, () => page.getByRole('region', { name: 'Sell-through by style' }), null],
+        ['Repairs', /\/office\/electronics\/repairs/, () => page.getByText('No repair jobs yet.').or(page.getByRole('table', { name: 'Repairs' }).getByRole('row').nth(1)), 'New repair job'],
+        ['Serial numbers', /\/office\/electronics\/serials/, () => page.getByText('No serial numbers yet.').or(page.getByRole('table', { name: 'Serial numbers' }).getByRole('row').nth(1)), 'Register numbers for stock on hand']]) {
+        const menu = page.getByRole('navigation', { name: 'Menu' }).getByRole('button', { name: /Industries|Fashion|Electronics/ }).first()
+        if (!await menu.waitFor({ timeout: 10000 }).then(() => true, () => false)) break
+        const tab = (await menu.innerText()).trim().match(/^(Fashion|Electronics)/)?.[1] ?? 'Industries'
+        await menu.click()
+        const l = page.getByRole('navigation', { name: tab }).getByRole('link', { name: menuName(link) }).first()
+        if (!await l.count()) { await page.keyboard.press('Escape'); continue }
+        await l.click()
+        await page.waitForURL(url, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${link} did not open the new screen (${page.url()})`))
+        await ready().first().waitFor({ timeout: 30000 }).catch(() => problems.push(`${look} ${w}: ${link} did not load`))
+        await page.screenshot({ path: out(`industry-${link.toLowerCase().replace(/[ &-]+/g, '-')}-${look}-${w}`) })
+        if (!button) continue
+        const b = page.getByRole('button', { name: button })
+        if (!await b.waitFor({ timeout: 10000 }).then(() => true, () => false)) { problems.push(`${look} ${w}: ${link} has no ${button}`); continue }
+        await b.click()
+        if (button === 'New style') {
+          await page.getByRole('region', { name: 'Sizes and colours' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: New style did not open the form`))
+          await page.screenshot({ path: out(`industry-new-style-${look}-${w}`) })
+          await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+          await page.waitForURL(/\/office\/fashion\/styles\/?$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Cancel did not leave the style form`))
+          continue
+        }
+        const dlg = page.getByRole('dialog')
+        await dlg.waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${button} did not open its dialog`))
+        await page.screenshot({ path: out(`industry-${button.toLowerCase().replace(/ /g, '-')}-${look}-${w}`) })
+        await dlg.getByRole('button', { name: 'Back' }).click().catch(() => page.keyboard.press('Escape'))
+        await dlg.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => problems.push(`${look} ${w}: ${button}'s dialog did not close`))
+      }
       // Maintenance, rebuilt (part 31), where the add-on is on: Equipment and Work orders open from Stock and load; the first of
       // each opens (equipment with its plans, a work order with its cost); New work order opens its form (nothing is saved).
       for (const [link, url, table, empty, opened] of [

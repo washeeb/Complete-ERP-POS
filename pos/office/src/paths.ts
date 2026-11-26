@@ -124,6 +124,14 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: new RegExp(`^/admin/boms/(${UUID})/edit$`), app: (m) => `${APP}/manufacturing/boms/${m[1]}/edit` },
   { admin: /^\/admin\/production-planning\/?$/, app: () => `${APP}/manufacturing/planning` },
   { admin: /^\/admin\/work-centres\/?$/, app: () => `${APP}/manufacturing/centres` },
+  { admin: /^\/admin\/styles\/?$/, app: (_, q) => `${APP}/fashion/styles${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: new RegExp(`^/admin/styles/(${UUID})$`), app: (m) => `${APP}/fashion/styles/${m[1]}` },
+  { admin: /^\/admin\/alterations\/?$/, app: (_, q) => `${APP}/fashion/alterations${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: /^\/admin\/fashion-report\/?$/, app: (_, q) => `${APP}/fashion/sell-through${q.toString() ? `?${q.toString()}` : ''}` },
+  { admin: /^\/admin\/repair-jobs\/?$/, app: (_, q) => `${APP}/electronics/repairs${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: new RegExp(`^/admin/repair-jobs/(${UUID})$`), app: (m) => `${APP}/electronics/repairs/${m[1]}` },
+  { admin: /^\/admin\/serial-numbers\/?$/, app: (_, q) => `${APP}/electronics/serials${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
+  { admin: new RegExp(`^/admin/serial-numbers/(${UUID})$`), app: (m) => `${APP}/electronics/serials/${m[1]}` },
   { admin: /^\/admin\/sales-orders\/?$/, app: (_, q) => `${APP}/online/orders${q.get('tableSearch') ? `?q=${encodeURIComponent(q.get('tableSearch')!)}` : ''}` },
   { admin: new RegExp(`^/admin/sales-orders/(${UUID})$`), app: (m) => `${APP}/online/orders/${m[1]}` },
   { admin: /^\/admin\/sales-channels\/?$/, app: () => `${APP}/online/channels` },
@@ -332,6 +340,8 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'dist-performance' }
   | { page: 'mfg-orders' } | { page: 'mfg-order'; id: string } | { page: 'mfg-boms' } | { page: 'mfg-bom'; id: string } | { page: 'mfg-bom-form'; id: string | null }
   | { page: 'mfg-planning' } | { page: 'mfg-centres' }
+  | { page: 'fsh-styles' } | { page: 'fsh-style'; id: string } | { page: 'fsh-style-form'; id: string | null } | { page: 'fsh-alterations' }
+  | { page: 'fsh-sell-through' } | { page: 'ele-repairs' } | { page: 'ele-repair'; id: string } | { page: 'ele-serials' } | { page: 'ele-serial'; id: string }
   | { page: 'crm-pipeline' } | { page: 'crm-leads' } | { page: 'crm-lead'; id: string | null } | { page: 'crm-deals' } | { page: 'crm-deal'; id: string | null }
   | { page: 'crm-follow-ups' } | { page: 'crm-campaigns' } | { page: 'crm-campaign'; id: string | null } | { page: 'crm-stages' }
   | { page: 'goods-received' } | { page: 'goods-receipt'; id: string }
@@ -474,6 +484,18 @@ export function routeOf(path: string, search = ''): Route {
   if (mfb) return mfb[2] ? { page: 'mfg-bom-form', id: mfb[1] } : { page: 'mfg-bom', id: mfb[1] }
   if (/^\/office\/manufacturing\/planning\/?$/.test(path)) return { page: 'mfg-planning' }
   if (/^\/office\/manufacturing\/centres\/?$/.test(path)) return { page: 'mfg-centres' }
+  if (/^\/office\/fashion\/styles\/?$/.test(path)) return { page: 'fsh-styles' }
+  if (/^\/office\/fashion\/styles\/new\/?$/.test(path)) return { page: 'fsh-style-form', id: null }
+  const fst = path.match(new RegExp(`^/office/fashion/styles/(${UUID})(/edit)?/?$`))
+  if (fst) return fst[2] ? { page: 'fsh-style-form', id: fst[1] } : { page: 'fsh-style', id: fst[1] }
+  if (/^\/office\/fashion\/alterations\/?$/.test(path)) return { page: 'fsh-alterations' }
+  if (/^\/office\/fashion\/sell-through\/?$/.test(path)) return { page: 'fsh-sell-through' }
+  if (/^\/office\/electronics\/repairs\/?$/.test(path)) return { page: 'ele-repairs' }
+  const ere = path.match(new RegExp(`^/office/electronics/repairs/(${UUID})/?$`))
+  if (ere) return { page: 'ele-repair', id: ere[1] }
+  if (/^\/office\/electronics\/serials\/?$/.test(path)) return { page: 'ele-serials' }
+  const ese = path.match(new RegExp(`^/office/electronics/serials/(${UUID})/?$`))
+  if (ese) return { page: 'ele-serial', id: ese[1] }
   if (/^\/office\/online\/orders\/?$/.test(path)) return { page: 'onl-orders' }
   const onlo = path.match(new RegExp(`^/office/online/orders/(${UUID})/?$`))
   if (onlo) return { page: 'onl-order', id: onlo[1] }
@@ -742,6 +764,15 @@ export function adminEquivalent(route: Route): string | null {
     case 'mfg-bom-form': return route.id ? `/admin/boms/${route.id}/edit` : '/admin/boms/create'
     case 'mfg-planning': return '/admin/production-planning'
     case 'mfg-centres': return '/admin/work-centres'
+    case 'fsh-styles': return '/admin/styles'
+    case 'fsh-style': return `/admin/styles/${route.id}`
+    case 'fsh-style-form': return route.id ? `/admin/styles/${route.id}` : '/admin/styles'
+    case 'fsh-alterations': return '/admin/alterations'
+    case 'fsh-sell-through': return '/admin/fashion-report'
+    case 'ele-repairs': return '/admin/repair-jobs'
+    case 'ele-repair': return `/admin/repair-jobs/${route.id}`
+    case 'ele-serials': return '/admin/serial-numbers'
+    case 'ele-serial': return `/admin/serial-numbers/${route.id}`
     case 'onl-orders': return '/admin/sales-orders'
     case 'onl-order': return `/admin/sales-orders/${route.id}`
     case 'onl-channels': return '/admin/sales-channels'

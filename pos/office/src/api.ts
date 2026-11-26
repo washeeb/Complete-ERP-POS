@@ -876,6 +876,35 @@ export type VisitList = { total: number; page: number; per: number; outcomes: Op
 export type TargetValues = { user_id: string; year: string; month: string; target: string; visit_target: string }
 export type TargetList = { currency: string; exponent: number; reps: Option[]; months: Option[]; year: number; month: number
   rows: { id: string; rep: string; period: string; target: number; visits: number | null; values: TargetValues }[] }
+export type StyleRow = Archivable & { id: string; code: string; name: string; season: string | null; collection: string | null; products: number; price: number | null; for_sale: boolean }
+export type StyleList = { currency: string; exponent: number; total: number; page: number; per: number; can_create: boolean; seasons: Option[]; rows: StyleRow[] }
+export type StyleCell = { id: string; sku: string; on_hand: string; sold: string }
+export type StyleDetail = Archivable & { currency: string; exponent: number; id: string; code: string; name: string; season: string | null; collection: string | null
+  price: number | null; for_sale: boolean; description: string | null; category: string | null; brand: string | null; tax: string | null; sizes: string[]; colours: string[]
+  cells: Record<string, Record<string, StyleCell>>; missing: number; actions: { edit: boolean; generate: boolean; price: boolean } }
+export type StyleValues = { name: string; industry_id: string; category_id: string; brand_id: string; tax_group_id: string; season: string; collection: string; price: string
+  sizes: string[]; colours: string[]; description: string; is_active: boolean }
+export type StyleForm = { id: string | null; code: string | null; categories: Option[]; brands: Option[]; taxes: Option[]; industries: Option[]; values: StyleValues }
+export type AlterationRow = { id: string; number: string; customer: string; phone: string | null; garment: string; work: string; charge: number; due: string | null
+  tailor: string | null; status: string; status_label: string; tone: string; next: Option[]; can_hand_over: boolean }
+export type AlterationList = { currency: string; exponent: number; total: number; page: number; per: number; statuses: Option[]; can_create: boolean; branches: Option[]
+  rows: AlterationRow[] }
+export type SellThrough = { currency: string; exponent: number; from: string; to: string; season: string; seasons: Option[]
+  styles: { id: string; code: string; name: string; season: string | null; collection: string | null; sold: string; on_hand: string; sell_through: string; revenue: number }[]
+  consignment: boolean; can_settle: boolean; owed: { consignor_id: string; name: string; branch_id: string; branch: string; qty: string; sold: number; owed: number }[] }
+export type RepairRow = { id: string; number: string; received: string | null; customer: string; phone: string | null; device: string; serial: string | null; status: string
+  status_label: string; tone: string; warranty: boolean; promised: string | null }
+export type RepairList = { total: number; page: number; per: number; statuses: Option[]; can_create: boolean; branches: Option[]; rows: RepairRow[] }
+export type RepairDetail = { currency: string; exponent: number; id: string; number: string; status: string; status_label: string; tone: string; received: string | null
+  customer: string; phone: string | null; device: string; serial: string | null; serial_open: string | null; fault: string; accessories: string | null; promised: string | null
+  warranty: boolean; supplier: string | null; rma: string | null; lines: { id: string; name: string; qty: string; price: number; amount: number }[]; charge: number
+  line_values: { product_uom_id: string; unit: string; qty: string }[]; log: { when: string; status: string; by: string; note: string | null }[]; next: Option[]; warehouses: Option[]
+  actions: { progress: boolean; lines: boolean; hand_over: boolean } }
+export type SerialRow = { id: string; serial: string; product: string | null; status: string; status_label: string; tone: string; where: string | null; warranty: string | null }
+export type SerialList = { total: number; page: number; per: number; statuses: Option[]; can_register: boolean; gaps: number; warehouses: Option[]; rows: SerialRow[] }
+export type SerialDetail = { id: string; serial: string; product: string | null; sku: string | null; status: string; status_label: string; tone: string; where: string | null
+  sold: string | null; receipt: string | null; sale_open: string | null; customer: string | null; warranty: string | null; in_warranty: boolean | null
+  history: { id: string; when: string; what: string; where: string; reason: string | null; by: string | null }[] }
 export type MfgTable = { headings: string[]; rows: (string | number)[][]; numeric: number[] }
 export type MfgOrderRow = { id: string; number: string; product: string | null; warehouse: string | null; planned: string; done: string; due: string | null
   status: string; status_label: string; tone: string }
@@ -1870,6 +1899,34 @@ export const api = {
     call<{ id: string; message: string }>(`/office-api/manufacturing/centres${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(body) }),
   workCentreArchive: (id: string, restore: boolean, reason: string) =>
     call<{ message: string }>(`/office-api/manufacturing/centres/${id}/archive`, { method: 'POST', body: JSON.stringify({ restore, reason: restore ? null : reason }) }),
+  styles: (query: string, signal?: AbortSignal) => call<StyleList>(`/office-api/fashion/styles?${query}`, { signal }),
+  style: (id: string) => call<StyleDetail>(`/office-api/fashion/styles/${id}`),
+  styleForm: (id: string | null) => call<StyleForm>(id ? `/office-api/fashion/styles/${id}/form` : '/office-api/fashion/styles/form'),
+  saveStyle: (id: string | null, body: StyleValues) =>
+    call<{ id: string; message: string }>(`/office-api/fashion/styles${id ? `/${id}` : ''}`, { method: 'POST', body: JSON.stringify(body) }),
+  styleAction: (id: string, action: 'generate' | 'price', body: Record<string, unknown> = {}) =>
+    call<{ message: string }>(`/office-api/fashion/styles/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  styleArchive: (id: string, restore: boolean, reason: string) =>
+    call<{ message: string }>(`/office-api/fashion/styles/${id}/archive`, { method: 'POST', body: JSON.stringify({ restore, reason: restore ? null : reason }) }),
+  alterations: (query: string, signal?: AbortSignal) => call<AlterationList>(`/office-api/fashion/alterations?${query}`, { signal }),
+  newAlteration: (body: Record<string, unknown>) => call<{ id: string; message: string }>('/office-api/fashion/alterations', { method: 'POST', body: JSON.stringify(body) }),
+  alterationAction: (id: string, action: 'progress' | 'hand_over', body: Record<string, unknown> = {}) =>
+    call<{ message: string }>(`/office-api/fashion/alterations/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  sellThrough: (query: string, signal?: AbortSignal) => call<SellThrough>(`/office-api/fashion/report?${query}`, { signal }),
+  settleConsignor: (body: { consignor_id: string; branch_id: string; to: string; statement_no: string }) =>
+    call<{ message: string; open?: string }>('/office-api/fashion/report/settle', { method: 'POST', body: JSON.stringify(body) }),
+  repairs: (query: string, signal?: AbortSignal) => call<RepairList>(`/office-api/electronics/repairs?${query}`, { signal }),
+  newRepair: (body: Record<string, unknown>) => call<{ id: string; message: string }>('/office-api/electronics/repairs', { method: 'POST', body: JSON.stringify(body) }),
+  repair: (id: string) => call<RepairDetail>(`/office-api/electronics/repairs/${id}`),
+  repairAction: (id: string, action: 'progress' | 'lines' | 'hand_over', body: Record<string, unknown> = {}) =>
+    call<{ message: string }>(`/office-api/electronics/repairs/${id}/action`, { method: 'POST', body: JSON.stringify({ action, ...body }) }),
+  repairUnits: (q: string, signal?: AbortSignal) => call<{ results: UnitOption[] }>(`/office-api/electronics/units?q=${encodeURIComponent(q)}`, { signal }),
+  repairSuppliers: (q: string, signal?: AbortSignal) => call<{ results: { id: string; label: string }[] }>(`/office-api/electronics/suppliers?q=${encodeURIComponent(q)}`, { signal }),
+  serials: (query: string, signal?: AbortSignal) => call<SerialList>(`/office-api/electronics/serials?${query}`, { signal }),
+  serial: (id: string) => call<SerialDetail>(`/office-api/electronics/serials/${id}`),
+  serialProducts: (q: string, signal?: AbortSignal) => call<{ results: { id: string; label: string }[] }>(`/office-api/electronics/serial-products?q=${encodeURIComponent(q)}`, { signal }),
+  registerSerials: (body: { warehouse_id: string; product_id: string; serials: string[] }) =>
+    call<{ message: string }>('/office-api/electronics/serials/register', { method: 'POST', body: JSON.stringify(body) }),
   onlineOrders: (query: string, signal?: AbortSignal) => call<OnlineOrderList>(`/office-api/online/orders?${query}`, { signal }),
   onlineOrder: (id: string) => call<OnlineOrderDetail>(`/office-api/online/orders/${id}`),
   onlineOrderAction: (id: string, action: 'ready' | 'fulfil' | 'cancel', body: Record<string, unknown> = {}) =>
