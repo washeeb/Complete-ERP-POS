@@ -16,7 +16,7 @@ import { UserMenu } from './UserMenu'
 const useStyles = makeStyles({
   root: { display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: tokens.colorNeutralBackground2 },
   top: {
-    display: 'grid', gridTemplateColumns: 'minmax(160px, 1fr) minmax(200px, 560px) minmax(160px, 1fr)', alignItems: 'center', gap: '16px',
+    display: 'grid', gridTemplateColumns: 'minmax(120px, 1fr) minmax(200px, 560px) auto', alignItems: 'center', gap: '16px',
     flex: '0 0 52px', height: '52px', padding: '0 16px', backgroundColor: tokens.colorNeutralBackground1, borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
     '@media (max-width: 760px)': { gridTemplateColumns: 'auto 1fr auto', gap: '8px', padding: '0 8px' },
   },
@@ -41,11 +41,10 @@ const useStyles = makeStyles({
  * Look 1 (the default, owner 2026-11-16): the company and search on a white band, the menu areas on a coloured band
  * below; each area drops down its pages in columns. Like the desktop business programs people know.
  */
-export function TopLook({ me, menu, current, page, todo, atTodo, onLook, onFavourites, children }: {
-  me: Me; menu: Menu; current: string | null; page: Page | null; todo: number; atTodo: boolean
+export function TopLook({ me, menu, current, page, todo, atHome, atTodo, onLook, onFavourites, children }: {
+  me: Me; menu: Menu; current: string | null; page: Page | null; todo: number; atHome: boolean; atTodo: boolean
   onLook: (l: Prefs['office_look']) => void; onFavourites: (list: Page[]) => void; children: ReactNode
 }) {
-  const atHome = current === null && !page && !atTodo
   const s = useStyles()
   const [open, setOpen] = useState<string | null>(null)
   const band = me.company.menu_color ?? menuShade(me.company.color)
@@ -67,7 +66,7 @@ export function TopLook({ me, menu, current, page, todo, atTodo, onLook, onFavou
         </div>
       </header>
       <nav className={s.bar} style={{ backgroundColor: band, color: ink }} aria-label="Menu">
-        <Tooltip content="Home" relationship="label">
+        <Tooltip content="Business Portal" relationship="label">
           <Button appearance="transparent" className={mergeClasses(s.tab, atHome && s.current)} icon={<HomeFilled />} onClick={() => navigate('/office/')}
             aria-current={atHome ? 'page' : undefined} />
         </Tooltip>

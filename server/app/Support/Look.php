@@ -188,7 +188,7 @@ final class Look
     }
 
     /** The icon of each top-level group in the side menu (the tabs' names; an industry tab takes the shop icon). */
-    public const TAB_ICONS = ['Home' => 'heroicon-o-home', 'Insights' => 'heroicon-o-chart-bar', 'Sales' => 'heroicon-o-shopping-bag',
+    public const TAB_ICONS = ['Home' => 'heroicon-o-home', 'Business Portal' => 'heroicon-o-home', 'Insights' => 'heroicon-o-chart-bar', 'Sales' => 'heroicon-o-shopping-bag',
         'Purchasing' => 'heroicon-o-shopping-cart', 'Stock' => 'heroicon-o-archive-box', 'Finance' => 'heroicon-o-banknotes',
         'People' => 'heroicon-o-user-group', 'Setup' => 'heroicon-o-cog-6-tooth', 'More' => 'heroicon-o-squares-2x2'];
 
@@ -300,7 +300,7 @@ final class Look
             $tabs[] = ['label' => 'More', 'sections' => $rest];
         }
         if ($overview !== [] && $tabs === []) {
-            $tabs[] = ['label' => 'Home', 'sections' => [$overview]];
+            $tabs[] = ['label' => 'Business Portal', 'sections' => [$overview]];
         } elseif ($overview !== []) {
             array_unshift($tabs[0]['sections'], $overview);
         }

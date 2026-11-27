@@ -8,6 +8,7 @@ import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
 import { Fact, Panel, ToneBadge, useProcStyles } from './ProcurementParts'
 import { AlarmTable, DayChart } from './SensorParts'
+import { SaveBar } from '../form/SaveBar'
 
 type Dialog = 'check' | 'address' | 'new_address' | 'archive' | 'restore'
 
@@ -120,10 +121,10 @@ export function SensorPage({ id, onTitle }: { id: string | null; onTitle: (t: st
         {v.connection === 'direct' && !d.id && <Text size={200} block className={s.muted}>After saving, this page shows the address the sensor posts its readings to.</Text>}
       </Panel>
       {edit && (
-        <div className={s.foot}>
+        <SaveBar value={v}>
           <Button onClick={back}>Cancel</Button>
           <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !ready} onClick={save}>{busy ? 'Saving…' : d.id ? 'Save' : 'Add sensor'}</Button>
-        </div>
+        </SaveBar>
       )}
 
       {d.id && <Panel title="Sensor alarms"><AlarmTable rows={d.alarms ?? []} withSensor={false} onDone={after} /></Panel>}

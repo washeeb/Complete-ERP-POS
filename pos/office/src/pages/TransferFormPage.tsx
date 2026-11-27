@@ -7,6 +7,7 @@ import { UnitPicker } from '../form/UnitPicker'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
 import { repeated } from './CountPage'
+import { SaveBar } from '../form/SaveBar'
 
 const useStyles = makeStyles({
   head: { display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' },
@@ -21,8 +22,6 @@ const useStyles = makeStyles({
   num: { alignSelf: 'center', color: tokens.colorNeutralForeground3 },
   stat: { display: 'flex', flexDirection: 'column', minWidth: 0 },
   statValue: { fontWeight: tokens.fontWeightSemibold, fontVariantNumeric: 'tabular-nums', padding: '6px 0' },
-  foot: { position: 'sticky', bottom: 0, zIndex: 2, display: 'flex', justifyContent: 'flex-end', gap: '8px', padding: '10px 0',
-    backgroundColor: tokens.colorNeutralBackground2, borderTop: `1px solid ${tokens.colorNeutralStroke2}` },
 })
 
 type Line = TransferLine & { k: number }
@@ -98,10 +97,10 @@ export function TransferFormPage({ id, onTitle }: { id: string | null; onTitle: 
         <Button icon={<AddRegular />} appearance="subtle" onClick={() => setLines((ls) => [...ls, blank()])}>Add line</Button>
       </Panel>
 
-      <div className={s.foot}>
+      <SaveBar value={[head, lines]}>
         <Button onClick={back}>Cancel</Button>
         <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !ready} onClick={save}>{busy ? 'Saving…' : id ? 'Save the draft' : 'Create the draft'}</Button>
-      </div>
+      </SaveBar>
     </div>
   )
 }

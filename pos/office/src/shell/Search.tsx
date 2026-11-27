@@ -28,6 +28,12 @@ type Hit = { kind: 'page' | 'record'; title: string; sub: string; url: string; g
  * One box for everything (Ctrl+K or /): pages of the menu as you type, then records (customers, products, invoices…)
  * from the back office's own search. Arrow keys and Enter, or the mouse.
  */
+/** Pages outside the menu's areas (the house and list icons), found by their names and the old ones. */
+const FIXED = [
+  { title: 'Business Portal', sub: 'Your start page: reminders, Action Centre, figures', url: '/office/', words: ['business portal', 'portal', 'home', 'dashboard'] },
+  { title: 'To-do', sub: 'Everything waiting for your decision', url: '/office/todo', words: ['to-do', 'todo', 'approvals', 'waiting'] },
+]
+
 export function Search({ menu, compact = false }: { menu: Menu; compact?: boolean }) {
   const s = useStyles()
   const [q, setQ] = useState('')
@@ -63,6 +69,8 @@ export function Search({ menu, compact = false }: { menu: Menu; compact?: boolea
   }, [q])
 
   const hits: Hit[] = useMemo(() => [
+    ...FIXED.filter((f) => q.trim().length >= 2 && f.words.some((w) => w.startsWith(q.trim().toLowerCase())))
+      .map((f) => ({ kind: 'page' as const, title: f.title, sub: f.sub, url: f.url, group: 'Pages' })),
     ...findPages(menu, q, 6).map((p) => ({ kind: 'page' as const, title: p.label, sub: p.where, url: p.url, group: 'Pages' })),
     ...records.map((r) => ({ kind: 'record' as const, title: r.title, sub: r.details, url: r.url, group: r.group })),
   ], [menu, q, records])

@@ -1,0 +1,7 @@
+## Business Portal, the save bar and unsaved work
+- **"Business Portal" everywhere (owner 2026-11-26),** including the My profile setting; the side rail keeps a short label ("Portal") with the full name as its spoken name and tooltip, like the other rail items (owner).
+- **The bar hung because a sticky element stops at its scroll box's padding;** the fix takes the page's padding back (CSS variables set by the page) instead of removing the padding, so the pages' spacing is unchanged. Found the same on the Settings bar (top) and fixed it there.
+- **One shared save bar** instead of 31 copies: the look, the unsaved note and Ctrl+S stay the same on every form. Ctrl+S presses the visible save button rather than calling the page's save, so a save not allowed yet or already running is never sent twice.
+- **Unsaved changes are judged by the values, after the person's own input,** so a form filling itself while it loads is never "unsaved", and undoing a change clears it. A save is known to have worked when the server accepts the change sent after the person asked to save; no page needed its own wiring.
+- **The browser's own box on tab close/reload** (a page may not show its own there); the in-app box everywhere else, with *Save and leave* (owner's choice).
+- **Phones always use the side menu,** as the guide already said; the layout check now includes a phone size, which found the side panels overflowing.

@@ -7,6 +7,7 @@ import { Choose, LongText, TextField, useFieldStyles } from '../form/Fields'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
 import { Panel, ToneBadge, useProcStyles } from './ProcurementParts'
+import { SaveBar } from '../form/SaveBar'
 
 type Dialog = 'activate' | 'pause' | 'reconcile' | 'retry' | 'archive' | 'restore'
 
@@ -101,10 +102,10 @@ export function ChannelPage({ id, onTitle }: { id: string | null; onTitle: (t: s
           </div>
         </Panel>
       )}
-      <div className={s.foot}>
+      <SaveBar value={[v, secrets]}>
         <Button onClick={back}>Cancel</Button>
         <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !ready} onClick={save}>{busy ? 'Saving…' : d.id ? 'Save' : 'Add channel'}</Button>
-      </div>
+      </SaveBar>
 
       {dialog === 'activate' && (
         <Ask title="Activate this channel?" go="Activate" ready onClose={() => setDialog(null)} run={() => api.channelAction(d.id!, 'activate').then(after)}>

@@ -5,13 +5,13 @@ import { api, type EcForm } from '../api'
 import { Choose, TextField, useFieldStyles } from '../form/Fields'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
+import { SaveBar } from '../form/SaveBar'
 
 const useStyles = makeStyles({
   title: { fontSize: '22px', fontWeight: tokens.fontWeightSemibold, margin: '0 0 4px' },
   muted: { color: tokens.colorNeutralForeground3 },
   panel: { backgroundColor: tokens.colorNeutralBackground1, borderRadius: tokens.borderRadiusXLarge, border: `1px solid ${tokens.colorNeutralStroke2}`,
     boxShadow: tokens.shadow4, padding: '14px 16px 16px', margin: '12px 0 14px' },
-  foot: { display: 'flex', justifyContent: 'flex-end', gap: '8px' },
 })
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -68,10 +68,10 @@ export function ExpenseClaimFormPage({ onTitle }: { onTitle: (t: string) => void
           </Field>
         </div>
       </section>
-      <div className={s.foot}>
+      <SaveBar value={[v, receipt?.name]}>
         <Button onClick={() => (history.length > 1 ? history.back() : navigate('/office/expense-claims'))}>Cancel</Button>
         <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !ready} onClick={save}>{busy ? 'Saving…' : 'Submit the claim'}</Button>
-      </div>
+      </SaveBar>
     </div>
   )
 }

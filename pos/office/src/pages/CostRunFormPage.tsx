@@ -7,6 +7,7 @@ import { SearchPicker } from '../form/SearchPicker'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
 import { Panel, useProcStyles } from './ProcurementParts'
+import { SaveBar } from '../form/SaveBar'
 
 type Override = { kind: 'category' | 'brand'; id: string; value: string }
 const FOR = [{ id: 'category', label: 'Category' }, { id: 'brand', label: 'Brand' }]
@@ -109,10 +110,10 @@ export function CostRunFormPage() {
           <LongText label="Note" className={f.spanAll} maxLength={255} value={note} onChange={setNote} />
         </div>
       </Panel>
-      <div className={s.foot}>
+      <SaveBar value={[v, pick, overrides, account, note]}>
         <Button onClick={back}>Cancel</Button>
         <Button appearance="primary" icon={<CalculatorRegular />} disabled={busy || !ready} onClick={save}>{busy ? 'Working it out…' : 'Work it out'}</Button>
-      </div>
+      </SaveBar>
     </div>
   )
 }

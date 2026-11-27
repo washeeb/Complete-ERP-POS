@@ -11,7 +11,8 @@ import { linkClick, navigate } from '../nav'
 import { appPathFor } from '../paths'
 
 const useStyles = makeStyles({
-  page: { flex: '1 1 auto', overflowY: 'auto', padding: '16px 20px 32px', '@media (max-width: 760px)': { padding: '12px 10px 24px' } },
+  page: { flex: '1 1 auto', overflowY: 'auto', padding: '16px 20px 32px', '--zx-pad-t': '16px', '--zx-pad-x': '20px', '--zx-pad-b': '32px',
+    '@media (max-width: 760px)': { padding: '12px 10px 24px', '--zx-pad-t': '12px', '--zx-pad-x': '10px', '--zx-pad-b': '24px' } },
   head: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '8px' },
   title: { fontSize: '22px', fontWeight: tokens.fontWeightSemibold, margin: 0 },
   muted: { color: tokens.colorNeutralForeground3 },

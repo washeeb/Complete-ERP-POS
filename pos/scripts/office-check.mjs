@@ -45,6 +45,13 @@ try {
   await page.waitForURL(/\/office\/(?!sign-in)/, { timeout: 20000 }).catch(() => problems.push(`after sign-in the browser is at ${page.url()}, not /office`))
   if (!/\/office\/(?!sign-in)/.test(page.url())) await page.goto(`${base}/office/`)
 
+  /** Cancel on a form; when something was typed, leaving asks first (part 44): leave without saving. */
+  const cancelForm = async () => {
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+    const leave = page.getByRole('dialog', { name: 'You have unsaved changes' })
+    if (await leave.waitFor({ timeout: 1500 }).then(() => true).catch(() => false)) await leave.getByRole('button', { name: 'Leave without saving' }).click()
+  }
+
   for (const look of ['top', 'side']) {
     // Switch the look from the person's menu.
     await page.getByRole('button', { name: /your menu/ }).click()
@@ -55,8 +62,8 @@ try {
       await page.setViewportSize({ width: w, height: h })
       await page.goto(`${base}/office/`)
       // Home: every panel of the template is there.
-      await page.getByRole('heading', { name: 'Home', level: 1 }).waitFor({ timeout: 20000 })
-      for (const panel of ['Reminders', 'Tiles', 'Key performance indicators', 'KPI meter', 'Top 15 items by quantity sold', 'Monthly trend', 'Shortcuts']) {
+      await page.getByRole('heading', { name: 'Business Portal', level: 1 }).waitFor({ timeout: 20000 })
+      for (const panel of ['Reminders', 'Action Centre', 'Key performance indicators', 'KPI meter', 'Top 15 items by quantity sold', 'Monthly trend', 'Shortcuts']) {
         if (!(await page.getByRole('heading', { name: panel, level: 2 }).isVisible().catch(() => false))) problems.push(`${look} ${w}: Home has no "${panel}" panel`)
       }
       await page.waitForTimeout(700) // the panels' grow-in finishes
@@ -148,12 +155,12 @@ try {
         await page.getByRole('button', { name: 'Add customer' }).click()
         await page.waitForURL(/\/office\/customers\/new$/, { timeout: 15000 }).catch(() => problems.push('customer form: did not open'))
         await page.getByRole('textbox', { name: /^Name/ }).fill('Check customer').catch(() => problems.push('customer form: no Name box'))
-        const industry = page.getByRole('combobox', { name: /^Industry/ })
-        if (await industry.isVisible().catch(() => false)) { await industry.click(); await page.getByRole('option').first().click() }
+        const industry = page.getByRole('main').getByRole('combobox', { name: /^Industry/ })
+        if (await industry.isVisible().catch(() => false)) { await industry.click(); await page.getByRole('listbox').getByRole('option').first().click() }
         if (await page.getByRole('button', { name: 'Save', exact: true }).isDisabled()) problems.push('customer form: Save stays off with the name (and industry) filled in')
         await page.getByRole('region', { name: 'Marketing consent' }).waitFor({ timeout: 5000 }).catch(() => problems.push('customer form: no consent section'))
         await page.screenshot({ path: out('customer-form'), fullPage: true })
-        await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
+        await cancelForm() // nothing is saved
       }
 
       // Invoices, rebuilt (release 4): from the Sales menu, rows (or "No invoices match"); a row opens the invoice with
@@ -212,13 +219,13 @@ try {
         await page.getByRole('button', { name: 'Add supplier' }).click()
         await page.waitForURL(/\/office\/suppliers\/new$/, { timeout: 15000 }).catch(() => problems.push('supplier form: did not open'))
         await page.getByRole('textbox', { name: /^Name/ }).fill('Check supplier').catch(() => problems.push('supplier form: no Name box'))
-        const industry = page.getByRole('combobox', { name: /^Industry/ })
-        if (await industry.isVisible().catch(() => false)) { await industry.click(); await page.getByRole('option').first().click() }
+        const industry = page.getByRole('main').getByRole('combobox', { name: /^Industry/ })
+        if (await industry.isVisible().catch(() => false)) { await industry.click(); await page.getByRole('listbox').getByRole('option').first().click() }
         if (await page.getByRole('button', { name: 'Save', exact: true }).isDisabled()) problems.push('supplier form: Save stays off with the name (and industry) filled in')
         await page.getByRole('button', { name: 'Add product' }).click()
         if (await page.getByRole('button', { name: 'Save', exact: true }).isEnabled()) problems.push('supplier form: Save is on with a product line not chosen')
         await page.screenshot({ path: out('supplier-form'), fullPage: true })
-        await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
+        await cancelForm() // nothing is saved
       }
 
       // Purchase orders, rebuilt (release 5): from the Purchasing menu, rows (or "No purchase orders match"); a row opens
@@ -245,7 +252,7 @@ try {
         await page.getByRole('button', { name: 'Service or non-stock item' }).first().click()
         await page.getByRole('textbox', { name: /^What/ }).waitFor({ timeout: 5000 }).catch(() => problems.push('purchase order form: a service line asks no "What"'))
         await page.screenshot({ path: out('purchase-order-form'), fullPage: true })
-        await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
+        await cancelForm() // nothing is saved
       }
 
       // Goods received, rebuilt (release 5): from the Purchasing menu, rows (or "No goods received notes match"); a row opens the note.
@@ -305,14 +312,14 @@ try {
         const dpPick = line1.getByRole('combobox', { name: /Product and unit/ })
         await dpPick.click() // opens the list, as a person typing does
         await dpPick.fill('tom')
-        await page.getByRole('option').first().click({ timeout: 10000 }).catch(() => problems.push('direct purchase form: the product search found nothing for "tom"'))
+        await page.getByRole('listbox').getByRole('option').first().click({ timeout: 10000 }).catch(() => problems.push('direct purchase form: the product search found nothing for "tom"'))
         await line1.getByRole('spinbutton', { name: /^Qty/ }).fill('2')
         await line1.getByRole('spinbutton', { name: /^Unit price/ }).fill('100')
         await line1.getByRole('spinbutton', { name: /^New selling price/ }).fill('150')
         await line1.getByText(/^Margin \d+%/).waitFor({ timeout: 10000 }).catch(() => problems.push('direct purchase form: no margin shown beside the new price'))
         await line1.scrollIntoViewIfNeeded()
         await page.screenshot({ path: out('direct-purchase-form') })
-        await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
+        await cancelForm() // nothing is saved
       }
 
       // Invoices from suppliers and Consignment to pay, rebuilt (release 5): from the Purchasing menu, each opens its new screen.
@@ -374,7 +381,7 @@ try {
           await page.getByRole('region', { name: 'The claim' }).waitFor({ timeout: 10000 }).catch(() => problems.push('expense claim form: no form'))
           if (await page.getByRole('button', { name: 'Submit the claim' }).isEnabled()) problems.push('expense claim form: Submit is on with nothing filled in')
           await page.screenshot({ path: out('expense-claim-form') })
-          await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
+          await cancelForm() // nothing is saved
         }
       }
 
@@ -401,13 +408,13 @@ try {
           await page.waitForURL(/\/office\/supplier-bills\/new$/, { timeout: 15000 }).catch(() => problems.push('supplier bill form: did not open'))
           const sup = page.getByRole('combobox', { name: /^Supplier/ })
           await sup.click()
-          await page.getByRole('option').first().click().catch(() => problems.push('supplier bill form: no supplier to choose'))
+          await page.getByRole('listbox').getByRole('option').first().click().catch(() => problems.push('supplier bill form: no supplier to choose'))
           const goods = page.getByRole('region', { name: 'Goods received' })
           await goods.getByText(/Add everything still to bill from|Nothing received from this supplier/).first().waitFor({ timeout: 15000 })
             .catch(() => problems.push('supplier bill form: choosing a supplier did not show what is still to bill'))
           if (await page.getByRole('button', { name: 'Create the bill' }).isEnabled()) problems.push('supplier bill form: Create is on with no lines')
           await page.screenshot({ path: out('supplier-bill-form'), fullPage: true })
-          await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
+          await cancelForm() // nothing is saved
         }
       }
 
@@ -652,7 +659,7 @@ try {
           await page.getByRole('region', { name: 'Quotation' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: New quotation did not open the form`))
           if (await page.getByRole('button', { name: 'Save quotation' }).isEnabled()) problems.push(`${look} ${w}: Save quotation is on with nothing filled in`)
           await page.screenshot({ path: out(`customer-order-form-${look}-${w}`) })
-          await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+          await cancelForm()
         }
       }
       if (await salesLink('Payments received')) {
@@ -728,7 +735,7 @@ try {
               await b.click()
               await page.getByRole('region', { name: form, exact: true }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${button} did not open the form`))
               await page.screenshot({ path: out(`crm-${form.toLowerCase()}-form-${look}-${w}`) })
-              await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+              await cancelForm()
             }
           }
         }
@@ -762,7 +769,7 @@ try {
             await b.click()
             await page.getByRole('region', { name: 'Project', exact: true }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: New project did not open the form`))
             await page.screenshot({ path: out(`projects-new-${look}-${w}`) })
-            await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+            await cancelForm()
           }
         }
         if (link === 'My time') {
@@ -807,7 +814,7 @@ try {
           await b.click()
           await page.getByRole('region', { name: 'Ticket', exact: true }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: New ticket did not open the form`))
           await page.screenshot({ path: out(`desk-new-${look}-${w}`) })
-          await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+          await cancelForm()
         } else problems.push(`${look} ${w}: Tickets has no New ticket`)
       }
       // Ask your business, Alerts and the AI usage log, rebuilt (part 29): each opens from Insights and loads; a quick question
@@ -886,7 +893,7 @@ try {
         if (button === 'New style') {
           await page.getByRole('region', { name: 'Sizes and colours' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: New style did not open the form`))
           await page.screenshot({ path: out(`industry-new-style-${look}-${w}`) })
-          await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+          await cancelForm()
           await page.waitForURL(/\/office\/fashion\/styles\/?$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Cancel did not leave the style form`))
           continue
         }
@@ -923,7 +930,7 @@ try {
             await b.click()
             await page.getByRole('region', { name: 'Work order', exact: true }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: New work order did not open the form`))
             await page.screenshot({ path: out(`maintenance-new-order-${look}-${w}`) })
-            await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+            await cancelForm()
           } else problems.push(`${look} ${w}: Work orders has no New work order`)
         }
       }
@@ -988,7 +995,7 @@ try {
             await b.click()
             await page.getByRole('region', { name: 'Channel', exact: true }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: New channel did not open the form`))
             await page.screenshot({ path: out(`online-new-channel-${look}-${w}`) })
-            await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+            await cancelForm()
           } else problems.push(`${look} ${w}: Channels has no New channel`)
         }
       }
@@ -1047,7 +1054,7 @@ try {
         if (button === 'New bill of materials') {
           await page.getByRole('region', { name: 'Lines' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: New bill of materials did not open the form`))
           await page.screenshot({ path: out(`manufacturing-new-bom-${look}-${w}`) })
-          await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+          await cancelForm()
           await page.waitForURL(/\/office\/manufacturing\/boms\/?$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Cancel did not leave the BOM form`))
           continue
         }
@@ -1135,7 +1142,7 @@ try {
           await page.getByRole('button', { name: 'Add employee' }).click()
           await page.getByRole('region', { name: 'Pay (per month)' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Add employee did not open the form`))
           await page.screenshot({ path: out(`hr-employee-form-${look}-${w}`) })
-          await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+          await cancelForm()
         }
         if (link === 'Payroll' && await page.getByRole('button', { name: 'Prepare payroll' }).count()) {
           await page.getByRole('button', { name: 'Prepare payroll' }).click()
@@ -1170,7 +1177,7 @@ try {
             await add.click()
             await page.getByLabel('Tills to create').waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: New branch did not open the form`))
             await page.screenshot({ path: out(`company-branch-new-${look}-${w}`) })
-            await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+            await cancelForm()
           }
         }
       }
@@ -1240,7 +1247,7 @@ try {
             await btn.click()
             await page.getByRole('region', { name: 'How to work out the cost' }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: New cost run did not open the form`))
             await page.screenshot({ path: out(`cost-run-form-${look}-${w}`) })
-            await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+            await cancelForm()
           }
         }
         if (link === 'Landed costs') {
@@ -1275,7 +1282,7 @@ try {
           await btn.click()
           await page.getByRole('region', { name: region }).waitFor({ timeout: 15000 }).catch(() => problems.push(`${look} ${w}: ${create} did not open the form`))
           await page.screenshot({ path: out(`${link.split(' ')[0].toLowerCase()}-proc-form-${look}-${w}`) })
-          await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+          await cancelForm()
         }
       }
       // Fixed assets, rebuilt (release 8): Kinds of asset opens from the register with its kinds.
@@ -1359,7 +1366,7 @@ try {
           const d = page.getByRole('dialog')
           await d.waitFor({ timeout: 10000 }).catch(() => problems.push('pay a supplier: the dialog did not open'))
           await d.getByRole('combobox', { name: /^Supplier/ }).click()
-          await page.getByRole('option').first().click().catch(() => problems.push('pay a supplier: no supplier to choose'))
+          await page.getByRole('listbox').getByRole('option').first().click().catch(() => problems.push('pay a supplier: no supplier to choose'))
           await d.getByRole('spinbutton', { name: /^Amount/ }).fill('10')
           await page.waitForTimeout(800)
           await page.screenshot({ path: out('pay-a-supplier') })
@@ -1389,7 +1396,7 @@ try {
         }
       }
       await page.goto(`${base}/office/`)
-      await page.getByRole('heading', { name: 'Home', level: 1 }).waitFor({ timeout: 20000 })
+      await page.getByRole('heading', { name: 'Business Portal', level: 1 }).waitFor({ timeout: 20000 })
       const sideways = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)
       if (sideways > 1) problems.push(`${look} ${w}: the page runs ${sideways}px off the side`)
 
@@ -1436,7 +1443,12 @@ try {
           await page.mouse.wheel(0, 200)
           await page.screenshot({ path: out('product-form-prices') })
         }
+        if (!await page.getByText(/^Unsaved changes/).count()) problems.push(`${look} ${w}: the save bar does not say there are unsaved changes`)
         await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
+        // Typed in, so leaving asks first (part 44): leave without saving.
+        const leave = page.getByRole('dialog', { name: 'You have unsaved changes' })
+        await leave.waitFor({ timeout: 10000 }).catch(() => problems.push(`${look} ${w}: leaving the product form with changes did not ask first`))
+        await leave.getByRole('button', { name: 'Leave without saving' }).click().catch(() => undefined)
         await page.waitForURL(/\/office\/products\/[0-9a-f-]{36}$/, { timeout: 15000 }).catch(() => problems.push(`${look} ${w}: Cancel did not go back to the product`))
       }
 
@@ -1489,16 +1501,16 @@ try {
         const lineRegion = page.getByRole('region', { name: 'Lines' })
         await lineRegion.waitFor({ timeout: 15000 }).catch(() => problems.push('adjustment form: no lines'))
         const wh = page.getByRole('combobox', { name: /Warehouse/ })
-        if (!(await wh.inputValue().catch(() => ''))) { await wh.click(); await page.getByRole('option').first().click() }
+        if (!(await wh.inputValue().catch(() => ''))) { await wh.click(); await page.getByRole('listbox').getByRole('option').first().click() }
         const picker = lineRegion.getByRole('combobox', { name: /Product and unit/ })
         await picker.click()
         await picker.fill('am')
-        await page.getByRole('option').first().click({ timeout: 15000 }).catch(() => problems.push('adjustment form: the product search offered nothing'))
+        await page.getByRole('listbox').getByRole('option').first().click({ timeout: 15000 }).catch(() => problems.push('adjustment form: the product search offered nothing'))
         await lineRegion.getByRole('spinbutton', { name: /Quantity/ }).fill('1')
         await lineRegion.getByText(/^-?\d+(\.\d+)? \S+$/).first().waitFor({ timeout: 10000 }).catch(() => problems.push('adjustment form: no stock shown for the product'))
         await page.waitForTimeout(400)
         await page.screenshot({ path: out('adjustment-form') })
-        await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
+        await cancelForm() // nothing is saved
 
         // One adjustment's page, drawn from an answer made up in the browser (the dev data may hold none; nothing is saved).
         const fake = '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e0f'
@@ -1570,16 +1582,16 @@ try {
         await page.getByRole('button', { name: 'New transfer' }).click()
         await page.waitForURL(/\/office\/transfers\/new$/, { timeout: 15000 }).catch(() => problems.push('transfer form: did not open'))
         const fromBox = page.getByRole('combobox', { name: /^From/ })
-        if (!(await fromBox.inputValue().catch(() => ''))) { await fromBox.click(); await page.getByRole('option').first().click() }
+        if (!(await fromBox.inputValue().catch(() => ''))) { await fromBox.click(); await page.getByRole('listbox').getByRole('option').first().click() }
         const linesRegion = page.getByRole('region', { name: 'Lines' })
         const pick = linesRegion.getByRole('combobox', { name: /Product and unit/ })
         await pick.click()
         await pick.fill('am')
-        await page.getByRole('option').first().click({ timeout: 15000 }).catch(() => problems.push('transfer form: the product search offered nothing'))
+        await page.getByRole('listbox').getByRole('option').first().click({ timeout: 15000 }).catch(() => problems.push('transfer form: the product search offered nothing'))
         await linesRegion.getByRole('spinbutton', { name: /Quantity/ }).fill('1')
         await linesRegion.getByText(/^-?\d+(\.\d+)? \S+$/).first().waitFor({ timeout: 10000 }).catch(() => problems.push('transfer form: no stock to send shown'))
         await page.screenshot({ path: out('transfer-form') })
-        await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
+        await cancelForm() // nothing is saved
 
         const fakeTr = '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e2f'
         await page.route(`**/office-api/transfers/${fakeTr}`, (r) => r.fulfill({ json: {
@@ -1620,19 +1632,19 @@ try {
         await page.getByRole('button', { name: 'Ask for stock' }).click()
         await page.waitForURL(/\/office\/requests\/new$/, { timeout: 15000 }).catch(() => problems.push('request form: did not open'))
         const forBox = page.getByRole('combobox', { name: /^For/ })
-        if (!(await forBox.inputValue().catch(() => ''))) { await forBox.click(); await page.getByRole('option').first().click() }
+        if (!(await forBox.inputValue().catch(() => ''))) { await forBox.click(); await page.getByRole('listbox').getByRole('option').first().click() }
         const askBox = page.getByRole('combobox', { name: /^Ask/ })
         await askBox.click()
-        await page.getByRole('option').nth(1).click().catch(() => problems.push('request form: nobody to ask'))
+        await page.getByRole('listbox').getByRole('option').nth(1).click().catch(() => problems.push('request form: nobody to ask'))
         const needRegion = page.getByRole('region', { name: 'What you need' })
         const pick = needRegion.getByRole('combobox', { name: /Product and unit/ })
         await pick.click()
         await pick.fill('am')
-        await page.getByRole('option').first().click({ timeout: 15000 }).catch(() => problems.push('request form: the product search offered nothing'))
+        await page.getByRole('listbox').getByRole('option').first().click({ timeout: 15000 }).catch(() => problems.push('request form: the product search offered nothing'))
         await needRegion.getByRole('spinbutton', { name: /Quantity/ }).fill('2')
         await needRegion.getByText(/^-?\d+(\.\d+)? \S+$/).nth(1).waitFor({ timeout: 10000 }).catch(() => problems.push('request form: "You have" / "They have" not shown'))
         await page.screenshot({ path: out('request-form') })
-        await page.getByRole('button', { name: 'Cancel', exact: true }).click() // nothing is saved
+        await cancelForm() // nothing is saved
 
         const fakeRq = '0198f2c4-1a2b-7c3d-8e4f-5a6b7c8d9e3f'
         await page.route(`**/office-api/requests/${fakeRq}`, (r) => r.fulfill({ json: {
@@ -1753,7 +1765,8 @@ try {
   await page.getByRole('button', { name: /your menu/ }).click()
   await page.getByRole('menuitemradio', { name: 'Across the top' }).click()
 } catch (e) {
-  problems.push(`stopped: ${e.message.split('\n')[0]}`)
+  const where = (e.stack ?? '').split('\n').find((l) => l.includes('office-check.mjs'))?.trim() ?? '?' // which step
+  problems.push(`stopped: ${e.message.split('\n')[0]} (${where})`)
   await page.screenshot({ path: out('error') }).catch(() => undefined)
 } finally {
   await browser.close()

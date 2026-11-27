@@ -8,6 +8,7 @@ import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
 import { Activities } from './CrmParts'
 import { Panel, ToneBadge, useProcStyles } from './ProcurementParts'
+import { SaveBar } from '../form/SaveBar'
 
 /**
  * One lead (part 25), as the current form: who they are and how to reach them, where they came from, status, what they
@@ -77,10 +78,10 @@ export function CrmLeadPage({ id, onTitle }: { id: string | null; onTitle: (t: s
         </div>
       </Panel>
       {edit && (
-        <div className={s.foot}>
+        <SaveBar value={v}>
           <Button onClick={back}>Cancel</Button>
           <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !v.name.trim() || (!v.phone.trim() && !v.email.trim())} onClick={save}>{busy ? 'Saving…' : d.id ? 'Save' : 'Add lead'}</Button>
-        </div>
+        </SaveBar>
       )}
       {d.id && <Activities on={{ lead_id: d.id }} rows={d.activities} choices={d} canManage={edit} onChanged={(m) => { setDone(m); load() }} />}
 

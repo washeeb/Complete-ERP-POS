@@ -7,6 +7,7 @@ import { Choose, LongText, TextField, Toggle, useFieldStyles } from '../form/Fie
 import { UnitPicker } from '../form/UnitPicker'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
+import { SaveBar } from '../form/SaveBar'
 
 const useStyles = makeStyles({
   head: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' },
@@ -27,8 +28,6 @@ const useStyles = makeStyles({
   check: { display: 'block', marginTop: '6px', color: tokens.colorNeutralForeground3 },
   pages: { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', gridColumn: '1 / -1' },
   one: { display: 'grid', gap: '10px' },
-  foot: { position: 'sticky', bottom: 0, zIndex: 2, display: 'flex', justifyContent: 'flex-end', gap: '8px', padding: '10px 0',
-    backgroundColor: tokens.colorNeutralBackground2, borderTop: `1px solid ${tokens.colorNeutralStroke2}` },
 })
 
 const SETTLE_ABOUT: Record<string, string> = {
@@ -213,10 +212,10 @@ export function DirectPurchaseFormPage({ id, onTitle }: { id: string | null; onT
         </div>
       </Panel>
 
-      <div className={s.foot}>
+      <SaveBar value={v}>
         <Button onClick={back}>Cancel</Button>
         <Button appearance="primary" icon={<SaveRegular />} disabled={busy || uploading || !ready} onClick={save}>{busy ? 'Saving…' : 'Save'}</Button>
-      </div>
+      </SaveBar>
 
       {scanning && <Scan unavailable={form.ai_unavailable} onClose={() => setScanning(false)} onRead={(x) => {
         setV({ ...v, ...x, supplier_id: x.supplier_id || v.supplier_id, lines: x.lines.length ? x.lines : v.lines, attachments: [...v.attachments, ...x.attachments] })

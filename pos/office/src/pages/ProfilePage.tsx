@@ -11,6 +11,7 @@ import { Ask } from '../form/Ask'
 import { Choose, TextField, useFieldStyles } from '../form/Fields'
 import { usePageStyles } from '../list/ListParts'
 import { Panel, useProcStyles } from './ProcurementParts'
+import { SaveBar } from '../form/SaveBar'
 
 const useStyles = makeStyles({
   layout: { display: 'grid', gridTemplateColumns: 'minmax(0, 240px) minmax(0, 1fr)', gap: '20px', alignItems: 'start', '@media (max-width: 900px)': { gridTemplateColumns: '1fr' } },
@@ -26,7 +27,7 @@ const useStyles = makeStyles({
   row: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', padding: '8px 0', borderTop: `1px solid ${tokens.colorNeutralStroke2}` },
 })
 
-const PARTS = [['you', 'Your profile', 'Photo, name and e-mail address'], ['look', 'Look', 'How the back office looks for you'], ['prefs', 'Preferences', 'Home page, lists, light or dark, dates'],
+const PARTS = [['you', 'Your profile', 'Photo, name and e-mail address'], ['look', 'Look', 'How the back office looks for you'], ['prefs', 'Preferences', 'Business Portal, lists, light or dark, dates'],
   ['notify', 'Notifications', 'What reaches you, and how'], ['security', 'Security', 'Password, two-factor sign-in, passkeys']] as const
 
 /** How hard the new password would be to guess, as it is typed (the server's own rules still decide), as the current page. */
@@ -177,7 +178,7 @@ export function ProfilePage() {
           </Panel></div>
           <div id="profile-prefs"><Panel title="Preferences" about="Your own defaults. They follow you to any computer you sign in to.">
             <div className={f.grid}>
-              <Choose label="Home page" hint="Opened when you sign in and by the house icon. Favourites (the star) can be chosen too." options={d.homes} value={v.prefs.home}
+              <Choose label="Business Portal" hint="The page opened when you sign in and by the house icon: the Business Portal itself, Today, or one of your favourites (the star)." options={d.homes} value={v.prefs.home}
                 onChange={(x) => setV({ ...v, prefs: { ...v.prefs, home: x } })} />
               <Choose label="Rows a list shows at first" options={d.rows} value={String(v.prefs.rows)} onChange={(x) => setV({ ...v, prefs: { ...v.prefs, rows: Number(x) } })} />
               <Choose label="How dates are written" options={d.dates} value={v.prefs.date} onChange={(x) => setV({ ...v, prefs: { ...v.prefs, date: x } })} />
@@ -219,9 +220,9 @@ export function ProfilePage() {
             </div>
             {pw.password !== '' && pw.confirm !== '' && pw.password !== pw.confirm && <Text block style={{ color: tokens.colorPaletteRedForeground1, marginTop: 6 }}>The two new passwords are not the same.</Text>}
           </Panel></div>
-          <div className={s.foot} style={{ marginBottom: 14 }}>
+          <SaveBar value={[v, pw]}>
             <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !ready} onClick={save}>{busy ? 'Saving…' : 'Save changes'}</Button>
-          </div>
+          </SaveBar>
 
           <Panel title="Two-factor sign-in" about="A code from an app on your phone, asked for at sign-in, so a stolen password alone is not enough."
             actions={<Badge appearance="tint" color={tfa.enabled ? 'success' : 'subtle'}>{tfa.enabled ? 'On' : 'Off'}</Badge>}>

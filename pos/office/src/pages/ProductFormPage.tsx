@@ -8,6 +8,7 @@ import { api, type Option as Choice, type PriceRow, type ProductFormData, type P
 import { Choose, ChooseMany, LongText, Tags, TextField, Toggle, useFieldStyles } from '../form/Fields'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
+import { SaveBar } from '../form/SaveBar'
 
 const useStyles = makeStyles({
   head: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' },
@@ -24,8 +25,6 @@ const useStyles = makeStyles({
     '@media (max-width: 1100px)': { gridTemplateColumns: '1fr 1fr 1fr' } },
   pack: { gridTemplateColumns: 'minmax(200px, 3fr) minmax(80px, 1fr) minmax(140px, 2fr) auto', '@media (max-width: 760px)': { gridTemplateColumns: '1fr 1fr' } },
   recipe: { gridTemplateColumns: 'minmax(220px, 3fr) minmax(90px, 1fr) auto', '@media (max-width: 760px)': { gridTemplateColumns: '1fr 1fr' } },
-  foot: { position: 'sticky', bottom: 0, zIndex: 2, display: 'flex', justifyContent: 'flex-end', gap: '8px', padding: '10px 0',
-    backgroundColor: tokens.colorNeutralBackground2, borderTop: `1px solid ${tokens.colorNeutralStroke2}` },
 })
 
 type Add = { kind: 'category' | 'brand' | 'uom'; then: (id: string) => void }
@@ -251,10 +250,10 @@ export function ProductFormPage({ id, onTitle }: { id: string | null; onTitle: (
         </Panel>
       )}
 
-      <div className={s.foot}>
+      <SaveBar value={v}>
         <Button onClick={back}>Cancel</Button>
         <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !v.name.trim()} onClick={save}>{busy ? 'Saving…' : id ? 'Save changes' : 'Create product'}</Button>
-      </div>
+      </SaveBar>
 
       {adding && <QuickAdd kind={adding.kind} onClose={() => setAdding(null)} onAdded={(o) => {
         const key = adding.kind === 'category' ? 'categories' : adding.kind === 'brand' ? 'brands' : 'uoms'

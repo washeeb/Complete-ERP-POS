@@ -9,6 +9,7 @@ import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
 import { Activities } from './CrmParts'
 import { Panel, ToneBadge, useProcStyles } from './ProcurementParts'
+import { SaveBar } from '../form/SaveBar'
 
 /**
  * One deal (part 25), as the current form: what they want, stage, customer (or a lead, for someone not yet a customer),
@@ -83,10 +84,10 @@ export function CrmDealPage({ id, onTitle }: { id: string | null; onTitle: (t: s
         </div>
       </Panel>
       {edit && (
-        <div className={s.foot}>
+        <SaveBar value={v}>
           <Button onClick={back}>Cancel</Button>
           <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !v.title.trim() || !v.stage_id || !v.branch_id} onClick={save}>{busy ? 'Saving…' : d.id ? 'Save' : 'Add deal'}</Button>
-        </div>
+        </SaveBar>
       )}
       {d.id && <Activities on={{ deal_id: d.id }} rows={d.activities} choices={d} canManage={d.actions.win || d.actions.reopen} onChanged={(m) => { setDone(m); load() }} />}
 

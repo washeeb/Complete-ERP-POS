@@ -14,7 +14,8 @@ import { flatMenu } from '../paths'
 import { recentPages } from '../recent'
 
 const useStyles = makeStyles({
-  page: { flex: '1 1 auto', overflowY: 'auto', padding: '16px 20px 32px', '@media (max-width: 760px)': { padding: '12px 10px 24px' } },
+  page: { flex: '1 1 auto', overflowY: 'auto', padding: '16px 20px 32px', '--zx-pad-t': '16px', '--zx-pad-x': '20px', '--zx-pad-b': '32px',
+    '@media (max-width: 760px)': { padding: '12px 10px 24px', '--zx-pad-t': '12px', '--zx-pad-x': '10px', '--zx-pad-b': '24px' } },
   head: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '14px' },
   title: { fontSize: '22px', fontWeight: tokens.fontWeightSemibold, margin: 0 },
   greeting: { color: tokens.colorNeutralForeground3, display: 'block' },
@@ -101,7 +102,7 @@ export function HomePage({ me, menu }: { me: Me; menu: MenuData }) {
     <div className={s.page}>
       <div className={s.head}>
         <div>
-          <h1 className={s.title}>Home</h1>
+          <h1 className={s.title}>Business Portal</h1>
           <Text size={300} className={s.greeting}>{hello}. {data.period.label} so far, against {data.period.previous.toLowerCase()}.</Text>
         </div>
         <div className={s.tools}>
@@ -116,7 +117,7 @@ export function HomePage({ me, menu }: { me: Me; menu: MenuData }) {
             <MenuPopover>
               <MenuList>
                 <MenuGroup>
-                  <MenuGroupHeader>Panels on your Home</MenuGroupHeader>
+                  <MenuGroupHeader>Panels on your Business Portal</MenuGroupHeader>
                   {PANELS.map((id) => <MenuItemCheckbox key={id} name="panels" value={id}>{PANEL_NAMES[id]}</MenuItemCheckbox>)}
                 </MenuGroup>
                 <MenuDivider />
@@ -134,7 +135,7 @@ export function HomePage({ me, menu }: { me: Me; menu: MenuData }) {
                   <MenuItemRadio name="cols" value="2">Two columns</MenuItemRadio>
                 </MenuGroup>
                 <MenuDivider />
-                <MenuItem icon={<ArrowResetRegular />} onClick={() => change(null)}>Back to the standard Home</MenuItem>
+                <MenuItem icon={<ArrowResetRegular />} onClick={() => change(null)}>Back to the standard Business Portal</MenuItem>
               </MenuList>
             </MenuPopover>
           </Menu>

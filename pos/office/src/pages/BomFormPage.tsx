@@ -8,6 +8,7 @@ import { UnitPicker } from '../form/UnitPicker'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
 import { Panel, useProcStyles } from './ProcurementParts'
+import { SaveBar } from '../form/SaveBar'
 
 const LINE: BomLineValues = { kind: 'material', product_uom_id: '', unit: null, qty: '', scrap_pct: '0', backflush: true }
 const STEP: BomOperationValues = { name: '', work_centre_id: '', setup_minutes: '0', run_minutes: '0', backflush: true }
@@ -101,10 +102,10 @@ export function BomFormPage({ id, onTitle }: { id: string | null; onTitle: (t: s
           {d.work_centres.length === 0 && <Text className={s.muted} style={{ marginLeft: 8 }}>Add a work centre first (Manufacturing → Work centres).</Text>}
         </div>
       </Panel>
-      <div className={s.foot}>
+      <SaveBar value={v}>
         <Button onClick={back}>Cancel</Button>
         <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !ready} onClick={save}>{busy ? 'Saving…' : 'Save draft'}</Button>
-      </div>
+      </SaveBar>
     </div>
   )
 }

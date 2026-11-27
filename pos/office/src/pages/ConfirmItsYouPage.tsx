@@ -3,7 +3,7 @@ import { ConfirmForm } from '../form/ConfirmItsYou'
 import { PageHead, usePageStyles } from '../list/ListParts'
 import { Panel } from './ProcurementParts'
 
-/** "Confirm it's you" on its own page (part 40): opened from the classic look's note, or a saved link. */
+/** "Confirm it's you" on its own page (part 40): opened from a saved link. */
 export function ConfirmItsYouPage() {
   const page = usePageStyles()
   return (

@@ -147,12 +147,12 @@ The back office has two looks; each person chooses under their name at the top r
   notifications, with a red number for the unread ones) and your name with your role. Under it, a band in your menu
   colour starts with four icons, then the areas (Insights, Sales, Purchasing, Stock, Finance, People, your industry,
   Setup). Press an area and its pages open in columns. The panel always fits inside the window, however narrow.
-  - **House — Home:** your home page.
+  - **House — Business Portal:** your start page (reminders, the Action Centre, the figures).
   - **List — To-do:** everything waiting for your decision, with a red number.
   - **Clock — recent pages:** the pages you opened last.
   - **Star — favourites:** on a page you use often, press the star, then *Add this page*. Your favourites follow you
     to any computer (up to 20).
-- **Side menu:** a slim strip in your menu colour down the left side, with **Create** at the top, then To-do, Home,
+- **Side menu:** a slim strip in your menu colour down the left side, with **Create** at the top, then To-do, **Portal** (the Business Portal),
   Recent, Favourites and one row per area; press an area to open its pages beside it.
 
 ![Menu across the top: the Purchasing area open](img/look-tabs.png)
@@ -208,7 +208,7 @@ the owner sees the whole business. Panels show only what the person may see, for
 ![Arrange your dashboard](img/dashboard-arrange.png)
 
 **Preferences** (top right → **Profile** → *Preferences*) — they follow you to any computer:
-- **Home page:** the dashboard, *Today*, or one of your favourite pages — opened when you sign in and by the house icon.
+- **Business Portal:** which page opens when you sign in and by the house icon: the Business Portal itself, *Today*, or one of your favourite pages.
 - **Rows a list shows at first:** 10, 25, 50 or 100.
 - **How dates are written:** *2 Nov 2026*, *02/11/2026* or *2026-11-02*.
 - **Light or dark**, and **Lists**: comfortable or compact (more rows on the screen).

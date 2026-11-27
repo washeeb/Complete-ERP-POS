@@ -7,6 +7,7 @@ import { blankSpend, SpendItem, SpendKind, spendReady } from '../form/SpendLineF
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
 import { Panel, useProcStyles } from './ProcurementParts'
+import { SaveBar } from '../form/SaveBar'
 
 type Line = SpendLine & { qty: string; est_unit_cost: string; note: string }
 const blank = (kind: 'stock' | 'service' = 'stock'): Line => ({ ...blankSpend(kind), qty: '', est_unit_cost: '', note: '' })
@@ -87,10 +88,10 @@ export function PurchaseRequestFormPage() {
         ))}
         <Button icon={<AddRegular />} style={{ marginTop: 10 }} onClick={() => setLines([...lines, blank()])}>Add line</Button>
       </Panel>
-      <div className={s.foot}>
+      <SaveBar value={[v, lines]}>
         <Button onClick={back}>Cancel</Button>
         <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !ready} onClick={save}>{busy ? 'Sending…' : 'Send the request'}</Button>
-      </div>
+      </SaveBar>
     </div>
   )
 }

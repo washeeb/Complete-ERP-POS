@@ -7,6 +7,7 @@ import { SearchPicker } from '../form/SearchPicker'
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
 import { Panel, useProcStyles } from './ProcurementParts'
+import { SaveBar } from '../form/SaveBar'
 
 /**
  * Service desk → New ticket (part 28), as the current form: what kind, priority, how it came, in a few words and what
@@ -70,10 +71,10 @@ export function TicketNewPage() {
         </div>
         {!reach && <Text size={200} block className={s.muted}>Add the customer, or a phone number or e-mail address, so you can answer them.</Text>}
       </Panel>
-      <div className={s.foot}>
+      <SaveBar value={v}>
         <Button onClick={back}>Cancel</Button>
         <Button appearance="primary" icon={<SaveRegular />} disabled={busy || v.subject.trim() === '' || !reach} onClick={save}>{busy ? 'Opening…' : d.staff_only ? 'Ask for help' : 'Open ticket'}</Button>
-      </div>
+      </SaveBar>
     </div>
   )
 }

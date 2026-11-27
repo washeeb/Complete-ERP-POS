@@ -6,6 +6,7 @@ import { Choose, LongText, Tags, TextField, Toggle, useFieldStyles } from '../fo
 import { usePageStyles } from '../list/ListParts'
 import { navigate } from '../nav'
 import { Panel, useProcStyles } from './ProcurementParts'
+import { SaveBar } from '../form/SaveBar'
 
 /**
  * A campaign (part 25), as the current form: the message (name, industry, SMS / WhatsApp / e-mail, subject or template,
@@ -80,10 +81,10 @@ export function CrmCampaignPage({ id, onTitle }: { id: string | null; onTitle: (
       <Panel title="When">
         <TextField label="Send at (leave empty to send when you press “Send”)" type="datetime-local" value={v.send_at} onChange={put('send_at')} hint="Mind the time: messages at night annoy people." />
       </Panel>
-      <div className={s.foot}>
+      <SaveBar value={v}>
         <Button onClick={back}>Cancel</Button>
         <Button appearance="primary" icon={<SaveRegular />} disabled={busy || !ready} onClick={save}>{busy ? 'Saving…' : 'Save'}</Button>
-      </div>
+      </SaveBar>
     </div>
   )
 }

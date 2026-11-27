@@ -918,6 +918,19 @@ export function findPages(menu: Menu, query: string, limit = 8) {
 }
 
 /** The menu area (tab) holding a page, to mark it as the current one. */
+/** Pages opened from another page rather than the menu, and the menu page they belong under (for the area lit). */
+const PARENTS: [RegExp, string][] = [
+  [/^\/office\/departments(\/|$)/, '/office/employees'],
+  [/^\/office\/payroll-rules(\/|$)/, '/office/payroll'],
+  [/^\/office\/asset-kinds(\/|$)/, '/office/fixed-assets'],
+]
+
+/** The area of the menu a page belongs to: its menu page, or the page it was opened from (PARENTS), or its own address. */
+export function areaOf(menu: Menu, path: string, same: string | null): string | null {
+  const parent = PARENTS.find(([re]) => re.test(path))?.[1] ?? null
+  return (same ? tabOf(menu, same) : null) ?? tabOf(menu, parent) ?? tabOf(menu, path)
+}
+
 export function tabOf(menu: Menu, adminPath: string | null): string | null {
   if (!adminPath) return null
   const path = adminPath.split('?')[0]
