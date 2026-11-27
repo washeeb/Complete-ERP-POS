@@ -54,7 +54,7 @@ export function AlterationsScreen({ currency, exponent, onCollect, onClose }: {
   }
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [k]: e.target.value })
   return (
-    <div className="modal" role="dialog" aria-modal="true" aria-label="Alterations">
+    <div className="modal" role="dialog" aria-modal="true" aria-label="Alterations" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose() } }}>
       <div className="card wide">
         <div className="row spread"><h2>Alterations</h2><button type="button" onClick={onClose}>Back to till</button></div>
         {error && <p className="error" role="alert">{error}</p>}

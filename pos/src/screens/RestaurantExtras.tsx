@@ -32,7 +32,7 @@ export function BookingsPanel({ tables, money, onSeated, onClose }: {
   }
   const code = (id: string | null) => tables.find((t) => t.id === id)?.code ?? '—'
   return (
-    <div className="modal" role="dialog" aria-modal="true" aria-label="Bookings">
+    <div className="modal" role="dialog" aria-modal="true" aria-label="Bookings" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose() } }}>
       <div className="card wide">
         <div className="row spread">
           <h2>Bookings</h2>
@@ -218,7 +218,7 @@ export function WasteDialog({ products, identify, money, onSave, onCancel }: {
   }
   if (done) {
     return (
-      <div className="modal" role="dialog" aria-modal="true" aria-label="Waste recorded">
+      <div className="modal" role="dialog" aria-modal="true" aria-label="Waste recorded" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onCancel() } }}>
         <div className="card pay">
           <h2>Waste recorded</h2>
           <p>{formatMoney(done.value_minor, done.currency || money.currency, money.exponent)} at cost{done.approved_by ? `, approved by ${done.approved_by}` : ''}.</p>

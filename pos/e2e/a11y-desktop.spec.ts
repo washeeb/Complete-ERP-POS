@@ -93,6 +93,25 @@ test('the main till screens pass the automated WCAG 2.2 AA checks, in light and 
   await axe(page, 'Receipt (dark)')
 })
 
+// Every main screen in dark too, with the company's brand on (owner report 2026-11-27: text hard to read in dark), and
+// the screens a cashier opens through the day: the drawer and the till settings.
+for (const scheme of ['dark', 'light'] as const) {
+  test(`the till's daily screens read in ${scheme} with the company's brand`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: scheme })
+    await serve(page, { brand: true })
+    await signInAndSell(page)
+    await axe(page, `Receipt (${scheme})`)
+    await page.getByRole('button', { name: 'New sale' }).click()
+    await page.getByRole('button', { name: 'Drawer', exact: true }).click()
+    await expect(page.getByRole('dialog', { name: 'Drawer' })).toBeVisible()
+    await axe(page, `Drawer (${scheme})`)
+    await page.keyboard.press('Escape')
+    await page.getByRole('button', { name: 'Till settings' }).click()
+    await expect(page.getByRole('heading', { name: 'Till settings' })).toBeVisible()
+    await axe(page, `Till settings (${scheme})`)
+  })
+}
+
 test('the desktop till prints the receipt by itself, silently, on the receipt printer and opens the drawer after cash', async ({ page }) => {
   await page.addInitScript(() => {
     const calls: { cmd: string; args?: Record<string, unknown> }[] = []

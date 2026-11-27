@@ -95,7 +95,7 @@ export function DrawerScreen({ boot, online, initial = 'payout', onDone, onCance
 
 
   return (
-    <div className="modal" role="dialog" aria-modal="true" aria-label="Drawer">
+    <div className="modal" role="dialog" aria-modal="true" aria-label="Drawer" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); if (!busy) onCancel() } }}>
       <form className="card pay drawer" onSubmit={submit}>
         <h2>Drawer</h2>
         <div className="row tabs" role="tablist" aria-label="What are you doing">

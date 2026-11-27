@@ -112,7 +112,7 @@ For each staff member:
 
 **Warning:** Do not share one account between several people. Every sale, refund and change is recorded under the person who signed in.
 
-**Finding a page:** at the top of the side menu, **Search the menu** — type part of a name (*adjust*, *expiry*, *momo*, *po*) and only the matching pages stay; **Enter** opens the first, **Esc** clears. Press `/` anywhere to jump there. To find a record (a product, a customer, a receipt), use the search at the top (Ctrl+K).
+**Finding a page or a record:** the **Search** box at the top (or press **Ctrl+K**, or `/` outside a text box). Type part of a page's name (*adjust*, *expiry*, *momo*, *po*) and the matching pages show first; type part of a product, customer or receipt and the records follow. **Enter** opens the first, **Esc** closes the list.
 
 ## Step 6 — Settings
 

@@ -84,7 +84,7 @@ export function ManagerApproval({ title, ask, online, who = 'manager', message, 
   }
 
   return (
-    <div className="modal" role="dialog" aria-modal="true" aria-label={title}>
+    <div className="modal" role="dialog" aria-modal="true" aria-label={title} onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); if (!(working && mode !== 'waiting')) { void cancelWait(); onCancel() } } }}>
       <div className="card pay approval">
         <h2>{title}</h2>
         <p>{ask.summary}{ask.reason ? ` · ${ask.reason}` : ''}</p>

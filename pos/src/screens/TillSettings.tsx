@@ -212,7 +212,7 @@ export function TillSettings({ boot, online, onClose }: { boot: Bootstrap; onlin
       {!online && <p className="muted small">Saving needs a connection. Try again when the status says Connected.</p>}
 
       {asking && (
-        <div className="modal" role="dialog" aria-modal="true" aria-label="Manager approval">
+        <div className="modal" role="dialog" aria-modal="true" aria-label="Manager approval" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); if (!busy) { setAsking(null); setApproval({ username: '', pin: '' }) } } }}>
           <form className="card pay" onSubmit={confirm}>
             <h2>{asking === 'drawer' ? 'Open the drawer (test)' : 'Save the till settings'}</h2>
             <p className="muted small">A manager approves with their username and PIN.</p>

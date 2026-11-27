@@ -52,7 +52,7 @@ export function CameraScan({ onScan, onClose }: { onScan: (code: string) => void
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="modal" role="dialog" aria-modal="true" aria-label="Scan with the camera">
+    <div className="modal" role="dialog" aria-modal="true" aria-label="Scan with the camera" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose() } }}>
       <div className="card camera-scan">
         {error ? <p className="error" role="alert">{error}</p> : <>
           <video ref={video} muted playsInline className="camera-view" aria-label="Camera" />

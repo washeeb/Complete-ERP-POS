@@ -896,7 +896,7 @@ function CreditApproval({ title, message, busy, onApprove, onCancel, self = fals
   const [username, setUsername] = useState('')
   const [pin, setPin] = useState('')
   return (
-    <div className="modal" role="dialog" aria-modal="true" aria-label={self ? 'Sign in again' : 'Supervisor approval'}>
+    <div className="modal" role="dialog" aria-modal="true" aria-label={self ? 'Sign in again' : 'Supervisor approval'} onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); if (!busy) onCancel() } }}>
       <form className="card pay" onSubmit={(e) => { e.preventDefault(); if (username && pin) onApprove({ username, pin }) }}>
         <h2>{title}</h2>
         <p className="error">{message}</p>
