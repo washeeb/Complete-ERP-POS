@@ -62,7 +62,7 @@ test('sells a weighed pack from its scale label and a marked-down pack from its 
   await scan.fill('2912345678903'); await scan.press('Enter') // sticker: Yogo at 7.00
   await expect(page.getByText('Marked-down sticker')).toBeVisible()
   await page.keyboard.press('F12')
-  await page.getByRole('button', { name: /GH₵ 22\.00/ }).first().click()
+  await page.getByRole('dialog', { name: 'Payment' }).getByRole('button', { name: /GH₵ 22\.00/ }).first().click()
   await expect(page.getByText('Receipt HQ-T01A-000001')).toBeVisible()
   expect(s.sales[0]).toMatchObject({ totals: { total_minor: 2200 }, lines: [{ product_id: 'p-tom', qty: '1.25', unit_price_minor: 1200 },
     { product_id: 'p-yog', markdown_id: 'md-1', unit_price_minor: 700 }] })

@@ -59,7 +59,7 @@ test('asks before signing out with a sale on screen, and keeps it when the cashi
   page.once('dialog', (d) => { asked = d.message(); void d.dismiss() }) // the cashier says no
   await page.getByRole('button', { name: 'Sign out' }).click()
   expect(asked).toContain('You have not saved the sale on screen')
-  await expect(page.getByText('Milo 400g tin')).toBeVisible() // still there
+  await expect(page.getByRole('region', { name: 'Cart' }).getByText('Milo 400g tin')).toBeVisible() // still there
 
   page.once('dialog', (d) => void d.accept()) // now yes
   await page.getByRole('button', { name: 'Sign out' }).click()

@@ -15,7 +15,7 @@ Keep this card at the till. Practise first in the **practice company** (a purple
 
 | To… | Do this |
 |---|---|
-| Add an item | Scan the barcode, or type part of the name and press **Enter** |
+| Add an item | Scan the barcode, **tap its tile** (choose the category at the top of the tiles first), or type part of the name and press **Enter** |
 | Check a price | Type part of the name: the list shows each item's price (and each pack size's) without adding it |
 | Search again | **F2** |
 | Sell a carton | Scan the carton barcode, or tap **+ CTN** |

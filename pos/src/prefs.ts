@@ -1,11 +1,18 @@
 /**
- * This till's screen preferences (till Settings): text size and the scan beep. Kept on this computer only, like the
+ * This till's screen preferences (till Settings): text size, the scan beep and the selling screen's layout. Kept on this computer only, like the
  * light/dark choice (theme.ts); the printer and drawer are kept by the desktop app (hardware.ts).
  */
-export type Prefs = { textScale: 100 | 112 | 125; beep: boolean }
+export type Prefs = { textScale: 100 | 112 | 125; beep: boolean; layout: SellLayout }
+
+/**
+ * The selling screen (owner 2026-11-28): product tiles beside the cart (the default, for touch screens), or the search
+ * list beside the cart as before the new look (scanning and typing only).
+ */
+export type SellLayout = 'tiles' | 'list'
+export const LAYOUTS: Record<SellLayout, string> = { tiles: 'Product tiles and the cart', list: 'Search list and the cart' }
 
 const KEY = 'till-prefs'
-const DEFAULTS: Prefs = { textScale: 100, beep: true }
+const DEFAULTS: Prefs = { textScale: 100, beep: true, layout: 'tiles' }
 
 export function getPrefs(): Prefs {
   try {

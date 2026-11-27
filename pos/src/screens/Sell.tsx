@@ -3,7 +3,8 @@ import { cameraScanSupported, listenForScans } from '../scanner'
 import { CameraScan } from './CameraScan'
 import { cachedImage } from '../brand'
 import { isDesktop, readScale } from '../hardware'
-import { beep } from '../prefs'
+import { beep, getPrefs } from '../prefs'
+import { ProductTiles } from './ProductTiles'
 import { api, ApiError, type Approval } from '../api'
 import { raisePeaks, removedSince, settlePeaks, voidNeedsApproval, type Peak, type Removed } from '../approve'
 import { ManagerApproval } from './ManagerApproval'
@@ -30,7 +31,7 @@ import { formatMoney, prettyQty, toMilli } from '../money'
 import { isLow, leftMilli, queuedLines, takenMilli, type QueuedLine } from '../stock'
 import { expiryNote } from '../expiry'
 import type { Appointment, Services, ServicePass, StaffMember, RxLevel } from '../types'
-import type { Alteration, Bootstrap, DiningItem, DiningOrder, Fashion, Grocery, Pharmacy, Restaurant, RepairJob, Style, TradeInItem, Payment, PostedSale, Product, PromotionRow, TillCustomer, Unit } from '../types'
+import type { Alteration, Bootstrap, Category, DiningItem, DiningOrder, Fashion, Grocery, Pharmacy, Restaurant, RepairJob, Style, TradeInItem, Payment, PostedSale, Product, PromotionRow, TillCustomer, Unit } from '../types'
 import { parseMoney } from '../money'
 import { ReturnScreen } from './ReturnScreen'
 import { DrawerScreen } from './Drawer'
@@ -79,6 +80,8 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
     tradeIns?: TradeInItem[]; tradeInApproval?: { username: string; pin: string } | null }
   const [approval, setApproval] = useState<{ payments: Payment[]; message: string; kind: 'credit' | 'discount' | 'discount_offline' | 'sign_in'; approvals: Approvals; limit?: number } | null>(null)
   const [promotions, setPromotions] = useState<PromotionRow[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const tiles = getPrefs().layout === 'tiles' // till Settings → Selling screen
   const [utcOffset, setUtcOffset] = useState(0)
   const [grocery, setGrocery] = useState<Grocery | null>(null)
   const [pharmacy, setPharmacy] = useState<Pharmacy | null>(null)
@@ -135,6 +138,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
     db.cache.get('catalog').then((c) => {
       const cat = c as Extract<CacheRecord, { id: 'catalog' }> | undefined
       setPromotions(cat?.promotions ?? [])
+      setCategories(cat?.categories ?? [])
       setUtcOffset(cat?.utc_offset_minutes ?? 0)
       setGrocery(cat?.grocery ?? null)
       setPharmacy(cat?.pharmacy ?? null)
@@ -628,6 +632,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
           </span>
         </div>
       )}
+      <div className="work">
       <section className="find">
         <form ref={findForm} onSubmit={onScanOrSearch} className="scan">
           <input ref={searchRef} autoFocus className="big" value={query} onChange={(e) => setQuery(e.target.value)}
@@ -636,7 +641,10 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
         </form>
         {camera && <CameraScan onScan={(code) => { setCamera(false); scanned(code) }} onClose={() => setCamera(false)} />}
         {message && <p className="error" role="alert">{message}</p>}
-        <ul className="results">
+        {tiles && !query.trim() ? (
+          <ProductTiles products={products} categories={categories} stock={stockLeft}
+            price={(p, u) => { const pr = priceOf(p, u); return pr ? money(pr.amount_minor) : null }} onAdd={(p) => add(p)} />
+        ) : <ul className="results">
           {results.map((p) => (
             <li key={p.id}>
               <button type="button" onClick={() => add(p)}>
@@ -650,7 +658,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
               })}
             </li>
           ))}
-        </ul>
+        </ul>}
       </section>
 
       <section className="cart" aria-label="Cart">
@@ -720,10 +728,11 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
             <button type="button" onClick={() => guardVoid([], () => setLines([]))} disabled={!lines.length}>Clear</button>
             <button type="button" onClick={() => setDetailsPrompt({ message: '' })} aria-label="Sale details">
               Details{details.comment || details.name || details.phone || Object.keys(details.extras).length ? ' ✓' : ''}</button>
-            <button type="button" className="primary big" onClick={startPay} disabled={!lines.length || busy}>{orderMode ? 'Send order (F12)' : cart.total < 0 ? 'Pay out deposit (F12)' : 'Pay (F12)'}</button>
+            <button type="button" className="primary big pay-btn" onClick={startPay} disabled={!lines.length || busy}>{orderMode ? 'Send order (F12)' : cart.total < 0 ? 'Pay out deposit (F12)' : 'Pay (F12)'}</button>
           </div>
         </div>
       </section>
+      </div>
 
       {paying && !approval && !rxPrompt && (
         <Pay total={cart.total} currency={boot.company.currency} exponent={boot.company.exponent} busy={busy} error={payError}
