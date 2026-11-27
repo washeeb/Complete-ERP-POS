@@ -62,6 +62,17 @@ final class Erp
      *
      * @return list<string>|null null = all branches
      */
+    /**
+     * Whether the person's grant for this covers the whole company: a question of rights, so the industry and branch
+     * chosen at the top do not change it (pages and actions stay available; what they show still follows the choice).
+     */
+    public static function companyWide(string $permission): bool
+    {
+        $user = self::user();
+
+        return $user !== null && app(Authorizer::class)->branchIds($user, $permission) === null;
+    }
+
     public static function branchIds(string $permission): ?array
     {
         $user = self::user();

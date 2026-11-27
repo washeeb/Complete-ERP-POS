@@ -30,6 +30,7 @@ const page = await browser.newPage({ viewport: { width: 1920, height: 1000 } })
 const problems = []
 let optionsAnswer = 'no answer yet' // the products screen's options, for a clearer problem report
 page.on('response', async (r) => { if (r.url().includes('/office-api/products/options')) optionsAnswer = `options answered ${r.status()} ${(await r.text().catch(() => '')).slice(0, 200)}` })
+let restoreScope = null
 try {
   // Opening /office signed out goes to the new sign-in page (part 41), and back to /office afterwards: the password, then
   // the code from the app.
@@ -44,6 +45,16 @@ try {
   await code.waitFor({ timeout: 15000 }); await code.fill(totp(secrets.totp_secret)); await code.press('Enter')
   await page.waitForURL(/\/office\/(?!sign-in)/, { timeout: 20000 }).catch(() => problems.push(`after sign-in the browser is at ${page.url()}, not /office`))
   if (!/\/office\/(?!sign-in)/.test(page.url())) await page.goto(`${base}/office/`)
+  // This dev account is shared: look at everything for the check, and put the person's own place back at the end.
+  const scopeCall = (body) => page.evaluate(async (b) => {
+    const xsrf = decodeURIComponent(document.cookie.split('; ').find((c) => c.startsWith('XSRF-TOKEN='))?.slice(11) ?? '')
+    const h = { Accept: 'application/json', 'Content-Type': 'application/json', 'X-XSRF-TOKEN': xsrf }
+    if (!b) return (await (await fetch('/office-api/me', { headers: h })).json()).scope
+    await fetch('/office-api/scope', { method: 'POST', headers: h, body: JSON.stringify(b) })
+  }, body)
+  const ownScope = await scopeCall(null)
+  if (ownScope && (ownScope.industry || ownScope.branch)) { await scopeCall({ industry: '', branch: '' }); await page.reload() }
+  restoreScope = ownScope && (ownScope.industry || ownScope.branch) ? () => scopeCall({ industry: ownScope.industry, branch: ownScope.branch }) : null
 
   /** Cancel on a form; when something was typed, leaving asks first (part 44): leave without saving. */
   const cancelForm = async () => {
@@ -1769,6 +1780,7 @@ try {
   problems.push(`stopped: ${e.message.split('\n')[0]} (${where})`)
   await page.screenshot({ path: out('error') }).catch(() => undefined)
 } finally {
+  if (restoreScope) await restoreScope().catch(() => undefined)
   await browser.close()
 }
 

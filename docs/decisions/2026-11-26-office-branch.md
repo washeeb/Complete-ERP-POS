@@ -1,6 +1,8 @@
-## The branch switch
-- **Owner 2026-11-26: free; filter + default.** A chosen branch narrows every list, report, the Business Portal and To-do, and new documents start with it.
-- **One chokepoint:** `Erp::branchIds` already narrowed by industry for 172 call sites; the branch joins it there, so no screen needed its own change, and it can only narrow what a person may see, never widen it.
-- **Defaults come from the narrowed choices:** forms already fill in the only/first store they offer, so with a branch chosen they offer (and fill in) its store. Choosing another branch on a form means switching at the top, as with the industry.
-- **Kept in the session, like the industry,** not saved per person: it is a "where am I looking now" choice; signing in again starts with all branches.
-- **On a phone** the two boxes do not fit beside the search, bell and name; they sit behind one button there (the layout check caught a 46 px overflow).
+## The industry and branch picker
+- **Owner 2026-11-26: free; a chosen branch filters every page and fills in new documents.** 2026-11-27: choose an industry, then all of its branches or one; only people with access to them see them.
+- **One picker instead of two boxes (owner's choice),** after Dynamics 365's company switcher and Fiori's context selector: one press reaches *Grocery › Spintex*; search and recent places for people with many branches.
+- **Shown to anyone whose access covers two or more branches (owner);** someone in one branch has nothing to choose. **An industry with one of the person's branches shows no branch list (owner):** the industry is enough.
+- **Remembered per person (owner),** in the audited preferences, and read at the start of each session; checked against access every time, so a saved place never widens what anyone sees.
+- **One chokepoint:** `Erp::branchIds` already narrowed by industry for 172 call sites; the branch joins it there, so no screen needed its own change.
+- **Found:** the first version hid the branch box whenever the chosen industry had one branch, which is every industry in the demo data, so it looked missing once an industry was chosen.
+- **Rights are not the view.** 21 checks used "`Erp::branchIds(x) === null`" to mean "company-wide". With an industry or branch chosen that is never true, so choosing a place hid the owner's *Export to QuickBooks / Xero / Sage* (already so with the industry box of part 43). Pages and actions that need company-wide rights now ask `Erp::companyWide()` (the grant, not the view): Accounting export, refreshing AI insights, the AI alerts action. Figures with no branch (*Customers owe*, *We owe suppliers*, the Insights cash/customers/pricing tabs, company-wide report types, To-do items without a branch) still show only under *All industries › All branches*, so a branch view never shows company totals as if they were the branch's.

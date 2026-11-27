@@ -17,11 +17,10 @@ use App\Models\Tenant;
 use App\Models\TillApproval;
 use App\Models\User;
 use App\Security\ReconfirmNeeded;
-use App\Support\BranchContext;
-use App\Support\IndustryContext;
 use App\Support\Look;
 use App\Support\OfficeUrl;
 use App\Support\UserPrefs;
+use App\Support\WorkScope;
 use BackedEnum;
 use Filament\Facades\Filament;
 use Illuminate\Http\JsonResponse;
@@ -101,62 +100,22 @@ class OfficeController extends Controller
             'setup' => $tenant && ! $tenant->isSetUp() && SetupWizard::canAccess() ? '/office/setup-wizard' : null,
             // Not licensed yet: the licence page first, as the current back office does (part 43).
             'licence' => app(LicenseManager::class)->status()['state'] === 'unlicensed' ? '/office/licence' : null,
-            'industry' => $this->industrySwitch($user),
-            'branch' => $this->branchSwitch($user),
+            // Which industry and branch the back office shows, and what the person may choose (null: nothing to choose).
+            'scope' => WorkScope::picker($user),
         ]);
     }
 
-    /**
-     * The industry switch at the top ("All industries / Pharmacy / Grocery …", as the current back office's): every
-     * screen then shows only that industry's branches, stock, prices, purchasing, sales and reports. Only for people who
-     * cover several industries, or the whole company; null for everyone else (they stay in their own).
-     */
-    private function industrySwitch(User $user): ?array
-    {
-        $options = IndustryContext::options($user);
-        if (! ($options->count() > 1 || ($options->isNotEmpty() && IndustryContext::companyWide($user)))) {
-            return null;
-        }
-
-        return ['selected' => (string) IndustryContext::selected(), 'options' => $options->map(fn ($name, $id) => ['id' => (string) $id, 'label' => $name])->values()->all()];
-    }
-
-    /**
-     * The branch switch beside it (part 45): "All my branches" or one of them, within the chosen industry. Only for
-     * people with more than one branch there; null for everyone else.
-     */
-    private function branchSwitch(User $user): ?array
-    {
-        $options = BranchContext::options($user);
-        if ($options->count() < 2) {
-            return null;
-        }
-
-        return ['selected' => (string) BranchContext::selected(), 'options' => $options->map(fn ($label, $id) => ['id' => (string) $id, 'label' => $label])->values()->all()];
-    }
-
-    /** Choose the branch shown (empty: all the person's branches). One the person cannot switch to is refused. */
-    public function branch(Request $request): JsonResponse
+    /** Look at another industry and/or branch ('' = all), and remember it for the person (WorkScope). */
+    public function scope(Request $request): JsonResponse
     {
         $user = $this->panel($request);
-        $id = (string) $request->input('branch', '');
-        $switch = $this->branchSwitch($user);
-        abort_if($switch === null || ($id !== '' && ! in_array($id, array_column($switch['options'], 'id'), true)), 422, 'Choose one of your branches.');
-        BranchContext::set($id ?: null);
+        $industry = (string) $request->input('industry', '');
+        $branch = (string) $request->input('branch', '');
+        $picker = WorkScope::picker($user);
+        abort_if($picker === null || ! WorkScope::allows($picker, $industry, $branch), 422, 'Choose one of your industries and branches.');
+        WorkScope::choose($user, $industry, $branch);
 
-        return response()->json(['selected' => (string) BranchContext::selected()]);
-    }
-
-    /** Choose the industry shown (empty: all of them). One the person cannot switch to is refused. */
-    public function industry(Request $request): JsonResponse
-    {
-        $user = $this->panel($request);
-        $id = (string) $request->input('industry', '');
-        $switch = $this->industrySwitch($user);
-        abort_if($switch === null || ($id !== '' && ! in_array($id, array_column($switch['options'], 'id'), true)), 422, 'Choose one of your industries.');
-        IndustryContext::set($id ?: null);
-
-        return response()->json(['selected' => (string) IndustryContext::selected()]);
+        return response()->json(['scope' => WorkScope::picker($user->fresh())]);
     }
 
     /** The menu: areas → sections → (headed) groups → pages, as the current back office has it for this person. */

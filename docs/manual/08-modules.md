@@ -16,12 +16,12 @@ When a company runs more than one kind of business, each kind is an **industry**
 
 - **An industry appears by itself** when its module is switched on for a branch (8.1). The branch then belongs to it. *Company → Industries* lists the industries. You rarely need to add one by hand: switching on a module for a branch creates it. Its **code** is given automatically from the name and starts its product codes (e.g. GROCER-000001).
 - **Head office or a central warehouse** can belong to no industry (*company-level*). Only people with company-wide access see it.
-- **The industry switcher** at the top of the back office, beside the bell (*All industries*, *Pharmacy*, *Grocery*, …), is shown to people who can see more than one industry.
+- **The industry and branch picker** at the top of the back office, beside the bell, shows where you are, e.g. *Pharmacy › All branches*. It is shown to anyone whose access covers two or more branches, and lists only the industries and branches their access covers. Press it: industries are on the left (*All industries*, *Pharmacy*, *Grocery*, …), the chosen industry's branches on the right (*All Grocery branches*, or one branch). An industry where you have only one branch needs no branch choice: pressing the industry is enough. There is a search box, and your last few places are offered first. **Why one picker:** one press takes you to *Grocery › Spintex*, instead of choosing twice.
   - With an industry chosen, every screen shows only that industry: branches, stock, prices, purchasing, sales, reports, and its own dashboard. The pharmacy dashboard shows prescriptions and expiring batches.
   - With *All industries*, the dashboard shows each industry's sales side by side.
-- **The branch switcher** beside it (*All my branches*, or one branch) is shown to people who work in more than one branch. It lists only the branches of the industry chosen beside it.
   - With a branch chosen, every list, report, the Business Portal and To-do show only that branch, and a new document (an order, a transfer, a stock adjustment…) starts with that branch's store filled in. **Why:** a manager covering several shops can look at one shop at a time without filtering every list.
-  - On a phone both choices are behind the **building** button at the top.
+  - Your choice is kept for you: when you sign in again, on any computer, you are back where you were. If your access changes so that you can no longer see that branch, you see all your branches instead.
+  - On a phone, the picker is the **building** button at the top.
 - **Each industry has its own catalogue.**
   - When you create a product or price list, choose its industry; the industry chosen at the top is filled in for you.
   - That industry's tills sell only its products.

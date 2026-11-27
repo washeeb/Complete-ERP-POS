@@ -32,6 +32,18 @@ final class UserPrefs
      *
      * @return array{cols: int, panels: list<array{id: string, col: int, hidden: bool}>, tiles: list<array{url: string, label: string}>, meter: ?string}|null
      */
+    /** Where the person last looked: ids only ('' = all); whether they may still look there is checked on reading. */
+    public static function cleanScope(mixed $in): ?array
+    {
+        if (! is_array($in)) {
+            return null;
+        }
+        $id = fn ($v) => is_string($v) && preg_match('/^[0-9a-f-]{36}$/', $v) ? $v : '';
+        $place = fn ($p) => is_array($p) ? ['industry' => $id($p['industry'] ?? ''), 'branch' => $id($p['branch'] ?? '')] : null;
+
+        return $place($in) + ['recent' => array_values(array_slice(array_filter(array_map($place, (array) ($in['recent'] ?? []))), 0, WorkScope::RECENT))];
+    }
+
     public static function cleanHome(mixed $in): ?array
     {
         if (! is_array($in)) {
@@ -97,6 +109,9 @@ final class UserPrefs
             if (isset($allowed[$in[$key] ?? ''])) {
                 $p[$key] = $in[$key];
             }
+        }
+        if (($scope = self::cleanScope($in['scope'] ?? null)) !== null) {
+            $p['scope'] = $scope; // the industry and branch last looked at, and the recent ones (WorkScope)
         }
         if (($home = self::cleanHome($in['office_home'] ?? null)) !== null) {
             $p['office_home'] = $home; // only when the person arranged their Home; absent = the standard one

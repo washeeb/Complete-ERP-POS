@@ -18,7 +18,7 @@ class ListAiAlerts extends ListRecords
     {
         return [
             Action::make('refresh')->label('Refresh now')->icon(Heroicon::OutlinedArrowPath)->color('gray')
-                ->visible(fn () => Erp::branchIds('insights.view') === null)
+                ->visible(fn () => Erp::companyWide('insights.view'))
                 ->action(function () {
                     $open = app(InsightAlerts::class)->run(Erp::user()->tenant_id);
                     Notification::make()->title(array_sum($open).' open alert(s)')->success()->send();

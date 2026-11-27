@@ -36,7 +36,8 @@ final class IndustryContext
             return null;
         }
         $options = self::remembered($user);
-        $id = session(self::KEY);
+        // This session's choice; at the start of a session, the one saved for the person (WorkScope).
+        $id = session()->exists(self::KEY) ? session(self::KEY) : ($user->ui_prefs['scope']['industry'] ?? null);
         if ($id && $options->has($id)) {
             return $id;
         }

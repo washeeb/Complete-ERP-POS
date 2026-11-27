@@ -98,7 +98,7 @@ final class InsightsAiScreen
         $total = (clone $q)->count();
 
         return ['total' => $total, 'page' => $page, 'per' => $per, 'status' => $status, 'statuses' => self::choices(AiAlert::STATUSES), 'kinds' => self::choices($kinds),
-            'severities' => self::choices(self::SEVERITY), 'can_refresh' => Erp::branchIds('insights.view') === null,
+            'severities' => self::choices(self::SEVERITY), 'can_refresh' => Erp::companyWide('insights.view'),
             'rows' => $q->orderByDesc('ai_alerts.updated_at')->forPage($page, $per)->get()->map(fn (AiAlert $a) => ['id' => $a->id,
                 'severity' => self::SEVERITY[$a->severity] ?? $a->severity, 'tone' => self::SEVERITY_TONE[$a->severity] ?? 'subtle',
                 'kind' => InsightAlerts::KINDS[$a->kind] ?? $a->kind, 'title' => $a->title, 'detail' => $a->detail, 'seen' => $a->updated_at?->diffForHumans(),

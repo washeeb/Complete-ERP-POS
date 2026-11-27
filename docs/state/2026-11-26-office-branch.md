@@ -1,7 +1,11 @@
-## New back office, part 45: branch switch (branch `office-branch`, base `office-polish`)
-- **`App\Support\BranchContext`** (session `erp.branch`): `options(User)` = active, unarchived branches the person's grants cover (company → all; legal entity, industry, branch), within `IndustryContext::branchIds()`; `selected()` ignores a choice no longer offered (another industry, access gone); remembered per request.
-- **`Erp::branchIds`** intersects the industry's and the branch's ids (narrows only). Every branch-filtered list, report, `HomeData`, `TodoData` and the forms' choices (`Fields::warehouses`, …) follow it, so a new document defaults to the branch's store (first/only choice). Transfers still offer every destination store.
-- **API:** `me.branch` (null under two options), `POST office-api/branch` (422 for a branch not offered).
-- **Client:** `shell/BranchSwitch.tsx`; `shell/WhereSwitch.tsx` puts industry + branch inline, or behind one button on a phone; both switches ask before leaving unsaved work (`confirmLeave`), then reload. `api.chooseBranch`.
-- **Tests:** `OfficeBranchSwitchTest` (3).
-- **check:office:** the report-builder wait looks inside the page only (the branch box's options also contain " · ").
+## New back office, part 45: industry and branch picker (branch `office-branch`, base `office-polish`)
+- **`App\Support\WorkScope`:** `picker(User)` (null under two branches): `industries` = "All industries" (when the person may choose an industry: several, or company-wide) + each industry with the person's branches in it (`BranchContext::optionsIn`), `industry`/`branch` chosen, `recent` (up to 5, still reachable, with labels). `allows()`, `choose()` (sets both contexts and saves `ui_prefs.scope` through `AccessService::updateOwnProfile`: audited).
+- **`BranchContext`** (session `erp.branch`) and **`IndustryContext`** read the session, or at the start of a session the saved `ui_prefs.scope`; a value no longer offered is ignored. `BranchContext::optionsIn(User, ?industry)`: active, unarchived branches the grants cover (company → all; legal entity, industry, branch).
+- **`Erp::branchIds`** intersects the industry's and branch's ids (narrows only): lists, reports, `HomeData`, `TodoData`, the forms' store choices (new documents default to the branch's store). Transfers still offer every destination.
+- **`UserPrefs::cleanScope`** keeps `scope` (ids only) when other preferences are saved.
+- **API:** `me.scope`; `POST office-api/scope {industry, branch}` (422 for a place not offered). The part-43 `POST office-api/industry` is gone.
+- **Client:** `shell/ScopePicker.tsx` (button with the place, panel with industries / branches / search / Lately; an icon on a phone); replaces IndustrySwitch. `api.chooseScope`; asks before leaving unsaved work, then reloads.
+- **Tests:** `OfficeScopeTest` (6). **check:layout:** "squashed" now means the list's own box hides rows (a short list shown whole is fine). **check:office:** the report-builder wait looks inside the page.
+- **`Erp::companyWide($permission)`:** the person's grant covers the company, whatever is chosen at the top. Used by `AccountingExportPage::canAccess`, `InsightsAiScreen` (`can_refresh`), `InsightsAiController` (refresh), `ListAiAlerts`. The `branchIds(...) === null` checks left are about what to show (company totals, form choices).
+- **check:office** looks at everything for its run (`POST office-api/scope ''/''`) and puts the dev account's own place back at the end (the account is shared with the person testing by hand).
+- **`Plain::limits`** writes nested values through `Plain::value` (recursive): an audit entry with nested arrays opened with "Array to string conversion" (found by check:office on the picker's own audit entries).
