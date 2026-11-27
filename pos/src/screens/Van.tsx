@@ -27,7 +27,7 @@ export function RouteScreen({ day, customers, online, onSell, onOrder, onClose }
   }
   const done = stops.filter((s) => s.outcome).length
   return (
-    <div className="modal" role="dialog" aria-modal="true" aria-label="Today's route">
+    <div className="modal" role="dialog" aria-modal="true" aria-label="Today's route" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose() } }}>
       <div className="card wide">
         <div className="row spread">
           <h2>Today's route <span className="muted small">{day.routes.map((r) => r.name).join(' · ') || 'No route today'} · {done} of {stops.length} visited</span></h2>

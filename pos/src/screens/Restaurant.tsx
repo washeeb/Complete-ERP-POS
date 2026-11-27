@@ -330,7 +330,7 @@ export function BillView({ initial, products, restaurant, onPay, onBack }: {
       {picking && <ModifierPicker product={picking} restaurant={restaurant} tableService={tableService} onDone={(c) => addPicked(picking, c)} onCancel={() => setPicking(null)} />}
       {voiding && <VoidDialog message={voiding.message} needsApproval={voiding.needsApproval} busy={busy} count={selected.length} onVoid={voidSelected} onCancel={() => setVoiding(null)} />}
       {moving && (
-        <div className="modal" role="dialog" aria-modal="true" aria-label="Move to table">
+        <div className="modal" role="dialog" aria-modal="true" aria-label="Move to table" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); setMoving(null) } }}>
           <div className="card pay">
             <h2>Move to which table?</h2>
             <div className="row wrap">{moving.map((t) => <button key={t.id} type="button" onClick={() => { setMoving(null); run(() => dining.move(order.id, t.id)) }}>{t.code}</button>)}</div>

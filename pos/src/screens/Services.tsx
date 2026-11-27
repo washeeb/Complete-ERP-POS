@@ -45,7 +45,7 @@ export function AppointmentsScreen({ products, services, customer, onCheckout, o
   const times = slots(services.day_start, services.day_end, services.slot_minutes)
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm({ ...form, [k]: e.target.value })
   return (
-    <div className="modal" role="dialog" aria-modal="true" aria-label="Appointments">
+    <div className="modal" role="dialog" aria-modal="true" aria-label="Appointments" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose() } }}>
       <div className="card wide">
         <div className="row spread">
           <h2>Appointments</h2>

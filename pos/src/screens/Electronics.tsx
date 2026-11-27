@@ -124,7 +124,7 @@ export function RepairsScreen({ products, currency, exponent, onCollect, onClose
     }
   }
   return (
-    <div className="modal" role="dialog" aria-modal="true" aria-label="Repairs">
+    <div className="modal" role="dialog" aria-modal="true" aria-label="Repairs" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onClose() } }}>
       <div className="card wide">
         <div className="row spread"><h2>Repairs</h2>
           <div className="row"><button type="button" className="primary" onClick={() => { setCreating(true); setOpen(null) }}>New repair job</button><button type="button" onClick={onClose}>Back to till</button></div>

@@ -53,7 +53,7 @@ export function SlipScreen({ slip, boot, message, onDone }: { slip: DrawerSlip; 
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="modal" role="dialog" aria-modal="true" aria-label="Slip">
+    <div className="modal" role="dialog" aria-modal="true" aria-label="Slip" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onDone() } }}>
       <div className="card pay">
         <p className="banner ok" role="status">{message}</p>
         <SlipPaper slip={slip} boot={boot} />

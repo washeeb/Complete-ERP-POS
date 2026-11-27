@@ -25,6 +25,7 @@ Keep this card at the till. Practise first in the **practice company** (a purple
 | Wholesale price | Change **Price list** at the top (only if allowed) |
 | Customer on account / loyalty | **Customer** → search name or phone |
 | Pay | **F12** or **Pay** |
+| Close a window (Drawer, payment, approval…) | **Esc**, or **Back** / **Cancel** |
 
 A **red line** has no price on that list: it cannot be sold on it.
 

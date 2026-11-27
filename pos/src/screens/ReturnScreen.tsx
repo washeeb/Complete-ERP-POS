@@ -86,7 +86,7 @@ export function ReturnScreen({ boot, money, onDone }: { boot: Bootstrap; money: 
 
   if (credit) {
     return (
-      <div className="modal" role="dialog" aria-modal="true" aria-label="Store credit issued">
+      <div className="modal" role="dialog" aria-modal="true" aria-label="Store credit issued" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); onDone(null) } }}>
         <div className="card pay">
           <h2>Store credit issued</h2>
           <p>Give the customer this code (it is also on the slip): <strong className="mono big">{credit}</strong></p>
