@@ -267,6 +267,8 @@ What's there:
 
 **One industry, one branch at a time.** If your access covers two or more branches, the picker at the top (e.g. *Grocery › All branches*) chooses an industry and then all of its branches or one. Every list, report, the Business Portal and To-do then show only that place, and new documents start with its store filled in. It remembers your choice for the next time you sign in, on any computer. On a phone, press the **building** button at the top. **Why:** a manager of several shops can work on one shop without filtering every list by hand.
 
+**Your colour, readable everywhere.** Words and buttons in your company's colour (Step 4, *Your brand*) are now always easy to read, in light and in dark: if the colour itself would be too dark on a dark screen, or too pale on a light one, a lighter or deeper shade of it is used. **Why:** a dark brand colour made links and reminders nearly invisible in dark mode.
+
 **Export on the rebuilt lists.** Till sales, Till shifts, Till drawer, Products, Stock on hand, the Stock ledger, Stock adjustments, Stock counts, Transfers, Stock requests, Customers, Invoices, Suppliers, Purchase orders, Goods received, Direct purchases, Invoices from suppliers, Reorder levels, Expense claims, Supplier bills and Supplier payments each have **Export**, as every list does.
 - **Excel**, **CSV** or **PDF** of what the list shows: its search, filters and order, all pages, not only the one on screen.
 - A PDF holds about 800 rows; for a longer list **Export to PDF** is greyed out and says so. Narrow the list (for example to a date range), or use Excel or CSV, which take everything. **Why:** a PDF is laid out in the server's memory, and a very long one would stop it.

@@ -1,0 +1,4 @@
+## Brand colours: contrast is computed, not assumed
+- **Found (owner screenshot, dark mode):** brand-coloured words used fixed ramp shades (Fluent's 100/110), fine for a bright colour but 2.6–3.3:1 for dark ones (navy, slate, dark green) on #292929; even the demo orange was 4.3:1. Filled controls used the brand itself: a navy Create button was 1.1:1 against the dark page.
+- **Decided:** pick shades by measured WCAG contrast for each theme (4.5:1 text, 3:1 controls), rather than per-brand exceptions or a "too dark" warning on the brand page: every company's colour works without anyone having to know about contrast, and the company's own colour is kept wherever it already reads.
+- **Text on filled controls** is white or black, whichever reads on all its states, not the fixed luminance threshold used for the menu band, which picked wrongly for mid-tones.
