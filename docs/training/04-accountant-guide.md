@@ -5,14 +5,14 @@ Sales, purchases, stock and payroll post to the accounts **automatically**. Your
 ## Going live (once)
 
 1. Check the **chart of accounts** (Finance → Chart of accounts) — especially what each automatic purpose posts to.
-2. Load, in this order (System → Import data, "Coming from" = your old system): **chart of accounts** (if you bring yours), **opening trial balance**, **customer balances**, **supplier balances**; the shop loads products, prices and **opening stock**.
+2. Load, in this order (**System → Import data (CSV / Excel)**, "Coming from" = your old system): **chart of accounts** (if you bring yours), **opening trial balance**, **customer balances**, **supplier balances**; the shop loads products, prices and **opening stock**.
 3. Do **not** put customers, suppliers, stock, gift cards or loyalty points in the opening trial balance as amounts: they come in through their own imports. The trial balance import skips those rows for you.
 4. **System → Go-live → Check the figures**: enter the old system's totals; press **Post and check again**. Everything must match, and **"Opening balances (to clear)"** must be **0.00**. If not, something is missing or loaded twice.
 5. A wrong opening trial balance: reverse the opening journal (Finance → Journals → Reverse) and load the corrected file.
 
 ## Every week
 
-- **Finance → Bank reconciliation** for each bank and MoMo account.
+- **Finance → Bank & cash**: reconcile each bank and MoMo account (tick the lines off against the statement).
 - **Aged receivables / payables**: chase what is overdue, plan payments.
 - **Sales → Till drawer**: expenses paid from tills (each is also a paid expense claim, posted from *Cash on hand – tills* to its expense account), and cash drops / pay-ins between tills and the safe (*Cash on hand – office and safe*). Check the receipt photos.
 - **GRA E-VAT** (if used): nothing waiting or refused for more than a day.

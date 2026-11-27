@@ -1267,6 +1267,9 @@ export function xsrf(): string {
   return m ? decodeURIComponent(m[1]) : ''
 }
 
+/** Sent when the page, or a part of it, is refused (403 on reading): the no-access notice listens (NoAccessBar). */
+export const NO_ACCESS = 'zx-no-access'
+
 /** Every request: a change the server accepted (or refused) tells the save bar's unsaved-work guard (unsaved.ts). */
 async function send(path: string, init: RequestInit = {}): Promise<Response> {
   const res = await fetch(path, init)
@@ -1292,6 +1295,9 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
     if (to.pathname === '/office/two-factor-setup' && location.pathname !== to.pathname) location.assign(to.pathname)
     throw new ApiError(body.detail, 403, 'mfa_setup')
   }
+  if (res.status === 403 && (init.method ?? 'GET').toUpperCase() === 'GET') {
+    window.dispatchEvent(new CustomEvent(NO_ACCESS, { detail: body.detail ?? body.message ?? '' })) // the page offers Ask for access
+  }
   if (res.status === 429) throw new ApiError('Too many changes in a minute. Wait a moment, then try again.', 429, 'too_many')
   if (!res.ok) throw new ApiError(body.detail ?? body.message ?? 'Something went wrong. Try again.', res.status, body.error ?? 'error', typeof body.url === 'string' ? body.url : null)
   return body as T
@@ -1299,6 +1305,7 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export const api = {
   me: () => call<Me>('/office-api/me'),
+  requestAccess: (path: string, note: string) => call<{ told: number }>('/access-request', { method: 'POST', body: JSON.stringify({ path, note }) }),
   chooseScope: (industry: string, branch: string) => call<{ scope: Scope | null }>('/office-api/scope', { method: 'POST', body: JSON.stringify({ industry, branch }) }),
   notifications: () => call<{ unread: number; items: NotificationItem[] }>('/office-api/notifications'),
   notificationCount: () => call<{ unread: number }>('/office-api/notifications/count'),

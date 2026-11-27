@@ -40,7 +40,7 @@ Show creating a count, printing the sheet, typing counts, submitting, and the ma
 
 ## 8. Reading your business (owners and managers, 4 min)
 
-Show the dashboard, Insights → Forecast and Alerts, and the report builder making "sales by product this month". Say: "Ten minutes every morning is enough."
+Show the Business Portal, **Insights → Insights** (tab *Forecast & reorder*) and **Insights → Alerts**, and the report builder making "sales by product this month". Say: "Ten minutes every morning is enough."
 
 ## 9. Going live, step by step (owners and managers, 4 min)
 

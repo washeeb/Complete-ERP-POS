@@ -7,18 +7,19 @@ use App\Domain\Support\Actor;
 use App\Domain\Support\AuditLog;
 use App\Models\Permission;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 /**
- * "Ask for access" on the no-access page (owner request 2026-10-22): everyone who may give roles is told, on the bell,
+ * "Ask for access" on the no-access page (owner request 2026-10-22; the new back office's notice since part 46): everyone who may give roles is told, on the bell,
  * who asked, for which page, which permission it needs and the person's message; the request is in the audit log.
  * Nothing is granted by itself — an administrator decides.
  */
 class AccessRequestController extends Controller
 {
-    public function __invoke(Request $request, Notifier $notifier): RedirectResponse
+    public function __invoke(Request $request, Notifier $notifier): RedirectResponse|JsonResponse
     {
         $data = $request->validate([
             'path' => ['required', 'string', 'max:500'],
@@ -35,6 +36,7 @@ class AccessRequestController extends Controller
         DB::transaction(fn () => app(AuditLog::class)->record(Actor::user($user, 'web'), 'access.requested', $user,
             ['page' => [null, mb_substr($path, 0, 200)], 'permission' => [null, $data['permission'] ?? null]]));
 
-        return back()->with('access_requested', $told);
+        // The new back office asks from its "no access" notice and shows the answer there (part 46).
+        return $request->expectsJson() ? response()->json(['told' => $told]) : back()->with('access_requested', $told);
     }
 }

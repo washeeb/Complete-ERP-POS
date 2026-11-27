@@ -9,19 +9,23 @@ You decide who may do what, approve what is above your staff's limits, and read 
 - The **IT Admin** sets up devices and users but sees no sales or money unless you also give them a business role.
 - Owners and managers must use **two-step sign-in** (an authenticator app or a passkey).
 
+## One shop at a time
+
+If you look after several branches, the box at the top of the back office shows where you are looking, e.g. *Grocery › All branches*. Press it to choose an industry, then all of its branches or one. Every list, report, the Business Portal and To-do then show only that place, and new documents start with its store. It remembers your choice for the next time you sign in. **Why:** you can check one shop without filtering every list.
+
 ## Stock requests between industries
 
 When one of your branches asks a branch of another industry for stock (or the other way round), **Stock → Stock requests** shows it as *Awaiting approval*. Open it and click **Approve** or **Reject**. You cannot approve a request you made yourself. The goods move at cost once both sides approve.
 
 ## Daily (ten minutes)
 
-1. **Dashboard**: sales today against last week, stock alerts, anything waiting for your approval.
+1. **Business Portal** (the house at the top left; it opens when you sign in): sales against last week, the *Reminders* (stock alerts, anything waiting for your approval), the *Action Centre* shortcuts and your key figures.
 2. **Insights → Alerts**: unusual voids or refunds, items about to run out, margins that fell.
 3. Approve purchase orders, stock adjustments and expense claims that wait for you.
-4. **Sales → Till shifts**: cash and MoMo / card / voucher differences, and the *Drawer* column (paid out, dropped, no-sale opens). **Insights → Loss prevention** now also compares how often each cashier opens the drawer without a sale.
+4. **Sales → Till shifts**: cash and MoMo / card / voucher differences, and the *Drawer* column (paid out, dropped, no-sale opens). **Insights → Insights**, tab *Loss prevention*, also compares how often each cashier opens the drawer without a sale.
 
 5. **Cash → Close the day** before leaving: fix any red ✗ (or write why), enter the cash taken to the bank with the slip number and the bank account, and what stays in the safe, and press **Close the day**.
-6. **On your phone: Today** (top of the menu) shows the day at a glance; add it to your home screen once (browser menu → *Add to Home screen*).
+6. **On your phone: Insights → Today** shows the day at a glance; add it to your home screen once (browser menu → *Add to Home screen*).
 7. **Purchasing → What to order:** lines with *From another store* — tick them and **Ask other stores to send** before buying.
 
 **Settings for the drawer** (System → Settings → Tills and cash): *Expenses paid from the till: a supervisor approves above* (default GHS 100) and *Cash limit in a till drawer* (default off; e.g. 200000 = GHS 2,000). Who approves pay-outs and takes cash drops: the permission *Approve till pay-outs above the limit and take cash drops* (supervisors and managers have it).

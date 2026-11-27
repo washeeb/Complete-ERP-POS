@@ -56,7 +56,7 @@ You look after the product list and the stock in the shop: products, stock level
 
 ## Asking the buyers to order (purchase requests)
 
-1. **Purchasing → Purchase requests → Ask the buyers to order**: the store, an optional *needed by* date, and the products and quantities. Each line shows what the store holds now.
+1. **Purchasing → Purchase requests → New purchase request** (then **Send the request**): the store, an optional *needed by* date, and the products and quantities. Each line shows what the store holds now.
 2. The buyers are told. One of them **orders** it (a draft purchase order to a supplier, which they check and submit) or **rejects** it with the reason, which you see on the request.
 3. While it waits you can **cancel** it.
 

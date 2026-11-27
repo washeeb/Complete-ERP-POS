@@ -269,6 +269,8 @@ What's there:
 
 **Your colour, readable everywhere.** Words and buttons in your company's colour (Step 4, *Your brand*) are now always easy to read, in light and in dark: if the colour itself would be too dark on a dark screen, or too pale on a light one, a lighter or deeper shade of it is used. **Why:** a dark brand colour made links and reminders nearly invisible in dark mode.
 
+**Ask for access.** If someone opens a page they are not allowed to see (from a link, a bookmark or a notification), a notice at the top says so and offers **Ask for access**, with room for a short note. The people who give roles get it on the bell, with the page and the note; nothing is granted by itself. **Why:** staff can ask for what they need without having to explain which page or permission it is.
+
 **Export on the rebuilt lists.** Till sales, Till shifts, Till drawer, Products, Stock on hand, the Stock ledger, Stock adjustments, Stock counts, Transfers, Stock requests, Customers, Invoices, Suppliers, Purchase orders, Goods received, Direct purchases, Invoices from suppliers, Reorder levels, Expense claims, Supplier bills and Supplier payments each have **Export**, as every list does.
 - **Excel**, **CSV** or **PDF** of what the list shows: its search, filters and order, all pages, not only the one on screen.
 - A PDF holds about 800 rows; for a longer list **Export to PDF** is greyed out and says so. Narrow the list (for example to a date range), or use Excel or CSV, which take everything. **Why:** a PDF is laid out in the server's memory, and a very long one would stop it.
