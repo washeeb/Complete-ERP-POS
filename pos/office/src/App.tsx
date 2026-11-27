@@ -255,6 +255,7 @@ import { SalesPage } from './pages/SalesPage'
 import { TodoPage } from './pages/TodoPage'
 import { adminEquivalent, adminPathFor, appPathFor, areaOf } from './paths'
 import { LeaveDialog } from './shell/LeaveDialog'
+import { NoAccessBar } from './shell/NoAccessBar'
 import { SideLook } from './shell/SideLook'
 import { TopLook } from './shell/TopLook'
 import { themes } from './theme'
@@ -383,7 +384,8 @@ function Shell({ me, menu, setMe }: { me: Me; menu: Menu; setMe: (m: Me) => void
   return (
     <>
       <Look me={me} menu={menu} current={current} page={page} todo={todo} atHome={route.page === 'home'} atTodo={route.page === 'todo'} onLook={onLook} onFavourites={(favourites) => setMe({ ...me, favourites })}>
-        {/* Pages rebuilt so far are the new ones; every other page is the current back office's, framed. */}
+        {/* A page, or part of it, refused: why, and Ask for access (one notice per page address). */}
+        <NoAccessBar key={location.pathname + location.search} />
         {route.page === 'home' ? <HomePage me={me} menu={menu} />
           : route.page === 'todo' ? <TodoPage onCount={setTodo} />
             : route.page === 'sales' ? <SalesPage />

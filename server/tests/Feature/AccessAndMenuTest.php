@@ -30,6 +30,16 @@ it('says why a page cannot be opened, who can give access, and sends an access r
         ->and(AuditEvent::where('action', 'access.requested')->exists())->toBeTrue();
 });
 
+it('lets the new back office ask for access when a page is refused (part 46)', function () {
+    $clerk = withMfa(staff($this->owner, 'clerk', 2));
+    $this->actingAs($clerk, 'web');
+    $this->getJson('/office-api/users')->assertForbidden(); // the page's data: the notice offers Ask for access
+    $this->postJson(route('access.request'), ['path' => '/office/users', 'note' => 'For the new staff'])->assertOk()->assertJson(['told' => 1]);
+    $n = $this->owner->notifications()->sole();
+    expect($n->data['title'])->toBe('Clerk asks for access')->and($n->data['body'])->toContain('/office/users')->toContain('For the new staff')
+        ->and(AuditEvent::where('action', 'access.requested')->exists())->toBeTrue();
+});
+
 it('puts a menu search at the top of the side menu', function () {
     $this->actingAs(withMfa($this->owner), 'web')->get('/admin/sales')->assertOk()->assertSee('id="ses-menu-q"', false)->assertSee('Search the menu');
 });

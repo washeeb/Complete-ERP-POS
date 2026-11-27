@@ -4,7 +4,7 @@
 
 Every till, handheld and kitchen screen is set up the same way:
 
-1. **Register** it in the back office: **System → Devices → New device**. You get a **one-time enrolment code** (valid 24 hours by default).
+1. **Register** it in the back office: **System → Devices → Register a device**. You get a **one-time enrolment code** (valid 24 hours by default).
 2. On the device, open the till app address in Chrome or Edge and **enter the code**.
 3. People **sign in** on it (cashiers with username and PIN; kitchen screens need no sign-in).
 
@@ -12,7 +12,7 @@ Every till, handheld and kitchen screen is set up the same way:
 
 ### Register a device
 
-**System → Devices → New device**:
+**System → Devices → Register a device**:
 
 | Field | What to enter |
 |---|---|

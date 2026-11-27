@@ -80,7 +80,7 @@ Each branch runs one industry (Pharmacy, Grocery, …), switched on per branch i
 
 For each staff member:
 
-1. **People & access → Users → New user**: name, username, email (for back-office users), and a **Security level (ceiling)** (the highest level of what they can ever be given — see Chapter 18).
+1. **People & access → Users → Add a user**: name, username, email (for back-office users), and a **Security level (ceiling)** (the highest level of what they can ever be given — see Chapter 18).
 2. On the next screen, **Grant access**: choose a **role** (Cashier, Supervisor, Branch Manager, Storekeeper, Stock Controller, Accountant, Pharmacist, Waiter, Stylist / Therapist…) and **where it applies** (a till, a branch, a warehouse or the whole company).
    A person's own **security level** must be at least the role's (e.g. Stock Controller L3, Warehouse Manager L4); raise
    the level on the user's page first if the role is refused. **Products** (create and edit, categories, brands, units)
@@ -89,7 +89,7 @@ For each staff member:
    or an industry, it prices that industry: its products, its own price lists, pricing rules and prices to review
    (a supermarket price manager prices the supermarket, never the pharmacy). Company price lists (such as Retail),
    the default list and **tax** set-up need it for the whole company. **Why:** each shop sets its own prices; tax is the company's.
-3. For anyone who sells or clocks in on a till: **Set POS PIN** (4–8 digits; simple PINs like 1234 are refused).
+3. For anyone who sells or clocks in on a till: **Set till PIN** (4–8 digits; simple PINs like 1234 are refused).
 4. **How the person signs in to the back office** (on the user's page):
    - **Company rule** (default): the authenticator app from the level set under System → Settings → Security (L3 unless you change it), password only below it;
    - **Password and the authenticator app** — always, whatever the level;

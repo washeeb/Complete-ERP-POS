@@ -1,0 +1,4 @@
+## Training guides and Ask for access
+- **Checked by script, not by eye:** the guides' menu paths were compared with the real menu read from the server (all industries and branches), so every path a member of staff reads exists. Paths keep the guides' "Section → Page" convention (as the installation guide).
+- **Found: Ask for access was lost in part 43.** It lived only on the old back office's no-access page; the new look showed "You cannot see this." with no way to ask, while the new-features checklist promised the button. Restored in the new look on the existing request flow (bell to the people who give roles, audit row), instead of a new mechanism.
+- **A notice, not a replacement page:** a refused read can be the whole page or one part of it; the notice says "this page, or part of it" and leaves what the person may see on screen. It can be closed, in case a role is refused a minor part on purpose.

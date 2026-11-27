@@ -69,8 +69,11 @@ On each user (People & access → Users), choose **How the person signs in**:
 
 ## 6. Finding things and asking for access
 
-- [ ] **Search the menu** (top of the side menu, or press `/`): type *expiry*, *momo* or *po* and the right page shows.
+- [ ] **Search** (the box at the top, or press **Ctrl+K**): type *expiry*, *momo* or *po* and the right page shows; type part of a customer or product name and the record shows.
 - [ ] A teller who opens a manager's page sees **why** and an **Ask for access** button; the owner gets the request on the bell.
+
+- [ ] Someone who covers two or more branches sees the **industry and branch** box at the top (e.g. *Grocery › All branches*); choosing one branch narrows the lists and is remembered at the next sign-in.
+- [ ] On a form, change something and press another menu entry: the back office asks **Save and leave**, **Leave without saving** or **Stay**. **Ctrl+S** saves.
 
 ## 7. Batches and expiry
 
