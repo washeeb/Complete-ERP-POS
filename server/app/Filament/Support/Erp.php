@@ -10,6 +10,7 @@ use App\Models\AccessRequest;
 use App\Models\User;
 use App\Security\Authorizer;
 use App\Security\ReconfirmNeeded;
+use App\Support\BranchContext;
 use App\Support\IndustryContext;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
@@ -61,6 +62,17 @@ final class Erp
      *
      * @return list<string>|null null = all branches
      */
+    /**
+     * Whether the person's grant for this covers the whole company: a question of rights, so the industry and branch
+     * chosen at the top do not change it (pages and actions stay available; what they show still follows the choice).
+     */
+    public static function companyWide(string $permission): bool
+    {
+        $user = self::user();
+
+        return $user !== null && app(Authorizer::class)->branchIds($user, $permission) === null;
+    }
+
     public static function branchIds(string $permission): ?array
     {
         $user = self::user();
@@ -68,12 +80,14 @@ final class Erp
             return [];
         }
         $ids = app(Authorizer::class)->branchIds($user, $permission);
-        $industry = IndustryContext::branchIds();
-        if ($industry === null) {
-            return $ids;
+        // The industry and the branch chosen at the top narrow it further (never widen it).
+        foreach ([IndustryContext::branchIds(), BranchContext::branchIds()] as $chosen) {
+            if ($chosen !== null) {
+                $ids = $ids === null ? $chosen : array_values(array_intersect($ids, $chosen));
+            }
         }
 
-        return $ids === null ? $industry : array_values(array_intersect($ids, $industry));
+        return $ids;
     }
 
     /**

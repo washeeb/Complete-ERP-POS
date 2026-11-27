@@ -93,7 +93,7 @@ class InsightsAiController extends Controller
     public function alertsRefresh(Request $request, InsightAlerts $alerts): JsonResponse
     {
         $this->screen($request, InsightsAiScreen::canAlerts());
-        abort_unless(Erp::branchIds('insights.view') === null, 403, 'Refreshing needs company-wide insights.');
+        abort_unless(Erp::companyWide('insights.view'), 403, 'Refreshing needs company-wide insights.');
 
         return response()->json(['message' => array_sum($alerts->run($request->user()->tenant_id)).' open alert(s).']);
     }

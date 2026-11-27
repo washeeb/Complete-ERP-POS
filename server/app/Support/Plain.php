@@ -30,7 +30,7 @@ final class Plain
             $parts[] = match ($kind) {
                 'money' => (int) $value >= self::NO_LIMIT_MINOR ? "{$words} any amount" : $words.' '.Money::display((int) $value, $currency),
                 'percent' => $words.' '.rtrim(rtrim(number_format(((int) $value) / 100, 2), '0'), '.').'%',
-                default => "{$words}: {$value}",
+                default => "{$words}: ".self::value((string) $key, $value, $currency), // nested values in words too, never "Array"
             };
         }
 

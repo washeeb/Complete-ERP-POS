@@ -65,6 +65,9 @@ try {
         const r = await page.evaluate(() => {
           const table = document.querySelector('main table, [role=main] table, table')
           const rows = table ? table.querySelectorAll('tbody tr').length : 0
+          // Squashed = the list's own box hides rows (it scrolls inside); a short list shown whole is fine.
+          let box = table?.parentElement; while (box && box.tagName !== 'MAIN' && !/(auto|scroll)/.test(getComputedStyle(box).overflowY)) box = box.parentElement
+          const hidden = !!box && box.tagName !== 'MAIN' && box.scrollHeight > box.clientHeight + 2 && !box.contains(document.querySelector('[role=region][aria-label=Save]'))
           const nav = document.querySelector('nav[aria-label="Menu"]')
           const n = nav ? nav.getBoundingClientRect() : null
           // The save bar of a form: flush with the bottom of the window while the form scrolls (owner report 2026-11-26).
@@ -74,14 +77,14 @@ try {
           // The top row's controls (search, Create, industry, bell, your name) never cover one another.
           const ctl = [...(document.querySelector('header')?.querySelectorAll('button, input, select') ?? [])].map((e) => e.getBoundingClientRect()).filter((r) => r.width && r.height)
           const overlap = ctl.some((a, i) => ctl.some((b, j) => j > i && a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1 && !(a.left >= b.left && a.right <= b.right) && !(b.left >= a.left && b.right <= a.right)))
-          return { sideways: document.documentElement.scrollWidth - innerWidth, innerHeight, innerWidth, rows, saveGap, overlap,
+          return { sideways: document.documentElement.scrollWidth - innerWidth, innerHeight, innerWidth, rows, saveGap, overlap, hidden, boxHeight: box ? box.clientHeight : 0,
             table: table ? table.getBoundingClientRect().height : null, nav: n ? { top: n.top, bottom: n.bottom, left: n.left, right: n.right } : null }
         })
         const where = `${look} ${w}×${h} ${path}`
         if (r.sideways > 1) problems.push(`${where}: the page scrolls sideways by ${r.sideways}px`)
         if (r.overlap) problems.push(`${where}: controls in the top row cover one another`)
         if (r.saveGap !== null && Math.abs(r.saveGap) > 1) problems.push(`${where}: the save bar hangs ${r.saveGap}px above the bottom of the window`)
-        if (r.table !== null && r.rows > 5 && r.table < r.innerHeight / 3) problems.push(`${where}: list squashed to ${Math.round(r.table)}px with ${r.rows} rows`)
+        if (r.table !== null && r.rows > 5 && r.hidden && r.boxHeight < r.innerHeight / 3) problems.push(`${where}: list squashed to ${Math.round(r.boxHeight)}px, hiding rows`)
         if (look === 'side' && r.nav && (r.nav.bottom < 100 || r.nav.left < 0)) problems.push(`${where}: the side menu is out of reach after scrolling`)
         if (look === 'top' && r.nav && (r.nav.bottom < 0 || r.nav.top > r.innerHeight)) problems.push(`${where}: the menu bar is off the screen`)
         if (path === PAGES[0]) {

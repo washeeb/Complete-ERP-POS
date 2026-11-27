@@ -37,7 +37,7 @@ class AccountingExportPage extends Page
 
     public static function canAccess(): bool
     {
-        return Erp::canAnywhere('finance.view') && Erp::branchIds('finance.view') === null;
+        return Erp::canAnywhere('finance.view') && Erp::companyWide('finance.view');
     }
 
     public function mount(): void
