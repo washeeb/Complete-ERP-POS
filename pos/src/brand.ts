@@ -1,5 +1,6 @@
 import { db, type CacheRecord } from './db'
 import type { Bootstrap } from './types'
+import { BRAND_EVENT } from './ui/brandEvent'
 
 /**
  * The company's brand on the till: the logo on screen and on the printed receipt, the brand colour, and the small
@@ -34,12 +35,17 @@ export async function cachedImage(url: string | null | undefined): Promise<strin
   }
 }
 
-/** Apply the brand colour to the till (a thin accent; the till's own colours keep their contrast). */
+/**
+ * Apply the company's colour to the till: the line at the top, and the new look's theme (Pay and each window's main
+ * button, in shades that stay readable in light and dark: ui/TillTheme.tsx).
+ */
 export function applyBrand(boot: Bootstrap | null): void {
   const c = boot?.brand?.color
   const root = document.documentElement
-  if (c && /^#[0-9A-Fa-f]{6}$/.test(c)) root.style.setProperty('--brand', c)
+  const ok = !!c && /^#[0-9A-Fa-f]{6}$/.test(c)
+  if (ok) root.style.setProperty('--brand', c)
   else root.style.removeProperty('--brand')
+  window.dispatchEvent(new CustomEvent(BRAND_EVENT, { detail: ok ? c : '' }))
 }
 
 /**

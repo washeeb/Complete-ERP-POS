@@ -1,7 +1,7 @@
 import { clientHeader } from './clientInfo'
 import { db, getDevice, getSession } from './db'
 import type { OfflineGrant } from './db'
-import type { Bootstrap, PostedSale, Product, PromotionRow, Returnable, Shift, TillCustomer, WmsBin, WmsBootstrap, WmsCatalog, WmsCount, WmsOrder, WmsTransfer, WmsUnit, Grocery, Pharmacy, Restaurant, DiningOrder, Floor, KitchenTicket, Reservation, RepairJob, SerialInfo, Fashion, Alteration, Services, Appointment, ServicePass, StaffMember, VanDay } from './types'
+import type { Bootstrap, Category, PostedSale, Product, PromotionRow, Returnable, Shift, TillCustomer, WmsBin, WmsBootstrap, WmsCatalog, WmsCount, WmsOrder, WmsTransfer, WmsUnit, Grocery, Pharmacy, Restaurant, DiningOrder, Floor, KitchenTicket, Reservation, RepairJob, SerialInfo, Fashion, Alteration, Services, Appointment, ServicePass, StaffMember, VanDay } from './types'
 
 export type ApprovalKind = 'return' | 'discount' | 'void' | 'no_sale' | 'drawer' | 'restaurant_void'
 export type ApprovalAsk = { kind: ApprovalKind; summary: string; amount_minor?: number; limit_amount?: number; reason?: string | null
@@ -120,7 +120,7 @@ export const api = {
       throw new ApiError('network', slow ? 'The product list took too long to arrive.' : 'No connection.', 0, slow ? 'catalog_timeout' : undefined)
     }
     if (!res.ok) throw new ApiError((body.error as string) ?? 'server', (body.detail as string) ?? 'Something went wrong. Try again, or tell your supervisor.', res.status)
-    return body as unknown as { version: string; generated_at: string; products: Product[]; promotions?: PromotionRow[]; utc_offset_minutes?: number; grocery?: Grocery | null; pharmacy?: Pharmacy | null; restaurant?: Restaurant | null; electronics?: boolean; fashion?: Fashion | null; services?: Services | null }
+    return body as unknown as { version: string; generated_at: string; products: Product[]; categories?: Category[]; promotions?: PromotionRow[]; utc_offset_minutes?: number; grocery?: Grocery | null; pharmacy?: Pharmacy | null; restaurant?: Restaurant | null; electronics?: boolean; fashion?: Fashion | null; services?: Services | null }
   },
   /** Stock left, next expiry and low-stock minimum per product at this till's store (ETag); null = unchanged. */
   stock: async (version?: string | null) => {

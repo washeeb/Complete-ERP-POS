@@ -36,6 +36,7 @@ use App\Domain\Support\DomainException;
 use App\Domain\Support\Recorder;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
+use App\Models\Category;
 use App\Models\Customer;
 use App\Models\Device;
 use App\Models\DiningOrder;
@@ -176,6 +177,9 @@ class PosController extends Controller
             // Every active promotion; the till picks the running ones (dates, days, happy hours, branch, list) like the server.
             'promotions' => Promotion::where('is_active', true)->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>', $now))->get()
                 ->map(fn (Promotion $p) => $p->toEngine())->values(),
+            // The categories of these products, for the selling screen's tiles (part 48).
+            'categories' => Category::whereIn('id', $products->pluck('category_id')->filter()->unique()->values())->orderBy('name')
+                ->get(['id', 'name'])->map(fn (Category $c) => ['id' => $c->id, 'name' => $c->name])->values(),
             'utc_offset_minutes' => (int) round(Carbon::now(Branch::find($device->branch_id)?->timezone ?: config('app.timezone'))->utcOffset()),
             // Near-expiry markdown stickers this branch's tills recognise (any branch with expiry dates: grocery, pharmacy…),
             // and the weighted-barcode scale labels (Grocery only).
@@ -333,7 +337,7 @@ class PosController extends Controller
     {
         $tenant = app(TenantContext::class)->id();
         $parts = [];
-        foreach (['products', 'product_uoms', 'barcodes', 'prices', 'price_lists', 'tax_rates', 'tax_groups', 'uoms', 'promotions', 'markdowns', 'drug_interactions', 'modifier_groups', 'settings', 'styles'] as $t) {
+        foreach (['products', 'product_uoms', 'barcodes', 'prices', 'price_lists', 'tax_rates', 'tax_groups', 'uoms', 'promotions', 'markdowns', 'drug_interactions', 'modifier_groups', 'settings', 'styles', 'categories'] as $t) {
             $row = DB::table($t)->where('tenant_id', $tenant)->selectRaw('count(*) as c, max(updated_at) as u')->first();
             $parts[] = $t.':'.$row->c.':'.$row->u;
         }

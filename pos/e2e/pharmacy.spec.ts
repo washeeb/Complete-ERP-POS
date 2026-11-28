@@ -86,7 +86,7 @@ test('asks for the prescription and the pharmacist, warns about allergies, and o
   await rx.getByLabel('Pharmacist username').fill('kwame')
   await rx.getByLabel('Pharmacist PIN').fill('000000')
   await rx.getByRole('button', { name: 'Dispense despite warnings' }).click()
-  await page.getByRole('button', { name: /GH₵ 20\.00/ }).first().click()
+  await page.getByRole('dialog', { name: 'Payment' }).getByRole('button', { name: /GH₵ 20\.00/ }).first().click()
 
   // Wrong PIN: back to the prescription with the server's message; the details are kept.
   await expect(rx.getByText('Supervisor username or PIN is wrong.')).toBeVisible()

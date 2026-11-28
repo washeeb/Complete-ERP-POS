@@ -271,6 +271,8 @@ What's there:
 
 **Ask for access.** If someone opens a page they are not allowed to see (from a link, a bookmark or a notification), a notice at the top says so and offers **Ask for access**, with room for a short note. The people who give roles get it on the bell, with the page and the note; nothing is granted by itself. **Why:** staff can ask for what they need without having to explain which page or permission it is.
 
+**The till in the new look (first part).** The selling screen has the new look in your company's colour: the categories as tabs and each product as a large tile to tap on the left, the cart with a large total and a large **Pay** button on the right. Scanning and typing work as before; a till can keep the plain search list (till **Settings → Selling screen**). The other till screens take the new colours now and get their new layout in the next updates. **Why:** quicker on touch screens, easier to read, and the same look as the back office.
+
 **Export on the rebuilt lists.** Till sales, Till shifts, Till drawer, Products, Stock on hand, the Stock ledger, Stock adjustments, Stock counts, Transfers, Stock requests, Customers, Invoices, Suppliers, Purchase orders, Goods received, Direct purchases, Invoices from suppliers, Reorder levels, Expense claims, Supplier bills and Supplier payments each have **Export**, as every list does.
 - **Excel**, **CSV** or **PDF** of what the list shows: its search, filters and order, all pages, not only the one on screen.
 - A PDF holds about 800 rows; for a longer list **Export to PDF** is greyed out and says so. Narrow the list (for example to a date range), or use Excel or CSV, which take everything. **Why:** a PDF is laid out in the server's memory, and a very long one would stop it.

@@ -93,7 +93,7 @@ async function sellOneMilo(page: Page) {
   await scan.fill('200000900')
   await scan.press('Enter')
   await page.keyboard.press('F12')
-  await page.getByRole('button', { name: /GH₵ 58\.00/ }).first().click() // exact cash
+  await page.getByRole('dialog', { name: 'Payment' }).getByRole('button', { name: /GH₵ 58\.00/ }).first().click() // exact cash
 }
 
 test('sells online, keeps selling with the server down, then sends the signed queue', async ({ page }) => {
