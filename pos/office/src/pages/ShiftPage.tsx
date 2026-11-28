@@ -130,8 +130,10 @@ function CountDialog({ shift, kind, money, onDone, onCancel }: {
           <DialogTitle>{kind === 'close' ? 'Close the shift here' : 'Correct the count'}</DialogTitle>
           <DialogContent>
             <Text block style={{ marginBottom: 10 }}>
-              {kind === 'close'
-                ? `For a shift no till can close (the till was reinstalled or replaced, or it was left open). Expected in the drawer: ${money(shift.expected_now)}. The over/short goes to the books as for any close.`
+              {kind === 'close' && shift.cash_vault
+                ? 'For a shift no till can close (the till was wiped, reinstalled or replaced, or it was left open). It is on a cash-control vault: count the cash in the drawer without knowing what is expected. Your count stands for the teller’s; the cashier then receives the vault as usual (Cash → Shifts and vaults).'
+                : kind === 'close'
+                ? `For a shift no till can close (the till was wiped, reinstalled or replaced, or it was left open). Expected in the drawer: ${money(shift.expected_now)}. The over/short goes to the books as for any close.`
                 : `Recorded count: ${money(shift.counted)}; expected: ${money(shift.expected)}. The shift keeps its original count; the correction and the difference in the books are recorded with your name.`}
             </Text>
             <Field label={kind === 'close' ? 'Cash actually there' : 'The right count'} required>

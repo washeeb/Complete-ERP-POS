@@ -134,14 +134,16 @@ final class ShiftsScreen
             'currency' => $s->currency_code, 'exponent' => Money::exponent($s->currency_code),
             'tiles' => $intro['tiles'], 'facts' => $intro['facts'], 'branch' => $intro['branch'],
             'sheets' => array_values(array_filter($sheets, fn ($sh) => ! (($sh['skip_empty'] ?? false) && $sh['rows'] === []))),
-            'expected_now' => $s->isOpen() ? app(ShiftService::class)->expectedCash($s) : null,
+            // On a cash-control vault the count stays blind, also when a manager closes the shift here.
+            'expected_now' => $s->isOpen() && ! $s->vault_session_id ? app(ShiftService::class)->expectedCash($s) : null,
+            'cash_vault' => (bool) $s->vault_session_id,
             // The vault count is blind: the notes and coins to count, never the figure it is checked against.
             'denominations' => collect(CashControl::denominations($s->currency_code))->map(fn ($d, $key) => ['key' => $key, 'label' => preg_replace('/ (note|coin)$/', '', $d[0]),
                 'value' => $d[1], 'kind' => str_starts_with($key, 'n') ? 'note' : 'coin'])->values()->all(),
             'vault_recounts' => (int) $s->check_recounts,
             'actions' => [
                 'report' => ! $s->isOpen(),
-                'close' => $s->isOpen() && ! $s->vault_session_id && $canSetup,
+                'close' => $s->isOpen() && $canSetup, // on a vault too: the cashier then receives it as usual
                 'correct' => ! $s->isOpen() && ! $s->vault_session_id && $canSetup,
                 'count_vault' => $s->vault_id && ! $s->isOpen() && ! $s->checked_at && Erp::can('cash.vault.check', $branch),
             ],

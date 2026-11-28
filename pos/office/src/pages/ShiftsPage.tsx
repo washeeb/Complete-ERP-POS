@@ -37,7 +37,7 @@ export function ShiftsPage() {
     { key: 'opened', label: 'Opened', sort: 'opened_at', render: (r) => when(r.opened_at) },
     { key: 'closed', label: 'Closed', render: (r) => (r.status === 'open'
       ? (r.left_open
-        ? <Text weight="semibold" style={{ color: 'var(--zx-bad)' }}>Left open since {r.left_open}<Text block size={200} style={{ color: 'inherit', fontWeight: 400 }}>close it on the till</Text></Text>
+        ? <Text weight="semibold" style={{ color: 'var(--zx-bad)' }}>Left open since {r.left_open}<Text block size={200} style={{ color: 'inherit', fontWeight: 400 }}>close it on the till or here</Text></Text>
         : <Badge appearance="tint" color="success">Open</Badge>)
       : <>{when(r.closed_at)}{r.vault_waiting && <Text block size={200} style={{ color: 'var(--zx-warn)' }}>Vault waiting for the manager's count</Text>}</>) },
     { key: 'sales', label: 'Sales', end: true, render: (r) => <>{r.sales}<Text block size={200} className={s.muted}>{m(r.takings)}</Text></> },

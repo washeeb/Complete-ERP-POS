@@ -11,6 +11,7 @@ use App\Models\Branch;
 use App\Models\Computer;
 use App\Models\Device;
 use App\Models\DeviceCommand;
+use App\Models\Shift;
 use App\Models\Till;
 use App\Models\User;
 use App\Support\ClientInfo;
@@ -92,6 +93,9 @@ final class DevicesScreen
             'view_url' => $level !== null ? route('remote.connect', [$d, 'view']) : null, 'control_url' => $level === 'control' ? route('remote.connect', [$d, 'control']) : null,
             'can_fix' => $d->isActive() && in_array($d->kind, ['pos', 'handheld'], true) && $health->canFix($this->user, $d),
             'has_fixes' => DeviceCommand::where('device_id', $d->id)->exists(),
+            // A shift still open on this device: revoking does not close it; the replacement till continues it, or a manager closes it.
+            'open_shift' => ($sh = Shift::where('device_id', $d->id)->where('status', 'open')->first())
+                ? ['id' => $sh->id, 'opened_by' => $sh->opened_by_name, 'opened_at' => $sh->opened_at->toIso8601String()] : null,
             'can_reissue' => $d->status === 'pending', 'can_revoke' => $d->status !== 'revoked',
             'can_archive' => ! $d->archived_at && $allowed, 'archive_blockers' => ! $d->archived_at && $allowed ? $archive->blockers($d) : [], 'can_restore' => (bool) $d->archived_at && $allowed];
     }

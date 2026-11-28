@@ -289,6 +289,8 @@ What's there:
 
 **The till's windows fit any screen.** The payment window keeps one size whatever the way to pay: what is due stays at the top, the ways to pay and their boxes scroll in the middle, and *Back to cart* and *Add …* stay at the bottom. Every other till window (customer, return, drawer, calculator and the rest) scrolls inside itself with its buttons kept in view. **Why:** on a shorter screen, mobile money, card and the other ways to pay pushed their buttons out of the window; only cash fitted.
 
+**A shift left open by a wiped till is never stuck.** A till added in place of one that was wiped, reinstalled or replaced offers to continue the shift left open on it (a manager approves by PIN), and a manager can close any open shift from the back office, also on cash control (vaults). See chapter 9.13. **Why:** before, a vault shift whose till was gone could not be closed anywhere.
+
 **Export on the rebuilt lists.** Till sales, Till shifts, Till drawer, Products, Stock on hand, the Stock ledger, Stock adjustments, Stock counts, Transfers, Stock requests, Customers, Invoices, Suppliers, Purchase orders, Goods received, Direct purchases, Invoices from suppliers, Reorder levels, Expense claims, Supplier bills and Supplier payments each have **Export**, as every list does.
 - **Excel**, **CSV** or **PDF** of what the list shows: its search, filters and order, all pages, not only the one on screen.
 - A PDF holds about 800 rows; for a longer list **Export to PDF** is greyed out and says so. Narrow the list (for example to a date range), or use Excel or CSV, which take everything. **Why:** a PDF is laid out in the server's memory, and a very long one would stop it.

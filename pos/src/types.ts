@@ -127,6 +127,8 @@ export type Bootstrap = {
   send_receipt?: ('sms' | 'whatsapp' | 'email')[] // channels the business has switched on for digital receipts
   license?: { state: string; read_only: boolean; message: string | null; ref: string }
   shift: Shift | null
+  /** A shift left open on this till by a till that is gone (wiped, reinstalled, replaced): continue it here with a manager's PIN. */
+  left_open?: { id: string; opened_by: string | null; opened_at: string; sales: number; device: string | null } | null
   /** Cash control: vaults issued to this teller at this till, and the notes and coins to count (missing on servers before 0.30). */
   cash?: CashInfo
   /** The drawer: pay-out categories, the limit above which a supervisor approves a pay-out, the cash limit (0 = off). */
