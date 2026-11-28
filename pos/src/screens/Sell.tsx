@@ -578,14 +578,6 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
           </select>
         </label>
         <div className="row">
-          {customer ? (
-            <span className="chip" aria-label="Customer">
-              {customer.name}{customer.credit_limit_minor !== null && ` · credit ${money(customer.available_minor ?? 0)}`}
-              {online && <button type="button" className="link" onClick={() => setTakingPayment(true)}>Take payment</button>}
-              {online && services && <button type="button" className="link" onClick={() => setPassesOpen(true)}>Passes</button>}
-              <button type="button" className="link" onClick={() => pickCustomer(null)} aria-label="Remove customer">✕</button>
-            </span>
-          ) : <button type="button" onClick={() => setPicking(true)}>Customer (F4)</button>}
           <button type="button" onClick={() => setCalcOpen(true)} title="Calculator">Calculator (F1)</button>
           {online && restaurant && <button type="button" onClick={() => setFloorOpen(true)}>Tables (F6)</button>}
           {online && electronics && <button type="button" onClick={() => setRepairsOpen(true)}>Repairs (F7)</button>}
@@ -664,6 +656,17 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       </section>
 
       <section className="cart" aria-label="Cart">
+        {/* The customer belongs to the sale (new look, part 4): at the top of the cart, so the top bar keeps one row. */}
+        <div className="cart-customer">
+          {customer ? (
+            <span className="chip" aria-label="Customer">
+              {customer.name}{customer.credit_limit_minor !== null && ` · credit ${money(customer.available_minor ?? 0)}`}
+              {online && <button type="button" className="link" onClick={() => setTakingPayment(true)}>Take payment</button>}
+              {online && services && <button type="button" className="link" onClick={() => setPassesOpen(true)}>Passes</button>}
+              <button type="button" className="link" onClick={() => pickCustomer(null)} aria-label="Remove customer">✕</button>
+            </span>
+          ) : <button type="button" onClick={() => setPicking(true)}>Customer (F4)</button>}
+        </div>
         {cart.lines.length === 0 ? <p className="muted center">Scan or search to start a sale.</p> : (
           <table>
             <thead><tr><th>Item</th><th>Qty</th><th>Unit</th><th className="num">Price</th><th className="num">Total</th><th /></tr></thead>

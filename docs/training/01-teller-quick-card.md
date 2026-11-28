@@ -23,7 +23,7 @@ Keep this card at the till. Practise first in the **practice company** (a purple
 | Weigh (loose goods) | Put it on the scale, tap **Weigh** |
 | Remove a line | **✕** at the end of the line |
 | Wholesale price | Change **Price list** at the top (only if allowed) |
-| Customer on account / loyalty | **Customer** → search name or phone |
+| Customer on account / loyalty | **Customer (F4)** at the top of the cart → search name or phone |
 | Pay | **F12** or **Pay** |
 | Close a window (Drawer, payment, approval…) | **Esc**, or **Back** / **Cancel** |
 

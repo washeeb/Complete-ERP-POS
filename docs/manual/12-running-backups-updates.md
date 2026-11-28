@@ -279,6 +279,8 @@ What's there:
 
 **The till in the new look (drawer and closing the shift).** The *Drawer* window shows its four actions (pay out, pay in, cash drop, open without a sale) as large buttons with pictures and its boxes in two columns, so it fits without scrolling. *Close shift* uses the width of the screen: the cash count, then mobile money, card, vouchers and coupons side by side, with *Close shift* always in reach at the bottom. A barcode scanned while the cursor is not in a box is recognised even on a slow or busy till. **Why:** the end of the day is quicker and fewer things are missed.
 
+**The till in the new look (returns and the customer).** The customer chosen for a sale now shows at the top of the cart (with *Take payment*), and **Customer (F4)** is there too; the top row of the till keeps to one line. The *Return* window shows the refund in large figures. **Why:** the customer belongs to the sale, and the cashier checks the refund before giving money back.
+
 **Export on the rebuilt lists.** Till sales, Till shifts, Till drawer, Products, Stock on hand, the Stock ledger, Stock adjustments, Stock counts, Transfers, Stock requests, Customers, Invoices, Suppliers, Purchase orders, Goods received, Direct purchases, Invoices from suppliers, Reorder levels, Expense claims, Supplier bills and Supplier payments each have **Export**, as every list does.
 - **Excel**, **CSV** or **PDF** of what the list shows: its search, filters and order, all pages, not only the one on screen.
 - A PDF holds about 800 rows; for a longer list **Export to PDF** is greyed out and says so. Narrow the list (for example to a date range), or use Excel or CSV, which take everything. **Why:** a PDF is laid out in the server's memory, and a very long one would stop it.
