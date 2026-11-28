@@ -18,6 +18,12 @@ export class EscPos {
   /** Characters a line: 48 on 80 mm paper, 32 on 58 mm (till Settings). */
   readonly width: number
 
+  /**
+   * What a line may hold: one character less than the paper's width. Some printers and their Windows drivers start a new
+   * line when a line is completely full, so every amount printed on the line below its label (owner's photo, 2026-11-28).
+   */
+  get room(): number { return this.width - 1 }
+
   constructor(width = WIDTH) {
     this.width = width
   }
@@ -37,13 +43,19 @@ export class EscPos {
   double(on: boolean): this { this.bytes.push(GS, 0x21, on ? 0x11 : 0); return this }
 
   /** Two columns on one line: left text, right text (left is cut if needed). */
-  columns(left: string, right: string, width = this.width): this {
+  columns(left: string, right: string, width = this.room): this {
     const room = Math.max(1, width - right.length - 1)
     const l = left.length > room ? left.slice(0, room) : left
     return this.line(l + ' '.repeat(width - l.length - right.length) + right)
   }
 
-  rule(): this { return this.line('-'.repeat(this.width)) }
+  rule(): this { return this.line('-'.repeat(this.room)) }
+
+  /** Text longer than a line, broken between words (never in the middle of a word, as the printer would). */
+  wrapped(s: string, width = this.room): this {
+    for (const l of wrap(s, width)) this.line(l)
+    return this
+  }
 
   /** QR code (model 2, error correction M), drawn by the printer. */
   qr(data: string, size = 6): this {
@@ -84,28 +96,74 @@ const PC858: Record<string, number> = {
 
 const PLAIN_UNITS = new Set(['PC', 'EA', 'PCS'])
 
-/** The receipt as the printed (browser) one, in ESC/POS. */
+/** Words over as many lines of `width` as needed; a word longer than a line is cut into pieces. */
+export function wrap(s: string, width: number): string[] {
+  const out: string[] = []
+  let cur = ''
+  for (let word of s.split(/\s+/).filter(Boolean)) {
+    while (word.length > width) { if (cur) { out.push(cur); cur = '' } out.push(word.slice(0, width)); word = word.slice(width) }
+    if (!cur) cur = word
+    else if (cur.length + 1 + word.length <= width) cur += ` ${word}`
+    else { out.push(cur); cur = word }
+  }
+  if (cur) out.push(cur)
+  return out.length ? out : ['']
+}
+
+/**
+ * The item columns of the screen receipt (SN · Item · Qty · Price · Total) on 80 mm paper; null on narrow paper, where
+ * the name goes on its own line and "qty x price ... total" under it.
+ */
+function itemColumns(room: number) {
+  if (room < 40) return null
+  const qty = 5, price = 8, total = 9, sn = 3
+  const item = room - sn - (qty + 1) - (price + 1) - (total + 1)
+  const row = (a: string, b: string, c: string, d: string, e: string) =>
+    a.padEnd(sn) + b.padEnd(item) + ' ' + c.padStart(qty) + ' ' + d.padStart(price) + ' ' + e.padStart(total)
+  return { item, row }
+}
+
+/** The receipt as the screen (preview) one, in ESC/POS: the same parts in the same order (owner 2026-11-28). */
 export function receiptEscPos(sale: PostedSale, boot: Bootstrap, logo: Raster | null = null, width = WIDTH): EscPos {
   const m = (v: number) => formatMoney(v, sale.currency, boot.company.exponent)
   const when = new Date(sale.occurred_at).toLocaleString('en-GB', { timeZone: boot.company.timezone, dateStyle: 'medium', timeStyle: 'short' })
   const p = new EscPos(width).align('center')
   if (logo) p.image(logo).feed()
-  p.bold(true).double(true).line(boot.company.name).double(false).bold(false)
-  p.line(boot.branch.name + (boot.branch.phone ? ` · Tel ${boot.branch.phone}` : ''))
+  // The company's name large when it fits on one line at double width; otherwise in bold, broken between words.
+  if (boot.company.name.length <= Math.floor(p.room / 2)) p.bold(true).double(true).line(boot.company.name).double(false).bold(false)
+  else p.bold(true).wrapped(boot.company.name).bold(false)
+  p.wrapped(boot.branch.name + (boot.branch.phone ? ` · Tel ${boot.branch.phone}` : ''))
   if (boot.company.tin || boot.company.vat_no) p.line([boot.company.tin && `TIN ${boot.company.tin}`, boot.company.vat_no && `VAT ${boot.company.vat_no}`].filter(Boolean).join(' '))
-  p.bold(true).line(`${sale.kind === 'return' ? 'RETURN' : 'Receipt'} ${sale.receipt_no}`).bold(false).line(`${when} · ${sale.cashier}`)
+  p.rule().bold(true).line(`${sale.kind === 'return' ? 'RETURN' : 'Receipt'} ${sale.receipt_no}`).bold(false).wrapped(`${when} · ${sale.cashier}`)
   if (sale.order_number) p.bold(true).line(`Order ${sale.order_number.slice(-3)}`).bold(false)
   if (sale.walk_in?.name) p.line(`Customer: ${sale.walk_in.name}`)
   p.align('left').rule()
-  for (const l of sale.lines) {
+  // Item amounts without the currency, which the column header states once (as on the screen receipt).
+  const n = (v: number) => m(v).replace(/^(-?)\S+ /, '$1')
+  const cols = itemColumns(p.room)
+  if (cols) p.bold(true).line(cols.row('SN', 'Item', 'Qty', 'Price', 'Total')).bold(false).line(`Amounts in ${m(0).split(' ')[0]}`).rule()
+  sale.lines.forEach((l, i) => {
     const unit = PLAIN_UNITS.has(l.uom) ? '' : ` ${l.uom}`
-    p.line(l.name)
-    p.columns(`  ${prettyQty(toMilli(l.qty))}${unit} x ${m(l.unit_price_minor)}`, m(l.line_total_minor))
+    const qty = `${prettyQty(toMilli(l.qty))}${unit}`
+    // A unit too wide for the Qty column ("12 CTN") goes with the name instead.
+    const fits = qty.length <= 5
+    const label = fits || !unit ? l.name : `${l.name} (${l.uom})`
+    const shortQty = fits ? qty : prettyQty(toMilli(l.qty))
+    const first = cols && cols.row(String(i + 1), wrap(label, cols.item - 1)[0], shortQty, n(l.unit_price_minor), n(l.line_total_minor))
+    if (cols && first && first.length <= p.room) {
+      // The name in its column, broken between words; the numbers on its first line.
+      const name = wrap(label, cols.item - 1)
+      p.line(first)
+      for (const more of name.slice(1)) p.line(cols.row('', more, '', '', '').trimEnd())
+    } else { // narrow paper, or amounts too wide for the columns: the name, then "qty x price ... total" under it
+      p.wrapped(l.name)
+      p.columns(`  ${qty} x ${m(l.unit_price_minor)}`, m(l.line_total_minor))
+    }
     for (const pr of l.promotions ?? []) p.columns(`  ${pr.name}`, `-${m(pr.saving_minor)}`)
-    if (l.note) p.line(`  ${l.note}`)
-    if (l.dosage) p.line(`  Dosage: ${l.dosage}`)
-    if (l.serials?.length) p.line(`  S/N ${l.serials.join(', ')}`)
-  }
+    if (l.note) p.wrapped(`   ${l.note}`)
+    if (l.dosage) p.wrapped(`   Dosage: ${l.dosage}`)
+    if (l.serials?.length) p.wrapped(`  S/N ${l.serials.join(', ')}`)
+  })
   if (sale.comment) p.rule().line(sale.comment)
   p.rule()
   if ((sale.discount_minor ?? 0) > 0) p.columns('You saved', m(sale.discount_minor ?? 0))
@@ -126,11 +184,11 @@ export function receiptEscPos(sale: PostedSale, boot: Bootstrap, logo: Raster | 
     if (sale.approved_by) p.columns('Approved by', sale.approved_by)
     p.feed().line('Customer ________________________').feed().line('Manager  ________________________')
   }
-  for (const line of footerLines(boot.receipt_footer)) p.line(line) // each message on its own line
+  for (const line of footerLines(boot.receipt_footer)) p.wrapped(line) // each message on its own line
   // The software maker's name and contact, in bold so they read clearly on thermal paper.
   p.bold(true)
-  for (const line of boot.brand?.credit ?? []) p.line(line)
-  if (boot.brand?.powered_by) p.line(boot.brand.powered_by)
+  for (const line of boot.brand?.credit ?? []) p.wrapped(line)
+  if (boot.brand?.powered_by) p.wrapped(boot.brand.powered_by)
   p.bold(false)
   return p.cut()
 }
