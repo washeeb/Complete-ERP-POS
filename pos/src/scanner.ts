@@ -5,8 +5,11 @@
  * types far faster than a person), and gives the beep and buzz people expect from a handheld.
  */
 
-/** A scanner sends each character within this many milliseconds of the last; a person types slower. */
-export const SCAN_GAP_MS = 35
+/**
+ * A scanner sends each character within this many milliseconds of the last (1–5 ms in practice); a person types slower
+ * (70–80 ms or more between keys, even a fast typist). 50 (was 35 until 2026-11-28) leaves room for a slow till.
+ */
+export const SCAN_GAP_MS = 50
 /** Shorter than this is a key someone pressed, not a barcode. */
 export const MIN_SCAN_LENGTH = 4
 
@@ -37,7 +40,9 @@ export function listenForScans(onScan: (code: string) => void): () => void {
     const t = e.target as HTMLElement | null
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return
     if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'AltGraph') return // capitals: Shift comes first
-    const now = performance.now()
+    // When the key was pressed, not when this handler ran: on a busy or slow till the page can handle keys late, and a
+    // scan measured late looks like a person typing (found 2026-11-28 by the handheld test while the screen was busy).
+    const now = e.timeStamp > 0 ? e.timeStamp : performance.now()
     if (keys.length && now - keys[keys.length - 1].at > SCAN_GAP_MS) keys = []
     keys.push({ key: e.key, at: now })
     const code = scannedCode(keys)

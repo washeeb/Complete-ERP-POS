@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import type { ReactElement } from 'react'
+import { AddCircleRegular, LockOpenRegular, MoneyRegular, VaultRegular } from '@fluentui/react-icons'
 import { ApiError, type Approval } from '../api'
 import { recordDrawer, shrinkPhoto, type DrawerBody } from '../drawer'
 import { openDrawer } from '../hardware'
@@ -9,6 +11,9 @@ import type { Bootstrap } from '../types'
 import { ManagerApproval } from './ManagerApproval'
 
 type Tab = 'payout' | 'payin' | 'drop' | 'no_sale'
+/** The icon on each drawer action (new look, part 3). */
+const ICON: Record<Tab, ReactElement> = { payout: <MoneyRegular />, payin: <AddCircleRegular />, drop: <VaultRegular />, no_sale: <LockOpenRegular /> }
+
 const TABS: { key: Tab; label: string }[] = [
   { key: 'payout', label: 'Pay out (expense)' }, { key: 'payin', label: 'Pay in' }, { key: 'drop', label: 'Cash drop' }, { key: 'no_sale', label: 'Open drawer (no sale)' },
 ]
@@ -98,12 +103,13 @@ export function DrawerScreen({ boot, online, initial = 'payout', onDone, onCance
     <div className="modal" role="dialog" aria-modal="true" aria-label="Drawer" onKeyDown={(e) => { if (e.key === 'Escape') { e.stopPropagation(); if (!busy) onCancel() } }}>
       <form className="card pay drawer" onSubmit={submit}>
         <h2>Drawer</h2>
-        <div className="row tabs" role="tablist" aria-label="What are you doing">
+        <div className="segmented pay-methods" role="tablist" aria-label="What are you doing">
           {TABS.map((t) => (
-            <button key={t.key} type="button" role="tab" aria-selected={tab === t.key} className={tab === t.key ? 'primary' : ''}
-              onClick={() => { setTab(t.key); setError('') }}>{t.label}</button>
+            <button key={t.key} type="button" role="tab" aria-selected={tab === t.key} className={tab === t.key ? 'active' : ''}
+              onClick={() => { setTab(t.key); setError('') }}><span className="pay-icon" aria-hidden>{ICON[t.key]}</span>{t.label}</button>
           ))}
         </div>
+        <div className="drawer-fields">
         {tab !== 'no_sale' && (
           <label>Amount ({boot.company.currency})
             <input autoFocus className="big mono" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} required />
@@ -134,6 +140,7 @@ export function DrawerScreen({ boot, online, initial = 'payout', onDone, onCance
             <p className="muted small">Keep the paper receipt with the cash. Above {money(drawer.payout_approval_minor)} a supervisor approves.</p>
           </>
         )}
+        </div>
         {tab === 'drop' && <p className="muted small">The supervisor counts the cash in front of you and takes it to the safe.</p>}
         {noSaleApproval && <p className="muted small">A manager approves opening the drawer without a sale.</p>}
         {needsSupervisor && <p className="muted small">Next, a {approver.toLowerCase()} approves: from their phone, or here with their card and PIN.</p>}
