@@ -1,3 +1,4 @@
+import { CheckmarkCircleFilled } from '@fluentui/react-icons'
 import qrcode from 'qrcode-generator'
 import { useEffect, useState } from 'react'
 import { footerLines } from '../footer'
@@ -109,7 +110,7 @@ function PrintButton({ sale, boot }: { sale: PostedSale; boot: Bootstrap }) {
     }
   }
   return <>
-    <button type="button" className="primary" onClick={() => void print()}>Print receipt</button>
+    <button type="button" onClick={() => void print()}>Print receipt</button>
     <button type="button" onClick={() => window.print()}>Show print preview</button>
     {note && <span className="small" role="alert">{note}</span>}
   </>
@@ -171,8 +172,10 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
   const when = new Date(sale.occurred_at).toLocaleString('en-GB', { timeZone: boot.company.timezone, dateStyle: 'medium', timeStyle: 'short' })
   const symbol = m(0).split(' ')[0]
 
+  const refund = sale.kind === 'return'
   return (
     <div className="receipt-screen">
+      <div className="receipt-paper">
       <div className="receipt" aria-label={`Receipt ${sale.receipt_no}`}>
         <header className="center">
           <ReceiptLogo boot={boot} />
@@ -266,13 +269,23 @@ export function Receipt({ sale, boot, onNew }: { sale: PostedSale; boot: Bootstr
           ))}
         </div>
       )}
-      <SendReceipt sale={sale} channels={boot.send_receipt ?? []} />
-      <div className="row no-print">
-        <PrintButton sale={sale} boot={boot} />
-        <DosageLabelsButton sale={sale} boot={boot} />
-        {isDesktop() && <button type="button" onClick={() => void openHardwareSetup()}>Printer and scale set-up</button>}
-        <button type="button" className="primary big" autoFocus onClick={onNew}>New sale</button>
       </div>
+      {/* The new look (part 2): what the cashier needs now, beside the receipt: done, the change to give, then print,
+          send and the next sale. */}
+      <section className="done-panel no-print" aria-label={refund ? 'Refund done' : 'Sale complete'}>
+        <p className="done-title"><CheckmarkCircleFilled className="done-icon" aria-hidden />{refund ? 'Refund done' : sale.status === 'queued' ? 'Sale saved on this till' : 'Sale complete'}</p>
+        <dl className="done-figures">
+          <dt>{refund ? 'Refunded' : 'Total'}</dt><dd>{m(sale.total_minor)}</dd>
+          {!refund && sale.change_minor > 0 && <><dt className="change">Change to give</dt><dd className="change">{m(sale.change_minor)}</dd></>}
+        </dl>
+        <button type="button" className="primary big new-sale" autoFocus onClick={onNew}>New sale</button>
+        <div className="row wrap">
+          <PrintButton sale={sale} boot={boot} />
+          <DosageLabelsButton sale={sale} boot={boot} />
+          {isDesktop() && <button type="button" onClick={() => void openHardwareSetup()}>Printer and scale set-up</button>}
+        </div>
+        <SendReceipt sale={sale} channels={boot.send_receipt ?? []} />
+      </section>
     </div>
   )
 }

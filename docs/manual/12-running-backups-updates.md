@@ -275,6 +275,8 @@ What's there:
 
 **Till favourites.** **Sales → Till favourites** chooses the products a branch's tills show first, as large tiles on a *Favourites* tab, in the order you set (up to 48). Type a name, SKU or barcode to add one; the arrows move it; the bin takes it off; **Save**. The tills show them within a few minutes. A branch manager can set their own branch's. **Why:** the items sold most, and those without a barcode (bread, loose items), are one tap away.
 
+**The till in the new look (payment and receipt).** The payment window shows the amount due in large figures, the ways to pay as large buttons with pictures, and the usual cash amounts as large buttons. After the sale, the receipt is on the left and *Sale complete* on the right, with the **change to give** in large figures and **New sale** first (Enter starts the next customer); print and send the receipt there. **Why:** the cashier sees at a glance what to collect and what to hand back.
+
 **Export on the rebuilt lists.** Till sales, Till shifts, Till drawer, Products, Stock on hand, the Stock ledger, Stock adjustments, Stock counts, Transfers, Stock requests, Customers, Invoices, Suppliers, Purchase orders, Goods received, Direct purchases, Invoices from suppliers, Reorder levels, Expense claims, Supplier bills and Supplier payments each have **Export**, as every list does.
 - **Excel**, **CSV** or **PDF** of what the list shows: its search, filters and order, all pages, not only the one on screen.
 - A PDF holds about 800 rows; for a longer list **Export to PDF** is greyed out and says so. Narrow the list (for example to a date range), or use Excel or CSV, which take everything. **Why:** a PDF is laid out in the server's memory, and a very long one would stop it.

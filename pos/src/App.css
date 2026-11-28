@@ -89,12 +89,36 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
 .grand { font-size: 1.8rem; }
 
 .modal { position: fixed; inset: 0; background: rgb(0 0 0 / .45); display: grid; place-items: center; padding: 12px; z-index: 10; }
-.pay { width: min(640px, 100%); display: grid; gap: 12px; max-height: 95vh; overflow: auto; }
+.pay { width: min(720px, 100%); display: grid; gap: 14px; max-height: 95vh; overflow: auto; box-shadow: var(--shadow28); }
+/* The payment window (new look, part 2): the amount due large, the ways to pay as tiles with icons, quick cash as a grid. */
+.pay-totals { padding: 12px 14px; border-radius: 10px; background: var(--bg); }
+.pay-totals .due { font-size: 1.9rem; font-weight: 700; }
+.pay-totals dd.due { color: var(--colorBrandForeground1); }
+.pay-totals .change { font-size: 1.5rem; font-weight: 700; }
+.pay-methods { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px; }
+.pay-methods button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 76px; font-weight: 600; }
+.pay-icon { font-size: 26px; line-height: 0; }
+.quick-cash { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.quick-cash button { min-height: 60px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .segmented { display: flex; gap: 6px; } .segmented button { flex: 1; } .segmented .active { background: var(--primary); color: var(--primary-text); }
 .chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-weight: 500; }
 .payments { margin: 0; padding-left: 1.2rem; }
 
-.receipt-screen { display: grid; justify-content: center; gap: 12px; }
+/* The receipt screen (new look, part 2): the receipt as it prints on the left, "Sale complete" on the right. */
+.receipt-screen { display: grid; grid-template-columns: auto minmax(300px, 420px); justify-content: center; align-items: start; gap: 24px; padding-bottom: 48px; }
+.receipt-paper { display: grid; gap: 12px; justify-items: center; }
+.receipt-paper .receipt { box-shadow: var(--shadow8); border-radius: 4px; }
+.done-panel { position: sticky; top: 12px; display: grid; gap: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; box-shadow: var(--shadow4); }
+.done-title { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 1.4rem; font-weight: 700; }
+.done-icon { font-size: 32px; color: var(--colorPaletteGreenForeground1); }
+.done-figures { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; margin: 0; font-variant-numeric: tabular-nums; }
+.done-figures dd { margin: 0; text-align: right; }
+.done-figures .change { font-size: 1.6rem; font-weight: 700; }
+.new-sale { width: 100%; min-height: 64px; font-size: 1.4rem; }
+.done-panel .send-receipt { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; }
+.done-panel .send-receipt input { width: 100%; }
+.done-panel .send-receipt > button, .done-panel .send-receipt > [role=status] { grid-column: 1 / -1; }
+@media (max-width: 900px) { .receipt-screen { grid-template-columns: 1fr; } .done-panel { position: static; order: -1; } }
 .receipt { background: #fff; color: #000; width: 80mm; padding: 4mm; font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
 .receipt h2 { font-size: 15px; margin: 0 0 2px; color: #000; font-family: inherit; } .receipt .small { font-size: 10px; } .receipt p { margin: 2px 0; text-align: left; }
 .receipt .center, .receipt .center p { text-align: center; }
@@ -120,6 +144,7 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
   body { background: #fff; } .app { padding: 0; }
   .no-print, .status { display: none !important; }
   .receipt-screen { display: block; } .receipt { width: 80mm; }
+  .till-root { background: #fff !important; } .receipt-paper .receipt { box-shadow: none; border-radius: 0; } /* the new look stays on screen */
 }
 .banner.bad { background: var(--bad-bg); color: var(--bad-text); }
 .banner.ok { background: var(--ok-bg); color: var(--ok-text); }

@@ -52,7 +52,8 @@ async function serve(page: Page, opts: { practice?: boolean; problems?: unknown[
       case 'POST pos/sales': {
         const b = req.postDataJSON()
         return json(route, 201, { replayed: false, sale: { id: b.id, receipt_no: 'HQ-T01A-000001', device_seq: b.device_seq, status: 'posted', occurred_at: b.occurred_at,
-          cashier: 'Efua', currency: 'GHS', prices_include_tax: true, ...b.totals, paid_minor: b.totals.total_minor, change_minor: 0, tax_breakdown: [],
+          cashier: 'Efua', currency: 'GHS', prices_include_tax: true, ...b.totals, paid_minor: b.totals.total_minor, tax_breakdown: [],
+          change_minor: Math.max(0, (b.payments ?? []).reduce((t: number, p: { tendered_minor?: number; amount_minor: number }) => t + (p.tendered_minor ?? p.amount_minor), 0) - b.totals.total_minor),
           lines: [{ line_no: 1, sku: 'MILO', name: 'Milo 400g', uom: 'PC', qty: '1.000', unit_price_minor: 5800, line_total_minor: 5800 }],
           payments: [{ method: 'cash', amount_minor: 5800, tendered_minor: 5800, reference: null }], kind: 'sale', discount_minor: 0, licence_keys: [],
           fiscal: { status: 'submitted', code: 'GRA-77', qr: 'https://evat.example/77', mode: 'realtime' } } })
@@ -144,6 +145,26 @@ test('sells from the product tiles: a category, then a tile; typing shows the se
   await page.getByLabel('Scan or search').fill('mil')
   await expect(page.getByRole('group', { name: 'Products' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: /Milo 400g/ })).toBeVisible()
+})
+
+test('after the sale, the receipt screen says the change to give, large, with New sale first', async ({ page }) => {
+  await serve(page)
+  await page.goto('/')
+  await page.getByPlaceholder('ABCD-EFGH-JKMN').fill('ABCD-EFGH-JKMN')
+  await page.getByRole('button', { name: 'Enrol this device' }).click()
+  await page.getByLabel('Username').fill('efua')
+  await page.getByLabel('PIN', { exact: true }).fill('482613')
+  await page.getByRole('button', { name: 'OK' }).click()
+  await page.getByLabel('Scan or search').fill('milo')
+  await page.getByRole('button', { name: /Milo 400g/ }).click()
+  await page.keyboard.press('F12')
+  const pay = page.getByRole('dialog', { name: 'Payment' })
+  await expect(pay.getByRole('tablist', { name: 'Ways to pay' }).getByRole('tab', { name: 'Cash' })).toHaveAttribute('aria-selected', 'true')
+  await pay.getByRole('group', { name: 'Cash received: quick amounts' }).getByRole('button', { name: 'GH₵ 60.00' }).click()
+  const done = page.getByRole('region', { name: 'Sale complete' })
+  await expect(done.getByText('Change to give')).toBeVisible()
+  await expect(done.getByText('GH₵ 2.00')).toBeVisible()
+  await expect(done.getByRole('button', { name: 'New sale' })).toBeFocused() // Enter starts the next customer
 })
 
 test('a till set to the search list (Till settings → Selling screen) shows no tiles', async ({ page }) => {
