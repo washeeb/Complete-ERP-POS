@@ -224,6 +224,7 @@ const REBUILT: { admin: RegExp; app: (m: RegExpMatchArray, query: URLSearchParam
   { admin: /^\/admin\/access-review\/?$/, app: () => `${APP}/who-can-do-what` },
   { admin: /^\/admin\/it-activity\/?$/, app: () => `${APP}/it-activity` },
   { admin: /^\/admin\/staff-cards\/?$/, app: () => `${APP}/staff-cards` },
+  { admin: /^\/admin\/till-favourites\/?$/, app: () => `${APP}/till-favourites` },
   { admin: /^\/admin\/manage-settings\/?$/, app: () => `${APP}/settings` },
   { admin: /^\/admin\/manage-modules\/?$/, app: () => `${APP}/modules` },
   { admin: /^\/admin\/messaging\/?$/, app: () => `${APP}/messaging` },
@@ -353,7 +354,7 @@ export type Route = { page: 'home' } | { page: 'todo' } | { page: 'sales' } | { 
   | { page: 'direct-purchases' } | { page: 'direct-purchase'; id: string } | { page: 'direct-purchase-form'; id: string | null }
   | { page: 'supplier-invoices' } | { page: 'consignment-to-pay' } | { page: 'reorder-levels' } | { page: 'what-to-order' } | { page: 'suggested-levels' }
   | { page: 'expense-claims' } | { page: 'expense-claim'; id: string } | { page: 'expense-claim-form' }
-  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'expiry' } | { page: 'close-day' } | { page: 'cash-desk' } | { page: 'income-control' } | { page: 'cash-setup' } | { page: 'markdowns'; industry: 'grocery' | 'pharmacy' } | { page: 'returns' } | { page: 'journals' } | { page: 'accounts' } | { page: 'month-end' } | { page: 'budgets' } | { page: 'bank-accounts' } | { page: 'reconcile'; id: string } | { page: 'money-moved' } | { page: 'fixed-assets' } | { page: 'fixed-asset'; id: string } | { page: 'asset-kinds' } | { page: 'accounting-export' } | { page: 'gra-evat' } | { page: 'gra-evat-report'; id: string } | { page: 'users' } | { page: 'user'; id: string } | { page: 'roles' } | { page: 'role'; id: string | null } | { page: 'access-requests' } | { page: 'settings' } | { page: 'modules' } | { page: 'messaging' } | { page: 'message-templates' } | { page: 'message-log' } | { page: 'devices' } | { page: 'computers' } | { page: 'pricing-rules' } | { page: 'promotions' } | { page: 'price-list' } | { page: 'prescriptions' } | { page: 'nhis-claims' } | { page: 'nhis-claim'; id: string } | { page: 'medicine-signoffs' } | { page: 'refill-reminders' } | { page: 'drug-interactions' } | { page: 'controlled-drug-register' } | { page: 'shared-products' } | { page: 'prices-to-review' } | { page: 'reference-list'; kind: 'categories' | 'brands' | 'units' | 'tax-rates' | 'tax-groups' | 'price-lists' } | { page: 'company-wide-access' } | { page: 'who-can-do-what' } | { page: 'it-activity' } | { page: 'staff-cards' } | { page: 'journal'; id: string }
+  | { page: 'supplier-bills' } | { page: 'supplier-bill'; id: string } | { page: 'supplier-bill-form' } | { page: 'supplier-payments' } | { page: 'aged-payables' } | { page: 'withholding-tax' } | { page: 'financial-reports' } | { page: 'insights' } | { page: 'report-builder' } | { page: 'saved-reports' } | { page: 'shrink' } | { page: 'slow-stock' } | { page: 'batches' } | { page: 'expiry' } | { page: 'close-day' } | { page: 'cash-desk' } | { page: 'income-control' } | { page: 'cash-setup' } | { page: 'markdowns'; industry: 'grocery' | 'pharmacy' } | { page: 'returns' } | { page: 'journals' } | { page: 'accounts' } | { page: 'month-end' } | { page: 'budgets' } | { page: 'bank-accounts' } | { page: 'reconcile'; id: string } | { page: 'money-moved' } | { page: 'fixed-assets' } | { page: 'fixed-asset'; id: string } | { page: 'asset-kinds' } | { page: 'accounting-export' } | { page: 'gra-evat' } | { page: 'gra-evat-report'; id: string } | { page: 'users' } | { page: 'user'; id: string } | { page: 'roles' } | { page: 'role'; id: string | null } | { page: 'access-requests' } | { page: 'settings' } | { page: 'modules' } | { page: 'messaging' } | { page: 'message-templates' } | { page: 'message-log' } | { page: 'devices' } | { page: 'computers' } | { page: 'pricing-rules' } | { page: 'promotions' } | { page: 'price-list' } | { page: 'prescriptions' } | { page: 'nhis-claims' } | { page: 'nhis-claim'; id: string } | { page: 'medicine-signoffs' } | { page: 'refill-reminders' } | { page: 'drug-interactions' } | { page: 'controlled-drug-register' } | { page: 'shared-products' } | { page: 'prices-to-review' } | { page: 'reference-list'; kind: 'categories' | 'brands' | 'units' | 'tax-rates' | 'tax-groups' | 'price-lists' } | { page: 'company-wide-access' } | { page: 'who-can-do-what' } | { page: 'it-activity' } | { page: 'staff-cards' } | { page: 'till-favourites' } | { page: 'journal'; id: string }
   | { page: 'requests' } | { page: 'request'; id: string } | { page: 'request-form' }
   | { page: 'transfers' } | { page: 'transfer'; id: string } | { page: 'transfer-form'; id: string | null } | { page: 'classic'; admin: string }
 
@@ -650,6 +651,7 @@ export function routeOf(path: string, search = ''): Route {
   if (/^\/office\/who-can-do-what\/?$/.test(path)) return { page: 'who-can-do-what' }
   if (/^\/office\/it-activity\/?$/.test(path)) return { page: 'it-activity' }
   if (/^\/office\/staff-cards\/?$/.test(path)) return { page: 'staff-cards' }
+  if (/^\/office\/till-favourites\/?$/.test(path)) return { page: 'till-favourites' }
   const us = path.match(new RegExp(`^/office/users/(${UUID})/?$`))
   if (us) return { page: 'user', id: us[1] }
   const ev = path.match(new RegExp(`^/office/gra-evat/(${UUID})/?$`))
@@ -896,6 +898,7 @@ export function adminEquivalent(route: Route): string | null {
     case 'who-can-do-what': return '/admin/access-review'
     case 'it-activity': return '/admin/it-activity'
     case 'staff-cards': return '/admin/staff-cards'
+    case 'till-favourites': return '/admin/till-favourites'
     default: return null
   }
 }

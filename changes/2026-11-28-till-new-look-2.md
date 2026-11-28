@@ -1,0 +1,2 @@
+### Changed
+- **The till in the new look, part 2: payment and receipt.** The payment window shows the amount due large in the company's colour, the ways to pay as large tiles with icons (cash, mobile money, card, account, points, gift card, store credit) and the quick cash amounts as large buttons. The receipt screen shows the receipt as it prints on the left and *Sale complete* on the right: the total, the **change to give** in large figures, **New sale** first (focused: Enter starts the next customer), then print and send.

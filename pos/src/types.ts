@@ -176,6 +176,9 @@ export type TillCustomer = { id: string; code: string; name: string; phone: stri
   allergies?: string[]; nhis_no?: string | null; nhis_expires_on?: string | null } // patient details: pharmacy staff only
 
 // Promotions as the till caches them (the engine input plus when/where they run)
+/** A product category, for the selling screen's tiles. */
+export type Category = { id: string; name: string }
+
 export type PromotionRow = import('./promotions').Promotion & {
   starts_at: string | null; ends_at: string | null; days: number[]; time_from: string | null; time_to: string | null; branch_ids: string[]; price_list_ids: string[]
 }

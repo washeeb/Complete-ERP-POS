@@ -487,7 +487,7 @@ export function CloseShift({ boot, online, onClosed, onCancel }: { boot: Bootstr
   }
 
   return (
-    <form className={`card narrow${byNotes ? ' count' : ''}`} onSubmit={submit}>
+    <form className={`card narrow close-shift${byNotes ? ' count' : ''}`} onSubmit={submit}>
       <h1>Close shift</h1>
       <p className="muted">Count all the cash in the {boot.cash?.vaults ? 'tray' : 'drawer'}, including the float.</p>
       {byNotes ? (

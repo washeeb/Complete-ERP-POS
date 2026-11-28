@@ -1,0 +1,2 @@
+### Changed
+- **The till in the new look, part 5b: the industry screens.** A fashion style is one tile, named after the style; pressing it opens the size-and-colour grid. Products the till adds by itself (a restaurant's service charge, the alteration charge) are no longer tiles. The prescription window's fields sit in two even columns. The other industry windows (tables and bills, bookings, deliveries, repairs and serial numbers, appointments and passes, the van's route, the handheld) keep their layouts and have the new colours.

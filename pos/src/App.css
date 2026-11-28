@@ -4,6 +4,13 @@
   --ok-bg: #dcfce7; --ok-text: #14532d; --bad-bg: #fee2e2; --bad-text: #7f1d1d; color-scheme: light;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 16px; color: var(--text);
 }
+/* The new look (part 48): inside the Fluent theme (ui/TillTheme.tsx, class till-root) the till's colours come from it,
+   in the company's colour and readable in light and dark; the status colours below stay the till's own. */
+.till-root { --bg: var(--colorNeutralBackground2); --panel: var(--colorNeutralBackground1); --text: var(--colorNeutralForeground1);
+  --muted: var(--colorNeutralForeground3); --line: var(--colorNeutralStroke2); --primary: var(--colorBrandBackground);
+  --primary-text: var(--colorNeutralForegroundOnBrand); --accent: var(--colorBrandForegroundLink);
+  min-height: 100vh; background: var(--bg); color: var(--text); font-family: var(--fontFamilyBase); }
+
 /* Theme: System follows the device; Light or Dark is chosen on the device (theme.ts sets <html data-theme>). */
 :root[data-theme="dark"] { --bg: #0b1120; --panel: #111827; --text: #f3f4f6; --muted: #9ca3af; --line: #1f2937;
     --primary: #e5e7eb; --primary-text: #111827; --accent: #60a5fa; --danger: #f87171; --warn-bg: #422006; --warn-text: #fde68a;
@@ -54,11 +61,18 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
 .idle-lock .who-band { display: block; text-align: center; margin: 0 0 8px; font-size: 1.4rem; padding: 10px; border-radius: 8px; }
 .vault-choice.taken { opacity: .55; }
 .card-scanned { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--accent); border-radius: 8px; }
-.sell { display: grid; grid-template-columns: minmax(280px, 2fr) 3fr; grid-template-rows: auto auto 1fr; gap: 12px; height: calc(100vh - 24px); }
-.topbar { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-.sell > .banner { grid-column: 1 / -1; }
-.find, .cart { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; overflow: auto; }
+/* The selling screen (new look, part 48): the top bar and any banners, then the work area filling the rest of the
+   screen: products (tiles or the search list) on the left, the cart on the right. */
+.sell { display: flex; flex-direction: column; gap: 12px; height: calc(100vh - 24px - 40px); } /* 40px: the Theme, Report a problem and Connected pills at the bottom */
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
+.topbar button { padding: 8px 12px; }
+.work { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(300px, 3fr) minmax(360px, 2fr); gap: 12px; }
+.find, .cart { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; overflow: auto; box-shadow: var(--shadow4); min-height: 0; }
+.find { display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.find .results { overflow-y: auto; margin-top: 0; }
 .find input { width: 100%; }
+.pay-btn { min-height: 64px; font-size: 1.4rem; flex: 1 1 220px; }
+@media (max-width: 900px) { .work { grid-template-columns: 1fr; grid-auto-rows: minmax(260px, auto); } .sell { height: auto; } }
 .results { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 6px; }
 .results li { display: flex; gap: 6px; }
 .results li > button:first-child { flex: 1; text-align: left; display: flex; align-items: center; }
@@ -75,12 +89,64 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
 .grand { font-size: 1.8rem; }
 
 .modal { position: fixed; inset: 0; background: rgb(0 0 0 / .45); display: grid; place-items: center; padding: 12px; z-index: 10; }
-.pay { width: min(640px, 100%); display: grid; gap: 12px; max-height: 95vh; overflow: auto; }
+.pay { width: min(720px, 100%); display: grid; gap: 14px; max-height: 95vh; overflow: auto; box-shadow: var(--shadow28); }
+/* The payment window (new look, part 2): the amount due large, the ways to pay as tiles with icons, quick cash as a grid. */
+.pay-totals { padding: 12px 14px; border-radius: 10px; background: var(--bg); }
+.pay-totals .due { font-size: 1.9rem; font-weight: 700; }
+.pay-totals dd.due { color: var(--colorBrandForeground1); }
+.pay-totals .change { font-size: 1.5rem; font-weight: 700; }
+.pay-methods { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px; }
+.pay-methods button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 76px; font-weight: 600; }
+.pay-icon { font-size: 26px; line-height: 0; }
+/* The prescription window (new look, part 5b): rows of fields share the width, the patient line spreads out. */
+.rx { width: min(760px, 100%); }
+.rx > .row:has(> label) > label { flex: 1 1 0; min-width: 0; }
+.rx > .row:has(> span) { justify-content: space-between; }
+/* Sign-in (new look, part 5a): the company in its colour on one side, the sign-in card on the other. */
+.signin-layout { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(360px, 1fr); min-height: calc(100vh - 64px); gap: 0; }
+.signin-brand { display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 40px 48px; border-radius: 16px; margin: 12px;
+  background: var(--colorBrandBackground); color: var(--colorNeutralForegroundOnBrand); }
+.signin-brand p { margin: 0; }
+.signin-logo { max-width: 220px; max-height: 96px; object-fit: contain; align-self: flex-start; margin-bottom: 18px; border-radius: 8px; background: #fff; padding: 8px; }
+.signin-company { font-size: 2rem; font-weight: 700; line-height: 1.2; }
+.signin-where { font-size: 1.1rem; }
+.signin-time { font-size: 3.4rem; font-weight: 700; line-height: 1.1; margin-top: 28px !important; font-variant-numeric: tabular-nums; }
+.signin-date { font-size: 1.1rem; line-height: 1.4; margin-top: 4px !important; }
+.signin-powered { margin-top: auto !important; font-size: .85rem; } /* full strength: dimmed text on the brand colour falls below WCAG contrast */
+.signin-card { display: grid; align-content: center; }
+.signin-card .narrow { margin: 0 auto; }
+@media (max-width: 900px) { .signin-layout { grid-template-columns: 1fr; } .signin-brand { padding: 20px 24px; } .signin-time { font-size: 2.2rem; margin-top: 8px !important; } }
+/* The customer at the top of the cart (new look, part 4). */
+.cart-customer { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+.cart-customer .chip { flex: 1 1 auto; justify-content: space-between; }
+/* The return window (new look, part 4): the items full width, the refund large like Due. */
+.return { width: min(820px, 100%); }
+.return table { width: 100%; border-collapse: collapse; } .return th, .return td { padding: 6px; border-bottom: 1px solid var(--line); text-align: left; } .return .num { text-align: right; }
+/* The Drawer window (new look, part 3): the same tiles; its fields in two columns on a wide screen. */
+.drawer { width: min(860px, 100%); }
+.drawer-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px 16px; align-items: start; }
+.drawer-fields > p, .drawer-fields > img { grid-column: 1 / -1; }
+.quick-cash { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.quick-cash button { min-height: 60px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .segmented { display: flex; gap: 6px; } .segmented button { flex: 1; } .segmented .active { background: var(--primary); color: var(--primary-text); }
 .chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-weight: 500; }
 .payments { margin: 0; padding-left: 1.2rem; }
 
-.receipt-screen { display: grid; justify-content: center; gap: 12px; }
+/* The receipt screen (new look, part 2): the receipt as it prints on the left, "Sale complete" on the right. */
+.receipt-screen { display: grid; grid-template-columns: auto minmax(300px, 420px); justify-content: center; align-items: start; gap: 24px; padding-bottom: 48px; }
+.receipt-paper { display: grid; gap: 12px; justify-items: center; }
+.receipt-paper .receipt { box-shadow: var(--shadow8); border-radius: 4px; }
+.done-panel { position: sticky; top: 12px; display: grid; gap: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; box-shadow: var(--shadow4); }
+.done-title { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 1.4rem; font-weight: 700; }
+.done-icon { font-size: 32px; color: var(--colorPaletteGreenForeground1); }
+.done-figures { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; margin: 0; font-variant-numeric: tabular-nums; }
+.done-figures dd { margin: 0; text-align: right; }
+.done-figures .change { font-size: 1.6rem; font-weight: 700; }
+.new-sale { width: 100%; min-height: 64px; font-size: 1.4rem; }
+.done-panel .send-receipt { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; }
+.done-panel .send-receipt input { width: 100%; }
+.done-panel .send-receipt > button, .done-panel .send-receipt > [role=status] { grid-column: 1 / -1; }
+@media (max-width: 900px) { .receipt-screen { grid-template-columns: 1fr; } .done-panel { position: static; order: -1; } }
 .receipt { background: #fff; color: #000; width: 80mm; padding: 4mm; font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
 .receipt h2 { font-size: 15px; margin: 0 0 2px; color: #000; font-family: inherit; } .receipt .small { font-size: 10px; } .receipt p { margin: 2px 0; text-align: left; }
 .receipt .center, .receipt .center p { text-align: center; }
@@ -106,6 +172,7 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
   body { background: #fff; } .app { padding: 0; }
   .no-print, .status { display: none !important; }
   .receipt-screen { display: block; } .receipt { width: 80mm; }
+  .till-root { background: #fff !important; } .receipt-paper .receipt { box-shadow: none; border-radius: 0; } /* the new look stays on screen */
 }
 .banner.bad { background: var(--bad-bg); color: var(--bad-text); }
 .banner.ok { background: var(--ok-bg); color: var(--ok-text); }
@@ -209,6 +276,12 @@ fieldset.choices button.active, .segmented button.active { background: var(--pri
 /* Cash count by notes and coins: two groups side by side (one under the other on a narrow screen), one line per
    denomination: name, how many, what they come to. Inputs never grow past their column. */
 .narrow.count { max-width: 760px; }
+/* Closing a shift (new look, part 3): wide enough for the cash count and the other checks side by side, so it fits a till
+   screen without scrolling; the total counted stands out. */
+.narrow.close-shift { max-width: 900px; margin-top: 3vh; }
+.close-shift .other-checks { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.close-shift .denoms-total strong { font-size: 1.6rem; color: var(--colorBrandForeground1); }
+.close-shift > .row { position: sticky; bottom: 0; background: var(--panel); padding: 10px 0 0; border-top: 1px solid var(--line); }
 .denoms { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px 28px; }
 .denom-group { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 6px; align-content: start; }
 .denom-group legend { padding: 0; margin-bottom: 4px; font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }

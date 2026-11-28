@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import type { Bootstrap, Product, PromotionRow, TillCustomer, Grocery, Pharmacy, Restaurant, Fashion, Services } from './types'
+import type { Bootstrap, Category, Product, PromotionRow, TillCustomer, Grocery, Pharmacy, Restaurant, Fashion, Services } from './types'
 
 /**
  * Till-local storage (IndexedDB). The till must keep working when the server is unreachable:
@@ -19,7 +19,7 @@ export type CounterRecord = { id: 'receipt_seq'; value: number }
 export type LocalShift = { id: 'shift'; shiftId: string; openedAt: string; floatMinor: number; cashMinor: number; queued: boolean; openedById?: string; openedByName?: string; vault?: boolean; vaultName?: string | null; limitAlerted?: boolean } // vault: opened on a cash-control vault (the close stays blind)
 export type CacheRecord =
   | { id: 'bootstrap'; data: Bootstrap; savedAt: string }
-  | { id: 'catalog'; version: string; products: Product[]; promotions?: PromotionRow[]; utc_offset_minutes?: number; grocery?: Grocery | null; pharmacy?: Pharmacy | null; restaurant?: Restaurant | null; electronics?: boolean; fashion?: Fashion | null; services?: Services | null; savedAt: string; stockVersion?: string }
+  | { id: 'catalog'; version: string; products: Product[]; categories?: Category[]; favourites?: string[]; promotions?: PromotionRow[]; utc_offset_minutes?: number; grocery?: Grocery | null; pharmacy?: Pharmacy | null; restaurant?: Restaurant | null; electronics?: boolean; fashion?: Fashion | null; services?: Services | null; savedAt: string; stockVersion?: string }
   | { id: 'customers'; version: string; customers: TillCustomer[]; savedAt: string }
   | { id: `brand:${string}`; url: string; dataUrl: string; savedAt: string }
   | { id: `wms:${string}`; data: unknown; savedAt: string } // warehouse handheld: its lists and scan catalogue, for working offline

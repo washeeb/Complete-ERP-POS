@@ -2,7 +2,8 @@ import { makeStyles, Text, ToggleButton, tokens } from '@fluentui/react-componen
 import type { ReactNode } from 'react'
 
 const useStyles = makeStyles({
-  page: { flex: '1 1 auto', overflowY: 'auto', padding: '16px 20px 32px', '--zx-pad-t': '16px', '--zx-pad-x': '20px', '--zx-pad-b': '32px',
+  // A column, so a form's save bar can sit at the foot of the window even when the form is short (SaveBar: marginTop auto).
+  page: { flex: '1 1 auto', overflowY: 'auto', display: 'flex', flexDirection: 'column', '& > *': { flexShrink: 0 }, padding: '16px 20px 32px', '--zx-pad-t': '16px', '--zx-pad-x': '20px', '--zx-pad-b': '32px',
     '@media (max-width: 760px)': { padding: '12px 10px 24px', '--zx-pad-t': '12px', '--zx-pad-x': '10px', '--zx-pad-b': '24px' } },
   head: { display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' },
   title: { fontSize: '22px', fontWeight: tokens.fontWeightSemibold, margin: 0 },

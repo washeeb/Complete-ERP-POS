@@ -98,7 +98,7 @@ export function ReturnScreen({ boot, money, onDone }: { boot: Bootstrap; money: 
 
   return (
     <div className="modal" role="dialog" aria-modal="true" aria-label="Return" onKeyDown={(e) => e.key === 'Escape' && onDone(null)}>
-      <div className="card pay">
+      <div className="card pay return">
         <h2>Return</h2>
         <form className="row wrap" onSubmit={lookup}>
           <input autoFocus aria-label="Receipt number" placeholder="Receipt number (scan or type)" className="mono" value={receipt} onChange={(e) => setReceipt(e.target.value)} />
@@ -116,7 +116,7 @@ export function ReturnScreen({ boot, money, onDone }: { boot: Bootstrap; money: 
                     disabled={toMilli(l.returnable_qty) === 0} /></td></tr>
               ))}</tbody>
             </table>
-            <p className="strong">Refund {money(value)}</p>
+            <dl className="totals pay-totals"><dt className="strong due">Refund</dt><dd className="strong due">{money(value)}</dd></dl>
             {!creditOnly && refunds.map((t) => (
               <div key={t.method} className="row wrap">
                 <span>{METHOD[t.method] ?? t.method}: {money(t.amount)}</span>

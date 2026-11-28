@@ -74,8 +74,9 @@ test('receives a purchase order by scanning on the handheld', async ({ page }) =
   }
   // The third with the cursor out of the box (after tapping the page), as a scanner types it: fast, ending with Tab.
   await page.locator('body').click({ position: { x: 5, y: 5 } })
-  await page.keyboard.type('2000099', { delay: 5 })
-  await page.keyboard.press('Tab')
+  // A scanner's keys arrive together; Playwright's keyboard sends each key on its own round trip, ~25 ms apart and more
+  // on a busy machine, so the burst is sent inside the page, as the scanner's would be.
+  await page.evaluate(() => { for (const key of [...'2000099', 'Tab']) document.body.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })) })
   await expect(page.getByLabel('Received now Gino tomato paste 400g')).toHaveValue('3')
   await page.getByLabel('Into bin').selectOption('bin-a1')
   await page.getByRole('button', { name: 'Post receipt' }).click()

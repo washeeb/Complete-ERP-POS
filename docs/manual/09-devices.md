@@ -119,7 +119,7 @@ Receipts then **print by themselves** the moment the sale is done, without a pri
 - **Cash drawer:** open after cash sales; **Open the drawer (test)** needs a manager's PIN, like opening it without a sale.
 - **Weighing scale:** port and speed, and **Read the scale**.
 - **Barcode scanner:** scan into the box to see exactly what the scanner sends; a **beep** after each scan (high: found, low: not found).
-- **Screen:** light, dark or like the computer; text size normal, larger or largest.
+- **Screen:** light, dark or like the computer; text size normal, larger or largest; and the **selling screen**: *product tiles and the cart* (the standard: the categories as tabs and each product as a large tile to tap, beside the cart) or *search list and the cart* (scanning and typing only, as before the new look). **Why:** tiles are quickest on a touch screen and for items without a barcode; a shop that scans everything may prefer the plain list.
 Saving needs the server (so the change is approved and recorded). Printer, drawer and scale are kept on the till computer itself.
 
 **Starting the till (0.28 or later):** a till already set up opens straight on the till: the window stays hidden until the till is drawn, so there is no white window and no set-up page in between. The set-up page appears only on first start, from *Till set-up*, or when the server never answered. To print only when the cashier presses **Print receipt**: **System → Settings → Tills and cash → Desktop till prints each receipt by itself** (on by default).

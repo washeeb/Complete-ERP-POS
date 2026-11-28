@@ -21,7 +21,11 @@ const bootstrap = {
   receipt_footer: 'Thank you', shift, last_device_seq: 0, catalog_version: 'v1', server_time: new Date().toISOString(), send_receipt: ['sms', 'email'],
 }
 const catalogBody = { version: 'v1', generated_at: new Date().toISOString(), utc_offset_minutes: 0, promotions: [], grocery: null, pharmacy: null, restaurant: null, electronics: false, fashion: null, services: null,
-  products: [{ id: 'milo', sku: 'MILO', name: 'Milo 400g', category_id: null, track_stock: true, on_hand: '40.000', tax: [],
+  categories: [{ id: 'c-drinks', name: 'Drinks' }, { id: 'c-snacks', name: 'Snacks' }], favourites: ['plantain'],
+  products: [{ id: 'plantain', sku: 'CHIPS', name: 'Plantain chips', category_id: 'c-snacks', track_stock: false, on_hand: null, tax: [],
+    units: [{ id: 'u-chips', uom_code: 'PC', uom_name: 'Piece', decimals: 0, factor: '1.000000', is_base: true, barcodes: [] }],
+    prices: [{ price_list_id: 'pl', product_uom_id: 'u-chips', min_qty: '1', amount_minor: 1200, starts_at: null, ends_at: null }] },
+  { id: 'milo', sku: 'MILO', name: 'Milo 400g', category_id: 'c-drinks', track_stock: true, on_hand: '40.000', tax: [],
     units: [{ id: 'u-milo', uom_code: 'PC', uom_name: 'Piece', decimals: 0, factor: '1.000000', is_base: true, barcodes: [] }],
     prices: [{ price_list_id: 'pl', product_uom_id: 'u-milo', min_qty: '1', amount_minor: 5800, starts_at: null, ends_at: null }] }] }
 
@@ -48,7 +52,8 @@ async function serve(page: Page, opts: { practice?: boolean; problems?: unknown[
       case 'POST pos/sales': {
         const b = req.postDataJSON()
         return json(route, 201, { replayed: false, sale: { id: b.id, receipt_no: 'HQ-T01A-000001', device_seq: b.device_seq, status: 'posted', occurred_at: b.occurred_at,
-          cashier: 'Efua', currency: 'GHS', prices_include_tax: true, ...b.totals, paid_minor: b.totals.total_minor, change_minor: 0, tax_breakdown: [],
+          cashier: 'Efua', currency: 'GHS', prices_include_tax: true, ...b.totals, paid_minor: b.totals.total_minor, tax_breakdown: [],
+          change_minor: Math.max(0, (b.payments ?? []).reduce((t: number, p: { tendered_minor?: number; amount_minor: number }) => t + (p.tendered_minor ?? p.amount_minor), 0) - b.totals.total_minor),
           lines: [{ line_no: 1, sku: 'MILO', name: 'Milo 400g', uom: 'PC', qty: '1.000', unit_price_minor: 5800, line_total_minor: 5800 }],
           payments: [{ method: 'cash', amount_minor: 5800, tendered_minor: 5800, reference: null }], kind: 'sale', discount_minor: 0, licence_keys: [],
           fiscal: { status: 'submitted', code: 'GRA-77', qr: 'https://evat.example/77', mode: 'realtime' } } })
@@ -59,7 +64,9 @@ async function serve(page: Page, opts: { practice?: boolean; problems?: unknown[
 }
 
 async function axe(page: Page, what: string) {
-  const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).analyze()
+  // Fluent UI's focus helpers (Tabster "dummy" elements around arrow-key groups such as the category tabs) are hidden,
+  // move focus on at once and hold no content: not something a cashier can land on or read, so axe leaves them out.
+  const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']).exclude('[data-tabster-dummy]').analyze()
   const bad = r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')
   expect(bad.map((v) => `${what}: ${v.id} — ${v.help} (${v.nodes.map((n) => `${n.html} ${n.failureSummary ?? ''}`).slice(0, 3).join('; ')})`)).toEqual([])
 }
@@ -109,8 +116,75 @@ for (const scheme of ['dark', 'light'] as const) {
     await page.getByRole('button', { name: 'Till settings' }).click()
     await expect(page.getByRole('heading', { name: 'Till settings' })).toBeVisible()
     await axe(page, `Till settings (${scheme})`)
+    // Signed out: the sign-in screen with the company's side (logo, branch and till, time) in its colour.
+    await page.getByRole('button', { name: 'Back' }).first().click()
+    await page.getByRole('button', { name: 'Sign out' }).click()
+    await expect(page.getByRole('complementary', { name: 'Demo Ltd' })).toBeVisible()
+    await axe(page, `Sign in with the company side (${scheme})`)
   })
 }
+
+test('sells from the product tiles: a category, then a tile; typing shows the search list', async ({ page }) => {
+  await serve(page)
+  await page.goto('/')
+  await page.getByPlaceholder('ABCD-EFGH-JKMN').fill('ABCD-EFGH-JKMN')
+  await page.getByRole('button', { name: 'Enrol this device' }).click()
+  await page.getByLabel('Username').fill('efua')
+  await page.getByLabel('PIN', { exact: true }).fill('482613')
+  await page.getByRole('button', { name: 'OK' }).click()
+  const tabs = page.getByRole('tablist', { name: 'Product categories' })
+  // The branch's favourites first (Sales → Till favourites), then the categories of what this till sells, in name order.
+  await expect(tabs.getByRole('tab')).toHaveCount(3)
+  await expect(tabs.getByRole('tab').nth(0)).toHaveAccessibleName('Favourites')
+  await expect(tabs.getByRole('tab').nth(0)).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('group', { name: 'Products' }).getByRole('button')).toHaveCount(1)
+  await expect(page.getByRole('group', { name: 'Products' }).getByRole('button')).toHaveAccessibleName('Plantain chips, GH₵ 12.00')
+  await expect(tabs.getByRole('tab').nth(1)).toHaveAccessibleName('Drinks')
+  await expect(tabs.getByRole('tab').nth(2)).toHaveAccessibleName('Snacks')
+  await tabs.getByRole('tab', { name: 'Snacks' }).click()
+  await page.getByRole('group', { name: 'Products' }).getByRole('button', { name: 'Plantain chips, GH₵ 12.00' }).click()
+  const cart = page.getByRole('region', { name: 'Cart' })
+  await expect(cart.getByText('Plantain chips')).toBeVisible()
+  await expect(cart.getByText('GH₵ 12.00').last()).toBeVisible()
+  // Typing replaces the tiles with the search list, as before.
+  await page.getByLabel('Scan or search').fill('mil')
+  await expect(page.getByRole('group', { name: 'Products' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /Milo 400g/ })).toBeVisible()
+})
+
+test('after the sale, the receipt screen says the change to give, large, with New sale first', async ({ page }) => {
+  await serve(page)
+  await page.goto('/')
+  await page.getByPlaceholder('ABCD-EFGH-JKMN').fill('ABCD-EFGH-JKMN')
+  await page.getByRole('button', { name: 'Enrol this device' }).click()
+  await page.getByLabel('Username').fill('efua')
+  await page.getByLabel('PIN', { exact: true }).fill('482613')
+  await page.getByRole('button', { name: 'OK' }).click()
+  await page.getByLabel('Scan or search').fill('milo')
+  await page.getByRole('button', { name: /Milo 400g/ }).click()
+  await page.keyboard.press('F12')
+  const pay = page.getByRole('dialog', { name: 'Payment' })
+  await expect(pay.getByRole('tablist', { name: 'Ways to pay' }).getByRole('tab', { name: 'Cash' })).toHaveAttribute('aria-selected', 'true')
+  await pay.getByRole('group', { name: 'Cash received: quick amounts' }).getByRole('button', { name: 'GH₵ 60.00' }).click()
+  const done = page.getByRole('region', { name: 'Sale complete' })
+  await expect(done.getByText('Change to give')).toBeVisible()
+  await expect(done.getByText('GH₵ 2.00')).toBeVisible()
+  await expect(done.getByRole('button', { name: 'New sale' })).toBeFocused() // Enter starts the next customer
+})
+
+test('a till set to the search list (Till settings → Selling screen) shows no tiles', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('till-prefs', JSON.stringify({ layout: 'list' })))
+  await serve(page)
+  await page.goto('/')
+  await page.getByPlaceholder('ABCD-EFGH-JKMN').fill('ABCD-EFGH-JKMN')
+  await page.getByRole('button', { name: 'Enrol this device' }).click()
+  await page.getByLabel('Username').fill('efua')
+  await page.getByLabel('PIN', { exact: true }).fill('482613')
+  await page.getByRole('button', { name: 'OK' }).click()
+  await expect(page.getByLabel('Scan or search')).toBeVisible()
+  await expect(page.getByRole('tablist', { name: 'Product categories' })).toHaveCount(0)
+  await expect(page.getByRole('group', { name: 'Products' })).toHaveCount(0)
+})
 
 test('the desktop till prints the receipt by itself, silently, on the receipt printer and opens the drawer after cash', async ({ page }) => {
   await page.addInitScript(() => {

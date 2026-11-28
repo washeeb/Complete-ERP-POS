@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api'
 import { hardware, isDesktop, openDrawer, printersInfo, readScale, saveHardware, scalePorts, testPrint, type Config, type PrinterInfo } from '../hardware'
-import { getPrefs, savePrefs, type Prefs } from '../prefs'
+import { getPrefs, LAYOUTS, savePrefs, type Prefs } from '../prefs'
 import { applyTheme, getTheme, type ThemeChoice } from '../theme'
 import type { Bootstrap } from '../types'
 import { SignedIn } from './SignedIn'
@@ -199,6 +199,11 @@ export function TillSettings({ boot, online, onClose }: { boot: Bootstrap; onlin
           <label>Text size
             <select value={prefs.textScale} onChange={(e) => setPrefs({ ...prefs, textScale: Number(e.target.value) as Prefs['textScale'] })}>
               <option value={100}>Normal</option><option value={112}>Larger</option><option value={125}>Largest</option>
+            </select>
+          </label>
+          <label>Selling screen
+            <select value={prefs.layout} onChange={(e) => setPrefs({ ...prefs, layout: e.target.value as Prefs['layout'] })}>
+              {Object.entries(LAYOUTS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
           </label>
         </div>

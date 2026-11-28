@@ -60,6 +60,11 @@ test('picks a size and colour from the style grid, and collects an alteration at
   await page.getByLabel('PIN', { exact: true }).fill('482613')
   await page.getByRole('button', { name: 'OK' }).click()
 
+  // The tiles: one per style (its sizes and colours are chosen in the grid), none for the alteration charge.
+  const tiles = page.getByRole('group', { name: 'Products' })
+  await expect(tiles.getByRole('button', { name: /^Kente dress, / })).toHaveCount(1)
+  await expect(tiles.getByRole('button', { name: /Alteration/ })).toHaveCount(0)
+
   await page.getByLabel('Scan or search').fill('kente gold m')
   await page.getByRole('button', { name: /Kente dress Gold M/ }).click()
   const grid = page.getByRole('dialog', { name: 'Sizes and colours of Kente dress' })

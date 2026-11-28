@@ -15,7 +15,7 @@ Keep this card at the till. Practise first in the **practice company** (a purple
 
 | To… | Do this |
 |---|---|
-| Add an item | Scan the barcode, or type part of the name and press **Enter** |
+| Add an item | Scan the barcode, **tap its tile** (choose the category at the top of the tiles first), or type part of the name and press **Enter** |
 | Check a price | Type part of the name: the list shows each item's price (and each pack size's) without adding it |
 | Search again | **F2** |
 | Sell a carton | Scan the carton barcode, or tap **+ CTN** |
@@ -23,7 +23,7 @@ Keep this card at the till. Practise first in the **practice company** (a purple
 | Weigh (loose goods) | Put it on the scale, tap **Weigh** |
 | Remove a line | **✕** at the end of the line |
 | Wholesale price | Change **Price list** at the top (only if allowed) |
-| Customer on account / loyalty | **Customer** → search name or phone |
+| Customer on account / loyalty | **Customer (F4)** at the top of the cart → search name or phone |
 | Pay | **F12** or **Pay** |
 | Close a window (Drawer, payment, approval…) | **Esc**, or **Back** / **Cancel** |
 
@@ -39,7 +39,7 @@ Where the shop has switched it on, each item shows **how many are left** (e.g. *
 
 ## Taking payment
 
-- **Cash** — tap the amount handed over (or type it). The change shows and prints.
+- **Cash** — tap the amount handed over (or type it). The change shows and prints; after the sale, **Change to give** stays in large figures beside the receipt until you press **New sale** (or Enter).
 - **Mobile money** — choose the network. If you see **Send payment request**: type the customer's MoMo number and press it; the customer approves on their phone with their PIN, and the till adds the payment by itself (if they get a code, type it in). Otherwise enter the **transaction ID** from the customer's confirmation message, and accept only after you see the confirmation.
 - **Card** — run the card on the terminal first, then enter the approval code from the slip.
 - **Mixed** — e.g. part MoMo, rest cash. The sale completes when nothing is left to pay.

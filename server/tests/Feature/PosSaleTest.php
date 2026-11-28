@@ -20,6 +20,7 @@ use App\Filament\Resources\StockLevels\StockLevelResource;
 use App\Filament\Resources\StockMovements\StockMovementResource;
 use App\Filament\Resources\TaxRates\TaxRateResource;
 use App\Models\AuditEvent;
+use App\Models\Category;
 use App\Models\Customer;
 use App\Models\Device;
 use App\Models\HealthReading;
@@ -222,6 +223,19 @@ it('gives the till its catalog with units, barcodes, prices, tax and stock', fun
         ->and($milo['on_hand'])->toBe('100.000')
         ->and(collect($milo['tax'])->sum('rate_bp'))->toBe(2000)
         ->and(collect($milo['prices'])->pluck('amount_minor')->all())->toContain(4500, 100000, 4250);
+});
+
+it('gives the till the category names of the products it sells, for the tiles of the selling screen (part 48)', function () {
+    $drinks = Category::create(['name' => 'Drinks', 'is_active' => true]);
+    Category::create(['name' => 'Unused', 'is_active' => true]);
+    $this->milo->forceFill(['category_id' => $drinks->id])->save();
+    $first = $this->withToken($this->token)->getJson('/api/v1/pos/catalog')->assertOk();
+    expect($first->json('categories'))->toBe([['id' => $drinks->id, 'name' => 'Drinks']]); // only categories of products sold here
+
+    $this->travel(1)->seconds();
+    $drinks->forceFill(['name' => 'Cold drinks'])->save(); // renamed: the tills fetch the catalog again
+    $this->withToken($this->token)->withHeaders(['If-None-Match' => $first->headers->get('ETag')])->getJson('/api/v1/pos/catalog')
+        ->assertOk()->assertJsonPath('categories.0.name', 'Cold drinks');
 });
 
 it('refuses selling for someone without till access there', function () {

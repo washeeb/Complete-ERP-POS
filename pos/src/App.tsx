@@ -9,6 +9,7 @@ import { exportQueueFile, sendQueue } from './offline'
 import { HEALTH_EVERY_TICKS, reportHealth, type FixHandlers } from './health'
 import { CloseShift, Enroll, Handover, Login, OpenShift } from './screens/Setup'
 import { TillSettings } from './screens/TillSettings'
+import { SignInSide } from './screens/SignInSide'
 import { Receipt } from './screens/Receipt'
 import { Sell } from './screens/Sell'
 import type { Bootstrap, PostedSale, Product } from './types'
@@ -74,7 +75,7 @@ export default function App() {
       step('saving the product list on this PC')
       const savedAt = new Date().toISOString()
       await db.cache.put({ id: 'bootstrap', data: b, savedAt })
-      if (fresh) await db.cache.put({ id: 'catalog', version: fresh.version, products: fresh.products, promotions: fresh.promotions ?? [], utc_offset_minutes: fresh.utc_offset_minutes ?? 0, grocery: fresh.grocery ?? null, pharmacy: fresh.pharmacy ?? null, restaurant: fresh.restaurant ?? null, electronics: fresh.electronics ?? false, fashion: fresh.fashion ?? null, services: fresh.services ?? null, savedAt })
+      if (fresh) await db.cache.put({ id: 'catalog', version: fresh.version, products: fresh.products, categories: fresh.categories ?? [], favourites: fresh.favourites ?? [], promotions: fresh.promotions ?? [], utc_offset_minutes: fresh.utc_offset_minutes ?? 0, grocery: fresh.grocery ?? null, pharmacy: fresh.pharmacy ?? null, restaurant: fresh.restaurant ?? null, electronics: fresh.electronics ?? false, fashion: fresh.fashion ?? null, services: fresh.services ?? null, savedAt })
       return { b, products: fresh?.products ?? cachedCat!.products, version: fresh?.version ?? cachedCat!.version, live: true }
     } catch (e) {
       if (!(e instanceof ApiError && (e.code === 'network' || e.status === 401)) || !cachedBoot || !cachedCat) throw e
@@ -257,7 +258,7 @@ export default function App() {
       )}
       {stage === 'loading' && <LogoLoader variant="page" text="Starting the till…" />}
       {stage === 'enroll' && <Enroll onDone={load} />}
-      {stage === 'login' && <Login onDone={load} />}
+      {stage === 'login' && <SignInSide><Login onDone={load} /></SignInSide>}
       {stage === 'open-shift' && boot && <OpenShift boot={boot} online={online} onDone={load} onLogout={logout} />}
       {stage === 'sell' && boot && (
         <Sell boot={boot} products={products} online={online} catalogVersion={catalogVersion} queue={queue}
