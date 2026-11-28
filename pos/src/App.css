@@ -98,6 +98,10 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
 .pay-methods { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px; }
 .pay-methods button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 76px; font-weight: 600; }
 .pay-icon { font-size: 26px; line-height: 0; }
+/* The Drawer window (new look, part 3): the same tiles; its fields in two columns on a wide screen. */
+.drawer { width: min(860px, 100%); }
+.drawer-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px 16px; align-items: start; }
+.drawer-fields > p, .drawer-fields > img { grid-column: 1 / -1; }
 .quick-cash { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
 .quick-cash button { min-height: 60px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .segmented { display: flex; gap: 6px; } .segmented button { flex: 1; } .segmented .active { background: var(--primary); color: var(--primary-text); }
@@ -248,6 +252,12 @@ fieldset.choices button.active, .segmented button.active { background: var(--pri
 /* Cash count by notes and coins: two groups side by side (one under the other on a narrow screen), one line per
    denomination: name, how many, what they come to. Inputs never grow past their column. */
 .narrow.count { max-width: 760px; }
+/* Closing a shift (new look, part 3): wide enough for the cash count and the other checks side by side, so it fits a till
+   screen without scrolling; the total counted stands out. */
+.narrow.close-shift { max-width: 900px; margin-top: 3vh; }
+.close-shift .other-checks { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.close-shift .denoms-total strong { font-size: 1.6rem; color: var(--colorBrandForeground1); }
+.close-shift > .row { position: sticky; bottom: 0; background: var(--panel); padding: 10px 0 0; border-top: 1px solid var(--line); }
 .denoms { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px 28px; }
 .denom-group { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 6px; align-content: start; }
 .denom-group legend { padding: 0; margin-bottom: 4px; font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }

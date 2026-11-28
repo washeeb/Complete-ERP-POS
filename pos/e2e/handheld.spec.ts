@@ -74,7 +74,7 @@ test('receives a purchase order by scanning on the handheld', async ({ page }) =
   }
   // The third with the cursor out of the box (after tapping the page), as a scanner types it: fast, ending with Tab.
   await page.locator('body').click({ position: { x: 5, y: 5 } })
-  await page.keyboard.type('2000099', { delay: 5 })
+  await page.keyboard.type('2000099') // no pause between keys, as a scanner sends them
   await page.keyboard.press('Tab')
   await expect(page.getByLabel('Received now Gino tomato paste 400g')).toHaveValue('3')
   await page.getByLabel('Into bin').selectOption('bin-a1')
