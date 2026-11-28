@@ -1,6 +1,6 @@
 import { makeStyles, mergeClasses, Tab, TabList, Text, tokens } from '@fluentui/react-components'
 import { useMemo, useState } from 'react'
-import type { Category, Product, Unit } from '../types'
+import type { Category, Product, Style, Unit } from '../types'
 
 const MAX = 60 // tiles per category: a large shop types to find the rest, so a slow till stays quick
 
@@ -32,13 +32,29 @@ const FAVOURITES = '__favourites'
  * in the back office) come first, as their own tab, in the order chosen. Pressing a tile adds the item as scanning it
  * does; typing or scanning still searches (the list replaces the tiles while there is text in the box).
  */
-export function ProductTiles({ products, categories, favourites = [], price, stock, onAdd }: {
+export function ProductTiles({ products: all, categories, favourites = [], hidden = [], styles = [], price, stock, onAdd }: {
   products: Product[]; categories: Category[]; favourites?: string[]
+  /** Products the till adds by itself (a restaurant's service charge, a fashion shop's alteration): never a tile. */
+  hidden?: string[]
+  /** Fashion styles: a style's sizes and colours are one tile, named after the style (pressing it opens the size grid). */
+  styles?: Style[]
   price: (p: Product, u: Unit) => string | null
   stock: (p: Product) => { text: string; out: boolean; low: boolean } | null
   onAdd: (p: Product) => void
 }) {
   const s = useStyles()
+  // One tile per fashion style (its first size and colour stands for it), and none for what the till adds itself.
+  const styleName = useMemo(() => new Map(styles.map((x) => [x.id, x.name])), [styles])
+  const products = useMemo(() => {
+    const seen = new Set<string>()
+    return all.filter((p) => {
+      if (hidden.includes(p.id)) return false
+      if (!p.style_id || !styleName.has(p.style_id)) return true
+      if (seen.has(p.style_id)) return false
+      seen.add(p.style_id)
+      return true
+    })
+  }, [all, hidden, styleName])
   // Categories that have something to sell here, in name order; products without one last ("Other").
   const byId = useMemo(() => new Map(products.map((p) => [p.id, p])), [products])
   const favs = useMemo(() => favourites.map((id) => byId.get(id)).filter((p): p is Product => !!p), [favourites, byId])
@@ -65,13 +81,14 @@ export function ProductTiles({ products, categories, favourites = [], price, sto
           const base = p.units.find((u) => u.is_base) ?? p.units[0]
           const pr = base ? price(p, base) : null
           const st = stock(p)
+          const name = (p.style_id && styleName.get(p.style_id)) || p.name
           return (
             <button key={p.id} type="button" className={mergeClasses(s.tile, st?.out && s.out)} onClick={() => onAdd(p)}
-              aria-label={`${p.name}, ${pr ?? 'no price'}${st ? `, ${st.text}` : ''}`}>
-              <span className={s.name}>{p.name}</span>
+              aria-label={`${name}, ${pr ?? 'no price'}${st && !p.style_id ? `, ${st.text}` : ''}`}>
+              <span className={s.name}>{name}</span>
               <span>
                 <span className={s.price}>{pr ?? 'No price'}</span>
-                {st && <span className={s.note}> · {st.text}</span>}
+                {st && !p.style_id && <span className={s.note}> · {st.text}</span>}
               </span>
             </button>
           )

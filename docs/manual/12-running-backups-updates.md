@@ -283,6 +283,8 @@ What's there:
 
 **The till in the new look (sign-in).** The till's sign-in screen shows your company on one side, in its colour: the logo, the branch and till, and the time and date; the sign-in and PIN keypad are beside it. It works offline too (from what the till kept from its last start). **Why:** staff see at once that they are at the right till, and the screen looks like your shop.
 
+**The till in the new look (industry screens).** A fashion style is one tile (pressing it opens its sizes and colours); the restaurant's service charge and the alteration charge are not tiles (the till adds them itself); the prescription window's boxes are in two even columns. **Why:** the tiles show what a cashier sells, once each.
+
 **Export on the rebuilt lists.** Till sales, Till shifts, Till drawer, Products, Stock on hand, the Stock ledger, Stock adjustments, Stock counts, Transfers, Stock requests, Customers, Invoices, Suppliers, Purchase orders, Goods received, Direct purchases, Invoices from suppliers, Reorder levels, Expense claims, Supplier bills and Supplier payments each have **Export**, as every list does.
 - **Excel**, **CSV** or **PDF** of what the list shows: its search, filters and order, all pages, not only the one on screen.
 - A PDF holds about 800 rows; for a longer list **Export to PDF** is greyed out and says so. Narrow the list (for example to a date range), or use Excel or CSV, which take everything. **Why:** a PDF is laid out in the server's memory, and a very long one would stop it.
