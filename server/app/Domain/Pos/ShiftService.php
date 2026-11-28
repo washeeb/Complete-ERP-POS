@@ -48,8 +48,55 @@ final class ShiftService
             return $shift;
         }
         $to = DB::table('shift_aliases')->where('id', $id)->where('device_id', $device->id)->value('shift_id');
+        if ($to && ($shift = Shift::where('device_id', $device->id)->find($to))) {
+            return $shift;
+        }
 
-        return $to ? Shift::where('device_id', $device->id)->find($to) : null;
+        // A shift another till took over (this one was wiped or replaced): what this device still sends goes into it.
+        return Shift::where('taken_over_from_device_id', $device->id)->find($to ?? $id);
+    }
+
+    /** Minutes without a word from a till before its open shift may be continued on another device of the same till. */
+    public const LEFT_OPEN_SILENT_MINUTES = 15;
+
+    /**
+     * A shift left open on this device's till by another device that is gone: revoked, or silent for a while (wiped,
+     * reinstalled, replaced). This device may continue it, with a manager's approval; null when it has its own shift.
+     */
+    public function leftOpenFor(Device $device): ?Shift
+    {
+        if (! $device->till_id || $this->current($device)) {
+            return null;
+        }
+        $quiet = now()->subMinutes(self::LEFT_OPEN_SILENT_MINUTES);
+        $gone = Device::where('till_id', $device->till_id)->whereKeyNot($device->id)
+            ->where(fn ($q) => $q->where('status', '!=', 'active')->orWhere(fn ($q) => $q
+                ->where(fn ($q) => $q->whereNull('last_seen_at')->orWhere('last_seen_at', '<', $quiet))
+                ->where(fn ($q) => $q->whereNull('health_at')->orWhere('health_at', '<', $quiet))))
+            ->pluck('id');
+
+        return $gone->isEmpty() ? null : Shift::where('till_id', $device->till_id)->where('status', 'open')
+            ->whereIn('device_id', $gone)->orderByDesc('opened_at')->first();
+    }
+
+    /**
+     * Continue a shift left open on this till on this device (the till it was opened on was wiped or replaced). A manager
+     * approves; the shift keeps its float and its sales, and closes here as usual. Sales the old device still sends land
+     * in it.
+     */
+    public function takeOver(Device $device, User $cashier, string $shiftId, User $manager, string $reason): Shift
+    {
+        $shift = $this->leftOpenFor($device);
+        if (! $shift || $shift->id !== $shiftId) {
+            throw new DomainException('That shift can no longer be continued here: it was closed, or the till it was opened on is still in use.', 'not_left_open');
+        }
+        if (trim($reason) === '') {
+            throw new DomainException('Give the reason (e.g. the till was reinstalled).');
+        }
+        $shift->forceFill(['device_id' => $device->id, 'taken_over_from_device_id' => $shift->device_id]);
+
+        return $this->recorder->transaction(fn () => $this->recorder->save(Actor::user($cashier, 'pos', $device->id), $shift, 'shift.taken_over',
+            mb_substr(trim($reason)." (approved by {$manager->name})", 0, 255), $shift->branch_id));
     }
 
     /** $id/$openedAt come from the till (offline shifts are opened without us); $offline skips the live access check (reviewed via the grant instead). */
@@ -184,16 +231,14 @@ final class ShiftService
     /**
      * Close a shift from the back office: for a shift no till can close any more (the till was reinstalled or replaced,
      * or the person left without closing). A manager enters the cash actually there and why. Same result as a till
-     * close: expected cash, the count, over/short (posted to the books as usual).
+     * close: expected cash, the count, over/short (posted to the books as usual). On a cash-control vault the manager's
+     * count stands for the teller's, and the cashier then receives the vault as usual (blind count).
      */
     public function closeFromOffice(Actor $actor, Shift $shift, int $countedMinor, string $reason): Shift
     {
         $this->requireManager($actor, $shift);
         if (! $shift->isOpen()) {
             throw new DomainException('This shift is already closed.');
-        }
-        if ($shift->vault_session_id) {
-            throw new DomainException('This shift is on a cash-control vault: close it at Cash → Shifts and vaults.');
         }
         if ($countedMinor < 0 || trim($reason) === '') {
             throw new DomainException('Give the cash counted (0 or more) and the reason.');
@@ -209,7 +254,14 @@ final class ShiftService
             $shift->forceFill(['checked_count_minor' => $countedMinor, 'checked_by' => $actor->id, 'checked_by_name' => $actor->name, 'checked_at' => now()]);
         }
 
-        return $this->recorder->transaction(fn () => $this->recorder->save($actor, $shift, 'shift.closed_in_office', $reason, $shift->branch_id));
+        return $this->recorder->transaction(function () use ($actor, $shift, $reason, $countedMinor, $expected) {
+            $this->recorder->save($actor, $shift, 'shift.closed_in_office', $reason, $shift->branch_id);
+            if ($shift->vault_session_id) {
+                $this->cash->countedInOffice($actor, $shift, $countedMinor, $expected);
+            }
+
+            return $shift;
+        });
     }
 
     /**

@@ -8,6 +8,7 @@ import {
 import { useEffect, useState } from 'react'
 import { api, type DeviceFix, type DeviceOptions, type DeviceRow, type UserDone } from '../api'
 import { Ask } from '../form/Ask'
+import { navigate } from '../nav'
 import { Choose, TextField } from '../form/Fields'
 import { DataTable, Pager, type Column } from '../list/DataTable'
 import { PageHead, usePageStyles } from '../list/ListParts'
@@ -62,6 +63,7 @@ export function DevicesPage() {
     { key: 'name', label: 'Name', render: (r) => <><Text weight="semibold">{r.name}</Text><Text block size={200} className={s.muted}>{r.kind}</Text></> },
     { key: 'where', label: 'Branch · till', render: (r) => `${r.branch ?? '—'}${r.till ? ` · ${r.till}` : ''}` },
     { key: 'status', label: 'Status', render: (r) => <><Badge appearance="tint" color={TONE[r.status] ?? 'subtle'}>{r.status}</Badge>
+      {r.open_shift && <div><Link onClick={(e) => { e.stopPropagation(); navigate(`/office/shifts/${r.open_shift!.id}`) }}>{r.open_shift.opened_by ?? 'A'}’s shift open</Link></div>}
       {r.code_expires && <Text block size={200} className={s.muted}>code until {new Date(r.code_expires).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</Text>}</> },
     { key: 'seen', label: 'Last seen', render: (r) => ago(r.last_seen) ?? <Text className={s.muted}>never</Text> },
     { key: 'health', label: 'Health', render: (r) => (r.health === null ? <Text className={s.muted}>—</Text> : (
@@ -171,6 +173,13 @@ function DeviceDialogs({ doing, remoteLink, onClose, onDone }: { doing: Doing; r
     <Ask title={conf.title} go={conf.go} ready={!blocked && (!conf.needs || why.trim().length >= 3)} onClose={onClose}
       run={guard(async () => onDone(await api.deviceAction(r.id, doing.kind as 'new-code', conf.needs ? { reason: why } : {}), r.name))}>
       <Text block>{conf.text}</Text>
+      {doing.kind === 'revoke' && r.open_shift && (
+        <MessageBar intent="warning" style={{ marginTop: 10 }}><MessageBarBody>
+          {r.open_shift.opened_by ?? 'A'}’s shift is still open on this till (since {new Date(r.open_shift.opened_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}).
+          Revoking does not close it: the till added in its place can continue it with a manager’s PIN, or a manager{' '}
+          <Link onClick={() => navigate(`/office/shifts/${r.open_shift!.id}`)}>closes it here</Link> with the cash counted.
+        </MessageBarBody></MessageBar>
+      )}
       {conf.needs && !blocked && <div style={{ marginTop: 10 }}><TextField label={doing.kind === 'revoke' ? 'Why (lost, stolen, replaced…)' : 'Why'} required value={why} maxLength={255} onChange={setWhy} /></div>}
     </Ask>
   )

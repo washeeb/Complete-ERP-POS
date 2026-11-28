@@ -113,6 +113,9 @@ class PosController extends Controller
             'license' => (fn ($s) => ['state' => $s['read_only'] ? 'read_only' : 'active', 'read_only' => $s['read_only'],
                 'message' => $s['read_only'] ? 'This till cannot take sales right now. Tell your manager.' : null])(app(LicenseManager::class)->status()),
             'shift' => $this->shiftJson($shifts->current($device), $shifts),
+            // A shift left open on this till by a till that is gone (wiped, reinstalled, replaced): continue it here, or a manager closes it.
+            'left_open' => ($lo = $shifts->leftOpenFor($device)) ? ['id' => $lo->id, 'opened_by' => $lo->opened_by_name, 'opened_at' => $lo->opened_at->toIso8601String(),
+                'sales' => $lo->sales()->where('status', 'posted')->count(), 'device' => Device::find($lo->device_id)?->name] : null,
             // The drawer: pay-out categories and the limit above which a supervisor approves; the cash limit (0 = off).
             'drawer' => [
                 'payout_approval_minor' => (int) $settings->get('pos.payout_approval_minor', $device->tenant_id),
@@ -365,6 +368,21 @@ class PosController extends Controller
             vaultSessionId: $data['vault_session_id'] ?? null, grant: $data['grant'] ?? null, vaultId: $data['vault_id'] ?? null);
 
         return response()->json(['shift' => $this->shiftJson($shift, $shifts)], 201);
+    }
+
+    /** Continue a shift left open on this till by a till that is gone; a manager approves by username and PIN (cash set-up). */
+    public function takeOverShift(Request $request, ShiftService $shifts, SupervisorApproval $approvals): JsonResponse
+    {
+        $data = $request->validate([
+            'shift_id' => ['required', 'uuid'], 'reason' => ['required', 'string', 'max:200'],
+            'approval' => ['required', 'array'], 'approval.username' => ['required', 'string', 'max:60'], 'approval.pin' => ['required', 'string', 'max:8'],
+        ]);
+        $device = $this->device($request);
+        $till = Till::find($device->till_id) ?? throw new DomainException('This device is not assigned to a till.', 'no_till');
+        $manager = $approvals->verify($device, $data['approval'], 'cash.setup', $till, null, 0, ''); // a manager may continue their own shift
+        $shift = $shifts->takeOver($device, $request->user(), $data['shift_id'], $manager, $data['reason']);
+
+        return response()->json(['shift' => $this->shiftJson($shift, $shifts)]);
     }
 
     public function closeShift(Request $request, ShiftService $shifts): JsonResponse

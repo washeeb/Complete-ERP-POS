@@ -62,7 +62,7 @@ export type ShiftRow = {
 export type ShiftsList = { currency: string; exponent: number; total: number; open: number; over_short: number; page: number; per: number; sort: string; dir: 'asc' | 'desc'; rows: ShiftRow[] }
 export type ReportSheet = { title: string; headings: string[]; rows: string[][]; numeric?: number[]; foot?: string[] }
 export type ShiftDetail = ShiftRow & {
-  currency: string; exponent: number; branch: string
+  currency: string; exponent: number; branch: string; cash_vault: boolean
   tiles: { label: string; value: string; tone?: 'good' | 'warn' | 'bad' | null }[]
   facts: Record<string, string>
   sheets: ReportSheet[]
@@ -516,7 +516,7 @@ export type MessageLog = { total: number; page: number; per: number; statuses: O
 export type DeviceRow = { id: string; name: string; kind: string; branch: string | null; till: string | null; status: string; code_expires: string | null; last_seen: string | null
   health: string | null; health_details: string | null; used_from: string | null; mac: string | null; archived: boolean; can_view: boolean; can_control: boolean
   view_url: string | null; control_url: string | null; can_fix: boolean; has_fixes: boolean; can_reissue: boolean; can_revoke: boolean; can_archive: boolean
-  archive_blockers: string[]; can_restore: boolean }
+  archive_blockers: string[]; can_restore: boolean; open_shift: { id: string; opened_by: string | null; opened_at: string } | null }
 export type DeviceList = { total: number; page: number; per: number; remote_link: string | null; remote_available: boolean; rows: DeviceRow[] }
 export type DeviceOptions = { branches: Option[]; commands: Option[]; tills: Option[]; kinds: Option[] }
 export type DeviceFix = { when: string | null; what: string; by: string | null; status: string; result: string | null }

@@ -265,6 +265,17 @@ final class CashControl
         $this->recorder->save(Actor::user($teller, 'pos', $shift->device_id), $s, 'vault.counted_by_teller', branchId: $s->branch_id);
     }
 
+    /** A shift no till can close (wiped or replaced), closed in the back office: the manager's count stands for the teller's. */
+    public function countedInOffice(Actor $actor, Shift $shift, int $countMinor, int $expectedMinor): void
+    {
+        $s = VaultSession::where('shift_id', $shift->id)->first();
+        if (! $s || $s->status !== 'open') {
+            return;
+        }
+        $s->forceFill(['status' => 'counted', 'teller_count_minor' => $countMinor, 'teller_denoms' => null, 'expected_minor' => $expectedMinor, 'counted_at' => now()]);
+        $this->recorder->save($actor, $s, 'vault.counted_in_office', "Counted by {$actor->name}: the till could not close this shift", $s->branch_id);
+    }
+
     // ------------------------------------------------------------------------------------------------ cashier: receive and hand over
 
     /**

@@ -63,6 +63,7 @@ Route::prefix('v1')->group(function () {
         Route::post('shifts/open', [PosController::class, 'openShift']);
         Route::post('vaults/lend', [PosController::class, 'lendVault']); // a manager lends a vault to the person signed in, by PIN
         Route::post('shifts/close', [PosController::class, 'closeShift']);
+        Route::post('shifts/take-over', [PosController::class, 'takeOverShift']); // a shift left open by a wiped or replaced till, by a manager's PIN
         Route::post('drawer', [PosController::class, 'drawer']);
         Route::post('settings', [PosController::class, 'settings']); // the till's own printer and screen settings, by a manager's PIN
         Route::post('health', [PosController::class, 'health']);

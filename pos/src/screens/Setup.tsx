@@ -230,6 +230,7 @@ export function OpenShift({ boot, online, onDone, onLogout }: { boot: Bootstrap;
   const money = (m: number) => formatMoney(m, boot.company.currency, boot.company.exponent)
 
   const [opening, setOpening] = useState(false)
+  const [fresh, setFresh] = useState(false) // a shift was left open here; the cashier chose to open a new one instead
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -256,6 +257,10 @@ export function OpenShift({ boot, online, onDone, onLogout }: { boot: Bootstrap;
     } finally {
       setOpening(false)
     }
+  }
+
+  if (boot.left_open && !fresh) {
+    return <LeftOpen boot={boot} online={online} onDone={onDone} onFresh={() => setFresh(true)} onLogout={onLogout} />
   }
 
   if (personal && (mine.length === 0 || lending)) {
@@ -330,6 +335,58 @@ export function OpenShift({ boot, online, onDone, onLogout }: { boot: Bootstrap;
       )}
       {error && <p className="error" role="alert">{error}</p>}
       <button className="primary big" disabled={opening}>{opening ? 'Opening the shift…' : needsGrant ? 'Open shift (manager allows)' : 'Open shift'}</button>
+    </form>
+  )
+}
+
+/**
+ * A shift was left open on this till by a till that is gone: it was wiped, reinstalled or replaced while the shift was
+ * open (owner 2026-11-28). The cashier continues it here with a manager's approval (its float and sales stay in it, and
+ * it is counted and closed here as usual), or opens a new one and a manager closes the old one in the back office.
+ */
+function LeftOpen({ boot, online, onDone, onFresh, onLogout }: { boot: Bootstrap; online: boolean; onDone: () => void; onFresh: () => void; onLogout: () => void }) {
+  const lo = boot.left_open!
+  const [approval, setApproval] = useState({ username: '', pin: '' })
+  const [reason, setReason] = useState('The till was reinstalled')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const since = new Date(lo.opened_at).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    if (busy) return
+    setBusy(true)
+    setError('')
+    try {
+      await api.takeOverShift(lo.id, reason.trim(), approval)
+      onDone()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not continue the shift.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form className="card narrow" onSubmit={submit} aria-label="Shift left open on this till">
+      <h1>A shift was left open on this till</h1>
+      <p><strong>{lo.opened_by ?? 'Someone'}</strong>’s shift on {boot.till?.name ?? 'this till'} has been open since {since}{lo.device ? ` on ${lo.device}` : ''}, with {lo.sales} sale{lo.sales === 1 ? '' : 's'}.
+        That till is gone (it was wiped, reinstalled or replaced), so the shift was never counted.</p>
+      <p className="muted">Continue it here: the float and the sales stay in it, and you count and close it on this till as usual. A manager approves.</p>
+      <p className="signed-in">Signed in: <strong>{boot.user.name}</strong>. Not you? <button type="button" className="link" onClick={onLogout}>Sign out</button></p>
+      <fieldset className="grant">
+        <legend>A manager approves</legend>
+        <label>Manager's username<input autoComplete="off" value={approval.username} onChange={(e) => setApproval({ ...approval, username: e.target.value })} required /></label>
+        <label>Manager's PIN<input type="text" className="pin-mask" inputMode="numeric" autoComplete="off" maxLength={8} value={approval.pin} onChange={(e) => setApproval({ ...approval, pin: e.target.value })} required /></label>
+        <label>Reason<input maxLength={200} value={reason} onChange={(e) => setReason(e.target.value)} required /></label>
+      </fieldset>
+      {!online && <p className="muted" role="status">Continuing it needs the connection to the server; it comes back by itself.</p>}
+      {error && <p className="error" role="alert">{error}</p>}
+      <div className="row">
+        <button type="button" onClick={onFresh} disabled={busy}>Open a new shift instead</button>
+        <button className="primary big" disabled={busy || !online}>{busy ? 'Continuing…' : 'Continue this shift'}</button>
+      </div>
+      <p className="muted small">If you open a new shift, a manager closes the old one in the back office (Till shifts → the shift → Close shift) with the cash counted.</p>
     </form>
   )
 }
