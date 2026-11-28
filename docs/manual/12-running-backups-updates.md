@@ -287,6 +287,8 @@ What's there:
 
 **The till in the new look (industry screens).** A fashion style is one tile (pressing it opens its sizes and colours); the restaurant's service charge and the alteration charge are not tiles (the till adds them itself); the prescription window's boxes are in two even columns. **Why:** the tiles show what a cashier sells, once each.
 
+**The till's windows fit any screen.** The payment window keeps one size whatever the way to pay: what is due stays at the top, the ways to pay and their boxes scroll in the middle, and *Back to cart* and *Add …* stay at the bottom. Every other till window (customer, return, drawer, calculator and the rest) scrolls inside itself with its buttons kept in view. **Why:** on a shorter screen, mobile money, card and the other ways to pay pushed their buttons out of the window; only cash fitted.
+
 **Export on the rebuilt lists.** Till sales, Till shifts, Till drawer, Products, Stock on hand, the Stock ledger, Stock adjustments, Stock counts, Transfers, Stock requests, Customers, Invoices, Suppliers, Purchase orders, Goods received, Direct purchases, Invoices from suppliers, Reorder levels, Expense claims, Supplier bills and Supplier payments each have **Export**, as every list does.
 - **Excel**, **CSV** or **PDF** of what the list shows: its search, filters and order, all pages, not only the one on screen.
 - A PDF holds about 800 rows; for a longer list **Export to PDF** is greyed out and says so. Narrow the list (for example to a date range), or use Excel or CSV, which take everything. **Why:** a PDF is laid out in the server's memory, and a very long one would stop it.

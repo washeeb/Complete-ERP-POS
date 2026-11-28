@@ -4,7 +4,7 @@ import type { FrCell, FrTable } from '../api'
 const useStyles = makeStyles({
   panel: { backgroundColor: tokens.colorNeutralBackground1, borderRadius: tokens.borderRadiusXLarge, border: `1px solid ${tokens.colorNeutralStroke2}`,
     boxShadow: tokens.shadow4, padding: '14px 16px', overflowX: 'auto', marginBottom: '12px' },
-  end: { textAlign: 'right', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' },
+  end: { textAlign: 'right', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', '& .fui-Text': { textAlign: 'inherit' } },
   head: { fontWeight: tokens.fontWeightBold, paddingTop: '12px' },
   sub: { fontWeight: tokens.fontWeightSemibold },
   total: { fontWeight: tokens.fontWeightBold, borderTop: `2px solid ${tokens.colorNeutralForeground1}` },
