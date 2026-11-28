@@ -21,7 +21,7 @@ const bootstrap = {
   receipt_footer: 'Thank you', shift, last_device_seq: 0, catalog_version: 'v1', server_time: new Date().toISOString(), send_receipt: ['sms', 'email'],
 }
 const catalogBody = { version: 'v1', generated_at: new Date().toISOString(), utc_offset_minutes: 0, promotions: [], grocery: null, pharmacy: null, restaurant: null, electronics: false, fashion: null, services: null,
-  categories: [{ id: 'c-drinks', name: 'Drinks' }, { id: 'c-snacks', name: 'Snacks' }],
+  categories: [{ id: 'c-drinks', name: 'Drinks' }, { id: 'c-snacks', name: 'Snacks' }], favourites: ['plantain'],
   products: [{ id: 'plantain', sku: 'CHIPS', name: 'Plantain chips', category_id: 'c-snacks', track_stock: false, on_hand: null, tax: [],
     units: [{ id: 'u-chips', uom_code: 'PC', uom_name: 'Piece', decimals: 0, factor: '1.000000', is_base: true, barcodes: [] }],
     prices: [{ price_list_id: 'pl', product_uom_id: 'u-chips', min_qty: '1', amount_minor: 1200, starts_at: null, ends_at: null }] },
@@ -127,9 +127,14 @@ test('sells from the product tiles: a category, then a tile; typing shows the se
   await page.getByLabel('PIN', { exact: true }).fill('482613')
   await page.getByRole('button', { name: 'OK' }).click()
   const tabs = page.getByRole('tablist', { name: 'Product categories' })
-  await expect(tabs.getByRole('tab')).toHaveCount(2) // the categories of what this till sells, in name order
-  await expect(tabs.getByRole('tab').first()).toHaveAccessibleName('Drinks')
-  await expect(tabs.getByRole('tab').last()).toHaveAccessibleName('Snacks')
+  // The branch's favourites first (Sales → Till favourites), then the categories of what this till sells, in name order.
+  await expect(tabs.getByRole('tab')).toHaveCount(3)
+  await expect(tabs.getByRole('tab').nth(0)).toHaveAccessibleName('Favourites')
+  await expect(tabs.getByRole('tab').nth(0)).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('group', { name: 'Products' }).getByRole('button')).toHaveCount(1)
+  await expect(page.getByRole('group', { name: 'Products' }).getByRole('button')).toHaveAccessibleName('Plantain chips, GH₵ 12.00')
+  await expect(tabs.getByRole('tab').nth(1)).toHaveAccessibleName('Drinks')
+  await expect(tabs.getByRole('tab').nth(2)).toHaveAccessibleName('Snacks')
   await tabs.getByRole('tab', { name: 'Snacks' }).click()
   await page.getByRole('group', { name: 'Products' }).getByRole('button', { name: 'Plantain chips, GH₵ 12.00' }).click()
   const cart = page.getByRole('region', { name: 'Cart' })

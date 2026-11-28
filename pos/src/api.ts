@@ -120,7 +120,7 @@ export const api = {
       throw new ApiError('network', slow ? 'The product list took too long to arrive.' : 'No connection.', 0, slow ? 'catalog_timeout' : undefined)
     }
     if (!res.ok) throw new ApiError((body.error as string) ?? 'server', (body.detail as string) ?? 'Something went wrong. Try again, or tell your supervisor.', res.status)
-    return body as unknown as { version: string; generated_at: string; products: Product[]; categories?: Category[]; promotions?: PromotionRow[]; utc_offset_minutes?: number; grocery?: Grocery | null; pharmacy?: Pharmacy | null; restaurant?: Restaurant | null; electronics?: boolean; fashion?: Fashion | null; services?: Services | null }
+    return body as unknown as { version: string; generated_at: string; products: Product[]; categories?: Category[]; favourites?: string[]; promotions?: PromotionRow[]; utc_offset_minutes?: number; grocery?: Grocery | null; pharmacy?: Pharmacy | null; restaurant?: Restaurant | null; electronics?: boolean; fashion?: Fashion | null; services?: Services | null }
   },
   /** Stock left, next expiry and low-stock minimum per product at this till's store (ETag); null = unchanged. */
   stock: async (version?: string | null) => {

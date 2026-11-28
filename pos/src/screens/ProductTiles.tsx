@@ -24,28 +24,33 @@ const useStyles = makeStyles({
 })
 
 const OTHER = '__other'
+const FAVOURITES = '__favourites'
 
 /**
  * Product tiles beside the cart (owner 2026-11-28, as Square, Shopify POS and Dynamics Store Commerce): categories as
- * tabs, the category's products as large touch tiles with their price. Pressing a tile adds the item as scanning it
+ * tabs, the category's products as large touch tiles with their price. The branch's favourites (Sales → Till favourites
+ * in the back office) come first, as their own tab, in the order chosen. Pressing a tile adds the item as scanning it
  * does; typing or scanning still searches (the list replaces the tiles while there is text in the box).
  */
-export function ProductTiles({ products, categories, price, stock, onAdd }: {
-  products: Product[]; categories: Category[]
+export function ProductTiles({ products, categories, favourites = [], price, stock, onAdd }: {
+  products: Product[]; categories: Category[]; favourites?: string[]
   price: (p: Product, u: Unit) => string | null
   stock: (p: Product) => { text: string; out: boolean; low: boolean } | null
   onAdd: (p: Product) => void
 }) {
   const s = useStyles()
   // Categories that have something to sell here, in name order; products without one last ("Other").
+  const byId = useMemo(() => new Map(products.map((p) => [p.id, p])), [products])
+  const favs = useMemo(() => favourites.map((id) => byId.get(id)).filter((p): p is Product => !!p), [favourites, byId])
   const tabs = useMemo(() => {
     const used = new Set(products.map((p) => p.category_id ?? OTHER))
     const named = categories.filter((c) => used.has(c.id)).map((c) => ({ id: c.id, name: c.name }))
-    return used.has(OTHER) || named.length === 0 ? [...named, { id: OTHER, name: named.length ? 'Other' : 'All products' }] : named
-  }, [products, categories])
+    const all = used.has(OTHER) || named.length === 0 ? [...named, { id: OTHER, name: named.length ? 'Other' : 'All products' }] : named
+    return favs.length ? [{ id: FAVOURITES, name: 'Favourites' }, ...all] : all
+  }, [products, categories, favs.length])
   const [tab, setTab] = useState<string>(() => tabs[0]?.id ?? OTHER)
   const current = tabs.some((t) => t.id === tab) ? tab : tabs[0]?.id ?? OTHER
-  const inTab = useMemo(() => products.filter((p) => (p.category_id ?? OTHER) === current && !p.is_container), [products, current])
+  const inTab = useMemo(() => (current === FAVOURITES ? favs : products.filter((p) => (p.category_id ?? OTHER) === current && !p.is_container)), [products, current, favs])
   const shown = inTab.slice(0, MAX)
 
   return (

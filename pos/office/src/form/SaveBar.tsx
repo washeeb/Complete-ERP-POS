@@ -8,10 +8,10 @@ const useStyles = makeStyles({
   // values) is taken back, so nothing of the form shows below or beside it (owner report 2026-11-26).
   bar: {
     position: 'sticky', bottom: 'calc(-1 * var(--zx-pad-b, 0px))', zIndex: 3, display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap',
-    marginTop: '12px', marginInline: 'calc(-1 * var(--zx-pad-x, 0px))', marginBottom: 'calc(-1 * var(--zx-pad-b, 0px))',
+    marginTop: 'auto', marginInline: 'calc(-1 * var(--zx-pad-x, 0px))', marginBottom: 'calc(-1 * var(--zx-pad-b, 0px))',
     padding: '10px var(--zx-pad-x, 12px)', backgroundColor: tokens.colorNeutralBackground1,
     borderTop: `1px solid ${tokens.colorNeutralStroke2}`, boxShadow: '0 -4px 12px rgba(0,0,0,.06)',
-    ':not(:last-child)': { marginBottom: '16px' }, // more of the page follows (e.g. My profile): keep its distance
+    ':not(:last-child)': { marginBottom: '16px', marginTop: '12px' }, // more of the page follows (e.g. My profile): keep its distance
   },
   note: { display: 'inline-flex', alignItems: 'center', gap: '4px', color: tokens.colorPaletteDarkOrangeForeground1 },
   saved: { color: tokens.colorNeutralForeground3 },
