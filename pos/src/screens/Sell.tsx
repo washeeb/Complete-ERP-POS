@@ -636,7 +636,8 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
         {camera && <CameraScan onScan={(code) => { setCamera(false); scanned(code) }} onClose={() => setCamera(false)} />}
         {message && <p className="error" role="alert">{message}</p>}
         {tiles && !query.trim() ? (
-          <ProductTiles products={products} categories={categories} favourites={favourites} stock={stockLeft}
+          <ProductTiles products={products} categories={categories} favourites={favourites} stock={stockLeft} styles={fashion?.styles ?? []}
+            hidden={[restaurant?.service_charge?.product_id, fashion?.alteration_product_id].filter((x): x is string => !!x)}
             price={(p, u) => { const pr = priceOf(p, u); return pr ? money(pr.amount_minor) : null }} onAdd={(p) => add(p)} />
         ) : <ul className="results">
           {results.map((p) => (

@@ -98,6 +98,10 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
 .pay-methods { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px; }
 .pay-methods button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 76px; font-weight: 600; }
 .pay-icon { font-size: 26px; line-height: 0; }
+/* The prescription window (new look, part 5b): rows of fields share the width, the patient line spreads out. */
+.rx { width: min(760px, 100%); }
+.rx > .row:has(> label) > label { flex: 1 1 0; min-width: 0; }
+.rx > .row:has(> span) { justify-content: space-between; }
 /* Sign-in (new look, part 5a): the company in its colour on one side, the sign-in card on the other. */
 .signin-layout { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(360px, 1fr); min-height: calc(100vh - 64px); gap: 0; }
 .signin-brand { display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 40px 48px; border-radius: 16px; margin: 12px;

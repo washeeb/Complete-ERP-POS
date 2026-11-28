@@ -85,6 +85,7 @@ test('opens a table, sends a dish with choices to the kitchen and pays the bill 
   await page.getByLabel('PIN', { exact: true }).fill('482613')
   await page.getByRole('button', { name: 'OK' }).click()
 
+  await expect(page.getByRole('group', { name: 'Products' }).getByRole('button', { name: /Service charge/ })).toHaveCount(0) // added by the till, not a tile
   await page.getByRole('button', { name: 'Tables (F6)' }).click()
   await page.getByRole('button', { name: 'Table T1, free' }).click()
   await page.getByRole('button', { name: 'Open bill' }).click()
