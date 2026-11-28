@@ -88,8 +88,20 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
 .totals dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
 .grand { font-size: 1.8rem; }
 
-.modal { position: fixed; inset: 0; background: rgb(0 0 0 / .45); display: grid; place-items: center; padding: 12px; z-index: 10; }
+/* Above the till's corner chips (theme, Report a problem, Connected), which otherwise sat on top of a window's buttons. */
+.modal { position: fixed; inset: 0; background: rgb(0 0 0 / .45); display: grid; place-items: center; padding: 12px; z-index: 30; }
 .pay { width: min(720px, 100%); display: grid; gap: 14px; max-height: 95vh; overflow: auto; box-shadow: var(--shadow28); }
+/* The payment window: one height whatever the way to pay, so it does not jump; the middle scrolls, the buttons stay in view. */
+.pay.pay-window { height: min(700px, calc(100dvh - 24px)); max-height: none; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+.pay-window > h2 { margin: 0; }
+.pay-window > :not(.pay-scroll) { flex: none; }
+/* Every till window fits the screen and scrolls inside; its bottom row of buttons stays in view while it scrolls. */
+.modal > .card { max-height: calc(100dvh - 24px); overflow: auto; margin-block: 0; }
+.modal > .card:not(.pay-window) > .row:last-child { position: sticky; bottom: -20px; z-index: 1; margin: 0 -20px -20px; padding: 12px 20px 20px; background: var(--panel); border-top: 1px solid var(--line); }
+.pay-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; display: grid; gap: 14px; align-content: start; padding: 2px; }
+.pay-scroll .grid2 > label, .pay-scroll .grid2 input { min-width: 0; }
+.pay-foot { flex: none; padding-top: 10px; border-top: 1px solid var(--line); }
+.pay-foot .primary.big { min-width: 220px; }
 /* The payment window (new look, part 2): the amount due large, the ways to pay as tiles with icons, quick cash as a grid. */
 .pay-totals { padding: 12px 14px; border-radius: 10px; background: var(--bg); }
 .pay-totals .due { font-size: 1.9rem; font-weight: 700; }

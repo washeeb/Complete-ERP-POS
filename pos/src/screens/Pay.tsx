@@ -123,7 +123,7 @@ export function Pay({ total: bill, currency, exponent, busy, error, customer, ti
 
   return (
     <div className="modal" role="dialog" aria-modal="true" aria-label="Payment" onKeyDown={(e) => e.key === 'Escape' && !busy && onCancel()}>
-      <div className="card pay">
+      <div className="card pay pay-window">
         <h2>Payment</h2>
         {tips && payments.length === 0 && (
           <div className="row wrap tip">
@@ -145,6 +145,9 @@ export function Pay({ total: bill, currency, exponent, busy, error, customer, ti
             {changeBreakdown(change, exponent).map((c) => `${c.count} × ${money(c.value)}`).join(' · ')}</p>
         )}
 
+        {/* What is due stays in view; the ways to pay scroll; the buttons stay at the bottom (owner 2026-11-28: on a
+            shorter screen the other methods pushed Add and Back out of the window). */}
+        <div className="pay-scroll">
         {payments.length > 0 && (
           <ul className="payments">
             {payments.map((p, i) => (
@@ -215,7 +218,7 @@ export function Pay({ total: bill, currency, exponent, busy, error, customer, ti
               {Number(guests) > 1 && <button type="button" onClick={() => setAmount((evenSplit(due, Number(guests) - payments.length)[0] / 10 ** exponent).toFixed(exponent))}>
                 Each pays {money(evenSplit(due, Math.max(1, Number(guests) - payments.length))[0])}</button>}
             </div>
-            <form className="grid2" onSubmit={(e) => { e.preventDefault(); add() }}>
+            <form id="pay-add" className="grid2" onSubmit={(e) => { e.preventDefault(); add() }}>
               <label>
                 {method === 'cash' ? 'Cash received' : 'Amount'} <span className="muted">(blank = {money(due)})</span>
                 <input autoFocus className="big mono" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
@@ -233,18 +236,19 @@ export function Pay({ total: bill, currency, exponent, busy, error, customer, ti
                 </label>
               )}
               <button type="button" onClick={() => setCalcOpen(true)} disabled={busy}>Calculator</button>
-              {(method !== 'momo' || manualAllowed(momoMode, online)) && (
-                <button className="primary big" disabled={busy}>Add {method === 'account' ? 'to account' : method === 'momo' && promptAvailable(momoMode, online) ? 'with transaction ID' : LABEL[method].toLowerCase()}</button>
-              )}
             </form>
           </>
         )}
+        </div>
         {(formError || error) && <p className="error" role="alert">{formError || error}</p>}
         {calcOpen && <Calculator useLabel="Use as amount" onUse={(v) => setAmount(v.toFixed(exponent))} onClose={() => setCalcOpen(false)} />}
         {tradingIn && tradeInProducts && <TradeInDialog products={tradeInProducts} currency={currency} exponent={exponent} due={due}
           onAdd={addTradeIn} onCancel={() => setTradingIn(false)} />}
-        <div className="row">
+        <div className="row pay-foot">
           <button type="button" onClick={onCancel} disabled={busy}>Back to cart (Esc)</button>
+          {due > 0 && (method !== 'momo' || manualAllowed(momoMode, online)) && (
+            <button form="pay-add" className="primary big" disabled={busy}>Add {method === 'account' ? 'to account' : method === 'momo' && promptAvailable(momoMode, online) ? 'with transaction ID' : LABEL[method].toLowerCase()}</button>
+          )}
           {due === 0 && <button type="button" className="primary big" disabled={busy} onClick={() => onPay(payments, tip, extra())}>{busy ? 'Saving…' : 'Complete sale'}</button>}
         </div>
       </div>

@@ -47,7 +47,7 @@ final class DeviceHealth
         $clean = array_intersect_key($snapshot, array_flip(['app', 'desktop', 'uptime_min', 'queue_pending', 'queue_review', 'oldest_pending_min', 'latency_ms',
             'connection', 'storage_used_mb', 'storage_free_mb', 'printer', 'catalog_age_min', 'errors_recent', 'screen']));
         $clean = array_map(fn ($v) => is_string($v) ? mb_substr($v, 0, 120) : (is_bool($v) || is_int($v) || is_float($v) || $v === null ? $v : null), $clean);
-        $device->forceFill(['health' => $clean, 'health_at' => now()])->saveQuietly();
+        $device->forceFill(['health' => $clean, 'health_at' => now(), 'last_seen_at' => now()])->saveQuietly(); // a report is being seen
 
         $waiting = DeviceCommand::withoutGlobalScopes()->where('device_id', $device->id)->where('status', 'pending')->orderBy('created_at')->get();
         foreach ($waiting as $c) {

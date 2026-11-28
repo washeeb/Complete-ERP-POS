@@ -10,7 +10,8 @@ const useStyles = makeStyles({
   bar: { position: 'absolute', insetInline: 0, top: 0 },
   head: { backgroundColor: tokens.colorNeutralBackground2, position: 'sticky', top: 0, zIndex: 1 },
   row: { cursor: 'pointer', ':focus-visible': { outline: `2px solid ${tokens.colorStrokeFocus2}`, outlineOffset: '-2px' } },
-  end: { textAlign: 'right', fontVariantNumeric: 'tabular-nums' },
+  // Fluent's Text sets its own left alignment; a second line in a number column (the amount under a count) follows the column.
+  end: { textAlign: 'right', fontVariantNumeric: 'tabular-nums', '& .fui-Text': { textAlign: 'inherit' } },
   tick: { width: '36px', paddingInlineEnd: 0 },
   empty: { padding: '40px 16px', textAlign: 'center', color: tokens.colorNeutralForeground3 },
   pager: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', padding: '10px 4px' },

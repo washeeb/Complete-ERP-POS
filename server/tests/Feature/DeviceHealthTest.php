@@ -3,6 +3,7 @@
 use App\Domain\Access\AccessService;
 use App\Domain\Devices\DeviceService;
 use App\Domain\Licensing\LicenseManager;
+use App\Domain\Office\DevicesScreen;
 use App\Domain\Remote\DeviceHealth;
 use App\Domain\Support\AccessDenied;
 use App\Filament\Resources\Devices\Pages\ListDevices;
@@ -49,6 +50,18 @@ it('keeps the till\'s health and names what is wrong in plain words', function (
 });
 
 afterEach(fn () => Carbon::setTestNow());
+
+it('counts a health report as the device being seen, and shows no health for a revoked device', function () {
+    Device::whereKey($this->device->id)->update(['last_seen_at' => now()->subHours(3)]);
+    $this->withToken($this->token)->postJson('/api/v1/pos/health', ['app' => 'dev'])->assertOk();
+    $d = Device::find($this->device->id);
+    expect($d->last_seen_at->timestamp)->toBe(now()->timestamp); // not "3 h ago" beside a fresher health report
+
+    $row = fn () => (new DevicesScreen($this->owner))->rowOf(Device::find($this->device->id));
+    expect($row()['health'])->toBe('OK');
+    app(DeviceService::class)->revoke(actorFor($this->it), $d, 'Replaced');
+    expect($row()['health'])->toBeNull(); // was "OK"
+});
 
 it('sends a fix to the till with the Remote access add-on, and records what the till did', function () {
     // Without the add-on nobody on the company's side can send fixes.

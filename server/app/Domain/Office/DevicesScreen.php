@@ -85,7 +85,7 @@ final class DevicesScreen
 
         return ['id' => $d->id, 'name' => $d->name, 'kind' => Device::KINDS[$d->kind] ?? $d->kind, 'branch' => $d->branch?->code, 'till' => $d->till?->code, 'status' => $d->status,
             'code_expires' => $d->status === 'pending' ? $d->enrollment_expires_at?->toIso8601String() : null, 'last_seen' => $d->last_seen_at?->toIso8601String(),
-            'health' => $d->health_at === null ? null : (implode('; ', $health->problems($d)) ?: 'OK'),
+            'health' => $d->health_at === null || ! $d->isActive() ? null : (implode('; ', $health->problems($d)) ?: 'OK'),
             'health_details' => $d->health ? collect($d->health)->map(fn ($v, $k) => "{$k}: ".(is_bool($v) ? ($v ? 'yes' : 'no') : ($v ?? '—')))->implode(' · ').' · reported '.$d->health_at?->diffForHumans() : null,
             'used_from' => ClientInfo::summary($d->last_client, $d->last_ip), 'mac' => $d->last_client['mac'] ?? null, 'archived' => $d->archived_at !== null,
             'can_view' => $level !== null, 'can_control' => $level === 'control',
