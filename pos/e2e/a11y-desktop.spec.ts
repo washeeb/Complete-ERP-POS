@@ -116,6 +116,11 @@ for (const scheme of ['dark', 'light'] as const) {
     await page.getByRole('button', { name: 'Till settings' }).click()
     await expect(page.getByRole('heading', { name: 'Till settings' })).toBeVisible()
     await axe(page, `Till settings (${scheme})`)
+    // Signed out: the sign-in screen with the company's side (logo, branch and till, time) in its colour.
+    await page.getByRole('button', { name: 'Back' }).first().click()
+    await page.getByRole('button', { name: 'Sign out' }).click()
+    await expect(page.getByRole('complementary', { name: 'Demo Ltd' })).toBeVisible()
+    await axe(page, `Sign in with the company side (${scheme})`)
   })
 }
 

@@ -98,6 +98,20 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
 .pay-methods { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px; }
 .pay-methods button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 76px; font-weight: 600; }
 .pay-icon { font-size: 26px; line-height: 0; }
+/* Sign-in (new look, part 5a): the company in its colour on one side, the sign-in card on the other. */
+.signin-layout { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(360px, 1fr); min-height: calc(100vh - 64px); gap: 0; }
+.signin-brand { display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 40px 48px; border-radius: 16px; margin: 12px;
+  background: var(--colorBrandBackground); color: var(--colorNeutralForegroundOnBrand); }
+.signin-brand p { margin: 0; }
+.signin-logo { max-width: 220px; max-height: 96px; object-fit: contain; align-self: flex-start; margin-bottom: 18px; border-radius: 8px; background: #fff; padding: 8px; }
+.signin-company { font-size: 2rem; font-weight: 700; line-height: 1.2; }
+.signin-where { font-size: 1.1rem; }
+.signin-time { font-size: 3.4rem; font-weight: 700; line-height: 1.1; margin-top: 28px !important; font-variant-numeric: tabular-nums; }
+.signin-date { font-size: 1.1rem; line-height: 1.4; margin-top: 4px !important; }
+.signin-powered { margin-top: auto !important; font-size: .85rem; } /* full strength: dimmed text on the brand colour falls below WCAG contrast */
+.signin-card { display: grid; align-content: center; }
+.signin-card .narrow { margin: 0 auto; }
+@media (max-width: 900px) { .signin-layout { grid-template-columns: 1fr; } .signin-brand { padding: 20px 24px; } .signin-time { font-size: 2.2rem; margin-top: 8px !important; } }
 /* The customer at the top of the cart (new look, part 4). */
 .cart-customer { display: flex; justify-content: flex-end; margin-bottom: 8px; }
 .cart-customer .chip { flex: 1 1 auto; justify-content: space-between; }
