@@ -9,6 +9,7 @@ import { exportQueueFile, sendQueue } from './offline'
 import { HEALTH_EVERY_TICKS, reportHealth, type FixHandlers } from './health'
 import { CloseShift, Enroll, Handover, Login, OpenShift } from './screens/Setup'
 import { TillSettings } from './screens/TillSettings'
+import { SignInSide } from './screens/SignInSide'
 import { Receipt } from './screens/Receipt'
 import { Sell } from './screens/Sell'
 import type { Bootstrap, PostedSale, Product } from './types'
@@ -257,7 +258,7 @@ export default function App() {
       )}
       {stage === 'loading' && <LogoLoader variant="page" text="Starting the till…" />}
       {stage === 'enroll' && <Enroll onDone={load} />}
-      {stage === 'login' && <Login onDone={load} />}
+      {stage === 'login' && <SignInSide><Login onDone={load} /></SignInSide>}
       {stage === 'open-shift' && boot && <OpenShift boot={boot} online={online} onDone={load} onLogout={logout} />}
       {stage === 'sell' && boot && (
         <Sell boot={boot} products={products} online={online} catalogVersion={catalogVersion} queue={queue}

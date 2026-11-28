@@ -281,6 +281,8 @@ What's there:
 
 **The till in the new look (returns and the customer).** The customer chosen for a sale now shows at the top of the cart (with *Take payment*), and **Customer (F4)** is there too; the top row of the till keeps to one line. The *Return* window shows the refund in large figures. **Why:** the customer belongs to the sale, and the cashier checks the refund before giving money back.
 
+**The till in the new look (sign-in).** The till's sign-in screen shows your company on one side, in its colour: the logo, the branch and till, and the time and date; the sign-in and PIN keypad are beside it. It works offline too (from what the till kept from its last start). **Why:** staff see at once that they are at the right till, and the screen looks like your shop.
+
 **Export on the rebuilt lists.** Till sales, Till shifts, Till drawer, Products, Stock on hand, the Stock ledger, Stock adjustments, Stock counts, Transfers, Stock requests, Customers, Invoices, Suppliers, Purchase orders, Goods received, Direct purchases, Invoices from suppliers, Reorder levels, Expense claims, Supplier bills and Supplier payments each have **Export**, as every list does.
 - **Excel**, **CSV** or **PDF** of what the list shows: its search, filters and order, all pages, not only the one on screen.
 - A PDF holds about 800 rows; for a longer list **Export to PDF** is greyed out and says so. Narrow the list (for example to a date range), or use Excel or CSV, which take everything. **Why:** a PDF is laid out in the server's memory, and a very long one would stop it.
