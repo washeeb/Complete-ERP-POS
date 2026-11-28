@@ -1026,6 +1026,10 @@
    "office": "/office/drawer"
   },
   {
+   "admin": "/admin/till-favourites",
+   "office": "/office/till-favourites"
+  },
+  {
    "admin": "/admin/till-requests",
    "office": "/office/till-requests"
   },

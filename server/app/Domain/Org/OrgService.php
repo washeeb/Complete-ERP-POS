@@ -13,6 +13,7 @@ use App\Models\Branch;
 use App\Models\Industry;
 use App\Models\LegalEntity;
 use App\Models\PriceList;
+use App\Models\Product;
 use App\Models\Tenant;
 use App\Models\Till;
 use App\Models\Warehouse;
@@ -250,6 +251,34 @@ final class OrgService
 
             return $this->recorder->save($actor, $entity, $entity->exists ? 'legal_entity.updated' : 'legal_entity.created');
         });
+    }
+
+    /** Most favourite tiles a branch may have: one screen of tiles on a till. */
+    public const MAX_FAVOURITES = 48;
+
+    /**
+     * The favourite tiles of a branch's tills (till new look, part 1b): the products its tills show first, in this order.
+     * Whoever may change the branch's till settings may choose them (pos.settings, e.g. the branch manager). Only active
+     * products this branch sells (its industry's, or shared by all) are kept; the same product once.
+     *
+     * @param  list<string>  $productIds
+     */
+    public function setTillFavourites(Actor $actor, Branch $branch, array $productIds): Branch
+    {
+        $this->require($actor, 'pos.settings', $branch);
+        $ids = array_values(array_unique(array_filter($productIds, 'is_string')));
+        if (count($ids) > self::MAX_FAVOURITES) {
+            throw new DomainException('A till shows at most '.self::MAX_FAVOURITES.' favourite tiles. Take some off first.');
+        }
+        $sold = Product::whereIn('id', $ids)->where('is_active', true)
+            ->when($branch->industry_id, fn ($q) => $q->where(fn ($w) => $w->whereNull('industry_id')->orWhere('industry_id', $branch->industry_id)))
+            ->pluck('id')->all();
+        if (count($sold) !== count($ids)) {
+            throw new DomainException('One of these products is not sold at this branch (another industry, or no longer in use).');
+        }
+        $branch->till_favourites = $ids ?: null;
+
+        return $this->recorder->transaction(fn () => $this->recorder->save($actor, $branch, 'branch.till_favourites_changed', null, $branch->id));
     }
 
     private function require(Actor $actor, string $permission, ?Branch $branch = null): void

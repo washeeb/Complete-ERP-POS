@@ -81,6 +81,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
   const [approval, setApproval] = useState<{ payments: Payment[]; message: string; kind: 'credit' | 'discount' | 'discount_offline' | 'sign_in'; approvals: Approvals; limit?: number } | null>(null)
   const [promotions, setPromotions] = useState<PromotionRow[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [favourites, setFavourites] = useState<string[]>([])
   const tiles = getPrefs().layout === 'tiles' // till Settings → Selling screen
   const [utcOffset, setUtcOffset] = useState(0)
   const [grocery, setGrocery] = useState<Grocery | null>(null)
@@ -139,6 +140,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
       const cat = c as Extract<CacheRecord, { id: 'catalog' }> | undefined
       setPromotions(cat?.promotions ?? [])
       setCategories(cat?.categories ?? [])
+      setFavourites(cat?.favourites ?? [])
       setUtcOffset(cat?.utc_offset_minutes ?? 0)
       setGrocery(cat?.grocery ?? null)
       setPharmacy(cat?.pharmacy ?? null)
@@ -642,7 +644,7 @@ export function Sell({ boot, products, online, catalogVersion, queue, onPosted, 
         {camera && <CameraScan onScan={(code) => { setCamera(false); scanned(code) }} onClose={() => setCamera(false)} />}
         {message && <p className="error" role="alert">{message}</p>}
         {tiles && !query.trim() ? (
-          <ProductTiles products={products} categories={categories} stock={stockLeft}
+          <ProductTiles products={products} categories={categories} favourites={favourites} stock={stockLeft}
             price={(p, u) => { const pr = priceOf(p, u); return pr ? money(pr.amount_minor) : null }} onAdd={(p) => add(p)} />
         ) : <ul className="results">
           {results.map((p) => (

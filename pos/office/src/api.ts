@@ -27,6 +27,9 @@ export type Scope = {
   industries: { id: string; label: string; branches: { id: string; label: string }[] }[]
   recent: { industry: string; branch: string; label: string }[]
 }
+/** Sales → Till favourites: the tiles a branch's tills show first, in order. */
+export type TillFavourite = { id: string; name: string; sku: string; price: string | null }
+export type TillFavourites = { branches: { id: string; label: string }[]; branch: string | null; max: number; favourites: TillFavourite[] }
 export type SearchResult = { group: string; title: string; url: string; details: string }
 export type TodoItem = {
   id: string; title: string; detail: string; who: string | null; where: string | null; amount: number | null; percent: number | null
@@ -1305,6 +1308,9 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export const api = {
   me: () => call<Me>('/office-api/me'),
+  tillFavourites: (branch: string) => call<TillFavourites>(`/office-api/till-favourites${branch ? `?branch=${encodeURIComponent(branch)}` : ''}`),
+  tillFavouriteProducts: (branch: string) => (q: string, signal?: AbortSignal) => call<{ results: { id: string; label: string; detail?: string }[] }>(`/office-api/till-favourites/products?branch=${encodeURIComponent(branch)}&q=${encodeURIComponent(q)}`, { signal }),
+  saveTillFavourites: (branch: string, products: string[]) => call<{ message: string; favourites: TillFavourite[] }>(`/office-api/till-favourites/${branch}`, { method: 'POST', body: JSON.stringify({ products }) }),
   requestAccess: (path: string, note: string) => call<{ told: number }>('/access-request', { method: 'POST', body: JSON.stringify({ path, note }) }),
   chooseScope: (industry: string, branch: string) => call<{ scope: Scope | null }>('/office-api/scope', { method: 'POST', body: JSON.stringify({ industry, branch }) }),
   notifications: () => call<{ unread: number; items: NotificationItem[] }>('/office-api/notifications'),

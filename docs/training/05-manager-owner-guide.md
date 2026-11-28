@@ -13,6 +13,10 @@ You decide who may do what, approve what is above your staff's limits, and read 
 
 If you look after several branches, the box at the top of the back office shows where you are looking, e.g. *Grocery › All branches*. Press it to choose an industry, then all of its branches or one. Every list, report, the Business Portal and To-do then show only that place, and new documents start with its store. It remembers your choice for the next time you sign in. **Why:** you can check one shop without filtering every list.
 
+## Till favourites
+
+**Sales → Till favourites:** the products your tills show first, as large tiles, in the order you choose. Put the fastest sellers and anything without a barcode there. **Save**, and the tills show them within a few minutes.
+
 ## Stock requests between industries
 
 When one of your branches asks a branch of another industry for stock (or the other way round), **Stock → Stock requests** shows it as *Awaiting approval*. Open it and click **Approve** or **Reject**. You cannot approve a request you made yourself. The goods move at cost once both sides approve.

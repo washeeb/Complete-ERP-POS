@@ -83,6 +83,7 @@ use App\Http\Controllers\Office\SupplierInvoicesController as OfficeSupplierInvo
 use App\Http\Controllers\Office\SupplierPaymentsController as OfficeSupplierPaymentsController;
 use App\Http\Controllers\Office\SuppliersController as OfficeSuppliersController;
 use App\Http\Controllers\Office\SystemController as OfficeSystemController;
+use App\Http\Controllers\Office\TillFavouritesController as OfficeTillFavouritesController;
 use App\Http\Controllers\Office\TodayController as OfficeTodayController;
 use App\Http\Controllers\Office\TransfersController as OfficeTransfersController;
 use App\Http\Controllers\Office\UsersController as OfficeUsersController;
@@ -517,6 +518,10 @@ Route::prefix('office-api')->middleware(['auth', 'throttle:120,1,office', Office
     Route::get('customer-payments/options', [OfficeReceivablesController::class, 'options']);
     Route::get('aged-receivables', [OfficeReceivablesController::class, 'aging']);
     Route::get('till-requests', [OfficeSalesDeskController::class, 'tillRequests']);
+    // Sales → Till favourites (till new look, part 1b): the tiles a branch's tills show first.
+    Route::get('till-favourites', [OfficeTillFavouritesController::class, 'index']);
+    Route::get('till-favourites/products', [OfficeTillFavouritesController::class, 'products']);
+    Route::post('till-favourites/{id}', [OfficeTillFavouritesController::class, 'save'])->whereUuid('id');
     Route::post('till-requests/push', [OfficeSalesDeskController::class, 'push']);
     Route::get('office-returns', [OfficeSalesDeskController::class, 'returns']);
     Route::get('office-returns/{id}', [OfficeSalesDeskController::class, 'returnShow'])->whereUuid('id');

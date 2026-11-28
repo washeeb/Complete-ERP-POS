@@ -24,7 +24,7 @@ class Branch extends Model
 
     protected function casts(): array
     {
-        return ['is_hq' => 'boolean', 'is_active' => 'boolean', 'settings' => 'array', 'archived_at' => 'datetime', 'archived_children' => 'array'];
+        return ['is_hq' => 'boolean', 'is_active' => 'boolean', 'settings' => 'array', 'till_favourites' => 'array', 'archived_at' => 'datetime', 'archived_children' => 'array'];
     }
 
     /**
