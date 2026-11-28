@@ -98,6 +98,12 @@ button.link { border: 0; background: none; color: var(--accent); min-height: aut
 .pay-methods { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px; }
 .pay-methods button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 76px; font-weight: 600; }
 .pay-icon { font-size: 26px; line-height: 0; }
+/* The customer at the top of the cart (new look, part 4). */
+.cart-customer { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+.cart-customer .chip { flex: 1 1 auto; justify-content: space-between; }
+/* The return window (new look, part 4): the items full width, the refund large like Due. */
+.return { width: min(820px, 100%); }
+.return table { width: 100%; border-collapse: collapse; } .return th, .return td { padding: 6px; border-bottom: 1px solid var(--line); text-align: left; } .return .num { text-align: right; }
 /* The Drawer window (new look, part 3): the same tiles; its fields in two columns on a wide screen. */
 .drawer { width: min(860px, 100%); }
 .drawer-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px 16px; align-items: start; }
