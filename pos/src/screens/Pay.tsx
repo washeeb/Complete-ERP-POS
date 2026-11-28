@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { CreditCardPersonRegular, GiftCardRegular, MoneyRegular, PaymentRegular, PhoneRegular, StarRegular, WalletRegular } from '@fluentui/react-icons'
+import { useMemo, useState, type ReactElement } from 'react'
 import { formatMoney, parseMoney } from '../money'
 import { evenSplit } from '../restaurant'
 import { changeBreakdown } from '../calc'
@@ -9,6 +10,9 @@ import { MomoRequest } from './MomoRequest'
 import { manualAllowed, paymentFrom, promptAvailable } from '../momo'
 import type { MomoMode } from '../momo'
 
+/** The icon on each way to pay (new look, part 2). */
+const ICON: Record<string, ReactElement> = { cash: <MoneyRegular />, momo: <PhoneRegular />, card: <PaymentRegular />, account: <CreditCardPersonRegular />,
+  points: <StarRegular />, gift_card: <GiftCardRegular />, store_credit: <WalletRegular /> }
 const LABEL: Record<string, string> = { cash: 'Cash', momo: 'Mobile money', card: 'Card', account: 'On account', points: 'Points', gift_card: 'Gift card', store_credit: 'Store credit',
   deposit: 'Booking deposit', aggregator: 'Delivery app', trade_in: 'Trade-in', nhis: 'NHIS' }
 const PLATFORM: Record<string, string> = { bolt_food: 'Bolt Food', glovo: 'Glovo', chowdeck: 'Chowdeck' }
@@ -129,12 +133,12 @@ export function Pay({ total: bill, currency, exponent, busy, error, customer, ti
             ))}
           </div>
         )}
-        <dl className="totals">
+        <dl className="totals pay-totals">
           {tip > 0 && <><dt>Bill</dt><dd>{money(bill)}</dd><dt>Tip</dt><dd>{money(tip)}</dd></>}
           <dt>Total</dt><dd>{money(total)}</dd>
           {applied > 0 && <><dt>Paid</dt><dd>{money(applied)}</dd></>}
-          <dt className="strong">Due</dt><dd className="strong">{money(due)}</dd>
-          {change > 0 && <><dt>Change</dt><dd className="strong">{money(change)}</dd></>}
+          <dt className="strong due">Due</dt><dd className="strong due">{money(due)}</dd>
+          {change > 0 && <><dt className="change">Change</dt><dd className="strong change">{money(change)}</dd></>}
         </dl>
         {change > 0 && changeBreakdown(change, exponent).length > 0 && (
           <p className="muted small change-notes" aria-label="Change in notes and coins">
@@ -158,15 +162,15 @@ export function Pay({ total: bill, currency, exponent, busy, error, customer, ti
 
         {due > 0 && (
           <>
-            <div className="segmented" role="tablist">
+            <div className="segmented pay-methods" role="tablist" aria-label="Ways to pay">
               {(customer ? (['cash', 'momo', 'card', 'account', 'points', 'gift_card', 'store_credit'] as const) : (['cash', 'momo', 'card', 'gift_card', 'store_credit'] as const)).map((m) => (
                 <button key={m} type="button" role="tab" aria-selected={method === m} className={method === m ? 'active' : ''} onClick={() => setMethod(m)}>
-                  {LABEL[m]}
+                  <span className="pay-icon" aria-hidden>{ICON[m]}</span>{LABEL[m]}
                 </button>
               ))}
             </div>
             {method === 'cash' && (
-              <div className="row wrap">
+              <div className="quick-cash" role="group" aria-label="Cash received: quick amounts">
                 {quick.map((q) => <button key={q} type="button" className="big" onClick={() => add(q)} disabled={busy}>{money(q)}</button>)}
               </div>
             )}
